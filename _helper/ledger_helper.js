@@ -1,0 +1,56 @@
+
+module.exports = {
+
+    IE_STRUCTURE: [
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 110, "groupCode": null, "line_item": "Tax Revenue","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 120, "groupCode": null, "line_item": "Assigned Revenues & Compensation","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 130, "groupCode": null, "line_item": "Rental Income from Municipal Properties","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 140, "groupCode": null, "line_item": "Fee & User Charges","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 150, "groupCode": null, "line_item": "Sale & Hire charges","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 160, "groupCode": null, "line_item": "Revenue Grants, Contributions & Subsidies","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 170, "groupCode": null, "line_item": "Income from Investment","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 171, "groupCode": null, "line_item": "Interest earned","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 180, "groupCode": null, "line_item": "Other Income","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Revenue", "code": 100, "groupCode": null, "line_item": "Others","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 210, "groupCode": null, "line_item": "Establishment Expenses","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 220, "groupCode": null, "line_item": "Administrative Expenses","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 230, "groupCode": null, "line_item": "Operation & Maintenance","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 240, "groupCode": null, "line_item": "Interest & Finance Charges","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 250, "groupCode": null, "line_item": "Programme Expenses","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 260, "groupCode": null, "line_item": "Revenue Grants, Contributions & Subsidies (Exp)","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 270, "groupCode": null, "line_item": "Provisions and Write Off","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 271, "groupCode": null, "line_item": "Miscellaneous Expenses","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 272, "groupCode": null, "line_item": "Depreciation on Fixed Assets","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 280, "groupCode": null, "line_item": "Prior Period items","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 290, "groupCode": null, "line_item": "Transfer to Reserve Funds","budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Expense", "code": 200, "groupCode": null, "line_item": "Others","budget": []}
+    ],
+
+    BS_STRUCTURE : [
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 310, "groupCode": null, "line_item": "Municipal (General) Fund", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 311, "groupCode": null, "line_item": "Earmarked Funds", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 312, "groupCode": null, "line_item": "Reserves", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 320, "groupCode": null, "line_item": "Grants, Contribution for Specific purposes", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 330, "groupCode": null, "line_item": "Secured Loans", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 331, "groupCode": null, "line_item": "Unsecured Loans", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 340, "groupCode": null, "line_item": "Deposits received", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 341, "groupCode": null, "line_item": "Deposit Works", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 350, "groupCode": null, "line_item": "Other Liabilities (Sundry Creditors)", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 360, "groupCode": null, "line_item": "Provisions", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Liability", "code": 300, "groupCode": null, "line_item": "Others", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 410, "groupCode": null, "line_item": "Gross Block", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 411, "groupCode": null, "line_item": "Accumulated Depreciation", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 412, "groupCode": null, "line_item": "Capital Work-in-progress", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 420, "groupCode": null, "line_item": "Investment - General Fund", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 421, "groupCode": null, "line_item": "Investment - Other Funds", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 430, "groupCode": null, "line_item": "Stock in Hand (Inventories)", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 431, "groupCode": null, "line_item": "Sundry Debtors (Receivables)", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 432, "groupCode": null, "line_item": "Accumulated Provisions against Bad and Doubtful Receivables", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 440, "groupCode": null, "line_item": "Prepaid Expenses", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 450, "groupCode": null, "line_item": "Cash and Bank Balance", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 460, "groupCode": null, "line_item": "Loans, Advances and Deposits", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 470, "groupCode": null, "line_item": "Other Assets", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 480, "groupCode": null, "line_item": "Miscellaneous Expenditure (to the extent not written off)", "budget": []},
+        { "ulb_code": "CG001", "head_of_account": "Asset", "code": 400, "groupCode": null, "line_item": "Others", "budget": []}
+    ]
+};
