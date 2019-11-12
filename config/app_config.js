@@ -1,16 +1,12 @@
 module.exports = {
 	APP: {
-		PORT: 8080
+		PORT: process.env.PORT
 	},
 	DATABASE : {
-		CONNECTION_STRING1: 'mongodb://10.10.10.65:27017/perfect',
-		CONNECTION_STRING: 'mongodb://127.0.0.1:27017/perfect',
-		USERNAME: '<ENTER USERNAME HERE>',
-		PASSWORD: '<ENTER PASSWORD HERE>'
+		CONNECTION_STRING: process.env.CONNECTION_STRING
 	},
 	JWT: {
-		SECRET: 'perfectsecret',
+		SECRET: process.env.SECRET,
 		TOKEN_EXPIRY: 604800
 	}
-	
 }
