@@ -134,7 +134,1636 @@ const ulbList = {
             { "state": "Chhattisgarh", "code": "CG006", "name": "Raipur Municipal Corporation", "natureOfUlb": "Municipal Corporation", "type": "Municipal Corporation", "wards": 70, "area": 2892, "population": 1027264 },
             { "state": "Chhattisgarh", "code": "CG007", "name": "Raigarh Municipal Corporation", "natureOfUlb": "Municipal Corporation", "type": "Municipal Corporation", "wards": 48, "area": 2892, "population": 2160876 },
             { "state": "Chhattisgarh", "code": "CG008", "name": "Rajnandgaon Municipal Corporation", "natureOfUlb": "Municipal Corporation", "type": "Municipal Corporation", "wards": 0, "area": 0, "population": 143727 },
-            
+            {
+                "state": "Chhattisgarh",
+                "code": "CG010",
+                "name": "Aarang Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG011",
+                "name": "Abhanpur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "18.25",
+                "population": "14432"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG012",
+                "name": "Adbhar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG013",
+                "name": "Akaltara Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG014",
+                "name": "Ambagarh Chowki Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "11.48",
+                "population": "9889"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG015",
+                "name": "Amdi Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG016",
+                "name": "Antagarh Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG017",
+                "name": "Arjunda Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG018",
+                "name": "Badi bacheli Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG019",
+                "name": "Bagbahara Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG020",
+                "name": "Bagicha Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "25.81",
+                "population": "10427"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG021",
+                "name": "Balod Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "3527",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG022",
+                "name": "Baloda Bazar Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "4748.44",
+                "population": "1305343"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG023",
+                "name": "Baloda Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG024",
+                "name": "Balrampur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "28",
+                "area": "36.28",
+                "population": "81054"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG025",
+                "name": "Baramkala Nagar Panchayat ",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG026",
+                "name": "Barsoor Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG027",
+                "name": "Basna Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "3.94",
+                "population": "10345"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG028",
+                "name": "Bastar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "36.84",
+                "population": "10048"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG029",
+                "name": "Bemetra Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "4",
+                "area": "2854.81",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG030",
+                "name": "Berla Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": "5165"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG031",
+                "name": "Bhairamgarh Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG032",
+                "name": "Bhakhara Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG033",
+                "name": "Bhanupratappur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "1.32",
+                "population": "8125"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG034",
+                "name": "Bhatapara Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG035",
+                "name": "Bhatgaon Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG036",
+                "name": "Bhilai Charoda Nagar Palika Nigam",
+                "type": "Municipal Corporation",
+                "natureOfUlb": "",
+                "wards": "40",
+                "area": "81",
+                "population": "98008"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG037",
+                "name": "Bhilai Nagar Palika Nigam",
+                "type": "Municipal Corporation",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG038",
+                "name": "Bhopalpatnam Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG039",
+                "name": "Bijapur Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "35",
+                "area": "98.73",
+                "population": "327427"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG040",
+                "name": "Bilaigarh Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG041",
+                "name": "Bilaspur Nagar Palika  ",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG042",
+                "name": "Bilha Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "6.54",
+                "population": "11048"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG043",
+                "name": "Birgaon Municipal Corporation",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG044",
+                "name": "Bodari Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG045",
+                "name": "Champa Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "6.32",
+                "population": "7688"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG046",
+                "name": "Chandrapur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG047",
+                "name": "Chikhlakasa Nagar Panchayat ",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG048",
+                "name": "Charama Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG049",
+                "name": "Chhuikhadan Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "2.77",
+                "population": "7093"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG050",
+                "name": "Chhura Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG051",
+                "name": "Chhuriya Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG052",
+                "name": "Chikhlakasa Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG053",
+                "name": "Chirmiri Nagar Palika Nigam",
+                "type": "Municipal Corporation",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG054",
+                "name": "Churikala Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG055",
+                "name": "Dallirajhara Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG056",
+                "name": "Dantewada Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG057",
+                "name": "Devkar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "10.45",
+                "population": "6358"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG058",
+                "name": "Dhabara Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG059",
+                "name": "Dhamdha Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "15.08",
+                "population": "9961"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG060",
+                "name": "Dhamtari Municipal Corporation",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG061",
+                "name": "Dharamjaigarh Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "31.25",
+                "population": "14354"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG062",
+                "name": "Dipka Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG063",
+                "name": "Dondi - Lohara Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "5.93",
+                "population": "6045"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG064",
+                "name": "Dondi Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "13.57",
+                "population": "8042"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG065",
+                "name": "Dongargaon Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "4.31",
+                "population": "14693"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG066",
+                "name": "Dongarhgarh Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG067",
+                "name": "Dornapal Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG068",
+                "name": "Durg Nigam Nagar Palik",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG069",
+                "name": "Pharasgaon Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG070",
+                "name": "Fingeshwar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG071",
+                "name": "Gandai Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "15.04",
+                "population": "13278"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG072",
+                "name": "Gariaband Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "5",
+                "area": "5822.861",
+                "population": "597653"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG073",
+                "name": "Gharghoda Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "13",
+                "population": "9455"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG074",
+                "name": "Gidam Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "27.34",
+                "population": "6636"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG075",
+                "name": "Gobra Nawapara Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "18",
+                "area": "",
+                "population": "29315"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG076",
+                "name": "Gourella Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG077",
+                "name": "Gunderdehi Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG078",
+                "name": "Gurur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "3.72",
+                "population": "3775"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG079",
+                "name": "Jamul Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG080",
+                "name": "Janjgir Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "446674",
+                "population": "1619707"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG081",
+                "name": "Jarhi Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "5.73",
+                "population": "7228"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG082",
+                "name": "Jashpur Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "6205",
+                "population": "851669"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG083",
+                "name": "Jhagrakhand Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG084",
+                "name": "Kanker Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG085",
+                "name": "Kasdol Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG086",
+                "name": "Keskal Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG087",
+                "name": "Khairagarh Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG088",
+                "name": "Kharaud Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG089",
+                "name": "Kharora Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG090",
+                "name": "Kharsia Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG091",
+                "name": "Khatgora Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG092",
+                "name": "Kirandul Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG093",
+                "name": "Kirodumal Nagar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG094",
+                "name": "Kondagaon Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG095",
+                "name": "Konta Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "5.9",
+                "population": "7038"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG096",
+                "name": "Kota Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG097",
+                "name": "Korba Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG098",
+                "name": "Kumhari Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG099",
+                "name": "Kunkuri Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG100",
+                "name": "Kurra Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG101",
+                "name": "Kurud Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "13.4",
+                "population": "13783"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG102",
+                "name": "Kusmi Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG103",
+                "name": "Lailunga Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG104",
+                "name": "Lakhanpur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG105",
+                "name": "Lawan Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG106",
+                "name": "Lormi Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "9.4",
+                "population": "15156"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG107",
+                "name": "Magarlod Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "11.6",
+                "population": "6280"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG108",
+                "name": "Mahasamund Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "4790",
+                "population": "1032754"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG109",
+                "name": "Malhar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG110",
+                "name": "Mana Camp Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "6",
+                "population": "11953"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG111",
+                "name": "Manendragarh Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG112",
+                "name": "Maro Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "17",
+                "area": "17.67",
+                "population": "6596"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG113",
+                "name": "Mungeli Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "2750.36",
+                "population": "701707"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG114",
+                "name": "Nagari Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "10.23",
+                "population": "13308"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG115",
+                "name": "Nailedri Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG116",
+                "name": "Narayanpur Nagar Palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG117",
+                "name": "Narharpur Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG118",
+                "name": "Navagarh Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG119",
+                "name": "Nayabaradwar Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG120",
+                "name": "Pakhanjur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "10.52",
+                "population": "10201"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG121",
+                "name": "Palari Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "14.29",
+                "population": "8567"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG122",
+                "name": "Pali Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG123",
+                "name": "Pandaria Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG124",
+                "name": "Pandatarai Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG125",
+                "name": "Parpodi Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG126",
+                "name": "Patan Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "13.03",
+                "population": "14624"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG127",
+                "name": "Pathalgaon Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "14.96",
+                "population": "16613"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG128",
+                "name": "Patharia nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "19.24",
+                "population": "21026"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG129",
+                "name": "Pendra Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "18.67",
+                "population": "14120"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG130",
+                "name": "Pharshgoan Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG131",
+                "name": "Pipariya Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "3.59",
+                "population": "4859"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG132",
+                "name": "Pithora Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "3.54",
+                "population": "8428"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG133",
+                "name": "Pratappur Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG134",
+                "name": "Premnagar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG135",
+                "name": "Pussour Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG136",
+                "name": "Rahaud Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG137",
+                "name": "Rajim Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "10.07",
+                "population": "14090"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG138",
+                "name": "Rajpur Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "6",
+                "population": "4838"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG139",
+                "name": "Ramanujganj Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "6.7",
+                "population": "11893"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG140",
+                "name": "Ratanpur Nagar palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG141",
+                "name": "Saja Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "10.87",
+                "population": "5257"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG142",
+                "name": "Sakri Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": "1961922"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG143",
+                "name": "Sakti Nagar palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG144",
+                "name": "Saragaon nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG145",
+                "name": "Saraipali Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG146",
+                "name": "Saranggarh Nagar palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG147",
+                "name": "Sargaon Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG148",
+                "name": "Sariya nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "8.8",
+                "population": "6927"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG149",
+                "name": "Shahaspur Lohara Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "9.47",
+                "population": "7017"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG150",
+                "name": "Sheorinarayan Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG151",
+                "name": "Shivpur charcha Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG152",
+                "name": "Simga Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "14.32",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG153",
+                "name": "Sirgitti Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG154",
+                "name": "Sitapur Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "8.34",
+                "population": "9361"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG155",
+                "name": "Sukma Nagar palika Parishad",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG156",
+                "name": "Surajpur nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG157",
+                "name": "Takhatpur Nagar palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG158",
+                "name": "Thankamariya Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG159",
+                "name": "Tifra Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG160",
+                "name": "Tilda-Nevra Municipal Council",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "20",
+                "area": "30.61",
+                "population": "32331"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG161",
+                "name": "Tumgaon Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG162",
+                "name": "Tundra nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG163",
+                "name": "Utai Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "5.47",
+                "population": "8752"
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG164",
+                "name": "Wadrafnagar Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG165",
+                "name": "Raipur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG166",
+                "name": "Nawagarh Nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG167",
+                "name": "Jai jaipur Nagar Panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG168",
+                "name": "Lallunga nagar panchayat",
+                "type": "Town Panchayat",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG169",
+                "name": "Raigrah  Municipal Corporation",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG170",
+                "name": "Jagdalpur Nagar Nigam",
+                "type": "Municipal Corporation",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG171",
+                "name": "Rajnandgaon Nagar Palika Nigam",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Chhattisgarh",
+                "code": "CG172",
+                "name": "Ambikapur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },            
         ]
     },
     DH: {
@@ -163,6 +1792,1626 @@ const ulbList = {
         "ulbs": [
             { "state": "Gujarat", "code": "GJ001", "name": "Surendranagar Dudhrej Municipality", "natureOfUlb": "Municipality", "type": "Municipality", "wards": 14, "area": 10489, "population": 177851 },
 
+            {
+                "state": "Gujarat",
+                "code": "GJ007",
+                "name": "Amerali Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "13",
+                "area": "65",
+                "population": "117967"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ008",
+                "name": "Amod Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "15237"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ002",
+                "name": "Anand Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "13",
+                "area": "2941",
+                "population": "2090276"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ009",
+                "name": "Anjar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "87183"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ010",
+                "name": "Anklav Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "21003"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ011",
+                "name": "Ankleshwar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "16",
+                "area": "",
+                "population": "89457"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ012",
+                "name": "Babra Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "25270"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ013",
+                "name": "Bagasar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "34521"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ014",
+                "name": "Balasinor Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "39330"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ015",
+                "name": "Bantwa Nagar Seva Sadan",
+                "type": "Municipal Corporation",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "15,29"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ016",
+                "name": "Bardoli Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "60821"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ017",
+                "name": "Bareja Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "8",
+                "area": "",
+                "population": "19690"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ018",
+                "name": "Barwala Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "19",
+                "area": "",
+                "population": "43384"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ019",
+                "name": "Bavla Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "11",
+                "area": "",
+                "population": "36206"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ020",
+                "name": "Bayad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "17886"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ021",
+                "name": "Bhabhar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "21894"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ022",
+                "name": "Bhachau Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "39532"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ023",
+                "name": "Bhanvad Municipality",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "22142"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ024",
+                "name": "Bharuch Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "14",
+                "area": "",
+                "population": "169007"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ025",
+                "name": "Bhayavadar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "19404"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ026",
+                "name": "Bhujj Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "143286"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ027",
+                "name": "Biliomora Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "53187"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ028",
+                "name": "Bopal Ghuma Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ029",
+                "name": "Borivai Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ030",
+                "name": "Borsad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "63377"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ031",
+                "name": "Botad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "14",
+                "area": "",
+                "population": "130327"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ032",
+                "name": "Chaklsai Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "39581"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ033",
+                "name": "Chalala Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "16721"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ034",
+                "name": "Chansama Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "15932"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ035",
+                "name": "Chhaya Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "47699"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ036",
+                "name": "Chhota Udepur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "25787"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ037",
+                "name": "Chorvad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "22720"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ038",
+                "name": "Chotila Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "21364"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ039",
+                "name": "Dabhoi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "51240"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ040",
+                "name": "Dahod Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": "2127086"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ041",
+                "name": "Dakor Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "8",
+                "area": "",
+                "population": "25658"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ042",
+                "name": "Damnagar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "16614"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ043",
+                "name": "Deesa Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "111160"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ044",
+                "name": "Degham Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "42632"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ045",
+                "name": "Devgadh Bariya Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ046",
+                "name": "Dhandhuka Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "5",
+                "area": "",
+                "population": "32475"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ047",
+                "name": "Dhanera Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "29578"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ048",
+                "name": "Dharampur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "31305"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ049",
+                "name": "Dholka Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "13",
+                "area": "",
+                "population": "79531"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ050",
+                "name": "Dhorji Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "84545"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ051",
+                "name": "Dhrangadhara Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "75133"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ052",
+                "name": "Dhrol Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "25883"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ053",
+                "name": "Dwarka Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "5",
+                "area": "",
+                "population": "38873"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ054",
+                "name": "Gadha Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "28",
+                "area": "",
+                "population": "39241"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ055",
+                "name": "Gandevi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "16827"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ056",
+                "name": "Gandhiham Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "14",
+                "area": "",
+                "population": "247992"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ057",
+                "name": "Gariyadhar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "50",
+                "area": "",
+                "population": "33949"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ058",
+                "name": "Godhara Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "14",
+                "area": "",
+                "population": "143644"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ059",
+                "name": "Gondal Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "112197"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ060",
+                "name": "Halol Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "59605"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ061",
+                "name": "Halvad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "32024"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ062",
+                "name": "Harij Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "20253"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ063",
+                "name": "Himmatnagar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "81137"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ064",
+                "name": "Ider Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "36055"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ065",
+                "name": "Jafarabad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "10",
+                "area": "",
+                "population": "10792"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ066",
+                "name": "Jambusar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "43344"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ067",
+                "name": "Jamjodhpur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "2",
+                "area": "",
+                "population": "25892"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ068",
+                "name": "Jamraval Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "19777"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ069",
+                "name": "Jasdan Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "48483"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ070",
+                "name": "Jetpur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "118302"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ071",
+                "name": "Kaalol Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "11",
+                "area": "",
+                "population": "113153"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ072",
+                "name": "Kadi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "11",
+                "area": "",
+                "population": "73228"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ073",
+                "name": "Kadodara Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ074",
+                "name": "Kalawad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "28314"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ075",
+                "name": "Kalol Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "11",
+                "area": "",
+                "population": "113153"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ076",
+                "name": "Kanakpur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ077",
+                "name": "Kanjari Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "17881"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ078",
+                "name": "Kapadwanj Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "49308"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ079",
+                "name": "Karamsad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "35285"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ080",
+                "name": "Karjan Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "30405"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ081",
+                "name": "Kathlal Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "22071"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ082",
+                "name": "Keshod Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "76193"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ083",
+                "name": "Khambhailiya Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "41734"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ084",
+                "name": "Khambhat Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "20",
+                "area": "",
+                "population": "83715"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ085",
+                "name": "Kheda Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "25575"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ086",
+                "name": "Khedbrahma Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "25001"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ087",
+                "name": "Kheralu Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "21843"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ088",
+                "name": "Kodinar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "41492"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ089",
+                "name": "Kutiyana Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "16581"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ090",
+                "name": "Lathi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "16614"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ091",
+                "name": "Limbdi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "42769"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ092",
+                "name": "Lunawada Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "36954"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ093",
+                "name": "Mahemdabad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "35368"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ094",
+                "name": "Mahesana Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "184991"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ095",
+                "name": "Mahudha Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "17722"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ096",
+                "name": "Mahuva Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "13",
+                "area": "",
+                "population": "82772"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ097",
+                "name": "Maliya Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "15964"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ098",
+                "name": "Manavadar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "30850"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ099",
+                "name": "Mandvi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "51376"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ100",
+                "name": "Mandvi Surat Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "18214"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ101",
+                "name": "Mangrol Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "20",
+                "area": "",
+                "population": "25073"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ102",
+                "name": "Mansa Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "26551"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ103",
+                "name": "Modasa Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "67648"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ104",
+                "name": "Morbi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ105",
+                "name": "Nadiad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ106",
+                "name": "Navasari Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "81245"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ107",
+                "name": "Ode Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "8",
+                "area": "",
+                "population": "23250"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ108",
+                "name": "Okha Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "14",
+                "area": "",
+                "population": "62052"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ109",
+                "name": "Padra Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "43366"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ110",
+                "name": "Palanpur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "122344"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ111",
+                "name": "Palitana Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "64497"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ112",
+                "name": "Pardi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "28495"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ113",
+                "name": "Patan Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "15",
+                "area": "",
+                "population": "14624"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ114",
+                "name": "Patdi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "17725"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ115",
+                "name": "Pethapur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "23497"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ116",
+                "name": "Petlad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "55330"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ117",
+                "name": "Porbandar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": "151770"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ118",
+                "name": "Prantij Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "23596"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ119",
+                "name": "Radhanpur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "5",
+                "area": "",
+                "population": "39558"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ120",
+                "name": "Rajpipla Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "8",
+                "area": "",
+                "population": "34845"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ121",
+                "name": "Rajula Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "38489"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ122",
+                "name": "Ranavav Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "10",
+                "area": "",
+                "population": "46018"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ123",
+                "name": "Rapar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "28407"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ124",
+                "name": "Sachin Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": "28102"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ125",
+                "name": "Sahera Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "25",
+                "area": "",
+                "population": "95516"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ126",
+                "name": "Salaya Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "33246"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ127",
+                "name": "Sanand Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "23",
+                "area": "",
+                "population": "41530"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ128",
+                "name": "Santrampur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "5",
+                "area": "",
+                "population": "19465"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ129",
+                "name": "Satrapada Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "26132"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ130",
+                "name": "Savarkundla Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "78354"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ131",
+                "name": "Savli Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "18467"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ132",
+                "name": "Shihor Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "54547"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ133",
+                "name": "Siddhpur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "11",
+                "area": "",
+                "population": "56402"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ134",
+                "name": "Sikka Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "28814"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ135",
+                "name": "Sojitra Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "16713"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ136",
+                "name": "Songadh Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "26515"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ001",
+                "name": "Surendranagar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "14",
+                "area": "",
+                "population": "177851"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ137",
+                "name": "Talaja Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "27822"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ138",
+                "name": "Talala Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "21060"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ139",
+                "name": "Talod Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "18298"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ140",
+                "name": "Tarsadi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "29305"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ141",
+                "name": "Thangadh Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "42351"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ142",
+                "name": "Thara Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "18060"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ143",
+                "name": "Tharad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "27954"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ144",
+                "name": "Thasara Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "15806"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ145",
+                "name": "Umbergaun Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "27859"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ146",
+                "name": "Umreth Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "33762"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ147",
+                "name": "Una Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "15124"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ148",
+                "name": "Unjha Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "57108"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ149",
+                "name": "Upleta Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "58775"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ150",
+                "name": "Vadali Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "20646"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ151",
+                "name": "Vadnagar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "27790"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ152",
+                "name": "Vallabhipur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "15852"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ153",
+                "name": "Valsad Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "20",
+                "area": "",
+                "population": "114636"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ154",
+                "name": "Vamthali Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "14554"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ155",
+                "name": "Vapi Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "14",
+                "area": "",
+                "population": "163630"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ156",
+                "name": "Veraval Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "16",
+                "area": "",
+                "population": "154636"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ157",
+                "name": "Vidhyanagar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "23783"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ158",
+                "name": "Vijalpore Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "81245"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ159",
+                "name": "Vijapur Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "",
+                "area": "",
+                "population": ""
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ160",
+                "name": "Viramgam Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "7",
+                "area": "",
+                "population": "55821"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ161",
+                "name": "Visavadar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "5",
+                "area": "",
+                "population": "19515"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ162",
+                "name": "Visnagar Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "6",
+                "area": "",
+                "population": "63073"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ163",
+                "name": "Vyara Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "39789"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ164",
+                "name": "Wadhwan Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "12",
+                "area": "",
+                "population": "75755"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ165",
+                "name": "Wankaner Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "10",
+                "area": "",
+                "population": "43881"
+              },
+              {
+                "state": "Gujarat",
+                "code": "GJ166",
+                "name": "Zalod Nagar Palika",
+                "type": "Municipality",
+                "natureOfUlb": "",
+                "wards": "9",
+                "area": "",
+                "population": "28720"
+              }
         ]
     },
     HR: {
