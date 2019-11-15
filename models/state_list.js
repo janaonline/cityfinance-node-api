@@ -1,5 +1,10 @@
-module.exports.getStateList = function() {
-    return state_list;
+const State = require("./Schema/State")
+module.exports.getStateList = async function() {
+    try{
+        return  await State.find({},{code:1, name:1}).exec();
+    }catch (e) {
+        return [];
+    }
 }
 
 state_list = [

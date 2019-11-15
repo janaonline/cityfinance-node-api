@@ -36,9 +36,14 @@ const LedgerSchema = mongoose.Schema({
 });
 
 const Ledger = module.exports = mongoose.model('Ledger', LedgerSchema);
+
 module.exports.ledgerSchema = Ledger;
 
+const UlbLedger = require("./Schema/UlbLedger");
 module.exports.getAll = function (payload, callback) {
+	UlbLedger.aggregate([
+		{}
+	]).exec(callback);
 	Ledger.find(payload, callback);
 }
 

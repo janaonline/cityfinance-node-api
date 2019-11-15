@@ -1,53 +1,184 @@
-module.exports.getByState = function(stateCode){
-    return ulbList[stateCode];
-}
+const Ulb = require("./Schema/Ulb");
+const State = require("./Schema/State");
+module.exports.getByState = async function(stateCode){
+    try{
+        return  await Ulb.aggregate([
+            {
+                $lookup:{
+                    from: "states",
+                    localField : "state",
+                    foreignField:"_id",
+                    as : "state"
+                }
 
-module.exports.getUlbInfo = function(stateCode, ulbCode){
-    const stateInfo = ulbList[stateCode];
-    for (let index = 0; index < stateInfo.ulbs.length; index++) {
-        if(stateInfo.ulbs[index] && stateInfo.ulbs[index].code == ulbCode){
-            return stateInfo.ulbs[index];
-        }
+            },
+            {$unwind : "$state"},
+            {
+                $match : { "state.code" : stateCode}
+            },
+            {
+                $lookup:{
+                    from: "ulbtypes",
+                    localField : "ulbType",
+                    foreignField:"_id",
+                    as : "ulbType"
+                }
+
+            },
+            {$unwind : "ulbType"},
+            {
+                $group:{
+                      _id : "$state.code",
+                      state : { $first : "$state.name"},
+                      ulbs : {
+                          $push : {
+                              state : "$state.name",
+                              code : "$code",
+                              name : "$name",
+                              natureOfUlb : "$natureOfUlb",
+                              type : "$ulbType.name",
+                              ward : "$ward",
+                              area : "$area",
+                              population : "$population"
+                          }
+                      }
+                }
+            },
+            {
+                $project:{
+                    _id : 0,
+                    stateCode : "$_id",
+                    ulbs : 1
+                }
+            }
+        ]).exec();
+    }catch (e) {
+        console.log("Error",e);
+        return [];
     }
-    
-    return null;
 }
 
-module.exports.getUlbByCode = function(ulbCode){
-
-    let ulbs = [];
-    let shortCode = ulbCode.substring(0,2);
-    const stateInfo = ulbList[shortCode];
-    for (let index = 0; index < stateInfo.ulbs.length; index++) {
-        if(stateInfo.ulbs[index] && stateInfo.ulbs[index].code == ulbCode){
-            let temp = stateInfo.ulbs[index];
-            temp['stateName'] = stateInfo['state'];
-            return temp;
-        }
+module.exports.getUlbInfo = async function(stateCode, ulbCode){
+    try {
+        return await Ulb.findOne({code : ulbCode}).exec();
+    }catch (e) {
+        console.log("Error",e);
+        return  {};
     }
-    return ulbs;
-
-
-    // let ulbs = [];
-    // const stateList = Object.keys(ulbList);
-    // for (let i = 0; i < stateList.length; i++) {
-    //     const state = ulbList[stateList[i]];
-    //     for (let j = 0; j < state.ulbs.length; j++) {
-    //         ulbs.push(state.ulbs[j]);
-    //     }
-    // }
-    // return ulbs;
 }
 
-module.exports.getAllUlbs = function(){
-    // const stateArr = Object.keys(ulbList);
-    // let ulbs = [];
-    // for(let i=0; i<stateArr.length; i++){
-    //     if(ulbList[stateArr[i]].length > 0){
-    //         ulbs = [...ulbs, ...ulbList[stateArr[i]]]
-    //     }
-    // }
-    return ulbList;
+module.exports.getUlbByCode = async function(ulbCode){
+
+    try {
+        return await Ulb.aggregate([
+            {
+                $match : { code : ulbCode}
+            },
+            {
+                $lookup:{
+                    from: "states",
+                    localField : "state",
+                    foreignField:"_id",
+                    as : "state"
+                }
+
+            },
+            {$unwind : "$state"},
+            {
+                $lookup:{
+                    from: "ulbtypes",
+                    localField : "ulbType",
+                    foreignField:"_id",
+                    as : "ulbType"
+                }
+
+            },
+            {$unwind : "ulbType"},
+            {
+                $group:{
+                    _id : "$state.code",
+                    state : { $first : "$state.name"},
+                    ulbs : {
+                        $push : {
+                            stateName : "$state.name",
+                            code : "$code",
+                            name : "$name",
+                            natureOfUlb : "$natureOfUlb",
+                            type : "$ulbType.name",
+                            ward : "$ward",
+                            area : "$area",
+                            population : "$population"
+                        }
+                    }
+                }
+            },
+            {
+                $project:{
+                    _id : 0,
+                    stateCode : "$_id",
+                    ulbs : 1
+                }
+            }
+        ]).exec();
+    }catch (e) {
+        console.log("Error",e);
+        return  [];
+    }
+}
+
+module.exports.getAllUlbs = async function(){
+    try {
+        return   await Ulb.aggregate([
+            {
+                $lookup:{
+                    from: "states",
+                    localField : "state",
+                    foreignField:"_id",
+                    as : "state"
+                }
+
+            },
+            {$unwind : "$state"},
+            {
+                $lookup:{
+                    from: "ulbtypes",
+                    localField : "ulbType",
+                    foreignField:"_id",
+                    as : "ulbType"
+                }
+
+            },
+            {$unwind : "ulbType"},
+            {
+                $group:{
+                    _id : "$state.code",
+                    state : { $first : "$state.name"},
+                    ulbs : {
+                        $push : {
+                            state : "$state.name",
+                            code : "$code",
+                            name : "$name",
+                            natureOfUlb : "$natureOfUlb",
+                            type : "$ulbType.name",
+                            ward : "$ward",
+                            area : "$area",
+                            population : "$population"
+                        }
+                    }
+                }
+            },
+            {
+                $project:{
+                    _id : 0,
+                    stateCode : "$_id",
+                    ulbs : 1
+                }
+            }
+        ]).exec();
+    }catch (e) {
+        console.log("Erro",e)
+        return  [];
+    }
 }
 
 const ulbList = {
