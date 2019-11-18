@@ -81,9 +81,9 @@ var ledgerEntry = function(reqFile, financialYear){
                     uploadResult.push({ success: false, msg: 'ULB info not available : ' + payload['ulb_code_year'], data: '' });
                     return;
                 }
-                payload['wards'] = ulbInfo.wards;
-                payload['area'] = ulbInfo.area;
-                payload['population'] = ulbInfo.population;
+                payload['wards'] = ulbInfo.wards ? ulbInfo.wards : 0;
+                payload['area'] = ulbInfo.area  ? ulbInfo.area : 0;
+                payload['population'] = ulbInfo.population   ? ulbInfo.population : 0;
                 
                 
                 try {
