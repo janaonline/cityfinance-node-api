@@ -1,389 +1,221 @@
-const ledgerLogModel = require('../models/ledger_log_model');
-const ledgerModel = require('../models/ledger_model');
-const lookupService = require('../service/lookup_service');
 const CONSTANTS = require('../_helper/constants');
-var multer = require('multer');
+
+const State = require("../models/Schema/State")
+const Ulb = require("../models/Schema/Ulb");
+const LineItem = require("../models/Schema/LineItem");
+const UlbLedger = require("../models/Schema/UlbLedger")
 var xlstojson = require("xls-to-json-lc");
 var xlsxtojson = require("xlsx-to-json-lc");
 
-let uploadResult = [];
-module.exports.bulkEntry = function (req, res) {
-
-    uploadResult = [];
-    for(index=0; index<req.files.length; index++){
-        ledgerEntry(req.files[index], req.body.year);
-    }
-    var si = setInterval(function(){
-        if(req.files.length == uploadResult.length){
-            clearInterval(si);
-            res.json({success: true, data: uploadResult});
-        }
-    }, 500);
+const overViewSheet = {
+    'State Code': 'state_code',
+    'Name of the state': 'state',
+    'ULB Code': 'ulb_code',
+    'Name of the ULB': 'ulb',
+    'Financial Year': 'year',
+    'Audit Status': 'audit_status',
+    'Audit Firm Name': 'audit_firm',
+    'Name of the Partner': 'partner_name',
+    'ICAI Membership Number': 'icai_membership_number',
+    'Date of Entry': 'created_at',
+    'Entered by': 'created_by',
+    'Date of verification': 'verified_at',
+    'Verified by': 'verified_by',
+    'Date of Re-verification': 'reverified_at',
+    'Re-verified by': 'reverified_by'
 };
 
-var ledgerEntry = function(reqFile, financialYear){
-    // let uploadResult = [];
-    // for(index=0; index<req.files.length; index++){
+
+
+module.exports.bulkEntry = async function (req, res) {
+
+
+    var financialYear = req.body.year;
+    if(req.files.length ==1){
+        var reqFile = req.files[0]
+        let errors = []
+        
+        var balanceSheet = {
+            liability: 0,
+            assets : 0,
+            liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
+            assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
+        }
         var exceltojson;
+        res["fileName"] = reqFile.originalname;
         if (reqFile.originalname.split('.')[reqFile.originalname.split('.').length - 1] === 'xlsx') {
             exceltojson = xlsxtojson;
         } else {
             exceltojson = xlstojson;
         }
         try {
-            exceltojson({
+            await exceltojson({
                 input: reqFile.path,
                 output: null, //since we don't need output.json
                 lowerCaseHeaders: true,
                 sheet: CONSTANTS.LEDGER.BULK_ENTRY.OVERVIEW_SHEET_NAME,
-            }, function (err, ledgerLogPayload) {
-
-                if(ledgerLogPayload.length < 2){
-                    uploadResult.push({ success: false, msg: 'Overview sheet not available : ' + reqFile.originalname, data: reqFile.originalname });
-                    return;
+            }, async function (err, sheet) {
+                if(err){
+                    errors.push( "Corupted overview excel file for ULB : "+reqFile.originalname );
+                    res["errors"] = errors
+                    returnResponse(res)
+                }
+                if(sheet.length < 2){
+                    // means less than two entries are there in the sheet;
+                    errors.push( "Overview sheet has less than two rows, Please check" );
+                    res["errors"] = errors
+                    returnResponse(res)
                 }
 
-                const ledgerKeys = {
-                    'State Code': 'state_code',
-                    'Name of the state': 'state',
-                    'ULB Code': 'ulb_code',
-                    'Name of the ULB': 'ulb',
-                    'Financial Year': 'year',
-                    'Audit Status': 'audit_status',
-                    'Audit Firm Name': 'audit_firm',
-                    'Name of the Partner': 'partner_name',
-                    'ICAI Membership Number': 'icai_membership_number',
-                    'Date of Entry': 'created_at',
-                    'Entered by': 'created_by',
-                    'Date of verification': 'verified_at',
-                    'Verified by': 'verified_by',
-                    'Date of Re-verification': 'reverified_at',
-                    'Re-verified by': 'reverified_by'
+
+                let objOfSheet = {};
+                for(let eachRow of sheet){
+                    // converting data in rows here in obj;
+                    eachRow["basic details"] ? objOfSheet[eachRow["basic details"] ] = eachRow.value : "Means row is empty remove it"
+
+                }
+                for(let key of Object.keys(objOfSheet)){
+                    objOfSheet[ overViewSheet[key]] = objOfSheet[key] ;
+                    delete objOfSheet[key];
+                }
+                if(objOfSheet.year != financialYear){
+                    errors.push("Selected financial year: "+financialYear+" while sheet has year:"+objOfSheet.year);
+                    res["errors"] = errors
+                    returnResponse(res)
+                }
+                // Find whether state code exists or not
+                const state = await State.findOne({ code : objOfSheet.state_code,isActive:true }).exec();
+
+                if(!state){
+                    errors.push( "State code "+ objOfSheet.state_code+" or "+" State name "+objOfSheet.state+" do not exists in states master");
+                    res["errors"] = errors
+                    returnResponse(res)
                 }
 
-                const payload = new ledgerLogModel({ });
+                // Find whether ulb code exists or not
+                const ulb = await Ulb.findOne({ code : objOfSheet.ulb_code, state : state._id ,isActive:true }).exec();
 
-                const k = Object.keys(ledgerKeys);
-                for (var i = 0; i < ledgerLogPayload.length; i++) {
-                    if (k.indexOf(ledgerLogPayload[i]['basic details']) > -1) {
-                        payload[ledgerKeys[ledgerLogPayload[i]['basic details']]] = ledgerLogPayload[i]['value'];
+                if(!ulb){
+                    errors.push( "Ulb code "+ objOfSheet.ulb_code+" do not exists in ulb's master for "+objOfSheet.state_code+" state");
+                    res["errors"] = errors
+                    returnResponse(res)
+                }
+
+                Object.assign(objOfSheet,JSON.parse(JSON.stringify(ulb)));
+
+                objOfSheet['ulb_code_year'] = objOfSheet.ulb_code + '_' + objOfSheet.year;
+                await exceltojson({
+                    input: reqFile.path,
+                    output: null, //since we don't need output.json
+                    lowerCaseHeaders: true,
+                    sheet: CONSTANTS.LEDGER.BULK_ENTRY.INPUT_SHEET_NAME,
+                }, async function (err, sheet) {
+
+                    if(err){
+                        errors.push( "Corupted input sheet excel file for ULB : "+reqFile.originalname );
+                        res["errors"] = errors
+                        return returnResponse(res)
                     }
-                }
-                payload['ulb_code_year'] = payload.ulb_code + '_' + payload.year;
 
-                if(payload['year'] != financialYear){
-                    uploadResult.push({ success: false, msg: 'Invalid finacial year for ULB : ' + payload['ulb_code_year'], data: financialYear });
-                    return;
-                }
+                    let inputSheetObj = { }
+                    for(let eachRow of sheet){
+                        eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='' ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
 
-                const ulbInfo = lookupService.getUlbInfo(payload.state_code, payload.ulb_code);
-                if(!ulbInfo){
-                    uploadResult.push({ success: false, msg: 'ULB info not available : ' + payload['ulb_code_year'], data: '' });
-                    return;
-                }
-                payload['wards'] = ulbInfo.wards;
-                payload['area'] = ulbInfo.area;
-                payload['population'] = ulbInfo.population;
-                
-                
-                try {
-                    exceltojson({
-                        input: reqFile.path,
-                        output: null, //since we don't need output.json
-                        lowerCaseHeaders: true,
-                        sheet: CONSTANTS.LEDGER.BULK_ENTRY.INPUT_SHEET_NAME,
-                    }, function (err, arr) {
-                        if (err) {
-                            uploadResult.push({ success: false, msg: 'Parsing error on ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                            // if(req.files.length == uploadResult.length){
-                                // res.json({success: true, data: uploadResult});
-                            // }
-                        }
-                        if(arr && arr.length > 0){
-                            var inputSheetKeys = Object.keys(arr[0]);
-                            if(inputSheetKeys.indexOf('head of account') == -1 || 
-                                inputSheetKeys.indexOf('code') == -1 ||
-                                inputSheetKeys.indexOf('line item') == -1 ||
-                                inputSheetKeys.indexOf('amount in inr') == -1
-                            ){
-                                uploadResult.push({ success: false, msg: 'Incorrect input sheet format : ' + reqFile.originalname, data: '' });
-                                return false;
+                        if((eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
+                        eachRow["amount in inr"] = "-" + eachRow["amount in inr"].replace("(", "").replace(")","")
+
+                        if(eachRow["code"]){
+                            inputSheetObj[eachRow["code"].trim()] = Number(eachRow["amount in inr"]);
+                            if(isNaN(inputSheetObj[eachRow["code"].trim()])){
+                                errors.push("Line item code "+eachRow["code"]+" value is not applicable");
                             }
-
-                        }else {
-                            uploadResult.push({ success: false, msg: 'Input sheet is empty : ' + reqFile.originalname, data: '' });
-                            return false;
+                                 // converting in format {'100': '0',
+                        //                      '110': '793,655,000',
+                        //                      '120': '0' }
+                       
                         }
+                   
+                    }
+                    var message = validateBalanceSheet(balanceSheet,inputSheetObj);
+                    if(message){
+                        errors.push(message);
+                        res["errors"] = errors
+                        return returnResponse(res)
+                    }
+                    let lineItemCodes = Object.keys(inputSheetObj);
+                    
+                    for(let el of lineItemCodes){
+                        const validateLI = await LineItem.findOne({ code:el ,isActive : true }).exec();
                         
-                        
-        
-
-                                ledgerModel.getAll({
-                                    'ulb_code': payload.ulb_code
-                                }, (err, ledgerArr) => {
-                                    // for(var i = 0; i<ledgers.length; i++){
-                                    var validEntry = [];
-                                    var invalidEntry = [];
-                                    bulk = ledgerModel.collection.initializeUnorderedBulkOp({
-                                        useLegacyOps: true
-                                    });
-                                    bulkUpload = ledgerModel.collection.initializeUnorderedBulkOp({
-                                        useLegacyOps: true
-                                    });
-
-                                    var insertFlag = true;
-
-                                    var bsLiability = 0;
-                                    var bsAssets = 0;
-                                    var bsCalc = {
-                                        libAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
-                                        assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
-                                    }
-                                    arr.forEach(row => {
-                                        insertFlag = true;
-                                        var tempAmount = row['amount in inr'] 
-                                        
-                                        if(!tempAmount || ! row['code']){
-                                            invalidEntry.push(row);
-                                            return false;
-                                        } else if((tempAmount.indexOf('(')>-1 && tempAmount.indexOf(')')>-1)){
-                                            tempAmount = "-" + tempAmount.replace("(", "").replace(")","");
-                                        } else if( isNaN(parseFloat(tempAmount.replace(/,/g, '')))){
-                                            invalidEntry.push(row);
-                                            return false;
-                                        }
-
-                                        var amountInInr = parseFloat(tempAmount.replace(/,/g, ''));
-
-                                        if( bsCalc.libAdd.indexOf(row['code'].trim()) > -1 ){
-                                            bsLiability = bsLiability + amountInInr;
-                                        } else if( bsCalc.assetsAdd.indexOf(row['code'].trim()) > -1){
-                                            bsAssets = bsAssets + amountInInr;
-                                        }
-                                        // if(amountInInr.indexOf('-')>-1 || (amountInInr.indexOf('(')>-1 && amountInInr.indexOf(')')>-1)){
-                                        //     amountInInr = '-' + amountInInr.replace(/\D/g, '');
-                                        // } else{
-                                        //     amountInInr = amountInInr.replace(/\D/g, '');
-                                        // }
-                                        for (var i = 0; i < ledgerArr.length; i++) {
-                                            if (ledgerArr[i]['code'].toString() == row['code']) {
-                                                ledgerArr[i]['budget'].push({
-                                                    'year': payload.year,
-                                                    'amount': amountInInr
-                                                });
-
-                                                bulkUpload.find({'code': row['code'], 'ulb_code': payload.ulb_code})
-                                                    .update({ 
-                                                        $set: { budget: ledgerArr[i]['budget'] }
-                                                    });
-                                           
-                                                insertFlag = false;
-                                            }
-                                        }
-                                        if (!insertFlag) {
-                                            return false;
-                                        }
-                                        if (!row['head of account'] && !row['code'] && !row['line item'] && !row['amount in inr']) {
-                                            return false;
-                                        } else if (!row['head of account'] || !row['code'] || !row['line item'] || !row['amount in inr']) {
-                                            invalidEntry.push(row);
-                                        } else if (row['head of account'] && row['code'] && row['line item'] && row['amount in inr']) {
-                                            
-                                            validEntry.push({'ulb_code': payload.ulb_code,
-                                                'head_of_account': row['head of account'],
-                                                'code': row['code'],
-                                                'groupCode': '',
-                                                'line_item': row['line item'],
-                                                'budget': [{
-                                                    'year': payload.year,
-                                                    'amount': amountInInr
-                                                }]
-                                            });
-                                        }
-
-                                    });
-                                   
-                                    if(bsLiability != bsAssets){
-                                        uploadResult.push({ success: false, msg: 'Balance Sheet not tallied : ' + payload['ulb_code_year'], data: {
-                                            'valid': validEntry,
-                                            'invalid': invalidEntry
-                                        } });
-                                    }
-                                    else if (validEntry.length > 0) {
-                                        ledgerModel.bulkInsert(validEntry, (err, out) => {
-                                            if (bulkUpload.length > 0) {
-                                                bulkUpload.execute((err1, res1) => {
-                                                    if(err1){
-                                                        return
-                                                    }
-                                                    ledgerLogModel.create(payload, (err, newLedgerLog) => {
-                                                        if (err) {
-                                                            if(err.code == 11000){
-                                                                uploadResult.push({ success: false, msg: 'Duplicate entry for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                                // if(req.files.length == uploadResult.length){
-                                                                    // res.json({success: true, data: uploadResult});
-                                                                // }
-                                                            }else{
-                                                                uploadResult.push({ success: false, msg: 'Invalid payload for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                                // if(req.files.length == uploadResult.length){
-                                                                    // res.json({success: true, data: uploadResult});
-                                                                // }
-                                                            }
-                                                            return; 
-                                                        } else {
-                                                            // console.log(err1, res1);
-                                                            uploadResult.push({ success: true, msg: 'Success on ULB : ' + payload['ulb_code_year'], data: {
-                                                                'valid': validEntry,
-                                                                'invalid': invalidEntry
-                                                            } });
-                                                        }
-                                                    });
-                                                    
-                                                })
-                                            } else {
-                                                
-                                                ledgerLogModel.create(payload, (err, newLedgerLog) => {
-                                                    if (err) {
-                                                        if(err.code == 11000){
-                                                            uploadResult.push({ success: false, msg: 'Duplicate entry for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                            // if(req.files.length == uploadResult.length){
-                                                                // res.json({success: true, data: uploadResult});
-                                                            // }
-                                                        }else{
-                                                            uploadResult.push({ success: false, msg: 'Invalid payload for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                            // if(req.files.length == uploadResult.length){
-                                                                // res.json({success: true, data: uploadResult});
-                                                            // }
-                                                        }
-                                                        return; 
-                                                    } else {
-                                                        // console.log(err1, res1);
-                                                        uploadResult.push({ success: true, msg: 'Success on ULB : ' + payload['ulb_code_year'], data: {
-                                                            'valid': validEntry,
-                                                            'invalid': invalidEntry
-                                                        } });
-                                                    }
-                                                });
-                                            }
-                                        })
-                                    } else if (bulkUpload.length > 0) {
-                                        bulkUpload.execute((err1, res1) => {
-                                            if(err1){
-                                                return
-                                            }
-                                            ledgerLogModel.create(payload, (err, newLedgerLog) => {
-                                                if (err) {
-                                                    if(err.code == 11000){
-                                                        uploadResult.push({ success: false, msg: 'Duplicate entry for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                        // if(req.files.length == uploadResult.length){
-                                                            // res.json({success: true, data: uploadResult});
-                                                        // }
-                                                    }else{
-                                                        uploadResult.push({ success: false, msg: 'Invalid payload for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                        // if(req.files.length == uploadResult.length){
-                                                            // res.json({success: true, data: uploadResult});
-                                                        // }
-                                                    }
-                                                    return; 
-                                                } else {
-                                                    // console.log(err1, res1);
-                                                    uploadResult.push({ success: true, msg: 'Success on ULB : ' + payload['ulb_code_year'], data: {
-                                                        'valid': validEntry,
-                                                        'invalid': invalidEntry
-                                                    } });
-                                                }
-                                            });
-                                        })
-                                    } else {
-                                       
-                                        ledgerLogModel.create(payload, (err, newLedgerLog) => {
-                                            if (err) {
-                                                if(err.code == 11000){
-                                                    uploadResult.push({ success: false, msg: 'Duplicate entry for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                    // if(req.files.length == uploadResult.length){
-                                                        // res.json({success: true, data: uploadResult});
-                                                    // }
-                                                }else{
-                                                    uploadResult.push({ success: false, msg: 'Invalid payload for ULB : ' + payload['ulb_code_year'], data: err.toString() });
-                                                    // if(req.files.length == uploadResult.length){
-                                                        // res.json({success: true, data: uploadResult});
-                                                    // }
-                                                }
-                                                return; 
-                                            } else {
-                                                // console.log(err1, res1);
-                                                uploadResult.push({ success: true, msg: 'Success on ULB : ' + payload['ulb_code_year'], data: {
-                                                    'valid': validEntry,
-                                                    'invalid': invalidEntry
-                                                } });
-                                            }
-                                        });
-                                        // if(req.files.length == uploadResult.length){
-                                            // res.json({success: true, data: uploadResult});
-                                        // }
-                                        // res.json({
-                                        //     success: true,
-                                        //     msg: 'Success',
-                                        //     data: {
-                                        //         'valid': validEntry,
-                                        //         'invalid': invalidEntry
-                                        //     }
-                                        // });
-                                    }
-                                });
-                        //     }
-                        // });
-
-
-
-
-///////////////////////////////////////////////////////////////////////
-                    });
-                } catch (e) {
-                    uploadResult.push({ success: false, msg: 'Corupted excel file for ULB : ' + payload['ulb_code_year'], data: e.toString() });
-                    // if(req.files.length == uploadResult.length){
-                        // res.json({success: true, data: uploadResult});
-                    // }
-                    // res.json({
-                    //     success: false,
-                    //     msg: 'Corupted excel file',
-                    //     data: e.toString()
-                    // });
-                }
-            // }
-                // });
+                        if(!validateLI){
+                            console.log(el)
+                            errors.push("Invalid Item code "+el+" found in the sheet"); 
+                        }else{
+                            console.log("here coming")
+                            inputSheetObj[validateLI._id] = inputSheetObj[el]
+                            delete inputSheetObj[el]
+                        }
+                    }
+                    if(errors.length){
+                        res["errors"] = errors
+                        return returnResponse(res)
+                    }
+                    Object.assign(objOfSheet,{ ledger : JSON.parse(JSON.stringify(inputSheetObj)) });
+                    for(let el of Object.keys(objOfSheet.ledger)){
+                        let query = {
+                            ulb : objOfSheet._id,
+                            lineItem : el,
+                            financialYear : financialYear
+                        },update = {
+                            amount : objOfSheet.ledger[el]
+                        },options = {
+                            upsert : true,
+                            setDefaultsOnInsert : true,
+                            new: true
+                        }
+                        let result = await UlbLedger.findOneAndUpdate(query,update,options);
+                        if(!result){
+                            errors.push("Item code " +el+ " doesn't got inserted/updated");
+                        }
+                    }
+                    if(errors.length){
+                        res["errors"] = errors
+                        return returnResponse(res)
+                    }
+                    return returnResponse(res)
+                })
             });
         } catch (e) {
-            uploadResult.push({ success: false, msg: 'Corupted excel file for ULB : ' + payload['ulb_code_year'], data: e.toString() });
-            // if(req.files.length == uploadResult.length){
-                // res.json({success: true, data: uploadResult});
-            // }
-            // res.json({
-            //     success: false,
-            //     msg: 'Corupted excel file',
-            //     data: e.toString()
-            // });
+            console.log("Exception Caught while extracting file => ",e);
+            errors.push("Exception Caught while extracting file");
         }
-    // };
+    }
 };
 
+function returnResponse(res){
+    return res.status(200).json({
+        data : [
+            { 
+                msg : res.errors && res.errors.length > 0 ? res.errors : "Successfully uploaded file : "+res["fileName"],
+                success :  res.errors && res.errors.length > 0 ? false : true
+            }
+        ],
+        success:true
+        
+    })
+}
 
-// var storage = multer.diskStorage({ //multers disk storage settings
-//     destination: function (req, file, cb) {
-//         cb(null, './uploads/')
-//     },
-//     filename: function (req, file, cb) {
-//         var datetimestamp = Date.now();
-//         cb(null, file.fieldname + '-' + datetimestamp + '.' + file.originalname.split('.')[file.originalname.split('.').length - 1])
-//     }
-// });
-
-// var upload = multer({ //multer settings
-//     storage: storage,
-//     fileFilter: function (req, file, callback) { //file filter
-//         if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length - 1]) === -1) {
-//             return callback(new Error('Wrong extension type'));
-//         }
-//         callback(null, true);
-//     }
-// }).single('file');
+function validateBalanceSheet(balanceSheet,inputSheetObj){
+    let message = "";
+    for(let key of Object.keys(inputSheetObj)){
+        if(balanceSheet.liabilityAdd.includes(key)){
+            balanceSheet.liability+=inputSheetObj[key]
+        }else if(balanceSheet.assetsAdd.includes(key)){
+            balanceSheet.assets+=inputSheetObj[key]
+        }
+    }
+    if(balanceSheet.liability!=balanceSheet.assets){
+        message = "Balance sheet has liablity: "+balanceSheet.liability+" while assets :"+balanceSheet.assets;
+    }
+    return message;
+}

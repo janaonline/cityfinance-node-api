@@ -1,6 +1,13 @@
 exports = mongoose = require('mongoose');
+mongoose.set('useCreateIndex', true)
+mongoose.set('useFindAndModify', false)
+mongoose.set('useNewUrlParser', true)
+mongoose.set('useUnifiedTopology', true)
+
+exports =  Schema = mongoose.Schema;
+
 if(process.env.CONNECTION_STRING){
-    mongoose.connect(CONFIG[process.env.CONNECTION_STRING],{useMongoClient: true},function(err){
+    mongoose.connect(process.env.CONNECTION_STRING,function(err){
         if(err){
             console.log("Error in connecting production database : ",err);
             process.exit(0);

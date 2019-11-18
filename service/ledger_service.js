@@ -1,5 +1,5 @@
-const ledgerLogModel = require('../models/ledger_log_model');
-const ledgerModel = require('../models/ledger_model');
+const ledgerLogModel = require('../models/Schema/UlbLedger');
+const ledgerModel = require('../models/Schema/UlbLedger');
 const CONSTANTS = require('../_helper/constants');
 const _helper = require('../_helper/ledger_helper');
 var multer = require('multer');
@@ -264,77 +264,25 @@ module.exports.getIE = function (req, res) {
            ulbCodeArr.push(req.body.ulbList[i].code);
         }
     }
-
     let payload = {};
-    payload['head_of_account'] = {$in : ['Revenue','Expense']};
-    payload['ulb_code']= {$in: ulbCodeArr};
-    ledgerModel.getAll(payload, (err, result) => {
+    payload['head_of_account'] = { $match:{ "lineitems.headOfAccount":{$in : ['Revenue','Expense']} } };
+    payload['ulb_code']= { $match: { "ulbs.code":{$in : ulbCodeArr} } } ;
+    var aggregateCondition = condition(); 
+    aggregateCondition.splice(2, 0, payload['ulb_code'],payload['head_of_account']);
+    ledgerModel.aggregate(aggregateCondition).exec((err, result) => {
         if (err) {
-            res.json({
+            return res.json({
                 success: false,
                 msg: 'Invalid payload',
                 data: err.toString()
             });
         }
-        res.json({
+        return res.json({
             success: true,
             msg: 'success',
             data: result,
         });
     })
-
-
-    // let processedItem = 0;
-    // let ulbList = {}
-    // const iterval = setInterval(() => {
-    //     if(req.body.ulbList.length == processedItem){
-    //         clearInterval(iterval);
-    //         res.json({
-    //             success: true,
-    //             msg: 'success',
-    //             ulbList: ulbList,
-    //         });
-    //     }
-    // }, 100);
-
-    // let payload = {};
-    // payload['ulb_code']= {$in: req.body.ulbList[0].code};
-    // payload['head_of_account'] = {$in : ['Revenue','Expense']};
-    // ledgerModel.getAll(payload, (err, result) => {
-    //     if (err) {
-    //         res.json({
-    //             success: false,
-    //             msg: 'Invalid payload',
-    //             data: err.toString()
-    //         });
-    //     }
-
-    //     if(req.body.ulbList[1]){
-    //         payload['ulb_code']= {$in: req.body.ulbList[1].code};
-    //         ledgerModel.getAll(payload, (err, result2) => {
-    //             if (err) {
-    //                 res.json({
-    //                     success: false,
-    //                     msg: 'Invalid payload',
-    //                     data: err.toString()
-    //                 });
-    //             }
-    //             res.json({
-    //                 success: true,
-    //                 msg: 'success',
-    //                 data: result,
-    //                 data2: result2
-    //             });
-    //         })
-
-    //     } else {
-    //         res.json({
-    //             success: true,
-    //             msg: 'success',
-    //             data: result
-    //         });
-    //     }
-    // })
 }
 
 
@@ -356,62 +304,24 @@ module.exports.getBS = function (req, res) {
     }
 
     let payload = {};
-    payload['head_of_account'] = {$in : ['Asset','Liability']};
-    payload['ulb_code']= {$in: ulbCodeArr};
-    ledgerModel.getAll(payload, (err, result) => {
+    payload['head_of_account'] = { $match:{ "lineitems.headOfAccount":{$in : ['Asset','Liability']} } };
+    payload['ulb_code']= { $match:{ "ulbs.code":{$in : ulbCodeArr} } } ;
+    var aggregateCondition = condition(); 
+    aggregateCondition.splice(2, 0, payload['ulb_code']);
+    ledgerModel.aggregate(aggregateCondition).exec(function(err, result){
         if (err) {
-            res.json({
+            return res.json({
                 success: false,
                 msg: 'Invalid payload',
                 data: err.toString()
             });
         }
-        res.json({
+        return res.json({
             success: true,
             msg: 'success',
             data: result,
         });
     })
-
-    // let payload = {};
-    // payload['ulb_code']= {$in: req.body.ulbs[0].code};
-    // payload['head_of_account'] = {$nin : ['Revenue','Expense']};
-
-    // ledgerModel.getAll(payload, (err, result) => {
-    //     if (err) {
-    //         res.json({
-    //             success: false,
-    //             msg: 'Invalid payload',
-    //             data: err.toString()
-    //         });
-    //     }
-
-    //     if(req.body.ulb2){
-    //         payload['ulb_code']= {$in: req.body.ulb2.code};
-    //         ledgerModel.getAll(payload, (err, result2) => {
-    //             if (err) {
-    //                 res.json({
-    //                     success: false,
-    //                     msg: 'Invalid payload',
-    //                     data: err.toString()
-    //                 });
-    //             }
-    //             res.json({
-    //                 success: true,
-    //                 msg: 'success',
-    //                 data: result,
-    //                 data2: result2
-    //             });
-    //         });
-
-    //     } else {
-    //         res.json({
-    //             success: true,
-    //             msg: 'success',
-    //             data: result
-    //         });
-    //     }
-    // })
 }
 
 // update entry
@@ -533,3 +443,57 @@ var upload = multer({ //multer settings
         callback(null, true);
     }
 }).single('file');
+
+
+function condition(){
+    return [{$lookup:{
+        from:"ulbs",
+        as:"ulbs",
+        foreignField : "_id",
+        localField:"ulb"
+    }
+    },
+    {$lookup:{
+        from:"lineitems",
+        as:"lineitems",
+        foreignField : "_id",
+        localField:"lineItem"
+    }
+    },
+    {$project:{
+        "ulbs":{ $arrayElemAt  :  [ "$ulbs",0]},
+        amount:1,
+        financialYear:1,
+        "lineitems":{ $arrayElemAt  :  [ "$lineitems",0]},
+    }
+    },
+    {$project:{
+        _id:1,
+        ulbs : { $cond : ["$ulbs","$ulbs","NA"]},
+        amount:1,
+        financialYear:1,
+       "lineitems": { $cond : ["$lineitems","$lineitems","NA"]},
+    }
+    },
+    {$group:{
+        _id:{
+            "lineItem" : "$lineitems.code",
+            "ulb" : "$ulbs.code",
+        },
+        budget:{$push:{ amount:"$amount","year" : "$financialYear" }} ,
+        ulb_code:{$first:"$ulbs.code"},
+        line_item:{$first:"$lineitems.name"},
+        code:{$first:"$lineitems.code"},
+        head_of_account:{$first:"$lineitems.headOfAccount"},
+    }
+    },
+    {$project:{
+        _id:0,
+        head_of_account:1,
+        code:1,
+        ulb_code:1,
+        line_item:1,
+        budget:1
+    }
+    }]
+}

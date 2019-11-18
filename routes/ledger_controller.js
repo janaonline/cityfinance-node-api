@@ -37,6 +37,7 @@ var uploadMultiple = multer({
 }).array('files', 100);
 
 router.post('/bulkEntry', passport.authenticate('jwt', {session: false}), uploadMultiple, (req, res, next) => {
+    console.log(req.user.role,Constants.USER.LEDGER_AUTHORITY)
     if(req.user.role === Constants.USER.LEDGER_AUTHORITY){
 		ledgerUpload.bulkEntry(req, res);
 	} else{

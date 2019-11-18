@@ -6,19 +6,6 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv').config({path: path.join(__dirname, ".env")});
 const config = require('./config/app_config');
-
-
-console.log(config.DATABASE.CONNECTION_STRING)
-mongoose.connect(config.DATABASE.CONNECTION_STRING,{ useNewUrlParser: true });
-mongoose.connection.on('connected', () => {
-	console.log('connected to db ', config.DATABASE.CONNECTION_STRING);
-});
-
-mongoose.connection.on('error', (err) => {
-	console.log('error: ', err);
-});
-
-
 const app = express();
 
 
@@ -55,20 +42,32 @@ const ledgerRoutes = require('./routes/ledger_controller');
 const reportRoutes = require('./routes/report_controller');
 const downloadLogRoutes = require('./routes/download_log_controller');
 
+const routes = require("./routes");
+
 app.use('/users', userRoutes);
 app.use('/lookup', lookupRoutes);
 app.use('/ledger', ledgerRoutes);
 // app.use('/report', reportRoutes);
 app.use('/logs', downloadLogRoutes);
 
-//Index Route
-app.get('/', function (req, res) {
-	res.send('invalid rest point');
-})
+app.use('/api/admin/v1/', routes);
 
 app.get('*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public/index.html'));
 })
+app.use(function(err, req, res) {
+	var status =  err.status || 500;
+	/*return res.status(status).json({ 
+	  success : false,
+	  message: err.message,
+	  error: "Something went wrong!"
+	});*/
+	return res.status(status).send({ 
+	  success : false,
+	  message: err.message,
+	  error: "Something went wrong!"
+	});
+  });
 
 app.listen(port, () => {
 	console.log('server started on port ' + port);

@@ -3,7 +3,7 @@ module.exports = {
         ROLES: ['USER', 'ADMIN', 'SUPERADMIN'],
         DEFAULT_ROLE: 'USER',
         ONBOARD_AUTHORITY: 'SUPERADMIN',
-        LEDGER_AUTHORITY: 'ADMIN'
+        LEDGER_AUTHORITY: 'SUPERADMIN'
     }, 
     BUDGET: {
         YEAR: ['2015-16', '2016-17', '2017-18']

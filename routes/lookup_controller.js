@@ -2,27 +2,16 @@ const express = require('express');
 const router = express.Router();
 
 const lookupService = require('../service/lookup_service');
+const State = require('../models/Schema/State')
+const Ulb = require('../models/Schema/Ulb')
 
 // Get state list
-router.get('/states', (req, res, next)=>{
-	res.json({
-		success: true,
-		msg: 'State List',
-		data: lookupService.getStateList()
-	})
-});
+router.get('/states',State.get);
 
 // Get ULBs by state
-router.get('/states/:stateCode/ulbs', (req, res, next)=>{
-	if(! req.params.stateCode){
-		res.json({success:false, msg:'State field required'});
-	}
-	res.json({success:true, data: lookupService.getUlbsByState(req.params.stateCode), msg:'Success'})
-});
+router.get('/states/:stateCode/ulbs', Ulb.getByState);
 
-router.get('/ulbs', (req, res, next)=>{
-	res.json({success:true, data: lookupService.getAllUlbs(), msg:'Success'})
-});
+router.get('/ulbs', Ulb.getAllUlbs);
 
 
 module.exports = router;

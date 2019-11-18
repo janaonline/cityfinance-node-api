@@ -1,7 +1,7 @@
 const ledgerLogModel = require('../models/ledger_log_model');
-const ledgerModel = require('../models/ledger_model');
+const ledgerModel = require('../models/Schema/UlbLedger');
 const CONSTANTS = require('../_helper/constants');
-const UlbModel = require('../models/ulb_list');
+const UlbModel = require('../models/Schema/Ulb');
 
 module.exports.getOwnRevenueReport = function (req, res) {
     

@@ -1,10 +1,6 @@
-const stateModel = require('../models/state_list');
-const ulbModel = require('../models/ulb_list');
+const stateModel = require('../models/Schema/State');
+const ulbModel = require('../models/Schema/Ulb');
 
-
-module.exports.getStateList = function(){
-    return stateModel.getStateList();
-}
 
 module.exports.getUlbsByState = function(stateCode){
     return ulbModel.getByState(stateCode);
