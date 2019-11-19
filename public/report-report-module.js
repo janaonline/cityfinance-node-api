@@ -35323,6 +35323,7 @@ var BasicComponent = /** @class */ (function () {
         }
         for (var i = 0; i < calcFields.length; i++) {
             var keyName = calcFields[i].keyName;
+            // console.log({ keyName });
             result[keyName] = { line_item: calcFields[i].title, isBold: true };
             if (calcFields[i].code) {
                 result[keyName]["code"] = calcFields[i].code;
@@ -35333,6 +35334,7 @@ var BasicComponent = /** @class */ (function () {
                     var sum = 0;
                     var addFields = calcFields[i].addFields;
                     var subtractFields = calcFields[i].subtractFields;
+                    console.log({ addFields: addFields });
                     /** loop through each result line item and add values for specific year */
                     if (addFields) {
                         for (var k = 0; k < addFields.length; k++) {
@@ -35357,6 +35359,9 @@ var BasicComponent = /** @class */ (function () {
                             }
                         }
                     }
+                    // if (keyName === "Others") {
+                    //   console.log(sum);
+                    // }
                     result[keyName][years[j]["title"]] = sum;
                 }
             }
@@ -35422,14 +35427,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _excel_service__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../excel.service */ "./src/app/dashboard/report/excel.service.ts");
 /* harmony import */ var _report_helper_service__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../report-helper.service */ "./src/app/dashboard/report/report-helper.service.ts");
 /* harmony import */ var _report_service__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../report.service */ "./src/app/dashboard/report/report.service.ts");
-var __assign = (undefined && undefined.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
 var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -35487,6 +35484,7 @@ var ComparativeUlbComponent = /** @class */ (function () {
                 // this.links = this.reportService.loadDefaultLinks();
                 // this.transformResult(res['data']);
                 _this.transformResult(res);
+                // console.log(this.report);
                 _this.headerGroup.yearColspan =
                     _this.years.length / _this.reportReq.years.length;
             }
@@ -35584,7 +35582,7 @@ var ComparativeUlbComponent = /** @class */ (function () {
      */
     ComparativeUlbComponent.prototype.populateCalcFields = function (result, years) {
         var calcFields = [];
-        console.log("reportReq: ", __assign({}, this.reportReq));
+        // console.log(`reportReq: `, { ...this.reportReq });
         if (this.reportReq.reportGroup == "Balance Sheet" &&
             this.reportReq.type.indexOf("Summary") > -1) {
             // BS Summary
@@ -35606,7 +35604,7 @@ var ComparativeUlbComponent = /** @class */ (function () {
             this.reportKeys = this.reportHelper.getIEReportMasterKeys();
             calcFields = this.reportHelper.getIECalcFields();
         }
-        console.log({ calcFields: calcFields });
+        // console.log({ calcFields });
         for (var i = 0; i < calcFields.length; i++) {
             var keyName = calcFields[i].keyName;
             result[keyName] = { line_item: calcFields[i].title, isBold: true };
@@ -36021,7 +36019,7 @@ var InrCurrencyPipe = /** @class */ (function () {
             return "Not Applicable";
         }
         // value = value.toFixed()
-        var x = value < 0 ? "(" + (value * -1).toFixed(2) + ")" : value.toFixed(2);
+        var x = value < 0 ? "(" + Math.round(value * -1) + ")" : Math.round(value).toString();
         var decimal = "";
         if (x.indexOf(".") > -1) {
             decimal = x.substring(x.indexOf("."));
@@ -36198,7 +36196,7 @@ var ReportHelperService = /** @class */ (function () {
             { keyName: 'income', title: 'A.Income', isCalc: false, prePushCode: 110, },
             { keyName: 'totalIncome', title: 'Total Income(A) (110 + 120 + 130 + 140 + 150 + 160 + 170 + 171 + 180 + 100)', isCalc: true, postPushCode: 180, addFields: ['110', '120', '130', '140', '150', '160', '170', '171', '180', '100'] },
             { keyName: 'expenditure', title: 'B.Expenditure', isCalc: false, prePushCode: 210, },
-            { keyName: 'totalExp', title: 'Total Expenditure(B) (210 + 220 + 230 + 240 + 250 + 260 + 270 + 271 + 272 + 200)', isCalc: true, postPushCode: 272, addFields: ['210', '220', '230', '240', '250', '260', '270', '271', '272', '200'] },
+            { keyName: 'totalExp', title: 'Total Expenditure(B) (210 + 220 + 230 + 240 + 250 + 260 + 270 + 271 + 272 + 200)', isCalc: true, postPushCode: 272, addFields: ['210', '220', '230', '240', '250', '260', '270', '271', '272', '200', '280', '290'] },
             { keyName: 'grossSurplusBefore', title: 'Gross Surplus/(Deficit) of Income over Expenditure before Prior Period Items (C) (A-B) ', isCalc: true, prePushCode: 280, addFields: ['totalIncome'], subtractFields: ['totalExp'] },
             { keyName: 'grossSurplusAfter', title: 'Gross Surplus/(Deficit) of Income over Expenditure after Prior Period Items', isCalc: true, prePushCode: 290, addFields: ['grossSurplusBefore', '280'] },
             { keyName: 'netBalance', title: 'Net Surplus/(Deficit) carried over (E) (D-290)', isCalc: true, postPushCode: 290, addFields: ['grossSurplusAfter'], subtractFields: ['290'] },
@@ -36317,7 +36315,7 @@ var ReportHelperService = /** @class */ (function () {
             { keyName: 'curALA', title: 'Current Assets, Loans and Advances', isCalc: false },
             { keyName: 'netAmtOutstanding1', title: 'Net amount outstanding (431 - 432) ', isCalc: true, addFields: ['431', '432'] },
             { keyName: 'netAmtOutstanding2', title: 'Net amount outstanding (ii) (430 + 431 + 432 + 440 + 450 + 460)', isCalc: true, addFields: ["430", '431', '432', '440', '450', '460'] },
-            { keyName: 'totalCALA', title: 'Total Current Assets, Loans and Advances (III)', isCalc: true, addFields: ['netAmtOutstanding1', 'netAmtOutstanding2'] },
+            { keyName: 'totalCALA', title: 'Total Current Assets, Loans and Advances (III)', isCalc: true, addFields: ["430", '431', '432', '440', '450', '460'] },
             { keyName: 'totalOtherAssets', title: 'Total Other Assets (IV) (470 + 480 + 400)', isCalc: true, addFields: ['470', '480', '400'] },
             { keyName: 'totalAssets', title: 'Total Assets (I + II + III + IV)', isCalc: true, addFields: ['totalFixedAssets', 'totalInvestments', 'totalCALA', '470', '480', '400'] },
         ];
