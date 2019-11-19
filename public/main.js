@@ -554,7 +554,7 @@ var environment = {
     api: {
         url2: 'http://cityfinance.in/',
         url1: 'http://localhost:8080/',
-        url: 'http://localhost:8080/'
+        url: 'http://staging.cityfinance.in/'
     }
 };
 /*
