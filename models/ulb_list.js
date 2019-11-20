@@ -1890,7 +1890,7 @@ const ulbList = {
                 "natureOfUlb": "",
                 "wards": "7",
                 "area": "",
-                "population": "15,29"
+                "population": "1529"
               },
               {
                 "state": "Gujarat",
