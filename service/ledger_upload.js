@@ -85,7 +85,6 @@ var ledgerEntry = function(reqFile, financialYear){
                 payload['area'] = ulbInfo.area  ? ulbInfo.area : 0;
                 payload['population'] = ulbInfo.population   ? ulbInfo.population : 0;
                 
-                
                 try {
                     exceltojson({
                         input: reqFile.path,
