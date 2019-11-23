@@ -96,6 +96,10 @@ router.post('/getBS', (req, res, next) => {
 
 });
 
+router.post('/getAllLedger', (req, res, next) => {
+    ledgerService.getAllLedger(req, res);
+
+});
 
 // get own revenue data
 router.get('/own-revenue', (req, res) => {
