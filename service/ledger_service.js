@@ -468,9 +468,9 @@ module.exports.getAllLegder = function (req, res) {
     let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
 
 	// Set approrpiate download headers
-	res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
 	res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-
+    res.write("ULB Code, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
 	// Flush the headers before we start pushing the CSV content
     res.flushHeaders();
     
@@ -510,7 +510,7 @@ module.exports.getAllLegder = function (req, res) {
                 el.line_item = el.line_item ? el.line_item.toString().replace(/[,]/g, ' | ') : ""
                 let len = el.amount.length
                 el.budgetAm = el.amount[len-1]
-                res.write(el.ulb_code+","+el.head_of_account+","+el.code+","+el.line_item+","+el.budgetYr+","+el.budgetAm+",");
+                res.write(el.ulb_code+","+el.head_of_account+","+el.code+","+el.line_item+","+el.budgetYr+","+el.budgetAm+"\r\n");
             }
             res.end()
         }
