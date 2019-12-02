@@ -148,8 +148,12 @@ var ledgerEntry = function(reqFile, financialYear){
                                         } else if((tempAmount.indexOf('(')>-1 && tempAmount.indexOf(')')>-1)){
                                             tempAmount = "-" + tempAmount.replace("(", "").replace(")","");
                                         } else if( isNaN(parseFloat(tempAmount.replace(/,/g, '')))){
-                                            invalidEntry.push(row);
-                                            return false;
+                                            if(tempAmount=="-"){
+                                                tempAmount = "0";
+                                            }else{
+                                                invalidEntry.push(row);
+                                                return false;
+                                            }
                                         }
 
                                         var amountInInr = parseFloat(tempAmount.replace(/,/g, ''));
