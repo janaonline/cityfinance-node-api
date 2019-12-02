@@ -38,7 +38,7 @@ var uploadMultiple = multer({
 
 router.post('/bulkEntry', passport.authenticate('jwt', {session: false}), uploadMultiple, (req, res, next) => {
     if(req.user.role === Constants.USER.LEDGER_AUTHORITY){
-		ledgerUpload.bulkEntry(req, res);
+        ledgerUpload.bulkEntry(req, res);
 	} else{
 		res.json({success:false, msg:'Unauthorized user'});
 	}
@@ -64,10 +64,10 @@ router.post('/getAll', (req, res, next) => {
 
 });
 
-// router.get('/getAllLegders', (req, res, next) => {
-//     ledgerService.getAllLegders(req, res);
+router.get('/getAllLegder', (req, res, next) => {
+    ledgerService.getAllLegder(req, res);
 
-// });
+});
 
 
 
