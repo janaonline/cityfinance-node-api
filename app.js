@@ -56,12 +56,13 @@ app.get('*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public/index.html'));
 })
 app.use(function(err, req, res) {
-	var status =  err.status || 500;
+	var status = 500;
 	/*return res.status(status).json({ 
 	  success : false,
 	  message: err.message,
 	  error: "Something went wrong!"
 	});*/
+	console.log(res.status);
 	return res.status(status).send({ 
 	  success : false,
 	  message: err.message,

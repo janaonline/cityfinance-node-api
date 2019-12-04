@@ -1,7 +1,5 @@
 const express = require('express');
 const router = express.Router();
-
-const lookupService = require('../service/lookup_service');
 const State = require('../models/Schema/State')
 const Ulb = require('../models/Schema/Ulb')
 

@@ -16,6 +16,9 @@ module.exports = {
             OVERVIEW_SHEET_NAME: 'Overview',
             INPUT_SHEET_NAME: 'Input sheet'
         }
+    },
+    ULBMASTER:{
+        INPUT_SHEET_NAME: 'Input sheet'
     }
 
 }

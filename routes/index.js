@@ -4,8 +4,7 @@ const router = express.Router();
 const passport = require('passport');
 const userService = require('../service/user_service');
 const Constants = require('../_helper/constants');
-
-
+const ulbUploadService = require("../service/ulb-upload")
 const State = require("../models/Schema/State");
 
 router.get('/state', passport.authenticate('jwt', {session: false}), State.get);
@@ -27,7 +26,9 @@ router.get('/Ulb', passport.authenticate('jwt', {session: false}), Ulb.get);
 router.put('/Ulb/:_id', passport.authenticate('jwt', {session: false}), Ulb.put);
 router.post('/Ulb', passport.authenticate('jwt', {session: false}), Ulb.post);
 router.delete('/Ulb/:_id', passport.authenticate('jwt', {session: false}), Ulb.delete);
-
+router.post('/bulk/ulb-upload',(req, res, next) => {
+    ulbUploadService.create(req, res);
+});
 
 const LineItem = require("../models/Schema/LineItem");
 
