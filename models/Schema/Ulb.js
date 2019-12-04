@@ -153,7 +153,8 @@ module.exports.getByState = async function(req,res){
                               type : "$ulbType.name",
                               ward : "$ward",
                               area : "$area",
-                              population : "$population"
+                              population : "$population",
+                              amrut : "$amrut"
                           }
                       }
                 }
@@ -230,7 +231,8 @@ module.exports.getUlbByCode = async function(ulbCode){
                     population:1,
                     natureOfUlb:1,
                     code : 1,
-                    name : 1
+                    name : 1,
+                    amrut : 1
                 }
             }  
         ]).exec();
@@ -283,7 +285,8 @@ module.exports.getAllUlbs = async function(req,res){
                             type : "$ulbType.name",
                             ward : "$ward",
                             area : "$area",
-                            population : "$population"
+                            population : "$population",
+                            amrut  : "$amrut"
                         }
                     }
                 }
