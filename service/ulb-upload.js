@@ -29,22 +29,21 @@ module.exports.create = async function(req,res,next){
                 sheet: CONSTANTS.ULBMASTER.INPUT_SHEET_NAME,
             }, async function (err, sheet) {
 
-                for(let eachRow of sheet){
+                for(let eachRow of sheet){                    
                     Object.keys(eachRow).forEach((key) => (eachRow[key] == null || eachRow[key] == '') && delete eachRow[key]);
                     let message = "";
                     let state = await State.findOne({ name : eachRow.state,isActive : true},{ _id:1 }).exec();
-                    let ulbType = await UlbType.findOne({ name : eachRow.ulbtype,isActive : true},{ _id:1 }).exec();
-                    
+                    let ulbType = await UlbType.findOne({ name : eachRow.type,isActive : true},{ _id:1 }).exec();
                     state ? eachRow.state = state._id : message+="State "+eachRow.state+" don't exists";
-                    ulbType ? eachRow.ulbtype = ulbType._id : message+="Ulb "+eachRow.ulbtype+" don't exists";
+                    ulbType ? eachRow.ulbtype = ulbType._id : message+="Ulb "+eachRow.type+" don't exists";
                     if(message!=""){
+                        console.log(eachRow,message)
                         errors.push(message);
-                    }
-                    else{
+                    }else{
                         eachRow.area = eachRow.area ? Number(eachRow.area.replace(/\,/g,'')) : 0;
                         eachRow.wards = eachRow.wards ? Number(eachRow.wards.replace(/\,/g,'')) : 0;
                         eachRow.population = eachRow.population ? Number(eachRow.population.replace(/\,/g,'')) : 0;
-                        eachRow["natureOfUlb"] = eachRow["natureofulb"]
+                        eachRow["natureOfUlb"] = eachRow["natureofulb"] ? eachRow["natureofulb"] :""
                         eachRow["ulbType"] = eachRow["ulbtype"]
                         delete eachRow["ulbtype"]
                         delete eachRow["natureofulb"]

@@ -14,7 +14,7 @@ var UlbSchema = new Schema({
     wards : { type : Number, default : 0},
     area : { type : Number, default : 0},
     population : { type : Number, default : 0},
-    amrut : { type : String , enum:["Yes","No"], default : ""},
+    amrut : { type : String ,  default : ""},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() },
     isActive : { type  : Boolean, default : 1 }

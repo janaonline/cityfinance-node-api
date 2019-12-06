@@ -46,7 +46,6 @@ const post = function(schema,body,callback){
 };
 
 const put = function(condition = {},update,schema,callback){
-    console.log(condition,update);
 	schema.updateOne(condition,update,{ upsert:true,new : true , setDefaultsOnInsert:true }).exec((err,data)=>{
 		if (err) {
             console.log("error occurred in put",schema,err);
