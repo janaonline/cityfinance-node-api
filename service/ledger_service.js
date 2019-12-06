@@ -5,7 +5,7 @@ const _helper = require('../_helper/ledger_helper');
 var multer = require('multer');
 var xlstojson = require("xls-to-json-lc");
 var xlsxtojson = require("xlsx-to-json-lc");
-
+const mongoose = require("mongoose");
 module.exports.entry = function (req, res) {
 
     var exceltojson;
@@ -249,7 +249,7 @@ module.exports.entry = function (req, res) {
 module.exports.getIE = function (req, res) {
 
     // if(!req.body.ulb || !req.body.ulb.code || req.body.ulb.length == 0){
-    if(!req.body.ulbList || req.body.ulbList.length == 0){
+    if(!req.body.ulbList || req.body.ulbList.length == 0 || req.body.ulbIds.length == 0){
         res.json({
             success: false,
             msg: 'Invalid payload',
@@ -267,8 +267,12 @@ module.exports.getIE = function (req, res) {
     let payload = {};
     payload['head_of_account'] = { $match:{ "lineitems.headOfAccount":{$in : ['Revenue','Expense']} } };
     payload['ulb_code']= { $match: { "ulbs.code":{$in : ulbCodeArr} } } ;
-    var aggregateCondition = condition(); 
-    aggregateCondition.splice(2, 0, payload['ulb_code'],payload['head_of_account']);
+
+    let ulbIds = req.body.ulbIds ? req.body.ulbIds.map(m=> mongoose.Types.ObjectId(m)) : "NA";
+
+    var aggregateCondition = condition(ulbIds); 
+    aggregateCondition.splice(3, 0, payload['ulb_code'],payload['head_of_account']);
+
     ledgerModel.aggregate(aggregateCondition).exec((err, result) => {
         if (err) {
             return res.json({
@@ -306,8 +310,12 @@ module.exports.getBS = function (req, res) {
     let payload = {};
     payload['head_of_account'] = { $match:{ "lineitems.headOfAccount":{$in : ['Asset','Liability']} } };
     payload['ulb_code']= { $match:{ "ulbs.code":{$in : ulbCodeArr} } } ;
-    var aggregateCondition = condition(); 
-    aggregateCondition.splice(2, 0, payload['ulb_code']);
+
+    let ulbIds = req.body.ulbIds ? req.body.ulbIds.map(m=> mongoose.Types.ObjectId(m)) : "NA";
+
+    var aggregateCondition = condition(ulbIds); 
+    aggregateCondition.splice(3, 0, payload['ulb_code'],payload['head_of_account']);
+
     ledgerModel.aggregate(aggregateCondition).exec(function(err, result){
         if (err) {
             return res.json({
@@ -358,7 +366,7 @@ module.exports.getAll = function (req, res) {
 };
 
 module.exports.getAllLegders = function (req, res) {
-    ledgerModel.getAllLedgers({}, (err, out) => {
+    ledgerModel.getAllLedgers(req, (err, out) => {
         if (err) {
             res.json({
                 success: false,
@@ -445,8 +453,10 @@ var upload = multer({ //multer settings
 }).single('file');
 
 
-function condition(){
-    return [{$lookup:{
+function condition(ulbs){
+    return [
+    {$match: { ulb : {$in:ulbs}}},    
+    {$lookup:{
         from:"ulbs",
         as:"ulbs",
         foreignField : "_id",

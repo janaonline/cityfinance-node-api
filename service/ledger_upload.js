@@ -119,6 +119,7 @@ module.exports.bulkEntry = async function (req, res) {
 
                     let inputSheetObj = { }
                     for(let eachRow of sheet){
+                        eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;
                         eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='' ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
 
                         if((eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
@@ -148,7 +149,6 @@ module.exports.bulkEntry = async function (req, res) {
                         const validateLI = await LineItem.findOne({ code:el ,isActive : true }).exec();
                         
                         if(!validateLI){
-                            console.log(el)
                             errors.push("Invalid Item code "+el+" found in the sheet"); 
                         }else{
                             console.log("here coming")

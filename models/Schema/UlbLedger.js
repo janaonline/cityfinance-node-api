@@ -50,9 +50,46 @@ module.exports.getAggregate = function (payload, callback) {
 
 
 module.exports.getAllLedgers = function (payload, callback) {
+    let year = payload.body.year;
     Ledger.aggregate([
-        {$unwind: "$budget"},
-        {$match: { "budget.year": "2016-17"}}
+            {$match:{ isActive:true,financialYear:{ $in:year } }},
+            {$group:{
+                    _id:{
+                        ulb : "$ulb",
+                        financialYear : "$financialYear"
+                     },
+                     amount :{$sum : "$amount"}
+                }
+            },
+            {$lookup:{
+                    from:"ulbs",
+                    as:"ulbs",
+                    foreignField : "_id",
+                    localField:"_id.ulb"
+                }
+            },
+            {$lookup:{
+                    from:"states",
+                    as:"states",
+                    foreignField : "_id",
+                    localField:"ulbs.state"
+                }
+            },
+            {$project:{
+                    "ulbs":{ $arrayElemAt  :  [ "$ulbs",0]},
+                    "states":{ $arrayElemAt  :  [ "$states",0]},
+                    financialYear:"$_id.financialYear",
+                    amount:1
+                }
+            },
+            {$project:{
+                    _id:0,
+                    ulb : { $cond : ["$ulbs","$ulbs","NA"]},
+                    state : { $cond : ["$states","$states","NA"]},
+                    financialYear:1,
+                    amount:1
+                }
+            }
     ]).exec(callback);
 
     // Ledger.find({"ulb_code": "CG001"}, callback);

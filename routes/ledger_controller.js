@@ -76,10 +76,10 @@ router.post('/getAll', (req, res, next) => {
 
 });
 
-// router.get('/getAllLegders', (req, res, next) => {
-//     ledgerService.getAllLegders(req, res);
+router.post('/getAllLegders', (req, res, next) => {
+    ledgerService.getAllLegders(req, res);
 
-// });
+});
 
 
 
