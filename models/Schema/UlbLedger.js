@@ -77,9 +77,17 @@ module.exports.getAllLedgers = function (payload, callback) {
                     localField:"ulbs.state"
                 }
             },
+            {$lookup:{
+                    from:"ulbtypes",
+                    as:"ulbtypes",
+                    foreignField : "_id",
+                    localField:"ulbs.ulbType"
+                }
+            },
             {$project:{
                     "ulbs":{ $arrayElemAt  :  [ "$ulbs",0]},
                     "states":{ $arrayElemAt  :  [ "$states",0]},
+                    "ulbtypes":{ $arrayElemAt  :  [ "$ulbtypes",0]},
                     financialYear:"$_id.financialYear",
                     amount:1
                 }
@@ -88,6 +96,7 @@ module.exports.getAllLedgers = function (payload, callback) {
                     _id:0,
                     ulb : { $cond : ["$ulbs","$ulbs","NA"]},
                     state : { $cond : ["$states","$states","NA"]},
+                    ulbtypes : { $cond : ["$ulbtypes","$ulbtypes","NA"]},
                     financialYear:1,
                     amount:1
                 }

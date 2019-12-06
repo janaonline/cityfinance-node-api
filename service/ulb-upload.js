@@ -13,12 +13,6 @@ module.exports.create = async function(req,res,next){
         var reqFile = req.files[0]
         let errors = []
         
-        var balanceSheet = {
-            liability: 0,
-            assets : 0,
-            liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
-            assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
-        }
         var exceltojson;
         res["fileName"] = reqFile.originalname;
         if (reqFile.originalname.split('.')[reqFile.originalname.split('.').length - 1] === 'xlsx') {
