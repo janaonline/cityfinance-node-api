@@ -62,7 +62,6 @@ app.use(function(err, req, res) {
 	  message: err.message,
 	  error: "Something went wrong!"
 	});*/
-	console.log(res.status);
 	return res.status(status).send({ 
 	  success : false,
 	  message: err.message,

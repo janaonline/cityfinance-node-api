@@ -50,9 +50,11 @@ module.exports.getAggregate = function (payload, callback) {
 
 
 module.exports.getAllLedgers = function (payload, callback) {
-    let year = payload.body.year;
+    let year = payload.body.year ? ( payload.body.year.length? payload.body.year:null ) : null;
+    let condition =  { isActive:true };
+    year ? condition[ "financialYear"] =  {$in:year } : null;
     Ledger.aggregate([
-            {$match:{ isActive:true,financialYear:{ $in:year } }},
+            {$match:condition},
             {$group:{
                     _id:{
                         ulb : "$ulb",
