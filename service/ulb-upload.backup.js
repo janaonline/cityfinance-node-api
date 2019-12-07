@@ -10,8 +10,8 @@ const UlbType = require("../models/Schema/UlbType");
 module.exports.create = async function(req,res,next){
     var financialYear = req.body.year;
     if(req.files.length ==1){
-        var reqFile = req.files[0];
-        let errors = [];
+        var reqFile = req.files[0]
+        let errors = []
         
         var exceltojson;
         res["fileName"] = reqFile.originalname;
@@ -20,7 +20,7 @@ module.exports.create = async function(req,res,next){
         } else {
             exceltojson = xlstojson;
         }
-        let success = [];
+        let success = []
         try {
             await exceltojson({
                 input: reqFile.path,

@@ -30,6 +30,11 @@ router.post('/bulk/ulb-upload',(req, res, next) => {
     ulbUploadService.create(req, res);
 });
 
+const BulkUpload = require("./bulk-upload");
+router.post("/getS3Url", BulkUpload.S3Url);
+router.post("/processData", BulkUpload.processData);
+router.get("/getProcessStatus/:_id", BulkUpload.getProcessStatus);
+
 const LineItem = require("../models/Schema/LineItem");
 
 router.get('/LineItem', passport.authenticate('jwt', {session: false}), LineItem.get);

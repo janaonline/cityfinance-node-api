@@ -51,10 +51,16 @@ app.use('/ledger', ledgerRoutes);
 app.use('/logs', downloadLogRoutes);
 
 app.use('/api/admin/v1/', routes);
-
 app.get('*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public/index.html'));
 })
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+	return res.status(404).json({
+		success : false,
+		message: "Page not found!"
+	});
+});
 app.use(function(err, req, res) {
 	var status = 500;
 	/*return res.status(status).json({ 
@@ -62,7 +68,7 @@ app.use(function(err, req, res) {
 	  message: err.message,
 	  error: "Something went wrong!"
 	});*/
-	return res.status(status).send({ 
+	return res.status(400).send({
 	  success : false,
 	  message: err.message,
 	  error: "Something went wrong!"
