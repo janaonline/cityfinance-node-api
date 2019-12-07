@@ -52,15 +52,70 @@ module.exports.getAggregate = function (payload, callback) {
 module.exports.getAllLedgers = function (payload, callback) {
     let year = payload.body.year ? ( payload.body.year.length? payload.body.year:null ) : null;
     let condition =  { isActive:true };
-    year ? condition[ "financialYear"] =  {$in:year } : null;
-    Ledger.aggregate([
-            {$match:condition},
+    year ? condition[ "financialYear"] =  {$all:year } : null;
+    if(!year){
+        Ledger.aggregate([
+                {$match:condition},
+                {$group:{
+                        _id:{
+                            ulb : "$ulb",
+                            financialYear : "$financialYear"
+                        },
+                        amount :{$sum : "$amount"}
+                    }
+                },
+                {$lookup:{
+                        from:"ulbs",
+                        as:"ulbs",
+                        foreignField : "_id",
+                        localField:"_id.ulb"
+                    }
+                },
+                {$lookup:{
+                        from:"states",
+                        as:"states",
+                        foreignField : "_id",
+                        localField:"ulbs.state"
+                    }
+                },
+                {$lookup:{
+                        from:"ulbtypes",
+                        as:"ulbtypes",
+                        foreignField : "_id",
+                        localField:"ulbs.ulbType"
+                    }
+                },
+                {$project:{
+                        "ulbs":{ $arrayElemAt  :  [ "$ulbs",0]},
+                        "states":{ $arrayElemAt  :  [ "$states",0]},
+                        "ulbtypes":{ $arrayElemAt  :  [ "$ulbtypes",0]},
+                        financialYear:"$_id.financialYear",
+                        amount:1
+                    }
+                },
+                {$project:{
+                        _id:0,
+                        ulb : { $cond : ["$ulbs","$ulbs","NA"]},
+                        state : { $cond : ["$states","$states","NA"]},
+                        ulbtypes : { $cond : ["$ulbtypes","$ulbtypes","NA"]},
+                        financialYear:1,
+                        amount:1
+                    }
+                }
+        ]).exec(callback);
+
+    }else{
+        Ledger.aggregate([
+            {$match:{  isActive:true }},
             {$group:{
-                    _id:{
-                        ulb : "$ulb",
-                        financialYear : "$financialYear"
-                     },
-                     amount :{$sum : "$amount"}
+                _id:{
+                    ulb : "$ulb",
+                  },
+                  financialYear : {$addToSet:"$financialYear"},
+                }
+            },
+            {$match:{
+                    financialYear : condition[ "financialYear"]
                 }
             },
             {$lookup:{
@@ -103,6 +158,8 @@ module.exports.getAllLedgers = function (payload, callback) {
             }
     ]).exec(callback);
 
+    }
+  
     // Ledger.find({"ulb_code": "CG001"}, callback);
 }
 
