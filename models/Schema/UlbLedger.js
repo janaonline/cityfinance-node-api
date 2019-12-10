@@ -111,6 +111,7 @@ module.exports.getAllLedgers = function (payload, callback) {
                 _id:{
                     ulb : "$ulb",
                   },
+                  population : {$first:"$population"},
                   financialYear : {$addToSet:"$financialYear"},
                 }
             },
@@ -144,7 +145,8 @@ module.exports.getAllLedgers = function (payload, callback) {
                     "states":{ $arrayElemAt  :  [ "$states",0]},
                     "ulbtypes":{ $arrayElemAt  :  [ "$ulbtypes",0]},
                     financialYear:"$_id.financialYear",
-                    amount:1
+                    amount:1,
+                    population : 1
                 }
             },
             {$project:{
@@ -153,7 +155,8 @@ module.exports.getAllLedgers = function (payload, callback) {
                     state : { $cond : ["$states","$states","NA"]},
                     ulbtypes : { $cond : ["$ulbtypes","$ulbtypes","NA"]},
                     financialYear:1,
-                    amount:1
+                    amount:1,
+                    population:1
                 }
             }
     ]).exec(callback);
