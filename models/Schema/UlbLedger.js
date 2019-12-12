@@ -158,7 +158,8 @@ module.exports.getAllLedgers = function (payload, callback) {
                     amount:1,
                     population:1
                 }
-            }
+            },
+            {$match:{ amount : {$ne: 0}} }
     ]).exec(callback);
 
     }
