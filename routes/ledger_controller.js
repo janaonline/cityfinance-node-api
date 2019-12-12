@@ -78,10 +78,11 @@ router.post('/getAll', (req, res, next) => {
 
 router.post('/getAllLegders', (req, res, next) => {
     ledgerService.getAllLegders(req, res);
-
 });
 
-
+router.get('/getAllLegdersCsv', (req, res, next) => {
+    ledgerService.getAllLegdersCsv(req, res);
+});
 
 // update entry
 router.put('/entry/:entryId', (req, res, next) => {

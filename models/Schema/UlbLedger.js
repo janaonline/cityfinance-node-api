@@ -167,7 +167,59 @@ module.exports.getAllLedgers = function (payload, callback) {
     // Ledger.find({"ulb_code": "CG001"}, callback);
 }
 
-
+module.exports.getAllLedgersCsv = function(payload,callback){
+    Ledger.aggregate([
+        {$lookup:{
+                from:"ulbs",
+                as:"ulbs",
+                foreignField : "_id",
+                localField:"ulb"
+            }
+        },
+        {$lookup:{
+                from:"lineitems",
+                as:"lineitems",
+                foreignField : "_id",
+                localField:"lineItem"
+            }
+        },
+        {$lookup:{
+                from:"states",
+                as:"states",
+                foreignField : "_id",
+                localField:"ulbs.state"
+            }
+        },
+        {$lookup:{
+                from:"ulbtypes",
+                as:"ulbtypes",
+                foreignField : "_id",
+                localField:"ulbs.ulbType"
+            }
+        },
+        {$project:{
+                "ulbs":{ $arrayElemAt  :  [ "$ulbs",0]},
+                "states":{ $arrayElemAt  :  [ "$states",0]},
+                "ulbtypes":{ $arrayElemAt  :  [ "$ulbtypes",0]},
+                "lineitems":{ $arrayElemAt  :  [ "$lineitems",0]},
+                financialYear:"$financialYear",
+                amount:1,
+                population : 1
+            }
+        },
+        {$project:{
+                _id:0,
+                ulb : { $cond : ["$ulbs","$ulbs","NA"]},
+                state : { $cond : ["$states","$states","NA"]},
+                ulbtypes : { $cond : ["$ulbtypes","$ulbtypes","NA"]},
+                lineitems : { $cond : ["$lineitems","$lineitems","NA"]},
+                financialYear:1,
+                amount:1,
+                population:1
+            }
+        }
+    ])
+}
 module.exports.deleteById = function(payload, callback){
     Ledger.deleteOne(payload, callback);
 }
