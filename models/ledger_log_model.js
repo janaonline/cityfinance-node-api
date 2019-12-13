@@ -70,7 +70,8 @@ const LedgerLogSchema = mongoose.Schema({
 	},
 	reverified_by: {
 		type: String
-	}
+	},
+	lastModifiedAt:{ type:Date, default:Date.now()}
 
 });
 

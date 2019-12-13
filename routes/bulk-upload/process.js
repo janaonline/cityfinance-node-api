@@ -3,64 +3,344 @@ const RequestLog = require("../../models/Schema/RequestLog")
 const awsService = require("../../service/s3-services");
 const xlstojson = require("xls-to-json-lc");
 const xlsxtojson = require("xlsx-to-json-lc");
+const CONSTANTS = require('../../_helper/constants');
+const State = require("../../models/Schema/State")
+const Ulb = require("../../models/Schema/Ulb");
+const LineItem = require("../../models/Schema/LineItem");
+const UlbLedger = require("../../models/Schema/UlbLedger");
+const LedgerLog = require("../../models/ledger_log_model");
+const overViewSheet = {
+    'State Code': 'state_code',
+    'Name of the state': 'state',
+    'ULB Code': 'ulb_code',
+    'Name of the ULB': 'ulb',
+    'Financial Year': 'year',
+    'Audit Status': 'audit_status',
+    'Audit Firm Name': 'audit_firm',
+    'Name of the Partner': 'partner_name',
+    'ICAI Membership Number': 'icai_membership_number',
+    'Date of Entry': 'created_at',
+    'Entered by': 'created_by',
+    'Date of verification': 'verified_at',
+    'Verified by': 'verified_by',
+    'Date of Re-verification': 'reverified_at',
+    'Re-verified by': 'reverified_by'
+};
+const balanceSheet = {
+    liability: 0,
+    assets : 0,
+    liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
+    assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
+}
+
 module.exports = function (req, res) {
-    awsService.downloadFileToDisk(req.body.alias, async(err, file)=> {
-        if(err){
-            return res.status(400).json({
-                timestamp : moment().unix(),
-                success:false,
-                message:"Error Occurred",
-                error: err.message
-            });
-        }else if(!file){
-            return res.status(400).json({
-                timestamp : moment().unix(),
-                success:false,
-                message:"File not available"
-            });
-        }else {
-            //return res.status(200).json({file:file});
-            try{
-                let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:req.body.financialYear});
-                if(!reqLog){
-                    let requestLog = new RequestLog({
-                        user:req.decoded ? req.decoded.id : null,
-                        url:req.body.alias,
-                        message:"Data Processing",
-                        financialYear:req.body.financialYear
-                    });
-                    requestLog.save((err, data)=> {
-                       if(err){
-                           return res.status(400).json({
-                               timestamp:moment().unix(),
-                               success:false,
-                               message:err.message,
-                               data:err
-                           })
-                       } else {
-                           return res.status(200).json({
-                               timestamp:moment().unix(),
-                               success:true,
-                               message:`Request recieved.`,
-                               data:data
-                           })
-                       }
-                    });
-                }else {
+    let financialYear = req.body.financialYear;
+    if(!financialYear){
+        return res.status(400).json({
+            timestamp : moment().unix(),
+            success:false,
+            message:"Financial Year is required."
+        });
+    }else {
+        awsService.downloadFileToDisk(req.body.alias, async(err, file)=> {
+            if(err){
+                return res.status(400).json({
+                    timestamp : moment().unix(),
+                    success:false,
+                    message:"Error Occurred",
+                    error: err.message
+                });
+            }else if(!file){
+                return res.status(400).json({
+                    timestamp : moment().unix(),
+                    success:false,
+                    message:"File not available"
+                });
+            }else {
+                try{
+                    //console.log("file:",file);
+                    //return res.status(200).json({message:file})
+                    let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:financialYear});
+                    if(!reqLog){
+                        let requestLog = new RequestLog({
+                            user:req.decoded ? req.decoded.id : null,
+                            url:req.body.alias,
+                            message:"Data Processing",
+                            financialYear:financialYear
+                        });
+                        requestLog.save(async(err, data)=> {
+                            if(err){
+                                return res.status(400).json({
+                                    timestamp:moment().unix(),
+                                    success:false,
+                                    message:err.message,
+                                    data:err
+                                })
+                            } else {
+                                try {
+                                    processData(file, financialYear, data._id);
+                                    return res.status(200).json({
+                                        timestamp:moment().unix(),
+                                        success:true,
+                                        message:`Request recieved.`,
+                                        data:data
+                                    })
+                                }catch (e) {
+                                    return res.status(400).json({
+                                        timestamp:moment().unix(),
+                                        success:false,
+                                        message:`${e.message} \n ${e.errMessage}.`
+                                    })
+                                }
+
+                            }
+                        });
+                    }else {
+                        return res.status(400).json({
+                            timestamp:moment().unix(),
+                            success:false,
+                            message:reqLog.completed ? `Already processed.` : `Already in process.`,
+                            data:reqLog
+                        })
+                    }
+                }catch (e) {
                     return res.status(400).json({
                         timestamp:moment().unix(),
                         success:false,
-                        message:reqLog.completed ? `Already processed.` : `Already in process.`,
-                        data:reqLog
+                        message: `Caught Error:${e.message}`
                     })
                 }
+            }
+        })
+    }
+    async function processData(reqFile, financialYear, reqId) {
+        //console.log("processData",reqFile, financialYear, reqId);
+
+        try {
+            try {
+                let {overviewSheet, dataSheet} = await readXlsxFile(reqFile);
+                let objOfSheet = await validateOverview(overviewSheet,financialYear); // rejection in case of error
+                let du = {
+                    query : {ulb_code_year : objOfSheet.ulb_code_year},
+                    update : Object.assign({lastModifiedAt:new Date()},objOfSheet),
+                    options : {upsert : true,setDefaultsOnInsert : true,new: true}
+                }
+                delete du.update._id;
+                delete du.update.__v;
+                console.log("du.update",du.update);
+                let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
+                console.log("objOfSheet",JSON.stringify(ud,0,3));
+                let inputDataArr = await validateData(dataSheet, objOfSheet); //  return line item data array
+                let responseArr = [];
+                //let session = await mongoose.startSession();
+                //await session.startTransaction();
+                let aborted = false;
+                for(let el of inputDataArr){
+                    let options = el.options;//Object.assign(el.options,{session:session});
+                    try {
+                        let result = await UlbLedger.findOneAndUpdate(el.query, el.update, options);
+                        responseArr.push(result);
+                        await updateLog(reqId, {message:`Status: (${responseArr.length}/${inputDataArr.length}) processed`, completed:0});
+                        continue;
+                    }catch (e) {
+                        //await session.abortTransaction();
+                        aborted = true;
+                        await updateLog(reqId, {message:e.message, completed:0, status:"FAILED"});
+                        console.log("Exception",e);
+                        break;
+                    }
+                }
+                if(aborted){
+                    await updateLog(reqId, {completed:1, status:"FAILED"});
+                }else {
+                    //await session.commitTransaction();
+                    await updateLog(reqId, {message:`Completed`, completed:1, status:"SUCCESS"});
+                }
+
             }catch (e) {
-                return res.status(400).json({
-                    timestamp:moment().unix(),
-                    success:false,
-                    message: `Caught Error:${e.message}`
+                console.log("processData: Caught Exception", e.message, e);
+                await updateLog(reqId, {message:e.message, completed:0, status:"FAILED"});
+            }
+        } catch (e) {
+            console.log("Exception Caught while extracting file => ",e);
+            errors.push("Exception Caught while extracting file");
+            await updateLog(reqId, {message:e.message, completed:0, status:"FAILED"});
+        }
+    }
+    async function readXlsxFile(file) {
+        return new Promise(async (resolve, reject)=>{
+            let exceltojson;
+            try{
+                let fileInfo  = file.path.split('.');
+                console.log("DD : file",fileInfo[(fileInfo.length - 1)]);
+                exceltojson = fileInfo && fileInfo.length > 0 && fileInfo[(fileInfo.length - 1)] == 'xlsx' ? xlsxtojson : xlstojson;
+                let prms1 = new Promise((rslv, rjct) => {
+                    exceltojson({
+                        input: file.path,
+                        output: null, //since we don't need output.json
+                        lowerCaseHeaders: true,
+                        sheet: CONSTANTS.LEDGER.BULK_ENTRY.OVERVIEW_SHEET_NAME,
+                    }, function (err, sheet) {
+                        if(err){
+                            rjct({message:"Error: OVERVIEW_SHEET_NAME"})
+                        }else {
+                            rslv(sheet)
+                        }
+                    })
                 })
+                let prms2 = new Promise((rslv, rjct) => {
+                    exceltojson({
+                        input: file.path,
+                        output: null, //since we don't need output.json
+                        lowerCaseHeaders: true,
+                        sheet: CONSTANTS.LEDGER.BULK_ENTRY.INPUT_SHEET_NAME,
+                    }, function (err, sheet) {
+                        if(err){
+                            rjct({message:"Error: INPUT_SHEET_NAME"})
+                        }else {
+                            rslv(sheet)
+                        }
+                    })
+                })
+                Promise.all([prms1, prms2]).then(sheets=>{
+                    let overviewSheet = sheets[0];
+                    let dataSheet = sheets[1];
+                    if(overviewSheet && dataSheet){
+                        resolve({overviewSheet,dataSheet});
+                    }else {
+                        console.log("readXlsxFile: sheet count")
+                        reject({message : "Two sheet is required in the file."});
+                    }
+                },e=>{
+                    reject(e);
+                }).catch(e=>{
+                    reject(e);
+                })
+            }catch (e) {
+                console.log("readXlsxFile: Exception",e)
+                reject({message : "Caught Exception while reading file.", errMessage:e.message});
+            }
+        });
+    }
+    async function validateOverview(data, financialYear) {
+        return new Promise(async (resolve, reject)=>{
+            if(data.length < 2){
+                // means less than two entries are there in the sheet;
+                console.log("validateOverview : data.length < 2")
+                reject( {message : "Overview sheet has less than two rows, Please check"} );
+            }else {
+                let objOfSheet = {};
+                for(let eachRow of data){
+                    // converting data in rows here in obj;
+                    eachRow["basic details"] ? objOfSheet[eachRow["basic details"] ] = eachRow.value : "Means row is empty remove it"
+                }
+                for(let key of Object.keys(objOfSheet)){
+                    objOfSheet[ overViewSheet[key]] = objOfSheet[key] ;
+                    delete objOfSheet[key];
+                }
+                let state = await State.findOne({ code : objOfSheet.state_code,isActive:true }).exec();
+                // Find whether ulb code exists or not
+                let ulb = await Ulb.findOne({ code : objOfSheet.ulb_code, state : state._id ,isActive:true }).exec();
+                if(!state){
+                    console.log("validateOverview: !state")
+                    reject( {message : "State code "+ objOfSheet.state_code+" or "+" State name "+objOfSheet.state+" do not exists in states master"} );
+                }else if(!ulb){
+                    console.log("validateOverview: !ulb")
+                    reject( {message : "Ulb code "+ objOfSheet.ulb_code+" do not exists in ulb's master for "+objOfSheet.state_code+" state"} );
+                }else if(objOfSheet.year != financialYear){
+                    console.log("validateOverview: objOfSheet.year != financialYear")
+                    reject({message:"Selected financial year: "+financialYear+" while sheet has year:"+objOfSheet.year})
+                }
+                Object.assign(objOfSheet,JSON.parse(JSON.stringify(ulb)));
+                objOfSheet['ulb_code_year'] = objOfSheet.ulb_code + '_' + objOfSheet.year;
+                resolve(objOfSheet);
+            }
+        });
+    }
+    async function validateData(data,objOfSheet) {
+        return new Promise(async (resolve, reject)=>{
+            let inputSheetObj = { }
+            let errors = [];
+            for(let eachRow of data){
+                eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;
+                eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='' ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
+
+                if((eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
+                    eachRow["amount in inr"] = "-" + eachRow["amount in inr"].replace("(", "").replace(")","")
+
+                if(eachRow["code"]){
+                    inputSheetObj[eachRow["code"].trim()] = Number(eachRow["amount in inr"]);
+                    if(isNaN(inputSheetObj[eachRow["code"].trim()])){
+                        errors.push("Line item code "+eachRow["code"]+" value is not applicable");
+                    }
+                }
+
+            }
+            var message = validateBalanceSheet(balanceSheet,inputSheetObj);
+            if(message){
+                console.log("validateData: message",message)
+                reject({message:message});
+            }else{
+                let lineItemCodes = Object.keys(inputSheetObj);
+                for(let el of lineItemCodes){
+                    const validateLI = await LineItem.findOne({ code:el ,isActive : true }).exec();
+                    if(!validateLI){
+                        errors.push("Invalid Item code "+el+" found in the sheet");
+                    }else{
+                        inputSheetObj[validateLI._id] = inputSheetObj[el]
+                        delete inputSheetObj[el]
+                    }
+                }
+                if(errors.length){
+                    console.log("validateData: errors.length",errors)
+                    reject({message:errors.join(","), errMessage : ""})
+                }else {
+                    Object.assign(objOfSheet,{ ledger : JSON.parse(JSON.stringify(inputSheetObj)) });
+                    let dataArr = [];
+                    for(let el of Object.keys(objOfSheet.ledger)){
+                        dataArr.push({
+                            query : {
+                                ulb : objOfSheet._id,
+                                lineItem : el,
+                                financialYear : financialYear
+                            },update : {
+                                amount : objOfSheet.ledger[el]
+                            },options : {
+                                upsert : true,
+                                setDefaultsOnInsert : true,
+                                new: true
+                            }
+                        });
+                    }
+                    resolve(dataArr);
+                }
+            }
+        });
+    }
+    async function updateLog(reqId, data){
+        return new Promise(async(resolve, reject)=>{
+            try {
+                let d  = await RequestLog.update({_id : reqId},{$set : data});
+                resolve(d);
+            }catch (e) {
+                console.log("updateLog: Caught Exception.", e)
+                reject({message:"Exception while updating the status.", err:e.message});
+            }
+        });
+    }
+    function validateBalanceSheet(balanceSheet,inputSheetObj){
+        let message = "";
+        for(let key of Object.keys(inputSheetObj)){
+            if(balanceSheet.liabilityAdd.includes(key)){
+                balanceSheet.liability+=inputSheetObj[key]
+            }else if(balanceSheet.assetsAdd.includes(key)){
+                balanceSheet.assets+=inputSheetObj[key]
             }
         }
-    })
+        if(balanceSheet.liability!=balanceSheet.assets){
+            message = "Balance sheet has liablity: "+balanceSheet.liability+" while assets :"+balanceSheet.assets;
+        }
+        return message;
+    }
 }
+

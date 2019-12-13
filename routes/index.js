@@ -41,5 +41,6 @@ router.get('/LineItem', passport.authenticate('jwt', {session: false}), LineItem
 router.put('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.put);
 router.post('/LineItem', passport.authenticate('jwt', {session: false}), LineItem.post);
 router.delete('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.delete);
-
+const finacialParamsRoutes = require("../routes/financial-parameter/route");
+router.use("/financial-parameter",finacialParamsRoutes);
 module.exports = router;

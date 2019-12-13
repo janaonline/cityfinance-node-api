@@ -4,6 +4,7 @@ const RequestLogSchema = new Schema({
     url: { type: String, required: true },
     financialYear: { type: String, required: true },
     message:{ type: String, default: null },
+    status : {type : String, enum:["SUCCESS","FAILED",""], default:""},
     completed : {type  : Boolean, default : 0 },
     modifiedAt : { type: Date, default : Date.now },
     createdAt : { type: Date, default : Date.now }

@@ -104,6 +104,7 @@ module.exports.bulkEntry = async function (req, res) {
                 Object.assign(objOfSheet,JSON.parse(JSON.stringify(ulb)));
 
                 objOfSheet['ulb_code_year'] = objOfSheet.ulb_code + '_' + objOfSheet.year;
+
                 await exceltojson({
                     input: reqFile.path,
                     output: null, //since we don't need output.json

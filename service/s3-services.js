@@ -149,14 +149,14 @@ function generateSignedUrl(data, _cb) {
     });
 }
 function downloadFileToDisk(fName, _cb) {
-    let fileName = fName ? fName.split("/")[0]:null;
+    let fileName = fName ? (fName.split("/").length > 1 ? fName.split("/")[1] :  fName.split("/")[0]):null;
     var params = {Bucket: BUCKETNAME, Key: fName};
     var file = fs.createWriteStream(path.join(tempDir, fileName));
     var x = s3.getObject(params).createReadStream();
     x.pipe(file);
     x.on('end', function () {
         console.log('download done- ', file.path);
-        return _cb(null, file.path);
+        return _cb(null, file);
     });
     x.on('error', function (err) {
         console.log('download ERROR- ', file.path, arguments);
