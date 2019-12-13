@@ -28,7 +28,6 @@ module.exports = async(req, res)=>{
         let sortBy = {overallIndexScore:-1};
         let groupBy = {ulb:"$ulbledgers.ulb",financialYear:"$ulbledgers.financialYear"};
         let data = await Ulb.aggregate([
-            {$match:condition},
             {
                 $lookup:{
                     from:"states",
@@ -409,7 +408,8 @@ module.exports = async(req, res)=>{
                     }
                 }
             },
-            {$sort:sortBy}
+            {$sort:sortBy},
+            {$match:condition}
         ]);
         return res.status(200).json({
             success:false,
