@@ -6,14 +6,15 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv').config({path: path.join(__dirname, ".env")});
 const config = require('./config/app_config');
+const logger = require('morgan');
 const app = express();
-
-
 
 
 
 //Port Number
 const port = config.APP.PORT;
+
+app.use(logger('dev'));
 
 // CORS middleware
 app.use(cors());

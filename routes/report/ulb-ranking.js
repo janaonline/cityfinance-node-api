@@ -1,18 +1,34 @@
 const Ulb = require("../../models/Schema/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
+const CONSTANTS = require("../../_helper/constants")
 module.exports = async(req, res)=>{
-    let finYears = ["2015-16","2016-17"];
-    if(req.body.financialYear && req.body.financialYear.length){
-        finYears = req.body.financialYear;
-    }
-    let condition = {};
-    if(req.body.ulb){
-        condition["ulb"] = ObjectId(req.body.ulb);
-    }
+    let populationRange = CONSTANTS.POPULATION_DROPDOWN;
     try{
+        let finYears = ["2015-16","2016-17"];
+        try {
+            if(req.query.financialYear){
+                finYears = req.query.financialYear.split(",");
+            }
+        }catch (e) {
+            console.log("req.query Exception",e.message)
+        }
+        if(req.body.financialYear && req.body.financialYear.length){
+            finYears = req.body.financialYear;
+        }
+        let condition = {};
+        req.body.ulbId ? condition["_id"] = req.body.ulbId : "";
+        req.body.ulbCode ? condition["code"] = req.body.ulbCode : "";
+
+        if(req.body.populationId){
+            let pop = populationRange.find(f=> f._id == req.body.populationId);
+            if(pop){
+                condition["population"] = pop.condition;
+            }
+        }
         let sortBy = {overallIndexScore:-1};
         let groupBy = {ulb:"$ulbledgers.ulb",financialYear:"$ulbledgers.financialYear"};
         let data = await Ulb.aggregate([
+            {$match:condition},
             {
                 $lookup:{
                     from:"states",

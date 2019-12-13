@@ -19,6 +19,42 @@ module.exports = {
     },
     ULBMASTER:{
         INPUT_SHEET_NAME: 'Input sheet'
-    }
-
+    },
+    POPULATION_DROPDOWN:[
+        {
+            _id:1,
+            label:"Overall",
+            condition:{}
+        },
+        {
+            _id:2,
+            label:"Less than 50k",
+            condition:{ $lte:50000}
+        },
+        {
+            _id:3,
+            label:"Over 50k but less than 100k",
+            condition:{ $gte:(50 * 1000), $lte:(100 * 1000)}
+        },
+        {
+            _id:4,
+            label:"Over 100k but less than 300k",
+            condition:{ $gte:(100 * 1000), $lte:(300 * 1000)}
+        },
+        {
+            _id:5,
+            label:"Over 300k but less than 500k",
+            condition:{ $gte:(300 * 1000), $lte:(500 * 1000)}
+        },
+        {
+            _id:6,
+            label:"Over 500k but less than 1 million",
+            condition:{ $gte:(500 * 1000), $lte:(1000 * 1000)}
+        },
+        {
+            _id:7,
+            label:"Over 1 million",
+            condition:{ $gte:(1000 * 1000)}
+        }
+    ]
 }
