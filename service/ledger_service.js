@@ -6,6 +6,7 @@ var multer = require('multer');
 var xlstojson = require("xls-to-json-lc");
 var xlsxtojson = require("xlsx-to-json-lc");
 const mongoose = require("mongoose");
+const moment = require("moment");
 module.exports.entry = function (req, res) {
 
     var exceltojson;
@@ -429,7 +430,85 @@ module.exports.getAggregate = function (req, res) {
     }
 };
 
+module.exports.getAllLegdersCsv = function(req,res){
+    let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
 
+	// Set approrpiate download headers
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+	res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("ULB Name, ULB Code, AMRUT, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
+	// Flush the headers before we start pushing the CSV content
+    res.flushHeaders();
+    
+    ledgerModel.aggregate([
+        {   $lookup:{
+                from:"ulbs",
+                as:"ulbs",
+                foreignField : "_id",
+                localField:"ulb"
+            }
+        },
+        {$lookup:{
+                from:"lineitems",
+                as:"lineitems",
+                foreignField : "_id",
+                localField:"lineItem"
+            }
+        },
+        {$lookup:{
+                from:"states",
+                as:"states",
+                foreignField : "_id",
+                localField:"ulbs.state"
+            }
+        },
+        {$lookup:{
+                from:"ulbtypes",
+                as:"ulbtypes",
+                foreignField : "_id",
+                localField:"ulbs.ulbType"
+            }
+        },
+        {$project:{
+                "ulbs":{ $arrayElemAt  :  [ "$ulbs",0]},
+                "states":{ $arrayElemAt  :  [ "$states",0]},
+                "ulbtypes":{ $arrayElemAt  :  [ "$ulbtypes",0]},
+                "lineitems":{ $arrayElemAt  :  [ "$lineitems",0]},
+                financialYear:"$financialYear",
+                amount:1,
+                population : 1
+            }
+        },
+        {$project:{
+                _id:0,
+                ulb : { $cond : ["$ulbs","$ulbs","NA"]},
+                state : { $cond : ["$states","$states","NA"]},
+                ulbtypes : { $cond : ["$ulbtypes","$ulbtypes","NA"]},
+                line_item : { $cond : ["$lineitems","$lineitems","NA"]},
+                financialYear:1,
+                amount:1,
+                population:1
+            }
+        }
+    ]).exec((err,data)=>{
+        if(err){
+            res.json({
+                success: false,
+                msg: 'Invalid Payload',
+                data: err.toString()
+            });
+        }else{
+            for(let el of data){
+                let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
+                el.code = el.line_item ? el.line_item.code : "";
+                el.head_of_account =  el.line_item ? el.line_item.headOfAccount : "";
+                el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ')  : "";
+                res.write(el.ulb.name+","+el.ulb.code+","+el.ulb.amrut+","+el.head_of_account+","+el.code+","+line_item+","+el.financialYear+","+el.amount+"\r\n");
+            }
+            res.end()
+        }
+    });
+}
 
 
 var storage = multer.diskStorage({ //multers disk storage settings
