@@ -216,6 +216,7 @@ module.exports = async(req, res)=>{
             {
                 $group:{
                     _id:false,
+                    nationalAverageIndexScore:{"$avg":"$overallIndexScore"},
                     data:{
                         $push :{
                             "maxOwnRevenuePercentage" : "$maxOwnRevenuePercentage",
@@ -272,7 +273,7 @@ module.exports = async(req, res)=>{
             {
                 $group:{
                     _id : "$data.state._id",
-                    data:{$push:{data:"$data", nationalRanking:"$nationalRanking"}}
+                    data:{$push:{data:"$data",nationalAverageIndexScore:"$nationalAverageIndexScore", nationalRanking:"$nationalRanking"}}
                 }
             },
             {
@@ -382,6 +383,7 @@ module.exports = async(req, res)=>{
                     "overallIndexScore": {
                         "$avg": "$data.data.overallIndexScore"
                     },
+                    "nationalAverageIndexScore":{ "$first":{"$toInt": "$data.nationalAverageIndexScore"}},
                     "maxOwnRevenuePercentage": {
                         "$avg": "$data.data.maxOwnRevenuePercentage"
                     },
