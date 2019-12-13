@@ -43,4 +43,7 @@ router.post('/LineItem', passport.authenticate('jwt', {session: false}), LineIte
 router.delete('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.delete);
 const finacialParamsRoutes = require("../routes/financial-parameter/route");
 router.use("/financial-parameter",finacialParamsRoutes);
+
+const ReportRoutes = require("../routes/report/route");
+router.use("/report",ReportRoutes);
 module.exports = router;
