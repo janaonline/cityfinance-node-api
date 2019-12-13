@@ -10,6 +10,8 @@ module.exports = async(req, res)=>{
         condition["ulb"] = ObjectId(req.body.ulb);
     }
     try{
+        let sortBy = {overallIndexScore:-1};
+        let groupBy = {ulb:"$ulbledgers.ulb",financialYear:"$ulbledgers.financialYear"};
         let data = await Ulb.aggregate([
             {
                 $lookup:{
@@ -50,7 +52,7 @@ module.exports = async(req, res)=>{
             {$unwind:"$lineItem"},
             {
                 $group:{
-                    _id : {ulb:"$ulbledgers.ulb",financialYear:"$ulbledgers.financialYear"},
+                    _id : groupBy,
                     state:{$first:"$state"},
                     code:{$first:"$code"},
                     name:{$first:"$name"},
@@ -195,7 +197,7 @@ module.exports = async(req, res)=>{
                     "overallIndexScore":{"$sum":[{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.ownRevenuePercentage","$minOwnRevenuePercentage"]},{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]},"$data.financialAccountabilityPercentage"]}
                 }
             },
-            {$sort:{overallIndexScore:-1}},
+            {$sort:sortBy},
             {
                 $group:{
                     _id:false,
@@ -265,47 +267,133 @@ module.exports = async(req, res)=>{
                 }
             },
             {
-                $project:{
-                    "ulb":"$data.data.ulb",
-                    "code":"$data.data.code",
-                    "name":"$data.data.name",
-                    "nationalRanking":{$toInt: { "$sum" : ["$data.nationalRanking",1]}},
-                    "stateRanking":{$toInt: { "$sum" : ["$stateRanking",1]}},
-                    "ulbType":"$data.data.ulbType",
-                    "state":"$data.data.state",
-                    "population":"$data.data.population",
-                    "area":"$data.data.area",
-                    "wards":"$data.data.wards",
-                    "natureOfUlb":"$data.data.natureOfUlb",
-                    "amrut":"$data.data.amrut",
-                    "financialYear":"$data.data.financialYear",
-                    "ownRevenue":"$data.data.ownRevenue",
-                    "totalRevenueExpenditure":"$data.data.totalRevenueExpenditure",
-                    "totalDebt":"$data.data.totalDebt",
-                    "totalRevenue":"$data.data.totalRevenue",
-                    "netReceivables":"$data.data.netReceivables",
-                    "debtServicePercentage":"$data.data.debtServicePercentage",
-                    "collectionEfficiencyPercentage":"$data.data.collectionEfficiencyPercentage",
-                    "ownRevenuePercentage":"$data.data.ownRevenuePercentage",
-                    "financialAccountabilityPercentage":"$data.data.financialAccountabilityPercentage",
-                    "financialAccountabilityIndexScore":"$data.data.financialAccountabilityIndexScore",
-                    "financialPerformanceIndexScore":"$data.data.financialPerformanceIndexScore",
-                    "financialPositionCollectionEfficiencyIndexScore":"$data.data.financialPositionCollectionEfficiencyIndexScore",
-                    "financialPositionDebtServiceIndexScore":"$data.data.financialPositionDebtServiceIndexScore",
-                    "financialPositionIndexScore":"$data.data.financialPositionIndexScore",
-                    "overallIndexScore":"$data.data.overallIndexScore",
-                    "maxOwnRevenuePercentage":"$data.data.maxOwnRevenuePercentage",
-                    "minOwnRevenuePercentage":"$data.data.minOwnRevenuePercentage",
-                    "maxCollectionEfficiencyPercentage":"$data.data.maxCollectionEfficiencyPercentage",
-                    "minCollectionEfficiencyPercentage":"$data.data.minCollectionEfficiencyPercentage",
-                    "maxDebtServicePercentage":"$data.data.maxDebtServicePercentage",
-                    "minDebtServicePercentage":"$data.data.minDebtServicePercentage",
-                    "maxFinancialAccountabilityPercentage":"$data.data.maxFinancialAccountabilityPercentage",
-                    "minFinancialAccountabilityPercentage":"$data.data.minFinancialAccountabilityPercentage",
+                "$group": {
+                    "_id": "$data.data.ulb",
+                    "ulb": {
+                        "$first": "$data.data.ulb"
+                    },
+                    "code": {
+                        "$first": "$data.data.code"
+                    },
+                    "name": {
+                        "$first": "$data.data.name"
+                    },
+                    "nationalRanking": {
+                        "$first": {
+                            "$toInt": {
+                                "$sum": [
+                                    "$data.nationalRanking",
+                                    1
+                                ]
+                            }
+                        }
+                    },
+                    "stateRanking": {
+                        "$first": {
+                            "$toInt": {
+                                "$sum": [
+                                    "$stateRanking",
+                                    1
+                                ]
+                            }
+                        }
+                    },
+                    "ulbType": {
+                        "$first": "$data.data.ulbType"
+                    },
+                    "state": {
+                        "$first": "$data.data.state"
+                    },
+                    "population": {
+                        "$first": "$data.data.population"
+                    },
+                    "area": {
+                        "$first": "$data.data.area"
+                    },
+                    "wards": {
+                        "$first": "$data.data.wards"
+                    },
+                    "natureOfUlb": {
+                        "$first": "$data.data.natureOfUlb"
+                    },
+                    "amrut": {
+                        "$first": "$data.data.amrut"
+                    },
+                    "financialYear": {
+                        "$first": "$data.data.financialYear"
+                    },
+                    "ownRevenue": {
+                        "$avg": "$data.data.ownRevenue"
+                    },
+                    "totalRevenueExpenditure": {
+                        "$avg": "$data.data.totalRevenueExpenditure"
+                    },
+                    "totalDebt": {
+                        "$avg": "$data.data.totalDebt"
+                    },
+                    "totalRevenue": {
+                        "$avg": "$data.data.totalRevenue"
+                    },
+                    "netReceivables": {
+                        "$avg": "$data.data.netReceivables"
+                    },
+                    "debtServicePercentage": {
+                        "$avg": "$data.data.debtServicePercentage"
+                    },
+                    "collectionEfficiencyPercentage": {
+                        "$avg": "$data.data.collectionEfficiencyPercentage"
+                    },
+                    "ownRevenuePercentage": {
+                        "$avg": "$data.data.ownRevenuePercentage"
+                    },
+                    "financialAccountabilityPercentage": {
+                        "$avg": "$data.data.financialAccountabilityPercentage"
+                    },
+                    "financialAccountabilityIndexScore": {
+                        "$avg": "$data.data.financialAccountabilityIndexScore"
+                    },
+                    "financialPerformanceIndexScore": {
+                        "$avg": "$data.data.financialPerformanceIndexScore"
+                    },
+                    "financialPositionCollectionEfficiencyIndexScore": {
+                        "$avg": "$data.data.financialPositionCollectionEfficiencyIndexScore"
+                    },
+                    "financialPositionDebtServiceIndexScore": {
+                        "$avg": "$data.data.financialPositionDebtServiceIndexScore"
+                    },
+                    "financialPositionIndexScore": {
+                        "$avg": "$data.data.financialPositionIndexScore"
+                    },
+                    "overallIndexScore": {
+                        "$avg": "$data.data.overallIndexScore"
+                    },
+                    "maxOwnRevenuePercentage": {
+                        "$avg": "$data.data.maxOwnRevenuePercentage"
+                    },
+                    "minOwnRevenuePercentage": {
+                        "$avg": "$data.data.minOwnRevenuePercentage"
+                    },
+                    "maxCollectionEfficiencyPercentage": {
+                        "$avg": "$data.data.maxCollectionEfficiencyPercentage"
+                    },
+                    "minCollectionEfficiencyPercentage": {
+                        "$avg": "$data.data.minCollectionEfficiencyPercentage"
+                    },
+                    "maxDebtServicePercentage": {
+                        "$avg": "$data.data.maxDebtServicePercentage"
+                    },
+                    "minDebtServicePercentage": {
+                        "$avg": "$data.data.minDebtServicePercentage"
+                    },
+                    "maxFinancialAccountabilityPercentage": {
+                        "$avg": "$data.data.maxFinancialAccountabilityPercentage"
+                    },
+                    "minFinancialAccountabilityPercentage": {
+                        "$avg": "$data.data.minFinancialAccountabilityPercentage"
+                    }
                 }
             },
-            {$sort:{overallIndexScore:-1}},
-            {$match:condition}
+            {$sort:sortBy}
         ]);
         return res.status(200).json({
             success:false,
