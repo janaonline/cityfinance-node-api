@@ -50,6 +50,7 @@ module.exports = async(req, res)=>{
                 }
             },
             {$unwind:"$ulbType"},
+            {$match:{ "ulbType.name":{$in : ["Municipality","Town Panchayat","Municipal Corporation"]}}},
             {
                 $lookup:{
                     from:"ulbledgers",
