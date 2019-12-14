@@ -16,18 +16,22 @@ module.exports = async(req, res)=>{
             finYears = req.body.financialYear;
         }
         let condition = {};
+        req.query.ulbId ? condition["_id"] = req.query.ulbId : "";
+        req.query.ulbCode ? condition["code"] = req.query.ulbCode : "";
+
         req.body.ulbId ? condition["_id"] = req.body.ulbId : "";
         req.body.ulbCode ? condition["code"] = req.body.ulbCode : "";
-
-        if(req.body.populationId){
-            let pop = populationRange.find(f=> f._id == req.body.populationId);
+        let populationCondition = {};
+        if(req.body.populationId || req.query.populationId){
+            let pop = populationRange.find(f=> (f._id == req.body.populationId || f._id == req.query.populationId));
             if(pop){
-                condition["population"] = pop.condition;
+                populationCondition["population"] = pop.condition;
             }
         }
-        let sortBy = {overallIndexScore:-1};
+
         let groupBy = {ulb:"$ulbledgers.ulb",financialYear:"$ulbledgers.financialYear"};
         let data = await Ulb.aggregate([
+            {$match:populationCondition},
             {
                 $lookup:{
                     from:"states",
