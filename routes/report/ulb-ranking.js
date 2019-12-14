@@ -212,11 +212,14 @@ module.exports = async(req, res)=>{
                     "overallIndexScore":{"$sum":[{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.ownRevenuePercentage","$minOwnRevenuePercentage"]},{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]},"$data.financialAccountabilityPercentage"]}
                 }
             },
-            {$sort:sortBy},
+            {$sort:{"overallIndexScore":-1}},
             {
                 $group:{
                     _id:false,
-                    nationalAverageIndexScore:{"$avg":"$overallIndexScore"},
+                    nationalAverageOverallIndexScore:{"$avg":"$overallIndexScore"},
+                    nationalAverageFinancialPerformanceIndexScore:{"$avg":"$financialPerformanceIndexScore"},
+                    nationalAverageFinancialPositionIndexScore:{"$avg":"$financialPositionIndexScore"},
+                    nationalAverageFinancialAccountabilityIndexScore:{"$avg":"$financialAccountabilityIndexScore"},
                     data:{
                         $push :{
                             "maxOwnRevenuePercentage" : "$maxOwnRevenuePercentage",
@@ -258,7 +261,6 @@ module.exports = async(req, res)=>{
                             "financialPositionCollectionEfficiencyIndexScore":"$financialPositionCollectionEfficiencyIndexScore",
                             "financialPositionDebtServiceIndexScore":"$financialPositionDebtServiceIndexScore",
                             "financialPositionIndexScore":"$financialPositionIndexScore",
-
                             "overallIndexScore":"$overallIndexScore"
                         }
                     }
@@ -267,150 +269,200 @@ module.exports = async(req, res)=>{
             {
                 "$unwind": {
                     "path": "$data",
-                    "includeArrayIndex": "nationalRanking"
+                    "includeArrayIndex": "nationalOverallRanking"
+                }
+            },
+            {$sort:{"data.overallIndexScore":-1}},
+            {
+                $addFields: {
+                    "data.nationalAverageOverallIndexScore": "$nationalAverageOverallIndexScore",
+                    "data.nationalAverageFinancialPerformanceIndexScore": "$nationalAverageFinancialPerformanceIndexScore",
+                    "data.nationalAverageFinancialPositionIndexScore": "$nationalAverageFinancialPositionIndexScore",
+                    "data.nationalAverageFinancialAccountabilityIndexScore": "$nationalAverageFinancialAccountabilityIndexScore",
+                    "data.nationalOverallRanking": "$nationalOverallRanking"
                 }
             },
             {
                 $group:{
                     _id : "$data.state._id",
-                    data:{$push:{data:"$data",nationalAverageIndexScore:"$nationalAverageIndexScore", nationalRanking:"$nationalRanking"}}
+
+                    stateAverageOverallIndexScore:{$avg:"$data.overallIndexScore"},
+                    stateAverageFinancialPerformanceIndexScore:{$avg:"$data.financialPerformanceIndexScore"},
+                    stateAverageFinancialPositionIndexScore:{$avg:"$data.financialPositionIndexScore"},
+                    stateAverageFinancialAccountabilityIndexScore:{$avg:"$data.financialAccountabilityIndexScore"},
+
+                    data:{$push:"$data"}
                 }
             },
+            {"$unwind":{"path":"$data","includeArrayIndex":"stateOverallRanking"}},
             {
-                "$unwind": {
-                    "path": "$data",
-                    "includeArrayIndex": "stateRanking"
+                $addFields: {
+                    "data.stateAverageOverallIndexScore": "$stateAverageOverallIndexScore",
+                    "data.stateAverageFinancialPerformanceIndexScore": "$stateAverageFinancialPerformanceIndexScore",
+                    "data.stateAverageFinancialPositionIndexScore": "$stateAverageFinancialPositionIndexScore",
+                    "data.nationalAverageFinancialAccountabilityIndexScore": "$nationalAverageFinancialAccountabilityIndexScore",
+                    "data.stateAverageFinancialAccountabilityIndexScore": "$stateAverageFinancialAccountabilityIndexScore",
+                    "data.stateOverallRanking": "$stateOverallRanking"
                 }
             },
+
+            {$sort:{"data.financialPositionIndexScore":-1}},
+            {$group:{_id:false,data:{$push:"$data"}}},
+            {"$unwind":{"path":"$data","includeArrayIndex":"nationalFinancialPositionRanking"}},
+            {$addFields: {"data.nationalFinancialPositionRanking": "$nationalFinancialPositionRanking"}},
+            {$sort:{"data.financialPositionIndexScore":-1}},
+            {$group:{_id:"$data.state._id",data:{$push:"$data"}}},
+            {"$unwind":{"path":"$data","includeArrayIndex":"stateFinancialPositionRanking"}},
+            {$addFields: {"data.stateFinancialPositionRanking": "$stateFinancialPositionRanking"}},
+
+            {$sort:{"data.financialPerformanceIndexScore":-1}},
+            {$group:{_id:false,data:{$push:"$data"}}},
+            {"$unwind":{"path":"$data","includeArrayIndex":"nationalFinancialPerformanceRanking"}},
+            {$addFields: {"data.nationalFinancialPerformanceRanking": "$nationalFinancialPerformanceRanking"}},
+            {$sort:{"data.financialPerformanceIndexScore":-1}},
+            {$group:{_id:"$data.state._id",data:{$push:"$data"}}},
+            {"$unwind":{"path":"$data","includeArrayIndex":"stateFinancialPerformanceRanking"}},
+            {$addFields: {"data.stateFinancialPerformanceRanking": "$stateFinancialPerformanceRanking"}},
+
+            {$sort:{"data.financialAccountabilityIndexScore":-1}},
+            {$group:{_id : false,data:{$push:"$data"}}},
+            {"$unwind":{"path":"$data","includeArrayIndex": "nationalFinancialAccountabilityRanking"}},
+            {$addFields: {"data.nationalFinancialAccountabilityRanking": "$nationalFinancialAccountabilityRanking"}},
+            {$sort:{"data.financialAccountabilityIndexScore":-1}},
+            {$group:{_id : "$data.state._id",data:{$push:"$data"}}},
+            {"$unwind":{"path":"$data","includeArrayIndex":"stateFinancialAccountabilityRanking"}},
+            {$addFields: {"data.stateFinancialAccountabilityRanking": "$stateFinancialAccountabilityRanking"}},
             {
                 "$group": {
-                    "_id": "$data.data.ulb",
-                    "ulb": {
-                        "$first": "$data.data.ulb"
-                    },
-                    "code": {
-                        "$first": "$data.data.code"
-                    },
-                    "name": {
-                        "$first": "$data.data.name"
-                    },
-                    "nationalRanking": {
-                        "$first": {
-                            "$toInt": {
-                                "$sum": [
-                                    "$data.nationalRanking",
-                                    1
-                                ]
-                            }
-                        }
-                    },
-                    "stateRanking": {
-                        "$first": {
-                            "$toInt": {
-                                "$sum": [
-                                    "$stateRanking",
-                                    1
-                                ]
-                            }
-                        }
-                    },
-                    "ulbType": {
-                        "$first": "$data.data.ulbType"
-                    },
-                    "state": {
-                        "$first": "$data.data.state"
-                    },
-                    "population": {
-                        "$first": "$data.data.population"
-                    },
-                    "area": {
-                        "$first": "$data.data.area"
-                    },
-                    "wards": {
-                        "$first": "$data.data.wards"
-                    },
-                    "natureOfUlb": {
-                        "$first": "$data.data.natureOfUlb"
-                    },
-                    "amrut": {
-                        "$first": "$data.data.amrut"
-                    },
-                    "financialYear": {
-                        "$first": "$data.data.financialYear"
-                    },
-                    "ownRevenue": {
-                        "$avg": "$data.data.ownRevenue"
-                    },
-                    "totalRevenueExpenditure": {
-                        "$avg": "$data.data.totalRevenueExpenditure"
-                    },
-                    "totalDebt": {
-                        "$avg": "$data.data.totalDebt"
-                    },
-                    "totalRevenue": {
-                        "$avg": "$data.data.totalRevenue"
-                    },
-                    "netReceivables": {
-                        "$avg": "$data.data.netReceivables"
-                    },
-                    "debtServicePercentage": {
-                        "$avg": "$data.data.debtServicePercentage"
-                    },
-                    "collectionEfficiencyPercentage": {
-                        "$avg": "$data.data.collectionEfficiencyPercentage"
-                    },
-                    "ownRevenuePercentage": {
-                        "$avg": "$data.data.ownRevenuePercentage"
-                    },
-                    "financialAccountabilityPercentage": {
-                        "$avg": "$data.data.financialAccountabilityPercentage"
-                    },
-                    "financialAccountabilityIndexScore": {
-                        "$avg": "$data.data.financialAccountabilityIndexScore"
-                    },
-                    "financialPerformanceIndexScore": {
-                        "$avg": "$data.data.financialPerformanceIndexScore"
-                    },
-                    "financialPositionCollectionEfficiencyIndexScore": {
-                        "$avg": "$data.data.financialPositionCollectionEfficiencyIndexScore"
-                    },
-                    "financialPositionDebtServiceIndexScore": {
-                        "$avg": "$data.data.financialPositionDebtServiceIndexScore"
-                    },
-                    "financialPositionIndexScore": {
-                        "$avg": "$data.data.financialPositionIndexScore"
-                    },
-                    "overallIndexScore": {
-                        "$avg": "$data.data.overallIndexScore"
-                    },
-                    "nationalAverageIndexScore":{ "$first":{"$toInt": "$data.nationalAverageIndexScore"}},
-                    "maxOwnRevenuePercentage": {
-                        "$avg": "$data.data.maxOwnRevenuePercentage"
-                    },
-                    "minOwnRevenuePercentage": {
-                        "$avg": "$data.data.minOwnRevenuePercentage"
-                    },
-                    "maxCollectionEfficiencyPercentage": {
-                        "$avg": "$data.data.maxCollectionEfficiencyPercentage"
-                    },
-                    "minCollectionEfficiencyPercentage": {
-                        "$avg": "$data.data.minCollectionEfficiencyPercentage"
-                    },
-                    "maxDebtServicePercentage": {
-                        "$avg": "$data.data.maxDebtServicePercentage"
-                    },
-                    "minDebtServicePercentage": {
-                        "$avg": "$data.data.minDebtServicePercentage"
-                    },
-                    "maxFinancialAccountabilityPercentage": {
-                        "$avg": "$data.data.maxFinancialAccountabilityPercentage"
-                    },
-                    "minFinancialAccountabilityPercentage": {
-                        "$avg": "$data.data.minFinancialAccountabilityPercentage"
-                    }
+                    "_id": "$data.ulb",
+                    "ulb": {"$first": "$data.ulb"},
+                    "code": {"$first": "$data.code"},
+                    "name": {"$first": "$data.name"},
+                    "ulbType": {"$first": "$data.ulbType"},
+                    "state": {"$first": "$data.state"},
+                    "population": {"$first": "$data.population"},
+                    "area": {"$first": "$data.area"},
+                    "wards": {"$first": "$data.wards"},
+                    "natureOfUlb": {"$first":"$data.natureOfUlb"},
+                    "amrut":{"$first": "$data.amrut"},
+                    "financialYear":{"$first":"$data.financialYear"},
+                    "ownRevenue":{"$avg":"$data.ownRevenue"},
+                    "totalRevenueExpenditure":{"$avg":"$data.totalRevenueExpenditure"},
+                    "totalDebt":{"$avg":"$data.totalDebt"},
+                    "totalRevenue":{"$avg":"$data.totalRevenue"},
+                    "netReceivables":{"$avg":"$data.netReceivables"},
+                    "debtServicePercentage":{"$avg":"$data.debtServicePercentage"},
+                    "collectionEfficiencyPercentage":{"$avg":"$data.collectionEfficiencyPercentage"},
+                    "ownRevenuePercentage":{"$avg":"$data.ownRevenuePercentage"},
+                    "financialAccountabilityPercentage":{"$avg":"$data.financialAccountabilityPercentage"},
+                    "financialAccountabilityIndexScore":{"$avg":"$data.financialAccountabilityIndexScore"},
+                    "financialPerformanceIndexScore":{"$avg":"$data.financialPerformanceIndexScore"},
+                    "financialPositionCollectionEfficiencyIndexScore":{"$avg":"$data.financialPositionCollectionEfficiencyIndexScore"},
+                    "financialPositionDebtServiceIndexScore":{"$avg":"$data.financialPositionDebtServiceIndexScore"},
+                    "financialPositionIndexScore":{"$avg":"$data.financialPositionIndexScore"},
+                    "overallIndexScore":{"$avg":"$data.overallIndexScore"},
+                    "nationalAverageIndexScore":{"$first":{"$toInt":"$data.nationalAverageIndexScore"}},
+                    "maxOwnRevenuePercentage":{"$avg":"$data.maxOwnRevenuePercentage"},
+                    "minOwnRevenuePercentage":{"$avg":"$data.minOwnRevenuePercentage"},
+                    "maxCollectionEfficiencyPercentage":{"$avg": "$data.maxCollectionEfficiencyPercentage"},
+                    "minCollectionEfficiencyPercentage":{"$avg":"$data.minCollectionEfficiencyPercentage"},
+                    "maxDebtServicePercentage":{"$avg":"$data.maxDebtServicePercentage"},
+                    "minDebtServicePercentage":{"$avg":"$data.minDebtServicePercentage"},
+                    "maxFinancialAccountabilityPercentage":{"$avg":"$data.maxFinancialAccountabilityPercentage"},
+                    "minFinancialAccountabilityPercentage":{"$avg":"$data.minFinancialAccountabilityPercentage"},
+
+                    "nationalOverallRanking": {"$first":{"$toInt":{"$sum":["$data.nationalOverallRanking",1]}}},
+                    "stateOverallRanking": {"$first":{"$toInt":{"$sum":["$data.stateOverallRanking",1]}}},
+
+                    "nationalFinancialPositionRanking": {"$first":{"$toInt":{"$sum":["$data.nationalFinancialPositionRanking",1]}}},
+                    "stateFinancialPositionRanking": {"$first":{"$toInt":{"$sum":["$data.stateFinancialPositionRanking",1]}}},
+
+                    "nationalFinancialPerformanceRanking": {"$first":{"$toInt":{"$sum":["$data.nationalFinancialPerformanceRanking",1]}}},
+                    "stateFinancialPerformanceRanking": {"$first":{"$toInt":{"$sum":["$data.stateFinancialPerformanceRanking",1]}}},
+
+                    "nationalFinancialAccountabilityRanking": {"$first":{"$toInt":{"$sum":["$data.nationalFinancialAccountabilityRanking",1]}}},
+                    "stateFinancialAccountabilityRanking": {"$first":{"$toInt":{"$sum":["$data.stateFinancialAccountabilityRanking",1]}}}
                 }
             },
-            {$sort:sortBy},
+            {
+                $project:{
+                    "_id": "$_id",
+                    "ulb": "$ulb",
+                    "code": "$code",
+                    "name": "$name",
+                    "ulbType": "$ulbType",
+                    "state": "$state",
+                    "population": "$population",
+                    "area": "$area",
+                    "wards": "$wards",
+                    "natureOfUlb": "$natureOfUlb",
+                    "amrut": "$amrut",
+                    "financialYear": "$financialYear",
+                    "ownRevenue": "$ownRevenue",
+                    "totalRevenueExpenditure": "$totalRevenueExpenditure",
+                    "totalDebt": "$totalDebt",
+                    "totalRevenue": "$totalRevenue",
+                    "netReceivables": "$netReceivables",
+                    "debtServicePercentage": "$debtServicePercentage",
+                    "collectionEfficiencyPercentage": "$collectionEfficiencyPercentage",
+                    "ownRevenuePercentage": "$ownRevenuePercentage",
+                    "financialAccountabilityPercentage": "$financialAccountabilityPercentage",
+                    "financialAccountabilityIndexScore": "$financialAccountabilityIndexScore",
+                    "financialPerformanceIndexScore": "$financialPerformanceIndexScore",
+                    "financialPositionCollectionEfficiencyIndexScore": "$financialPositionCollectionEfficiencyIndexScore",
+                    "financialPositionDebtServiceIndexScore": "$financialPositionDebtServiceIndexScore",
+                    "financialPositionIndexScore": "$financialPositionIndexScore",
+                    "overallIndexScore": "$overallIndexScore",
+                    "nationalAverageIndexScore": "$nationalAverageIndexScore",
+                    "maxOwnRevenuePercentage": "$maxOwnRevenuePercentage",
+                    "minOwnRevenuePercentage": "$minOwnRevenuePercentage",
+                    "maxCollectionEfficiencyPercentage": "$maxCollectionEfficiencyPercentage",
+                    "minCollectionEfficiencyPercentage": "$minCollectionEfficiencyPercentage",
+                    "maxDebtServicePercentage": "$maxDebtServicePercentage",
+                    "minDebtServicePercentage": "$minDebtServicePercentage",
+                    "maxFinancialAccountabilityPercentage": "$maxFinancialAccountabilityPercentage",
+                    "minFinancialAccountabilityPercentage": "$minFinancialAccountabilityPercentage",
+                    "financialParameters": "$financialParameters",
+                    "nationalOverallRanking": "$nationalOverallRanking",
+                    "stateOverallRanking": "$stateOverallRanking",
+                    "nationalFinancialPositionRanking": "$nationalFinancialPositionRanking",
+                    "stateFinancialPositionRanking": "$stateFinancialPositionRanking",
+                    "nationalFinancialPerformanceRanking": "$nationalFinancialPerformanceRanking",
+                    "stateFinancialPerformanceRanking": "$stateFinancialPerformanceRanking",
+                    "nationalFinancialAccountabilityRanking": "$nationalFinancialAccountabilityRanking",
+                    "stateFinancialAccountabilityRanking": "$stateFinancialAccountabilityRanking",
+                    "financialParameters":[
+                        {
+                            "type":"Overall",
+                            "nationalRank": "$nationalOverallRanking",
+                            "stateRank": "$stateOverallRanking",
+                            "indexScore":"$overallIndexScore"
+
+                        },
+                        {
+                            "type":"Financial Accountability",
+                            "nationalRank": "$nationalFinancialAccountabilityRanking",
+                            "stateRank": "$stateFinancialAccountabilityRanking",
+                            "indexScore":"$financialAccountabilityIndexScore"
+                        },
+                        {
+                            "type":"Financial performance",
+                            "nationalRank": "$nationalFinancialPerformanceRanking",
+                            "stateRank": "$stateFinancialPerformanceRanking",
+                            "indexScore":"$financialPerformanceIndexScore"
+
+                        },
+                        {
+                            "type":"Financial position",
+                            "nationalRank": "$nationalFinancialPositionRanking",
+                            "stateRank": "$stateFinancialPositionRanking",
+                            "indexScore":"$financialPositionIndexScore"
+                        }
+                    ]
+
+                }
+            },
+            {$sort:{"nationalOverallRanking":1}},
             {$match:condition}
         ]);
         return res.status(200).json({
