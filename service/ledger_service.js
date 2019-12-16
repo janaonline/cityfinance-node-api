@@ -5,7 +5,7 @@ const _helper = require('../_helper/ledger_helper');
 var multer = require('multer');
 var xlstojson = require("xls-to-json-lc");
 var xlsxtojson = require("xlsx-to-json-lc");
-
+const moment = require("moment");
 module.exports.entry = function (req, res) {
 
     var exceltojson;
@@ -463,7 +463,59 @@ module.exports.getAllLegders = function (req, res) {
         });
     });
 };
+module.exports.getAllLegder = function (req, res) {
 
+    let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
+
+	// Set approrpiate download headers
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+	res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("ULB Code, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
+	// Flush the headers before we start pushing the CSV content
+    res.flushHeaders();
+    
+    ledgerModel.aggregate([
+        {$unwind:"$budget"},
+        {$group:{
+                _id:{
+                ulb_code:"$ulb_code",
+                code : "$code",
+                line_item:"$line_item",
+                budgetYr:"$budget.year",  
+                head_of_account:"$head_of_account"
+                },
+                amount:{$push:"$budget.amount"},
+                sum:{$sum:1}
+            }
+        },
+        {$project:{
+                _id:0,
+            ulb_code:"$_id.ulb_code",
+            code : "$_id.code",
+            line_item:"$_id.line_item",
+            budgetYr:"$_id.budgetYr", 
+            amount:1,
+            head_of_account:"$_id.head_of_account"
+            }
+        }
+    ]).exec((err,data)=>{
+        if(err){
+            res.json({
+                success: false,
+                msg: 'Invalid Payload',
+                data: err.toString()
+            });
+        }else{
+            for(let el of data){
+                el.line_item = el.line_item ? el.line_item.toString().replace(/[,]/g, ' | ') : ""
+                let len = el.amount.length
+                el.budgetAm = el.amount[len-1]
+                res.write(el.ulb_code+","+el.head_of_account+","+el.code+","+el.line_item+","+el.budgetYr+","+el.budgetAm+"\r\n");
+            }
+            res.end()
+        }
+    });
+};
 
 module.exports.getAggregate = function (req, res) {
     
