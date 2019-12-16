@@ -24,7 +24,7 @@ module.exports = async(req, res)=>{
         let populationCondition = {};
         if(req.body.populationId || req.query.populationId){
             let pop = populationRange.find(f=> (f._id == req.body.populationId || f._id == req.query.populationId));
-            if(pop){
+            if(pop && Object.keys(pop.condition).length){
                 populationCondition["population"] = pop.condition;
             }
         }
