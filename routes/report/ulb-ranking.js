@@ -221,10 +221,19 @@ module.exports = async(req, res)=>{
             {
                 $group:{
                     _id:false,
+
                     nationalAverageOverallIndexScore:{"$avg":"$overallIndexScore"},
                     nationalAverageFinancialPerformanceIndexScore:{"$avg":"$financialPerformanceIndexScore"},
+                    nationalAverageFinancialPositionDebtServiceIndexScore:{"$avg":"$financialPositionDebtServiceIndexScore"},
+                    nationalAverageFinancialPositionCollectionEfficiencyIndexScore:{"$avg":"$financialPositionCollectionEfficiencyIndexScore"},
                     nationalAverageFinancialPositionIndexScore:{"$avg":"$financialPositionIndexScore"},
                     nationalAverageFinancialAccountabilityIndexScore:{"$avg":"$financialAccountabilityIndexScore"},
+
+                    nationalAverageDebtServicePercentage:{"$avg":"$debtServicePercentage"},
+                    nationalAverageCollectionEfficiencyPercentage:{"$avg":"$collectionEfficiencyPercentage"},
+                    nationalAverageOwnRevenuePercentage:{"$avg":"$ownRevenuePercentage"},
+                    nationalAverageFinancialAccountabilityPercentage:{"$avg":"$financialAccountabilityPercentage"},
+
                     data:{
                         $push :{
                             "maxOwnRevenuePercentage" : "$maxOwnRevenuePercentage",
@@ -282,9 +291,18 @@ module.exports = async(req, res)=>{
                 $addFields: {
                     "data.nationalAverageOverallIndexScore": "$nationalAverageOverallIndexScore",
                     "data.nationalAverageFinancialPerformanceIndexScore": "$nationalAverageFinancialPerformanceIndexScore",
+                    "data.nationalAverageFinancialPositionDebtServiceIndexScore": "$nationalAverageFinancialPositionDebtServiceIndexScore",
+                    "data.nationalAverageFinancialPositionCollectionEfficiencyIndexScore": "$nationalAverageFinancialPositionCollectionEfficiencyIndexScore",
                     "data.nationalAverageFinancialPositionIndexScore": "$nationalAverageFinancialPositionIndexScore",
                     "data.nationalAverageFinancialAccountabilityIndexScore": "$nationalAverageFinancialAccountabilityIndexScore",
-                    "data.nationalOverallRanking": "$nationalOverallRanking"
+
+
+                    "data.nationalOverallRanking": "$nationalOverallRanking",
+
+                    "data.nationalAverageDebtServicePercentage": "$nationalAverageDebtServicePercentage",
+                    "data.nationalAverageCollectionEfficiencyPercentage": "$nationalAverageCollectionEfficiencyPercentage",
+                    "data.nationalAverageOwnRevenuePercentage": "$nationalAverageOwnRevenuePercentage",
+                    "data.nationalAverageFinancialAccountabilityPercentage": "$nationalAverageFinancialAccountabilityPercentage"
                 }
             },
             {
@@ -296,6 +314,10 @@ module.exports = async(req, res)=>{
                     stateAverageFinancialPositionIndexScore:{$avg:"$data.financialPositionIndexScore"},
                     stateAverageFinancialAccountabilityIndexScore:{$avg:"$data.financialAccountabilityIndexScore"},
 
+                    stateAverageDebtServicePercentage:{$avg:"$data.debtServicePercentage"},
+                    stateAverageCollectionEfficiencyPercentage:{$avg:"$data.collectionEfficiencyPercentage"},
+                    stateAverageOwnRevenuePercentage:{$avg:"$data.ownRevenuePercentage"},
+                    stateAverageFinancialAccountabilityPercentage:{$avg:"$data.financialAccountabilityPercentage"},
                     data:{$push:"$data"}
                 }
             },
@@ -305,8 +327,13 @@ module.exports = async(req, res)=>{
                     "data.stateAverageOverallIndexScore": "$stateAverageOverallIndexScore",
                     "data.stateAverageFinancialPerformanceIndexScore": "$stateAverageFinancialPerformanceIndexScore",
                     "data.stateAverageFinancialPositionIndexScore": "$stateAverageFinancialPositionIndexScore",
-                    "data.nationalAverageFinancialAccountabilityIndexScore": "$nationalAverageFinancialAccountabilityIndexScore",
                     "data.stateAverageFinancialAccountabilityIndexScore": "$stateAverageFinancialAccountabilityIndexScore",
+
+                    "data.stateAverageDebtServicePercentage": "$stateAverageDebtServicePercentage",
+                    "data.stateAverageCollectionEfficiencyPercentage": "$stateAverageCollectionEfficiencyPercentage",
+                    "data.stateAverageOwnRevenuePercentage": "$stateAverageOwnRevenuePercentage",
+                    "data.stateAverageFinancialAccountabilityPercentage": "$stateAverageFinancialAccountabilityPercentage",
+
                     "data.stateOverallRanking": "$stateOverallRanking"
                 }
             },
@@ -376,6 +403,29 @@ module.exports = async(req, res)=>{
                     "maxFinancialAccountabilityPercentage":{"$avg":"$data.maxFinancialAccountabilityPercentage"},
                     "minFinancialAccountabilityPercentage":{"$avg":"$data.minFinancialAccountabilityPercentage"},
 
+                    "stateAverageDebtServicePercentage": {"$first":"$data.stateAverageDebtServicePercentage"},
+                    "stateAverageCollectionEfficiencyPercentage": {"$first":"$data.stateAverageCollectionEfficiencyPercentage"},
+                    "stateAverageOwnRevenuePercentage": {"$first":"$data.stateAverageOwnRevenuePercentage"},
+                    "stateAverageFinancialAccountabilityPercentage": {"$first":"$data.stateAverageFinancialAccountabilityPercentage"},
+
+                    "nationalAverageDebtServicePercentage": {"$first":"$data.nationalAverageDebtServicePercentage"},
+                    "nationalAverageCollectionEfficiencyPercentage": {"$first":"$data.nationalAverageCollectionEfficiencyPercentage"},
+                    "nationalAverageOwnRevenuePercentage": {"$first":"$data.nationalAverageOwnRevenuePercentage"},
+                    "nationalAverageFinancialAccountabilityPercentage": {"$first":"$data.nationalAverageFinancialAccountabilityPercentage"},
+
+                    "nationalAverageOverallIndexScore": {"$first":"$data.nationalAverageOverallIndexScore"},
+
+                    "nationalAverageFinancialPerformanceIndexScore":{"$first": "$data.nationalAverageFinancialPerformanceIndexScore"},
+                    "nationalAverageFinancialPositionDebtServiceIndexScore": {"$first":"$data.nationalAverageFinancialPositionDebtServiceIndexScore"},
+                    "nationalAverageFinancialPositionCollectionEfficiencyIndexScore": {"$first":"$data.nationalAverageFinancialPositionCollectionEfficiencyIndexScore"},
+                    "nationalAverageFinancialPositionIndexScore": {"$first":"$data.nationalAverageFinancialPositionIndexScore"},
+                    "nationalAverageFinancialAccountabilityIndexScore": {"$first":"$data.nationalAverageFinancialAccountabilityIndexScore"},
+
+                    "stateAverageOverallIndexScore": {"$first":"$data.stateAverageOverallIndexScore"},
+                    "stateAverageFinancialPerformanceIndexScore":{"$first": "$data.stateAverageFinancialPerformanceIndexScore"},
+                    "stateAverageFinancialPositionIndexScore": {"$first":"$data.stateAverageFinancialPositionIndexScore"},
+                    "stateAverageFinancialAccountabilityIndexScore": {"$first":"$data.stateAverageFinancialAccountabilityIndexScore"},
+
                     "nationalOverallRanking": {"$first":{"$toInt":{"$sum":["$data.nationalOverallRanking",1]}}},
                     "stateOverallRanking": {"$first":{"$toInt":{"$sum":["$data.stateOverallRanking",1]}}},
 
@@ -418,7 +468,7 @@ module.exports = async(req, res)=>{
                     "financialPositionDebtServiceIndexScore": "$financialPositionDebtServiceIndexScore",
                     "financialPositionIndexScore": "$financialPositionIndexScore",
                     "overallIndexScore": "$overallIndexScore",
-                    "nationalAverageIndexScore": "$nationalAverageIndexScore",
+                    "nationalAverageIndexScore": "$nationalAverageOverallIndexScore",
                     "maxOwnRevenuePercentage": "$maxOwnRevenuePercentage",
                     "minOwnRevenuePercentage": "$minOwnRevenuePercentage",
                     "maxCollectionEfficiencyPercentage": "$maxCollectionEfficiencyPercentage",
@@ -435,6 +485,30 @@ module.exports = async(req, res)=>{
                     "stateFinancialPerformanceRanking": "$stateFinancialPerformanceRanking",
                     "nationalFinancialAccountabilityRanking": "$nationalFinancialAccountabilityRanking",
                     "stateFinancialAccountabilityRanking": "$stateFinancialAccountabilityRanking",
+
+                    "stateAverageDebtServicePercentage":"$stateAverageDebtServicePercentage",
+                    "stateAverageCollectionEfficiencyPercentage":"$stateAverageCollectionEfficiencyPercentage",
+                    "stateAverageOwnRevenuePercentage":"$stateAverageOwnRevenuePercentage",
+                    "stateAverageFinancialAccountabilityPercentage":"$stateAverageFinancialAccountabilityPercentage",
+
+                    "nationalAverageDebtServicePercentage":"$nationalAverageDebtServicePercentage",
+                    "nationalAverageCollectionEfficiencyPercentage":"$nationalAverageCollectionEfficiencyPercentage",
+                    "nationalAverageOwnRevenuePercentage":"$nationalAverageOwnRevenuePercentage",
+                    "nationalAverageFinancialAccountabilityPercentage":"$nationalAverageFinancialAccountabilityPercentage",
+
+                    "nationalAverageOverallIndexScore":"$nationalAverageOverallIndexScore",
+                    "nationalAverageFinancialPerformanceIndexScore":"$nationalAverageFinancialPerformanceIndexScore",
+                    "nationalAverageFinancialPositionDebtServiceIndexScore":"$nationalAverageFinancialPositionDebtServiceIndexScore",
+                    "nationalAverageFinancialPositionCollectionEfficiencyIndexScore":"$nationalAverageFinancialPositionCollectionEfficiencyIndexScore",
+                    "nationalAverageFinancialPositionIndexScore":"$nationalAverageFinancialPositionIndexScore",
+                    "nationalAverageFinancialAccountabilityIndexScore":"$nationalAverageFinancialAccountabilityIndexScore",
+
+                    "stateAverageOverallIndexScore":"$stateAverageOverallIndexScore",
+                    "stateAverageFinancialPerformanceIndexScore":"$stateAverageFinancialPerformanceIndexScore",
+                    "stateAverageFinancialPositionIndexScore":"$stateAverageFinancialPositionIndexScore",
+                    "stateAverageFinancialAccountabilityIndexScore":"$stateAverageFinancialAccountabilityIndexScore",
+
+
                     "financialParameters":[
                         {
                             "type":"Overall",
@@ -444,36 +518,36 @@ module.exports = async(req, res)=>{
                             "report":[
                                 {
                                     "name":"Availability of Financial Inormation",
-                                    "ratio":{"$concat":[{"$toString":"$financialAccountabilityPercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$financialAccountabilityPercentage",
+                                    "nationalAvgRatio":"$nationalAverageFinancialAccountabilityPercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialAccountabilityIndexScore",
                                     "indexScore":"$financialAccountabilityIndexScore",
                                     "nationalRank":"$nationalFinancialAccountabilityRanking",
                                     "stateRank":"$stateFinancialAccountabilityRanking"
                                 },
                                 {
                                     "name":"Own Revenue %",
-                                    "ratio":{"$concat":[{"$toString":"$ownRevenuePercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$ownRevenuePercentage",
+                                    "nationalAvgRatio":"$nationalAverageOwnRevenuePercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialPerformanceIndexScore",
                                     "indexScore":"$financialPerformanceIndexScore",
                                     "nationalRank":"$nationalFinancialPerformanceRanking",
                                     "stateRank":"$stateFinancialPerformanceRanking"
                                 },
                                 {
                                     "name":"Collection Efficiency %",
-                                    "ratio":{"$concat":[{"$toString":"$collectionEfficiencyPercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$collectionEfficiencyPercentage",
+                                    "nationalAvgRatio":"$nationalAverageCollectionEfficiencyPercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialPositionCollectionEfficiencyIndexScore",
                                     "indexScore":"$financialPositionCollectionEfficiencyIndexScore",
                                     "nationalRank":"$nationalFinancialPositionRanking",
                                     "stateRank":"$stateFinancialPositionRanking"
                                 },
                                 {
                                     "name":"Debt Service Ratio %",
-                                    "ratio":{"$concat":[{"$toString":"$debtServicePercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$debtServicePercentage",
+                                    "nationalAvgRatio":"$nationalAverageDebtServicePercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialPositionDebtServiceIndexScore",
                                     "indexScore":"$financialPositionDebtServiceIndexScore",
                                     "nationalRank":"$nationalFinancialPositionRanking",
                                     "stateRank":"$stateFinancialPositionRanking"
@@ -488,9 +562,9 @@ module.exports = async(req, res)=>{
                             "report":[
                                 {
                                     "name":"Availability of Financial Inormation",
-                                    "ratio":{"$concat":[{"$toString":"$financialAccountabilityPercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$financialAccountabilityPercentage",
+                                    "nationalAvgRatio":"$nationalAverageFinancialAccountabilityPercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialAccountabilityIndexScore",
                                     "indexScore":"$financialAccountabilityIndexScore",
                                     "nationalRank":"$nationalFinancialAccountabilityRanking",
                                     "stateRank":"$stateFinancialAccountabilityRanking"
@@ -505,9 +579,9 @@ module.exports = async(req, res)=>{
                             "report":[
                                 {
                                     "name":"Own Revenue %",
-                                    "ratio":{"$concat":[{"$toString":"$ownRevenuePercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$ownRevenuePercentage",
+                                    "nationalAvgRatio":"$nationalAverageOwnRevenuePercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialPerformanceIndexScore",
                                     "indexScore":"$financialPerformanceIndexScore",
                                     "nationalRank":"$nationalFinancialPerformanceRanking",
                                     "stateRank":"$stateFinancialPerformanceRanking"
@@ -523,18 +597,18 @@ module.exports = async(req, res)=>{
                             "report":[
                                 {
                                     "name":"Collection Efficiency %",
-                                    "ratio":{"$concat":[{"$toString":"$collectionEfficiencyPercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$collectionEfficiencyPercentage",
+                                    "nationalAvgRatio":"$nationalAverageCollectionEfficiencyPercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialPositionCollectionEfficiencyIndexScore",
                                     "indexScore":"$financialPositionCollectionEfficiencyIndexScore",
                                     "nationalRank":"$nationalFinancialPositionRanking",
                                     "stateRank":"$stateFinancialPositionRanking"
                                 },
                                 {
                                     "name":"Debt Service Ratio %",
-                                    "ratio":{"$concat":[{"$toString":"$debtServicePercentage"},"%"]},
-                                    "nationalAvgRatio":"NA",
-                                    "nationalAvgIndexScore":"NA",
+                                    "ratio":"$debtServicePercentage",
+                                    "nationalAvgRatio":"$nationalAverageDebtServicePercentage",
+                                    "nationalAvgIndexScore":"$nationalAverageFinancialPositionDebtServiceIndexScore",
                                     "indexScore":"$financialPositionDebtServiceIndexScore",
                                     "nationalRank":"$nationalFinancialPositionRanking",
                                     "stateRank":"$stateFinancialPositionRanking"
