@@ -427,7 +427,6 @@ module.exports = async(req, res)=>{
                     "minDebtServicePercentage": "$minDebtServicePercentage",
                     "maxFinancialAccountabilityPercentage": "$maxFinancialAccountabilityPercentage",
                     "minFinancialAccountabilityPercentage": "$minFinancialAccountabilityPercentage",
-                    "financialParameters": "$financialParameters",
                     "nationalOverallRanking": "$nationalOverallRanking",
                     "stateOverallRanking": "$stateOverallRanking",
                     "nationalFinancialPositionRanking": "$nationalFinancialPositionRanking",
@@ -441,27 +440,106 @@ module.exports = async(req, res)=>{
                             "type":"Overall",
                             "nationalRank": "$nationalOverallRanking",
                             "stateRank": "$stateOverallRanking",
-                            "indexScore":"$overallIndexScore"
-
+                            "indexScore":"$overallIndexScore",
+                            "report":[
+                                {
+                                    "name":"Availability of Financial Inormation",
+                                    "ratio":{"$concat":[{"$toString":"$financialAccountabilityPercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialAccountabilityIndexScore",
+                                    "nationalRank":"$nationalFinancialAccountabilityRanking",
+                                    "stateRank":"$stateFinancialAccountabilityRanking"
+                                },
+                                {
+                                    "name":"Own Revenue %",
+                                    "ratio":{"$concat":[{"$toString":"$ownRevenuePercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialPerformanceIndexScore",
+                                    "nationalRank":"$nationalFinancialPerformanceRanking",
+                                    "stateRank":"$stateFinancialPerformanceRanking"
+                                },
+                                {
+                                    "name":"Collection Efficiency %",
+                                    "ratio":{"$concat":[{"$toString":"$collectionEfficiencyPercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialPositionCollectionEfficiencyIndexScore",
+                                    "nationalRank":"$nationalFinancialPositionRanking",
+                                    "stateRank":"$stateFinancialPositionRanking"
+                                },
+                                {
+                                    "name":"Debt Service Ratio %",
+                                    "ratio":{"$concat":[{"$toString":"$debtServicePercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialPositionDebtServiceIndexScore",
+                                    "nationalRank":"$nationalFinancialPositionRanking",
+                                    "stateRank":"$stateFinancialPositionRanking"
+                                }
+                            ]
                         },
                         {
                             "type":"Financial Accountability",
                             "nationalRank": "$nationalFinancialAccountabilityRanking",
                             "stateRank": "$stateFinancialAccountabilityRanking",
-                            "indexScore":"$financialAccountabilityIndexScore"
+                            "indexScore":"$financialAccountabilityIndexScore",
+                            "report":[
+                                {
+                                    "name":"Availability of Financial Inormation",
+                                    "ratio":{"$concat":[{"$toString":"$financialAccountabilityPercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialAccountabilityIndexScore",
+                                    "nationalRank":"$nationalFinancialAccountabilityRanking",
+                                    "stateRank":"$stateFinancialAccountabilityRanking"
+                                }
+                            ]
                         },
                         {
                             "type":"Financial performance",
                             "nationalRank": "$nationalFinancialPerformanceRanking",
                             "stateRank": "$stateFinancialPerformanceRanking",
-                            "indexScore":"$financialPerformanceIndexScore"
+                            "indexScore":"$financialPerformanceIndexScore",
+                            "report":[
+                                {
+                                    "name":"Own Revenue %",
+                                    "ratio":{"$concat":[{"$toString":"$ownRevenuePercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialPerformanceIndexScore",
+                                    "nationalRank":"$nationalFinancialPerformanceRanking",
+                                    "stateRank":"$stateFinancialPerformanceRanking"
+                                }
+                            ]
 
                         },
                         {
                             "type":"Financial position",
                             "nationalRank": "$nationalFinancialPositionRanking",
                             "stateRank": "$stateFinancialPositionRanking",
-                            "indexScore":"$financialPositionIndexScore"
+                            "indexScore":"$financialPositionIndexScore",
+                            "report":[
+                                {
+                                    "name":"Collection Efficiency %",
+                                    "ratio":{"$concat":[{"$toString":"$collectionEfficiencyPercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialPositionCollectionEfficiencyIndexScore",
+                                    "nationalRank":"$nationalFinancialPositionRanking",
+                                    "stateRank":"$stateFinancialPositionRanking"
+                                },
+                                {
+                                    "name":"Debt Service Ratio %",
+                                    "ratio":{"$concat":[{"$toString":"$debtServicePercentage"},"%"]},
+                                    "nationalAvgRatio":"NA",
+                                    "nationalAvgIndexScore":"NA",
+                                    "indexScore":"$financialPositionDebtServiceIndexScore",
+                                    "nationalRank":"$nationalFinancialPositionRanking",
+                                    "stateRank":"$stateFinancialPositionRanking"
+                                }
+                            ]
                         }
                     ]
 
