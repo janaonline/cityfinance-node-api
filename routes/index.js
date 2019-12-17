@@ -41,8 +41,8 @@ router.get('/LineItem', passport.authenticate('jwt', {session: false}), LineItem
 router.put('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.put);
 router.post('/LineItem', passport.authenticate('jwt', {session: false}), LineItem.post);
 router.delete('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.delete);
-const finacialParamsRoutes = require("./ulb/route");
-router.use("/financial-parameter",finacialParamsRoutes);
+const UlbRoutes = require("./ulb/route");
+router.use("/ulblist",UlbRoutes);
 
 const ReportRoutes = require("../routes/report/route");
 router.use("/report",ReportRoutes);
