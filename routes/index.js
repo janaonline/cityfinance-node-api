@@ -1,6 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
 
+//Define where project photos will be stored
+const storage = multer.diskStorage({
+    destination: function (request, file, callback) {
+        callback(null, 'uploads');
+    },
+    filename: function (request, file, callback) {
+        console.log(file);
+        callback(null, file.originalname)
+    }
+});
+const multerUpload = multer({ storage: storage });
+/*
+* END MULTER
+*/
 const passport = require('passport');
 const userService = require('../service/user_service');
 const Constants = require('../_helper/constants');
@@ -29,6 +44,8 @@ router.delete('/Ulb/:_id', passport.authenticate('jwt', {session: false}), Ulb.d
 router.post('/bulk/ulb-upload',(req, res, next) => {
     ulbUploadService.create(req, res);
 });
+const ledgerUpload = require("./ledger/upload_ledger");
+router.post("/uploadLedger",multerUpload.single('csv'),ledgerUpload);
 
 const BulkUpload = require("./bulk-upload");
 router.post("/getS3Url", BulkUpload.S3Url);
@@ -41,6 +58,7 @@ router.get('/LineItem', passport.authenticate('jwt', {session: false}), LineItem
 router.put('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.put);
 router.post('/LineItem', passport.authenticate('jwt', {session: false}), LineItem.post);
 router.delete('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.delete);
+
 const UlbRoutes = require("./ulb/route");
 router.use("/ulblist",UlbRoutes);
 

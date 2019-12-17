@@ -8,8 +8,7 @@ const dotenv = require('dotenv').config({path: path.join(__dirname, ".env")});
 const config = require('./config/app_config');
 const logger = require('morgan');
 const app = express();
-
-
+require("./initialization/initialize")();
 
 //Port Number
 const port = config.APP.PORT;
