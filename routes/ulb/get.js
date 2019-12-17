@@ -1,12 +1,12 @@
 const moment =require("moment");
-const FinancialParameter = require("../../models/Schema/FinancialParameter");
+const Ulb = require("../../models/Schema/Ulb");
 module.exports.get = async(req,res, next)=>{
     try{
-        let data = await FinancialParameter.find({}).exec();
+        let data = await Ulb.find({},"_id name code state ulbType").populate("state","_id name").populate("ulbType","_id name").exec();
         return res.status(200).json({
             timestamp:moment().unix(),
             success:true,
-            message:"FinancialParameter list",
+            message:"Ulb list",
             data:data
         });
     }catch (e) {
@@ -14,17 +14,17 @@ module.exports.get = async(req,res, next)=>{
         return res.status(500).json({
             timestamp:moment().unix(),
             success:true,
-            message:"FinancialParameter Exception:"+e.message
+            message:"Ulb Exception:"+e.message
         });
     }
 };
 module.exports.getById = async(req,res, next)=>{
     try{
-        let data = await FinancialParameter.find({_id : req.params.id}).exec();
+        let data = await Ulb.find({_id : req.params.id}, "_id name code state ulbType").populate("state","_id name").populate("ulbType","_id name").exec();
         return res.status(200).json({
             timestamp:moment().unix(),
             success:true,
-            message:"FinancialParameter list",
+            message:"Ulb list",
             data:data
         });
     }catch (e) {
@@ -32,7 +32,7 @@ module.exports.getById = async(req,res, next)=>{
         return res.status(500).json({
             timestamp:moment().unix(),
             success:true,
-            message:"FinancialParameter Exception:"+e.message
+            message:"Ulb Exception:"+e.message
         });
     }
 };

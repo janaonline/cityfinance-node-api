@@ -1,13 +1,12 @@
 const moment =require("moment");
-const FinancialParameter = require("../../models/Schema/FinancialParameter");
+const Ulb = require("../../models/Schema/Ulb");
 module.exports = async(req,res, next)=>{
     try{
-        let financialParameter = new FinancialParameter(req.body);
-        let data = await financialParameter.save();
+        let data = await Ulb.remove({_id : req.params._id}).exec();
         return res.status(200).json({
             timestamp:moment().unix(),
             success:true,
-            message:"FinancialParameter saved",
+            message:"Ulb removed",
             data:data
         });
     }catch (e) {
@@ -15,7 +14,7 @@ module.exports = async(req,res, next)=>{
         return res.status(500).json({
             timestamp:moment().unix(),
             success:true,
-            message:"FinancialParameter Exception:"+e.message
+            message:"Ulb Exception:"+e.message
         });
     }
 };
