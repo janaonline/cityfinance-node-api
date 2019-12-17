@@ -16,10 +16,10 @@ module.exports = async(req, res)=>{
             finYears = req.body.financialYear;
         }
         let condition = {};
-        req.query.ulbId ? condition["ulb"] = req.query.ulbId : "";
+        req.query.ulbId ? condition["ulb"] = ObjectId(req.query.ulbId) : "";
         req.query.ulbCode ? condition["code"] = req.query.ulbCode : "";
 
-        req.body.ulbId ? condition["ulb"] = req.body.ulbId : "";
+        req.body.ulbId ? condition["ulb"] = ObjectId(req.body.ulbId) : "";
         req.body.ulbCode ? condition["code"] = req.body.ulbCode : "";
         let populationCondition = {};
         if(req.body.populationId || req.query.populationId){
@@ -28,7 +28,7 @@ module.exports = async(req, res)=>{
                 populationCondition["population"] = pop.condition;
             }
         }
-
+        console.log("condition",condition);
         let groupBy = {ulb:"$ulbledgers.ulb",financialYear:"$ulbledgers.financialYear"};
         let data = await Ulb.aggregate([
             {$match:populationCondition},
