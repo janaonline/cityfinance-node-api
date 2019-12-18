@@ -132,10 +132,12 @@ module.exports = async(req, res)=>{
                     debtServicePercentage: {$multiply:[{$cond: [{ $eq: [ "$totalDebt", 0 ] }, 0, {"$divide":[{ $subtract:["$totalRevenue","$totalRevenueExpenditure"]}, "$totalDebt"]} ] },100]},
                     collectionEfficiencyPercentage: {$multiply:[{$cond: [{ $eq:[ "$ownRevenue", 0 ] }, 0, {"$divide":["$netReceivables", "$ownRevenue"]} ] },100]},
                     ownRevenuePercentage:{$multiply:[{$cond:[{$eq:["$totalRevenueExpenditure",0]},0,{"$divide":["$ownRevenue","$totalRevenueExpenditure"]}]},100]},
-                    financialAccountabilityPercentage:{"$multiply":[{"$divide":[{"$sum":["$auditReport","$balanceSheet","$incomeEpenditure","$notesToAccounts",{"$cond":[{"$or":[{"$gt":["$schedule",0]},{"$gt":["$trialBalance",0]}]},200,0]}]},600]},100]},
+                    financialAccountabilityPercentage:{"$multiply":[{"$divide":[{"$sum":["$auditReport","$balanceSheet","$incomeEpenditure","$notesToAccounts",{"$cond":[{"$or":[{"$gt":["$schedule",0]},{"$gt":["$trialBalance",0]}]},200,0]}]},1000]},100]},
                     financialAccountabilityIndexScore:{"$sum":["$auditReport","$balanceSheet","$incomeEpenditure","$notesToAccounts",{"$cond":[{"$or":[{"$gt":["$schedule",0]},{"$gt":["$trialBalance",0]}]},200,0]}]}
                 }
             },
+
+
             {
                 $group:{
                     _id:"$financialYear",
@@ -176,6 +178,49 @@ module.exports = async(req, res)=>{
                             ownRevenuePercentage:"$ownRevenuePercentage",
                             financialAccountabilityPercentage:"$financialAccountabilityPercentage",
                             financialAccountabilityIndexScore:"$financialAccountabilityIndexScore"
+                        }
+                    }
+                }
+            },
+            {$unwind:"$data"},
+            {
+                $group:{
+                    _id : {"ulb":"$data.ulb", "financialYear":"$data.financialYear"},
+                    "maxOwnRevenuePercentage" : {"$first":"$maxOwnRevenuePercentage"},
+                    "minOwnRevenuePercentage" : {"$first":"$minOwnRevenuePercentage"},
+
+                    "maxCollectionEfficiencyPercentage" : {"$first":"$maxCollectionEfficiencyPercentage"},
+                    "minCollectionEfficiencyPercentage" : {"$first":"$minCollectionEfficiencyPercentage"},
+
+                    "maxDebtServicePercentage" : {"$first":"$maxDebtServicePercentage"},
+                    "minDebtServicePercentage" : {"$first":"$minDebtServicePercentage"},
+
+                    "maxFinancialAccountabilityPercentage" : {"$first":"$maxFinancialAccountabilityPercentage"},
+                    "minFinancialAccountabilityPercentage" : {"$first":"$minFinancialAccountabilityPercentage"},
+                    "data" : {
+                        $push : {
+                            state:"$data.state",
+                            ulb:"$data.ulb",
+                            code:"$data.code",
+                            name:"$data.name",
+                            ulbType:"$data.ulbType",
+                            population:"$data.population",
+                            area:"$data.area",
+                            wards:"$data.wards",
+                            natureOfUlb:"$data.natureOfUlb",
+                            amrut:"$data.amrut",
+                            financialYear:"$data.financialYear",
+                            ownRevenue:"$data.ownRevenue",
+                            totalRevenueExpenditure:"$data.totalRevenueExpenditure",
+                            totalDebt:"$data.totalDebt",
+                            totalRevenue:"$data.totalRevenue",
+                            netReceivables:"$data.netReceivables",
+
+                            debtServicePercentage:"$data.debtServicePercentage",
+                            collectionEfficiencyPercentage:"$data.collectionEfficiencyPercentage",
+                            ownRevenuePercentage:"$data.ownRevenuePercentage",
+                            financialAccountabilityPercentage:"$data.financialAccountabilityPercentage",
+                            financialAccountabilityIndexScore:"$data.financialAccountabilityIndexScore"
                         }
                     }
                 }
@@ -228,9 +273,9 @@ module.exports = async(req, res)=>{
                     "financialPerformanceIndexScore":{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.ownRevenuePercentage","$minOwnRevenuePercentage"]},{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]}]}]},1000]},
                     "financialPositionCollectionEfficiencyIndexScore":{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},
                     "financialPositionDebtServiceIndexScore":{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]},
-                    "financialPositionIndexScore":{"$sum":[{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]}]},
 
-                    "overallIndexScore":{"$sum":[{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.ownRevenuePercentage","$minOwnRevenuePercentage"]},{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]},"$data.financialAccountabilityPercentage"]}
+                    "financialPositionIndexScore":{"$sum":[{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]}]},
+                    "overallIndexScore":{"$sum":[{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.ownRevenuePercentage","$minOwnRevenuePercentage"]},{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]},"$data.financialAccountabilityIndexScore"]}
                 }
             },
             {$sort:{"overallIndexScore":-1}},
@@ -636,6 +681,6 @@ module.exports = async(req, res)=>{
                 }
             },
             {$sort:{"nationalOverallRanking":1}}
-        ]
+        ];
     }
 }
