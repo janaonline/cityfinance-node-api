@@ -21,17 +21,31 @@ module.exports = async(req, res)=>{
 
         req.body.ulbId ? condition["ulb"] = ObjectId(req.body.ulbId) : "";
         req.body.ulbCode ? condition["code"] = req.body.ulbCode : "";
-        let populationCondition = {};
+        let populationCondition = [];
         if(req.body.populationId || req.query.populationId){
             let pop = populationRange.find(f=> (f._id == req.body.populationId || f._id == req.query.populationId));
             if(pop && Object.keys(pop.condition).length){
-                populationCondition["population"] = pop.condition;
+                populationCondition = [{$match :{"population":pop.condition}}];
             }
         }
         console.log("condition",condition);
         let groupBy = {ulb:"$ulbledgers.ulb",financialYear:"$ulbledgers.financialYear"};
-        let data = await Ulb.aggregate([
-            {$match:populationCondition},
+        let query = [...populationCondition, ...getQuery(finYears,groupBy),{$match:condition}]
+        let data = await Ulb.aggregate(query);
+        return res.status(200).json({
+            success:false,
+            message:"Ulb ranking list",
+            data:data
+        })
+    }catch (e) {
+        console.log("Caught Error",e);
+        return res.status(400).json({
+            success:false,
+            message:e.message
+        })
+    }
+    function getQuery(finYears,groupBy) {
+        return [
             {
                 $lookup:{
                     from:"states",
@@ -118,7 +132,8 @@ module.exports = async(req, res)=>{
                     debtServicePercentage: {$multiply:[{$cond: [{ $eq: [ "$totalDebt", 0 ] }, 0, {"$divide":[{ $subtract:["$totalRevenue","$totalRevenueExpenditure"]}, "$totalDebt"]} ] },100]},
                     collectionEfficiencyPercentage: {$multiply:[{$cond: [{ $eq:[ "$ownRevenue", 0 ] }, 0, {"$divide":["$netReceivables", "$ownRevenue"]} ] },100]},
                     ownRevenuePercentage:{$multiply:[{$cond:[{$eq:["$totalRevenueExpenditure",0]},0,{"$divide":["$ownRevenue","$totalRevenueExpenditure"]}]},100]},
-                    financialAccountabilityPercentage:{$multiply:[{$sum:["$auditReport","$balanceSheet","$incomeEpenditure","$notesToAccounts",{"$cond":[{"$or":[{"$gt":["$schedule",0]},{"$gt":["$trialBalance",0]}]},200,0]}]},100]}
+                    financialAccountabilityPercentage:{"$multiply":[{"$divide":[{"$sum":["$auditReport","$balanceSheet","$incomeEpenditure","$notesToAccounts",{"$cond":[{"$or":[{"$gt":["$schedule",0]},{"$gt":["$trialBalance",0]}]},200,0]}]},600]},100]},
+                    financialAccountabilityIndexScore:{"$sum":["$auditReport","$balanceSheet","$incomeEpenditure","$notesToAccounts",{"$cond":[{"$or":[{"$gt":["$schedule",0]},{"$gt":["$trialBalance",0]}]},200,0]}]}
                 }
             },
             {
@@ -159,7 +174,8 @@ module.exports = async(req, res)=>{
                             debtServicePercentage:"$debtServicePercentage",
                             collectionEfficiencyPercentage:"$collectionEfficiencyPercentage",
                             ownRevenuePercentage:"$ownRevenuePercentage",
-                            financialAccountabilityPercentage:"$financialAccountabilityPercentage"
+                            financialAccountabilityPercentage:"$financialAccountabilityPercentage",
+                            financialAccountabilityIndexScore:"$financialAccountabilityIndexScore"
                         }
                     }
                 }
@@ -208,7 +224,7 @@ module.exports = async(req, res)=>{
                     "ownRevenuePercentage":"$data.ownRevenuePercentage",
                     "financialAccountabilityPercentage":"$data.financialAccountabilityPercentage",
 
-                    "financialAccountabilityIndexScore":"$data.financialAccountabilityPercentage",
+                    "financialAccountabilityIndexScore":"$data.financialAccountabilityIndexScore",
                     "financialPerformanceIndexScore":{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.ownRevenuePercentage","$minOwnRevenuePercentage"]},{"$subtract":["$maxOwnRevenuePercentage","$minOwnRevenuePercentage"]}]}]},1000]},
                     "financialPositionCollectionEfficiencyIndexScore":{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]},0]},0,{"$divide":[{"$subtract":["$maxCollectionEfficiencyPercentage","$data.collectionEfficiencyPercentage"]},{"$subtract":["$maxCollectionEfficiencyPercentage","$minCollectionEfficiencyPercentage"]}]}]},1000]},
                     "financialPositionDebtServiceIndexScore":{"$multiply":[{"$cond":[{"$eq":[{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]},0]},0,{"$divide":[{"$subtract":["$data.debtServicePercentage","$minDebtServicePercentage"]},{"$subtract":["$maxDebtServicePercentage","$minDebtServicePercentage"]}]}]},1000]},
@@ -619,19 +635,7 @@ module.exports = async(req, res)=>{
 
                 }
             },
-            {$sort:{"nationalOverallRanking":1}},
-            {$match:condition}
-        ]);
-        return res.status(200).json({
-            success:false,
-            message:"Ulb ranking list",
-            data:data
-        })
-    }catch (e) {
-        console.log("Caught Error",e);
-        return res.status(400).json({
-            success:false,
-            message:e.message
-        })
+            {$sort:{"nationalOverallRanking":1}}
+        ]
     }
 }
