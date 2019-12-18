@@ -4,7 +4,7 @@ const service = require("../../service");
 var LineItemSchema = new Schema({
     name: { type: String, required: true },
     code: { type: String, required: true },
-    headOfAccount: { type: String, enum : ["Revenue","Expense","Liability","Asset", "Debt","Tax"], required: true ,index:true},
+    headOfAccount: { type: String, enum : ["Revenue","Expense","Liability","Asset", "Debt","Tax","Other"], required: true ,index:true},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() },
     isActive : { type  : Boolean, default : 1 },
