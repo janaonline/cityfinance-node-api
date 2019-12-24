@@ -1,4 +1,4 @@
-const ledgerLogModel = require('../models/Schema/UlbLedger');
+const ledgerLogModel = require('../models/ledger_log_model');
 const ledgerModel = require('../models/Schema/UlbLedger');
 const CONSTANTS = require('../_helper/constants');
 const _helper = require('../_helper/ledger_helper');
