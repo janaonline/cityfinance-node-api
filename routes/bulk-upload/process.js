@@ -148,7 +148,7 @@ module.exports = function (req, res) {
                     }catch (e) {
                         //await session.abortTransaction();
                         aborted = true;
-                        await updateLog(reqId, {message:e.message, completed:0, status:"FAILED"});
+                        await updateLog(reqId, {message:e.message, completed:1, status:"FAILED"});
                         console.log("Exception",e);
                         break;
                     }
@@ -162,12 +162,12 @@ module.exports = function (req, res) {
 
             }catch (e) {
                 console.log("processData: Caught Exception", e.message, e);
-                await updateLog(reqId, {message:e.message, completed:0, status:"FAILED"});
+                await updateLog(reqId, {message:e.message, completed:1, status:"FAILED"});
             }
         } catch (e) {
             console.log("Exception Caught while extracting file => ",e);
             errors.push("Exception Caught while extracting file");
-            await updateLog(reqId, {message:e.message, completed:0, status:"FAILED"});
+            await updateLog(reqId, {message:e.message, completed:1, status:"FAILED"});
         }
     }
     async function readXlsxFile(file) {

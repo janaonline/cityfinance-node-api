@@ -70,8 +70,9 @@ const getFilesizeInBytes = function(filename) {
 const downloadFileToDisk = function(url, _cb) {
     let fileName = url ? (url.split("/").length ? url.split("/")[(url.split("/").length - 1)] : url.split("/")[0]):null;
     let dest = "/tmp/"+fileName;
+    let url1 = url.replace("https","http");
     var file = fs.createWriteStream(dest);
-     const req = http.get(url, function(response) {
+     const req = http.get(url1, function(response) {
         response.pipe(file);
         file.on('finish', function() {
             file.close(function () {
