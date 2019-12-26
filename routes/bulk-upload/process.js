@@ -1,6 +1,6 @@
 const moment = require("moment");
 const RequestLog = require("../../models/Schema/RequestLog")
-const awsService = require("../../service/s3-services");
+const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const xlstojson = require("xls-to-json-lc");
 const xlsxtojson = require("xlsx-to-json-lc");
 const CONSTANTS = require('../../_helper/constants');
@@ -35,6 +35,7 @@ const balanceSheet = {
 
 module.exports = function (req, res) {
     let financialYear = req.body.financialYear;
+    console.log("FinY",financialYear)
     if(!financialYear){
         return res.status(400).json({
             timestamp : moment().unix(),
@@ -42,7 +43,8 @@ module.exports = function (req, res) {
             message:"Financial Year is required."
         });
     }else {
-        awsService.downloadFileToDisk(req.body.alias, async(err, file)=> {
+        console.log(req.originalUrl)
+        downloadFileToDisk(req.body.alias, async(err, file)=> {
             if(err){
                 return res.status(400).json({
                     timestamp : moment().unix(),
@@ -58,7 +60,7 @@ module.exports = function (req, res) {
                 });
             }else {
                 try{
-                    console.log("file:",file);
+                    console.log("file:",file.path);
                     //return res.status(200).json({message:file})
                     let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:financialYear});
                     if(!reqLog){
@@ -112,6 +114,7 @@ module.exports = function (req, res) {
                 }
             }
         })
+
     }
     async function processData(reqFile, financialYear, reqId) {
         //console.log("processData",reqFile, financialYear, reqId);

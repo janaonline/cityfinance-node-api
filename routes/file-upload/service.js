@@ -1,5 +1,6 @@
 const uuid = require('uuid');
 const fs = require("fs");
+const http = require('http');
 const urlencode = require("urlencode");
 const baseDir = "uploads/";
 const generateSignedUrl  = function(data) {
@@ -66,7 +67,21 @@ const getFilesizeInBytes = function(filename) {
     var fileSizeInBytes = stats["size"]
     return fileSizeInBytes
 }
+const downloadFileToDisk = function(url, _cb) {
+    let fileName = url ? (url.split("/").length ? url.split("/")[(url.split("/").length - 1)] : url.split("/")[0]):null;
+    let dest = "/tmp/"+fileName;
+    var file = fs.createWriteStream(dest);
+     const req = http.get(url, function(response) {
+        response.pipe(file);
+        file.on('finish', function() {
+            file.close(function () {
+                _cb(null,file)
+            });  // close() is async, call cb after close completes.
+        });
+    });
+}
 module.exports = {
     generateSignedUrl:generateSignedUrl,
-    putData:putData
+    putData:putData,
+    downloadFileToDisk:downloadFileToDisk
 }

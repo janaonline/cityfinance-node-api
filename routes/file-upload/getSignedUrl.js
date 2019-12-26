@@ -5,7 +5,9 @@ module.exports = async (req, res)=>{
         if(req.body && Array.isArray(req.body)){
             let finalArray = [];
             for(let single of req.body){
-                single["host"] = 'https://' + req.get('host');
+                let h = req.get('host');
+                console.log("h",typeof h,h);
+                single["host"] = (h.includes("local") ?  'http://' : 'https://') + req.get('host');
                 let data = await generateSignedUrl(single);
                 finalArray.push(data);
             }
