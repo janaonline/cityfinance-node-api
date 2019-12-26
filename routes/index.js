@@ -64,4 +64,7 @@ router.use("/ulblist",UlbRoutes);
 
 const ReportRoutes = require("../routes/report/route");
 router.use("/report",ReportRoutes);
+
+const fileUploadRoutes = require("../routes/file-upload");
+router.use("/",(r,s,n)=>{console.log("REched");n(); },fileUploadRoutes);
 module.exports = router;

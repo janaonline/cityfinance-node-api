@@ -58,7 +58,7 @@ module.exports = function (req, res) {
                 });
             }else {
                 try{
-                    //console.log("file:",file);
+                    console.log("file:",file);
                     //return res.status(200).json({message:file})
                     let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:financialYear});
                     if(!reqLog){

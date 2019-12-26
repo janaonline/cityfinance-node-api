@@ -3,8 +3,7 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const passport = require('passport');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv').config({path: path.join(__dirname, ".env")});
+require('dotenv').config({path: path.join(__dirname, ".env")});
 const config = require('./config/app_config');
 const logger = require('morgan');
 const app = express();
@@ -21,14 +20,11 @@ app.use(cors());
 
 //Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'uploads'))); // to serve file objects in public
 
 //Body Parser Middleware
 app.use(bodyParser.json({limit: '20mb'}));
 app.use(bodyParser.urlencoded({ limit: '20mb', extended: false }));
-
-
-app.use(express.static(path.join(__dirname, 'uploads')));
- 
 
 //Passport Middleware
 app.use(passport.initialize());
@@ -62,12 +58,6 @@ app.use(function(req, res, next) {
 	});
 });
 app.use(function(err, req, res) {
-	var status = 500;
-	/*return res.status(status).json({ 
-	  success : false,
-	  message: err.message,
-	  error: "Something went wrong!"
-	});*/
 	return res.status(400).send({
 	  success : false,
 	  message: err.message,
