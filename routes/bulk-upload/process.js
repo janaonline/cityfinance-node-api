@@ -26,15 +26,16 @@ const overViewSheet = {
     'Date of Re-verification': 'reverified_at',
     'Re-verified by': 'reverified_by'
 };
-const balanceSheet = {
-    liability: 0,
-    assets : 0,
-    liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
-    assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
-}
+
 
 module.exports = function (req, res) {
     let financialYear = req.body.financialYear;
+    const balanceSheet = {
+        liability: 0,
+        assets : 0,
+        liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
+        assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
+    }
     console.log("FinY",financialYear)
     if(!financialYear){
         return res.status(400).json({
@@ -80,7 +81,7 @@ module.exports = function (req, res) {
                                 })
                             } else {
                                 try {
-                                    processData(file, financialYear, data._id);
+                                    processData(file, financialYear, data._id,balanceSheet);
                                     return res.status(200).json({
                                         timestamp:moment().unix(),
                                         success:true,
@@ -116,7 +117,7 @@ module.exports = function (req, res) {
         })
 
     }
-    async function processData(reqFile, financialYear, reqId) {
+    async function processData(reqFile, financialYear, reqId,balanceSheet) {
         //console.log("processData",reqFile, financialYear, reqId);
 
         try {
@@ -133,7 +134,7 @@ module.exports = function (req, res) {
                 console.log("du.update",du.update);
                 let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
                 console.log("objOfSheet",JSON.stringify(ud,0,3));
-                let inputDataArr = await validateData(dataSheet, objOfSheet); //  return line item data array
+                let inputDataArr = await validateData(dataSheet, objOfSheet,balanceSheet); //  return line item data array
                 let responseArr = [];
                 //let session = await mongoose.startSession();
                 //await session.startTransaction();
@@ -260,7 +261,7 @@ module.exports = function (req, res) {
             }
         });
     }
-    async function validateData(data,objOfSheet) {
+    async function validateData(data,objOfSheet,balanceSheet) {
         return new Promise(async (resolve, reject)=>{
             let inputSheetObj = { }
             let errors = [];
@@ -334,6 +335,7 @@ module.exports = function (req, res) {
     function validateBalanceSheet(balanceSheet,inputSheetObj){
         let message = "";
         for(let key of Object.keys(inputSheetObj)){
+            console.log(key,balanceSheet.liabilityAdd)
             if(balanceSheet.liabilityAdd.includes(key)){
                 balanceSheet.liability+=inputSheetObj[key]
             }else if(balanceSheet.assetsAdd.includes(key)){
