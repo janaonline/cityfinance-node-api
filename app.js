@@ -35,7 +35,6 @@ require('./config/passport')(passport);
 const userRoutes = require('./routes/user_controller');
 const lookupRoutes = require('./routes/lookup_controller');
 const ledgerRoutes = require('./routes/ledger_controller');
-const reportRoutes = require('./routes/report_controller');
 const downloadLogRoutes = require('./routes/download_log_controller');
 
 const routes = require("./routes");
