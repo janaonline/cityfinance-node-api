@@ -33,16 +33,13 @@ app.use(passport.session());
 require('./config/passport')(passport);
 
 const userRoutes = require('./routes/user_controller');
-const lookupRoutes = require('./routes/lookup_controller');
 const ledgerRoutes = require('./routes/ledger_controller');
 const downloadLogRoutes = require('./routes/download_log_controller');
 
 const routes = require("./routes");
 
 app.use('/users', userRoutes);
-app.use('/lookup', lookupRoutes);
 app.use('/ledger', ledgerRoutes);
-// app.use('/report', reportRoutes);
 app.use('/logs', downloadLogRoutes);
 
 app.use('/api/admin/v1/', routes);

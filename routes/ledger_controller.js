@@ -8,34 +8,34 @@ const ledgerService = require('../service/ledger_service');
 const reportService = require('../service/report_service');
 // const ulbUpload = require('../service/ulb-upload');
 
-var multer = require('multer');
+// var multer = require('multer');
 
 
-//Define where project photos will be stored
-var storage = multer.diskStorage({
-	destination: function (request, file, callback) {
-	  callback(null, './uploads/');
-	},
-	filename: function (request, file, callback) {
-	  console.log(file);
-	  callback(null, file.originalname)
-	}
-  });
+// //Define where project photos will be stored
+// var storage = multer.diskStorage({
+// 	destination: function (request, file, callback) {
+// 	  callback(null, './uploads/');
+// 	},
+// 	filename: function (request, file, callback) {
+// 	  console.log(file);
+// 	  callback(null, file.originalname)
+// 	}
+//   });
   
-// Function to upload project images
-var uploadMultiple = multer({
-    storage: storage,
-    limits: {
-        files: 100, // allow only 1 file per request
-        fileSize: 1024 * 1024 * 50, // 1 MB (max file size)
-    },
-	fileFilter: function (req, file, callback) { //file filter
-	if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length - 1]) === -1) {
-		return callback(new Error('Wrong extension type'));
-	}
-	callback(null, true);
-    }
-}).array('files', 100);
+// // Function to upload project images
+// var uploadMultiple = multer({
+//     storage: storage,
+//     limits: {
+//         files: 100, // allow only 1 file per request
+//         fileSize: 1024 * 1024 * 50, // 1 MB (max file size)
+//     },
+// 	fileFilter: function (req, file, callback) { //file filter
+// 	if (['xls', 'xlsx'].indexOf(file.originalname.split('.')[file.originalname.split('.').length - 1]) === -1) {
+// 		return callback(new Error('Wrong extension type'));
+// 	}
+// 	callback(null, true);
+//     }
+// }).array('files', 100);
 
 
 

@@ -71,4 +71,14 @@ router.use("/report",ReportRoutes);
 
 const fileUploadRoutes = require("../routes/file-upload");
 router.use("/",(r,s,n)=>{console.log("reached"); n(); },fileUploadRoutes);
+
+// Get state list
+router.get('/states',State.get);
+
+// Get ULBs by state
+router.get('/states/:stateCode/ulbs', Ulb.getByState);
+
+// Get All Ulbs
+router.get('/ulbs', Ulb.getAllUlbs);
+
 module.exports = router;
