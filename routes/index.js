@@ -37,9 +37,11 @@ router.delete('/UlbType/:_id', passport.authenticate('jwt', {session: false}), U
 //--> ULB Routes <---//
 const Ulb = require("../models/Schema/Ulb");
 router.get('/Ulb', passport.authenticate('jwt', {session: false}), Ulb.get);
+router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
 router.put('/Ulb/:_id', passport.authenticate('jwt', {session: false}), Ulb.put);
 router.post('/Ulb', passport.authenticate('jwt', {session: false}), Ulb.post);
 router.delete('/Ulb/:_id', passport.authenticate('jwt', {session: false}), Ulb.delete);
+
 router.post('/bulk/ulb-upload',multerUpload.single("files"),(req, res, next) => {
     ulbUploadService.create(req, res);
 });

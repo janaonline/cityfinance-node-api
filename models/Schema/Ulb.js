@@ -3,7 +3,7 @@ require('./dbConnect');
 const State = require("./State");
 const UlbType = require("./UlbType");
 const service = require("../../service");
-
+const moment = require("moment");
 var UlbSchema = new Schema({
     name: { type: String, required: true },
     regionalName: { type: String, default : "" },
@@ -331,4 +331,79 @@ module.exports.getAllUlbs = async function(req,res){
         console.log("Erro",e)
         return  {};
     }
+}
+
+
+// Get all ledgers present in database in CSV Format
+module.exports.getAllULBSCSV = function(req,res){
+    let filename = "All Ulbs " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
+
+	// Set approrpiate download headers
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+	res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("ULB Name, ULB Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT \r\n");
+	// Flush the headers before we start pushing the CSV content
+    res.flushHeaders();
+    
+    Ulb.aggregate([
+        {$lookup:{
+            from:"states",
+            as:"states",
+            foreignField : "_id",
+            localField:"state"
+        }
+    },
+    {$lookup:{
+            from:"ulbtypes",
+            as:"ulbtypes",
+            foreignField : "_id",
+            localField:"ulbType"
+        }
+    },
+    {$project:{
+            "ulbs":{ $arrayElemAt  :  [ "$ulbs",0]},
+            "states":{ $arrayElemAt  :  [ "$states",0]},
+            "ulbtypes":{ $arrayElemAt  :  [ "$ulbtypes",0]},
+            "natureOfUlb" : 1,
+            "lineitems":{ $arrayElemAt  :  [ "$lineitems",0]},
+            financialYear:"$financialYear",
+            area:1,
+            population : 1,
+            amrut : 1,
+            name:1,
+            code:1,
+            wards : 1
+        }
+    },
+    {$project:{
+            _id:0,
+            ulb : { $cond : ["$ulbs","$ulbs","NA"]},
+            state : { $cond : ["$states","$states","NA"]},
+            ulbtypes : { $cond : ["$ulbtypes","$ulbtypes","NA"]},
+            financialYear:1,
+            "natureOfUlb" : 1,
+            area:1,
+            population:1,
+            amrut:1,
+            name:1,
+            code:1,
+            wards : 1
+        }
+    }
+    ]).exec((err,data)=>{
+        if(err){
+            res.json({
+                success: false,
+                msg: 'Invalid Payload',
+                data: err.toString()
+            });
+        }else{
+            for(let el of data){
+                el.natureOfUlb = el.natureOfUlb ? el.natureOfUlb : "";
+                el.name = el.name ? el.name.toString().replace(/[,]/g, ' | ')  : "";
+                res.write(el.name+","+el.code+","+el.ulbtypes.name+","+el.state.name+","+el.state.code+","+el.natureOfUlb+","+el.area+","+el.wards+","+el.population+","+el.amrut+"\r\n");
+            }
+            res.end()
+        }
+    });
 }
