@@ -12,16 +12,17 @@ const lineItems  = {
     "Schedule and Trial Balance": "1007"
 };
 module.exports = async (req, res)=>{
-    console.log("Files", req.file)
     try {
         const jsonArray = await csv().fromFile(req.file.path);
         let dataArr= [ ];
-        console.log("jsonArray",jsonArray.length);
         for(let json of jsonArray){
             for(let k in json){
-                //console.log("ulb Code:",{code : json["ULB Code"]})
+
+                // Find ulb based on ULB Code
                 let ulb = await Ulb.findOne({code : json["ULB Code"]},"_id");
                 if(["YEAR","ULB Code"].indexOf(k) < 0 && lineItems[k]){
+                    
+                    // Find lineItems in existing line items
                     let lineItem = await LineItem.findOne({code : lineItems[k]},"_id");
                     if(ulb && lineItem){
                         dataArr.push({
@@ -34,7 +35,6 @@ module.exports = async (req, res)=>{
                 }
             }
         }
-        console.log("Out of loop");
         for(let data of dataArr){
             let du = {
                 query : {ulb:data.ulb, lineItem:data.lineItem, financialYear: data.financialYear},
@@ -42,7 +42,6 @@ module.exports = async (req, res)=>{
                 options : {upsert : true,setDefaultsOnInsert : true,new: true}
             }
             let d = await UlbLedger.findOneAndUpdate(du.query,du.update,du.options);
-            console.log("d",d);
         }
         return res.status(200).json({success:true, data:dataArr});
     }catch (e) {

@@ -14,11 +14,13 @@ const generateSignedUrl  = function(data) {
             fs.mkdirSync(baseDir+dir);
             console.log("Created Dir",baseDir+dir);
         }
+        // extract file_name, file_extension, file_alias
         let file_name = data.file_name;
         let file_extension = file_name.substring(file_name.lastIndexOf('.'));
         let file_alias = dir+"/"+uuid.v4() + file_extension;
         try{
             fs.closeSync(fs.openSync(baseDir+file_alias, 'w'));
+            // url and file_alias has been created
             data["url"] = data.host+"/api/admin/v1/putDataIntoFile/"+urlencode(file_alias);
             data["file_alias"] = data.host+"/"+file_alias;
             resolve(data)
@@ -29,13 +31,12 @@ const generateSignedUrl  = function(data) {
 }
 const putData = function (filepath,req) {
     let path  = baseDir+filepath;
-    console.log("P",path);
     return new Promise(async(resolve, reject)=>{
         try{
             let p = urlencode.decode(path);
             let size = getFilesizeInBytes(p);
-            console.log("P",p,size);
             if(!size){
+                // if file size is empty, means data is not present in file then write to file
                 let stream = createWriteStreamSync(p, {flags:'a'});
                 req.on("data",(chunk)=>{
                     stream.write(chunk);
@@ -70,9 +71,8 @@ const getFilesizeInBytes = function(filename) {
 const downloadFileToDisk = function(url, _cb) {
     let fileName = url ? (url.split("/").length ? url.split("/")[(url.split("/").length - 1)] : url.split("/")[0]):null;
     let dest = "/tmp/"+fileName;
-    //let url1 = url.replace("https","http");
     var file = fs.createWriteStream(dest);
-     const req = https.get(url, function(response) {
+    const req = https.get(url, function(response) {
         response.pipe(file);
         file.on('finish', function() {
             file.close(function () {
