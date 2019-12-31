@@ -1,13 +1,16 @@
 const generateSignedUrl = require("./service").generateSignedUrl;
 module.exports = async (req, res)=>{
-    console.log("req.get",req.get);
     try{
         if(req.body && Array.isArray(req.body)){
             let finalArray = [];
+
             for(let single of req.body){
                 let h = req.get('host');
-                console.log("h",typeof h,h);
+
+                // Set host for generating signed Url
                 single["host"] = (h.includes("local") ?  'http://' : 'https://') + req.get('host');
+
+                // Generate signed url using the function generateSignedUrl
                 let data = await generateSignedUrl(single);
                 finalArray.push(data);
             }

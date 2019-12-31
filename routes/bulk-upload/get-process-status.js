@@ -2,7 +2,7 @@ const RequestLog = require("../../models/Schema/RequestLog")
 const moment = require("moment");
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports = function (req, res) {
-    console.log("req.params._id",req.params._id);
+    // Get request log, whether it is in process or completed
     RequestLog.findOne({_id : ObjectId(req.params._id)}).exec((err, data)=>{
         if(err){
             return res.status(400).json({

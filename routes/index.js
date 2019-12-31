@@ -50,7 +50,6 @@ router.post("/uploadLedger",multerUpload.single('csv'),ledgerUpload);
 
 
 const BulkUpload = require("./bulk-upload");
-router.post("/getS3Url", BulkUpload.S3Url);
 router.post("/processData", BulkUpload.processData);
 router.get("/getProcessStatus/:_id", BulkUpload.getProcessStatus);
 
@@ -60,9 +59,6 @@ router.get('/LineItem', passport.authenticate('jwt', {session: false}), LineItem
 router.put('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.put);
 router.post('/LineItem', passport.authenticate('jwt', {session: false}), LineItem.post);
 router.delete('/LineItem/:_id', passport.authenticate('jwt', {session: false}), LineItem.delete);
-
-const UlbRoutes = require("./ulb/route");
-router.use("/ulblist",UlbRoutes);
 
 //---> Ulb Ranking Routes <---//
 const ReportRoutes = require("../routes/report/route");

@@ -5,7 +5,7 @@ const router = express.Router();
 // const Constants = require('../_helper/constants');
 const ledgerService = require('../service/ledger_service');
 // const ledgerUpload = require('../service/ledger_upload');
-const reportService = require('../service/report_service');
+// const reportService = require('../service/report_service');
 // const ulbUpload = require('../service/ulb-upload');
 
 // var multer = require('multer');
@@ -51,8 +51,8 @@ router.post('/getIE', (req, res, next) => { ledgerService.getIE(req, res); });
 // Get Balance Sheet
 router.post('/getBS', (req, res, next) => { ledgerService.getBS(req, res); });
 
-// get own revenue data
-router.get('/own-revenue', (req, res) => { reportService.getOwnRevenueReport(req, res); });
+// // get own revenue data
+// router.get('/own-revenue', (req, res) => { reportService.getOwnRevenueReport(req, res); });
 
 
 
