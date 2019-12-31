@@ -1,5 +1,6 @@
 const moment = require("moment");
 const find = function(condition = {},schema,callback){
+    // PUT Function where find condition and schema name would be received and accordingly response will be returned
 	schema.find(condition).exec((err,data)=>{
 		if (err) {
             console.log("error occurred in get",schema,err);
@@ -23,6 +24,7 @@ const find = function(condition = {},schema,callback){
 };
 
 const post = function(schema,body,callback){
+    // POST Function where body would be received and accordingly response will be returned
 	schema.create(body,function(err,data){
 		if (err) {
             console.log("error occurred in post",schema,err);
@@ -46,6 +48,7 @@ const post = function(schema,body,callback){
 };
 
 const put = function(condition = {},update,schema,callback){
+    // PUT Function where find condition, update condition and schema name would be received and accordingly response will be returned
 	schema.updateOne(condition,update,{ upsert:true,new : true , setDefaultsOnInsert:true }).exec((err,data)=>{
 		if (err) {
             console.log("error occurred in put",schema,err);

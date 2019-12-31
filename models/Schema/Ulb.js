@@ -30,7 +30,8 @@ module.exports.get = async function(req,res) {
     if(req.params && req.params._code){
         query["code"] = req.params._code
     }
-
+    // Get any ulb
+    // Ulb is model name
     service.find(query,Ulb,function(response,value){
         return res.status(response ? 200 : 400).send(value);
     });
@@ -42,10 +43,15 @@ module.exports.put = async function(req,res) {
         _id : req.params._id
     };
     let obj = req.body;
+    // Edit any ULB
+    // Check for state and type
     if(obj.state || obj.type){
         try{
             let message = "";
+            // Find state exists based on name
             let state = await State.findOne({ name : obj.state,isActive : true},{ _id:1 }).exec();
+
+            // Find ulb types exists based on name
             let ulbType = await UlbType.findOne({ name : obj.type,isActive : true},{ _id:1 }).exec();
             
             obj.state  ? ( state ? obj.state = state._id : message+="State Doesn't Exists" ) : "Do nothing"
@@ -59,7 +65,7 @@ module.exports.put = async function(req,res) {
             })  
         }
     }
-
+    // Edit ulb here
     service.put(condition,obj,Ulb,function(response,value){
         return res.status(response ? 200 : 400).send(value);
     });
@@ -67,11 +73,14 @@ module.exports.put = async function(req,res) {
 }
 module.exports.post = async function(req,res) {
     let obj = req.body;
-
+    // state and ulb type is compulsory
     if(obj.state && obj.type){
         try{
             let message = "";
+            // find state  information based on name
             let state = await State.findOne({ name : obj.state,isActive : true},{ _id:1 }).exec();
+
+            // find ulb type information based on name
             let ulbType = await UlbType.findOne({ name : obj.type,isActive : true},{ _id:1 }).exec();
             
             state ? obj.state = state._id : message+="State don't exists"
@@ -103,6 +112,7 @@ module.exports.post = async function(req,res) {
 
 }
 module.exports.delete = async function(req,res) {
+    // Delete ulb based 
     let condition = {
         _id : req.params._id
     },update = {
@@ -116,6 +126,7 @@ module.exports.delete = async function(req,res) {
 
 module.exports.getByState = async function(req,res){
     try{
+        // Get ulb list by state code
         let data =  await Ulb.aggregate([
             {
                 $lookup:{
@@ -182,6 +193,7 @@ module.exports.getByState = async function(req,res){
 
 module.exports.getUlbInfo = async function(stateCode, ulbCode){
     try {
+        // Get ulb information using ulbCode
         let response = await Ulb.findOne({code : ulbCode}).exec();
         if(response){
             return response;
@@ -197,6 +209,7 @@ module.exports.getUlbInfo = async function(stateCode, ulbCode){
 module.exports.getUlbByCode = async function(ulbCode){
 
     try {
+        // get ulb information and other information based on ulbCode
         let response =  await Ulb.aggregate([
             {$match:{code : ulbCode}},
             {
@@ -251,6 +264,7 @@ module.exports.getUlbByCode = async function(ulbCode){
 
 module.exports.getAllUlbs = async function(req,res){
     try {
+        // Get all ulbs list in older format, so that everything works fine
         let data = await Ulb.aggregate([
             {
                 $lookup:{

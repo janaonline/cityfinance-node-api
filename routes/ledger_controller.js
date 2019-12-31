@@ -4,7 +4,7 @@ const passport = require('passport');
 
 const Constants = require('../_helper/constants');
 const ledgerService = require('../service/ledger_service');
-const ledgerUpload = require('../service/ledger_upload');
+// const ledgerUpload = require('../service/ledger_upload');
 const reportService = require('../service/report_service');
 const ulbUpload = require('../service/ulb-upload');
 
@@ -37,15 +37,15 @@ var uploadMultiple = multer({
     }
 }).array('files', 100);
 
-router.post('/bulkEntry', passport.authenticate('jwt', {session: false}), uploadMultiple, (req, res, next) => {
-    console.log(req.user.role,Constants.USER.LEDGER_AUTHORITY)
-    if(req.user.role === Constants.USER.LEDGER_AUTHORITY){
-		ledgerUpload.bulkEntry(req, res);
-	} else{
-		res.json({success:false, msg:'Unauthorized user'});
-	}
+// router.post('/bulkEntry', passport.authenticate('jwt', {session: false}), uploadMultiple, (req, res, next) => {
+//     console.log(req.user.role,Constants.USER.LEDGER_AUTHORITY)
+//     if(req.user.role === Constants.USER.LEDGER_AUTHORITY){
+// 		ledgerUpload.bulkEntry(req, res);
+// 	} else{
+// 		res.json({success:false, msg:'Unauthorized user'});
+// 	}
 
-});
+// });
 
 router.post('/bulk/ulb-upload', passport.authenticate('jwt', {session: false}), uploadMultiple, (req, res, next) => {
     console.log(req.user.role,Constants.USER.LEDGER_AUTHORITY)

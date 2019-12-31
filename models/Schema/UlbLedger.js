@@ -23,37 +23,43 @@ LedgerSchema.index(
 const Ledger = module.exports = mongoose.model('ULBLedger', LedgerSchema);
 module.exports.ledgerSchema = Ledger;
 
+// not in use
 module.exports.getAll = function (payload, callback) {
-    Ledger.find(payload, callback);
+    // Ledger.find(payload, callback);
 }
 
-
+// not in use
 module.exports.byId = function (entryId, callback) {
-    Ledger.findById(entryId, callback);
+    // Ledger.findById(entryId, callback);
 }
 
+// not in use
 module.exports.bulkInsert = function (ledgerArr, callback) {
     // Ledger.create(ledgerArr, callback);
-    Ledger.collection.insertMany(ledgerArr, callback);
+    // Ledger.collection.insertMany(ledgerArr, callback);
 }
 
+// not in use
 module.exports.getAggregate = function (payload, callback) {
-    Ledger.aggregate([
-        {$unwind: "$budget"},
-        {$match: { "budget.year": payload.year, ulb_code:{$in: payload.ulbList}}},
-        { $group: { _id: "$code", total: {$sum: {"$toDouble": "$budget.amount"} } }}
-    ]).exec(callback);
-
+   
+    // Ledger.aggregate([
+    //     {$unwind: "$budget"},
+    //     {$match: { "budget.year": payload.year, ulb_code:{$in: payload.ulbList}}},
+    //     { $group: { _id: "$code", total: {$sum: {"$toDouble": "$budget.amount"} } }}
+    // ]).exec(callback);
     // Ledger.find({"ulb_code": "CG001"}, callback);
 }
 
 
 
 module.exports.getAllLedgers = function (payload, callback) {
+    // if incoming parameter has year, then assign to year variable
     let year = payload.body.year ? ( payload.body.year.length? payload.body.year:null ) : null;
     let condition =  { isActive:true };
     year ? condition[ "financialYear"] =  {$all:year } : null;
+
     if(!year){
+        // if year is empty, then take all the ledgers from the database irrespective of any year filter
         Ledger.aggregate([
                 {$match:condition},
                 {$group:{
@@ -105,6 +111,7 @@ module.exports.getAllLedgers = function (payload, callback) {
         ]).exec(callback);
 
     }else{
+        // if year is present, then take all the ledgers from the database of year filter
         Ledger.aggregate([
             {$match:{  isActive:true }},
             {$group:{
@@ -168,6 +175,7 @@ module.exports.getAllLedgers = function (payload, callback) {
 }
 
 module.exports.getAllLedgersCsv = function(payload,callback){
+   // Get csv of all the ledgers which exists in the database
     Ledger.aggregate([
         {$lookup:{
                 from:"ulbs",
@@ -220,6 +228,8 @@ module.exports.getAllLedgersCsv = function(payload,callback){
         }
     ])
 }
+
+// not in use
 module.exports.deleteById = function(payload, callback){
-    Ledger.deleteOne(payload, callback);
+    //Ledger.deleteOne(payload, callback);
 }
