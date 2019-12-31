@@ -67,9 +67,9 @@ router.get('/own-revenue', (req, res) => { reportService.getOwnRevenueReport(req
 //     ledgerService.update(req, res);
 // });
 
-// router.post('/getAllLegders', (req, res, next) => {
-//     ledgerService.getAllLegders(req, res);
-// });
+router.post('/getAllLegders', (req, res, next) => {
+    ledgerService.getAllLegders(req, res);
+});
 
 // router.post('/bulkEntry', passport.authenticate('jwt', {session: false}), uploadMultiple, (req, res, next) => {
 //     console.log(req.user.role,Constants.USER.LEDGER_AUTHORITY)
