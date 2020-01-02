@@ -72,6 +72,7 @@ router.use("/",(r,s,n)=>{console.log("reached"); n(); },fileUploadRoutes);
 
 // Get state list
 router.get('/lookup/states',State.get);
+router.get('/ulblist', Ulb.get);
 
 // Get ULBs by state
 router.get('/states/:stateCode/ulbs', Ulb.getByState);
