@@ -30,13 +30,13 @@ const overViewSheet = {
 
 module.exports = function (req, res) {
     let financialYear = req.body.financialYear;
+    // maintaining list items which needs to get sum up in liability and assets
     const balanceSheet = {
         liability: 0,
         assets : 0,
         liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
         assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
     }
-    console.log("FinY",financialYear)
     if(!financialYear){
         return res.status(400).json({
             timestamp : moment().unix(),
@@ -44,7 +44,6 @@ module.exports = function (req, res) {
             message:"Financial Year is required."
         });
     }else {
-        console.log(req.originalUrl)
         downloadFileToDisk(req.body.alias, async(err, file)=> {
             if(err){
                 return res.status(400).json({
@@ -61,8 +60,6 @@ module.exports = function (req, res) {
                 });
             }else {
                 try{
-                    console.log("file:",file.path);
-                    //return res.status(200).json({message:file})
                     let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:financialYear});
                     if(!reqLog){
                         let requestLog = new RequestLog({
@@ -118,36 +115,42 @@ module.exports = function (req, res) {
 
     }
     async function processData(reqFile, financialYear, reqId,balanceSheet) {
-        //console.log("processData",reqFile, financialYear, reqId);
-
         try {
             try {
+                // extract the overviewSheet and dataSheet
                 let {overviewSheet, dataSheet} = await readXlsxFile(reqFile);
+
+                // validate overview sheet 
                 let objOfSheet = await validateOverview(overviewSheet,financialYear); // rejection in case of error
+
                 let du = {
-                    query : {ulb_code_year : objOfSheet.ulb_code_year},
-                    update : Object.assign({lastModifiedAt:new Date()},objOfSheet),
+                    query : { ulb_code_year : objOfSheet.ulb_code_year },
+                    update : Object.assign({ lastModifiedAt:new Date() },objOfSheet),
                     options : {upsert : true,setDefaultsOnInsert : true,new: true}
                 }
                 delete du.update._id;
                 delete du.update.__v;
-                console.log("du.update",du.update);
+
+                // insert the oviewViewSheet content in ledger logs
                 let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
-                console.log("objOfSheet",JSON.stringify(ud,0,3));
+
+                // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
                 let inputDataArr = await validateData(dataSheet, objOfSheet,balanceSheet); //  return line item data array
                 let responseArr = [];
-                //let session = await mongoose.startSession();
-                //await session.startTransaction();
+
                 let aborted = false;
                 for(let el of inputDataArr){
                     let options = el.options;//Object.assign(el.options,{session:session});
                     try {
                         let result = await UlbLedger.findOneAndUpdate(el.query, el.update, options);
                         responseArr.push(result);
+
+                        // Update in the request log collection, the current status of file
                         await updateLog(reqId, {message:`Status: (${responseArr.length}/${inputDataArr.length}) processed`, completed:0});
                         continue;
                     }catch (e) {
-                        //await session.abortTransaction();
+
+                        // Update in the request log collection, the current status of file
                         aborted = true;
                         await updateLog(reqId, {message:e.message, completed:0, status:"FAILED"});
                         console.log("Exception",e);
@@ -176,7 +179,6 @@ module.exports = function (req, res) {
             let exceltojson;
             try{
                 let fileInfo  = file.path.split('.');
-                console.log("DD : file",fileInfo[(fileInfo.length - 1)]);
                 exceltojson = fileInfo && fileInfo.length > 0 && fileInfo[(fileInfo.length - 1)] == 'xlsx' ? xlsxtojson : xlstojson;
                 let prms1 = new Promise((rslv, rjct) => {
                     exceltojson({
@@ -242,6 +244,7 @@ module.exports = function (req, res) {
                     objOfSheet[ overViewSheet[key]] = objOfSheet[key] ;
                     delete objOfSheet[key];
                 }
+                // Find whether state code exists or not
                 let state = await State.findOne({ code : objOfSheet.state_code,isActive:true }).exec();
                 // Find whether ulb code exists or not
                 let ulb = await Ulb.findOne({ code : objOfSheet.ulb_code, state : state._id ,isActive:true }).exec();
@@ -265,10 +268,16 @@ module.exports = function (req, res) {
         return new Promise(async (resolve, reject)=>{
             let inputSheetObj = { }
             let errors = [];
+
             for(let eachRow of data){
+
+                // removing all the - values and converting them to 0
                 eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;
+                
+                // removing commas from all the values
                 eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='' ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
 
+                // removing brackets from values and converting them to -ve values
                 if((eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
                     eachRow["amount in inr"] = "-" + eachRow["amount in inr"].replace("(", "").replace(")","")
 
@@ -278,19 +287,22 @@ module.exports = function (req, res) {
                         errors.push("Line item code "+eachRow["code"]+" value is not applicable");
                     }
                 }
-
             }
+
             var message = validateBalanceSheet(balanceSheet,inputSheetObj);
             if(message){
+                // if balance sheet is invalid, means sum doesn't matches
                 console.log("validateData: message",message)
                 reject({message:message});
             }else{
                 let lineItemCodes = Object.keys(inputSheetObj);
                 for(let el of lineItemCodes){
+                    // Validate each line Item, whether applicable or not
                     const validateLI = await LineItem.findOne({ code:el ,isActive : true }).exec();
                     if(!validateLI){
                         errors.push("Invalid Item code "+el+" found in the sheet");
                     }else{
+                        // assign the unique id of line item to inputSheetObj
                         inputSheetObj[validateLI._id] = inputSheetObj[el]
                         delete inputSheetObj[el]
                     }
@@ -334,15 +346,20 @@ module.exports = function (req, res) {
     }
     function validateBalanceSheet(balanceSheet,inputSheetObj){
         let message = "";
+
+        // iterate over each line items present in the input sheet
         for(let key of Object.keys(inputSheetObj)){
-            console.log(key,balanceSheet.liabilityAdd)
+            
             if(balanceSheet.liabilityAdd.includes(key)){
+                // line item is of liability, then add its value
                 balanceSheet.liability+=inputSheetObj[key]
             }else if(balanceSheet.assetsAdd.includes(key)){
+                // line item is of assets, then add its value
                 balanceSheet.assets+=inputSheetObj[key]
             }
         }
         if(balanceSheet.liability!=balanceSheet.assets){
+            // If balance sheet doesn't matches
             message = "Balance sheet has liablity: "+balanceSheet.liability+" while assets :"+balanceSheet.assets;
         }
         return message;
