@@ -1,6 +1,6 @@
 # compiled output
 /node_modules
-
+.env
 # Logs
 logs
 *.log
@@ -35,3 +35,5 @@ lerna-debug.log*
 # Environment specific
 .env
 .env_bk
+public
+/public

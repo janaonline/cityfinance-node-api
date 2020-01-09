@@ -10,7 +10,7 @@ router.post('/signup', (req, res, next)=>{
 	req.body.role = Constants.USER.DEFAULT_ROLE;
 	userService.register(req, res);
 });
-
+ 
 // Onboard User
 router.post('/onboard', passport.authenticate('jwt', {session: false}), (req, res, next)=>{
 	if(req.user.role === Constants.USER.ONBOARD_AUTHORITY){
