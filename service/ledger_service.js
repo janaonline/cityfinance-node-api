@@ -532,6 +532,8 @@ module.exports.getAllLegdersCsv = function(req,res){
 // };
 
 
+
+}
 function condition(ulbs){
     return [
     {$match: { ulb : {$in:ulbs}}},    
@@ -585,5 +587,4 @@ function condition(ulbs){
         budget:1
     }
     }]
-}
 }
