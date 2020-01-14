@@ -8,6 +8,7 @@ module.exports = async (req, res)=>{
                 let h = req.get('host');
 
                 // Set host for generating signed Url
+
                 single["host"] = (h.includes("local") ?  'http://' : 'https://') + req.get('host');
 
                 // Generate signed url using the function generateSignedUrl
