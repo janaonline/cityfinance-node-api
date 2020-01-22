@@ -122,6 +122,7 @@ router.delete(
 
 //---> Bond Issuer Item Routes <---//
 const BondIssuerItem = require('../models/Schema/BondIssuerItem');
+const bondsUploadService = require('../service/bonds-upload');
 router.get(
   '/BondIssuer',
   //   passport.authenticate('jwt', { session: false }),
@@ -143,7 +144,7 @@ router.post(
   BondIssuerItem.post
 );
 router.post(
-  '/BondIssuerItem/getByYearOrUlb',
+  '/BondIssuerItem/getList',
   //   passport.authenticate('jwt', { session: false }),
   BondIssuerItem.get
 );
@@ -151,6 +152,13 @@ router.delete(
   '/BondIssuerItem/:_id',
   //   passport.authenticate('jwt', { session: false }),
   BondIssuerItem.delete
+);
+router.post(
+  '/bulk/bonds-upload',
+  multerUpload.single('files'),
+  (req, res, next) => {
+    bondsUploadService.create(req, res);
+  }
 );
 
 //---> Ulb Ranking Routes <---//

@@ -10,7 +10,7 @@ var BondIssuerItemSchema = new Schema(
     // --------------------------- //
     // details of instrument
 
-    typeOfInstrument: { type: String, default: '' },
+    typeOfInstruments: { type: String, default: '' },
     term: { type: String, default: '' },
     couponRate: { type: String, default: '' },
     interestPayment: { type: String, default: '' },
@@ -19,16 +19,16 @@ var BondIssuerItemSchema = new Schema(
 
     // details of issue
 
-    dateOfIssue: { type: Date, default: null },
+    dateOfIssue: { type: String, default: null },
     maturityDate: { type: String, default: '' },
     platform: { type: String, default: '' },
     type: { type: String, default: '' },
-    issueSized: { type: String, default: '' },
+    issueSize: { type: String, default: '' },
     bidsReceived: { type: String, default: '' },
     amountAccepted: { type: String, default: '' },
     greenShoeOption: { type: String, default: '' },
-    greenShoeOptionAmount: { type: String, default: '' },
-    guaranteedByStateGovt: { type: String, default: '' },
+    greenShowOptionAmount: { type: String, default: '' },
+    guaranteedByStateGovernment: { type: String, default: '' },
     guaranteeMechanism: { type: String, default: '' },
 
     // rating
@@ -37,8 +37,8 @@ var BondIssuerItemSchema = new Schema(
     care: { type: String, default: '' },
     icra: { type: String, default: '' },
     brickwork: { type: String, default: '' },
-    auicte: { type: String, default: '' },
-    indiaRatingsandResearch: { type: String, default: '' },
+    'auicte/Smera': { type: String, default: '' },
+    'indiaRatings&Research': { type: String, default: '' },
     linksToReports: { type: String, default: '' },
 
     // objective of issue
@@ -53,9 +53,9 @@ var BondIssuerItemSchema = new Schema(
     // Advisors
 
     transactionAdvisors: { type: String, default: '' },
-    trustee: { type: String, default: '' },
-    registrar: { type: String, default: '' },
-    auditor: { type: String, default: '' },
+    trusteeForTheBond: { type: String, default: '' },
+    registrarOfTheIssue: { type: String, default: '' },
+    auditorOfIssue: { type: String, default: '' },
     legalCounsel: { type: String, default: '' },
     escrowBanker: { type: String, default: '' },
     arranger: { type: String, default: '' },
@@ -81,16 +81,18 @@ const BondIssuerItem = (module.exports = mongoose.model(
 BondIssuerItemSchema.index({ ulb: 1, yearOfBondIssued: 1 }, { unique: true });
 
 module.exports.get = async function(req, res) {
-  let query = {};
-  if (req.method == 'GET') {
-    query['isActive'] = true;
-    // Get any line item based on code or overall
-    // BondIssuerItem is model name
-    if (req.params && req.params.ulb) {
-      query['ulb'] = req.params.ulb;
-    }
-  }
-
+  let query = { isActive: true };
+  // if(req.query.ulb){
+  //   query['ulb'] = req.query.ulb
+  // }
+  // if (req.method == 'GET') {
+  //   query['isActive'] = true;
+  //   // Get any line item based on code or overall
+  //   // BondIssuerItem is model name
+  //   if (req.params && req.params.ulb) {
+  //     query['ulb'] = req.params.ulb;
+  //   }
+  // }
   if (req.method == 'POST') {
     query = {
       $or: [
