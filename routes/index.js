@@ -123,12 +123,12 @@ router.delete(
 //---> Bond Issuer Item Routes <---//
 const BondIssuerItem = require('../models/Schema/BondIssuerItem');
 router.get(
-  '/BondIssuerItem',
+  '/BondIssuer',
   //   passport.authenticate('jwt', { session: false }),
-  BondIssuerItem.get
+  BondIssuerItem.getJson
 );
 router.get(
-  '/BondIssuerItem/:ulb',
+  '/BondIssuerItem',
   //   passport.authenticate('jwt', { session: false }),
   BondIssuerItem.get
 );
@@ -141,6 +141,11 @@ router.post(
   '/BondIssuerItem',
   //   passport.authenticate('jwt', { session: false }),
   BondIssuerItem.post
+);
+router.post(
+  '/BondIssuerItem/getByYearOrUlb',
+  //   passport.authenticate('jwt', { session: false }),
+  BondIssuerItem.get
 );
 router.delete(
   '/BondIssuerItem/:_id',

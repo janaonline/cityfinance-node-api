@@ -1,12 +1,13 @@
 require('./dbConnect');
 const service = require('../../service');
 const mongoose = require('mongoose');
+const bondIssuerjson = require('./bondIssuer.json');
 
 var BondIssuerItemSchema = new Schema(
   {
     ulb: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Ulb' },
     yearOfBondIssued: { type: String, default: '' },
-
+    // --------------------------- //
     // details of instrument
 
     typeOfInstrument: { type: String, default: '' },
@@ -65,6 +66,8 @@ var BondIssuerItemSchema = new Schema(
     noticesFromPlatforms: { type: String, default: '' },
     others: { type: String, default: '' },
 
+    // ---------------------------- //
+
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 }
@@ -79,13 +82,23 @@ BondIssuerItemSchema.index({ ulb: 1, yearOfBondIssued: 1 }, { unique: true });
 
 module.exports.get = async function(req, res) {
   let query = {};
-  query['isActive'] = true;
-  // Get any line item based on code or overall
-  // BondIssuerItem is model name
-  if (req.params && req.params.ulb) {
-    query['ulb'] = req.params.ulb;
+  if (req.method == 'GET') {
+    query['isActive'] = true;
+    // Get any line item based on code or overall
+    // BondIssuerItem is model name
+    if (req.params && req.params.ulb) {
+      query['ulb'] = req.params.ulb;
+    }
   }
 
+  if (req.method == 'POST') {
+    query = {
+      $or: [
+        { ulb: { $in: req.body['ulb'] } },
+        { yearOfBondIssued: { $in: req.body['year'] } }
+      ]
+    };
+  }
   service.find(query, BondIssuerItem, function(response, value) {
     return res.status(response ? 200 : 400).send(value);
   });
@@ -128,4 +141,11 @@ module.exports.delete = async function(req, res) {
   service.put(condition, update, BondIssuerItem, function(response, value) {
     return res.status(response ? 200 : 400).send(value);
   });
+};
+
+module.exports.getJson = async function(req, res) {
+  if (!bondIssuerjson) {
+    return res.status(404).send();
+  }
+  res.send(bondIssuerjson);
 };

@@ -1,0 +1,54 @@
+{
+  "detailsOfInstrument": [
+    "typeOfInstrument",
+    "term",
+    "couponRate",
+    "interestPayment",
+    "taxTreatment",
+    "repayment"
+  ],
+
+  "detailsOfIssue": [
+    "dateOfIssue",
+    "maturityDate",
+    "platform",
+    "type",
+    "issueSized",
+    "bidsReceived",
+    "amountAccepted",
+    "greenShoeOption",
+    "greenShoeOptionAmount",
+    "guaranteedByStateGovt",
+    "guaranteeMechanism"
+  ],
+
+  "rating": [
+    "crisil",
+    "care",
+    "icra",
+    "brickwork",
+    "auicte",
+    "indiaRatingsandResearch",
+    "linksToReports"
+  ],
+
+  "objectiveOfIssue": ["objectOfIssue"],
+
+  "subscriber": ["whoCanInvest", "detailsOfSubscribers"],
+
+  "advisors": [
+    "transactionAdvisors",
+    "trustee",
+    "registrar",
+    "auditor",
+    "legalCounsel",
+    "escrowBanker",
+    "arranger"
+  ],
+
+  "documentsAvailable": [
+    "draftInformationMemorandum",
+    "noticesFromPlatforms",
+    "others"
+  ]
+}
