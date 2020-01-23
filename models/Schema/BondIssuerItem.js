@@ -125,8 +125,9 @@ module.exports.post = async function(req, res) {
   }
   let reqBody = {
     ...req.body,
-    yearOfBondIssued: date && date.getFullYear()
+    yearOfBondIssued: date.getFullYear()
   };
+  console.log(reqBody.yearOfBondIssued);
   service.post(BondIssuerItem, reqBody, function(response, value) {
     return res.status(response ? 200 : 400).send(value);
   });

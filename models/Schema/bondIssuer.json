@@ -1,6 +1,6 @@
 {
   "detailsOfInstrument": [
-    "typeOfInstrument",
+    "typeOfInstruments",
     "term",
     "couponRate",
     "interestPayment",
@@ -13,12 +13,12 @@
     "maturityDate",
     "platform",
     "type",
-    "issueSized",
+    "issueSize",
     "bidsReceived",
     "amountAccepted",
     "greenShoeOption",
-    "greenShoeOptionAmount",
-    "guaranteedByStateGovt",
+    "greenShowOptionAmount",
+    "guaranteedByStateGovernment",
     "guaranteeMechanism"
   ],
 
@@ -27,8 +27,8 @@
     "care",
     "icra",
     "brickwork",
-    "auicte",
-    "indiaRatingsandResearch",
+    "auicte/Smera",
+    "indiaRatings&Research",
     "linksToReports"
   ],
 
@@ -38,9 +38,9 @@
 
   "advisors": [
     "transactionAdvisors",
-    "trustee",
-    "registrar",
-    "auditor",
+    "trusteeForTheBond",
+    "registrarOfTheIssue",
+    "auditorOfIssue",
     "legalCounsel",
     "escrowBanker",
     "arranger"
