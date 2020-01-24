@@ -70,8 +70,33 @@ const put = function(condition = {},update,schema,callback){
 		}
 	});
 };
+
+const aggregate = function(condition = {},schema,callback){
+    // PUT Function where find condition, update condition and schema name would be received and accordingly response will be returned
+	schema.aggregate(condition).exec((err,data)=>{
+		if (err) {
+            console.log("error occurred in put",schema,err);
+            let obj = {
+                timestamp: moment().unix(),
+				success: false,
+                message: "DB Error Occured",
+                err: err
+            }
+			return callback(null,obj);
+		} else {
+            let obj = {
+                timestamp: moment().unix(),
+				success: true,
+                message: "Successfully updated",
+                data: data
+            }
+			return callback(true,obj);
+		}
+	});
+};
 module.exports = {
     find : find,
     put : put,
-    post :post
+    post :post,
+    aggregate : aggregate
 }

@@ -125,12 +125,15 @@ const BondIssuerItem = require('../models/Schema/BondIssuerItem');
 const bondsUploadService = require('../service/bonds-upload');
 router.get(
   '/BondIssuer',
-  passport.authenticate('jwt', { session: false }),
   BondIssuerItem.getJson
 );
 router.get(
+  '/Bond/Ulbs',
+  BondIssuerItem.BondUlbs
+);
+
+router.get(
   '/BondIssuerItem',
-  passport.authenticate('jwt', { session: false }),
   BondIssuerItem.get
 );
 router.put(

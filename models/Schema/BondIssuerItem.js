@@ -5,7 +5,7 @@ const bondIssuerjson = require('./bondIssuer.json');
 
 var BondIssuerItemSchema = new Schema(
   {
-    ulb: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Ulb' },
+    ulb:  { type: String,required:true },
     yearOfBondIssued: { type: String, default: '' },
     // --------------------------- //
     // details of instrument
@@ -152,3 +152,22 @@ module.exports.getJson = async function(req, res) {
   }
   res.send(bondIssuerjson);
 };
+
+module.exports.BondUlbs = function(req,res){
+  let arr = [
+    {$group:{
+        _id : "ulb",
+        years:{$addToSet:"$yearOfBondIssued"}
+      }
+    },
+    {$project:{
+          _id:0,
+          name:"$_id",
+          yeards : "$years"
+      }
+    }
+  ];
+  service.aggregate(arr , BondIssuerItem, function(response, value) {
+    return res.status(response ? 200 : 400).send(value);
+  });
+}

@@ -64,24 +64,9 @@ module.exports.create = async function(req, res, next) {
             // check for ulb
             let ulb;
             if (eachRow.ulbCode) {
-              ulb = await Ulb.findOne(
-                { code: eachRow.ulbCode, isActive: true },
-                { _id: 1 }
-              ).exec();
-
-              // check whether ulb type exists or not
-              // let ulbType = await UlbType.findOne(
-              //   { name: eachRow.type, isActive: true },
-              //   { _id: 1 }
-              // ).exec();
-
-              // state
-              //   ? (eachRow.state = state._id)
-              //   : (message += 'State ' + eachRow.state + " don't exists");
-
-              ulb
-                ? (eachRow.ulb = ulb._id)
-                : (message += 'Ulb ' + eachRow.issuer + " don't exists");
+              ulb = eachRow.ulbCode ? eachRow.ulbCode.trim() : null
+            }else{
+              message +="Ulb Name required"; 
             }
             // ulbType
             //   ? (eachRow.ulbtype = ulbType._id)
@@ -91,25 +76,6 @@ module.exports.create = async function(req, res, next) {
               // if any state or ulb type not exists, then return message
               errors.push(message);
             } else {
-              // take area, wards, population => if empty then convert to 0 or if comma then remove comma
-              // eachRow.area = eachRow.area
-              //   ? Number(eachRow.area.replace(/\,/g, ''))
-              //   : 0;
-              // eachRow.wards = eachRow.wards
-              //   ? Number(eachRow.wards.replace(/\,/g, ''))
-              //   : 0;
-              // eachRow.population = eachRow.population
-              //   ? Number(eachRow.population.replace(/\,/g, ''))
-              //   : 0;
-
-              // eachRow['natureOfUlb'] = eachRow['natureofulb']
-              //   ? eachRow['natureofulb']
-              //   : '';
-              // eachRow['ulbType'] = eachRow['ulbtype'];
-
-              // delete eachRow['ulbtype'];
-              // delete eachRow['natureofulb'];
-
               if (eachRow.ulb) {
                 service.put({ ulb: ulb._id }, eachRow, BondIssuerItem, function(
                   response,
