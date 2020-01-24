@@ -63,10 +63,10 @@ module.exports.create = async function(req, res, next) {
 
             // check for ulb
             let ulb;
-            if (eachRow.ulbCode) {
-              ulb = eachRow.ulbCode ? eachRow.ulbCode.trim() : null
-            }else{
-              message +="Ulb Name required"; 
+            if (eachRow.ulbName) {
+              ulb = eachRow.ulbName ? eachRow.ulbName.trim() : null;
+            } else {
+              message += 'Ulb Name required';
             }
             // ulbType
             //   ? (eachRow.ulbtype = ulbType._id)
