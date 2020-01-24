@@ -37,6 +37,7 @@ module.exports = function (req, res) {
         liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
         assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
     }
+    console.log("here coming")
     if(!financialYear){
         return res.status(400).json({
             timestamp : moment().unix(),
@@ -122,7 +123,8 @@ module.exports = function (req, res) {
 
                 // validate overview sheet 
                 let objOfSheet = await validateOverview(overviewSheet,financialYear); // rejection in case of error
-
+                delete objOfSheet['state'];
+                objOfSheet['state']  = objOfSheet.state_name;
                 let du = {
                     query : { ulb_code_year : objOfSheet.ulb_code_year },
                     update : Object.assign({ lastModifiedAt:new Date() },objOfSheet),
@@ -130,7 +132,7 @@ module.exports = function (req, res) {
                 }
                 delete du.update._id;
                 delete du.update.__v;
-
+                 
                 // insert the oviewViewSheet content in ledger logs
                 let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
 
@@ -260,6 +262,7 @@ module.exports = function (req, res) {
                 }
                 Object.assign(objOfSheet,JSON.parse(JSON.stringify(ulb)));
                 objOfSheet['ulb_code_year'] = objOfSheet.ulb_code + '_' + objOfSheet.year;
+                objOfSheet['state_name'] = state.name;
                 resolve(objOfSheet);
             }
         });

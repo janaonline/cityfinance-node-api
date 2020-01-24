@@ -1,0 +1,54 @@
+{
+  "detailsOfInstrument": [
+    "typeOfInstruments",
+    "term",
+    "couponRate",
+    "interestPayment",
+    "taxTreatment",
+    "repayment"
+  ],
+
+  "detailsOfIssue": [
+    "dateOfIssue",
+    "maturityDate",
+    "platform",
+    "type",
+    "issueSize",
+    "bidsReceived",
+    "amountAccepted",
+    "greenShoeOption",
+    "greenShowOptionAmount",
+    "guaranteedByStateGovernment",
+    "guaranteeMechanism"
+  ],
+
+  "rating": [
+    "crisil",
+    "care",
+    "icra",
+    "brickwork",
+    "auicte/Smera",
+    "indiaRatings&Research",
+    "linksToReports"
+  ],
+
+  "objectiveOfIssue": ["objectOfIssue"],
+
+  "subscriber": ["whoCanInvest", "detailsOfSubscribers"],
+
+  "advisors": [
+    "transactionAdvisors",
+    "trusteeForTheBond",
+    "registrarOfTheIssue",
+    "auditorOfIssue",
+    "legalCounsel",
+    "escrowBanker",
+    "arranger"
+  ],
+
+  "documentsAvailable": [
+    "draftInformationMemorandum",
+    "noticesFromPlatforms",
+    "others"
+  ]
+}

@@ -14,8 +14,11 @@ const lineItems  = {
 module.exports = async (req, res)=>{
     try {
         const jsonArray = await csv().fromFile(req.file.path);
+        console.log("jsonArray", jsonArray.length);
         let dataArr= [ ];
         for(let json of jsonArray){
+            console.log("json", json);
+            
             for(let k in json){
 
                 // Find ulb based on ULB Code
