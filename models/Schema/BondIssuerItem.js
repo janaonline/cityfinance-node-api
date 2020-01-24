@@ -74,6 +74,7 @@ var BondIssuerItemSchema = new Schema(
   },
   { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
+
 const BondIssuerItem = (module.exports = mongoose.model(
   'BondIssuerItem',
   BondIssuerItemSchema
@@ -119,13 +120,10 @@ module.exports.put = async function(req, res) {
 module.exports.post = async function(req, res) {
   // Create any financial parameter
   // BondIssuerItem is model name
-  let date = null;
-  if (req.body.dateOfIssue) {
-    date = new Date(req.body.dateOfIssue);
-  }
+
   let reqBody = {
     ...req.body,
-    yearOfBondIssued: date.getFullYear()
+    yearOfBondIssued: getYear(req.body.dateOfIssue)
   };
   console.log(reqBody.yearOfBondIssued);
   service.post(BondIssuerItem, reqBody, function(response, value) {
@@ -165,7 +163,7 @@ module.exports.BondUlbs = function(req, res) {
       $project: {
         _id: 0,
         name: '$_id',
-        yeards: '$years'
+        years: '$years'
       }
     }
   ];
@@ -173,3 +171,8 @@ module.exports.BondUlbs = function(req, res) {
     return res.status(response ? 200 : 400).send(value);
   });
 };
+
+function getYear(str) {
+  if (str.includes('-')) return str.split('-').slice(-1)[0];
+  return str;
+}

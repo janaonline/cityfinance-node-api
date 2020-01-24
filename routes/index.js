@@ -123,19 +123,10 @@ router.delete(
 //---> Bond Issuer Item Routes <---//
 const BondIssuerItem = require('../models/Schema/BondIssuerItem');
 const bondsUploadService = require('../service/bonds-upload');
-router.get(
-  '/BondIssuer',
-  BondIssuerItem.getJson
-);
-router.get(
-  '/Bond/Ulbs',
-  BondIssuerItem.BondUlbs
-);
+router.get('/BondIssuer', BondIssuerItem.getJson);
+router.get('/Bond/Ulbs', BondIssuerItem.BondUlbs);
 
-router.get(
-  '/BondIssuerItem',
-  BondIssuerItem.get
-);
+router.get('/BondIssuerItem', BondIssuerItem.get);
 router.put(
   '/BondIssuerItem/:_id',
   passport.authenticate('jwt', { session: false }),
@@ -143,17 +134,17 @@ router.put(
 );
 router.post(
   '/BondIssuerItem',
-  passport.authenticate('jwt', { session: false }),
+  // passport.authenticate('jwt', { session: false }),
   BondIssuerItem.post
 );
 router.post(
   '/BondIssuerItem/getList',
-  passport.authenticate('jwt', { session: false }),
+  // passport.authenticate('jwt', { session: false }),
   BondIssuerItem.get
 );
 router.delete(
   '/BondIssuerItem/:_id',
-  passport.authenticate('jwt', { session: false }),
+  // passport.authenticate('jwt', { session: false }),
   BondIssuerItem.delete
 );
 router.post(

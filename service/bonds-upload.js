@@ -1,7 +1,7 @@
 var xlstojson = require('xls-to-json-lc');
 var xlsxtojson = require('xlsx-to-json-lc');
 const service = require('./index');
-const Ulb = require('../models/Schema/Ulb');
+// const Ulb = require('../models/Schema/Ulb');
 // const State = require('../models/Schema/State');
 // const UlbType = require('../models/Schema/UlbType');
 const BondIssuerItem = require('../models/Schema/BondIssuerItem');
@@ -35,7 +35,7 @@ module.exports.create = async function(req, res, next) {
             res['errors'] = err;
             return returnResponse(res);
           }
-
+          console.log(sheet.length);
           for (let eachRow of sheet) {
             // remove all the empty rows or null rows from eachRow object
             Object.keys(eachRow).forEach(
@@ -52,8 +52,6 @@ module.exports.create = async function(req, res, next) {
             }
 
             let message = '';
-            let date = new Date(eachRow['dateOfIssue']);
-            eachRow['yearOfBondIssued'] = date.getFullYear();
 
             // check whether particular state exists or not
             // let state = await State.findOne(
@@ -62,12 +60,19 @@ module.exports.create = async function(req, res, next) {
             // ).exec();
 
             // check for ulb
-            let ulb;
-            if (eachRow.ulbName) {
-              ulb = eachRow.ulbName ? eachRow.ulbName.trim() : null;
-            } else {
-              message += 'Ulb Name required';
+            if (Object.keys(eachRow).length !== 0) {
+              // console.log(eachRow.ulbName);
+
+              if (eachRow.ulbName) {
+                eachRow.ulb = eachRow.ulbName ? eachRow.ulbName.trim() : null;
+                delete eachRow.ulbName;
+                // let date = new Date(eachRow['dateOfIssue']);
+                eachRow['yearOfBondIssued'] = getYear(eachRow['dateOfIssue']);
+              } else {
+                message += 'Ulb Name required';
+              }
             }
+
             // ulbType
             //   ? (eachRow.ulbtype = ulbType._id)
             //   : (message += 'Ulb ' + eachRow.type + " don't exists");
@@ -77,17 +82,22 @@ module.exports.create = async function(req, res, next) {
               errors.push(message);
             } else {
               if (eachRow.ulb) {
-                service.put({ ulb: ulb._id }, eachRow, BondIssuerItem, function(
-                  response,
-                  value
-                ) {
-                  if (!response) {
-                    errors.push(
-                      'Not able to create ulb => ',
-                      eachRow.code + '' + response
-                    );
+                service.put(
+                  {
+                    // ulb: eachRow['ulb'],
+                    // dateOfIssue: eachRow['dateOfIssue']
+                  },
+                  eachRow,
+                  BondIssuerItem,
+                  function(response, value) {
+                    if (!response) {
+                      errors.push(
+                        'Not able to create ulb => ',
+                        eachRow.code + '' + response
+                      );
+                    }
                   }
-                });
+                );
               }
             }
           }
@@ -132,4 +142,9 @@ function camelize(str) {
     if (+match === 0) return ''; // or if (/\s+/.test(match)) for white spaces
     return index == 0 ? match.toLowerCase() : match.toUpperCase();
   });
+}
+
+function getYear(str) {
+  if (str.includes('-')) return str.split('-').slice(-1)[0];
+  return str;
 }
