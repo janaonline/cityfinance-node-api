@@ -85,7 +85,8 @@ module.exports.create = async function(req, res, next) {
                 await service.put(
                   {
                     ulb: eachRow['ulb'],
-                    dateOfIssue: eachRow['dateOfIssue']
+                    dateOfIssue: eachRow['dateOfIssue'],
+                    issueSize: eachRow['issueSize']
                   },
                   eachRow,
                   BondIssuerItem,

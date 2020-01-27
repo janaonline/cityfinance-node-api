@@ -79,7 +79,9 @@ const BondIssuerItem = (module.exports = mongoose.model(
   'BondIssuerItem',
   BondIssuerItemSchema
 ));
-BondIssuerItemSchema.index({ ulb: 1, yearOfBondIssued: 1 }, { unique: true });
+BondIssuerItemSchema.index({ ulb: 1, dateOfIssue: 1 }, { unique: true });
+BondIssuerItemSchema.index({ ulb: 1, issueSize: 1 }, { unique: true });
+BondIssuerItemSchema.index({ dateOfIssue: 1, issueSize: 1 }, { unique: true });
 
 module.exports.get = async function(req, res) {
   let query = { isActive: true };
