@@ -40,6 +40,7 @@ var BondIssuerItemSchema = new Schema(
     'auicte/Smera': { type: String, default: '' },
     'indiaRatings&Research': { type: String, default: '' },
     linksToReports: { type: String, default: '' },
+    otherRatingAgencies: { type: String, default: '' },
 
     // objective of issue
 
