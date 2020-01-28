@@ -61,13 +61,12 @@ module.exports.create = async function(req, res, next) {
 
             // check for ulb
             if (Object.keys(eachRow).length !== 0) {
-              // console.log(eachRow.ulbName);
-
               if (eachRow.ulbName) {
                 eachRow.ulb = eachRow.ulbName ? eachRow.ulbName.trim() : null;
                 delete eachRow.ulbName;
                 // let date = new Date(eachRow['dateOfIssue']);
                 eachRow['yearOfBondIssued'] = getYear(eachRow['dateOfIssue']);
+                // console.log(eachRow);
               } else {
                 message += 'Ulb Name required';
               }
@@ -82,10 +81,12 @@ module.exports.create = async function(req, res, next) {
               errors.push(message);
             } else {
               if (eachRow.ulb) {
-                service.put(
+                // console.log('put called', eachRow);
+                await service.put(
                   {
-                    // ulb: eachRow['ulb'],
-                    // dateOfIssue: eachRow['dateOfIssue']
+                    ulb: eachRow['ulb'],
+                    dateOfIssue: eachRow['dateOfIssue'],
+                    issueSize: eachRow['issueSize']
                   },
                   eachRow,
                   BondIssuerItem,
