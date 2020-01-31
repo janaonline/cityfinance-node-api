@@ -1,6 +1,7 @@
 var xlstojson = require('xls-to-json-lc');
 var xlsxtojson = require('xlsx-to-json-lc');
 const service = require('./index');
+const bondIssuerJson = require('../models/Schema/bondIssuer.json');
 // const Ulb = require('../models/Schema/Ulb');
 // const State = require('../models/Schema/State');
 // const UlbType = require('../models/Schema/UlbType');
@@ -26,7 +27,7 @@ module.exports.create = async function(req, res, next) {
         {
           input: reqFile.path,
           output: null, //since we don't need output.json
-          lowerCaseHeaders: true,
+          // lowerCaseHeaders: true,
           sheet: 'Sheet1'
         },
         async function(err, sheet) {
@@ -35,7 +36,7 @@ module.exports.create = async function(req, res, next) {
             res['errors'] = err;
             return returnResponse(res);
           }
-          console.log(sheet.length);
+          // console.log(sheet);
           for (let eachRow of sheet) {
             // remove all the empty rows or null rows from eachRow object
             Object.keys(eachRow).forEach(
@@ -44,12 +45,25 @@ module.exports.create = async function(req, res, next) {
                 delete eachRow[key]
             );
 
+            bondIssuerJson['rating'].forEach((rating, i) => {
+              for (let key in eachRow) {
+                if (rating.toLowerCase() === key) {
+                  console.log(key);
+                  //eachRow[key.toUpperCase()] = eachRow[key];
+                }
+              }
+            });
+
+            console.log(eachRow);
+
             for (let key in eachRow) {
               if (camelize(key) !== key) {
                 eachRow[camelize(key)] = eachRow[key];
-                delete eachRow[key];
+                //delete eachRow[key];
               }
             }
+
+            //console.log(eachRow);
 
             let message = '';
 

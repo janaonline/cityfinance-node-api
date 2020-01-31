@@ -33,14 +33,48 @@ var BondIssuerItemSchema = new Schema(
 
     // rating
 
-    crisil: { type: String, default: '' },
-    care: { type: String, default: '' },
-    icra: { type: String, default: '' },
-    brickwork: { type: String, default: '' },
-    'auicte/Smera': { type: String, default: '' },
-    'indiaRatings&Research': { type: String, default: '' },
-    linksToReports: { type: String, default: '' },
-    otherRatingAgencies: { type: String, default: '' },
+    CRISIL: { type: String, default: '' },
+    CARE: { type: String, default: '' },
+    ICRA: { type: String, default: '' },
+    // BRICKWORK: { type: String, default: '' },
+    // 'AUICTE/SMERA': { type: String, default: '' },
+    // 'INDIARATINGS&RESEARCH': { type: String, default: '' },
+    // OTHERRATINGAGENCIES: { type: String, default: '' },
+    // LINKSTOREPORTS: { type: String, default: '' },
+
+    //-----------------------------//
+    Brickwork: { type: String, default: '' },
+    'Auicte / SMERA': { type: String, default: '' },
+    'India Ratings & Research': { type: String, default: '' },
+    'Other Rating Agencies': {
+      type: String,
+      default: ''
+    },
+    'Links to reports': { type: String, default: '' },
+    //-----------------------------//
+    // crisil: { type: String, default: '' },
+    // care: { type: String, default: '' },
+    // icra: { type: String, default: '' },
+    // brickwork: { type: String, default: '' },
+    // 'auicte/Smera': { type: String, default: '' },
+    // 'indiaRatings&Research': { type: String, default: '' },
+    // otherRatingAgencies: { type: String, default: '' },
+    // linksToReports: { type: String, default: '' },
+
+    // old json ---------------------//
+
+    // rating1: [
+    //   'crisil',
+    //   'care',
+    //   'icra',
+    //   'brickwork',
+    //   'auicte/Smera',
+    //   'indiaRatings&Research',
+    //   'otherRatingAgencies',
+    //   'linksToReports'
+    // ],
+
+    //-------------------------//
 
     // objective of issue
 

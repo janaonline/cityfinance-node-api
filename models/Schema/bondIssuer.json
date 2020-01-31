@@ -23,14 +23,14 @@
   ],
 
   "rating": [
-    "crisil",
-    "care",
-    "icra",
-    "brickwork",
-    "auicte/Smera",
-    "indiaRatings&Research",
-    "linksToReports",
-    "otherRatingAgencies"
+    "CRISIL",
+    "CARE",
+    "ICRA",
+    "Brickwork",
+    "Auicte / SMERA",
+    "India Ratings & Research",
+    "Other Rating Agencies",
+    "Links to reports"
   ],
 
   "objectiveOfIssue": ["objectOfIssue"],
