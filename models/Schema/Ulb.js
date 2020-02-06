@@ -14,6 +14,16 @@ var UlbSchema = new Schema({
     wards : { type : Number, default : 0},
     area : { type : Number, default : 0},
     population : { type : Number, default : 0},
+    location:{
+        type:{
+            lat:{type:String },
+            lng:{type:String },
+        },
+        default:{
+            lat:"0.0",
+            lng:"0.0"
+        }
+    },
     amrut : { type : String ,  default : ""},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() },
@@ -427,3 +437,17 @@ module.exports.getPopulate = async(req,res, next)=>{
         });
     }
 };
+module.exports.getUlbs = async (req, res)=>{
+    try{
+        let query=  {};
+        if(req.query.state){
+            query["state"] = Schema.Types.ObjectId(req.query.state);
+        }
+        let ulbs = await Ulb.find(query,{_id:1, name:1,code:1, state:1, location:1, population:1}).exec();
+        return res.status(200).json({message: "Ulb list with population and coordinates and population.", success: true, data:ulbs})
+    }catch (e) {
+        console.log("Exception",e);
+        return res.status(400).json({message:"", errMessage: e.message,success:false});
+    }
+}
+
