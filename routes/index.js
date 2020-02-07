@@ -174,7 +174,7 @@ router.get('/lookup/states', State.get);
 router.get('/ulblist', Ulb.getPopulate);
 
 router.get('/lookup/states-with-ulb-count', State.getStateListWithCoveredUlb);
-router.get('/ulb-list', Ulb.getPopulate);
+router.get('/ulb-list', Ulb.getUlbs);
 
 // Get ULBs by state
 router.get('/states/:stateCode/ulbs', Ulb.getByState);
