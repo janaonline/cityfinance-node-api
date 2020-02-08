@@ -95,7 +95,7 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
                     _id:1,
                     name:1,
                     code:1,
-                    ulbCount:{$toInt: "$ulbCount"},
+                    totalUlbs:{$toInt: "$totalUlbs"},
                     coveredUlbCount:{$size:"$ulbs"},
                     coveredUlbPercentage:{
                         $cond : {
