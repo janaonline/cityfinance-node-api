@@ -443,7 +443,7 @@ module.exports.getUlbs = async (req, res)=>{
         if(req.query.state){
             query["state"] = Schema.Types.ObjectId(req.query.state);
         }
-        let ulbs = await Ulb.find(query,{_id:1, name:1,code:1, state:1, location:1, population:1}).exec();
+        let ulbs = await Ulb.find(query,{_id:1, name:1,code:1, state:1, location:1, population:1, area:1}).exec();
         return res.status(200).json({message: "Ulb list with population and coordinates and population.", success: true, data:ulbs})
     }catch (e) {
         console.log("Exception",e);
