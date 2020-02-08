@@ -12,28 +12,28 @@ module.exports = (req, res, next)=>{
                         populationCategory:"> 10 Lakhs",
                         numOfUlb:100,
                         ownRevenue:1000,
-                        revenueExpenditure: 10000,
-                        ownRevenuePercentage:10,
-                        minOwnRevenuePercentage:8,
-                        maxOwnRevenuePercentage:20
+                        interestIncome: 10000,
+                        deficitFinanceByCapitalGrants:10,
+                        assignedRevenueAndRevenueGrants:8,
+                        otherIncome:20
                     },
                     {
                         populationCategory:"1Lakh to 10Lakhs",
                         numOfUlb:100,
                         ownRevenue:1000,
-                        revenueExpenditure: 10000,
-                        ownRevenuePercentage:10,
-                        minOwnRevenuePercentage:8,
-                        maxOwnRevenuePercentage:20
+                        interestIncome: 10000,
+                        deficitFinanceByCapitalGrants:10,
+                        assignedRevenueAndRevenueGrants:8,
+                        otherIncome:20
                     },
                     {
                         populationCategory:"< 1 Lakh",
                         numOfUlb:100,
                         ownRevenue:1000,
-                        revenueExpenditure: 10000,
-                        ownRevenuePercentage:10,
-                        minOwnRevenuePercentage:8,
-                        maxOwnRevenuePercentage:20
+                        interestIncome: 10000,
+                        deficitFinanceByCapitalGrants:10,
+                        assignedRevenueAndRevenueGrants:8,
+                        otherIncome:20
                     }
                 ]
             },
@@ -44,28 +44,28 @@ module.exports = (req, res, next)=>{
                         populationCategory:"> 10 Lakhs",
                         numOfUlb:100,
                         ownRevenue:1000,
-                        revenueExpenditure: 10000,
-                        ownRevenuePercentage:10,
-                        minOwnRevenuePercentage:8,
-                        maxOwnRevenuePercentage:20
+                        interestIncome: 10000,
+                        deficitFinanceByCapitalGrants:10,
+                        assignedRevenueAndRevenueGrants:8,
+                        otherIncome:20
                     },
                     {
                         populationCategory:"1Lakh to 10Lakhs",
                         numOfUlb:100,
                         ownRevenue:1000,
-                        revenueExpenditure: 10000,
-                        ownRevenuePercentage:10,
-                        minOwnRevenuePercentage:8,
-                        maxOwnRevenuePercentage:20
+                        interestIncome: 10000,
+                        deficitFinanceByCapitalGrants:10,
+                        assignedRevenueAndRevenueGrants:8,
+                        otherIncome:20
                     },
                     {
                         populationCategory:"< 1 Lakh",
                         numOfUlb:100,
                         ownRevenue:1000,
-                        revenueExpenditure: 10000,
-                        ownRevenuePercentage:10,
-                        minOwnRevenuePercentage:8,
-                        maxOwnRevenuePercentage:20
+                        interestIncome: 10000,
+                        deficitFinanceByCapitalGrants:10,
+                        assignedRevenueAndRevenueGrants:8,
+                        otherIncome:20
                     }
                 ]
             }
