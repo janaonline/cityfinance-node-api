@@ -45,6 +45,14 @@ module.exports = (req, res, next)=>{
                     }
                 ]
             }
-        ]
+        ].map(d=>{
+            return {
+                year:d.year,
+                data: d.data.map(m=>{
+                    m["ulbName"] = 'B';
+                    return m;
+                })
+            }
+        })
     })
 }
