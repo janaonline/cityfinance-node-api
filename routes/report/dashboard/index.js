@@ -1,0 +1,9 @@
+const dashboard = {
+    revenueExpenditure:require('./avenues-revenue-expenditure'),
+    cashAndBank:require('./cash-and-bank-balance'),
+    outstandingBank:require('./outstanding-debt'),
+    ownRevenueDependency:require('./own-revenue-dependency'),
+    sourceFinancialRevenueExpenditure:require('./source-financial-revenue-expenditure'),
+    sourceRevenue:require('./source-revenue')
+}
+module.exports = dashboard;
