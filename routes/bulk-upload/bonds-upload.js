@@ -1,13 +1,10 @@
 var xlstojson = require('xls-to-json-lc');
 var xlsxtojson = require('xlsx-to-json-lc');
-const service = require('./index');
-const bondIssuerJson = require('../models/Schema/bondIssuer.json');
-// const Ulb = require('../models/Schema/Ulb');
-// const State = require('../models/Schema/State');
-// const UlbType = require('../models/Schema/UlbType');
-const BondIssuerItem = require('../models/Schema/BondIssuerItem');
+const service = require('../../service');
+const bondIssuerJson = require('../../models/Schema/bondIssuer');
+const BondIssuerItem = require('../../models/Schema/BondIssuerItem');
 
-module.exports.create = async function(req, res, next) {
+module.exports = async function(req, res, next) {
   if (req.file) {
     var reqFile = req.file;
     let errors = [];

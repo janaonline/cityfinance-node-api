@@ -17,7 +17,7 @@ const multerUpload = multer({ storage: storage });
  * END MULTER
  */
 const passport = require('passport');
-const ulbUploadService = require('../service/ulb-upload');
+const ulbUploadService = require('./bulk-upload/ulb-upload');
 
 //--> State Routes <---//
 const State = require('../models/Schema/State');
@@ -81,22 +81,6 @@ router.delete(
   Ulb.delete
 );
 
-router.post(
-  '/bulk/ulb-upload',
-  multerUpload.single('files'),
-  (req, res, next) => {
-    ulbUploadService.create(req, res);
-  }
-);
-
-//--> Upload Ledger Routes <---//
-const ledgerUpload = require('./ledger/upload_ledger');
-router.post('/uploadLedger', multerUpload.single('csv'), ledgerUpload);
-
-const BulkUpload = require('./bulk-upload');
-router.post('/processData', BulkUpload.processData);
-router.get('/getProcessStatus/:_id', BulkUpload.getProcessStatus);
-
 //---> Line Item Routes <---//
 const LineItem = require('../models/Schema/LineItem');
 router.get(
@@ -122,7 +106,6 @@ router.delete(
 
 //---> Bond Issuer Item Routes <---//
 const BondIssuerItem = require('../models/Schema/BondIssuerItem');
-const bondsUploadService = require('../service/bonds-upload');
 router.get('/BondIssuer', BondIssuerItem.getJson);
 router.get('/Bond/Ulbs', BondIssuerItem.BondUlbs);
 
@@ -147,14 +130,10 @@ router.delete(
   // passport.authenticate('jwt', { session: false }),
   BondIssuerItem.delete
 );
-router.post(
-  '/bulk/bonds-upload',
-  multerUpload.single('files'),
-  (req, res, next) => {
-    bondsUploadService.create(req, res);
-  }
-);
 
+//---> Bulk-Upload Routes <---//
+const BulkUploadRoute = require('../routes/bulk-upload/route');
+router.use("/",BulkUploadRoute);
 //---> Ulb Ranking Routes <---//
 const ReportRoutes = require('../routes/report/route');
 router.use('/report', ReportRoutes);

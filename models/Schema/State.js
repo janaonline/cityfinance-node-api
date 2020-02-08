@@ -6,6 +6,7 @@ var StateSchema = new Schema({
     name: { type: String, required: true  },
     code: { type: String, required: true },
     regionalName: { type: String, required: true,default : "" },
+    censusCode:{ type: String, default:null },
     totalUlbs: { type: Number, default:0 },
     modifiedAt : { type: Date },
     createdAt : { type: Date },
