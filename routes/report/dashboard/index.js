@@ -4,6 +4,8 @@ const dashboard = {
     outstandingBank:require('./outstanding-debt'),
     ownRevenueDependency:require('./own-revenue-dependency'),
     sourceFinancialRevenueExpenditure:require('./source-financial-revenue-expenditure'),
-    sourceRevenue:require('./source-revenue')
+    sourceRevenue:require('./source-revenue'),
+    ulbCoverage:require('./ulb-coverage'),
+    filterUlbs:require('./filter-ulbs')
 }
 module.exports = dashboard;

@@ -1,5 +1,24 @@
 const moment = require('moment');
-module.exports = (req, res, next)=>{
+module.exports = async(req, res, next)=>{
+    /*try{
+        let data = [];
+        let queryArr = req.body.queryArr;
+        return res.status(200).json({
+            timestamp:moment().unix(),
+            success:true,
+            message:"",
+            data:queryArr
+        })
+    }catch (e) {
+        console.log("Exception:",e);
+        return res.status(400).json({
+            timestamp: moment().unix(),
+            success:false,
+            message: "Caught Exception!",
+            errorMessage:e.message,
+            query:req.query.years
+        });
+    }*/
     return res.status(200).json({
         timestamp:moment().unix(),
         success:true,

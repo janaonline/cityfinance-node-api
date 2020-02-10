@@ -6,5 +6,6 @@ router.get("/outstanding-bank", dashboard.outstandingBank);
 router.get("/own-revenue-dependency", dashboard.ownRevenueDependency);
 router.get("/revenue-expenditure", dashboard.revenueExpenditure);
 router.get("/source-financial-revenue-expenditure", dashboard.sourceFinancialRevenueExpenditure);
-router.get("/source-revenue", dashboard.sourceRevenue);
+router.get("/source-revenue", dashboard.filterUlbs, dashboard.sourceRevenue);
+router.get("/ulb-coverage", dashboard.ulbCoverage);
 module.exports = router;
