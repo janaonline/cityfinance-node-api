@@ -12,7 +12,6 @@ module.exports = async (req, res, next) => {
       let previousYear = moment(defaultYear).subtract('year', 1).format('YYYY').toString();
       years = [`${previousYear}-${currentYear}`];
     }
-    console.log(years);
     let ulbs = [];
     for (year of years) {
       let query = { financialYear: year };
