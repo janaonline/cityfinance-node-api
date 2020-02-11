@@ -3,7 +3,7 @@ const router = express.Router();
 const dashboard = require('./index');
 router.get("/cash-and-bank", dashboard.cashAndBank);
 router.get("/outstanding-bank", dashboard.outstandingBank);
-router.get("/own-revenue-dependency", dashboard.ownRevenueDependency);
+router.get("/own-revenue-dependency", dashboard.filterUlbs, dashboard.ownRevenueDependency);
 router.get("/revenue-expenditure", dashboard.revenueExpenditure);
 router.get("/source-financial-revenue-expenditure", dashboard.sourceFinancialRevenueExpenditure);
 router.get("/source-revenue", dashboard.filterUlbs, dashboard.sourceRevenue);
