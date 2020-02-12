@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const dashboard = require('./index');
 router.get("/cash-and-bank", dashboard.cashAndBank);
-router.get("/outstanding-bank", dashboard.outstandingBank); // remove
 router.get("/outstanding-debt", dashboard.filterUlbs, dashboard.outstandingDebt);
 router.get("/own-revenue-dependency", dashboard.ownRevenueDependency);
 router.get("/revenue-expenditure", dashboard.revenueExpenditure);

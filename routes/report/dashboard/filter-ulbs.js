@@ -65,7 +65,7 @@ module.exports = async (req, res, next) => {
         }
         req.body["queryArr"] = arr;
         next();
-// return res.status(200).json({ data: req.body, defaultYear: defaultYear });
+        // return res.status(200).json({ data: req.body, defaultYear: defaultYear });
     } catch (e) {
         console.log("Exception:", e);
         return res.status(400).json({
