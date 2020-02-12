@@ -100,9 +100,9 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
                     coveredUlbPercentage:{
                         $cond : {
                             if : {
-                                $gte:[{$size:"$ulbs"},"$totalUlbs"]
+                                $or:[{$gte:[{$size:"$ulbs"},"$totalUlbs"]},{$eq:[{$size:"$ulbs"},0]},{$eq:["$totalUlbs",0]}]
                             },
-                            then:{$toInt:"100"},
+                            then:{$toInt:"0"},
                             else: { $multiply:[{ $divide:[{$size:"$ulbs"},"$totalUlbs"]}, 100]}
                         }
                     }
