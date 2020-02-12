@@ -292,7 +292,7 @@ const calcualteTotal = (arr, keys)=>{
         for(el of arr){
             obj[k] = obj[k] + Number(el[k]);
         }
-        obj[k] = obj[k].toFixed(2);
+        obj[k] = Number.isInteger(obj[k]) ? obj[k] : obj[k].toFixed(2);
     }
     arr.push(obj);
     for(el of arr){
