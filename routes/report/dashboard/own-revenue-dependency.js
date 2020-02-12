@@ -2,7 +2,13 @@ const moment = require('moment');
 const UlbLedger = require('../../../models/Schema/UlbLedger');
 
 module.exports = async (req, res, next) => {
-  try {
+  return res.status(200).json({
+    timestamp: moment().unix(),
+    success: true,
+    message: '',
+    data: getData()
+  });
+  /*try {
     //console.log(req.body.queryArr);
     let query;
     let output = [];
@@ -161,7 +167,9 @@ module.exports = async (req, res, next) => {
     //     message: "",
     //     data: getData()
     // })
-  } catch (error) {}
+  } catch (error) {
+
+  }*/
 };
 const getData = ()=>{
   return [
