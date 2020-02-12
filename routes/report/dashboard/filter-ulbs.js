@@ -3,19 +3,18 @@ const Ulb = require('../../../models/Schema/Ulb');
 const moment = require('moment');
 module.exports = async (req, res, next) => {
     try {
-        let defaultYear = moment().subtract('year', 3);
         let years = [];
         if (req.query.years) {
             years = JSON.parse(req.query.years)
         } else {
-            let currentYear = moment(defaultYear).format("YY").toString();
-            let previousYear = moment(defaultYear).subtract('year', 1).format('YYYY').toString();
-            years = [`${previousYear}-${currentYear}`];
+            years = getBackYears(2, '2017');
         }
+
         let ulbs = [];
-        for (year of years) {
+        for (let i = 0; i< years.length; i++) {
+            let year = years[i];
             let query = { financialYear: year };
-            if (ulbs.length) {
+            if (i > 0) {
                 query["ulb"] = { $in: ulbs };
             }
             ulbs = await UlbLedger.distinct("ulb", query).exec();
@@ -52,20 +51,30 @@ module.exports = async (req, res, next) => {
         ];
         let ulbPopulationRanges = await Ulb.aggregate(rangeQuery).exec();
         let arr = [];
+        let len = 0;
         for (year of years) {
             let obj = {
                 financialYear: year
             };
             let rangeArr = [];
             for (o of ulbPopulationRanges) {
+                len += o.ulbs.length;
                 rangeArr.push({ range: o.range, ulb: { $in: o.ulbs } });
             }
             obj["data"] = rangeArr;
             arr.push(obj);
         }
-        req.body["queryArr"] = arr;
-        next();
-        // return res.status(200).json({ data: req.body, defaultYear: defaultYear });
+        if(len){
+            req.body["queryArr"] = arr;
+            next();
+        }else {
+            return res.status(200).json({
+                timestamp: moment().unix(),
+                success:true,
+                message:"Common ulb ledger not available.",
+                years: years
+            })
+        }
     } catch (e) {
         console.log("Exception:", e);
         return res.status(400).json({
@@ -76,4 +85,15 @@ module.exports = async (req, res, next) => {
             query: req.query.years
         });
     }
+}
+const getBackYears = (num=  3,before = '') =>{
+    let yr = before ? `${before}-01-01` : moment().format("YYYY-MM-DD");
+    let years = [];
+    for(let i=0; i<num; i++){
+        let defaultYear = moment(yr).subtract('year', i);
+        let currentYear = moment(defaultYear).format("YY").toString();
+        let previousYear = moment(defaultYear).subtract('year', 1).format('YYYY').toString();
+        years.push(`${previousYear}-${currentYear}`);
+    }
+    return years;
 }
