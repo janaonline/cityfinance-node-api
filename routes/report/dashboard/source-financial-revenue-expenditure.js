@@ -259,7 +259,7 @@ const getDeficit = (d = {})=>{
             }
         }
     }
-    o.coveredPercentage = (
+    /*o.coveredPercentage = (
         o.ownRevenueCoverPercentage
             +
         o.assignedRevenueAndCompensationCoverPercentage
@@ -273,7 +273,7 @@ const getDeficit = (d = {})=>{
         o.otherIncomeCoverPercentage
             +
         o.deficitFinanceByCapitalGrantsCoverPercentage
-    )
+    )*/
     o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
     o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
     o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));
@@ -281,7 +281,9 @@ const getDeficit = (d = {})=>{
     o.interestIncomeCoverPercentage = parseFloat(o.interestIncomeCoverPercentage.toFixed(2));
     o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
     o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
-    o.coveredPercentage = parseFloat(o.coveredPercentage.toFixed(2));
+
+    o.populationCategory = d.populationCategory;
+    // o.coveredPercentage = parseFloat(o.coveredPercentage.toFixed(2));
     /**/
     return JSON.parse(JSON.stringify(o));
 }
