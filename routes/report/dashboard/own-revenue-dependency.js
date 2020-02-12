@@ -265,10 +265,17 @@ const getQuery = (financialYear, range, ulbs)=>{
     ]
 }
 const modifyData = (obj)=>{
+
+    obj["ownRevenue"] = parseInt(obj.ownRevenue);
+    obj["revenueExpenditure"] = parseInt(obj.revenueExpenditure);
+
     obj["ownRevenuePercentage"] = obj.ownRevenuePercentage.toFixed(2) + "%";
     obj["minOwnRevenuePercentage"] = obj.minOwnRevenuePercentage.toFixed(2) + "%";
     obj["maxOwnRevenuePercentage"] = obj.maxOwnRevenuePercentage.toFixed(2) + "%";
     obj["ulbs"] = obj.ulbs.map(m=>{
+        m.ownRevenue = parseInt(m.ownRevenue);
+        m.revenueExpenditure = parseInt(m.revenueExpenditure);
+
         m.ownRevenuePercentage = m.ownRevenuePercentage.toFixed(2)+"%";
         return m;
     });
