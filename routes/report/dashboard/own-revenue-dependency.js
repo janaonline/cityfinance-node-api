@@ -153,86 +153,89 @@ module.exports = async (req, res, next) => {
       timestamp: moment().unix(),
       success: true,
       message: '',
-      data: output
+      data: getData()
     });
     // return res.status(200).json({
     //     timestamp: moment().unix(),
     //     success: true,
     //     message: "",
-    //     data: [
-    //         {
-    //             year: "2016-17",
-    //             data: [
-    //                 {
-    //                     populationCategory: "> 10 Lakhs",
-    //                     numOfUlb: 100,
-    //                     ownRevenue: 1000,
-    //                     revenueExpenditure: 10000,
-    //                     ownRevenuePercentage: 10,
-    //                     minOwnRevenuePercentage: 8,
-    //                     maxOwnRevenuePercentage: 20
-    //                 },
-    //                 {
-    //                     populationCategory: "1Lakh to 10Lakhs",
-    //                     numOfUlb: 100,
-    //                     ownRevenue: 1000,
-    //                     revenueExpenditure: 10000,
-    //                     ownRevenuePercentage: 10,
-    //                     minOwnRevenuePercentage: 8,
-    //                     maxOwnRevenuePercentage: 20
-    //                 },
-    //                 {
-    //                     populationCategory: "< 1 Lakh",
-    //                     numOfUlb: 100,
-    //                     ownRevenue: 1000,
-    //                     revenueExpenditure: 10000,
-    //                     ownRevenuePercentage: 10,
-    //                     minOwnRevenuePercentage: 8,
-    //                     maxOwnRevenuePercentage: 20
-    //                 }
-    //             ]
-    //         },
-    //         {
-    //             year: "2017-18",
-    //             data: [
-    //                 {
-    //                     populationCategory: "> 10 Lakhs",
-    //                     numOfUlb: 100,
-    //                     ownRevenue: 1000,
-    //                     revenueExpenditure: 10000,
-    //                     ownRevenuePercentage: 10,
-    //                     minOwnRevenuePercentage: 8,
-    //                     maxOwnRevenuePercentage: 20
-    //                 },
-    //                 {
-    //                     populationCategory: "1Lakh to 10Lakhs",
-    //                     numOfUlb: 100,
-    //                     ownRevenue: 1000,
-    //                     revenueExpenditure: 10000,
-    //                     ownRevenuePercentage: 10,
-    //                     minOwnRevenuePercentage: 8,
-    //                     maxOwnRevenuePercentage: 20
-    //                 },
-    //                 {
-    //                     populationCategory: "< 1 Lakh",
-    //                     numOfUlb: 100,
-    //                     ownRevenue: 1000,
-    //                     revenueExpenditure: 10000,
-    //                     ownRevenuePercentage: 10,
-    //                     minOwnRevenuePercentage: 8,
-    //                     maxOwnRevenuePercentage: 20
-    //                 }
-    //             ]
-    //         }
-    //     ].map(d => {
-    //         return {
-    //             year: d.year,
-    //             data: d.data.map(m => {
-    //                 m["ulbName"] = 'C';
-    //                 return m;
-    //             })
-    //         }
-    //     })
+    //     data: getData()
     // })
   } catch (error) {}
 };
+const getData = ()=>{
+  return [
+    {
+      year: "2016-17",
+      data: [
+        {
+          populationCategory: "> 10 Lakhs",
+          numOfUlb: 100,
+          ownRevenue: 1000,
+          revenueExpenditure: 10000,
+          ownRevenuePercentage: 10,
+          minOwnRevenuePercentage: 8,
+          maxOwnRevenuePercentage: 20
+        },
+        {
+          populationCategory: "1Lakh to 10Lakhs",
+          numOfUlb: 100,
+          ownRevenue: 1000,
+          revenueExpenditure: 10000,
+          ownRevenuePercentage: 10,
+          minOwnRevenuePercentage: 8,
+          maxOwnRevenuePercentage: 20
+        },
+        {
+          populationCategory: "< 1 Lakh",
+          numOfUlb: 100,
+          ownRevenue: 1000,
+          revenueExpenditure: 10000,
+          ownRevenuePercentage: 10,
+          minOwnRevenuePercentage: 8,
+          maxOwnRevenuePercentage: 20
+        }
+      ]
+    },
+    {
+      year: "2017-18",
+      data: [
+        {
+          populationCategory: "> 10 Lakhs",
+          numOfUlb: 100,
+          ownRevenue: 1000,
+          revenueExpenditure: 10000,
+          ownRevenuePercentage: 10,
+          minOwnRevenuePercentage: 8,
+          maxOwnRevenuePercentage: 20
+        },
+        {
+          populationCategory: "1Lakh to 10Lakhs",
+          numOfUlb: 100,
+          ownRevenue: 1000,
+          revenueExpenditure: 10000,
+          ownRevenuePercentage: 10,
+          minOwnRevenuePercentage: 8,
+          maxOwnRevenuePercentage: 20
+        },
+        {
+          populationCategory: "< 1 Lakh",
+          numOfUlb: 100,
+          ownRevenue: 1000,
+          revenueExpenditure: 10000,
+          ownRevenuePercentage: 10,
+          minOwnRevenuePercentage: 8,
+          maxOwnRevenuePercentage: 20
+        }
+      ]
+    }
+  ].map(d => {
+    return {
+      year: d.year,
+      data: d.data.map(m => {
+        m["ulbName"] = 'C';
+        return m;
+      })
+    }
+  });
+}
