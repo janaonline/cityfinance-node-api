@@ -1,6 +1,7 @@
 const UlbLedger = require('../../../models/Schema/UlbLedger');
 const Ulb = require('../../../models/Schema/Ulb');
 const moment = require('moment');
+const ObjectId = require('mongoose').Schema.Types.ObjectId;
 module.exports = async (req, res, next) => {
     try {
         let years = [];
@@ -18,9 +19,13 @@ module.exports = async (req, res, next) => {
             }
             ulbs = await UlbLedger.distinct("ulb", query).exec();
         }
+        let condition = { _id: { $in: ulbs }};
+        if(req.query.state && req.query.state.length > 12){
+            condition["state"] = ObjectId(req.query.state)
+        }
         let rangeQuery = [
             {
-                $match: { _id: { $in: ulbs } }
+                $match: condition
             },
             {
                 $project: {
