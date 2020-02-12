@@ -31,6 +31,7 @@ module.exports = async (req, res, next) => {
                     obj['data'].push(modifyData(data[0]));
                 }
             }
+            obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure']);
             output.push(obj);
         }
         return res.status(200).json({
@@ -283,4 +284,15 @@ const modifyData = (obj)=>{
 }
 const convertToCrores = (num)=>{
     return (num/10000000).toFixed(2)
+}
+const calcualteTotal = (arr, keys)=>{
+    let obj = {Total:''};
+    for(k of keys){
+        obj[k] = 0;
+        for(el of arr){
+            obj[k] = obj[k] + Number(el[k]);
+        }
+    }
+    arr.push(obj);
+    return arr;
 }
