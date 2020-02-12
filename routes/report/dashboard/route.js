@@ -5,7 +5,7 @@ router.get("/cash-and-bank", dashboard.cashAndBank);
 router.get("/outstanding-debt", dashboard.filterUlbs, dashboard.outstandingDebt);
 router.get("/own-revenue-dependency", dashboard.filterUlbs, dashboard.ownRevenueDependency);
 router.get("/revenue-expenditure", dashboard.revenueExpenditure);
-router.get("/source-financial-revenue-expenditure", dashboard.sourceFinancialRevenueExpenditure);
+router.get("/source-financial-revenue-expenditure", dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
 router.get("/source-revenue", dashboard.filterUlbs, dashboard.sourceRevenue);
 router.get("/ulb-coverage", dashboard.ulbCoverage);
 module.exports = router;

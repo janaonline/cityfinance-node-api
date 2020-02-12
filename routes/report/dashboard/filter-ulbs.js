@@ -9,7 +9,6 @@ module.exports = async (req, res, next) => {
         } else {
             years = getBackYears(2, '2017');
         }
-
         let ulbs = [];
         for (let i = 0; i< years.length; i++) {
             let year = years[i];
