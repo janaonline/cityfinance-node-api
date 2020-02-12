@@ -268,5 +268,9 @@ const modifyData = (obj)=>{
     obj["ownRevenuePercentage"] = obj.ownRevenuePercentage.toFixed(2) + "%";
     obj["minOwnRevenuePercentage"] = obj.minOwnRevenuePercentage.toFixed(2) + "%";
     obj["maxOwnRevenuePercentage"] = obj.maxOwnRevenuePercentage.toFixed(2) + "%";
+    obj["ulbs"] = obj.ulbs.map(m=>{
+        m.ownRevenuePercentage = m.ownRevenuePercentage.toFixed(2)+"%";
+        return m;
+    });
     return obj;
 }
