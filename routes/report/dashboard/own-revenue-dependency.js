@@ -277,7 +277,7 @@ const modifyData = (obj)=>{
         m.ownRevenue = convertToCrores(m.ownRevenue);
         m.revenueExpenditure = convertToCrores(m.revenueExpenditure);
 
-        m.ownRevenuePercentage = m.ownRevenuePercentage.toFixed(2);
+        m.ownRevenuePercentage = m.ownRevenuePercentage.toFixed(2)+"%";
         return m;
     });
     return obj;
@@ -293,6 +293,14 @@ const calcualteTotal = (arr, keys)=>{
             obj[k] = obj[k] + Number(el[k]);
         }
         obj[k] = obj[k].toFixed(2);
+
+    }
+    for(el of arr){
+        for(k in el){
+            if(k.includes('ercentage')){
+                el[k] = el[k]+"%";
+            }
+        }
     }
     arr.push(obj);
     return arr;
