@@ -28,7 +28,7 @@ module.exports = async (req, res, next) => {
                 query = getQuery(q.financialYear, d.range, d.ulb);
                 let data = await UlbLedger.aggregate(query);
                 if(data.length){
-                    obj['data'].push(data[0]);
+                    obj['data'].push(modifyData(data[0]));
                 }
             }
             output.push(obj);
@@ -263,4 +263,10 @@ const getQuery = (financialYear, range, ulbs)=>{
             }
         }
     ]
+}
+const modifyData = (obj)=>{
+    obj["ownRevenuePercentage"] = obj.ownRevenuePercentage.toFixed(2) + "%";
+    obj["minOwnRevenuePercentage"] = obj.minOwnRevenuePercentage.toFixed(2) + "%";
+    obj["maxOwnRevenuePercentage"] = obj.maxOwnRevenuePercentage.toFixed(2) + "%";
+    return obj;
 }

@@ -200,6 +200,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs)=>{
     ];
 }
 const getDeficit = (d = {})=>{
+    // let d = JSON.parse(JSON.stringify(o));
     let remainingExpediture = d.totalExpediture;
     d.ownRevenueCoverPercentage = 0;
     d.assignedRevenueAndCompensationCoverPercentage = 0;
@@ -272,5 +273,13 @@ const getDeficit = (d = {})=>{
             +
         d.deficitFinanceByCapitalGrantsCoverPercentage
     )
-    return d;
+    d.ownRevenueCoverPercentage = d.ownRevenueCoverPercentage.toFixed(2).toString()+"%";
+    d.assignedRevenueAndCompensationCoverPercentage = d.assignedRevenueAndCompensationCoverPercentage.toFixed(2).toString()+"%";
+    d.saleAndHireChargesCoverPercentage = d.saleAndHireChargesCoverPercentage.toFixed(2).toString()+"%";
+    d.revenueGrantsContributionAndSubsidiesCoverPercentage = d.revenueGrantsContributionAndSubsidiesCoverPercentage.toFixed(2).toString()+"%";
+    d.interestIncomeCoverPercentage = d.interestIncomeCoverPercentage.toFixed(2).toString()+"%";
+    d.otherIncomeCoverPercentage = d.otherIncomeCoverPercentage.toFixed(2).toString()+"%";
+    d.deficitFinanceByCapitalGrantsCoverPercentage = d.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2).toString()+"%";
+    d.coveredPercentage = d.coveredPercentage.toFixed(2).toString()+"%";
+    return JSON.parse(JSON.stringify(d));
 }
