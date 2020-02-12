@@ -293,8 +293,8 @@ const calcualteTotal = (arr, keys)=>{
             obj[k] = obj[k] + Number(el[k]);
         }
         obj[k] = obj[k].toFixed(2);
-
     }
+    arr.push(obj);
     for(el of arr){
         for(k in el){
             if(k.includes('ercentage')){
@@ -302,6 +302,5 @@ const calcualteTotal = (arr, keys)=>{
             }
         }
     }
-    arr.push(obj);
     return arr;
 }
