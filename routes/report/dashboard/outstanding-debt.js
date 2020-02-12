@@ -110,76 +110,11 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs)=>{
         }
     ];
 }
-const getUlbListDataQuery = (financialYear, populationCategory, ulbs)=>{
+const getSingleUlbDataQuery = (ulb)=>{
     return [
         {
             $match : {
-                financialYear:financialYear,
-                ulb:ulbs // contains $in
-            }
-        },
-        {
-            $addFields:{
-                financialYear:financialYear,
-                populationCategory:populationCategory
-            }
-        },
-        {
-            $lookup:{
-                from : "lineitems",
-                localField:"lineItem",
-                foreignField:"_id",
-                as : "lineItem"
-            }
-        },
-        { $unwind : "$lineItem"},
-        {
-            $group:{
-                _id : {ulb:"$ulb",financialYear:"$financialYear"},
-                populationCategory:{$first:"$populationCategory"},
-                LoanFromCentralGovernment:{$sum:{$cond: [{$eq: ['$lineItem.code', "33001"]}, '$amount', 0]}},
-                loanFromFIIB:{$sum:{$cond: [{$eq: ['$lineItem.code', "33002"]}, '$amount', 0]}},
-                loanFromStateGovernment:{$sum:{$cond: [{$eq: ['$lineItem.code', "33003"]}, '$amount', 0]}},
-                bondsAndOtherDebtInstruments:{$sum:{$cond: [{$eq: ['$lineItem.code', "33104"]}, '$amount', 0]}},
-                others:{$sum:{$cond: [{$eq: ['$lineItem.code', "33100"]}, '$amount', 0]}},
-            }
-        },
-        {
-            $lookup:{
-                from: 'ulbs',
-                localField: '_id.ulb',
-                foreignField: '_id',
-                as: 'ulb'
-            }
-        },
-        {$unwind:'ulb'},
-        {
-            $project:{
-                _id:0,
-                populationCategory:"$populationCategory",
-                nume:"$ulb.name",
-                LoanFromCentralGovernment:1,
-                loanFromFIIB:1,
-                loanFromStateGovernment:1,
-                bondsAndOtherDebtInstruments:1,
-                others:1,
-                total:{$sum:["$LoanFromCentralGovernment","$loanFromFIIB","$loanFromStateGovernment","$bondsAndOtherDebtInstruments","$others"]}
-            }
-        }
-    ];
-}
-const getSingleUlbDataQuery = (financialYear, populationCategory, ulb)=>{
-    return [
-        {
-            $match : {
-                financialYear:financialYear,
-                ulb:ulb // contains $in
-            }
-        },
-        {
-            $addFields:{
-                financialYear:financialYear,
-                populationCategory:populationCategory
+                ulb:ulb // contains ObjectId
             }
         },
         {
@@ -204,7 +139,7 @@ const getSingleUlbDataQuery = (financialYear, populationCategory, ulb)=>{
             $group:{
                 _id : "$financialYear",
                 name:{$first:"$ulb.name"},
-                populationCategory:{$first:"$populationCategory"},
+                population:{$first:"$ulb.population"},
                 LoanFromCentralGovernment:{$sum:{$cond: [{$eq: ['$lineItem.code', "33001"]}, '$amount', 0]}},
                 loanFromFIIB:{$sum:{$cond: [{$eq: ['$lineItem.code', "33002"]}, '$amount', 0]}},
                 loanFromStateGovernment:{$sum:{$cond: [{$eq: ['$lineItem.code', "33003"]}, '$amount', 0]}},
