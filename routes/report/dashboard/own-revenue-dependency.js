@@ -286,7 +286,7 @@ const convertToCrores = (num)=>{
     return (num/10000000).toFixed(2)
 }
 const calcualteTotal = (arr, keys)=>{
-    let obj = {Total:''};
+    let obj = {populationCategory : 'Total'};
     for(k of keys){
         obj[k] = 0;
         for(el of arr){
