@@ -31,7 +31,7 @@ module.exports = async (req, res, next) => {
                     obj['data'].push(modifyData(data[0]));
                 }
             }
-            obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure','ownRevenuePercentage']);
+            obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure']);
             output.push(obj);
         }
         return res.status(200).json({
@@ -294,6 +294,7 @@ const calcualteTotal = (arr, keys)=>{
         }
         obj[k] = Number.isInteger(obj[k]) ? obj[k] : obj[k].toFixed(2);
     }
+    obj["ownRevenuePercentage"] =  ((obj["ownRevenue"]/obj["revenueExpenditure"])*100).toFixed(2);
     arr.push(obj);
     for(el of arr){
         for(k in el){
