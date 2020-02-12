@@ -36,12 +36,20 @@ module.exports = async (req, res, next) => {
                             { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, "1 Lakh to 10 Lakhs", ""] },
                             { $cond: [{ $lte: ["$population", 100000] }, "< 1 Lakh", ""] }
                         ]
+                    },
+                    "rangeNum": {
+                        $concat: [
+                            { $cond: [{ $gte: ["$population", 1000000] }, 1, ""] },
+                            { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, 2, ""] },
+                            { $cond: [{ $lte: ["$population", 100000] }, 3, ""] }
+                        ]
                     }
                 }
             },
             {
                 $group: {
                     _id: "$range",
+                    rangeNum:{$first:"$rangeNum"},
                     ulbs: { $addToSet: "$_id" }
                 }
             },
@@ -49,8 +57,12 @@ module.exports = async (req, res, next) => {
                 $project: {
                     _id: 0,
                     range: "$_id",
+                    rangeNum:1,
                     ulbs: 1
                 }
+            },
+            {
+                $sort:{rangeNum:1}
             }
         ];
         let ulbPopulationRanges = await Ulb.aggregate(rangeQuery).exec();
