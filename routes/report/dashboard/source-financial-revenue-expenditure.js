@@ -274,14 +274,14 @@ const getDeficit = (d = {})=>{
             +
         o.deficitFinanceByCapitalGrantsCoverPercentage
     )
-    o.ownRevenueCoverPercentage = o.ownRevenueCoverPercentage.toFixed(2);
-    o.assignedRevenueAndCompensationCoverPercentage = o.assignedRevenueAndCompensationCoverPercentage.toFixed(2);
-    o.saleAndHireChargesCoverPercentage = o.saleAndHireChargesCoverPercentage.toFixed(2);
-    o.revenueGrantsContributionAndSubsidiesCoverPercentage = o.revenueGrantsContributionAndSubsidiesCoverPercentage.toFixed(2);
-    o.interestIncomeCoverPercentage = o.interestIncomeCoverPercentage.toFixed(2);
-    o.otherIncomeCoverPercentage = o.otherIncomeCoverPercentage.toFixed(2);
-    o.deficitFinanceByCapitalGrantsCoverPercentage = o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2);
-    o.coveredPercentage = o.coveredPercentage.toFixed(2);
+    o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
+    o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
+    o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));
+    o.revenueGrantsContributionAndSubsidiesCoverPercentage = parseFloat(o.revenueGrantsContributionAndSubsidiesCoverPercentage.toFixed(2));
+    o.interestIncomeCoverPercentage = parseFloat(o.interestIncomeCoverPercentage.toFixed(2));
+    o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
+    o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
+    o.coveredPercentage = parseFloat(o.coveredPercentage.toFixed(2));
     /**/
     return JSON.parse(JSON.stringify(o));
 }
