@@ -39,9 +39,9 @@ module.exports = async (req, res, next) => {
                     },
                     "rangeNum": {
                         $concat: [
-                            { $cond: [{ $gte: ["$population", 1000000] }, 1, ""] },
-                            { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, 2, ""] },
-                            { $cond: [{ $lte: ["$population", 100000] }, 3, ""] }
+                            { $cond: [{ $gte: ["$population", 1000000] }, "1", ""] },
+                            { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, "2", ""] },
+                            { $cond: [{ $lte: ["$population", 100000] }, "3",""] }
                         ]
                     }
                 }
@@ -57,7 +57,7 @@ module.exports = async (req, res, next) => {
                 $project: {
                     _id: 0,
                     range: "$_id",
-                    rangeNum:1,
+                    rangeNum:{$toInt:"$rangeNum"},
                     ulbs: 1
                 }
             },
