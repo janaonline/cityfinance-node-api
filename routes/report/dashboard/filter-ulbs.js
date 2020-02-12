@@ -32,9 +32,9 @@ module.exports = async (req, res, next) => {
                     _id: 1,
                     "range": {
                         $concat: [
-                            { $cond: [{ $gte: ["$population", 1000000] }, "> 1 Mn", ""] },
-                            { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, "100K to 1 Mn", ""] },
-                            { $cond: [{ $lte: ["$population", 100000] }, "< 1 100k", ""] }
+                            { $cond: [{ $gte: ["$population", 1000000] }, "> 10 Lakhs", ""] },
+                            { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, "1 Lakh to 10 Lakhs", ""] },
+                            { $cond: [{ $lte: ["$population", 100000] }, "< 1 Lakh", ""] }
                         ]
                     }
                 }
