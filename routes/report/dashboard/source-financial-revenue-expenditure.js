@@ -281,7 +281,6 @@ const getDeficit = (d = {})=>{
     o.interestIncomeCoverPercentage = parseFloat(o.interestIncomeCoverPercentage.toFixed(2));
     o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
     o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
-
     o.populationCategory = d.populationCategory;
     // o.coveredPercentage = parseFloat(o.coveredPercentage.toFixed(2));
     /**/
