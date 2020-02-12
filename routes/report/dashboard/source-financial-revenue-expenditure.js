@@ -201,85 +201,87 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs)=>{
 }
 const getDeficit = (d = {})=>{
     // let d = JSON.parse(JSON.stringify(o));
+    let o = {};
     let remainingExpediture = d.totalExpediture;
-    d.ownRevenueCoverPercentage = 0;
-    d.assignedRevenueAndCompensationCoverPercentage = 0;
-    d.saleAndHireChargesCoverPercentage = 0;
-    d.revenueGrantsContributionAndSubsidiesCoverPercentage = 0;
-    d.interestIncomeCoverPercentage = 0;
-    d.otherIncomeCoverPercentage = 0;
-    d.deficitFinanceByCapitalGrantsCoverPercentage = 0;
+    o.ownRevenueCoverPercentage = 0;
+    o.assignedRevenueAndCompensationCoverPercentage = 0;
+    o.saleAndHireChargesCoverPercentage = 0;
+    o.revenueGrantsContributionAndSubsidiesCoverPercentage = 0;
+    o.interestIncomeCoverPercentage = 0;
+    o.otherIncomeCoverPercentage = 0;
+    o.deficitFinanceByCapitalGrantsCoverPercentage = 0;
     if(d.ownRevenue >= remainingExpediture){
-        d.ownRevenueCoverPercentage = 100;
+        o.ownRevenueCoverPercentage = 100;
         totalExpediture = 0;
     }else {
         remainingExpediture = remainingExpediture - d.ownRevenue;
-        d.ownRevenueCoverPercentage = (d.ownRevenue/d.totalExpediture)*100;
+        o.ownRevenueCoverPercentage = (d.ownRevenue/d.totalExpediture)*100;
 
         if(d.assignedRevenueAndCompensation >= remainingExpediture){
-            d.assignedRevenueAndCompensationCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+            o.assignedRevenueAndCompensationCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
             totalExpediture = 0;
         }else {
             remainingExpediture = remainingExpediture - d.assignedRevenueAndCompensation;
-            d.assignedRevenueAndCompensationCoverPercentage = (d.assignedRevenueAndCompensation/d.totalExpediture)*100;
+            o.assignedRevenueAndCompensationCoverPercentage = (d.assignedRevenueAndCompensation/d.totalExpediture)*100;
 
             if(d.saleAndHireCharges >= remainingExpediture){
                 d.saleAndHireChargesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                 totalExpediture = 0;
             } else {
                 remainingExpediture = remainingExpediture - d.saleAndHireCharges;
-                d.saleAndHireChargesCoverPercentage = (d.saleAndHireCharges/d.totalExpediture)*100;
+                o.saleAndHireChargesCoverPercentage = (d.saleAndHireCharges/d.totalExpediture)*100;
 
                 if(d.revenueGrantsContributionAndSubsidies >= remainingExpediture){
                     d.revenueGrantsContributionAndSubsidiesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                     totalExpediture = 0;
                 }else {
                     remainingExpediture = remainingExpediture - d.revenueGrantsContributionAndSubsidies;
-                    d.revenueGrantsContributionAndSubsidiesCoverPercentage = (d.revenueGrantsContributionAndSubsidies/d.totalExpediture)*100;
+                    o.revenueGrantsContributionAndSubsidiesCoverPercentage = (d.revenueGrantsContributionAndSubsidies/d.totalExpediture)*100;
                     if(d.interestIncome >= remainingExpediture){
                         d.interestIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                         totalExpediture = 0;
                     }else {
                         remainingExpediture = remainingExpediture - d.interestIncome;
-                        d.interestIncomeCoverPercentage = (d.interestIncome/d.totalExpediture)*100;
+                        o.interestIncomeCoverPercentage = (d.interestIncome/d.totalExpediture)*100;
                         if(d.otherIncome >= remainingExpediture){
-                            d.otherIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                            o.otherIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                             totalExpediture = 0;
                         }else {
                             remainingExpediture = remainingExpediture - d.otherIncome;
-                            d.otherIncomeCoverPercentage = (d.otherIncome/d.totalExpediture)*100;
+                            o.otherIncomeCoverPercentage = (d.otherIncome/d.totalExpediture)*100;
 
                         }
                         if(remainingExpediture){
-                            d.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                            o.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                         }
                     }
                 }
             }
         }
     }
-    d.coveredPercentage = (
-        d.ownRevenueCoverPercentage
+    o.coveredPercentage = (
+        o.ownRevenueCoverPercentage
             +
-        d.assignedRevenueAndCompensationCoverPercentage
+        o.assignedRevenueAndCompensationCoverPercentage
             +
-        d.saleAndHireChargesCoverPercentage
+        o.saleAndHireChargesCoverPercentage
             +
-        d.revenueGrantsContributionAndSubsidiesCoverPercentage
+        o.revenueGrantsContributionAndSubsidiesCoverPercentage
             +
-        d.interestIncomeCoverPercentage
+        o.interestIncomeCoverPercentage
             +
-        d.otherIncomeCoverPercentage
+        o.otherIncomeCoverPercentage
             +
-        d.deficitFinanceByCapitalGrantsCoverPercentage
+        o.deficitFinanceByCapitalGrantsCoverPercentage
     )
-    d.ownRevenueCoverPercentage = d.ownRevenueCoverPercentage.toFixed(2).toString()+"%";
-    d.assignedRevenueAndCompensationCoverPercentage = d.assignedRevenueAndCompensationCoverPercentage.toFixed(2).toString()+"%";
-    d.saleAndHireChargesCoverPercentage = d.saleAndHireChargesCoverPercentage.toFixed(2).toString()+"%";
-    d.revenueGrantsContributionAndSubsidiesCoverPercentage = d.revenueGrantsContributionAndSubsidiesCoverPercentage.toFixed(2).toString()+"%";
-    d.interestIncomeCoverPercentage = d.interestIncomeCoverPercentage.toFixed(2).toString()+"%";
-    d.otherIncomeCoverPercentage = d.otherIncomeCoverPercentage.toFixed(2).toString()+"%";
-    d.deficitFinanceByCapitalGrantsCoverPercentage = d.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2).toString()+"%";
-    d.coveredPercentage = d.coveredPercentage.toFixed(2).toString()+"%";
-    return JSON.parse(JSON.stringify(d));
+    o.ownRevenueCoverPercentage = o.ownRevenueCoverPercentage.toFixed(2);
+    o.assignedRevenueAndCompensationCoverPercentage = o.assignedRevenueAndCompensationCoverPercentage.toFixed(2);
+    o.saleAndHireChargesCoverPercentage = o.saleAndHireChargesCoverPercentage.toFixed(2);
+    o.revenueGrantsContributionAndSubsidiesCoverPercentage = o.revenueGrantsContributionAndSubsidiesCoverPercentage.toFixed(2);
+    o.interestIncomeCoverPercentage = o.interestIncomeCoverPercentage.toFixed(2);
+    o.otherIncomeCoverPercentage = o.otherIncomeCoverPercentage.toFixed(2);
+    o.deficitFinanceByCapitalGrantsCoverPercentage = o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2);
+    o.coveredPercentage = o.coveredPercentage.toFixed(2);
+    /**/
+    return JSON.parse(JSON.stringify(o));
 }
