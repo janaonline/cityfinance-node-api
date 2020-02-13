@@ -5,109 +5,29 @@ module.exports = async (req, res, next) => {
   try {
     let output = [];
     let query;
-
+    //console.log(req.body.queryArr);
     for (let q of req.body.queryArr) {
+      let obj = {
+        year: q.financialYear,
+        data: []
+      };
+
       for (let d of q.data) {
         let range = d.range;
-        query = [
-          // stage 1
-          {
-            $match: {
-              financialYear: q.financialYear,
-              ulb: d.ulb
-            }
-          },
-          // stage 2
-          {
-            $lookup: {
-              from: 'lineitems',
-              as: 'lineitems',
-              foreignField: '_id',
-              localField: 'lineItem'
-            }
-          },
-          // stage 3
-          { $unwind: '$lineitems' },
-          // stage 4
-          {
-            $project: {
-              range: range,
-              financialYear: 1,
-              ulb: 1,
-              amount: 1,
-              code: '$lineitems.code'
-            }
-          },
-          // stage 5
-          {
-            $group: {
-              _id: { financialYear: '$financialYear', range: '$range' },
-              taxRevenue: {
-                $sum: { $cond: [{ $eq: ['$code', '110'] }, '$amount', 0] }
-              },
-              rentalIncome: {
-                $sum: { $cond: [{ $eq: ['$code', '130'] }, '$amount', 0] }
-              },
-              feesAndUserCharges: {
-                $sum: { $cond: [{ $eq: ['$code', '140'] }, '$amount', 0] }
-              },
-              saleAndHireCharges: {
-                $sum: { $cond: [{ $eq: ['$code', '150'] }, '$amount', 0] }
-              },
-              assignedRevenue: {
-                $sum: { $cond: [{ $eq: ['$code', '120'] }, '$amount', 0] }
-              },
-              grants: {
-                $sum: { $cond: [{ $eq: ['$code', '160'] }, '$amount', 0] }
-              },
-              interestIncome: {
-                $sum: {
-                  $cond: [{ $in: ['$code', ['170', '171']] }, '$amount', 0]
-                }
-              },
-              otherIncome: {
-                $sum: {
-                  $cond: [{ $in: ['$code', ['180', '100']] }, '$amount', 0]
-                }
-              },
-              totalIncome: {
-                $sum: {
-                  $cond: [
-                    {
-                      $in: [
-                        '$code',
-                        [
-                          '110',
-                          '120',
-                          '130',
-                          '140',
-                          '150',
-                          '160',
-                          '180',
-                          '100',
-                          '170',
-                          '171'
-                        ]
-                      ]
-                    },
-                    '$amount',
-                    0
-                  ]
-                }
-              }
-            }
-          }
-        ];
-
+        let numOfUlb = Number(d.ulb['$in'].length);
+        query = getQuery(q.financialYear, d.ulb, range, numOfUlb);
         let data = await UlbLedger.aggregate(query);
-        console.log(data);
+        data[0]['numOfUlb'] = numOfUlb;
+        let dataObj = convertToPercent(data[0]);
+        obj['data'].push(dataObj);
       }
+      output.push(obj);
     }
     return res.status(200).json({
       timestamp: moment().unix(),
       success: true,
       message: '',
-      data: []
+      data: output
     });
   } catch (e) {
     console.log('Exception:', e);
@@ -222,4 +142,166 @@ module.exports = async (req, res, next) => {
       };
     })
   });
+};
+
+const getQuery = (year, ulb, range, numOfUlb) => {
+  return [
+    // stage 1
+    {
+      $match: {
+        financialYear: year,
+        ulb: ulb
+      }
+    },
+    // stage 2
+    {
+      $lookup: {
+        from: 'lineitems',
+        as: 'lineitems',
+        foreignField: '_id',
+        localField: 'lineItem'
+      }
+    },
+    // stage 3
+    { $unwind: '$lineitems' },
+    // stage 4
+    {
+      $project: {
+        numOfUlb: numOfUlb,
+        range: range,
+        financialYear: 1,
+        ulb: 1,
+        amount: 1,
+        code: '$lineitems.code'
+      }
+    },
+    // stage 5
+    {
+      $group: {
+        _id: { financialYear: '$financialYear', range: '$range' },
+        numOfUlb: { $first: '$numOfUlb' },
+        taxRevenue: {
+          $sum: { $cond: [{ $eq: ['$code', '110'] }, '$amount', 0] }
+        },
+        rentalIncome: {
+          $sum: { $cond: [{ $eq: ['$code', '130'] }, '$amount', 0] }
+        },
+        feesAndUserCharges: {
+          $sum: { $cond: [{ $eq: ['$code', '140'] }, '$amount', 0] }
+        },
+        saleAndHireCharges: {
+          $sum: { $cond: [{ $eq: ['$code', '150'] }, '$amount', 0] }
+        },
+        assignedRevenue: {
+          $sum: { $cond: [{ $eq: ['$code', '120'] }, '$amount', 0] }
+        },
+        grants: {
+          $sum: { $cond: [{ $eq: ['$code', '160'] }, '$amount', 0] }
+        },
+        interestIncome: {
+          $sum: {
+            $cond: [{ $in: ['$code', ['170', '171']] }, '$amount', 0]
+          }
+        },
+        otherIncome: {
+          $sum: {
+            $cond: [{ $in: ['$code', ['180', '100']] }, '$amount', 0]
+          }
+        },
+        totalIncome: {
+          $sum: {
+            $cond: [
+              {
+                $in: [
+                  '$code',
+                  [
+                    '110',
+                    '120',
+                    '130',
+                    '140',
+                    '150',
+                    '160',
+                    '180',
+                    '100',
+                    '170',
+                    '171'
+                  ]
+                ]
+              },
+              '$amount',
+              0
+            ]
+          }
+        }
+      }
+    },
+
+    //stage
+
+    {
+      $project: {
+        _id: 0,
+        populationCategory: '$_id.range',
+        numOfUlb: '$numOfUlb',
+        taxRevenue: {
+          $multiply: [{ $divide: ['$taxRevenue', '$totalIncome'] }, 100]
+        },
+        rentalIncome: {
+          $multiply: [{ $divide: ['$rentalIncome', '$totalIncome'] }, 100]
+        },
+        feesAndUserCharges: {
+          $multiply: [{ $divide: ['$feesAndUserCharges', '$totalIncome'] }, 100]
+        },
+        ownRevenues: {
+          $sum: ['$taxRevenue', '$rentalIncome', '$feesAndUserCharges']
+        },
+        saleAndHireCharges: {
+          $multiply: [{ $divide: ['$saleAndHireCharges', '$totalIncome'] }, 100]
+        },
+        assignedRevenue: {
+          $multiply: [{ $divide: ['$assignedRevenue', '$totalIncome'] }, 100]
+        },
+        grants: {
+          $multiply: [{ $divide: ['$grants', '$totalIncome'] }, 100]
+        },
+        interestIncome: {
+          $multiply: [{ $divide: ['$interestIncome', '$totalIncome'] }, 100]
+        },
+        otherIncome: {
+          $multiply: [{ $divide: ['$otherIncome', '$totalIncome'] }, 100]
+        }
+      }
+    },
+
+    // stage
+
+    {
+      $project: {
+        populationCategory: '$populationCategory',
+        numOfUlb: '$numOfUlb',
+        taxRevenue: '$taxRevenue',
+        rentalIncome: '$rentalIncome',
+        feesAndUserCharges: '$feesAndUserCharges',
+        ownRevenues: {
+          $sum: ['$taxRevenue', '$rentalIncome', '$feesAndUserCharges']
+        },
+        saleAndHireCharges: '$saleAndHireCharges',
+        assignedRevenue: '$assignedRevenue',
+        grants: '$grants',
+        interestIncome: '$interestIncome',
+        otherIncome: '$otherIncome'
+      }
+    }
+  ];
+};
+
+const convertToPercent = obj => {
+  for (let k in obj) {
+    if (k == 'populationCategory' || k == 'numOfUlb') {
+      continue;
+    } else {
+      obj[k] = obj[k].toFixed(2) + '%';
+    }
+  }
+  return obj;
 };
