@@ -121,6 +121,7 @@ const getData = ()=>{
     });
 }
 const getQuery = (financialYear, range, ulbs)=>{
+    console.log(financialYear,range,ulbs)
     return [
         // stage 1
         {
@@ -235,7 +236,9 @@ const getQuery = (financialYear, range, ulbs)=>{
                         }
                     }
                 },
-                minOwnRevenuePercentage: { $min: '$ownRevenuePercentageUlB' },
+                "minOwnRevenuePercentage": {
+                    "$addToSet": "$ownRevenuePercentageUlB"
+                },                
                 maxOwnRevenuePercentage: { $max: '$ownRevenuePercentageUlB' },
                 ownRevenue: { $sum: '$ownRevenue' },
                 revenueExpenditure: { $sum: '$revenueExpenditure' },
@@ -259,7 +262,13 @@ const getQuery = (financialYear, range, ulbs)=>{
                         100
                     ]
                 },
-                minOwnRevenuePercentage: '$minOwnRevenuePercentage',
+                "minOwnRevenuePercentage": { $min: {
+                    $filter: {
+                       input: "$minOwnRevenuePercentage",
+                       as: "minOwnRevenuePercentage",
+                       cond: { $gt: [ "$$minOwnRevenuePercentage", 0 ] }
+                    }}
+                },
                 maxOwnRevenuePercentage: '$maxOwnRevenuePercentage'
             }
         }
