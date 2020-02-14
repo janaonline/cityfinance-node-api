@@ -262,7 +262,7 @@ const convertToPercent = obj => {
     if (k == 'populationCategory' || k == 'numOfUlb') {
       continue;
     } else {
-      obj[k] = obj[k].toFixed(2) + '%';
+      obj[k] = obj[k].toFixed(2);
     }
   }
   return obj;
