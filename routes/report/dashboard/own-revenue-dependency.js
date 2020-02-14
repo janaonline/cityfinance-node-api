@@ -1,5 +1,7 @@
 const moment = require('moment');
 const UlbLedger = require('../../../models/Schema/UlbLedger');
+const OverallUlb = require('../../../models/Schema/OverallUlb');
+
 const ownRevenueCode = ['110', '130', '140'];
 const revenueExpenditureCode = [
     '210',
@@ -25,7 +27,7 @@ module.exports = async (req, res, next) => {
                 data: []
             };
             for (let d of q.data) {
-                query = getQuery(q.financialYear, d.range, d.ulb);
+                query = await getQuery(q.financialYear, d.range, d.ulb);
                 let data = await UlbLedger.aggregate(query);
                 if(data.length){
                     obj['data'].push(modifyData(data[0]));
@@ -120,8 +122,8 @@ const getData = ()=>{
         }
     });
 }
-const getQuery = (financialYear, range, ulbs)=>{
-    console.log(financialYear,range,ulbs)
+const getQuery =async (financialYear, range, ulbs)=>{
+    let c = await OverallUlb.countDocuments({populationCategory:range}).exec();
     return [
         // stage 1
         {
@@ -252,7 +254,7 @@ const getQuery = (financialYear, range, ulbs)=>{
             $project: {
                 _id: 0,
                 populationCategory: '$_id.range',
-                numOfUlb: '$noOfUlb',
+                numOfUlb: c.toString(),
                 ulbs:"$ulbs",
                 ownRevenue: '$ownRevenue',
                 revenueExpenditure: '$revenueExpenditure',

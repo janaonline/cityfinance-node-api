@@ -6,5 +6,6 @@ module.exports = {
     csvToJSON:require('./csv-to-json'),
     uploadLedger: require('./upload-ledger'),
     bondUpload:require('./bonds-upload'),
-    ulbUlpload:require('./ulb-upload')
+    ulbUlpload:require('./ulb-upload'),
+    overallUlbUlpload:require('./overall-ulb-upload')
 }
