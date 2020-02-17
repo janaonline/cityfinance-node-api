@@ -91,19 +91,28 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
                 }
             },
             {
+                $lookup:{
+                    from:"overallulbs",
+                    localField:"_id",
+                    foreignField:"state",
+                    as:"overallulbs"
+                }
+            },
+            //OverallUlb
+            {
                 $project:{
                     _id:1,
                     name:1,
                     code:1,
-                    totalUlbs:{$toInt: "$totalUlbs"},
+                    totalUlbs:{$size: "$overallulbs"},
                     coveredUlbCount:{$size:"$ulbs"},
                     coveredUlbPercentage:{
                         $cond : {
                             if : {
-                                $or:[{$gte:[{$size:"$ulbs"},"$totalUlbs"]},{$eq:[{$size:"$ulbs"},0]},{$eq:["$totalUlbs",0]}]
+                                $or:[{$gte:[{$size:"$ulbs"},{$size: "$overallulbs"}]},{$eq:[{$size:"$ulbs"},0]},{$eq:[{$size: "$overallulbs"},0]}]
                             },
                             then:{$toInt:"0"},
-                            else: { $multiply:[{ $divide:[{$size:"$ulbs"},"$totalUlbs"]}, 100]}
+                            else: { $multiply:[{ $divide:[{$size:"$ulbs"},{$size: "$overallulbs"}]}, 100]}
                         }
                     }
                 }
