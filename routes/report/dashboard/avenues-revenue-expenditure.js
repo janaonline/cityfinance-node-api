@@ -15,7 +15,7 @@ module.exports = async (req, res, next) => {
       for (let d of q.data) {
         let range = d.range;
         let numOfUlb = Number(d.ulb['$in'].length);
-        query = getQuery(q.financialYear, d.ulb, range, numOfUlb);
+        query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
         let data = await UlbLedger.aggregate(query);
         data[0]['numOfUlb'] = numOfUlb;
         let dataObj = convertToPercent(data[0]);
@@ -120,7 +120,7 @@ module.exports = async (req, res, next) => {
   });
 };
 
-const getQuery = (year, ulb, range, numOfUlb) => {
+const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
   return [
     // stage 1
     {
@@ -253,7 +253,8 @@ const getQuery = (year, ulb, range, numOfUlb) => {
           $multiply: [{ $divide: ['$other', '$totalIncome'] }, 100]
         }
       }
-    }
+    },
+    {$addFields: { totalUlb : totalUlb} }
   ];
 };
 

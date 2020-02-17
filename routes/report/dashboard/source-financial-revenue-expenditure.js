@@ -7,7 +7,7 @@ module.exports = async (req, res, next)=>{
     for(query of queryArr){
         let obj = { year: query.financialYear, data:[]};
         for(d of query.data){
-            let q = getAggregatedDataQuery(query.financialYear, d.range, d.ulb);
+            let q = getAggregatedDataQuery(query.financialYear, d.range, d.ulb,d.totalUlb);
             try{
                 let ulbData = await UlbLedger.aggregate(q).exec();
                 if(ulbData.length){
@@ -105,7 +105,7 @@ module.exports = async (req, res, next)=>{
         })
     })*/
 }
-const getAggregatedDataQuery = (financialYear, populationCategory, ulbs)=>{
+const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUlb)=>{
 
     return [
         {
@@ -195,6 +195,10 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs)=>{
                 otherIncome:1,
                 totalExpediture:1,
                 deficitFinanceByCapitalGrants:{$toInt: "0"},
+            }
+        },
+        {$addFields : {
+                totalUlb : totalUlb
             }
         }
     ];

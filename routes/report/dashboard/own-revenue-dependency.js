@@ -27,7 +27,7 @@ module.exports = async (req, res, next) => {
                 data: []
             };
             for (let d of q.data) {
-                query = await getQuery(q.financialYear, d.range, d.ulb);
+                query = await getQuery(q.financialYear, d.range, d.ulb,d.totalUlb);
                 let data = await UlbLedger.aggregate(query);
                 if(data.length){
                     obj['data'].push(modifyData(data[0]));
@@ -122,8 +122,7 @@ const getData = ()=>{
         }
     });
 }
-const getQuery =async (financialYear, range, ulbs)=>{
-    let c = await OverallUlb.countDocuments({populationCategory:range}).exec();
+const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
     return [
         // stage 1
         {
@@ -254,7 +253,7 @@ const getQuery =async (financialYear, range, ulbs)=>{
             $project: {
                 _id: 0,
                 populationCategory: '$_id.range',
-                numOfUlb: c.toString(),
+                numOfUlb: '$noOfUlb',
                 ulbs:"$ulbs",
                 ownRevenue: '$ownRevenue',
                 revenueExpenditure: '$revenueExpenditure',
@@ -273,7 +272,11 @@ const getQuery =async (financialYear, range, ulbs)=>{
                 },
                 maxOwnRevenuePercentage: '$maxOwnRevenuePercentage'
             }
+        },
+        {$addFields : {
+            totalUlb : totalUlb
         }
+    }
     ]
 }
 const modifyData = (obj)=>{

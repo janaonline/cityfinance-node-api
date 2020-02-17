@@ -2,6 +2,7 @@ const UlbLedger = require('../../../models/Schema/UlbLedger');
 const Ulb = require('../../../models/Schema/Ulb');
 const moment = require('moment');
 const ObjectId = require('mongoose').Types.ObjectId;
+const OverallUlb = require('../../../models/Schema/OverallUlb');
 module.exports = async (req, res, next) => {
     try {
         let years = [];
@@ -76,7 +77,8 @@ module.exports = async (req, res, next) => {
             let rangeArr = [];
             for (o of ulbPopulationRanges) {
                 len += o.ulbs.length;
-                rangeArr.push({ range: o.range, ulb: { $in: o.ulbs } });
+                let overAllUlbs = await OverallUlb.countDocuments({ populationCategory : o.range }).exec();
+                rangeArr.push({ totalUlb : overAllUlbs, range: o.range, ulb: { $in: o.ulbs } });
             }
             obj["data"] = rangeArr;
             arr.push(obj);
