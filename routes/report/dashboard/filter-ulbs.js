@@ -13,18 +13,24 @@ module.exports = async (req, res, next) => {
         }
         years = years.sort();
         let ulbs = [];
-        for (let i = 0; i< years.length; i++) {
-            let year = years[i];
-            let query = { financialYear: year };
-            if (i > 0) {
-                query["ulb"] = { $in: ulbs };
+        let condition = {};
+        if(req.query.ulb){
+            req.query.ulb ? condition["_id"] = ObjectId(req.query.ulb) : null ;
+        }else{
+            for (let i = 0; i< years.length; i++) {
+                let year = years[i];
+                let query = { financialYear: year };
+                if (i > 0) {
+                    query["ulb"] = { $in: ulbs };
+                }
+                ulbs = await UlbLedger.distinct("ulb", query).exec();
             }
-            ulbs = await UlbLedger.distinct("ulb", query).exec();
-        }
-        let condition = { _id: { $in: ulbs }};
+            condition = { _id: { $in: ulbs }}
+        }        
         if(req.query.state && req.query.state.length > 12){
             condition["state"] = ObjectId(req.query.state)
         }
+
         let rangeQuery = [
             {
                 $match: condition
