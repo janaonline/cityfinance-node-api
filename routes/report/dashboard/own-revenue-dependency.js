@@ -238,7 +238,7 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                     }
                 },
                 "minOwnRevenuePercentage": {
-                    "$addToSet": "$ownRevenuePercentageUlB"
+                    "$addToSet": { name : "$ulb.name" , "value" :  "$ownRevenuePercentageUlB" }
                 },                
                 maxOwnRevenuePercentage: { $max: '$ownRevenuePercentageUlB' },
                 ownRevenue: { $sum: '$ownRevenue' },
@@ -267,7 +267,7 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                     $filter: {
                        input: "$minOwnRevenuePercentage",
                        as: "minOwnRevenuePercentage",
-                       cond: { $gt: [ "$$minOwnRevenuePercentage", 0 ] }
+                       cond: { $gt: [ "$$minOwnRevenuePercentage.value", 0 ] }
                     }}
                 },
                 maxOwnRevenuePercentage: '$maxOwnRevenuePercentage'
@@ -283,9 +283,8 @@ const modifyData = (obj)=>{
 
     obj["ownRevenue"] = convertToCrores(obj.ownRevenue);
     obj["revenueExpenditure"] = convertToCrores(obj.revenueExpenditure);
-
     obj["ownRevenuePercentage"] = obj.ownRevenuePercentage.toFixed(2);
-    obj["minOwnRevenuePercentage"] = obj.minOwnRevenuePercentage.toFixed(2);
+    obj["minOwnRevenuePercentage"]["value"] = obj.minOwnRevenuePercentage.value.toFixed(2);
     obj["maxOwnRevenuePercentage"] = obj.maxOwnRevenuePercentage.toFixed(2);
     obj["ulbs"] = obj.ulbs.map(m=>{
         m.ownRevenue = convertToCrores(m.ownRevenue);
@@ -312,8 +311,10 @@ const calcualteTotal = (arr, keys)=>{
     arr.push(obj);
     for(el of arr){
         for(k in el){
-            if(k.includes('ercentage')){
+            if(k.includes('ercentage') && k!="minOwnRevenuePercentage"){
                 el[k] = el[k]+"%";
+            }else if(k == "minOwnRevenuePercentage"){
+                el[k]["value"] = el[k]["value"]+"%";
             }
         }
     }
