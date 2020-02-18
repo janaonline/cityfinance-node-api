@@ -212,80 +212,107 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
         },
         {$unwind:"$ulb"},
         // stage 8
-
         {
-            $group: {
-                _id: {
-                    financialYear: '$_id.financialYear',
-                    range: '$_id.range'
+            "$group": {
+                "_id": {
+                    "financialYear": "$_id.financialYear",
+                    "range": "$_id.range"
                 },
-                ulbs:{
-                    $push:{
-                        _id:"$ulb._id",
-                        name:"$ulb.name",
-                        population:"$ulb.population",
-                        ownRevenue: '$ownRevenue',
-                        revenueExpenditure:'$revenueExpenditure',
-                        ownRevenuePercentage: {
-                            $cond: {
-                                if: {
-                                    $eq:["$revenueExpenditure",0]
+                "ulbs": {
+                    "$push": {
+                        "_id": "$ulb._id",
+                        "name": "$ulb.name",
+                        "population": "$ulb.population",
+                        "ownRevenue": "$ownRevenue",
+                        "revenueExpenditure": "$revenueExpenditure",
+                        "ownRevenuePercentage": {
+                            "$cond": {
+                                "if": {
+                                    "$eq": [
+                                        "$revenueExpenditure",
+                                        0
+                                    ]
                                 },
-                                then: 0,
-                                else: { $multiply: [{$divide:["$ownRevenue","$revenueExpenditure"]},100]}
+                                "then": 0,
+                                "else": {
+                                    "$multiply": [
+                                        {
+                                            "$divide": [
+                                                "$ownRevenue",
+                                                "$revenueExpenditure"
+                                            ]
+                                        },
+                                        100
+                                    ]
+                                }
                             }
                         }
                     }
                 },
-                "minOwnRevenuePercentage": {
-                    "$addToSet": { name : "$ulb.name" , "value" :  "$ownRevenuePercentageUlB" }
-                },                
-                maxOwnRevenuePercentage: { $max: '$ownRevenuePercentageUlB' },
-                ownRevenue: { $sum: '$ownRevenue' },
-                revenueExpenditure: { $sum: '$revenueExpenditure' },
-                noOfUlb: { $sum: 1 }
+                "ownRevenueUlb": {
+                    "$addToSet": {
+                        "name": "$ulb.name",
+                        "value": "$ownRevenuePercentageUlB"
+                    }
+                },
+                "ownRevenue": {
+                    "$sum": "$ownRevenue"
+                },
+                "revenueExpenditure": {
+                    "$sum": "$revenueExpenditure"
+                },
+                "noOfUlb": {
+                    "$sum": 1
+                }
             }
         },
-
-        // stage 9
-
         {
-            $project: {
-                _id: 0,
-                populationCategory: '$_id.range',
-                numOfUlb: '$noOfUlb',
-                ulbs:"$ulbs",
-                ownRevenue: '$ownRevenue',
-                revenueExpenditure: '$revenueExpenditure',
-                ownRevenuePercentage: {
-                    $multiply: [
-                        { $divide: ['$ownRevenue', '$revenueExpenditure'] },
+            "$project": {
+                "_id": 0,
+                "populationCategory": "$_id.range",
+                "numOfUlb": "$noOfUlb",
+                "ulbs": "$ulbs",
+                "ownRevenue": "$ownRevenue",
+                "revenueExpenditure": "$revenueExpenditure",
+                "ownRevenuePercentage": {
+                    "$multiply": [
+                        {
+                            "$divide": [
+                                "$ownRevenue",
+                                "$revenueExpenditure"
+                            ]
+                        },
                         100
                     ]
                 },
-                "minOwnRevenuePercentage": { $min: {
-                    $filter: {
-                       input: "$minOwnRevenuePercentage",
-                       as: "minOwnRevenuePercentage",
-                       cond: { $gt: [ "$$minOwnRevenuePercentage.value", 0 ] }
-                    }}
-                },
-                maxOwnRevenuePercentage: '$maxOwnRevenuePercentage'
+                "ownRevenueUlb":1,
             }
         },
-        {$addFields : {
-            totalUlb : totalUlb
+        {
+            "$addFields": {
+                "totalUlb": totalUlb
+            }
         }
-    }
     ]
 }
 const modifyData = (obj)=>{
-
     obj["ownRevenue"] = convertToCrores(obj.ownRevenue);
     obj["revenueExpenditure"] = convertToCrores(obj.revenueExpenditure);
     obj["ownRevenuePercentage"] = obj.ownRevenuePercentage.toFixed(2);
-    obj["minOwnRevenuePercentage"]["value"] = obj.minOwnRevenuePercentage.value.toFixed(2);
-    obj["maxOwnRevenuePercentage"] = obj.maxOwnRevenuePercentage.toFixed(2);
+    // obj["minOwnRevenuePercentage"]["value"] = obj.minOwnRevenuePercentage.value.toFixed(2);
+    // obj["maxOwnRevenuePercentage"]["value"] = obj.maxOwnRevenuePercentage.value.toFixed(2);
+    // obj["ownRevenueUlb"]
+    //obj["maxOwnRevenuePercentage"] = obj["ownRevenueUlb"].reduce((prev, current) => (prev.value > current.value) ? prev : current).value.toFixed(2)
+    obj["ownRevenueUlb"] = obj["ownRevenueUlb"].sort(function(a, b){
+        if (a.value < b.value) //sort string ascending
+            return -1 
+        if (a.value > b.value)
+            return 1
+        return 0 //default return value (no sorting)
+    })
+    obj["ownRevenueUlb"] = obj["ownRevenueUlb"].filter(f=> f.value >0 );
+    obj["maxOwnRevenuePercentage"] = obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1]
+    obj["minOwnRevenuePercentage"] = obj["ownRevenueUlb"][0]
     obj["ulbs"] = obj.ulbs.map(m=>{
         m.ownRevenue = convertToCrores(m.ownRevenue);
         m.revenueExpenditure = convertToCrores(m.revenueExpenditure);
@@ -311,9 +338,9 @@ const calcualteTotal = (arr, keys)=>{
     arr.push(obj);
     for(el of arr){
         for(k in el){
-            if(k.includes('ercentage') && k!="minOwnRevenuePercentage"){
+            if(k.includes('ercentage') && k!="minOwnRevenuePercentage" && k!="maxOwnRevenuePercentage"){
                 el[k] = el[k]+"%";
-            }else if(k == "minOwnRevenuePercentage"){
+            }else if(k == "minOwnRevenuePercentage" || k == "maxOwnRevenuePercentage"){
                 el[k]["value"] = el[k]["value"]+"%";
             }
         }
