@@ -341,7 +341,7 @@ const calcualteTotal = (arr, keys)=>{
             if(k.includes('ercentage') && k!="minOwnRevenuePercentage" && k!="maxOwnRevenuePercentage"){
                 el[k] = el[k]+"%";
             }else if(k == "minOwnRevenuePercentage" || k == "maxOwnRevenuePercentage"){
-                el[k]["value"] = el[k]["value"]+"%";
+                el[k]["value"] = el[k]["value"].toFixed(2)+"%";
             }
         }
     }
