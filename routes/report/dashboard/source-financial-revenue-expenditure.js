@@ -163,13 +163,15 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                       _id:"$ulb._id",
                       name:"$ulb.name",
                       population:"$ulb.population",
+                      populationCategory:"$populationCategory",
                       ownRevenue:"$ownRevenue",
                       interestIncome:"$interestIncome",
                       assignedRevenueAndCompensation:"$assignedRevenueAndCompensation",
                       revenueGrantsContributionAndSubsidies:"$revenueGrantsContributionAndSubsidies",
                       saleAndHireCharges:"$saleAndHireCharges",
                       otherIncome:"$otherIncome",
-                      totalExpediture:"$totalExpediture"
+                      totalExpediture:"$totalExpediture", 
+                      deficitFinanceByCapitalGrants:{$toInt: "0"},
                   }
                 },
                 ownRevenue:{$sum:"$ownRevenue"},
@@ -205,7 +207,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
 }
 const getDeficit = (d = {})=>{
     // let d = JSON.parse(JSON.stringify(o));
-    let o = {};
+    let to = {};
     let remainingExpediture = d.totalExpediture;
     o.ulbs = d.ulbs;
     o.ownRevenueCoverPercentage = 0;
@@ -215,6 +217,76 @@ const getDeficit = (d = {})=>{
     o.interestIncomeCoverPercentage = 0;
     o.otherIncomeCoverPercentage = 0;
     o.deficitFinanceByCapitalGrantsCoverPercentage = 0;
+    let arr = [];
+    d.ulbs = d.ulbs.map(d=>{
+        let o = {};
+        let remainingExpediture = d.totalExpediture;
+        o.ownRevenueCoverPercentage = 0;
+        o.assignedRevenueAndCompensationCoverPercentage = 0;
+        o.saleAndHireChargesCoverPercentage = 0;
+        o.revenueGrantsContributionAndSubsidiesCoverPercentage = 0;
+        o.interestIncomeCoverPercentage = 0;
+        o.otherIncomeCoverPercentage = 0;
+        o.deficitFinanceByCapitalGrantsCoverPercentage = 0;
+        if(d.ownRevenue >= remainingExpediture){
+            o.ownRevenueCoverPercentage = 100;
+            totalExpediture = 0;
+        }else {
+            remainingExpediture = remainingExpediture - d.ownRevenue;
+            o.ownRevenueCoverPercentage = (d.ownRevenue/d.totalExpediture)*100;
+    
+            if(d.assignedRevenueAndCompensation >= remainingExpediture){
+                o.assignedRevenueAndCompensationCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                totalExpediture = 0;
+            }else {
+                remainingExpediture = remainingExpediture - d.assignedRevenueAndCompensation;
+                o.assignedRevenueAndCompensationCoverPercentage = (d.assignedRevenueAndCompensation/d.totalExpediture)*100;
+    
+                if(d.saleAndHireCharges >= remainingExpediture){
+                    d.saleAndHireChargesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                    totalExpediture = 0;
+                } else {
+                    remainingExpediture = remainingExpediture - d.saleAndHireCharges;
+                    o.saleAndHireChargesCoverPercentage = (d.saleAndHireCharges/d.totalExpediture)*100;
+    
+                    if(d.revenueGrantsContributionAndSubsidies >= remainingExpediture){
+                        d.revenueGrantsContributionAndSubsidiesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                        totalExpediture = 0;
+                    }else {
+                        remainingExpediture = remainingExpediture - d.revenueGrantsContributionAndSubsidies;
+                        o.revenueGrantsContributionAndSubsidiesCoverPercentage = (d.revenueGrantsContributionAndSubsidies/d.totalExpediture)*100;
+                        if(d.interestIncome >= remainingExpediture){
+                            d.interestIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                            totalExpediture = 0;
+                        }else {
+                            remainingExpediture = remainingExpediture - d.interestIncome;
+                            o.interestIncomeCoverPercentage = (d.interestIncome/d.totalExpediture)*100;
+                            if(d.otherIncome >= remainingExpediture){
+                                o.otherIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                                totalExpediture = 0;
+                            }else {
+                                remainingExpediture = remainingExpediture - d.otherIncome;
+                                o.otherIncomeCoverPercentage = (d.otherIncome/d.totalExpediture)*100;
+    
+                            }
+                            if(remainingExpediture){
+                                o.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
+        o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
+        o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));
+        o.revenueGrantsContributionAndSubsidiesCoverPercentage = parseFloat(o.revenueGrantsContributionAndSubsidiesCoverPercentage.toFixed(2));
+        o.interestIncomeCoverPercentage = parseFloat(o.interestIncomeCoverPercentage.toFixed(2));
+        o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
+        o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
+        o.populationCategory = d.populationCategory;
+        arr.push(o);
+    })
     if(d.ownRevenue >= remainingExpediture){
         o.ownRevenueCoverPercentage = 100;
         totalExpediture = 0;
@@ -264,21 +336,7 @@ const getDeficit = (d = {})=>{
             }
         }
     }
-    /*o.coveredPercentage = (
-        o.ownRevenueCoverPercentage
-            +
-        o.assignedRevenueAndCompensationCoverPercentage
-            +
-        o.saleAndHireChargesCoverPercentage
-            +
-        o.revenueGrantsContributionAndSubsidiesCoverPercentage
-            +
-        o.interestIncomeCoverPercentage
-            +
-        o.otherIncomeCoverPercentage
-            +
-        o.deficitFinanceByCapitalGrantsCoverPercentage
-    )*/
+    o["ulbs"] = arr;
     o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
     o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
     o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));

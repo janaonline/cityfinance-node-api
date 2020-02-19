@@ -151,11 +151,83 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         code: '$lineitems.code'
       }
     },
+    {
+      $lookup:{
+          from : "ulbs",
+          localField:"_id.ulb",
+          foreignField:"_id",
+          as : "ulb"
+      }
+  },
+  { $unwind : "$ulb"},
     // stage 5
     {
       $group: {
         _id: { financialYear: '$financialYear', range: '$range' },
         numOfUlb: { $first: '$numOfUlb' },
+        "ulbs": {
+          "$push": {
+              "_id": "$ulb._id",
+              "name": "$ulb.name",
+              "population": "$ulb.population",
+              establishmentExpense: {
+                $sum: { $cond: [{ $eq: ['$code', '210'] }, '$amount', 0] }
+              },
+              administrativeExpense: {
+                $sum: { $cond: [{ $eq: ['$code', '220'] }, '$amount', 0] }
+              },
+              operationalAndMaintananceExpense: {
+                $sum: { $cond: [{ $eq: ['$code', '230'] }, '$amount', 0] }
+              },
+              interestAndFinanceExpense: {
+                $sum: { $cond: [{ $eq: ['$code', '240'] }, '$amount', 0] }
+              },
+              revenueGrants: {
+                $sum: { $cond: [{ $eq: ['$code', '260'] }, '$amount', 0] }
+              },
+              other: {
+                $sum: {
+                  $cond: [
+                    {
+                      $in: [
+                        '$code',
+                        ['250', '270', '271', '272', '280', '290', '200']
+                      ]
+                    },
+                    '$amount',
+                    0
+                  ]
+                }
+              },
+              totalIncome: {
+                $sum: {
+                  $cond: [
+                    {
+                      $in: [
+                        '$code',
+                        [
+                          '210',
+                          '220',
+                          '230',
+                          '240',
+                          '250',
+                          '260',
+                          '270',
+                          '271',
+                          '272',
+                          '280',
+                          '290',
+                          '200'
+                        ]
+                      ]
+                    },
+                    '$amount',
+                    0
+                  ]
+                }
+              }
+            }
+        },
         establishmentExpense: {
           $sum: { $cond: [{ $eq: ['$code', '210'] }, '$amount', 0] }
         },
@@ -260,7 +332,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
 
 const convertToPercent = obj => {
   for (let k in obj) {
-    if (k == 'populationCategory' || k == 'numOfUlb') {
+    if (k == 'populationCategory' || k == 'numOfUlb' || k=='ulbs') {
       continue;
     } else {
       obj[k] = obj[k].toFixed(2);
