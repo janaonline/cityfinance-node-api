@@ -175,11 +175,78 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         code: '$lineitems.code'
       }
     },
+    {
+        $lookup:{
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb"
+        }
+    },
+    {$unwind:"$ulb"},
     // stage 5
     {
       $group: {
         _id: { financialYear: '$financialYear', range: '$range' },
         numOfUlb: { $first: '$numOfUlb' },
+        "ulbs": {
+            "$push": {
+                "_id": "$ulb._id",
+                "name": "$ulb.name",
+                "population": "$ulb.population",
+                "ownRevenue": "$ownRevenue",
+                "revenueExpenditure": "$revenueExpenditure",
+                taxRevenue: { $cond: [{ $eq: ['$code', '110'] }, '$amount', 0] },
+                rentalIncome: {
+                  $cond: [{ $eq: ['$code', '130'] }, '$amount', 0] 
+                },
+                feesAndUserCharges: {
+                   $cond: [{ $eq: ['$code', '140'] }, '$amount', 0] 
+                },
+                saleAndHireCharges: {
+                  $cond: [{ $eq: ['$code', '150'] }, '$amount', 0] 
+                },
+                assignedRevenue: {
+                  $cond: [{ $eq: ['$code', '120'] }, '$amount', 0] 
+                },
+                grants: {
+                  $cond: [{ $eq: ['$code', '160'] }, '$amount', 0] 
+                },
+                interestIncome: {
+                 
+                    $cond: [{ $in: ['$code', ['170', '171']] }, '$amount', 0]
+              
+                },
+                otherIncome: {
+                    $cond: [{ $in: ['$code', ['180', '100']] }, '$amount', 0]
+                },
+                totalIncome: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $in: [
+                          '$code',
+                          [
+                            '110',
+                            '120',
+                            '130',
+                            '140',
+                            '150',
+                            '160',
+                            '180',
+                            '100',
+                            '170',
+                            '171'
+                          ]
+                        ]
+                      },
+                      '$amount',
+                      0
+                    ]
+                  }
+                }
+            }
+        },
         taxRevenue: {
           $sum: { $cond: [{ $eq: ['$code', '110'] }, '$amount', 0] }
         },
@@ -243,6 +310,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         _id: 0,
         populationCategory: '$_id.range',
         numOfUlb: '$numOfUlb',
+        ulbs:1,
         taxRevenue: {
           $multiply: [{ $divide: ['$taxRevenue', '$totalIncome'] }, 100]
         },
@@ -280,6 +348,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         populationCategory: '$populationCategory',
         numOfUlb: '$numOfUlb',
         taxRevenue: '$taxRevenue',
+        ulbs:1,
         rentalIncome: '$rentalIncome',
         feesAndUserCharges: '$feesAndUserCharges',
         ownRevenues: {
@@ -298,7 +367,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
 
 const convertToPercent = obj => {
   for (let k in obj) {
-    if (k == 'populationCategory' || k == 'numOfUlb') {
+    if (k == 'populationCategory' || k == 'numOfUlb' || k =="ulbs") {
       continue;
     } else {
       obj[k] = obj[k].toFixed(2);
