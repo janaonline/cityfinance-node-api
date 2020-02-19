@@ -277,6 +277,8 @@ const getDeficit = (d = {})=>{
                 }
             }
         }
+        o.population = d.population
+        o.name = d.name
         o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
         o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
         o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));
@@ -284,7 +286,7 @@ const getDeficit = (d = {})=>{
         o.interestIncomeCoverPercentage = parseFloat(o.interestIncomeCoverPercentage.toFixed(2));
         o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
         o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
-        o.populationCategory = d.populationCategory;
+        o.population = d.population;
         arr.push(o);
     })
     if(d.ownRevenue >= remainingExpediture){

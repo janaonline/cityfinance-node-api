@@ -121,6 +121,7 @@ module.exports = async (req, res, next) => {
 };
 
 const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
+  console.log(year,ulb,range,numOfUlb,totalUlb)
   return [
     // stage 1
     {
@@ -154,7 +155,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
     {
       $lookup:{
           from : "ulbs",
-          localField:"_id.ulb",
+          localField:"ulb",
           foreignField:"_id",
           as : "ulb"
       }
@@ -331,6 +332,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
 };
 
 const convertToPercent = obj => {
+  console.log(obj)
   for (let k in obj) {
     if (k == 'populationCategory' || k == 'numOfUlb' || k=='ulbs') {
       continue;
