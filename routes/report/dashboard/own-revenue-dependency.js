@@ -299,10 +299,6 @@ const modifyData = (obj)=>{
     obj["ownRevenue"] = convertToCrores(obj.ownRevenue);
     obj["revenueExpenditure"] = convertToCrores(obj.revenueExpenditure);
     obj["ownRevenuePercentage"] = obj.ownRevenuePercentage.toFixed(2);
-    // obj["minOwnRevenuePercentage"]["value"] = obj.minOwnRevenuePercentage.value.toFixed(2);
-    // obj["maxOwnRevenuePercentage"]["value"] = obj.maxOwnRevenuePercentage.value.toFixed(2);
-    // obj["ownRevenueUlb"]
-    //obj["maxOwnRevenuePercentage"] = obj["ownRevenueUlb"].reduce((prev, current) => (prev.value > current.value) ? prev : current).value.toFixed(2)
     obj["ownRevenueUlb"] = obj["ownRevenueUlb"].sort(function(a, b){
         if (a.value < b.value) //sort string ascending
             return -1 
@@ -311,8 +307,13 @@ const modifyData = (obj)=>{
         return 0 //default return value (no sorting)
     })
     obj["ownRevenueUlb"] = obj["ownRevenueUlb"].filter(f=> f.value >0 );
-    obj["maxOwnRevenuePercentage"] = obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1]
-    obj["minOwnRevenuePercentage"] = obj["ownRevenueUlb"][0]
+    obj["maxOwnRevenuePercentage"] = JSON.parse(JSON.stringify(obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1]))
+
+    obj["minOwnRevenuePercentage"] = JSON.parse(JSON.stringify(obj["ownRevenueUlb"][0]))
+
+    obj["maxOwnRevenuePercentage"].value = obj["maxOwnRevenuePercentage"].value.toFixed(2)
+    obj["minOwnRevenuePercentage"].value = obj["minOwnRevenuePercentage"].value.toFixed(2)
+
     obj["ulbs"] = obj.ulbs.map(m=>{
         m.ownRevenue = convertToCrores(m.ownRevenue);
         m.revenueExpenditure = convertToCrores(m.revenueExpenditure);
@@ -338,10 +339,10 @@ const calcualteTotal = (arr, keys)=>{
     arr.push(obj);
     for(el of arr){
         for(k in el){
-            if(k.includes('ercentage') && k!="minOwnRevenuePercentage" && k!="maxOwnRevenuePercentage"){
+            if(k.includes('ercentage') && k!="maxOwnRevenuePercentage" && k!="minOwnRevenuePercentage") {
                 el[k] = el[k]+"%";
-            }else if(k == "minOwnRevenuePercentage" || k == "maxOwnRevenuePercentage"){
-                el[k]["value"] = el[k]["value"].toFixed(2)+"%";
+            }else if(k=="maxOwnRevenuePercentage" || k=="minOwnRevenuePercentage"){
+                el[k].value = el[k].value+"%";
             }
         }
     }
