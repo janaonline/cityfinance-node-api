@@ -207,6 +207,7 @@ const getDeficit = (d = {})=>{
     // let d = JSON.parse(JSON.stringify(o));
     let o = {};
     let remainingExpediture = d.totalExpediture;
+    o.ulbs = d.ulbs;
     o.ownRevenueCoverPercentage = 0;
     o.assignedRevenueAndCompensationCoverPercentage = 0;
     o.saleAndHireChargesCoverPercentage = 0;
