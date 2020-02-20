@@ -18,7 +18,6 @@ module.exports = async (req, res, next)=>{
         query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
         let data = await UlbLedger.aggregate(query);
         data[0]['numOfUlb'] = numOfUlb;
-        console.log(data[0]);
         let dataObj = convertToCrores(data[0]);
         obj['data'].push(dataObj);
         //console.log(data[0]);
@@ -74,11 +73,30 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         code: '$lineitems.code'
       }
     },
+    {
+      $lookup:{
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb"
+      }
+  },
+  {$unwind:"$ulb"},
     // stage 5
     {
       $group: {
         _id: { financialYear: '$financialYear', range: '$range' },
         numOfUlb: { $first: '$numOfUlb' },
+        "ulbs": {
+          "$push": {
+              "_id": "$ulb._id",
+              "name": "$ulb.name",
+              "population": "$ulb.population",
+              cashAndBankBalance: {
+                $sum: { $cond: [{ $eq: ['$code', '450'] }, '$amount', 0] }
+              }
+          }
+      },
         cashAndBankBalance: {
           $sum: { $cond: [{ $eq: ['$code', '450'] }, '$amount', 0] }
         }
@@ -91,6 +109,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
       $project: {
         _id: 0,
         populationCategory: '$_id.range',
+        ulbs: 1,
         numOfUlb: '$numOfUlb',
         cashAndBankBalance: '$cashAndBankBalance'
       }
