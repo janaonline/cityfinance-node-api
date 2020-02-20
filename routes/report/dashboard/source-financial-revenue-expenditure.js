@@ -159,7 +159,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                 populationCategory:{$first:"$populationCategory"},
                 numOfUlb:{$first:"$numOfUlb"},
                 ulbs:{
-                  $push:{
+                  $addToSet:{
                       _id:"$ulb._id",
                       name:"$ulb.name",
                       population:"$ulb.population",

@@ -219,7 +219,7 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                     "range": "$_id.range"
                 },
                 "ulbs": {
-                    "$push": {
+                    "$addToSet": {
                         "_id": "$ulb._id",
                         "name": "$ulb.name",
                         "population": "$ulb.population",

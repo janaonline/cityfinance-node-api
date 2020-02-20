@@ -167,7 +167,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         _id: { financialYear: '$financialYear', range: '$range' },
         numOfUlb: { $first: '$numOfUlb' },
         "ulbs": {
-          "$push": {
+          "$addToSet": {
               "_id": "$ulb._id",
               "name": "$ulb.name",
               "population": "$ulb.population",
