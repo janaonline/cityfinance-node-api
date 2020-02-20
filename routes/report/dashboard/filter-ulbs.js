@@ -71,7 +71,13 @@ module.exports = async (req, res, next) => {
             },
             {
                 $sort:{rangeNum:1}
-            }
+            },
+            {
+                $project: {
+                     rangeNum:0,
+
+                }
+            },
         ];
         let ulbPopulationRanges = await Ulb.aggregate(rangeQuery).exec();
         let arr = [];
