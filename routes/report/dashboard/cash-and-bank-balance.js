@@ -120,7 +120,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
 };
 
 const convertToCrores = (obj) => {
-    obj['cashAndBankBalance'] = (obj['cashAndBankBalance'] / 10000000).toFixed(2);
+    obj['cashAndBankBalance'] = obj['cashAndBankBalance'];
     return obj;
 }
 
