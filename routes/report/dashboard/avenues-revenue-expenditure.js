@@ -295,6 +295,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         _id: 0,
         populationCategory: '$_id.range',
         numOfUlb: '$numOfUlb',
+        ulbs:1,
         establishmentExpense: {
           $multiply: [
             { $divide: ['$establishmentExpense', '$totalIncome'] },
@@ -332,7 +333,6 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
 };
 
 const convertToPercent = obj => {
-  console.log(obj)
   for (let k in obj) {
     if (k == 'populationCategory' || k == 'numOfUlb' || k=='ulbs') {
       continue;
