@@ -244,7 +244,25 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
                       0
                     ]
                   }
-                }
+                },
+                ownRevenues: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $in: [
+                          '$code',
+                          [
+                            '110',
+                            '130',
+                            '140',                            
+                          ]
+                        ]
+                      },
+                      '$amount',
+                      0
+                    ]
+                  }
+                },
             }
         },
         taxRevenue: {
@@ -274,9 +292,6 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
           $sum: {
             $cond: [{ $in: ['$code', ['180', '100']] }, '$amount', 0]
           }
-        },
-        ownRevenues: {
-          $sum: ['$taxRevenue', '$rentalIncome', '$feesAndUserCharges']
         },
         totalIncome: {
           $sum: {
