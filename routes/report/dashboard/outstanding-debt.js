@@ -74,7 +74,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             $group:{
                 _id : "$_id.financialYear",
                 ulbs:{
-                    $push:{
+                    $addToSet:{
                         _id:"$ulb._id",
                         name:"$ulb.name",
                         population:"$ulb.population",
@@ -83,6 +83,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                         loanFromStateGovernment:"$loanFromStateGovernment",
                         bondsAndOtherDebtInstruments:"$bondsAndOtherDebtInstruments",
                         others:"$others",
+                        total:{$sum:["$LoanFromCentralGovernment","$loanFromFIIB","$loanFromStateGovernment","$bondsAndOtherDebtInstruments","$others"]}
                     }
                 },
                 numOfUlb:{$first:"$numOfUlb"},
