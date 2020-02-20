@@ -296,8 +296,8 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
     ]
 }
 const modifyData = (obj)=>{
-    obj["ownRevenue"] = convertToCrores(obj.ownRevenue);
-    obj["revenueExpenditure"] = convertToCrores(obj.revenueExpenditure);
+    obj["ownRevenue"] = obj["ownRevenue"];
+    obj["revenueExpenditure"] = obj["revenueExpenditure"];
     obj["ownRevenuePercentage"] = obj.ownRevenuePercentage.toFixed(2);
     obj["ownRevenueUlb"] = obj["ownRevenueUlb"].sort(function(a, b){
         if (a.value < b.value) //sort string ascending
@@ -315,8 +315,8 @@ const modifyData = (obj)=>{
     obj["minOwnRevenuePercentage"].value = obj["minOwnRevenuePercentage"].value.toFixed(2)
 
     obj["ulbs"] = obj.ulbs.map(m=>{
-        m.ownRevenue = convertToCrores(m.ownRevenue);
-        m.revenueExpenditure = convertToCrores(m.revenueExpenditure);
+        m.ownRevenue = m.ownRevenue;
+        m.revenueExpenditure = m.revenueExpenditure;
 
         m.ownRevenuePercentage = m.ownRevenuePercentage.toFixed(2)+"%";
         return m;
