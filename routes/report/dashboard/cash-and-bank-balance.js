@@ -16,6 +16,7 @@ module.exports = async (req, res, next)=>{
         let range = d.range;
         let numOfUlb = Number(d.ulb['$in'].length);
         query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
+        return res.json(query);
         let data = await UlbLedger.aggregate(query);
         data[0]['numOfUlb'] = numOfUlb;
         let dataObj = convertToCrores(data[0]);
@@ -62,6 +63,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
     },
     // stage 3
     { $unwind: '$lineitems' },
+    {$match:{"lineitems.code" : "450"}},
     // stage 4
     {
       $project: {
@@ -82,6 +84,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
       }
   },
   {$unwind:"$ulb"},
+  
     // stage 5
     {
       $group: {
