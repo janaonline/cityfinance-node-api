@@ -54,7 +54,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
               _id:{ulb:"$ulb",financialYear:"$financialYear"},
               populationCategory:{$first:"$populationCategory"},
               numOfUlb:{$first:{ $size:"$ulbs"}},
-              LoanFromCentralGovernment:{$sum:{$cond: [{$eq: ['$lineItem.code', "33001"]}, '$amount', 0]}},
+              LoanFromCentralGovernment:{$sum:{$cond: [ {$eq: ['$lineItem.code', "33001"] }, '$amount', 0]}},
               loanFromFIIB:{$sum:{$cond: [{$eq: ['$lineItem.code', "33003"]}, '$amount', 0]}},
               loanFromStateGovernment:{$sum:{$cond: [{$eq: ['$lineItem.code', "33002"]}, '$amount', 0]}},
               bondsAndOtherDebtInstruments:{$sum:{$cond: [{$eq: ['$lineItem.code', "33104"]}, '$amount', 0]}},
@@ -71,28 +71,144 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
         },
         { $unwind : "$ulb"},
         {
-            $group:{
-                _id : "$_id.financialYear",
-                ulbs:{
-                    $addToSet:{
-                        _id:"$ulb._id",
-                        name:"$ulb.name",
-                        population:"$ulb.population",
-                        LoanFromCentralGovernment:"$LoanFromCentralGovernment",
-                        loanFromFIIB:"$loanFromFIIB",
-                        loanFromStateGovernment:"$loanFromStateGovernment",
-                        bondsAndOtherDebtInstruments:"$bondsAndOtherDebtInstruments",
-                        others:"$others",
-                        total:{$sum:["$LoanFromCentralGovernment","$loanFromFIIB","$loanFromStateGovernment","$bondsAndOtherDebtInstruments","$others"]}
+            "$group": {
+                "_id": {
+                    "ulb": "$ulb",
+                    "financialYear": "$financialYear"
+                },
+                "populationCategory": {
+                    "$first": "$populationCategory"
+                },
+                "numOfUlb": {
+                    "$first": {
+                        "$size": "$ulbs"
                     }
                 },
-                numOfUlb:{$first:"$numOfUlb"},
-                populationCategory:{$first:"$populationCategory"},
-                LoanFromCentralGovernment:{$sum: "$LoanFromCentralGovernment"},
-                loanFromFIIB:{$sum: "$loanFromFIIB"},
-                loanFromStateGovernment:{$sum: "$loanFromStateGovernment"},
-                bondsAndOtherDebtInstruments:{$sum: "$bondsAndOtherDebtInstruments"},
-                others:{$sum: "$others"},
+                "LoanFromCentralGovernment": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$eq": [
+                                    "$lineItem.code",
+                                    "33001"
+                                ]
+                            },
+                            "$amount",
+                            {
+                                    "$cond": [
+                                        {
+                                            "$eq": [
+                                                "$lineItem.code",
+                                                "33101"
+                                            ]
+                                        },
+                                        "$amount",
+                                        0
+                             ]
+                            }
+                        ]
+                    }
+                },
+                "loanFromFIIB": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$eq": [
+                                    "$lineItem.code",
+                                    "33003"
+                                ]
+                            },
+                            "$amount",
+                            {
+                                    "$cond": [
+                                        {
+                                            "$eq": [
+                                                "$lineItem.code",
+                                                "33103"
+                                            ]
+                                        },
+                                        "$amount",
+                                        0
+                             ]
+                            }
+                        ]
+                    }
+                },
+                "loanFromStateGovernment": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$eq": [
+                                    "$lineItem.code",
+                                    "33002"
+                                ]
+                            },
+                            "$amount",
+                            {
+                                    "$cond": [
+                                        {
+                                            "$eq": [
+                                                "$lineItem.code",
+                                                "33102"
+                                            ]
+                                        },
+                                        "$amount",
+                                        0
+                             ]
+                            }
+                        ]
+                    }
+                },
+                "bondsAndOtherDebtInstruments": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$eq": [
+                                    "$lineItem.code",
+                                    "33004"
+                                ]
+                            },
+                            "$amount",
+                            {
+                                    "$cond": [
+                                        {
+                                            "$eq": [
+                                                "$lineItem.code",
+                                                "33104"
+                                            ]
+                                        },
+                                        "$amount",
+                                        0
+                             ]
+                            }
+                        ]
+                    }
+                },
+                "others": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                "$eq": [
+                                    "$lineItem.code",
+                                    "33000"
+                                ]
+                            },
+                            "$amount",
+                            {
+                                    "$cond": [
+                                        {
+                                            "$eq": [
+                                                "$lineItem.code",
+                                                "33100"
+                                            ]
+                                        },
+                                        "$amount",
+                                        0
+                             ]
+                            }
+                        ]
+                    }
+                }
             }
         },
         {
