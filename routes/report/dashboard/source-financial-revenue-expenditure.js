@@ -8,6 +8,7 @@ module.exports = async (req, res, next)=>{
         let obj = { year: query.financialYear, data:[]};
         for(d of query.data){
             let q = getAggregatedDataQuery(query.financialYear, d.range, d.ulb,d.totalUlb);
+            return res.json(q);
             try{
                 let ulbData = await UlbLedger.aggregate(q).exec();
                 if(ulbData.length){
@@ -287,6 +288,7 @@ const getDeficit = (d = {})=>{
         o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
         o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
         o.population = d.population;
+        o._id = d._id
         arr.push(o);
     })
     if(d.ownRevenue >= remainingExpediture){
