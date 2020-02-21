@@ -41,35 +41,27 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             }
         },
         {
-            $lookup:{
-                from : "lineitems",
-                localField:"lineItem",
-                foreignField:"_id",
-                as : "lineItem"
+            "$lookup": {
+                "from": "lineitems",
+                "localField": "lineItem",
+                "foreignField": "_id",
+                "as": "lineItem"
             }
         },
-        { $unwind : "$lineItem"},
         {
-          $group:{
-              _id:{ulb:"$ulb",financialYear:"$financialYear"},
-              populationCategory:{$first:"$populationCategory"},
-              numOfUlb:{$first:{ $size:"$ulbs"}},
-              LoanFromCentralGovernment:{$sum:{$cond: [ {$eq: ['$lineItem.code', "33001"] }, '$amount', 0]}},
-              loanFromFIIB:{$sum:{$cond: [{$eq: ['$lineItem.code', "33003"]}, '$amount', 0]}},
-              loanFromStateGovernment:{$sum:{$cond: [{$eq: ['$lineItem.code', "33002"]}, '$amount', 0]}},
-              bondsAndOtherDebtInstruments:{$sum:{$cond: [{$eq: ['$lineItem.code', "33104"]}, '$amount', 0]}},
-              others:{$sum:{$cond: [{$eq: ['$lineItem.code', "33100"]}, '$amount', 0]}}
-          }
+            "$unwind": "$lineItem"
         },
         {
-            $lookup:{
-                from : "ulbs",
-                localField:"_id.ulb",
-                foreignField:"_id",
-                as : "ulb"
+            "$lookup": {
+                "from": "ulbs",
+                "localField": "ulb",
+                "foreignField": "_id",
+                "as": "ulb"
             }
         },
-        { $unwind : "$ulb"},
+        {
+            "$unwind": "$ulb"
+        },
         {
             "$group": {
                 "_id": {
@@ -80,9 +72,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                     "$first": "$populationCategory"
                 },
                 "numOfUlb": {
-                    "$first": {
-                        "$size": "$ulbs"
-                    }
+                    "$first": {"$size" : "$ulbs"}
                 },
                 "LoanFromCentralGovernment": {
                     "$sum": {
@@ -95,16 +85,16 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                             },
                             "$amount",
                             {
-                                    "$cond": [
-                                        {
-                                            "$eq": [
-                                                "$lineItem.code",
-                                                "33101"
-                                            ]
-                                        },
-                                        "$amount",
-                                        0
-                             ]
+                                "$cond": [
+                                    {
+                                        "$eq": [
+                                            "$lineItem.code",
+                                            "33101"
+                                        ]
+                                    },
+                                    "$amount",
+                                    0
+                                ]
                             }
                         ]
                     }
@@ -120,16 +110,16 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                             },
                             "$amount",
                             {
-                                    "$cond": [
-                                        {
-                                            "$eq": [
-                                                "$lineItem.code",
-                                                "33103"
-                                            ]
-                                        },
-                                        "$amount",
-                                        0
-                             ]
+                                "$cond": [
+                                    {
+                                        "$eq": [
+                                            "$lineItem.code",
+                                            "33103"
+                                        ]
+                                    },
+                                    "$amount",
+                                    0
+                                ]
                             }
                         ]
                     }
@@ -145,16 +135,16 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                             },
                             "$amount",
                             {
-                                    "$cond": [
-                                        {
-                                            "$eq": [
-                                                "$lineItem.code",
-                                                "33102"
-                                            ]
-                                        },
-                                        "$amount",
-                                        0
-                             ]
+                                "$cond": [
+                                    {
+                                        "$eq": [
+                                            "$lineItem.code",
+                                            "33102"
+                                        ]
+                                    },
+                                    "$amount",
+                                    0
+                                ]
                             }
                         ]
                     }
@@ -170,16 +160,16 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                             },
                             "$amount",
                             {
-                                    "$cond": [
-                                        {
-                                            "$eq": [
-                                                "$lineItem.code",
-                                                "33104"
-                                            ]
-                                        },
-                                        "$amount",
-                                        0
-                             ]
+                                "$cond": [
+                                    {
+                                        "$eq": [
+                                            "$lineItem.code",
+                                            "33104"
+                                        ]
+                                    },
+                                    "$amount",
+                                    0
+                                ]
                             }
                         ]
                     }
@@ -195,16 +185,16 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                             },
                             "$amount",
                             {
-                                    "$cond": [
-                                        {
-                                            "$eq": [
-                                                "$lineItem.code",
-                                                "33100"
-                                            ]
-                                        },
-                                        "$amount",
-                                        0
-                             ]
+                                "$cond": [
+                                    {
+                                        "$eq": [
+                                            "$lineItem.code",
+                                            "33100"
+                                        ]
+                                    },
+                                    "$amount",
+                                    0
+                                ]
                             }
                         ]
                     }
@@ -212,17 +202,25 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             }
         },
         {
-            $project:{
-                _id:0,
-                ulbs:1,
-                populationCategory:"$populationCategory",
-                numOfUlb:1,
-                LoanFromCentralGovernment:1,
-                loanFromFIIB:1,
-                loanFromStateGovernment:1,
-                bondsAndOtherDebtInstruments:1,
-                others:1,
-                total:{$sum:["$LoanFromCentralGovernment","$loanFromFIIB","$loanFromStateGovernment","$bondsAndOtherDebtInstruments","$others"]}
+            "$project": {
+                "_id": 0,
+                "ulbs": 1,
+                "populationCategory": "$populationCategory",
+                "numOfUlb": 1,
+                "LoanFromCentralGovernment": 1,
+                "loanFromFIIB": 1,
+                "loanFromStateGovernment": 1,
+                "bondsAndOtherDebtInstruments": 1,
+                "others": 1,
+                "total": {
+                    "$sum": [
+                        "$LoanFromCentralGovernment",
+                        "$loanFromFIIB",
+                        "$loanFromStateGovernment",
+                        "$bondsAndOtherDebtInstruments",
+                        "$others"
+                    ]
+                }
             }
         },
         {$addFields: { totalUlb : totalUlb} }
