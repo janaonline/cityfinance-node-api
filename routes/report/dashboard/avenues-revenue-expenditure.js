@@ -17,10 +17,14 @@ module.exports = async (req, res, next) => {
         let numOfUlb = Number(d.ulb['$in'].length);
         query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
         let data = await UlbLedger.aggregate(query);
-        data[0]['numOfUlb'] = numOfUlb;
-        let dataObj = convertToPercent(data[0]);
-        dataObj.ulbs = dataObj.ulbs.map(m=> m = convertToPercent(m));
-        obj['data'].push(dataObj);
+        if(data.length && data) { 
+            data[0]['numOfUlb'] = numOfUlb;
+            let dataObj = convertToPercent(data[0]);
+            if(dataObj)
+            dataObj.ulbs = dataObj.ulbs.map(m=> m = convertToPercent(m));
+            obj['data'].push(dataObj);
+        }
+        
       }
       output.push(obj);
     }
