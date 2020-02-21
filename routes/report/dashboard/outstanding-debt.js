@@ -7,6 +7,7 @@ module.exports = async (req, res, next)=>{
         let obj = { year: query.financialYear, data:[]};
         for(d of query.data){
             let q = getAggregatedDataQuery(query.financialYear, d.range, d.ulb,d.totalUlb);
+            return res.json(q);
             try{
                 let ulbData = await UlbLedger.aggregate(q).exec();
                 if(ulbData.length){
@@ -65,7 +66,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
         {
             "$group": {
                 "_id": {
-                    "ulb": "$ulb",
+                    "ulb": "$ulb._id",
                     "financialYear": "$financialYear"
                 },
                 "populationCategory": {
