@@ -19,6 +19,7 @@ module.exports = async (req, res, next) => {
         let data = await UlbLedger.aggregate(query);
         data[0]['numOfUlb'] = numOfUlb;
         let dataObj = convertToPercent(data[0]);
+        dataObj.ulbs = dataObj.ulbs.map(m=> m = convertToPercent(m));
         obj['data'].push(dataObj);
       }
       output.push(obj);
@@ -186,209 +187,407 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
     {$unwind:"$ulb"},
     // stage 5
     {
-      $group: {
-        _id: { financialYear: '$financialYear', range: '$range' },
-        numOfUlb: { $first: '$numOfUlb' },
+      "$group": {
+          "_id": {
+              "financialYear": "$financialYear",
+              "range": "$range",
+              "ulb" : "$ulb._id"
+          },
+          "numOfUlb": {
+              "$first": "$numOfUlb"
+          },
+          "ulbName" :  {
+              "$first":  "$ulb.name"},
+          "ulbPopulation" : {
+              "$first":  "$ulb.population"},
+          taxRevenue: {
+            $sum: { $cond: [{ $eq: ['$code', '110'] }, '$amount', 0] }
+          },
+          rentalIncome: {
+            $sum: { $cond: [{ $eq: ['$code', '130'] }, '$amount', 0] }
+          },
+          feesAndUserCharges: {
+            $sum: { $cond: [{ $eq: ['$code', '140'] }, '$amount', 0] }
+          },
+          saleAndHireCharges: {
+            $sum: { $cond: [{ $eq: ['$code', '150'] }, '$amount', 0] }
+          },
+          assignedRevenue: {
+            $sum: { $cond: [{ $eq: ['$code', '120'] }, '$amount', 0] }
+          },
+          grants: {
+            $sum: { $cond: [{ $eq: ['$code', '160'] }, '$amount', 0] }
+          },
+          interestIncome: {
+            $sum: {
+              $cond: [{ $in: ['$code', ['170', '171']] }, '$amount', 0]
+            }
+          },
+          otherIncome: {
+            $sum: {
+              $cond: [{ $in: ['$code', ['180', '100']] }, '$amount', 0]
+            }
+          },
+           ownRevenues: {
+                $sum: {
+                  $cond: [
+                    {
+                      $in: [
+                        '$code',
+                        [
+                          '110',
+                          '130',
+                          '140',                            
+                        ]
+                      ]
+                    },
+                    '$amount',
+                    0
+                  ]
+                }
+              },
+          totalIncome: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    '$code',
+                    [
+                      '110',
+                      '120',
+                      '130',
+                      '140',
+                      '150',
+                      '160',
+                      '180',
+                      '100',
+                      '170',
+                      '171'
+                    ]
+                  ]
+                },
+                '$amount',
+                0
+              ]
+            }
+          }
+      }
+  },
+  {
+    "$group": {
+        "_id": {
+            "financialYear": "$_id.financialYear",
+            "range": "$_id.range"
+        },
         "ulbs": {
             "$addToSet": {
-                "_id": "$ulb._id",
-                "name": "$ulb.name",
-                "population": "$ulb.population",
-                "ownRevenue": "$ownRevenue",
-                "revenueExpenditure": "$revenueExpenditure",
-                taxRevenue: { $cond: [{ $eq: ['$code', '110'] }, '$amount', 0] },
-                rentalIncome: {
-                  $cond: [{ $eq: ['$code', '130'] }, '$amount', 0] 
-                },
-                feesAndUserCharges: {
-                   $cond: [{ $eq: ['$code', '140'] }, '$amount', 0] 
-                },
-                saleAndHireCharges: {
-                  $cond: [{ $eq: ['$code', '150'] }, '$amount', 0] 
-                },
-                assignedRevenue: {
-                  $cond: [{ $eq: ['$code', '120'] }, '$amount', 0] 
-                },
-                grants: {
-                  $cond: [{ $eq: ['$code', '160'] }, '$amount', 0] 
-                },
-                interestIncome: {
-                 
-                    $cond: [{ $in: ['$code', ['170', '171']] }, '$amount', 0]
-              
-                },
-                otherIncome: {
-                    $cond: [{ $in: ['$code', ['180', '100']] }, '$amount', 0]
-                },
-                totalIncome: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $in: [
-                          '$code',
-                          [
-                            '110',
-                            '120',
-                            '130',
-                            '140',
-                            '150',
-                            '160',
-                            '180',
-                            '100',
-                            '170',
-                            '171'
-                          ]
-                        ]
-                      },
-                      '$amount',
-                      0
+                "_id": "$_id.ulb",
+                "name": "$ulbName",
+                "population": "$ulbPopulation",
+                "taxRevenue": {
+                    "$multiply": [
+                        {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$taxRevenue",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
                     ]
-                  }
                 },
-                ownRevenues: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $in: [
-                          '$code',
-                          [
-                            '110',
-                            '130',
-                            '140',                            
-                          ]
-                        ]
-                      },
-                      '$amount',
-                      0
+                "rentalIncome": {
+                    "$multiply": [
+                         {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$rentalIncome",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
                     ]
-                  }
                 },
+                "feesAndUserCharges": {
+                    "$multiply": [
+                        {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$feesAndUserCharges",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
+                    ]
+                },
+                "saleAndHireCharges": {
+                    "$multiply": [
+                        {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$saleAndHireCharges",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
+                    ]
+                },
+                "assignedRevenue": {
+                    "$multiply": [
+                         {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$assignedRevenue",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
+                    ]
+                },
+                "grants": {
+                    "$multiply": [
+                         {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$grants",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
+                    ]
+                },
+                "interestIncome": {
+                    "$multiply": [
+                         {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$interestIncome",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
+                    ]
+                },
+                "otherIncome": {
+                    "$multiply": [
+                                                    {
+                            
+                             $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                                "$otherIncome",
+                                "$totalIncome"
+                            ]}]  
+                            
+                        },
+                        100
+                    ]
+                }
             }
         },
-        taxRevenue: {
-          $sum: { $cond: [{ $eq: ['$code', '110'] }, '$amount', 0] }
+        "taxRevenue": {
+            "$sum": "$taxRevenue"
         },
-        rentalIncome: {
-          $sum: { $cond: [{ $eq: ['$code', '130'] }, '$amount', 0] }
+        "rentalIncome": {
+            "$sum": "$rentalIncome"
         },
-        feesAndUserCharges: {
-          $sum: { $cond: [{ $eq: ['$code', '140'] }, '$amount', 0] }
+        "feesAndUserCharges": {
+            "$sum": "$feesAndUserCharges"
         },
-        saleAndHireCharges: {
-          $sum: { $cond: [{ $eq: ['$code', '150'] }, '$amount', 0] }
+        "saleAndHireCharges": {
+            "$sum": "$saleAndHireCharges"
         },
-        assignedRevenue: {
-          $sum: { $cond: [{ $eq: ['$code', '120'] }, '$amount', 0] }
+        "assignedRevenue": {
+            "$sum": "$assignedRevenue"
         },
-        grants: {
-          $sum: { $cond: [{ $eq: ['$code', '160'] }, '$amount', 0] }
+        "grants": {
+            "$sum": "$grants"
         },
-        interestIncome: {
-          $sum: {
-            $cond: [{ $in: ['$code', ['170', '171']] }, '$amount', 0]
-          }
+        "interestIncome": {
+            "$sum": "$interestIncome"
         },
-        otherIncome: {
-          $sum: {
-            $cond: [{ $in: ['$code', ['180', '100']] }, '$amount', 0]
-          }
+        "otherIncome": {
+            "$sum": "$otherIncome"
         },
-        totalIncome: {
-          $sum: {
-            $cond: [
-              {
-                $in: [
-                  '$code',
-                  [
-                    '110',
-                    '120',
-                    '130',
-                    '140',
-                    '150',
-                    '160',
-                    '180',
-                    '100',
-                    '170',
-                    '171'
-                  ]
-                ]
-              },
-              '$amount',
-              0
+        "ownRevenues": {
+            "$sum": "$ownRevenues"
+        },
+        "totalIncome": {
+            "$sum": "$totalIncome"
+        }
+    }
+},
+{
+    "$project": {
+        "_id": 0,
+        "populationCategory": "$_id.range",
+        "numOfUlb": "$numOfUlb",
+        "ulbs": 1,
+        "taxRevenue": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$taxRevenue",
+                        "$totalIncome"
+                    ]
+                },
+                100
             ]
-          }
+        },
+        "rentalIncome": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$rentalIncome",
+                        "$totalIncome"
+                    ]
+                },
+                100
+            ]
+        },
+        "feesAndUserCharges": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$feesAndUserCharges",
+                        "$totalIncome"
+                    ]
+                },
+                100
+            ]
+        },
+        "ownRevenues": {
+            "$sum": [
+                "$taxRevenue",
+                "$rentalIncome",
+                "$feesAndUserCharges"
+            ]
+        },
+        "saleAndHireCharges": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$saleAndHireCharges",
+                        "$totalIncome"
+                    ]
+                },
+                100
+            ]
+        },
+        "assignedRevenue": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$assignedRevenue",
+                        "$totalIncome"
+                    ]
+                },
+                100
+            ]
+        },
+        "grants": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$grants",
+                        "$totalIncome"
+                    ]
+                },
+                100
+            ]
+        },
+        "interestIncome": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$interestIncome",
+                        "$totalIncome"
+                    ]
+                },
+                100
+            ]
+        },
+        "otherIncome": {
+            "$multiply": [
+                {
+                    "$divide": [
+                        "$otherIncome",
+                        "$totalIncome"
+                    ]
+                },
+                100
+            ]
         }
+    }
+},
+{
+    "$project": {
+        "populationCategory": "$populationCategory",
+        "numOfUlb": "$numOfUlb",
+        "taxRevenue": "$taxRevenue",
+        "ulbs": 1,
+        "rentalIncome": "$rentalIncome",
+        "feesAndUserCharges": "$feesAndUserCharges",
+        "ownRevenues": {
+            "$sum": [
+                "$taxRevenue",
+                "$rentalIncome",
+                "$feesAndUserCharges"
+            ]
+        },
+        "saleAndHireCharges": "$saleAndHireCharges",
+        "assignedRevenue": "$assignedRevenue",
+        "grants": "$grants",
+        "interestIncome": "$interestIncome",
+        "otherIncome": "$otherIncome"
+    }
+},
+  {
+      "$project": {
+          "populationCategory": "$populationCategory",
+          "numOfUlb": "$numOfUlb",
+          "taxRevenue": "$taxRevenue",
+          "ulbs": 1,
+          "rentalIncome": "$rentalIncome",
+          "feesAndUserCharges": "$feesAndUserCharges",
+          "ownRevenues": {
+              "$sum": [
+                  "$taxRevenue",
+                  "$rentalIncome",
+                  "$feesAndUserCharges"
+              ]
+          },
+          "saleAndHireCharges": "$saleAndHireCharges",
+          "assignedRevenue": "$assignedRevenue",
+          "grants": "$grants",
+          "interestIncome": "$interestIncome",
+          "otherIncome": "$otherIncome"
       }
-    },
-
-    //stage
-
-    {
-      $project: {
-        _id: 0,
-        populationCategory: '$_id.range',
-        numOfUlb: '$numOfUlb',
-        ulbs:1,
-        taxRevenue: {
-          $multiply: [{ $divide: ['$taxRevenue', '$totalIncome'] }, 100]
-        },
-        rentalIncome: {
-          $multiply: [{ $divide: ['$rentalIncome', '$totalIncome'] }, 100]
-        },
-        feesAndUserCharges: {
-          $multiply: [{ $divide: ['$feesAndUserCharges', '$totalIncome'] }, 100]
-        },
-        ownRevenues: {
-          $sum: ['$taxRevenue', '$rentalIncome', '$feesAndUserCharges']
-        },
-        saleAndHireCharges: {
-          $multiply: [{ $divide: ['$saleAndHireCharges', '$totalIncome'] }, 100]
-        },
-        assignedRevenue: {
-          $multiply: [{ $divide: ['$assignedRevenue', '$totalIncome'] }, 100]
-        },
-        grants: {
-          $multiply: [{ $divide: ['$grants', '$totalIncome'] }, 100]
-        },
-        interestIncome: {
-          $multiply: [{ $divide: ['$interestIncome', '$totalIncome'] }, 100]
-        },
-        otherIncome: {
-          $multiply: [{ $divide: ['$otherIncome', '$totalIncome'] }, 100]
-        }
+  },
+  {
+      "$addFields": {
+          "totalUlb": totalUlb
       }
-    },
-
-    // stage
-
-    {
-      $project: {
-        populationCategory: '$populationCategory',
-        numOfUlb: '$numOfUlb',
-        taxRevenue: '$taxRevenue',
-        ulbs:1,
-        rentalIncome: '$rentalIncome',
-        feesAndUserCharges: '$feesAndUserCharges',
-        ownRevenues: {
-          $sum: ['$taxRevenue', '$rentalIncome', '$feesAndUserCharges']
-        },
-        saleAndHireCharges: '$saleAndHireCharges',
-        assignedRevenue: '$assignedRevenue',
-        grants: '$grants',
-        interestIncome: '$interestIncome',
-        otherIncome: '$otherIncome'
-      }
-    },
-    {$addFields : {  totalUlb : totalUlb } }
+  }
   ];
 };
 
 const convertToPercent = obj => {
+  let t = 0;
   for (let k in obj) {
-    if (k == 'populationCategory' || k == 'numOfUlb' || k =="ulbs") {
-      continue;
-    } else {
-      obj[k] = obj[k].toFixed(2);
+    if( k== "taxRevenue" || k=="rentalIncome" || k=="feesAndUserCharges"){
+      t+= obj[k]
+    }
+    obj["ownRevenues"] = t.toFixed(2) +"%";
+    if ( k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
+      continue;}
+    else {
+      obj[k] = obj[k].toFixed(2) +"%";
     }
   }
   return obj;
