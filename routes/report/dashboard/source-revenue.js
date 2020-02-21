@@ -583,11 +583,11 @@ const convertToPercent = obj => {
     if( k== "taxRevenue" || k=="rentalIncome" || k=="feesAndUserCharges"){
       t+= obj[k]
     }
-    obj["ownRevenues"] = t.toFixed(2) +"%";
+    obj["ownRevenues"] = t.toFixed(2) ;
     if ( k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
       continue;}
     else {
-      obj[k] = obj[k].toFixed(2) +"%";
+      obj[k] = obj[k].toFixed(2);
     }
   }
   return obj;
