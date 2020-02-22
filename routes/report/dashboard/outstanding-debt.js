@@ -118,7 +118,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                        }
                     }
                 },
-                "bondsAndOtherDebtInstruments" : {
+                "others" : {
                     "$sum" : {
                        $switch: {
                           branches: [
@@ -142,6 +142,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                 "financialYear": "$_id.financialYear",
                 "range": "$_id.range"
             },
+            "populationCategory": {$first:"$populationCategory"},
             "ulbs": {
                 "$addToSet": {
                     "_id": "$_id.ulb",
@@ -164,6 +165,9 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             },
             "bondsAndOtherDebtInstruments": {
                 "$sum": "$bondsAndOtherDebtInstruments"
+            },
+            "others": {
+                "$sum": "$others"
             }
         }
     },
