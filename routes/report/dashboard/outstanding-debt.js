@@ -143,6 +143,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                 "range": "$_id.range"
             },
             "populationCategory": {$first:"$populationCategory"},
+            "numOfUlb": {$first:"$numOfUlb"},
             "ulbs": {
                 "$addToSet": {
                     "_id": "$_id.ulb",
