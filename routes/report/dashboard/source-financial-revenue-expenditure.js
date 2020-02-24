@@ -220,6 +220,7 @@ const getDeficit = (d = {})=>{
     let arr = [];
     d.ulbs = d.ulbs.map(d=>{
         let o = {};
+        let total = 0 ;
         let remainingExpediture = d.totalExpediture;
         o.ownRevenueCoverPercentage = 0;
         o.assignedRevenueAndCompensationCoverPercentage = 0;
@@ -288,6 +289,15 @@ const getDeficit = (d = {})=>{
         o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
         o.population = d.population;
         o._id = d._id
+        total+=o.ownRevenueCoverPercentage;
+        total+=o.assignedRevenueAndCompensationCoverPercentage;
+        total+=o.saleAndHireChargesCoverPercentage;
+        total+=o.revenueGrantsContributionAndSubsidiesCoverPercentage;
+        total+=o.interestIncomeCoverPercentage;
+        total+=o.interestIncomeCoverPercentage;
+        total+=o.otherIncomeCoverPercentage;
+        total+=o.deficitFinanceByCapitalGrantsCoverPercentage;
+        o["total"] = total.toFixed(2);
         arr.push(o);
     })
     if(d.ownRevenue >= remainingExpediture){

@@ -485,7 +485,23 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
 const convertToPercent = obj => {
   for (let k in obj) {
     if ( k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
-      continue;}
+        if(k=="ulbs"){
+            obj[k] = obj[k].map(m=>{
+                let total = 0;
+                total+=m.establishmentExpense
+                total+=m.administrativeExpense
+                total+=m.operationalAndMaintananceExpense
+                total+=m.interestAndFinanceExpense
+                total+=m.revenueGrants
+                total+=m.other
+                m["total"] = total;
+                return m;
+            })
+            continue;
+        }else{
+            continue;
+        }
+    }
     else {
       obj[k] = obj[k].toFixed(2);
     }

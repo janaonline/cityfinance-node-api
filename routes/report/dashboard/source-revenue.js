@@ -587,7 +587,25 @@ const convertToPercent = obj => {
     }
     obj["ownRevenues"] = t.toFixed(2) ;
     if ( k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
-      continue;}
+      if(k=="ulbs"){
+          obj[k] = obj[k].map(m=>{
+              let total = 0;
+              total+=m["taxRevenue"]
+              total+=m["rentalIncome"]
+              total+=m["feesAndUserCharges"]
+              total+=m["saleAndHireCharges"]
+              total+=m["assignedRevenue"]
+              total+=m["grants"]
+              total+=m["interestIncome"]
+              total+=m["otherIncome"]
+              m["total"] = total;
+              return m;
+          })
+          continue;
+      }else{
+          continue;
+      }
+    }
     else {
       obj[k] = obj[k].toFixed(2);
     }
