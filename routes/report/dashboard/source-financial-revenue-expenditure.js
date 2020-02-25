@@ -111,7 +111,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
         {
             $match : {
                 financialYear:financialYear,
-                ulb:{$in:[mongoose.Types.ObjectId("5dd24b8f91344e2300876cac")]} // contains $in
+                ulb:ulbs // contains $in
             }
         },
         {
