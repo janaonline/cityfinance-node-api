@@ -89,7 +89,9 @@ module.exports = async (req, res, next) => {
             let rangeArr = [];
             for (o of ulbPopulationRanges) {
                 len += o.ulbs.length;
-                let overAllUlbs = await OverallUlb.countDocuments({ populationCategory : o.range }).exec();
+                let condition = {populationCategory : o.range}
+                req.query.state ? condition["state"] = mongoose.Types.ObjectId(req.query.state) : null;
+                let overAllUlbs = await OverallUlb.countDocuments(condition).exec();
                 rangeArr.push({ totalUlb : overAllUlbs, range: o.range, ulb: { $in: o.ulbs } });
             }
             obj["data"] = rangeArr;
