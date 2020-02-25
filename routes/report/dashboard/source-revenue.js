@@ -431,37 +431,43 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         "numOfUlb": "$numOfUlb",
         "ulbs": 1,
         "taxRevenue": {
-            "$multiply": [
-                {
-                    "$divide": [
-                        "$taxRevenue",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+          "$multiply": [
+              {
+                  
+                  $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                      "$taxRevenue",
+                      "$totalIncome"
+                  ]}]  
+                  
+              },
+              100
+          ]
         },
         "rentalIncome": {
-            "$multiply": [
-                {
-                    "$divide": [
-                        "$rentalIncome",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+          "$multiply": [
+              {
+                  
+                  $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                      "$rentalIncome",
+                      "$totalIncome"
+                  ]}]  
+                  
+              },
+              100
+          ]
         },
         "feesAndUserCharges": {
             "$multiply": [
-                {
-                    "$divide": [
-                        "$feesAndUserCharges",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+              {
+                  
+                  $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                      "$feesAndUserCharges",
+                      "$totalIncome"
+                  ]}]  
+                  
+              },
+              100
+          ]
         },
         "ownRevenues": {
             "$sum": [
@@ -471,59 +477,69 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
             ]
         },
         "saleAndHireCharges": {
-            "$multiply": [
-                {
-                    "$divide": [
-                        "$saleAndHireCharges",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+          "$multiply": [
+              {
+                  
+                  $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                      "$saleAndHireCharges",
+                      "$totalIncome"
+                  ]}]  
+                  
+              },
+              100
+          ]
         },
         "assignedRevenue": {
-            "$multiply": [
-                {
-                    "$divide": [
-                        "$assignedRevenue",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+          "$multiply": [
+              {
+                  
+                  $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                      "$assignedRevenue",
+                      "$totalIncome"
+                  ]}]  
+                  
+              },
+              100
+          ]
         },
         "grants": {
-            "$multiply": [
-                {
-                    "$divide": [
-                        "$grants",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+          "$multiply": [
+              {
+                  
+                  $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                      "$grants",
+                      "$totalIncome"
+                  ]}]  
+                  
+              },
+              100
+          ]
         },
         "interestIncome": {
-            "$multiply": [
-                {
-                    "$divide": [
-                        "$interestIncome",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+          "$multiply": [
+            {
+                
+                 $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                    "$interestIncome",
+                    "$totalIncome"
+                ]}]  
+                
+            },
+            100
+        ]
         },
         "otherIncome": {
-            "$multiply": [
-                {
-                    "$divide": [
-                        "$otherIncome",
-                        "$totalIncome"
-                    ]
-                },
-                100
-            ]
+          "$multiply": [
+            {
+                
+                 $cond: [ { $eq: ["$totalIncome", 0] }, 0, {"$divide": [
+                    "$otherIncome",
+                    "$totalIncome"
+                ]}]  
+                
+            },
+            100
+        ]
         }
     }
 },
