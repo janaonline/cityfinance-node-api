@@ -244,14 +244,14 @@ const getDeficit = (d = {})=>{
                 o.assignedRevenueAndCompensationCoverPercentage = (d.assignedRevenueAndCompensation/d.totalExpediture)*100;
     
                 if(d.saleAndHireCharges >= remainingExpediture){
-                    d.saleAndHireChargesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                    o.saleAndHireChargesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                     totalExpediture = 0;
                 } else {
                     remainingExpediture = remainingExpediture - d.saleAndHireCharges;
                     o.saleAndHireChargesCoverPercentage = (d.saleAndHireCharges/d.totalExpediture)*100;
     
                     if(d.revenueGrantsContributionAndSubsidies >= remainingExpediture){
-                        d.revenueGrantsContributionAndSubsidiesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                        o.revenueGrantsContributionAndSubsidiesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                         totalExpediture = 0;
                     }else {
                         remainingExpediture = remainingExpediture - d.revenueGrantsContributionAndSubsidies;
@@ -320,15 +320,14 @@ const getDeficit = (d = {})=>{
             } else {
                 remainingExpediture = remainingExpediture - d.saleAndHireCharges;
                 o.saleAndHireChargesCoverPercentage = (d.saleAndHireCharges/d.totalExpediture)*100;
-
                 if(d.revenueGrantsContributionAndSubsidies >= remainingExpediture){
-                    d.revenueGrantsContributionAndSubsidiesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                    o.revenueGrantsContributionAndSubsidiesCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                     totalExpediture = 0;
                 }else {
                     remainingExpediture = remainingExpediture - d.revenueGrantsContributionAndSubsidies;
                     o.revenueGrantsContributionAndSubsidiesCoverPercentage = (d.revenueGrantsContributionAndSubsidies/d.totalExpediture)*100;
                     if(d.interestIncome >= remainingExpediture){
-                        d.interestIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                        o.interestIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                         totalExpediture = 0;
                     }else {
                         remainingExpediture = remainingExpediture - d.interestIncome;
