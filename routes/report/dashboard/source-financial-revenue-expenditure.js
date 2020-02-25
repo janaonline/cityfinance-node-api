@@ -294,7 +294,6 @@ const getDeficit = (d = {})=>{
         total+=o.saleAndHireChargesCoverPercentage;
         total+=o.revenueGrantsContributionAndSubsidiesCoverPercentage;
         total+=o.interestIncomeCoverPercentage;
-        total+=o.interestIncomeCoverPercentage;
         total+=o.otherIncomeCoverPercentage;
         total+=o.deficitFinanceByCapitalGrantsCoverPercentage;
         o["total"] = total.toFixed(2);
