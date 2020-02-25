@@ -111,7 +111,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
         {
             $match : {
                 financialYear:financialYear,
-                ulb:ulbs // contains $in
+                ulb:{$in:[mongoose.Types.ObjectId("5dd24729437ba31f7eb42ec8")]} // contains $in
             }
         },
         {
@@ -268,11 +268,11 @@ const getDeficit = (d = {})=>{
                             }else {
                                 remainingExpediture = remainingExpediture - d.otherIncome;
                                 o.otherIncomeCoverPercentage = (d.otherIncome/d.totalExpediture)*100;
-    
+                                if(remainingExpediture){
+                                    o.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                                }
                             }
-                            if(remainingExpediture){
-                                o.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
-                            }
+                            
                         }
                     }
                 }
@@ -337,11 +337,12 @@ const getDeficit = (d = {})=>{
                         }else {
                             remainingExpediture = remainingExpediture - d.otherIncome;
                             o.otherIncomeCoverPercentage = (d.otherIncome/d.totalExpediture)*100;
-
+                            console.log(remainingExpediture)
+                            if(remainingExpediture){
+                                o.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                            }
                         }
-                        if(remainingExpediture){
-                            o.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
-                        }
+                        
                     }
                 }
             }
