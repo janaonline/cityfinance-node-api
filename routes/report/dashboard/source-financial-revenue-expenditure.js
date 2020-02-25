@@ -350,6 +350,8 @@ const getDeficit = (d = {})=>{
         }
     }
     o["ulbs"] = arr;
+    o["totalUlb"] = d.totalUlb
+    o["numOfUlb"] = d.numOfUlb
     o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
     o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
     o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));
