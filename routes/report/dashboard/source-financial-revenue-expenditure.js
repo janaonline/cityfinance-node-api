@@ -111,7 +111,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
         {
             $match : {
                 financialYear:financialYear,
-                ulb:ulbs // contains $in
+                ulb:{$in:[mongoose.Types.ObjectId("5dd24b8f91344e2300876cac")]} // contains $in
             }
         },
         {
@@ -257,7 +257,7 @@ const getDeficit = (d = {})=>{
                         remainingExpediture = remainingExpediture - d.revenueGrantsContributionAndSubsidies;
                         o.revenueGrantsContributionAndSubsidiesCoverPercentage = (d.revenueGrantsContributionAndSubsidies/d.totalExpediture)*100;
                         if(d.interestIncome >= remainingExpediture){
-                            d.interestIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
+                            o.interestIncomeCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                             totalExpediture = 0;
                         }else {
                             remainingExpediture = remainingExpediture - d.interestIncome;
@@ -337,7 +337,6 @@ const getDeficit = (d = {})=>{
                         }else {
                             remainingExpediture = remainingExpediture - d.otherIncome;
                             o.otherIncomeCoverPercentage = (d.otherIncome/d.totalExpediture)*100;
-                            console.log(remainingExpediture)
                             if(remainingExpediture){
                                 o.deficitFinanceByCapitalGrantsCoverPercentage = (remainingExpediture/d.totalExpediture)*100;
                             }
