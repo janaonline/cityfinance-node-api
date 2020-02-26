@@ -30,7 +30,6 @@ module.exports = async (req, res, next) => {
         if(req.query.state && req.query.state.length > 12){
             condition["state"] = ObjectId(req.query.state)
         }
-
         let rangeQuery = [
             {
                 $match: condition
@@ -79,6 +78,7 @@ module.exports = async (req, res, next) => {
                 }
             },
         ];
+        //return res.json(rangeQuery)
         let ulbPopulationRanges = await Ulb.aggregate(rangeQuery).exec();
         let arr = [];
         let len = 0;

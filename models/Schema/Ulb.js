@@ -32,8 +32,9 @@ var UlbSchema = new Schema({
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 
 
-const Ulb = module.exports = mongoose.model('Ulb', UlbSchema);
 
+const Ulb = module.exports = mongoose.model('Ulb', UlbSchema);
+module.exports.UlbS = mongoose.model('Ulb', UlbSchema);
 module.exports.get = async function(req,res) {
 
     let query = {};

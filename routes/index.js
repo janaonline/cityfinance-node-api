@@ -21,6 +21,7 @@ const ulbUploadService = require('./bulk-upload/ulb-upload');
 
 //--> State Routes <---//
 const State = require('../models/Schema/State');
+const StateUlbCount = require('../routes/report/state-ulb-count');
 router.get(
   '/state',
   passport.authenticate('jwt', { session: false }),
@@ -152,7 +153,7 @@ router.use(
 router.get('/lookup/states', State.get);
 router.get('/ulblist', Ulb.getPopulate);
 
-router.get('/lookup/states-with-ulb-count', State.getStateListWithCoveredUlb);
+router.get('/lookup/states-with-ulb-count', StateUlbCount.getStateListWithCoveredUlb);
 router.get('/ulb-list', Ulb.getUlbs);
 
 // Get ULBs by state

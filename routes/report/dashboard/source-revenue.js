@@ -15,6 +15,7 @@ module.exports = async (req, res, next) => {
       for (let d of q.data) {
         let range = d.range;
         let numOfUlb = Number(d.ulb['$in'].length);
+        console.log(q.financialYear,d.ulb)
         query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
         let data = await UlbLedger.aggregate(query);
         if(data.length){
