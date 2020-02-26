@@ -54,7 +54,7 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
             obj["name"] = el.name
             obj["_id"] = el._id
             obj["totalUlbs"] = overAllUlbs.length
-            obj["coveredUlbs"] = coveredUlbs.length
+            obj["coveredUlbCount"] = coveredUlbs.length
             obj["coveredUlbPercentage"] = (obj["coveredUlbs"]/obj["totalUlbs"])*100 ?  ((obj["coveredUlbs"]/obj["totalUlbs"])*100).toFixed(2) : 0
             arr.push(obj);
         }
