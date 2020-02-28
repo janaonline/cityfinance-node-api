@@ -1,12 +1,10 @@
 var xlstojson = require('xls-to-json-lc');
 var xlsxtojson = require('xlsx-to-json-lc');
-const service = require('./index');
-const Ulb = require('../models/Schema/Ulb');
-// const State = require('../models/Schema/State');
-// const UlbType = require('../models/Schema/UlbType');
-const BondIssuerItem = require('../models/Schema/BondIssuerItem');
+const service = require('../../service');
+const bondIssuerJson = require('../../models/Schema/bondIssuer');
+const BondIssuerItem = require('../../models/Schema/BondIssuerItem');
 
-module.exports.create = async function(req, res, next) {
+module.exports = async function(req, res, next) {
   if (req.file) {
     var reqFile = req.file;
     let errors = [];
@@ -26,7 +24,7 @@ module.exports.create = async function(req, res, next) {
         {
           input: reqFile.path,
           output: null, //since we don't need output.json
-          lowerCaseHeaders: true,
+          // lowerCaseHeaders: true,
           sheet: 'Sheet1'
         },
         async function(err, sheet) {
@@ -35,7 +33,7 @@ module.exports.create = async function(req, res, next) {
             res['errors'] = err;
             return returnResponse(res);
           }
-
+          // console.log(sheet);
           for (let eachRow of sheet) {
             // remove all the empty rows or null rows from eachRow object
             Object.keys(eachRow).forEach(
@@ -44,16 +42,27 @@ module.exports.create = async function(req, res, next) {
                 delete eachRow[key]
             );
 
+            bondIssuerJson['rating'].forEach((rating, i) => {
+              for (let key in eachRow) {
+                if (rating.toLowerCase() === key) {
+                  console.log(key);
+                  //eachRow[key.toUpperCase()] = eachRow[key];
+                }
+              }
+            });
+
+            console.log(eachRow);
+
             for (let key in eachRow) {
               if (camelize(key) !== key) {
                 eachRow[camelize(key)] = eachRow[key];
-                delete eachRow[key];
+                //delete eachRow[key];
               }
             }
 
+            //console.log(eachRow);
+
             let message = '';
-            let date = new Date(eachRow['dateOfIssue']);
-            eachRow['yearOfBondIssued'] = date.getFullYear();
 
             // check whether particular state exists or not
             // let state = await State.findOne(
@@ -62,27 +71,18 @@ module.exports.create = async function(req, res, next) {
             // ).exec();
 
             // check for ulb
-            let ulb;
-            if (eachRow.ulbCode) {
-              ulb = await Ulb.findOne(
-                { code: eachRow.ulbCode, isActive: true },
-                { _id: 1 }
-              ).exec();
-
-              // check whether ulb type exists or not
-              // let ulbType = await UlbType.findOne(
-              //   { name: eachRow.type, isActive: true },
-              //   { _id: 1 }
-              // ).exec();
-
-              // state
-              //   ? (eachRow.state = state._id)
-              //   : (message += 'State ' + eachRow.state + " don't exists");
-
-              ulb
-                ? (eachRow.ulb = ulb._id)
-                : (message += 'Ulb ' + eachRow.issuer + " don't exists");
+            if (Object.keys(eachRow).length !== 0) {
+              if (eachRow.ulbName) {
+                eachRow.ulb = eachRow.ulbName ? eachRow.ulbName.trim() : null;
+                delete eachRow.ulbName;
+                // let date = new Date(eachRow['dateOfIssue']);
+                eachRow['yearOfBondIssued'] = getYear(eachRow['dateOfIssue']);
+                // console.log(eachRow);
+              } else {
+                message += 'Ulb Name required';
+              }
             }
+
             // ulbType
             //   ? (eachRow.ulbtype = ulbType._id)
             //   : (message += 'Ulb ' + eachRow.type + " don't exists");
@@ -91,37 +91,25 @@ module.exports.create = async function(req, res, next) {
               // if any state or ulb type not exists, then return message
               errors.push(message);
             } else {
-              // take area, wards, population => if empty then convert to 0 or if comma then remove comma
-              // eachRow.area = eachRow.area
-              //   ? Number(eachRow.area.replace(/\,/g, ''))
-              //   : 0;
-              // eachRow.wards = eachRow.wards
-              //   ? Number(eachRow.wards.replace(/\,/g, ''))
-              //   : 0;
-              // eachRow.population = eachRow.population
-              //   ? Number(eachRow.population.replace(/\,/g, ''))
-              //   : 0;
-
-              // eachRow['natureOfUlb'] = eachRow['natureofulb']
-              //   ? eachRow['natureofulb']
-              //   : '';
-              // eachRow['ulbType'] = eachRow['ulbtype'];
-
-              // delete eachRow['ulbtype'];
-              // delete eachRow['natureofulb'];
-
               if (eachRow.ulb) {
-                service.put({ ulb: ulb._id }, eachRow, BondIssuerItem, function(
-                  response,
-                  value
-                ) {
-                  if (!response) {
-                    errors.push(
-                      'Not able to create ulb => ',
-                      eachRow.code + '' + response
-                    );
+                // console.log('put called', eachRow);
+                await service.put(
+                  {
+                    ulb: eachRow['ulb'],
+                    dateOfIssue: eachRow['dateOfIssue'],
+                    issueSize: eachRow['issueSize']
+                  },
+                  eachRow,
+                  BondIssuerItem,
+                  function(response, value) {
+                    if (!response) {
+                      errors.push(
+                        'Not able to create ulb => ',
+                        eachRow.code + '' + response
+                      );
+                    }
                   }
-                });
+                );
               }
             }
           }
@@ -166,4 +154,9 @@ function camelize(str) {
     if (+match === 0) return ''; // or if (/\s+/.test(match)) for white spaces
     return index == 0 ? match.toLowerCase() : match.toUpperCase();
   });
+}
+
+function getYear(str) {
+  if (str.includes('-')) return str.split('-').slice(-1)[0];
+  return str;
 }

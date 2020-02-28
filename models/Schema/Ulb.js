@@ -2,6 +2,7 @@ require('./dbConnect');
 
 const State = require("./State");
 const UlbType = require("./UlbType");
+const UlbLedger= require("./UlbLedger");
 const service = require("../../service");
 const moment = require("moment");
 var UlbSchema = new Schema({
@@ -14,6 +15,16 @@ var UlbSchema = new Schema({
     wards : { type : Number, default : 0},
     area : { type : Number, default : 0},
     population : { type : Number, default : 0},
+    location:{
+        type:{
+            lat:{type:String },
+            lng:{type:String },
+        },
+        default:{
+            lat:"0.0",
+            lng:"0.0"
+        }
+    },
     amrut : { type : String ,  default : ""},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() },
@@ -21,8 +32,9 @@ var UlbSchema = new Schema({
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 
 
-const Ulb = module.exports = mongoose.model('Ulb', UlbSchema);
 
+const Ulb = module.exports = mongoose.model('Ulb', UlbSchema);
+module.exports.UlbS = mongoose.model('Ulb', UlbSchema);
 module.exports.get = async function(req,res) {
 
     let query = {};
@@ -427,3 +439,19 @@ module.exports.getPopulate = async(req,res, next)=>{
         });
     }
 };
+module.exports.getUlbs = async (req, res)=>{
+    try{
+        let query=  {};
+        if(req.query.state){
+            query["state"] = Schema.Types.ObjectId(req.query.state);
+        }
+        let selectiveUlbs =await UlbLedger.distinct("ulb",{isActive:true}).exec();
+        query["_id"] = {$in:selectiveUlbs};
+        let ulbs = await Ulb.find(query,{_id:1, name:1,code:1, state:1, location:1, population:1, area:1}).exec();
+        return res.status(200).json({message: "Ulb list with population and coordinates and population.", success: true, data:ulbs})
+    }catch (e) {
+        console.log("Exception",e);
+        return res.status(400).json({message:"", errMessage: e.message,success:false});
+    }
+}
+

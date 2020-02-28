@@ -5,7 +5,7 @@ const bondIssuerjson = require('./bondIssuer.json');
 
 var BondIssuerItemSchema = new Schema(
   {
-    ulb: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Ulb' },
+    ulb: { type: String, required: true },
     yearOfBondIssued: { type: String, default: '' },
     // --------------------------- //
     // details of instrument
@@ -33,13 +33,48 @@ var BondIssuerItemSchema = new Schema(
 
     // rating
 
-    crisil: { type: String, default: '' },
-    care: { type: String, default: '' },
-    icra: { type: String, default: '' },
-    brickwork: { type: String, default: '' },
-    'auicte/Smera': { type: String, default: '' },
-    'indiaRatings&Research': { type: String, default: '' },
-    linksToReports: { type: String, default: '' },
+    CRISIL: { type: String, default: '' },
+    CARE: { type: String, default: '' },
+    ICRA: { type: String, default: '' },
+    // BRICKWORK: { type: String, default: '' },
+    // 'AUICTE/SMERA': { type: String, default: '' },
+    // 'INDIARATINGS&RESEARCH': { type: String, default: '' },
+    // OTHERRATINGAGENCIES: { type: String, default: '' },
+    // LINKSTOREPORTS: { type: String, default: '' },
+
+    //-----------------------------//
+    Brickwork: { type: String, default: '' },
+    'Auicte / SMERA': { type: String, default: '' },
+    'India Ratings & Research': { type: String, default: '' },
+    'Other Rating Agencies': {
+      type: String,
+      default: ''
+    },
+    'Links to reports': { type: String, default: '' },
+    //-----------------------------//
+    // crisil: { type: String, default: '' },
+    // care: { type: String, default: '' },
+    // icra: { type: String, default: '' },
+    // brickwork: { type: String, default: '' },
+    // 'auicte/Smera': { type: String, default: '' },
+    // 'indiaRatings&Research': { type: String, default: '' },
+    // otherRatingAgencies: { type: String, default: '' },
+    // linksToReports: { type: String, default: '' },
+
+    // old json ---------------------//
+
+    // rating1: [
+    //   'crisil',
+    //   'care',
+    //   'icra',
+    //   'brickwork',
+    //   'auicte/Smera',
+    //   'indiaRatings&Research',
+    //   'otherRatingAgencies',
+    //   'linksToReports'
+    // ],
+
+    //-------------------------//
 
     // objective of issue
 
@@ -74,11 +109,14 @@ var BondIssuerItemSchema = new Schema(
   },
   { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
+
 const BondIssuerItem = (module.exports = mongoose.model(
   'BondIssuerItem',
   BondIssuerItemSchema
 ));
-BondIssuerItemSchema.index({ ulb: 1, yearOfBondIssued: 1 }, { unique: true });
+BondIssuerItemSchema.index({ ulb: 1, dateOfIssue: 1 }, { unique: true });
+BondIssuerItemSchema.index({ ulb: 1, issueSize: 1 }, { unique: true });
+BondIssuerItemSchema.index({ dateOfIssue: 1, issueSize: 1 }, { unique: true });
 
 module.exports.get = async function(req, res) {
   let query = { isActive: true };
@@ -119,13 +157,10 @@ module.exports.put = async function(req, res) {
 module.exports.post = async function(req, res) {
   // Create any financial parameter
   // BondIssuerItem is model name
-  let date = null;
-  if (req.body.dateOfIssue) {
-    date = new Date(req.body.dateOfIssue);
-  }
+
   let reqBody = {
     ...req.body,
-    yearOfBondIssued: date.getFullYear()
+    yearOfBondIssued: getYear(req.body.dateOfIssue)
   };
   console.log(reqBody.yearOfBondIssued);
   service.post(BondIssuerItem, reqBody, function(response, value) {
@@ -152,3 +187,29 @@ module.exports.getJson = async function(req, res) {
   }
   res.send(bondIssuerjson);
 };
+
+module.exports.BondUlbs = function(req, res) {
+  let arr = [
+    {
+      $group: {
+        _id: '$ulb',
+        years: { $addToSet: '$yearOfBondIssued' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        name: '$_id',
+        years: '$years'
+      }
+    }
+  ];
+  service.aggregate(arr, BondIssuerItem, function(response, value) {
+    return res.status(response ? 200 : 400).send(value);
+  });
+};
+
+function getYear(str) {
+  if (str.includes('-')) return str.split('-').slice(-1)[0];
+  return str;
+}

@@ -1,6 +1,7 @@
 const uuid = require('uuid');
 const fs = require("fs");
 const https = require('https');
+const http = require('http');
 const urlencode = require("urlencode");
 const baseDir = "uploads/";
 const generateSignedUrl  = function(data) {
@@ -72,14 +73,30 @@ const downloadFileToDisk = function(url, _cb) {
     let fileName = url ? (url.split("/").length ? url.split("/")[(url.split("/").length - 1)] : url.split("/")[0]):null;
     let dest = "/tmp/"+fileName;
     var file = fs.createWriteStream(dest);
-    const req = https.get(url, function(response) {
-        response.pipe(file);
-        file.on('finish', function() {
-            file.close(function () {
-                _cb(null,file)
-            });  // close() is async, call cb after close completes.
+    var h = http;
+    console.log("url",url)
+    let isHttps = url.includes("https"); 
+    console.log("isHttps",isHttps)
+    if(isHttps){
+        const req = https.get(url, function(response) {
+            response.pipe(file);
+            file.on('finish', function() {
+                file.close(function () {
+                    _cb(null,file)
+                });  // close() is async, call cb after close completes.
+            });
         });
-    });
+    }else{
+        const req = http.get(url, function(response) {
+            response.pipe(file);
+            file.on('finish', function() {
+                file.close(function () {
+                    _cb(null,file)
+                });  // close() is async, call cb after close completes.
+            });
+        });
+    }
+    
 }
 module.exports = {
     generateSignedUrl:generateSignedUrl,

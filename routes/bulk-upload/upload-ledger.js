@@ -1,7 +1,6 @@
 const UlbLedger = require("../../models/Schema/UlbLedger");
 const Ulb = require("../../models/Schema/Ulb");
 const LineItem = require("../../models/Schema/LineItem");
-const csv = require("csvtojson");
 const lineItems  = {
     "Audit report": "1001",
     "Balance sheet": "1002",
@@ -13,7 +12,7 @@ const lineItems  = {
 };
 module.exports = async (req, res)=>{
     try {
-        const jsonArray = await csv().fromFile(req.file.path);
+        const jsonArray = req.body.jsonArray;
         console.log("jsonArray", jsonArray.length);
         let dataArr= [ ];
         for(let json of jsonArray){
