@@ -24,6 +24,7 @@ module.exports = async function(req,res,next){
                 lowerCaseHeaders: true,
                 sheet: "Input sheet",
             }, async function (err, sheet) {
+                console.log(sheet)
                 // Error encountered in reading XLSX File
                 if(err){
                     res["errors"] = err;
@@ -35,7 +36,7 @@ module.exports = async function(req,res,next){
                     let message = "";
 
                     // check whether particular state exists or not
-                    let state = await State.findOne({ name : eachRow.state,isActive : true},{ _id:1 }).exec();
+                    let state = await State.findOne({ code : eachRow.state,isActive : true},{ _id:1 }).exec();
 
                     // check whether ulb type exists or not
                     let ulbType = await UlbType.findOne({ name : eachRow.type,isActive : true},{ _id:1 }).exec();
@@ -43,6 +44,7 @@ module.exports = async function(req,res,next){
 
                     state ? eachRow.state = state._id : message+="State "+eachRow.state+" don't exists";
                     ulbType ? eachRow.ulbtype = ulbType._id : message+="Ulb "+eachRow.type+" don't exists";
+                    console.log(message)
                     if(message!=""){
                         // if any state or ulb type not exists, then return message
                         errors.push(message);
@@ -51,7 +53,10 @@ module.exports = async function(req,res,next){
                         eachRow.area = eachRow.area ? Number(eachRow.area.replace(/\,/g,'')) : 0;
                         eachRow.wards = eachRow.wards ? Number(eachRow.wards.replace(/\,/g,'')) : 0;
                         eachRow.population = eachRow.population ? Number(eachRow.population.replace(/\,/g,'')) : 0;
-
+                        eachRow.location = {
+                            lat : eachRow.lat,
+                            lng : eachRow.lng
+                        }
 
                         eachRow["natureOfUlb"] = eachRow["natureofulb"] ? eachRow["natureofulb"] :""
                         eachRow["ulbType"] = eachRow["ulbtype"]

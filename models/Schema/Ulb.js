@@ -353,7 +353,7 @@ module.exports.getAllULBSCSV = function(req,res){
 	// Set approrpiate download headers
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
 	res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("ULB Name, ULB Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT \r\n");
+    res.write("ULB Name, ULB Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude \r\n");
 	// Flush the headers before we start pushing the CSV content
     res.flushHeaders();
     
@@ -384,7 +384,8 @@ module.exports.getAllULBSCSV = function(req,res){
             amrut : 1,
             name:1,
             code:1,
-            wards : 1
+            wards : 1,
+            location:1
         }
     },
     {$project:{
@@ -399,7 +400,8 @@ module.exports.getAllULBSCSV = function(req,res){
             amrut:1,
             name:1,
             code:1,
-            wards : 1
+            wards : 1,
+            location:1
         }
     }
     ]).exec((err,data)=>{
@@ -413,7 +415,8 @@ module.exports.getAllULBSCSV = function(req,res){
             for(let el of data){
                 el.natureOfUlb = el.natureOfUlb ? el.natureOfUlb : "";
                 el.name = el.name ? el.name.toString().replace(/[,]/g, ' | ')  : "";
-                res.write(el.name+","+el.code+","+el.ulbtypes.name+","+el.state.name+","+el.state.code+","+el.natureOfUlb+","+el.area+","+el.wards+","+el.population+","+el.amrut+"\r\n");
+                el.location = el.location ? el.location : {"lat" : "NA", "lng" : "NA"}
+                res.write(el.name+","+el.code+","+el.ulbtypes.name+","+el.state.name+","+el.state.code+","+el.natureOfUlb+","+el.area+","+el.wards+","+el.population+","+el.amrut+","+el.location.lat+","+el.location.lng+","+"\r\n");
             }
             res.end()
         }
