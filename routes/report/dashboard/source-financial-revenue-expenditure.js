@@ -142,6 +142,28 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                 saleAndHireCharges:{$sum:{$cond: [{$in: ['$lineItem.code', ITEMS.SALE_AND_HIRE_CHARGES]}, '$amount', 0]}},
                 otherIncome:{$sum:{$cond: [{$in: ['$lineItem.code', ITEMS.OTHER_INCOME]}, '$amount', 0]}},
                 totalExpediture:{$sum:{$cond: [{$in: ['$lineItem.code', ITEMS.TOTAL_EXPENDITURE]}, '$amount', 0]}},
+                "audited": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                $and:[{"$eq": ["$lineItem.code","1001"]},{"$gt": ["$amount",0]}]
+                            },
+                            1,
+                            0
+                        ]
+                      }
+                   },
+                "unaudited": {
+                    "$sum": {
+                        "$cond": [
+                        {
+                            $and:[{"$eq": ["$lineItem.code","1001"]},{"$eq": ["$amount",0]}]
+                        },
+                        1,
+                        0
+                    ]
+                    }
+                },
             }
         },
         {
@@ -164,6 +186,9 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                       name:"$ulb.name",
                       population:"$ulb.population",
                       populationCategory:"$populationCategory",
+                      "audited" :1,
+                      "unaudited" :1,
+                      "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
                       ownRevenue:"$ownRevenue",
                       interestIncome:"$interestIncome",
                       assignedRevenueAndCompensation:"$assignedRevenueAndCompensation",
@@ -181,12 +206,21 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                 saleAndHireCharges:{$sum:"$saleAndHireCharges"},
                 otherIncome:{$sum:"$otherIncome"},
                 totalExpediture:{$sum:"$totalExpediture"},
+                "audited": {
+                    "$sum": "$audited"
+                },
+                "unaudited": {
+                    "$sum": "$unaudited"
+                }
             }
         },
         {
             $project:{
                 _id:0,
                 populationCategory:"$populationCategory",
+                "audited" : 1,
+                "unaudited" : 1,
+                "auditNA" : {$subtract : ["$numOfUlb",{$add : ["$audited","$unaudited"]} ] },
                 numOfUlb:1,
                 ulbs:1,
                 ownRevenue:1,
