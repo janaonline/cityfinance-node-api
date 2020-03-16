@@ -134,6 +134,28 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                         "$size": "$ulbs"
                     }
                 },
+                "audited": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                $and:[{"$eq": ["$lineItem.code","1001"]},{"$gt": ["$amount",0]}]
+                            },
+                            1,
+                            0
+                        ]
+                      }
+                   },
+                "unaudited": {
+                    "$sum": {
+                        "$cond": [
+                        {
+                            $and:[{"$eq": ["$lineItem.code","1001"]},{"$eq": ["$amount",0]}]
+                        },
+                        1,
+                        0
+                    ]
+                    }
+                },
             }
         },
           {
@@ -153,6 +175,9 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                      "loanFromFIIB":  "$loanFromFIIB",
                     "loanFromStateGovernment":"$loanFromStateGovernment",
                     "bondsAndOtherDebtInstruments": "$bondsAndOtherDebtInstruments",
+                    "audited" :"$audited",
+                    "unaudited" :"$unaudited",
+                    "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
                     "others" : "$others",
                     "total": {
                         "$sum": [
@@ -179,7 +204,10 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             },
             "others": {
                 "$sum": "$others"
-            }
+            },
+            "audited" : {$sum : "$audited"},
+            "unaudited" : {$sum : "$unaudited"},
+            "numOfUlb" : {$sum:1}
         }
     },
     {
@@ -189,6 +217,9 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             "populationCategory": "$populationCategory",
             "numOfUlb": 1,
             "LoanFromCentralGovernment": 1,
+            "audited" : 1,
+            "unaudited" : 1,
+            "auditNA" : {$subtract : ["$numOfUlb",{$add : ["$audited","$unaudited"]} ] },
             "loanFromFIIB": 1,
             "loanFromStateGovernment": 1,
             "bondsAndOtherDebtInstruments": 1,
