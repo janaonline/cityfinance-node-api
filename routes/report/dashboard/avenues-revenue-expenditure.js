@@ -429,32 +429,84 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
           "totalIncome" : {$sum : "$totalIncome"},
           "audited" : {$sum : "$audited"},
           "unaudited" : {$sum : "$unaudited"},
-          "noOfUlb" : {$sum:1}
+          "numOfUlb" : {$sum:1}
       }
   },    
     {
         "$project": {
             "_id": 0,
+            "audited" : 1,
+            "unaudited" : 1,
+            "auditNA" : {$subtract : ["$numOfUlb",{$add : ["$audited","$unaudited"]} ] },
             "populationCategory": "$_id.range",
-            "numOfUlb": "$noOfUlb",
-            "ulbs": "$ulbs",
-            "audited":1,
-            "unaudited" :1,
-            "auditNA" : {$subtract : ["$noOfUlb",{$add : ["$audited","$unaudited"]} ] },
-            "ownRevenue": "$ownRevenue",
-            "revenueExpenditure": "$revenueExpenditure",
-            "ownRevenuePercentage": {
+            "numOfUlb": "$numOfUlb",
+            "ulbs": 1,
+            "establishmentExpense": {
                 "$multiply": [
                     {
                         "$divide": [
-                            "$ownRevenue",
-                            "$revenueExpenditure"
+                            "$establishmentExpense",
+                            "$totalIncome"
                         ]
                     },
                     100
                 ]
             },
-            "ownRevenueUlb": 1
+            "administrativeExpense": {
+                "$multiply": [
+                    {
+                        "$divide": [
+                            "$administrativeExpense",
+                            "$totalIncome"
+                        ]
+                    },
+                    100
+                ]
+            },
+            "operationalAndMaintananceExpense": {
+                "$multiply": [
+                    {
+                        "$divide": [
+                            "$operationalAndMaintananceExpense",
+                            "$totalIncome"
+                        ]
+                    },
+                    100
+                ]
+            },
+            "interestAndFinanceExpense": {
+                "$multiply": [
+                    {
+                        "$divide": [
+                            "$interestAndFinanceExpense",
+                            "$totalIncome"
+                        ]
+                    },
+                    100
+                ]
+            },
+            "revenueGrants": {
+                "$multiply": [
+                    {
+                        "$divide": [
+                            "$revenueGrants",
+                            "$totalIncome"
+                        ]
+                    },
+                    100
+                ]
+            },
+            "other": {
+                "$multiply": [
+                    {
+                        "$divide": [
+                            "$other",
+                            "$totalIncome"
+                        ]
+                    },
+                    100
+                ]
+            }
         }
     },
     {$addFields: { totalUlb : totalUlb} }
@@ -463,7 +515,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
 
 const convertToPercent = obj => {
   for (let k in obj) {
-    if ( k =="audited" ||k =="unaudited" ||k =="auditNA" ||k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
+    if (k=="audited" ||k=="unaudited" ||k=="auditNA" || k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
         if(k=="ulbs"){
             obj[k] = obj[k].map(m=>{
                 let total = 0;
