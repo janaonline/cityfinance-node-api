@@ -15,7 +15,6 @@ module.exports = async (req, res, next) => {
       for (let d of q.data) {
         let range = d.range;
         let numOfUlb = Number(d.ulb['$in'].length);
-        console.log(q.financialYear,d.ulb)
         query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
         let data = await UlbLedger.aggregate(query);
         if(data.length){
@@ -273,7 +272,29 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
                 0
               ]
             }
-          }
+          },
+          "audited": {
+            "$sum": {
+                "$cond": [
+                    {
+                        $and:[{"$eq": ["$code","1001"]},{"$gt": ["$amount",0]}]
+                    },
+                    1,
+                    0
+                ]
+              }
+           },
+        "unaudited": {
+            "$sum": {
+                "$cond": [
+                {
+                    $and:[{"$eq": ["$code","1001"]},{"$eq": ["$amount",0]}]
+                },
+                1,
+                0
+            ]
+            }
+        },
       }
   },
   {
@@ -287,6 +308,9 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
                 "_id": "$_id.ulb",
                 "name": "$ulbName",
                 "population": "$ulbPopulation",
+                "audited" : "$audited",
+                "unaudited" : "$unaudited",
+                "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
                 "taxRevenue": {
                     "$multiply": [
                         {
@@ -393,6 +417,12 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
                 }
             }
         },
+        "audited": {
+          "$sum": "$audited"
+        },
+        "unaudited": {
+            "$sum": "$unaudited"
+        },
         "taxRevenue": {
             "$sum": "$taxRevenue"
         },
@@ -422,7 +452,8 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         },
         "totalIncome": {
             "$sum": "$totalIncome"
-        }
+        },
+        "numOfUlb" : { $sum:1 }
     }
 },
 {
@@ -431,6 +462,9 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         "populationCategory": "$_id.range",
         "numOfUlb": "$numOfUlb",
         "ulbs": 1,
+        "audited" : 1,
+        "unaudited" : 1,
+        "auditNA" : {$subtract : ["$numOfUlb",{$add : ["$audited","$unaudited"]} ] },
         "taxRevenue": {
           "$multiply": [
               {
@@ -548,6 +582,9 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
     "$project": {
         "populationCategory": "$populationCategory",
         "numOfUlb": "$numOfUlb",
+        "audited" : 1,
+        "unaudited" : 1,
+        "auditNA" : 1,
         "taxRevenue": "$taxRevenue",
         "ulbs": 1,
         "rentalIncome": "$rentalIncome",
@@ -571,6 +608,9 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
           "populationCategory": "$populationCategory",
           "numOfUlb": "$numOfUlb",
           "taxRevenue": "$taxRevenue",
+          "audited" : 1,
+          "unaudited" : 1,
+          "auditNA" : 1,
           "ulbs": 1,
           "rentalIncome": "$rentalIncome",
           "feesAndUserCharges": "$feesAndUserCharges",
@@ -603,7 +643,7 @@ const convertToPercent = obj => {
       t+= obj[k]
     }
     obj["ownRevenues"] = t.toFixed(2) ;
-    if ( k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
+    if ( k =="audited"||k =="unaudited"||k =="auditNA"||k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
       if(k=="ulbs"){
           obj[k] = obj[k].map(m=>{
               let total = 0;
