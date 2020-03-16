@@ -46,82 +46,7 @@ module.exports = async (req, res, next) => {
         console.log("exception",error);
     }
 };
-const getData = ()=>{
-    return [
-        {
-            year: "2016-17",
-            data: [
-                {
-                    populationCategory: "> 10 Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "1Lakh to 10Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "< 1 Lakh",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                }
-            ]
-        },
-        {
-            year: "2017-18",
-            data: [
-                {
-                    populationCategory: "> 10 Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "1Lakh to 10Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "< 1 Lakh",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                }
-            ]
-        }
-    ].map(d => {
-        return {
-            year: d.year,
-            data: d.data.map(m => {
-                m["ulbName"] = 'C';
-                return m;
-            })
-        }
-    });
-}
+
 const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
     return [
         // stage 1
@@ -161,6 +86,28 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                     range: '$range',
                     ulb: '$ulb'
                 },
+                "audited": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                $and:[{"$eq": ["$code","1001"]},{"$gt": ["$amount",0]}]
+                            },
+                            1,
+                            0
+                        ]
+                      }
+                   },
+                "unaudited": {
+                    "$sum": {
+                        "$cond": [
+                        {
+                            $and:[{"$eq": ["$code","1001"]},{"$eq": ["$amount",0]}]
+                        },
+                        1,
+                        0
+                    ]
+                    }
+                },
                 ownRevenue: {
                     $sum: {
                         $cond: [{ $in: ['$code', ownRevenueCode] }, '$amount', 0]
@@ -181,18 +128,31 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
         // stage 6
 
         {
-            $project: {
-                financialYear: '$_id.financialYear',
-                range: '$_id.range',
-                ulb: '$_id.ulb',
-                ownRevenue: 1,
-                revenueExpenditure: 1,
-                ownRevenuePercentageUlB: {
-                    $cond: [
-                        { $ne: ['$revenueExpenditure', 0] },
+            "$project": {
+                "financialYear": "$_id.financialYear",
+                "range": "$_id.range",
+                "ulb": "$_id.ulb",
+                "audited" : 1,
+                "unaudited" : 1,
+                "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
+                "ownRevenue": 1,
+                "revenueExpenditure": 1,
+                "ownRevenuePercentageUlB": {
+                    "$cond": [
                         {
-                            $multiply: [
-                                { $divide: ['$ownRevenue', '$revenueExpenditure'] },
+                            "$ne": [
+                                "$revenueExpenditure",
+                                0
+                            ]
+                        },
+                        {
+                            "$multiply": [
+                                {
+                                    "$divide": [
+                                        "$ownRevenue",
+                                        "$revenueExpenditure"
+                                    ]
+                                },
                                 100
                             ]
                         },
@@ -201,17 +161,17 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                 }
             }
         },
-        // stage 7
         {
-            $lookup:{
-                from: "ulbs",
-                localField: "ulb",
-                foreignField: "_id",
-                as: "ulb"
+            "$lookup": {
+                "from": "ulbs",
+                "localField": "ulb",
+                "foreignField": "_id",
+                "as": "ulb"
             }
         },
-        {$unwind:"$ulb"},
-        // stage 8
+        {
+            "$unwind": "$ulb"
+        },
         {
             "$group": {
                 "_id": {
@@ -223,6 +183,9 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                         "_id": "$ulb._id",
                         "name": "$ulb.name",
                         "population": "$ulb.population",
+                        "audited" : "$audited",
+                        "unaudited" : "$unaudited",
+                        "auditNA" : "$auditNA",
                         "ownRevenue": "$ownRevenue",
                         "revenueExpenditure": "$revenueExpenditure",
                         "ownRevenuePercentage": {
@@ -255,6 +218,12 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                         "value": "$ownRevenuePercentageUlB"
                     }
                 },
+                "audited": {
+                    "$sum": "$audited"
+                },
+                "unaudited": {
+                    "$sum": "$unaudited"
+                },
                 "ownRevenue": {
                     "$sum": "$ownRevenue"
                 },
@@ -272,6 +241,9 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                 "populationCategory": "$_id.range",
                 "numOfUlb": "$noOfUlb",
                 "ulbs": "$ulbs",
+                "audited":1,
+                "unaudited" :1,
+                "auditNA" : {$subtract : ["$noOfUlb",{$add : ["$audited","$unaudited"]} ] },
                 "ownRevenue": "$ownRevenue",
                 "revenueExpenditure": "$revenueExpenditure",
                 "ownRevenuePercentage": {
@@ -285,7 +257,7 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                         100
                     ]
                 },
-                "ownRevenueUlb":1,
+                "ownRevenueUlb": 1
             }
         },
         {
