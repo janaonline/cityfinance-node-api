@@ -3,6 +3,7 @@ require('./dbConnect');
 const State = require("./State");
 const UlbType = require("./UlbType");
 const UlbLedger= require("./UlbLedger");
+const LineItem= require("./LineItem");
 const service = require("../../service");
 const moment = require("moment");
 var UlbSchema = new Schema({
@@ -463,13 +464,76 @@ module.exports.getUlbsWithAuditStatus = async (req, res)=>{
         if(req.query.state){
             query["state"] = Schema.Types.ObjectId(req.query.state);
         }
-        let cond = {isActive:true};
+        let condition = {isActive:true};
         let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
-        financialYear ? cond["financialYear"] = {$in: financialYear } : null;
+        financialYear ? condition["financialYear"] = {$in: financialYear } : null;
 
-        let selectiveUlbs =await UlbLedger.distinct("ulb",cond).exec();
-        query["_id"] = {$in:selectiveUlbs};
-        let ulbs = await Ulb.find(query,{_id:1, name:1,code:1, state:1, location:1, population:1, area:1}).exec();
+        let auditLineItem = await LineItem.findOne({code : "1001"}).exec();
+        let ulbs =  await UlbLedger.aggregate([
+                {$match : condition},
+                {$group:{
+                        _id: {
+                                ulb : "$ulb",
+                            },
+                            lineItem : {$addToSet : { _id : "$lineItem" ,amount:"$amount" } }
+                    }
+                },
+                {$project:{
+                       ulb : "$_id.ulb",
+                       lineItem :  {
+                          $filter: {
+                             input: "$lineItem",
+                             as: "lineItem",
+                             cond: { $and: [
+                                { $eq: [ "$$lineItem._id",auditLineItem._id] },
+                              ] }
+                          }
+                        }
+                    }
+                },
+                {$project:{
+                        "ulb" : 1,
+                        "lineItem" : { $arrayElemAt  :  [ "$lineItem",0]},
+                    }
+                },
+                {$project:{
+                        "ulb" : 1,
+                        amount  : "$lineItem.amount",
+                    }
+                },
+                {$project:{
+                        "ulb" : 1,
+                        auditStatus  : {
+                           $switch: {
+                              branches: [
+                                 { case: { $eq: [ "$amount", 0 ] }, then:"unaudited"},
+                                 { case: { $gt: [ "$amount", 0 ] }, then: "audited" }
+                              ],
+                              default:"auditNA"
+                           }
+                        },
+                    }
+                },
+                {$lookup:{
+                        from:"ulbs",
+                        as :"ulb",
+                        foreignField : "_id",
+                        localField : "ulb"
+                    }
+                },
+                {$unwind : "$ulb"},
+                {$project:{
+                        state : "$ulb.state",
+                        code : "$ulb.code",
+                        name : "$ulb.name",
+                        _id : "$ulb._id",
+                        area : "$ulb.area",
+                        population : "$ulb.population",
+                        auditStatus : 1,
+                        location : "$ulb.location"
+                    }
+                }
+        ])
         return res.status(200).json({message: "Ulb list with population and coordinates and population.", success: true, data:ulbs})
     }catch (e) {
         console.log("Exception",e);
