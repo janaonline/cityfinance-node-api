@@ -301,7 +301,29 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
                       0
                   ]
               }
-          }
+          },
+          "audited": {
+            "$sum": {
+                "$cond": [
+                    {
+                        $and:[{"$eq": ["$lineItem.code","1001"]},{"$gt": ["$amount",0]}]
+                    },
+                    1,
+                    0
+                ]
+              }
+           },
+        "unaudited": {
+            "$sum": {
+                "$cond": [
+                {
+                    $and:[{"$eq": ["$lineItem.code","1001"]},{"$eq": ["$amount",0]}]
+                },
+                1,
+                0
+            ]
+            }
+        },
       }
   },
       {
@@ -315,6 +337,9 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
                   "_id": "$_id.ulb",
                   "name": "$ulbName",
                   "population": "$ulbPopulation",
+                  "audited" :"$audited",
+                    "unaudited" :"$unaudited",
+                    "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
                   "establishmentExpense": {
                       "$multiply": [
                           {
@@ -402,89 +427,43 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
           "revenueGrants" :{$sum : "$revenueGrants"},
           "other" : {$sum : "$other"},
           "totalIncome" : {$sum : "$totalIncome"},
+          "audited" : {$sum : "$audited"},
+          "unaudited" : {$sum : "$unaudited"},
+          "noOfUlb" : {$sum:1}
       }
   },    
-  {
-      "$project": {
-          "_id": 0,
-          "populationCategory": "$_id.range",
-          "numOfUlb": "$numOfUlb",
-          "ulbs": 1,
-          "establishmentExpense": {
-              "$multiply": [
-                  {
-                      "$divide": [
-                          "$establishmentExpense",
-                          "$totalIncome"
-                      ]
-                  },
-                  100
-              ]
-          },
-          "administrativeExpense": {
-              "$multiply": [
-                  {
-                      "$divide": [
-                          "$administrativeExpense",
-                          "$totalIncome"
-                      ]
-                  },
-                  100
-              ]
-          },
-          "operationalAndMaintananceExpense": {
-              "$multiply": [
-                  {
-                      "$divide": [
-                          "$operationalAndMaintananceExpense",
-                          "$totalIncome"
-                      ]
-                  },
-                  100
-              ]
-          },
-          "interestAndFinanceExpense": {
-              "$multiply": [
-                  {
-                      "$divide": [
-                          "$interestAndFinanceExpense",
-                          "$totalIncome"
-                      ]
-                  },
-                  100
-              ]
-          },
-          "revenueGrants": {
-              "$multiply": [
-                  {
-                      "$divide": [
-                          "$revenueGrants",
-                          "$totalIncome"
-                      ]
-                  },
-                  100
-              ]
-          },
-          "other": {
-              "$multiply": [
-                  {
-                      "$divide": [
-                          "$other",
-                          "$totalIncome"
-                      ]
-                  },
-                  100
-              ]
-          }
-      }
-  },
+    {
+        "$project": {
+            "_id": 0,
+            "populationCategory": "$_id.range",
+            "numOfUlb": "$noOfUlb",
+            "ulbs": "$ulbs",
+            "audited":1,
+            "unaudited" :1,
+            "auditNA" : {$subtract : ["$noOfUlb",{$add : ["$audited","$unaudited"]} ] },
+            "ownRevenue": "$ownRevenue",
+            "revenueExpenditure": "$revenueExpenditure",
+            "ownRevenuePercentage": {
+                "$multiply": [
+                    {
+                        "$divide": [
+                            "$ownRevenue",
+                            "$revenueExpenditure"
+                        ]
+                    },
+                    100
+                ]
+            },
+            "ownRevenueUlb": 1
+        }
+    },
     {$addFields: { totalUlb : totalUlb} }
   ];
 };
 
 const convertToPercent = obj => {
   for (let k in obj) {
-    if ( k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
+    if ( k =="audited" ||k =="unaudited" ||k =="auditNA" ||k =="ownRevenues" || k == 'populationCategory' || k == 'population' || k == 'numOfUlb' || k == "ulbs"||  k=="_id" || k =="name") {
         if(k=="ulbs"){
             obj[k] = obj[k].map(m=>{
                 let total = 0;
@@ -503,7 +482,7 @@ const convertToPercent = obj => {
         }
     }
     else {
-      obj[k] = obj[k].toFixed(2);
+      obj[k] = obj[k] ? obj[k].toFixed(2) :  obj[k];
     }
   }
   return obj;
