@@ -457,4 +457,24 @@ module.exports.getUlbs = async (req, res)=>{
         return res.status(400).json({message:"", errMessage: e.message,success:false});
     }
 }
+module.exports.getUlbsWithAuditStatus = async (req, res)=>{
+    try{
+        let query=  {};
+        if(req.query.state){
+            query["state"] = Schema.Types.ObjectId(req.query.state);
+        }
+        let cond = {isActive:true};
+        let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
+        financialYear ? cond["financialYear"] = {$in: financialYear } : null;
+
+        let selectiveUlbs =await UlbLedger.distinct("ulb",cond).exec();
+        query["_id"] = {$in:selectiveUlbs};
+        let ulbs = await Ulb.find(query,{_id:1, name:1,code:1, state:1, location:1, population:1, area:1}).exec();
+        return res.status(200).json({message: "Ulb list with population and coordinates and population.", success: true, data:ulbs})
+    }catch (e) {
+        console.log("Exception",e);
+        return res.status(400).json({message:"", errMessage: e.message,success:false});
+    }
+}
+
 

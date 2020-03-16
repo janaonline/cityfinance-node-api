@@ -153,8 +153,8 @@ router.use(
 router.get('/lookup/states', State.get);
 router.get('/ulblist', Ulb.getPopulate);
 
-router.get('/lookup/states-with-ulb-count', StateUlbCount.getStateListWithCoveredUlb);
-router.get('/ulb-list', Ulb.getUlbs);
+router.post('/lookup/states-with-ulb-count', StateUlbCount.getStateListWithCoveredUlb);
+router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 
 // Get ULBs by state
 router.get('/states/:stateCode/ulbs', Ulb.getByState);
