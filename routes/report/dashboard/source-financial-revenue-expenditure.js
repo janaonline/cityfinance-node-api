@@ -322,6 +322,9 @@ const getDeficit = (d = {})=>{
         o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
         o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
         o.population = d.population;
+        o["audited"] = d.audited;
+        o["unaudited"] = d.unaudited
+        o["auditNA"] = d.auditNA
         o._id = d._id
         total+=o.ownRevenueCoverPercentage;
         total+=o.assignedRevenueAndCompensationCoverPercentage;
@@ -384,6 +387,9 @@ const getDeficit = (d = {})=>{
     o["ulbs"] = arr;
     o["totalUlb"] = d.totalUlb
     o["numOfUlb"] = d.numOfUlb
+    o["audited"] = d.audited;
+    o["unaudited"] = d.unaudited
+    o["auditNA"] = d.auditNA
     o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
     o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
     o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));
