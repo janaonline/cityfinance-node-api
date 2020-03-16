@@ -52,72 +52,114 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
         ulb: ulb
       }
     },
-    // stage 2
     {
-      $lookup: {
-        from: 'lineitems',
-        as: 'lineitems',
-        foreignField: '_id',
-        localField: 'lineItem'
-      }
-    },
-    // stage 3
-    { $unwind: '$lineitems' },
-    {$match:{"lineitems.code" : "450"}},
-    // stage 4
-    {
-      $project: {
-        numOfUlb: numOfUlb,
-        range: range,
-        financialYear: 1,
-        ulb: 1,
-        amount: 1,
-        code: '$lineitems.code'
-      }
-    },
-    {
-      $lookup:{
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb"
+      "$lookup": {
+          "from": "lineitems",
+          "as": "lineitems",
+          "foreignField": "_id",
+          "localField": "lineItem"
       }
   },
-  {$unwind:"$ulb"},
-  
-    // stage 5
-    {
-      $group: {
-        _id: { financialYear: '$financialYear', range: '$range' },
-        numOfUlb: { $first: '$numOfUlb' },
-        "ulbs": {
-          "$addToSet": {
-              "_id": "$ulb._id",
-              "name": "$ulb.name",
-              "population": "$ulb.population",
-              cashAndBankBalance: {
-                $sum: { $cond: [{ $eq: ['$code', '450'] }, '$amount', 0] }
+  {
+      "$unwind": "$lineitems"
+  },
+  {
+      "$project": {
+          "numOfUlb": numOfUlb,
+          "range": "> 10 Lakhs",
+          "financialYear": 1,
+          "ulb": 1,
+          "amount": 1,
+          "code": "$lineitems.code"
+      }
+  },
+  {
+      "$group": {
+          "_id": {
+              "financialYear": "$financialYear",
+              "range": "$range",
+              "ulb" : "$ulb"
+          },
+          "cashAndBankBalance": {
+              "$sum": {
+                  "$cond": [
+                      {
+                          "$eq": [
+                              "$code",
+                              "450"
+                          ]
+                      },
+                      "$amount",
+                      0
+                  ]
               }
-          }
-      },
-        cashAndBankBalance: {
-          $sum: { $cond: [{ $eq: ['$code', '450'] }, '$amount', 0] }
-        }
+          },
+          "audited": {
+            "$sum": {
+                "$cond": [
+                    {
+                        $and:[{"$eq": ["$code","1001"]},{"$gt": ["$amount",0]}]
+                    },
+                    1,
+                    0
+                ]
+              }
+           },
+        "unaudited": {
+            "$sum": {
+                "$cond": [
+                {
+                    $and:[{"$eq": ["$code","1001"]},{"$eq": ["$amount",0]}]
+                },
+                1,
+                0
+            ]
+            }
+        },
       }
-    },
-
-    //stage 6
-
-    {
-      $project: {
-        _id: 0,
-        populationCategory: '$_id.range',
-        ulbs: 1,
-        numOfUlb: '$numOfUlb',
-        cashAndBankBalance: '$cashAndBankBalance'
+  },
+ {
+      "$lookup": {
+          "from": "ulbs",
+          "localField": "_id.ulb",
+          "foreignField": "_id",
+          "as": "ulb"
       }
-    },
-
+  },
+  {
+      "$unwind": "$ulb"
+  },
+  {$group:{
+          _id : "ulb._id",
+          "ulbs": {
+              "$addToSet": {
+                  "_id": "$ulb._id",
+                  "name": "$ulb.name",
+                  "population": "$ulb.population",
+                  "cashAndBankBalance": "$cashAndBankBalance",
+                  "audited" : "$audited",
+                  "unaudited" : "$unaudited",
+                  "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
+              }
+          },
+          audited : {$sum: "$audited"},
+          unaudited : {$sum: "$unaudited"},
+          numOfUlb : {$sum : 1},
+          cashAndBankBalance : {$sum: "$cashAndBankBalance"}
+      }
+  },
+  {
+      "$project": {
+          "_id": 0,
+          "populationCategory": "$_id.range",
+          "ulbs": 1,
+          "audited" : 1,
+          "unaudited" : 1,
+          "auditNA" : {$subtract : ["$numOfUlb",{$add : ["$audited","$unaudited"]} ] },
+          "numOfUlb": "$numOfUlb",
+          "cashAndBankBalance": "$cashAndBankBalance"
+      }
+  },
     {$addFields : {  totalUlb : totalUlb } }
   ];
 };
