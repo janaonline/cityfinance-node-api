@@ -33,7 +33,7 @@ module.exports = async (req, res, next) => {
                     obj['data'].push(modifyData(data[0]));
                 }
             }
-            obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure','totalUlb']);
+            obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure','totalUlb','audited','unaudited','auditNA']);
             output.push(obj);
         }
         return res.status(200).json({
