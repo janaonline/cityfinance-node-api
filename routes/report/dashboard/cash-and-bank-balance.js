@@ -142,6 +142,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
                   "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
               }
           },
+          range : {$first : "$_id.range"},
           audited : {$sum: "$audited"},
           unaudited : {$sum: "$unaudited"},
           numOfUlb : {$sum : 1},
@@ -151,7 +152,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
   {
       "$project": {
           "_id": 0,
-          "populationCategory": "$_id.range",
+          "populationCategory": "$range",
           "ulbs": 1,
           "audited" : 1,
           "unaudited" : 1,
