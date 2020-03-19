@@ -306,7 +306,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
             "$sum": {
                 "$cond": [
                     {
-                        $and:[{"$eq": ["$lineItem.code","1001"]},{"$gt": ["$amount",0]}]
+                        $and:[{"$eq": ["$code","1001"]},{"$gt": ["$amount",0]}]
                     },
                     1,
                     0
@@ -317,7 +317,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
             "$sum": {
                 "$cond": [
                 {
-                    $and:[{"$eq": ["$lineItem.code","1001"]},{"$eq": ["$amount",0]}]
+                    $and:[{"$eq": ["$code","1001"]},{"$eq": ["$amount",0]}]
                 },
                 1,
                 0
