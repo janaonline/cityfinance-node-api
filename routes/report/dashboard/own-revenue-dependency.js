@@ -1,6 +1,6 @@
 const moment = require('moment');
-const UlbLedger = require('../../../models/Schema/UlbLedger');
-const OverallUlb = require('../../../models/Schema/OverallUlb');
+const UlbLedger = require('../../../models/UlbLedger');
+const OverallUlb = require('../../../models/OverallUlb');
 
 const ownRevenueCode = ['110', '130', '140'];
 const revenueExpenditureCode = [

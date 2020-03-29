@@ -1,5 +1,5 @@
-const UlbLedger = require('../../../models/Schema/UlbLedger');
-const Ulb = require('../../../models/Schema/Ulb');
+const UlbLedger = require('../../../models/UlbLedger');
+const Ulb = require('../../../models/Ulb');
 
 module.exports = async (req, res, next) => {
   try {

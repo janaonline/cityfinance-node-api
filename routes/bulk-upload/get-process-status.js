@@ -1,4 +1,4 @@
-const RequestLog = require("../../models/Schema/RequestLog")
+const RequestLog = require("../../models/RequestLog")
 const moment = require("moment");
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports = function (req, res) {

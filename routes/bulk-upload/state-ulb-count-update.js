@@ -1,5 +1,5 @@
 const moment = require("moment");
-const State = require('../../models/Schema/State');
+const State = require('../../models/State');
 const requiredKeys = ["STATECODE","ULBCOUNT"];
 module.exports = async (req, res)=>{
     try {

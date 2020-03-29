@@ -1,6 +1,6 @@
 module.exports = {
     USER: {
-        ROLES: ['USER', 'ADMIN', 'SUPERADMIN'],
+        ROLES: ['USER', 'ULB','STATE','ADMIN', 'SUPERADMIN'],
         DEFAULT_ROLE: 'USER',
         ONBOARD_AUTHORITY: 'SUPERADMIN',
         LEDGER_AUTHORITY: 'SUPERADMIN'

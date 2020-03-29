@@ -1,14 +1,14 @@
 const moment = require("moment");
-const RequestLog = require("../../models/Schema/RequestLog")
+const RequestLog = require("../../models/RequestLog")
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const xlstojson = require("xls-to-json-lc");
 const xlsxtojson = require("xlsx-to-json-lc");
 const CONSTANTS = require('../../_helper/constants');
-const State = require("../../models/Schema/State")
-const Ulb = require("../../models/Schema/Ulb");
-const LineItem = require("../../models/Schema/LineItem");
-const UlbLedger = require("../../models/Schema/UlbLedger");
-const LedgerLog = require("../../models/ledger_log_model");
+const State = require("../../models/State")
+const Ulb = require("../../models/Ulb");
+const LineItem = require("../../models/LineItem");
+const UlbLedger = require("../../models/UlbLedger");
+const LedgerLog = require("../../models/LedgerLog");
 const overViewSheet = {
     'State Code': 'state_code',
     'Name of the state': 'state',

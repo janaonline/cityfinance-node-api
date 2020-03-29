@@ -1,8 +1,8 @@
-const UlbLedger= require("../../models/Schema/UlbLedger");
-const Ulb =require("../../models/Schema/Ulb");
-const OverallUlb= require("../../models/Schema/OverallUlb");
-const State= require("../../models/Schema/State");
-const LineItem= require("../../models/Schema/LineItem");
+const UlbLedger= require("../../models/UlbLedger");
+const Ulb =require("../../models/Ulb");
+const OverallUlb= require("../../models/OverallUlb");
+const State= require("../../models/State");
+const LineItem= require("../../models/LineItem");
 module.exports.getStateListWithCoveredUlb = async (req, res)=>{
     try{
         let query = [

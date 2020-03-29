@@ -1,6 +1,6 @@
 const moment = require('moment');
-const UlbLedger = require('../../../models/Schema/UlbLedger');
-const State = require('../../../models/Schema/State');
+const UlbLedger = require('../../../models/UlbLedger');
+const State = require('../../../models/State');
 module.exports = async (req, res, next)=>{
     try{
        let totalUlbQuery = [

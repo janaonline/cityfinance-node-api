@@ -1,4 +1,4 @@
-const User = require('../models/Schema/User');
+const User = require('../models/User');
 const config = require('./app_config');
 
 const JwtStrategy = require('passport-jwt').Strategy

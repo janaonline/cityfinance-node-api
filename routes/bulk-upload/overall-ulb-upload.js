@@ -1,8 +1,8 @@
 var xlstojson = require("xls-to-json-lc");
 var xlsxtojson = require("xlsx-to-json-lc");
 const service = require("../../service");
-const OverallUlb =require("../../models/Schema/OverallUlb");
-const State = require("../../models/Schema/State");
+const OverallUlb =require("../../models/OverallUlb");
+const State = require("../../models/State");
 
 module.exports = async function(req,res,next){
     if(req.file){

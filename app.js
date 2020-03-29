@@ -31,21 +31,8 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 require('./config/passport')(passport);
-
-const userRoutes = require('./routes/user_controller');
-const ledgerRoutes = require('./routes/ledger_controller');
-const downloadLogRoutes = require('./routes/download_log_controller');
-
 const routes = require("./routes");
-
-app.use('/users', userRoutes);
-app.use('/ledger', ledgerRoutes);
-app.use('/logs', downloadLogRoutes);
-
-app.use('/api/admin/v1/', routes);
-app.get('*', (req, res) => {
-	res.sendFile(path.join(__dirname, 'public/index.html'));
-})
+app.use('/api/v1/', routes);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
 	return res.status(404).json({

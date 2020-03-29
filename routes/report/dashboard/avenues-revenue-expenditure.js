@@ -1,5 +1,5 @@
 const moment = require('moment');
-const UlbLedger = require('../../../models/Schema/UlbLedger');
+const UlbLedger = require('../../../models/UlbLedger');
 
 module.exports = async (req, res, next) => {
   try {

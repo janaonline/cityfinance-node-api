@@ -1,6 +1,6 @@
-const UlbLedger = require("../../models/Schema/UlbLedger");
-const Ulb = require("../../models/Schema/Ulb");
-const LineItem = require("../../models/Schema/LineItem");
+const UlbLedger = require("../../models/UlbLedger");
+const Ulb = require("../../models/Ulb");
+const LineItem = require("../../models/LineItem");
 const lineItems  = {
     "Audit report": "1001",
     "Balance sheet": "1002",

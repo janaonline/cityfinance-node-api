@@ -1,5 +1,5 @@
 const moment = require('moment');
-const UlbLedger = require("../../../models/Schema/UlbLedger");
+const UlbLedger = require("../../../models/UlbLedger");
 const ITEMS = require('./itemcode').REVENUE_EXPENDITURE_SOURCES;
 module.exports = async (req, res, next)=>{
     let queryArr = req.body.queryArr;

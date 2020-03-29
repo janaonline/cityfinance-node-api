@@ -1,8 +1,8 @@
-const UlbLedger = require('../../../models/Schema/UlbLedger');
-const Ulb = require('../../../models/Schema/Ulb');
+const UlbLedger = require('../../../models/UlbLedger');
+const Ulb = require('../../../models/Ulb');
 const moment = require('moment');
 const ObjectId = require('mongoose').Types.ObjectId;
-const OverallUlb = require('../../../models/Schema/OverallUlb');
+const OverallUlb = require('../../../models/OverallUlb');
 module.exports = async (req, res, next) => {
     try {
         let years = [];
