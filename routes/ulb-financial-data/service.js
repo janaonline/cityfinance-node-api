@@ -6,6 +6,7 @@ module.exports.create = async (req, res)=>{
     let user = req.decoded;
     let data = req.body;
     if(user.role == "ULB"){
+        data.ulb = user.ulb;
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbFinancialData(data);
         ulbUpdateRequest.save((err, dt)=>{
@@ -45,6 +46,56 @@ module.exports.get = async (req, res)=>{
         return Response.BadRequest(res,{}, 'Action not allowed.')
     }
 }
+module.exports.completeness = async (req, res)=>{
+    let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
+    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
+    let keys = [
+        "balanceSheet","schedulesToBalanceSheet","incomeAndExpenditure",
+        "schedulesToIncomeAndExpenditure","trialBalance","auditReport"
+    ];
+    if(actionAllowed.indexOf(user.role) > -1){
+        try{
+            if(user.role == "STATE"){
+                let ulb = await Ulb.findOne({_id:ObjectId(data.ulb)}).exec();
+                if(!(ulb && ulb.state && ulb.state.toString() == user.state)){
+                    let message = !ulb ? 'Ulb not found.' : 'State is not matching.'
+                    return  Response.BadRequest(res,{}, message)
+                }
+            }
+            let d = await UlbFinancialData.findOne({_id:_id}).lean();
+            if(!d){
+                return Response.BadRequest(res,{}, "Requested record not found.")
+            }else if(d.completeness == "APPROVED"){
+                return Response.BadRequest(res,{}, "Already approved.")
+            }else{
+                delete d.history;
+                let prevState = JSON.parse(JSON.stringify(d));
+                prevState.history.push(d);
+                let rejected = keys.filter(key=>{
+                    return data[key] && data[key].completeness == "REJECTED";
+                })
+                let pending = keys.filter(key=>{
+                    return data[key] && data[key].completeness == "PENDING";
+                });
+                console.log(rejected.length,pending.length);
+                for(let key of keys){
+                    if(data[key]){
+                        prevState[key].completeness = data[key].completeness;
+                    }
+                }
+                prevState["completeness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
+                prevState.modifiedAt = new Date();
+                prevState.actionTakenBy  = user._id;
+                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState});
+                return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
+            }
+        }catch (e) {
+            return Response.DbError(res,e.message, 'Caught Database Exception')
+        }
+    }else{
+        return Response.BadRequest(res,{},`This action is only allowed by ${actionAllowed.join()}`);
+    }
+}
 module.exports.correctness = async (req, res)=>{
     let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
@@ -64,11 +115,13 @@ module.exports.correctness = async (req, res)=>{
             let d = await UlbFinancialData.findOne({_id:_id}).lean();
             if(!d){
                 return Response.BadRequest(res,{}, "Requested record not found.")
+            }else if(d.completeness != "APPROVED"){
+                return Response.BadRequest(res,{}, "Completeness is on allowed after correctness.")
             }else if(d.correctness == "APPROVED"){
                 return Response.BadRequest(res,{}, "Already approved.")
             }else{
-                delete d.history;
                 let prevState = JSON.parse(JSON.stringify(d));
+                delete d.history;
                 prevState.history.push(d);
                 let rejected = keys.filter(key=>{
                     return data[key] && data[key].correctness == "REJECTED";
@@ -94,57 +147,5 @@ module.exports.correctness = async (req, res)=>{
         }
     }else{
         return Response.BadRequest(res,{},`This action is only allowed by ULB ${actionAllowed.join()}`);
-    }
-}
-module.exports.completeness = async (req, res)=>{
-    let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
-    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
-    let keys = [
-        "balanceSheet","schedulesToBalanceSheet","incomeAndExpenditure",
-        "schedulesToIncomeAndExpenditure","trialBalance","auditReport"
-    ];
-    if(actionAllowed.indexOf(user.role) > -1){
-        try{
-            if(user.role == "STATE"){
-                let ulb = await Ulb.findOne({_id:ObjectId(data.ulb)}).exec();
-                if(!(ulb && ulb.state && ulb.state.toString() == user.state)){
-                    let message = !ulb ? 'Ulb not found.' : 'State is not matching.'
-                    return  Response.BadRequest(res,{}, message)
-                }
-            }
-            let d = await UlbFinancialData.findOne({_id:_id}).lean();
-            if(!d){
-                return Response.BadRequest(res,{}, "Requested record not found.")
-            }else if(d.correctness != "APPROVED"){
-                return Response.BadRequest(res,{}, "Completeness is on allowed after correctness.")
-            }else if(d.completeness == "APPROVED"){
-                return Response.BadRequest(res,{}, "Already approved.")
-            }else{
-                let prevState = JSON.parse(JSON.stringify(d));
-                delete d.history;
-                prevState.history.push(d);
-                let rejected = keys.filter(key=>{
-                    return data[key] && data[key].completeness == "REJECTED";
-                })
-                let pending = keys.filter(key=>{
-                    return data[key] && data[key].completeness == "PENDING";
-                });
-                console.log(rejected.length,pending.length);
-                for(let key of keys){
-                    if(data[key]){
-                        prevState[key].completeness = data[key].completeness;
-                    }
-                }
-                prevState["completeness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
-                prevState.modifiedAt = new Date();
-                prevState.actionTakenBy  = user._id;
-                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState});
-                return Response.OK(res,du,`correctness status changed to ${prevState.completeness}`);
-            }
-        }catch (e) {
-            return Response.DbError(res,e.message, 'Caught Database Exception')
-        }
-    }else{
-        return Response.BadRequest(res,{},`This action is only allowed by ${actionAllowed.join()}`);
     }
 }

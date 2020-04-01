@@ -51,57 +51,20 @@ module.exports.delete = async function(req,res) {
 }
 module.exports.getStateListWithCoveredUlb = async (req, res)=>{
     try{
-        let query = [
-            {
-                $lookup:{
-                    from:"ulbs",
-                    localField:"_id",
-                    foreignField:"state",
-                    as:"ulbs"
-                }
-            },
-            {
-                $lookup:{
-                    from:"overallulbs",
-                    localField:"_id",
-                    foreignField:"state",
-                    as:"overallulbs"
-                }
-            },
-            //OverallUlb
-            {
-                $project:{
-                    _id:1,
-                    name:1,
-                    code:1,
-                    totalUlbs:{$size: "$overallulbs"},
-                    coveredUlbCount:{$size:"$ulbs"},
-                    coveredUlbPercentage:{
-                        $cond : {
-                            if : {
-                                $or:[{$gte:[{$size:"$ulbs"},{$size: "$overallulbs"}]},{$eq:[{$size:"$ulbs"},0]},{$eq:[{$size: "$overallulbs"},0]}]
-                            },
-                            then:{$toInt:"0"},
-                            else: { $multiply:[{ $divide:[{$size:"$ulbs"},{$size: "$overallulbs"}]}, 100]}
-                        }
-                    }
-                }
-            }
-        ];
         let arr = []
         let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
         let states = await State.find({ isActive:true }).exec();
         let lineItem = await LineItem.findOne({code:"1001"}).exec();
         for(var el of states){
-            let obj = {}
-            let ulbs = await Ulb.distinct("_id" , { state : el._id }).exec();
-
-            let condition = { ulb : { $in : ulbs }};
-            financialYear ? condition["financialYear"] = {$in: financialYear } : null;
+            let obj = {};
             //let coveredUlbs = await UlbLedger.distinct("ulb",cond).exec();
 
             let overAllUlbs = await OverallUlb.distinct("_id",{ state : el._id }).exec();
-
+            let stateUlbs = await getUlbs(el._id,financialYear);
+            let condition = {ulb:{ $in : stateUlbs }};
+            if(financialYear){
+                condition["financialYear"] = {$in: financialYear }
+            }
             let data =  await UlbLedger.aggregate([
                 {$match : condition},
                 {$group:{
@@ -174,4 +137,41 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
         console.log("Exception",e);
         return res.status(400).json({message:"", errMessage: e.message,success:false});
     }
+}
+const getBackYears = (num=  3,before = '') =>{
+    let yr = before ? `${before}-01-01` : moment().format("YYYY-MM-DD");
+    let years = [];
+    for(let i=0; i<num; i++){
+        let defaultYear = moment(yr).subtract('year', i);
+        let currentYear = moment(defaultYear).format("YY").toString();
+        let previousYear = moment(defaultYear).subtract('year', 1).format('YYYY').toString();
+        years.push(`${previousYear}-${currentYear}`);
+    }
+    return years;
+}
+const getUlbs = (state, yrs)=>{
+    return new Promise(async (resolve, reject)=>{
+        let years = yrs ? yrs.sort() : [];
+        let ulbs = [];
+        try {
+            let stateUlbs = await Ulb.distinct("_id",{state:state});
+            if(years.length){
+                for (let i = 0; i < years.length; i++) {
+                    let year = years[i];
+                    let query = { financialYear: year, ulb: { $in: stateUlbs } };
+                    if (i > 0) {
+                        query["ulb"] = { $in: ulbs };
+                    }
+                    ulbs = await UlbLedger.distinct("ulb", query).exec();
+                }
+            }else{
+                ulbs = await UlbLedger.distinct("ulb", {ulb: { $in: stateUlbs }}).exec();
+            }
+            resolve(ulbs);
+        }catch (e) {
+            console.log(e);
+            reject(e);
+        }
+    });
+
 }

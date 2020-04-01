@@ -1,11 +1,11 @@
 const State = require("../../models/State");
+const Ulb = require("../../models/Ulb");
 const UlbType = require("../../models/UlbType");
 const UlbLedger= require("../../models/UlbLedger");
 const LineItem= require("../../models/LineItem");
 const OverallUlb= require("../../models/OverallUlb");
 const service = require("../../service");
 const moment = require("moment");
-
 module.exports.get = async function(req,res) {
 
     let query = {};
@@ -186,10 +186,11 @@ module.exports.getUlbInfo = async function(stateCode, ulbCode){
     }
 }
 
-module.exports.getUlbByCode = async function(ulbCode){
+module.exports.getUlbByCode = async function(req,res){
 
     try {
         // get ulb information and other information based on ulbCode
+        let ulbCode = req.query.code;
         let response =  await Ulb.aggregate([
             {$match:{code : ulbCode}},
             {
@@ -215,7 +216,7 @@ module.exports.getUlbByCode = async function(ulbCode){
             {
                 $project:{
                     _id : 1,
-                    stateCode : "$_id",
+                    stateCode : "$state.code",
                     ulbs : 1,
                     state :"$state.name",
                     type : "$ulbType.name",
@@ -229,16 +230,27 @@ module.exports.getUlbByCode = async function(ulbCode){
                 }
             }
         ]).exec();
-
         if(response){
-            return response;
+            return res.status(200).json({
+                success:true,
+                message:"Ulb",
+                data: response.length ? response[0] : null
+            });
         }else{
-            return null;
+            return res.status(200).json({
+                success:true,
+                message:"Ulb",
+                data: null
+            });
         }
 
     }catch (e) {
         console.log("Error",e);
-        return  [];
+        return res.status(400).json({
+            success:true,
+            message:"Db Error",
+            data: null
+        });
     }
 }
 
@@ -434,6 +446,10 @@ module.exports.getUlbsWithAuditStatus = async (req, res)=>{
         financialYear ? condition["financialYear"] = {$in: financialYear } : null;
 
         let auditLineItem = await LineItem.findOne({code : "1001"}).exec();
+        if(financialYear && financialYear.length){
+            let commonUlbs = await getUlbs(financialYear);
+            condition["ulb"] = {$in:commonUlbs};
+        }
         let ulbs =  await UlbLedger.aggregate([
             {$match : condition},
             {$group:{
@@ -519,3 +535,25 @@ module.exports.getOverallUlb = async function(req,res) {
     });
 
 }
+const getUlbs = (yrs)=>{
+    return new Promise(async (resolve, reject)=>{
+        let years = yrs ? yrs.sort() : [];
+        let ulbs = [];
+        try {
+            for (let i = 0; i < years.length; i++) {
+                    let year = years[i];
+                    let query = { financialYear: year };
+                if (i > 0) {
+                    query["ulb"] = { $in: ulbs };
+                }
+                ulbs = await UlbLedger.distinct("ulb", query).exec();
+            }
+            resolve(ulbs);
+        }catch (e) {
+            console.log(e);
+            reject(e);
+        }
+    });
+
+}
+

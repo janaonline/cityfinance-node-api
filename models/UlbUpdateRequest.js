@@ -1,26 +1,23 @@
 require('./dbConnect');
 const UlbUpdateRequestSchema = new Schema({
     ulb:{ type: Schema.Types.ObjectId, ref: 'Ulb' ,required : true},
-    name: { type: String, required: true },
-    regionalName: { type: String, default : "" },
-    code: { type: String, required: true, index: { unique: true } },
-    state : { type: Schema.Types.ObjectId, ref: 'State' ,required : true},
-    ulbType : { type: Schema.Types.ObjectId, ref: 'UlbType' ,required : true},
+    name: { type: String, default:null },
+    regionalName: { type: String, default:null },
+    code: { type: String, default:null },
+    state : { type: Schema.Types.ObjectId, ref: 'State' , default:null},
+    ulbType : { type: Schema.Types.ObjectId, ref: 'UlbType' ,default:null},
     natureOfUlb : { type : String, default : null},
-    wards : { type : Number, default : 0},
-    area : { type : Number, default : 0},
-    population : { type : Number, default : 0},
+    wards : { type : Number, default:null},
+    area : { type : Number, default:null},
+    population : { type : Number, default:null},
     location:{
         type:{
             lat:{type:String },
             lng:{type:String },
         },
-        default:{
-            lat:"0.0",
-            lng:"0.0"
-        }
+        default:null
     },
-    amrut : { type : String ,  default : ""},
+    amrut : { type : String ,  default:null},
     status:{type:String, enum:["PENDING","APPROVED","REJECTED"]},
     actionTakenBy:{ type: Schema.Types.ObjectId, ref: 'User' ,required : true},
     history:{type:Array, default:[]},

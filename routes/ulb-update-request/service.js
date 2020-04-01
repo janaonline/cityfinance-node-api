@@ -28,7 +28,7 @@ module.exports.create = async (req, res)=>{
         }else{
             ulbUpdateRequest.save((err, dt)=>{
                 if(err){
-                    return Response.DbError(res,e.message, '')
+                    return Response.DbError(res,err, err.message)
                 }else {
                     return Response.OK(res,dt, 'Request accepted.');
                 }
@@ -63,7 +63,7 @@ module.exports.get = async (req, res)=>{
     }
 }
 module.exports.action = async (req, res)=>{
-    let user = req.decoded, data = req.body, _id = ObjectId(req.param._id);
+    let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
     if(actionAllowed.indexOf(user.role) > -1){
         try{
@@ -76,15 +76,32 @@ module.exports.action = async (req, res)=>{
             }
             try{
                 let prevState = await UlbUpdateRequest.findOne({_id:_id});
-                let updateData = {status:data.status, modifiedAt:new Date(), history:{$push:prevState}};
-                if(updateData.status == "APPROVED"){
-                    updateData.isActive = false;
-                }
-                let du = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
-                if(du.n){
-                    return Response.OK(res,du, 'Action updated.')
+                let updateData = {status:data.status, modifiedAt:new Date(), $push:{history:prevState}};
+                if(!prevState){
+                    return Response.BadRequest(res,{}, 'Requested record not found.')
+                }else if(prevState.status == "APPROVED"){
+                    return Response.BadRequest(res,{}, 'The record is already approved.')
                 }else{
-                    return Response.BadRequest(res,du, 'Requested record not found.')
+                    if(updateData.status == "APPROVED"){
+                        updateData.isActive = false;
+                        let keys = [
+                            "name","regionalName","code","state","ulbType","natureOfUlb","wards",
+                            "area","population","location","amrut"
+                        ];
+                        let obj = {};
+                        for(key of keys){
+                            if(updateData[key]){
+                                obj[key] = updateData[key];
+                            }
+                        }
+                        let dulb = await UlbUpdateRequest.update({_id:updateData.ulb},{$set:obj});
+                    }
+                    let du = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
+                    if(du.n){
+                        return Response.OK(res,du, 'Action updated.')
+                    }else{
+                        return Response.BadRequest(res,du, 'Requested record not found.')
+                    }
                 }
             }catch (e) {
                 return Response.DbError(res,e, e.message);
