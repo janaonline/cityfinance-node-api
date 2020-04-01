@@ -40,7 +40,7 @@ module.exports.create = async (req, res)=>{
 }
 module.exports.get = async (req, res)=>{
     let user = req.decoded;
-    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
+    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
         let ulbs;
         if(user.role == "STATE"){
@@ -50,6 +50,8 @@ module.exports.get = async (req, res)=>{
             }catch (e) {
                 return Response.DbError(res,e, e.message);
             }
+        }else if(user.role == "ULB"){
+            ulbs = [ObjectId(user.ulb)];
         }
         try{
             let condition = ulbs ? {ulb:{$in:ulbs}} : {};
