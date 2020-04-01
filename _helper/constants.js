@@ -1,9 +1,15 @@
 module.exports = {
     USER: {
-        ROLES: ['USER', 'ULB','STATE','ADMIN', 'SUPERADMIN'],
+        ROLES: ['ADMIN','MoHUA','PARTNER','STATE','ULB','USER'],
         DEFAULT_ROLE: 'USER',
         ONBOARD_AUTHORITY: 'SUPERADMIN',
-        LEDGER_AUTHORITY: 'SUPERADMIN'
+        LEDGER_AUTHORITY: 'SUPERADMIN',
+        LEVEL_ACCESS:{
+            ADMIN:['MoHUA','PARTNER','STATE','ULB'],
+            MoHUA:['PARTNER','STATE','ULB'],
+            PARTNER:['STATE','ULB'],
+            STATE:['ULB']
+        }
     }, 
     BUDGET: {
         YEAR: ['2015-16', '2016-17', '2017-18']

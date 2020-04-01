@@ -1,4 +1,6 @@
 const moment = require('moment');
+const email = require('./email');
+const bcrypt = require('bcryptjs');
 const find = function(condition = {}, schema, callback) {
   // PUT Function where find condition and schema name would be received and accordingly response will be returned
   schema.find(condition).exec((err, data) => {
@@ -101,9 +103,45 @@ const aggregate = function(condition = {}, schema, callback) {
     }
   });
 };
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) ) + min;
+}
+function getHash(str) {
+  return new Promise((resolve, reject)=> {
+    bcrypt.genSalt(10, (err, salt) => {
+      if(err){
+        reject(err)
+      }else{
+        bcrypt.hash(str, salt, (err, hash) => {
+          if(err){
+            reject(err)
+          }else {
+            resolve(hash);
+          }
+        })
+      }
+    });
+  });
+}
+function compareHash(str1, str2) {
+  return new Promise((resolve, reject)=>{
+    bcrypt.compare(str1, str2, (err, isMatch) => {
+      if(err){
+        reject(err)
+      } else {
+        resolve(isMatch);
+      }
+    });
+  })
+}
 module.exports = {
   find: find,
   put: put,
   post: post,
-  aggregate: aggregate
+  aggregate: aggregate,
+  sendEmail:email,
+  getRndInteger:getRndInteger,
+  getHash:getHash,
+  compareHash:compareHash,
+  response:require('./response')
 };

@@ -1,9 +1,7 @@
 const nodemailer = require('nodemailer');
-const CONFIG = require('routes/config');
-module.exports.send = function(mailOptions){
-    console.log("EMAIL",CONFIG.email);
+module.exports = function(mailOptions, cb){
     let transporter = nodemailer.createTransport(process.env.EMAIL);
-    transporter.sendMail(mailOptions, (error, info) => {
+    transporter.sendMail(mailOptions, cb ? cb : (error, info) => {
         if (error) {
             return console.log(error);
         }

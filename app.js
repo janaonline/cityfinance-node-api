@@ -8,6 +8,7 @@ const config = require('./config/app_config');
 const logger = require('morgan');
 const app = express();
 require("./initialization/initialize")();
+const Service = require('./service');
 
 //Port Number
 const port = config.APP.PORT;
@@ -32,6 +33,7 @@ app.use(passport.session());
 
 require('./config/passport')(passport);
 const routes = require("./routes");
+// app.use(Service.response);
 app.use('/api/v1/', routes);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

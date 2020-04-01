@@ -7,6 +7,7 @@ module.exports = {
 	},
 	JWT: {
 		SECRET: process.env.SECRET,
-		TOKEN_EXPIRY: 604800
+		TOKEN_EXPIRY: '10h',
+		EMAIL_VERFICATION_EXPIRY:'10m'
 	}
 }

@@ -1,15 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-
+const verifyToken = require('../auth/service').verifyToken;
 const userService = require('./service');
 const Constants = require('../../_helper/constants');
-
-// Register User
-router.post('/signup', (req, res, next)=>{
-    req.body.role = Constants.USER.DEFAULT_ROLE;
-    userService.register(req, res);
-});
 
 // Onboard User
 router.post('/onboard', passport.authenticate('jwt', {session: false}), (req, res, next)=>{
@@ -20,24 +14,18 @@ router.post('/onboard', passport.authenticate('jwt', {session: false}), (req, re
     }
 });
 
-// Authenticate User
-router.post('/signin', (req, res, next)=>{
-    userService.authenticate(req, res);
-});
 
 router.post('/getAll', (req, res, next)=>{
     userService.getAll(req, res);
 });
 
-router.put('/update', (req, res, next) => {
-    userService.update(req, res);
-})
+router.put('/profile', verifyToken, userService.profileUpdate)
 
 //Profile
-router.get('/profile', passport.authenticate('jwt', {session: false}), (req, res, next)=>{
-    res.json({user: req.user});
-});
+router.get('/profile', verifyToken, userService.profileGet);
 
+// @Create
+router.post('/create',verifyToken, userService.create);
 //Validate
 router.get('/validate', (req, res, next)=>{
     res.send('Validate');

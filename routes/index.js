@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+// @Auth
+const Auth = require('./auth');
+router.use(Auth);
 
 // @FinancialYear
 const FinancialYear = require('./financial-year');
@@ -16,6 +19,13 @@ router.use(UlbType);
 // @ULB
 const Ulb = require('./ulb');
 router.use(Ulb);
+
+// @ULBUPDATEREQUEST
+const ulbUpdateRequest = require('./ulb-update-request');
+router.use('/ulb-update-request',ulbUpdateRequest);
+// @ULBFINANCIALDATA
+const ulbFinancialData = require('./ulb-financial-data');
+router.use('/ulb-financial-data',ulbFinancialData);
 
 // @LineItem
 const LineItem = require('./line-item');
@@ -47,6 +57,6 @@ router.use('/ledger', Ledger);
 
 // @User
 const User = require('./user');
-router.use('/users', User);
+router.use('/user', User);
 
 module.exports = router;

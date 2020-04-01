@@ -1,41 +1,33 @@
 require('./dbConnect');
 const CONSTANTS = require('../_helper/constants');
+const ulbRole = function () {
+	return this.role == "ULB";
+}
+const stateRole = function () {
+	return this.role == "STATE";
+}
 const UserSchema = mongoose.Schema({
-	name: {
-		type: String,
-		required : true
-	},
-	mobile: {
-		type: String
-	},
-	username: {
-		type: String,
-		required: true
-	},
-	password: {
-		type: String,
-		required: true
-	},
-	role: {
-		type: String,
-		enum: CONSTANTS.USER.ROLES,
-		required: true
-	},
-	isActive: {
-		type: String,
-		default: true,
-	},
-	createdAt: {
-		type: String,
-		default: Date.now
-	},
-	updatedAt: {
-		type: String,
-		default: Date.now
-	},
-	isDeleted: {
-		type: String,
-		default: false,
-	}
+	name: { type: String,required : true },
+	mobile: { type: String, default:null },
+	email:	{ type: String, required: true, index:{unique:true}},
+	password: { type: String, required: true },
+	role: { type: String, enum: CONSTANTS.USER.ROLES, required: true },
+	username: { type: String, required: false }, // depricated
+	designation:{ type:String, default:null},
+	organization:{ type:String, default:null},
+	state : { type: Schema.Types.ObjectId, ref: 'State', required:stateRole},
+	ulb : { type: Schema.Types.ObjectId, ref: 'Ulb', required:ulbRole },
+	commissionerName:{type:String, required:ulbRole},
+	commissionerEmail:{type:String, required:ulbRole},
+	commissionerConatactNumber:{type:String, required:ulbRole},
+	accountantName:{type:String, required:ulbRole},
+	accountantEmail:{type:String, required:ulbRole},
+	accountantConatactNumber:{type:String, required:ulbRole},
+	isActive: { type: Boolean, default: false },
+	isEmailVerified:{ type: Boolean, default: false },
+	createdBy:{ type: Schema.Types.ObjectId, ref: 'User', default:null},
+	createdAt: { type: Date, default: Date.now },
+	updatedAt: { type: Date, default: Date.now },
+	isDeleted: { type: Boolean, default: false }
 });
-module.exports = mongoose.model('User', UserSchema);
+module.exports = mongoose.model('User', UserSchema);;
