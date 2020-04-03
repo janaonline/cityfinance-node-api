@@ -241,7 +241,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
 }
 const getDeficit = (d = {})=>{
     // let d = JSON.parse(JSON.stringify(o));
-    let to = {};
+    let o = {};
     let remainingExpediture = d.totalExpediture;
     o.ulbs = d.ulbs;
     o.ownRevenueCoverPercentage = 0;
