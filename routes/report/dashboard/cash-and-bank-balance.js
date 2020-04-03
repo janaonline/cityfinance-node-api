@@ -4,8 +4,8 @@ const UlbLedger = require('../../../models/UlbLedger');
 module.exports = async (req, res, next)=>{
     try {
     let output = [];
-    let query;
     //console.log(req.body.queryArr);
+    //    res.json(req.body.queryArr);
     for (let q of req.body.queryArr) {
       let obj = {
         year: q.financialYear,
@@ -15,12 +15,12 @@ module.exports = async (req, res, next)=>{
       for (let d of q.data) {
         let range = d.range;
         let numOfUlb = Number(d.ulb['$in'].length);
-        query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
+        let query = getQuery(q.financialYear, d.ulb, range, numOfUlb,d.totalUlb);
         let data = await UlbLedger.aggregate(query);
         if(data && data.length){
           data[0]['numOfUlb'] = numOfUlb;
-          let dataObj = convertToCrores(data[0]);
-          obj['data'].push(dataObj);
+          //let dataObj = convertToCrores(data[0]);
+          obj['data'].push(data[0]);
         }
       }
       output.push(obj);
@@ -66,7 +66,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
   {
       "$project": {
           "numOfUlb": numOfUlb,
-          "range": "> 10 Lakhs",
+          "range": range,
           "financialYear": 1,
           "ulb": 1,
           "amount": 1,
