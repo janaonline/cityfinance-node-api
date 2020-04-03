@@ -87,7 +87,7 @@ module.exports = async (req, res, next) => {
             let obj = {
                 financialYear: year
             };
-            let rangeArr = []; let rangeList = ["< 1 Lakh","1 Lakh to 10 Lakhs","> 10 Lakhs"]
+            let rangeArr = []; let rangeList = [ "> 10 Lakhs", "1 Lakh to 10 Lakhs", "< 1 Lakh" ]
             for (let k of rangeList) {
                 let range = ulbPopulationRanges.find(f=> f.range == k);
                 let o = range ? range : {range:k,ulbs:[]};
