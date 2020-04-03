@@ -24,26 +24,38 @@ module.exports.get = async (req, res)=>{
     let user = req.decoded;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
-        let ulbs;
-        if(user.role == "STATE"){
+        if(req.query._id){
             try{
-                let stateId = ObjectId(user.state);
-                ulbs = await Ulb.distinct("_id",{state:stateId});
+                let condition = {_id : ObjectId(req.query._id) };
+                let data = await UlbFinancialData.findOne(condition).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
+                return Response.OK(res,data, 'Request fetched.')
             }catch (e) {
                 console.log("Exception:",e)
                 return Response.DbError(res,e, e.message);
             }
-        }else if(user.role == "ULB"){
-            ulbs = [ObjectId(user.ulb)];
+        }else{
+            let ulbs;
+            if(user.role == "STATE"){
+                try{
+                    let stateId = ObjectId(user.state);
+                    ulbs = await Ulb.distinct("_id",{state:stateId});
+                }catch (e) {
+                    console.log("Exception:",e)
+                    return Response.DbError(res,e, e.message);
+                }
+            }else if(user.role == "ULB"){
+                ulbs = [ObjectId(user.ulb)];
+            }
+            try{
+                let condition = ulbs ? {ulb:{$in:ulbs}} : {};
+                let data = await UlbFinancialData.find(condition).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
+                return Response.OK(res,data, 'Request list.')
+            }catch (e) {
+                console.log("Exception:",e)
+                return Response.DbError(res,e, e.message);
+            }
         }
-        try{
-            let condition = ulbs ? {ulb:{$in:ulbs}} : {};
-            let data = await UlbFinancialData.find(condition).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
-            return Response.OK(res,data, 'Request list.')
-        }catch (e) {
-            console.log("Exception:",e)
-            return Response.DbError(res,e, e.message);
-        }
+
     }else{
         return Response.BadRequest(res,{}, 'Action not allowed.')
     }

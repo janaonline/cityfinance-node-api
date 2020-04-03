@@ -42,23 +42,33 @@ module.exports.get = async (req, res)=>{
     let user = req.decoded;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
-        let ulbs;
-        if(user.role == "STATE"){
+        if(req.query._id){
             try{
-                let stateId = ObjectId(user.state);
-                ulbs = await Ulb.distinct("_id",{state:stateId});
+                let condition = {_id : ObjectId(req.query._id) };
+                let data = await UlbUpdateRequest.findOne(condition).sort({modifiedAt: -1}).lean().exec();
+                return Response.OK(res,data, 'Request fetched.')
             }catch (e) {
                 return Response.DbError(res,e, e.message);
             }
-        }else if(user.role == "ULB"){
-            ulbs = [ObjectId(user.ulb)];
-        }
-        try{
-            let condition = ulbs ? {ulb:{$in:ulbs}} : {};
-            let data = await UlbUpdateRequest.find(condition).sort({modifiedAt: -1}).lean().exec();
-            return Response.OK(res,data, 'Request list.')
-        }catch (e) {
-            return Response.DbError(res,e, e.message);
+        }else {
+            let ulbs;
+            if(user.role == "STATE"){
+                try{
+                    let stateId = ObjectId(user.state);
+                    ulbs = await Ulb.distinct("_id",{state:stateId});
+                }catch (e) {
+                    return Response.DbError(res,e, e.message);
+                }
+            }else if(user.role == "ULB"){
+                ulbs = [ObjectId(user.ulb)];
+            }
+            try{
+                let condition = ulbs ? {ulb:{$in:ulbs}} : {};
+                let data = await UlbUpdateRequest.find(condition).sort({modifiedAt: -1}).lean().exec();
+                return Response.OK(res,data, 'Request list.')
+            }catch (e) {
+                return Response.DbError(res,e, e.message);
+            }
         }
     }else{
         return Response.BadRequest(res,{}, 'Action not allowed.')
