@@ -82,21 +82,26 @@ module.exports = async (req, res, next) => {
         let ulbPopulationRanges = await Ulb.aggregate(rangeQuery).exec();
         let arr = [];
         let len = 0;
+        let d = [];
         for (year of years) {
             let obj = {
                 financialYear: year
             };
-            let rangeArr = [];
-            for (o of ulbPopulationRanges) {
+            let rangeArr = []; let rangeList = ["< 1 Lakh","1 Lakh to 10 Lakhs","> 10 Lakhs"]
+            for (let k of rangeList) {
+                let range = ulbPopulationRanges.find(f=> f.range == k);
+                let o = range ? range : {range:k,ulbs:[]};
                 len += o.ulbs.length;
                 let condition = {populationCategory : o.range}
                 req.query.state ? condition["state"] = mongoose.Types.ObjectId(req.query.state) : null;
                 let overAllUlbs = await OverallUlb.countDocuments(condition).exec();
+                d.push({condition:condition,totalUlb : overAllUlbs, range: o.range});
                 rangeArr.push({ totalUlb : overAllUlbs, range: o.range, ulb: { $in: o.ulbs } });
             }
             obj["data"] = rangeArr;
             arr.push(obj);
         }
+        // res.json({arr,len});
         if(len){
             req.body["queryArr"] = arr;
             next();
