@@ -98,6 +98,7 @@ module.exports.create = async (req, res)=>{
             newUser.password = await Service.getHash(newUser.password);
             newUser.isActive = true;
             newUser.createdBy = user._id;
+            newUser.isEmailVerified = true; //@todo need to remove on production
             newUser.save((err, user)=>{
                 if(err){
                     console.log("Err",err)
