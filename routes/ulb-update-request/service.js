@@ -106,7 +106,7 @@ module.exports.action = async (req, res)=>{
                                 obj[key] = updateData[key];
                             }
                         }
-                        let dulb = await UlbUpdateRequest.update({_id:updateData.ulb},{$set:obj});
+                        let dulb = await Ulb.update({_id:updateData.ulb},{$set:obj});
                     }
                     let du = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
                     if(du.n){

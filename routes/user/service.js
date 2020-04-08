@@ -60,7 +60,7 @@ module.exports.profileGet = async (req, res) =>{
         ULB: {
             populate:{
                 path:"ulb",
-                select:"_id name",
+                select:"_id name code",
                 populate:{
                     path:"state",
                     select:"_id code name"

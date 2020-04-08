@@ -6,7 +6,6 @@ const router = express.Router();
 const UlbType = require('./service');
 router.get(
     '/UlbType',
-    passport.authenticate('jwt', { session: false }),
     UlbType.get
 );
 router.put(
