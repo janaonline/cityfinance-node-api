@@ -82,9 +82,7 @@ module.exports.completeness = async (req, res)=>{
             }else if(d.completeness == "APPROVED"){
                 return Response.BadRequest(res,{}, "Already approved.")
             }else{
-                delete d.history;
                 let prevState = JSON.parse(JSON.stringify(d));
-                prevState.history.push(d);
                 let rejected = keys.filter(key=>{
                     return data[key] && data[key].completeness == "REJECTED";
                 })
@@ -101,6 +99,8 @@ module.exports.completeness = async (req, res)=>{
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState});
+                delete d.history;
+                let duu = await UlbFinancialData.update({_id:d._id},{$push:{history:d}});
                 return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
             }
         }catch (e) {
@@ -135,8 +135,6 @@ module.exports.correctness = async (req, res)=>{
                 return Response.BadRequest(res,{}, "Already approved.")
             }else{
                 let prevState = JSON.parse(JSON.stringify(d));
-                delete d.history;
-                prevState.history.push(d);
                 let rejected = keys.filter(key=>{
                     return data[key] && data[key].correctness == "REJECTED";
                 })
@@ -152,7 +150,9 @@ module.exports.correctness = async (req, res)=>{
                 prevState["correctness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
-                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState});
+                let du = await UlbFinancialData.update({_id:d._id},{$set:prevState});
+                delete d.history;
+                let duu = await UlbFinancialData.update({_id:d._id},{$push:{history:d}});
                 return Response.OK(res,du,`correctness status changed to ${prevState.correctness}`);
             }
         }catch (e) {
