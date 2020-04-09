@@ -1,17 +1,51 @@
 const jwt = require('jsonwebtoken');
 const ObjectId = require('mongoose').Types.ObjectId;
 const User = require('../../models/User');
+const Ulb = require('../../models/Ulb');
 const Config = require('../../config/app_config');
 const bcrypt = require('bcryptjs');
 const Constants = require('../../_helper/constants');
 const Service = require('../../service');
-module.exports.getAll = function (req, res) {
-    User.find({}, (err, out) => {
-        if (err) {
-            res.json({success: false, msg: 'Invalid Payload', data: err.toString() });
+const Response = require('../../service').response;
+const moment = require("moment");
+module.exports.get = async (req, res)=> {
+    let user = req.decoded; role = req.body.role, filter= req.body.filter, sort=  req.body.sort;
+    let skip = req.query.skip ? parseInt(req.query.skip) : 0;
+    let limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
+    let access = Constants.USER.LEVEL_ACCESS;
+    if(!(role && filter && sort)){
+        Response.BadRequest(res, req.body, 'Invalid Payload:role && filter && sort are required fields.');
+    }else if(actionAllowed.indexOf(user.role) < 0 || !(access[user.role] && access[user.role].indexOf(role)) ){
+        Response.BadRequest(res, req.body, `Action not allowed for the role:${role} by the role:${user.role}`);
+    }else{
+        let query = {role:role};
+        for(key in filter){
+            query[key] = {$regex:filter[key]};
         }
-        res.json({success: true, msg: 'Success', data: out });
-    })
+        try {
+            let total = undefined;
+            if(user.role == "STATE"){
+                let ulbs = await Ulb.distict("_id",{state:ObjectId(user.state)}).exec();
+                if(ulbs){
+                    query["ulb"] = {$in:ulbs};
+                }
+            }
+            if(!skip) {
+                total = await User.count(query);
+            }
+            let users = await User.find(query).sort(sort).skip(skip).limit(limit).exec();
+            return  res.status(200).json({
+                timestamp:moment().unix(),
+                success:true,
+                message:"User list",
+                data:users,
+                total:total
+            });
+        }  catch (e) {
+            Response.DbError(res, e, e.message);
+        }
+    }
 };
 module.exports.update = function (req, res) {
     User.updateOne({_id: req.body._id}, req.body, (err, out) => {
@@ -55,21 +89,27 @@ module.exports.profileGet = async (req, res) =>{
     let obj = {}; let body = req.body; let user = req.decoded;
     let keyObj = {
         USER:{
-            select:"name email mobile designation organization"
+            select:"role name email mobile designation organization"
         },
         ULB: {
             populate:{
                 path:"ulb",
-                select:"_id name code wards area population",
-                populate:{
-                    path:"state",
-                    select:"_id code name"
-                }
+                select:"_id name code wards area population ulbType",
+                populate:[
+                    {
+                        path:"state",
+                        select:"_id code name"
+                    },
+                    {
+                        path:"ulbType",
+                        select:"_id name"
+                    }
+                ]
             },
-            select:"ulb name email mobile accountantConatactNumber accountantEmail accountantName commissionerConatactNumber commissionerEmail commissionerName"
+            select:"role ulb name email mobile accountantConatactNumber accountantEmail accountantName commissionerConatactNumber commissionerEmail commissionerName"
         },
         STATE:{
-            select:"name state",
+            select:"role name state",
             populate:{
                 path:"state",
                 select:"_id name"
@@ -79,7 +119,7 @@ module.exports.profileGet = async (req, res) =>{
     let select = keyObj[user.role] ? keyObj[user.role].select : "";
     let uModel = User.findOne({_id:ObjectId(user._id)}, select);
     if(keyObj[user.role] && keyObj[user.role].populate){
-        uModel.populate(keyObj[user.role].populate)
+        uModel.populate(keyObj[user.role].populate);
     }
     uModel.exec((err, out) => {
         if (err) {

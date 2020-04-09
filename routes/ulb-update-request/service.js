@@ -1,7 +1,10 @@
 const Ulb = require("../../models/Ulb");
-const User = require("../../models/User");
+const jwt = require('jsonwebtoken');
+const User = require('../../models/User');
+const Config = require('../../config/app_config');
 const UlbUpdateRequest = require("../../models/UlbUpdateRequest");
 const Response = require("../../service").response;
+const SendEmail = require("../../service").sendEmail;
 const moment = require("moment");
 const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.create = async (req, res)=>{
@@ -116,7 +119,27 @@ module.exports.action = async (req, res)=>{
                             }
                         }
                     }
-                    pObj["commissionerEmail"] ? obj["email"] = pObj["commissionerEmail"]: "";
+                    if(pObj["commissionerEmail"]){
+                        obj["email"] = pObj["commissionerEmail"];
+                        pObj["isEmailVerified"] = false;
+                        let data = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id,email,role,name").lean();
+                        data['purpose'] = 'EMAILVERFICATION';
+                        const token = jwt.sign(data, Config.JWT.SECRET, {
+                            expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
+                        });
+                        let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+                        let mailOptions = {
+                            to: data.email, // list of receivers
+                            subject: "Email changed successfull", // Subject line
+                            html: `
+                                    <b>Hi ${data.name},</b>
+                                    <p>Registration is completed.</p>
+                                    <a href="${baseUrl}/reset_password?token=${token}">click to activate</a>
+                                ` // html body
+                        };
+                        SendEmail(mailOptions);
+                    }
+
                     let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
                     if(du.n){
                         return Response.OK(res,du, 'Action updated.')
