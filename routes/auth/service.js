@@ -109,7 +109,7 @@ module.exports.login = async (req, res)=>{
             }
         }
     })
-}
+};
 module.exports.verifyToken = (req, res, next)=>{
     var token = req.body.token || req.query.token || req.params.token || req.headers['x-access-token'];
     if (token) {
@@ -128,7 +128,7 @@ module.exports.verifyToken = (req, res, next)=>{
         // return an error
         return res.status(403).send({ success: false,message: 'No token provided.'});
     }
-}
+};
 module.exports.resendVerificationLink = async (req, res)=>{
     try{
         let keys  = ["_id","email","role","name"];
@@ -160,9 +160,9 @@ module.exports.resendVerificationLink = async (req, res)=>{
             Response.BadRequest(res, req.body, `Email not found.`)
         }
     }catch (e) {
-
+        Response.BadRequest(res, req.body, `Exception occurred.`)
     }
-}
+};
 module.exports.emailVerification = async (req, res)=>{
     try{
         let ud = {isEmailVerified:true};
@@ -188,7 +188,7 @@ module.exports.emailVerification = async (req, res)=>{
     }catch (e) {
         return res.send(`<h1>Error Occurred:</h1><p>${e.message}</p>`);
     }
-}
+};
 module.exports.forgotPassword = async (req, res)=>{
     try{
         let user = await User.findOne({email: req.body.email}).exec();
@@ -239,7 +239,7 @@ module.exports.forgotPassword = async (req, res)=>{
             message:`Exception:${e.message}`
         })
     }
-}
+};
 module.exports.resetPassword = async (req, res)=>{
     try{
         if(req.body.password){
@@ -269,4 +269,4 @@ module.exports.resetPassword = async (req, res)=>{
             message:`Exception:${e.message}`
         })
     }
-}
+};
