@@ -2,12 +2,14 @@ require('./dbConnect');
 const audited = function () {
     return this.audited;
 }
-
+const statusType = ()=>{
+    return {type:String, enum: ["PENDING","APPROVED","REJECTED"], default:"PENDING"};
+}
 const ContentSchema = new Schema({
     pdfUrl:{type:String},
     excelUrl:{type:String},
-    completeness:{type:String, enum: ["PENDING","APPROVED","REJECTED"], default:"PENDING"},
-    correctness:{type:String, enum: ["PENDING","APPROVED","REJECTED"], default:"PENDING"}
+    completeness:statusType(),
+    correctness:statusType()
 });
 const UlbFinancialDataSchema = new Schema({
     ulb:{ type: Schema.Types.ObjectId, ref: 'Ulb' ,required : true},
@@ -19,8 +21,9 @@ const UlbFinancialDataSchema = new Schema({
     schedulesToIncomeAndExpenditure: { type:ContentSchema, required:true},
     trialBalance: { type:ContentSchema, required:true},
     auditReport: { type:ContentSchema, required:audited},
-    completeness:{type:String, enum:["PENDING","APPROVED","REJECTED"], default:"PENDING"},
-    correctness:{type:String, enum:["PENDING","APPROVED","REJECTED"], default:"PENDING"},
+    completeness:statusType(),
+    correctness:statusType(),
+    status:statusType(),
     actionTakenBy:{ type: Schema.Types.ObjectId, ref: 'User' ,required : true},
     history:{type:Array, default:[]},
     modifiedAt : { type: Date, default : Date.now() },

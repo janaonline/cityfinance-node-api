@@ -49,10 +49,26 @@ module.exports.get = async (req, res)=>{
             try{
                 let condition = ulbs ? {ulb:{$in:ulbs}} : {};
                 let data = await UlbFinancialData.find(condition).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
+                for(s of data){
+                    s["status"] = getStatus(s);
+                }
                 return Response.OK(res,data, 'Request list.')
             }catch (e) {
                 console.log("Exception:",e)
                 return Response.DbError(res,e, e.message);
+            }
+            function  getStatus() {
+                if(s.correctness == "PENDING" && s.completeness == "PENDING"){
+                    return "PENDING";
+                }else if(s.correctness == "APPROVED" && s.completeness == "APPROVED"){
+                    return "APPROVED";
+                }else if(s.completeness == "PENDING"){
+                    return "PENDING";
+                }else if(s.correctness == "PENDING"){
+                    return "PENDING";
+                }else{
+                    return "REJECTED";
+                }
             }
         }
 
