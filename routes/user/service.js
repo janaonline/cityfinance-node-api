@@ -135,6 +135,7 @@ module.exports.create = async (req, res)=>{
         try{
             let newUser = new User(data);
             let ud = await newUser.validate();
+            newUser.password = Service.getRndInteger(10000,99999).toString(); // dummy password for user creation.
             newUser.password = await Service.getHash(newUser.password);
             newUser.isActive = true;
             newUser.commissionerEmail ? newUser.email = newUser.commissionerEmail:"";
@@ -156,7 +157,7 @@ module.exports.create = async (req, res)=>{
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
                     });
-                    let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+                    let baseUrl = process.env.HOSTNAME; //req.protocol+"://"+req.headers.host+"/api/v1";
                     let mailOptions = {
                         to: user.email, // list of receivers
                         subject: "Registration successfull", // Subject line
@@ -166,10 +167,9 @@ module.exports.create = async (req, res)=>{
                                     <p>Registration is completed.</p>
                                     <p>
                                         Credentials: <br>
-                                        email:${user.email},<br>
-                                        password:${data.password}
+                                        email:${user.email}
                                     </p>
-                                    <a href="${baseUrl}/email_verification?token=${token}">click to activate</a>
+                                    <a href="${baseUrl}/password/request?token=${token}">click to reset password.</a>
                                 ` // html body
                     };
                     Service.sendEmail(mailOptions);

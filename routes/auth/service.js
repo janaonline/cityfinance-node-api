@@ -198,7 +198,7 @@ module.exports.resetPassword = async (req, res)=>{
             let user = req.decoded;
             let passwordHash = await Service.getHash(req.body.password);
             console.log("passwordHash",passwordHash);
-            let du = await User.update({_id:ObjectId(user._id)},{$set:{password:passwordHash}});
+            let du = await User.update({_id:ObjectId(user._id)},{$set:{password:passwordHash, isEmailVerified:true}});
             let mailOptions = {
                 to: user.email, // list of receivers
                 subject: "CityFinance", // Subject line
