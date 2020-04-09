@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 const Config = require('../../config/app_config');
 const Constants = require('../../_helper/constants');
-const Service = require('../../service')
+const Service = require('../../service');
+const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.register = async (req, res)=>{
     try{
@@ -128,19 +129,62 @@ module.exports.verifyToken = (req, res, next)=>{
         return res.status(403).send({ success: false,message: 'No token provided.'});
     }
 }
+module.exports.resendVerificationLink = async (req, res)=>{
+    try{
+        let keys  = ["_id","email","role","name"];
+        let user = await User.findOne({email:req.body.email}, keys.join(" ")).exec();
+        if(user){
+            let data = {};
+            for(k in user){
+                if(keys.indexOf(k)>-1){
+                    data[k] = user[k];
+                }
+            }
+            data['purpose'] = 'EMAILVERFICATION';
+            const token = jwt.sign(data, Config.JWT.SECRET, {
+                expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
+            });
+            let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+            let mailOptions = {
+                to: user.email, //list of receivers
+                subject: "Email Verification", //Subject line
+                html: `
+                    <b>Hi ${user.name},</b>
+                    <p>Please verify link.</p>
+                    <a href="${baseUrl}/email_verification?token=${token}">click to activate</a>
+                ` // html body
+            };
+            Service.sendEmail(mailOptions);
+            Response.OK(res, user, `Email verification link sent to ${user.email}.`);
+        }else{
+            Response.BadRequest(res, req.body, `Email not found.`)
+        }
+    }catch (e) {
+
+    }
+}
 module.exports.emailVerification = async (req, res)=>{
     try{
         let ud = {isEmailVerified:true};
         if(req.decoded.role == "USER"){
             ud.isActive = true;
         }
-        let du = await User.update({_id:ObjectId(req.decoded._id)},{$set:ud});
-        if(du.n){
-            return res.send(`<h1>Email verified</h1>`)
-        }else{
-            return res.send(`<h1>Record not found.</h1>`)
+        let keys  = ["_id","email","role","name",'ulb','state'];
+        let query = {_id:ObjectId(req.decoded._id)};
+        let user = await User.findOne(query,keys.join(" ")).exec();
+        let du = await User.update(query,{$set:ud});
+        let data = {};
+        for(k in user){
+            if(keys.indexOf(k)>-1){
+                data[k] = user[k];
+            }
         }
-
+        data['purpose'] = 'WEB';
+        const token = jwt.sign(data, Config.JWT.SECRET, {
+            expiresIn: Config.JWT.TOKEN_EXPIRY
+        });
+        let url = `${process.env.HOSTNAME}/email-verified?token=${token}&name=${user.name}&email=${user.email}&role=${user.role}`;
+        return res.redirect(url);
     }catch (e) {
         return res.send(`<h1>Error Occurred:</h1><p>${e.message}</p>`);
     }
