@@ -8,6 +8,10 @@ module.exports.register = async (req, res)=>{
     try{
         let data = req.body;
         data.role = data.role ? data.role : Constants.USER.DEFAULT_ROLE;
+        if(data.role == "ULB"){
+            data["email"] = data.commissionerEmail;
+            data["password"] = Service.getRndInteger(10000,99999).toString();
+        }
         let newUser = new User(data);
         let ud = await newUser.validate();
         newUser.password = await Service.getHash(newUser.password);
