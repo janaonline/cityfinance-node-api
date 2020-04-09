@@ -4,6 +4,7 @@ const verifyToken = require('../auth/service').verifyToken;
 const ufdService = require('./service');
 router.get("/", verifyToken,ufdService.get);
 router.post("/",verifyToken,ufdService.create);
+router.put("/",verifyToken,ufdService.update);
 router.put("/correctness/:_id", verifyToken, ufdService.correctness);
 router.put("/completeness/:_id",verifyToken, ufdService.completeness);
 module.exports = router;

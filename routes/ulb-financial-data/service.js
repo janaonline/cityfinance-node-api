@@ -60,6 +60,43 @@ module.exports.get = async (req, res)=>{
         return Response.BadRequest(res,{}, 'Action not allowed.')
     }
 }
+module.exports.update = async (req, res)=>{
+    let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
+    let actionAllowed = ['ULB'];
+    let keys = [
+        "audited",
+        "balanceSheet","schedulesToBalanceSheet","incomeAndExpenditure",
+        "schedulesToIncomeAndExpenditure","trialBalance","auditReport"
+    ];
+    if(actionAllowed.indexOf(user.role) > -1){
+        try{
+            let d = await UlbFinancialData.findOne({_id:_id}).lean();
+            if(!d){
+                return Response.BadRequest(res,{}, "Requested record not found.")
+            }else if(d.completeness == "APPROVED" || d.correctness == "APPROVED"){
+                return Response.BadRequest(res,{}, "Already approved.")
+            }else{
+                let prevState = JSON.parse(JSON.stringify(d));
+                for(let key of keys){
+                    if(data[key]){
+                        prevState[key] = data[key];
+                    }
+                }
+                prevState["completeness"] = "PENDING";
+                prevState.modifiedAt = new Date();
+                prevState.actionTakenBy  = user._id;
+                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState});
+                delete d.history;
+                let duu = await UlbFinancialData.update({_id:d._id},{$push:{history:d}});
+                return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
+            }
+        }catch (e) {
+            return Response.DbError(res,e.message, 'Caught Database Exception')
+        }
+    }else{
+        return Response.BadRequest(res,{},`This action is only allowed by ${actionAllowed.join()}`);
+    }
+}
 module.exports.completeness = async (req, res)=>{
     let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
