@@ -116,7 +116,7 @@ module.exports.profileGet = async (req, res) =>{
             }
         }
     }
-    let select = keyObj[user.role] ? keyObj[user.role].select : "";
+    let select = keyObj[user.role] ? keyObj[user.role].select : "_id name email role";
     let uModel = User.findOne({_id:ObjectId(user._id)}, select);
     if(keyObj[user.role] && keyObj[user.role].populate){
         uModel.populate(keyObj[user.role].populate);
