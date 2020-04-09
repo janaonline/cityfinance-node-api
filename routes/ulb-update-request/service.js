@@ -1,4 +1,5 @@
 const Ulb = require("../../models/Ulb");
+const User = require("../../models/User");
 const UlbUpdateRequest = require("../../models/UlbUpdateRequest");
 const Response = require("../../service").response;
 const moment = require("moment");
@@ -107,8 +108,16 @@ module.exports.action = async (req, res)=>{
                             }
                         }
                         let dulb = await Ulb.update({_id:updateData.ulb},{$set:obj});
+                        let profileKeys = ["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"];
+                        let pObj = {};
+                        for(key of profileKeys){
+                            if(updateData[key]){
+                                pObj[key] = updateData[key];
+                            }
+                        }
                     }
-                    let du = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
+                    pObj["commissionerEmail"] ? obj["email"] = pObj["commissionerEmail"]: "";
+                    let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
                     if(du.n){
                         return Response.OK(res,du, 'Action updated.')
                     }else{

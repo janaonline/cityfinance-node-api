@@ -29,7 +29,7 @@ module.exports.profileUpdate =  (req, res) =>{
         ULB:["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"],
         STATE:["name"]
     }
-    console.log(user)
+    console.log(user);
     if(Object.keys(keyObj).indexOf(user.role) < 0 ){
         return res.status(400).json({
             success:false,
@@ -60,7 +60,7 @@ module.exports.profileGet = async (req, res) =>{
         ULB: {
             populate:{
                 path:"ulb",
-                select:"_id name code",
+                select:"_id name code wards area population",
                 populate:{
                     path:"state",
                     select:"_id code name"
@@ -97,6 +97,7 @@ module.exports.create = async (req, res)=>{
             let ud = await newUser.validate();
             newUser.password = await Service.getHash(newUser.password);
             newUser.isActive = true;
+            newUser.commissionerEmail ? newUser.email = newUser.commissionerEmail:"";
             newUser.createdBy = user._id;
             newUser.isEmailVerified = true; //@todo need to remove on production
             newUser.save((err, user)=>{
