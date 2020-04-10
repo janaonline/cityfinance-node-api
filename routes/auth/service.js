@@ -10,6 +10,15 @@ module.exports.register = async (req, res)=>{
         let data = req.body;
         data.role = data.role ? data.role : Constants.USER.DEFAULT_ROLE;
         if(data.role == "ULB"){
+            if(data.commissionerEmail && data.ulb){
+                let user = await User.findOne({ulb:ObjectId(data.ulb), role:data.role}).lean().exec();
+                if(user){
+                    return Response.BadRequest(res, {data},`Already an user is registered with requested ulb.`)
+                }
+            }else{
+                return  Response.BadRequest(res, {data},`Commissioner Email and Ulb is required field.`)
+            }
+            data["isActive"] = false;
             data["email"] = data.commissionerEmail;
             data["password"] = Service.getRndInteger(10000,99999).toString();
         }
@@ -80,7 +89,7 @@ module.exports.login = async (req, res)=>{
             try{
                 let isMatch = await Service.compareHash(req.body.password, user.password);
                 if (isMatch) {
-                    let keys  = ["_id","email","role","name",'ulb','state'];
+                    let keys  = ["_id","email","role","name",'ulb','state','isActive'];
                     let data = {};
                     for(k in user){
                         if(keys.indexOf(k)>-1){
@@ -97,6 +106,7 @@ module.exports.login = async (req, res)=>{
                         user: {
                             name: user.name,
                             email: user.email,
+                            isActive: user.isActive,
                             role:user.role
                         }
                     });

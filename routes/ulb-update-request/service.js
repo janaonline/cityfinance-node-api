@@ -10,13 +10,22 @@ const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.create = async (req, res)=>{
     let user = req.decoded;
     let data = req.body;
+    delete data.ulb;
     if(user.role == "ULB"){
         data.ulb = user.ulb;
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbUpdateRequest(data);
         ulbUpdateRequest.ulb = user.ulb;
         ulbUpdateRequest.actionTakenBy = user._id;
-        let getPrevStatus = await UlbUpdateRequest.findOne({ulb:ulbUpdateRequest.ulb, status:{$in:["PENDING","REJECTED"]}}).lean().exec();
+
+        if(ulbUpdateRequest.commissionerEmail){
+            let emailCheck = await User.findOne({email:ulbUpdateRequest.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
+            if(emailCheck && (emailCheck.role != "ULB" || emailCheck.ulb.toString() != user._id.toString())){
+                return Response.BadRequest(res, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
+            }
+        }
+
+        let getPrevStatus = await UlbUpdateRequest.findOne({ulb:ulbUpdateRequest.ulb, status:"PENDING"}).lean().exec();
         if(getPrevStatus){
             Object.assign(getPrevStatus,data);
             try{
@@ -46,9 +55,9 @@ module.exports.get = async (req, res)=>{
     let user = req.decoded;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
-        if(req.query._id){
+        if(req.params._id){
             try{
-                let condition = {_id : ObjectId(req.query._id) };
+                let condition = {_id : ObjectId(req.params._id) };
                 let data = await UlbUpdateRequest.findOne(condition).sort({modifiedAt: -1}).lean().exec();
                 return Response.OK(res,data, 'Request fetched.')
             }catch (e) {
@@ -73,6 +82,65 @@ module.exports.get = async (req, res)=>{
             }catch (e) {
                 return Response.DbError(res,e, e.message);
             }
+        }
+    }else{
+        return Response.BadRequest(res,{}, 'Action not allowed.')
+    }
+}
+module.exports.getById = async (req, res)=>{
+    let user = req.decoded, _id = req.params._id;
+    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
+    if(actionAllowed.indexOf(user.role) > -1){
+        if(_id && ObjectId.isValid(_id)){
+            try{
+                let condition = {_id : ObjectId(_id) };
+                let data = await UlbUpdateRequest
+                        .findOne(condition)
+                        .populate([
+                            {
+                                path:"state",
+                                select:"_id name code"
+                            },
+                            {
+                                path: "ulb",
+                                select: "_id name code ulbType",
+                                populate:{
+                                    path:"ulbType",
+                                    select:"_id name"
+                                }
+                            },
+                            {
+                                path:"ulbType",
+                                select:"_id name"
+                            }
+                        ])
+                        .lean()
+                        .exec();
+                if(data){
+                    let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
+                    let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
+                    let user = await User
+                        .findOne({role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
+                        .populate({
+                            path:"ulb",
+                            select:ulbkeys.join(" "),
+                            populate:{
+                                path:"ulbType",
+                                select:"_id name"
+                            }
+                        })
+                        .lean()
+                        .exec();
+                    data["old"] = user;
+                    return Response.OK(res,data, 'Request fetched.')
+                }else{
+                    return Response.BadRequest(res,{},`Not a valid request Id.`)
+                }
+            }catch (e) {
+                return Response.DbError(res,e, e.message);
+            }
+        }else {
+            return Response.BadRequest(res,{},`Not a valid request Id.`)
         }
     }else{
         return Response.BadRequest(res,{}, 'Action not allowed.')
@@ -106,45 +174,54 @@ module.exports.action = async (req, res)=>{
                         ];
                         let obj = {};
                         for(key of keys){
-                            if(updateData[key]){
-                                obj[key] = updateData[key];
+                            if(prevState[key]){
+                                obj[key] = prevState[key];
                             }
                         }
-                        let dulb = await Ulb.update({_id:updateData.ulb},{$set:obj});
                         let profileKeys = ["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"];
                         let pObj = {};
                         for(key of profileKeys){
-                            if(updateData[key]){
-                                pObj[key] = updateData[key];
+                            if(prevState[key]){
+                                pObj[key] = prevState[key];
                             }
                         }
-                    }
-                    if(pObj["commissionerEmail"]){
-                        obj["email"] = pObj["commissionerEmail"];
-                        pObj["isEmailVerified"] = false;
-                        let data = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id,email,role,name").lean();
-                        data['purpose'] = 'EMAILVERFICATION';
-                        const token = jwt.sign(data, Config.JWT.SECRET, {
-                            expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-                        });
-                        let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
-                        let mailOptions = {
-                            to: data.email, // list of receivers
-                            subject: "Email changed successfull", // Subject line
-                            html: `
+                        if(pObj["commissionerEmail"]){
+                            let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
+                            if(emailCheck){
+                                if(emailCheck.ulb.toString() != updateData.ulb.toString()){
+                                      return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
+                                }
+                            }
+                            pObj["email"] = pObj["commissionerEmail"];
+                            pObj["isEmailVerified"] = false;
+                            let data = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id,email,role,name").lean();
+                            data['purpose'] = 'EMAILVERFICATION';
+                            const token = jwt.sign(data, Config.JWT.SECRET, {
+                                expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
+                            });
+                            let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+                            let mailOptions = {
+                                to: data.email, // list of receivers
+                                subject: "Approved: Email change request", // Subject line
+                                text: 'Approved: Email change request.', // plain text body
+                                html: `
                                     <b>Hi ${data.name},</b>
-                                    <p>Registration is completed.</p>
-                                    <a href="${baseUrl}/reset_password?token=${token}">click to activate</a>
+                                    <p>Reset password.</p>
+                                    <a href="${baseUrl}/email_verification?token=${token}">click to reset password</a>
                                 ` // html body
-                        };
-                        SendEmail(mailOptions);
-                    }
+                            };
+                            SendEmail(mailOptions);
+                        }
 
-                    let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
-                    if(du.n){
-                        return Response.OK(res,du, 'Action updated.')
+                        console.log({_id:prevState.ulb},obj)
+                        let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
+                        let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
+                    }
+                    let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
+                    if(uur.n){
+                        return Response.OK(res,uur, 'Action updated.')
                     }else{
-                        return Response.BadRequest(res,du, 'Requested record not found.')
+                        return Response.BadRequest(res,uur, 'Requested record not found.')
                     }
                 }
             }catch (e) {
