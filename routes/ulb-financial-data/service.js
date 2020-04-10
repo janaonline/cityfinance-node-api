@@ -11,7 +11,7 @@ module.exports.create = async (req, res)=>{
         let ulbUpdateRequest = new UlbFinancialData(data);
         ulbUpdateRequest.save((err, dt)=>{
             if(err){
-                return Response.DbError(res,err, err.message);
+                return Response.DbError(res,err, err.code == 11000 ? 'Duplicate entry.':'Failed to create entry');
             }else {
                 return Response.OK(res,dt, 'Request accepted.');
             }
