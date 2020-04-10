@@ -89,9 +89,7 @@ module.exports.update = async (req, res)=>{
             let d = await UlbFinancialData.findOne({_id:_id}).lean();
             if(!d){
                 return Response.BadRequest(res,{}, "Requested record not found.")
-            }else if(d.completeness == "APPROVED" || d.correctness == "APPROVED"){
-                return Response.BadRequest(res,{}, "Already approved.")
-            }else{
+            }else if(d.completeness == "REJECTED" || d.correctness == "REJECTED"){
                 let prevState = JSON.parse(JSON.stringify(d));
                 for(let key of keys){
                     if(data[key]){
@@ -105,6 +103,8 @@ module.exports.update = async (req, res)=>{
                 delete d.history;
                 let duu = await UlbFinancialData.update({_id:d._id},{$push:{history:d}});
                 return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
+            }else{
+                return Response.BadRequest(res,{}, "Update not allowed.")
             }
         }catch (e) {
             return Response.DbError(res,e.message, 'Caught Database Exception')
