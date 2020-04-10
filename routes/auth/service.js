@@ -183,7 +183,7 @@ module.exports.emailVerification = async (req, res)=>{
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
-        let url = `${process.env.HOSTNAME}/email-verified?token=${token}&name=${user.name}&email=${user.email}&role=${user.role}`;
+        let url = `${process.env.HOSTNAME}/password/request?token=${token}&name=${user.name}&email=${user.email}&role=${user.role}`;
         return res.redirect(url);
     }catch (e) {
         return res.send(`<h1>Error Occurred:</h1><p>${e.message}</p>`);
@@ -208,17 +208,30 @@ module.exports.forgotPassword = async (req, res)=>{
                 let passwordHash = await Service.getHash(newPassword);
                 try{
                     let du = await User.update({_id:user._id},{$set:{password:passwordHash}});
+                    let keys  = ["_id","email","role","name"];
+                    let data = {};
+                    for(k in user){
+                        if(keys.indexOf(k)>-1){
+                            data[k] = user[k];
+                        }
+                    }
+                    data['purpose'] = 'EMAILVERFICATION';
+                    const token = jwt.sign(data, Config.JWT.SECRET, {
+                        expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
+                    });
+                    let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
                     let mailOptions = {
                         to: user.email, // list of receivers
-                        subject: "CityFinance", // Subject line
-                        text: '', // plain text body
+                        subject: "Registration successfull", // Subject line
+                        text: 'Registration completed', // plain text body
                         html: `
                                     <b>Hi ${user.name},</b>
-                                    <p>You new password is <b title="${newPassword}">********</b>. Hover to see.</p>
+                                    <p>Reset password.</p>
+                                    <a href="${baseUrl}/email_verification?token=${token}">click to reset password</a>
                                 ` // html body
                     };
                     Service.sendEmail(mailOptions);
-                    return  res.status(200).json({success:true, msg:'User reset'})
+                    return  res.status(200).json({success:true, message:`Link sent to email ${user.email}`});
                 }catch (e) {
                     console.log("Exception",e);
                     return res.status(400).json({
