@@ -58,6 +58,9 @@ module.exports.get = async (req, res)=>{
         if(req.params._id){
             try{
                 let condition = {_id : ObjectId(req.params._id) };
+                if(user.role == "ULB"){
+                    condition["ulb"] = ObjectId(user.ulb);
+                }
                 let data = await UlbUpdateRequest.findOne(condition).sort({modifiedAt: -1}).lean().exec();
                 return Response.OK(res,data, 'Request fetched.')
             }catch (e) {
