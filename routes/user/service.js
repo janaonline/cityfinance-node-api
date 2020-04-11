@@ -14,14 +14,16 @@ module.exports.get = async (req, res)=> {
     let limit = req.query.limit ? parseInt(req.query.limit) : 50;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
     let access = Constants.USER.LEVEL_ACCESS;
-    if(!(role && filter && sort)){
-        Response.BadRequest(res, req.body, 'Invalid Payload:role && filter && sort are required fields.');
+    if(!role){
+        Response.BadRequest(res, req.body, 'Role is required field.');
     }else if(actionAllowed.indexOf(user.role) < 0 || !(access[user.role] && access[user.role].indexOf(role)) ){
         Response.BadRequest(res, req.body, `Action not allowed for the role:${role} by the role:${user.role}`);
     }else{
         let query = {role:role};
-        for(key in filter){
-            query[key] = {$regex:filter[key]};
+        if(filter){
+            for(key in filter){
+                query[key] = {$regex:filter[key]};
+            }
         }
         try {
             let total = undefined;
@@ -34,7 +36,11 @@ module.exports.get = async (req, res)=> {
             if(!skip) {
                 total = await User.count(query);
             }
-            let users = await User.find(query).sort(sort).skip(skip).limit(limit).exec();
+            let UserModel = User.find(query);
+                if(sort){
+                    UserModel.sort(sort);
+                }
+            let users =  await UserModel.skip(skip).limit(limit).exec();
             return  res.status(200).json({
                 timestamp:moment().unix(),
                 success:true,
