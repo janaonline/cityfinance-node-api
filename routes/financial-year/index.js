@@ -1,7 +1,7 @@
 const passport = require('passport');
 const express = require('express');
 const router = express.Router();
-
+const verifyToken = require('../auth/service').verifyToken;
 //--> ULB Type Routes <---//
 const FinancialYear = require('./service');
 router.get(
@@ -10,17 +10,17 @@ router.get(
 );
 router.put(
     '/financial-year/:_id',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     FinancialYear.put
 );
 router.post(
     '/financial-year',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     FinancialYear.post
 );
 router.delete(
     '/financial-year/:_id',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     FinancialYear.delete
 );
 module.exports = router;

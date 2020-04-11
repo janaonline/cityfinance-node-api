@@ -1,43 +1,58 @@
 const FinancialYear = require('../../models/FinancialYear');
-const service = require('../../service');
+const Response = require('../../service').response;
+const ObjectId=require('mongoose').Types.ObjectId;
 module.exports.get = async function(req,res) {
-    // Get any ulb type
-    // UlbType is model name
     let query = {};
     query["isActive"] = true;
-    service.find(query,FinancialYear,function(response,value){
-        return res.status(response ? 200 : 400).send(value);
-    });
+    try{
+        let years = await FinancialYear.find(query,"_id name");
 
+        return Response.OK(res, years,`Financial year list.`)
+    }catch (e) {
+        return Response.InternalError(res, {},`Exception: ${e.message}.`)
+    }
 }
 module.exports.put = async function(req,res) {
+    if(req.decoded.role != "ADMIN"){
+        return Response.BadRequest(res, {}, `Action not allowed.`)
+    }
     req.body['modifiedAt'] = new Date();
     let condition = {
-        _id : req.params._id
+        _id : ObjectId(req.params._id)
     };
-    // Edit any ulb type
-    // UlbType is model name
-    service.put(condition,req.body,FinancialYear,function(response,value){
-        return res.status(response ? 200 : 400).send(value);
-    });
-
+    try{
+        let du = await FinancialYear.update(condition,{$set:req.body});
+        return Response.OK(res, du, ``);
+    }catch (e) {
+        return Response.DbError(res, e, e.message);
+    }
 }
 module.exports.post = async function(req,res) {
-    // Create any ulb type
-    // UlbType is model name
-    service.post(FinancialYear,req.body,function(response,value){
-        return res.status(response ? 200 : 400).send(value);
-    });
+    if(req.decoded.role != "ADMIN"){
+        return Response.BadRequest(res, {}, `Action not allowed.`)
+    }
+    try{
+        let financialYear = new FinancialYear(req.body);
+        let du = await financialYear.save();
+        return Response.OK(res, du, ``);
+    }catch (e) {
+        return Response.DbError(res, e, e.message);
+    }
 }
 module.exports.delete = async function(req,res) {
+    if(req.decoded.role != "ADMIN"){
+        return Response.BadRequest(res, {}, `Action not allowed.`)
+    }
     let condition = {
-        _id : req.params._id
+        _id : ObjectId(req.params._id)
     },update = {
-        isActive : false
+        isActive : false,
+        modifiedAt:new Date()
     };
-    // Delete any ulb type
-    // UlbType is model name
-    service.put(condition,update,FinancialYear,function(response,value){
-        return res.status(response ? 200 : 400).send(value);
-    });
+    try{
+        let du = await FinancialYear.update(condition,update);
+        return Response.OK(res, du, ``);
+    }catch (e) {
+        return Response.DbError(res, e, e.message);
+    }
 }

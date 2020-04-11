@@ -126,7 +126,7 @@ module.exports.verifyToken = (req, res, next)=>{
         // verifies secret and checks exp
         jwt.verify(token, Config.JWT.SECRET, function(err, decoded) {
             if (err) {
-                console.log("verify-token jwt.verify : ",err);
+                console.log("verify-token jwt.verify : ",err.message);
                 return res.status(401).send({ success: false, message: 'Failed to authenticate token.',err:err });
             } else {
                 req.decoded = decoded;
