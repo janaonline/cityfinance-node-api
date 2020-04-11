@@ -92,7 +92,7 @@ module.exports.profileUpdate =  (req, res) =>{
     })
 };
 module.exports.profileGet = async (req, res) =>{
-    let obj = {}; let body = req.body; let user = req.decoded;
+    let obj = {}; let _id = req.query._id; let user = req.decoded;
     let keyObj = {
         USER:{
             select:"role name email mobile designation organization"
@@ -123,7 +123,8 @@ module.exports.profileGet = async (req, res) =>{
         }
     }
     let select = keyObj[user.role] ? keyObj[user.role].select : "_id name email role";
-    let uModel = User.findOne({_id:ObjectId(user._id)}, select);
+    let _condition = {_id : _id ? ObjectId(_id) :ObjectId(user._id)};
+    let uModel = User.findOne(_condition, select);
     if(keyObj[user.role] && keyObj[user.role].populate){
         uModel.populate(keyObj[user.role].populate);
     }
