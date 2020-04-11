@@ -56,7 +56,7 @@ module.exports.get = async (req, res)=>{
                 let total = undefined;
                 if(filter){
                     for(key in filter){
-                        query[key] = {$regex:filter[key]};
+                        query[key] = typeof filter[key] == "string" ? {$regex:filter[key]} : filter[key];
                     }
                 }
                 if(!skip) {
