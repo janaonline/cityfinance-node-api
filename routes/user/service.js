@@ -138,13 +138,14 @@ module.exports.create = async (req, res)=>{
     if(Constants.USER.LEVEL_ACCESS[user.role].indexOf(data.role) > -1){
         try{
             let newUser = new User(data);
-            let ud = await newUser.validate();
             let password = Service.getRndInteger(10000,99999).toString(); // dummy password for user creation.
             newUser.password = await Service.getHash(password);
+            let ud = await newUser.validate();
             newUser.isActive = true;
             newUser.commissionerEmail ? newUser.email = newUser.commissionerEmail:"";
             newUser.createdBy = user._id;
             newUser.isEmailVerified = true; //@todo need to remove on production
+            console.log(newUser)
             newUser.save((err, user)=>{
                 if(err){
                     console.log("Err",err)
