@@ -6,7 +6,6 @@ const router = express.Router();
 const FinancialYear = require('./service');
 router.get(
     '/financial-year',
-    passport.authenticate('jwt', { session: false }),
     FinancialYear.get
 );
 router.put(
