@@ -205,7 +205,7 @@ module.exports.action = async (req, res)=>{
                 }
             }
             try{
-                let prevState = await UlbUpdateRequest.findOne({_id:_id});
+                let prevState = await UlbUpdateRequest.findOne({_id:_id},"-history");
                 let updateData = {status:data.status, modifiedAt:new Date(), $push:{history:prevState}};
                 if(!prevState){
                     return Response.BadRequest(res,{}, 'Requested record not found.')
@@ -263,7 +263,7 @@ module.exports.action = async (req, res)=>{
                         let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
                         let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
                     }
-                    let history = prevState.history ? JSON.parse(JSON.stringify(prevState.history)) :[];
+                    /*let history = prevState.history ? JSON.parse(JSON.stringify(prevState.history)) :[];
                     let d = {};
                     for(k in prevState){
                         if(k != 'history'){
@@ -271,7 +271,7 @@ module.exports.action = async (req, res)=>{
                         }
                     }
                     history.push(d);
-                    updateData["history"] = history;
+                    updateData["history"] = history;*/
                     let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
                     if(uur.n){
                         return Response.OK(res,uur, 'Action updated.')
