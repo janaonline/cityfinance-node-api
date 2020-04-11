@@ -193,7 +193,9 @@ module.exports.emailVerification = async (req, res)=>{
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
-        let url = `${process.env.HOSTNAME}/password/request?token=${token}&name=${user.name}&email=${user.email}&role=${user.role}`;
+        let pageRoute = req.decoded.role == "USER" ? "login" : "password/request";
+        let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=Email verified.`
+        let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
         return res.redirect(url);
     }catch (e) {
         return res.send(`<h1>Error Occurred:</h1><p>${e.message}</p>`);

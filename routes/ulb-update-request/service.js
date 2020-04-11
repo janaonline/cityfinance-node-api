@@ -220,7 +220,8 @@ module.exports.action = async (req, res)=>{
                         let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
                         let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
                     }
-                    let history = updateData.history ? JSON.parse(JSON.stringify(updateData.history)) :[];
+                    let history = prevState.history ? JSON.parse(JSON.stringify(prevState.history)) :[];
+                    delete prevState.history;
                     history.push(prevState);
                     updateData["history"] = history;
                     let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
