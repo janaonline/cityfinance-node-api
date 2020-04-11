@@ -52,16 +52,36 @@ module.exports.create = async (req, res)=>{
     }
 }
 module.exports.get = async (req, res)=>{
-    let user = req.decoded;
-    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
+    let user = req.decoded,
+        filter= req.body.filter,
+        sort=  req.body.sort,
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 50,
+        actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
+        let query = {};
+        if(filter){
+            for(key in filter){
+                query[key] = {$regex:filter[key]};
+            }
+        }
         if(req.params._id){
             try{
-                let condition = {_id : ObjectId(req.params._id) };
+                query["_id"] = ObjectId(req.params._id);
                 if(user.role == "ULB"){
-                    condition["ulb"] = ObjectId(user.ulb);
+                    query["ulb"] = ObjectId(user.ulb);
                 }
-                let data = await UlbUpdateRequest.findOne(condition).sort({modifiedAt: -1}).lean().exec();
+                let data = await UlbUpdateRequest
+                    .findOne(query)
+                    .sort(sort?sort:{modifiedAt: -1})
+                    .populate("actionTakenBy","_id name email role")
+                    .populate({
+                        path:"history.actionTakenBy",
+                        model:User,
+                        select:"_id name email role"
+                    })
+                    .lean()
+                    .exec();
                 return Response.OK(res,data, 'Request fetched.')
             }catch (e) {
                 return Response.DbError(res,e, e.message);
@@ -79,9 +99,32 @@ module.exports.get = async (req, res)=>{
                 ulbs = [ObjectId(user.ulb)];
             }
             try{
-                let condition = ulbs ? {ulb:{$in:ulbs}} : {};
-                let data = await UlbUpdateRequest.find(condition).sort({modifiedAt: -1}).lean().exec();
-                return Response.OK(res,data, 'Request list.')
+                let total = undefined;
+                if(ulbs){
+                    query["ulb"] = {$in:ulbs};
+                }
+                if(!skip) {
+                    total = await UlbUpdateRequest.count(query);
+                }
+                let data = await UlbUpdateRequest
+                    .find(query)
+                    .sort(sort?sort:{modifiedAt: -1})
+                    .skip(skip)
+                    .limit(limit)
+                    .populate("actionTakenBy","_id name email role")
+                    .populate({
+                        path:"history.actionTakenBy",
+                        model:User,
+                        select:"_id name email role"
+                    })
+                    .lean().exec();
+                return  res.status(200).json({
+                    timestamp:moment().unix(),
+                    success:true,
+                    message:"request list",
+                    data:data,
+                    total:total
+                });
             }catch (e) {
                 return Response.DbError(res,e, e.message);
             }
@@ -221,8 +264,13 @@ module.exports.action = async (req, res)=>{
                         let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
                     }
                     let history = prevState.history ? JSON.parse(JSON.stringify(prevState.history)) :[];
-                    delete prevState.history;
-                    history.push(prevState);
+                    let d = {};
+                    for(k in prevState){
+                        if(k != 'history'){
+                            d[k] = prevState[k];
+                        }
+                    }
+                    history.push(d);
                     updateData["history"] = history;
                     let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData});
                     if(uur.n){

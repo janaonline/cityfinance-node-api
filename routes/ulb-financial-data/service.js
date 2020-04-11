@@ -40,7 +40,6 @@ module.exports.get = async (req, res)=>{
             }
         }else{
             let ulbs;
-            let total = undefined;
             if(user.role == "STATE"){
                 try{
                     let stateId = ObjectId(user.state);
@@ -54,10 +53,14 @@ module.exports.get = async (req, res)=>{
             }
             try{
                 let query = ulbs ? {ulb:{$in:ulbs}} : {};
+                let total = undefined;
                 if(filter){
                     for(key in filter){
                         query[key] = {$regex:filter[key]};
                     }
+                }
+                if(!skip) {
+                    total = await UlbFinancialData.count(query);
                 }
                 let data = await UlbFinancialData
                     .find(query)
