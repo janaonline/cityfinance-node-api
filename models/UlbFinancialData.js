@@ -30,5 +30,5 @@ const UlbFinancialDataSchema = new Schema({
     createdAt : { type: Date, default : Date.now() },
     isActive : { type  : Boolean, default : 1 }
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
-UlbFinancialDataSchema.index({ulb:1, financialYear:1},{unique:true});
+UlbFinancialDataSchema.index({ulb:1, financialYear:1,audited:1},{unique:true});
 module.exports = mongoose.model('UlbFinancialData', UlbFinancialDataSchema);
