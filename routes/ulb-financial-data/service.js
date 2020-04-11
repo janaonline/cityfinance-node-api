@@ -160,7 +160,7 @@ module.exports.completeness = async (req, res)=>{
                     return  Response.BadRequest(res,{}, message)
                 }
             }
-            let d = await UlbFinancialData.findOne({_id:_id}).lean();
+            let d = await UlbFinancialData.findOne({_id:_id},"-history").lean();
             if(!d){
                 return Response.BadRequest(res,{}, "Requested record not found.")
             }else if(d.completeness == "APPROVED"){
@@ -182,10 +182,8 @@ module.exports.completeness = async (req, res)=>{
                 prevState["completeness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
-                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState});
-                delete d.history;
-                let duu = await UlbFinancialData.update({_id:d._id},{$push:{history:d}});
-                return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
+                let duu = await UlbFinancialData.update({_id:d._id},{$set:prevState, $push:{history:d}});
+                return Response.OK(res,duu,`completeness status changed to ${prevState.completeness}`);
             }
         }catch (e) {
             return Response.DbError(res,e.message, 'Caught Database Exception')
