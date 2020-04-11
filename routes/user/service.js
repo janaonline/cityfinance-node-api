@@ -139,8 +139,8 @@ module.exports.create = async (req, res)=>{
         try{
             let newUser = new User(data);
             let ud = await newUser.validate();
-            newUser.password = Service.getRndInteger(10000,99999).toString(); // dummy password for user creation.
-            newUser.password = await Service.getHash(newUser.password);
+            let password = Service.getRndInteger(10000,99999).toString(); // dummy password for user creation.
+            newUser.password = await Service.getHash(password);
             newUser.isActive = true;
             newUser.commissionerEmail ? newUser.email = newUser.commissionerEmail:"";
             newUser.createdBy = user._id;
