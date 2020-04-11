@@ -126,6 +126,8 @@ module.exports.update = async (req, res)=>{
                 for(let key of keys){
                     if(data[key]){
                         Object.assign(prevState[key],data[key]);
+                        prevState[key]["completeness"] = "PENDING";
+                        prevState[key]["correctness"] = "PENDING";
                     }
                 }
                 prevState["completeness"] = "PENDING";
