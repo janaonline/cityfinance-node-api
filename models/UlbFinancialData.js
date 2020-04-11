@@ -9,7 +9,8 @@ const ContentSchema = new Schema({
     pdfUrl:{type:String},
     excelUrl:{type:String},
     completeness:statusType(),
-    correctness:statusType()
+    correctness:statusType(),
+    reason:{type:String, default:""}
 });
 const UlbFinancialDataSchema = new Schema({
     ulb:{ type: Schema.Types.ObjectId, ref: 'Ulb' ,required : true},
