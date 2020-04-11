@@ -5,19 +5,38 @@ const UlbLedger= require("../../models/UlbLedger");
 const LineItem= require("../../models/LineItem");
 const OverallUlb= require("../../models/OverallUlb");
 const service = require("../../service");
+const Response = require("../../service").response;
 const moment = require("moment");
+const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req,res) {
-
     let query = {};
     query["isActive"] = true;
-    if(req.params && req.params._code){
-        query["code"] = req.params._code
+    try {
+        let keys = [];
+        if(req.query.keys){
+            keys = JSON.parse(req.query.keys);
+        }
+        if(req.params && req.params._code){
+            query["code"] = req.params._code
+        }
+        for(key in req.query){
+            if(key !== "keys"){
+                if(req.query[key] && ObjectId.isValid(req.query[key])){
+                    query[key] = ObjectId(req.query[key]);
+                }else if (req.query[key]){
+                    query[key] = req.query[key];
+                }
+            }
+        }
+        try {
+            let ulbs = await Ulb.find(query,keys.join(" ")).exec();
+            Response.OK(res,ulbs,`ulb list.` )
+        }catch (e) {
+            Response.DbError(res,e,`Something went wrong.` )
+        }
+    }catch (e) {
+        return  Response.InternalError(res,e.message, `Something went wrong`);
     }
-    // Get any ulb
-    // Ulb is model name
-    service.find(query,Ulb,function(response,value){
-        return res.status(response ? 200 : 400).send(value);
-    });
 
 }
 module.exports.put = async function(req,res) {

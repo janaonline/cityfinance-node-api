@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const Ulb = require('./service')
 
-router.get('/Ulb', passport.authenticate('jwt', { session: false }), Ulb.get);
+router.get('/ulb', Ulb.get);
 router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
 router.put(
     '/Ulb/:_id',

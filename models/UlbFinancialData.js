@@ -10,7 +10,7 @@ const ContentSchema = new Schema({
     excelUrl:{type:String},
     completeness:statusType(),
     correctness:statusType(),
-    reason:{type:String, default:""}
+    message:{type:String, default:""}
 });
 const UlbFinancialDataSchema = new Schema({
     ulb:{ type: Schema.Types.ObjectId, ref: 'Ulb' ,required : true},
