@@ -125,7 +125,7 @@ module.exports.update = async (req, res)=>{
                 let prevState = JSON.parse(JSON.stringify(d));
                 for(let key of keys){
                     if(data[key]){
-                        prevState[key] = data[key];
+                        Object.assign(prevState[key],data[key]);
                     }
                 }
                 prevState["completeness"] = "PENDING";
