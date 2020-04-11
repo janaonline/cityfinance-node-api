@@ -1,5 +1,6 @@
 const Ulb = require("../../models/Ulb");
 const UlbFinancialData = require("../../models/UlbFinancialData");
+const User = require("../../models/User");
 const Response = require("../../service").response;
 const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.create = async (req, res)=>{
@@ -21,13 +22,17 @@ module.exports.create = async (req, res)=>{
     }
 }
 module.exports.get = async (req, res)=>{
-    let user = req.decoded;
-    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
+    let user = req.decoded,
+        filter= req.body.filter,
+        sort=  req.body.sort,
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 50,
+        actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
         if(req.query._id){
             try{
-                let condition = {_id : ObjectId(req.query._id) };
-                let data = await UlbFinancialData.findOne(condition).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
+                let query = {_id : ObjectId(req.query._id) };
+                let data = await UlbFinancialData.findOne(query).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
                 return Response.OK(res,data, 'Request fetched.')
             }catch (e) {
                 console.log("Exception:",e)
@@ -35,6 +40,7 @@ module.exports.get = async (req, res)=>{
             }
         }else{
             let ulbs;
+            let total = undefined;
             if(user.role == "STATE"){
                 try{
                     let stateId = ObjectId(user.state);
@@ -47,12 +53,33 @@ module.exports.get = async (req, res)=>{
                 ulbs = [ObjectId(user.ulb)];
             }
             try{
-                let condition = ulbs ? {ulb:{$in:ulbs}} : {};
-                let data = await UlbFinancialData.find(condition).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
+                let query = ulbs ? {ulb:{$in:ulbs}} : {};
+                if(filter){
+                    for(key in filter){
+                        query[key] = {$regex:filter[key]};
+                    }
+                }
+                let data = await UlbFinancialData
+                    .find(query)
+                    .sort(sort ? sort : {modifiedAt: -1})
+                    .skip(skip)
+                    .limit(limit)
+                    .populate("actionTakenBy","_id name email role")
+                    .populate({
+                        path:"history.actionTakenBy",
+                        model:User,
+                        select:"_id name email role"
+                    })
+                    .lean().exec();
                 for(s of data){
                     s["status"] = getStatus(s);
                 }
-                return Response.OK(res,data, 'Request list.')
+                return res.status(200).json({
+                    success:true,
+                    message:"data",
+                    total:total,
+                    data:data
+                })
             }catch (e) {
                 console.log("Exception:",e)
                 return Response.DbError(res,e, e.message);

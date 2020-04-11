@@ -3,6 +3,7 @@ const router = express.Router();
 const verifyToken = require('../auth/service').verifyToken;
 const ufdService = require('./service');
 router.get("/", verifyToken,ufdService.get);
+router.post("/list", verifyToken,ufdService.get);
 router.post("/",verifyToken,ufdService.create);
 router.put("/:_id",verifyToken,ufdService.update);
 router.put("/correctness/:_id", verifyToken, ufdService.correctness);

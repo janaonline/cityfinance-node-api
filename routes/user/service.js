@@ -9,7 +9,7 @@ const Service = require('../../service');
 const Response = require('../../service').response;
 const moment = require("moment");
 module.exports.get = async (req, res)=> {
-    let user = req.decoded; role = req.body.role, filter= req.body.filter, sort=  req.body.sort;
+    let user = req.decoded; role = req.body.role, filter = req.body.filter, sort=  req.body.sort;
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
     let limit = req.query.limit ? parseInt(req.query.limit) : 50;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
@@ -36,11 +36,7 @@ module.exports.get = async (req, res)=> {
             if(!skip) {
                 total = await User.count(query);
             }
-            let UserModel = User.find(query);
-                if(sort){
-                    UserModel.sort(sort);
-                }
-            let users =  await UserModel.skip(skip).limit(limit).exec();
+            let users = await User.find(query).sort(sort?sort:{modifiedAt:-1}).skip(skip).limit(limit).exec();
             return  res.status(200).json({
                 timestamp:moment().unix(),
                 success:true,
