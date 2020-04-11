@@ -122,11 +122,12 @@ module.exports.profileGet = async (req, res) =>{
             }
         }
     }
-    let select = keyObj[user.role] ? keyObj[user.role].select : "_id name email role";
+    let role = req.query.role ? req.query.role : user.role;
+    let select = keyObj[role] ? keyObj[role].select : "_id name email role";
     let _condition = {_id : _id ? ObjectId(_id) :ObjectId(user._id)};
     let uModel = User.findOne(_condition, select);
-    if(keyObj[user.role] && keyObj[user.role].populate){
-        uModel.populate(keyObj[user.role].populate);
+    if(keyObj[role] && keyObj[role].populate){
+        uModel.populate(keyObj[role].populate);
     }
     uModel.exec((err, out) => {
         if (err) {
