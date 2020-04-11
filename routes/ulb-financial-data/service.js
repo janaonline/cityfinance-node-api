@@ -118,16 +118,22 @@ module.exports.update = async (req, res)=>{
     ];
     if(actionAllowed.indexOf(user.role) > -1){
         try{
-            let d = await UlbFinancialData.findOne({_id:_id}).lean();
+            let d = await UlbFinancialData.findOne({_id:_id}, "-history").lean();
             if(!d){
                 return Response.BadRequest(res,{}, "Requested record not found.")
             }else if(d.completeness == "REJECTED" || d.correctness == "REJECTED"){
                 let prevState = JSON.parse(JSON.stringify(d));
                 for(let key of keys){
                     if(data[key]){
-                        Object.assign(prevState[key],data[key]);
-                        prevState[key]["completeness"] = "PENDING";
-                        prevState[key]["correctness"] = "PENDING";
+                        if(key == "auditReport" && prevState.audited){
+                            Object.assign(prevState[key],data[key]);
+                            prevState[key]["completeness"] = "PENDING";
+                            prevState[key]["correctness"] = "PENDING";
+                        }else if(key != "auditReport"){
+                            Object.assign(prevState[key],data[key]);
+                            prevState[key]["completeness"] = "PENDING";
+                            prevState[key]["correctness"] = "PENDING";
+                        }
                     }
                 }
                 prevState["completeness"] = "PENDING";
@@ -142,6 +148,7 @@ module.exports.update = async (req, res)=>{
                 return Response.BadRequest(res,{}, "Update not allowed.")
             }
         }catch (e) {
+            console.log(e);
             return Response.DbError(res,e.message, 'Caught Database Exception')
         }
     }else{
