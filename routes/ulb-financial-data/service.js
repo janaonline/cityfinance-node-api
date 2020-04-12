@@ -188,6 +188,7 @@ module.exports.completeness = async (req, res)=>{
                 for(let key of keys){
                     if(data[key]){
                         prevState[key].completeness = data[key].completeness;
+                        prevState[key].message = data[key].message;
                     }
                 }
                 prevState["completeness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
@@ -238,6 +239,7 @@ module.exports.correctness = async (req, res)=>{
                 for(let key of keys){
                     if(data[key]){
                         prevState[key].correctness = data[key].correctness;
+                        prevState[key].message = data[key].message;
                     }
                 }
                 prevState["correctness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
