@@ -143,5 +143,6 @@ module.exports = {
   getRndInteger:getRndInteger,
   getHash:getHash,
   compareHash:compareHash,
-  response:require('./response')
+  response:require('./response'),
+  mapFilter:require('./filter')
 };

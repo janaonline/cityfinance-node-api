@@ -16,19 +16,16 @@ module.exports.get = async (req, res)=> {
     let access = Constants.USER.LEVEL_ACCESS;
     if(!role){
         Response.BadRequest(res, req.body, 'Role is required field.');
-    }else if(actionAllowed.indexOf(user.role) < 0 || !(access[user.role] && access[user.role].indexOf(role)) ){
+    }else if(!(access[user.role] && access[user.role].indexOf(role) > -1) ){
         Response.BadRequest(res, req.body, `Action not allowed for the role:${role} by the role:${user.role}`);
     }else{
-        let query = {role:role};
-        if(filter){
-            for(key in filter){
-                query[key] = {$regex:filter[key]};
-            }
-        }
         try {
+            let query = {role:role};
+            let f = await Service.mapFilter(filter);
+            Object.assign(query, f);
             let total = undefined;
             if(user.role == "STATE"){
-                let ulbs = await Ulb.distict("_id",{state:ObjectId(user.state)}).exec();
+                let ulbs = await Ulb.distinct("_id",{state:ObjectId(user.state)}).exec();
                 if(ulbs){
                     query["ulb"] = {$in:ulbs};
                 }
@@ -208,3 +205,11 @@ module.exports.create = async (req, res)=>{
         });
     }
 }
+module.exports.delete = function (req, res) {
+    User.updateOne({_id: req.body._id}, req.body, (err, out) => {
+        if (err) {
+            res.json({success: false, msg: 'Invalid Payload', data: err.toString() });
+        }
+        res.json({success: true, msg: 'Success', data: out });
+    })
+};
