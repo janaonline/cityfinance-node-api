@@ -1,6 +1,6 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports = async (obj)=>{
-    new Promise((resolve, reject)=>{
+    return new Promise((resolve, reject)=>{
         let filter = {};
         try {
             for(key in obj){

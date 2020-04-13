@@ -25,6 +25,7 @@ module.exports.get = async (req, res)=> {
             let total = undefined;
             if(user.role == "STATE"){
                 let ulbs = await Ulb.distinct("_id",{state:ObjectId(user.state)}).exec();
+                console.log(ulbs,ObjectId(user.state))
                 if(ulbs){
                     query["ulb"] = {$in :ulbs};
                 }
@@ -65,6 +66,114 @@ module.exports.get = async (req, res)=> {
             });
         }  catch (e) {
             Response.DbError(res, e, e.message);
+        }
+    }
+};
+module.exports.getAll = async (req, res)=> {
+    let user = req.decoded,role = req.body.role, filter = req.body.filter, sort=  req.body.sort;
+    let skip = req.query.skip ? parseInt(req.query.skip) : 0;
+    let limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
+    let access = Constants.USER.LEVEL_ACCESS;
+    if(!role){
+        Response.BadRequest(res, req.body, 'Role is required field.');
+    }else if(!(access[user.role] && access[user.role].indexOf(role) > -1) ){
+        Response.BadRequest(res, req.body, `Action not allowed for the role:${role} by the role:${user.role}`);
+    }else{
+        try {
+            let query = {role:role, isDeleted: false};
+            let q = [
+                {$match:query},
+                {
+                    $lookup:{
+                        from:"ulbs",
+                        localField:"ulb",
+                        foreignField:"_id",
+                        as:"ulb"
+                    }
+                },
+                {
+                    $lookup:{
+                        from:"ulbtypes",
+                        localField:"ulbType",
+                        foreignField:"_id",
+                        as:"ulbType"
+                    }
+                },
+                {
+                    $lookup:{
+                        from:"states",
+                        localField:"ulb.state",
+                        foreignField:"_id",
+                        as:"stateUlb"
+                    }
+                },
+                {
+                    $lookup:{
+                        from:"states",
+                        localField:"state",
+                        foreignField:"_id",
+                        as:"state"
+                    }
+                },
+                {$unwind:{path:"$ulb",preserveNullAndEmptyArrays:true}},
+                {$unwind:{path:"$ulbType",preserveNullAndEmptyArrays:true}},
+                {$unwind:{path:"$state",preserveNullAndEmptyArrays:true}},
+                {$unwind:{path:"$stateUpdate",preserveNullAndEmptyArrays:true}},
+                {
+                    $project:{
+                        "_id": 1,
+                        "role": 1,
+                        "name": 1,
+                        "email": 1,
+                        "designation": 1,
+                        "organization": 1,
+                        "state": { $cond:[{$eq:["$state._id",""]},"$stateUlb._id","$state._id"]},
+                        "stateName": { $cond:[{$eq:["$state.name",""]},"$stateUlb.name","$state.name"]},
+                        "stateCode": { $cond:[{$eq:["$state.code",""]},"$stateUlb.code","$state.code"]},
+                        "ulb": "$ulb._id",
+                        "ulbName": "$ulb.name",
+                        "ulbCode":"$ulb.code",
+                        "ulbType": "$ulbType.name",
+                        "status": { $cond:[{ $ifNull:["$status",false]},"$status","NA"]},
+                        "message": 1,
+                        "modifiedAt": 1,
+                        "createdAt": 1
+                    }
+                }
+            ]
+            let newFilter = await Service.mapFilter(filter);
+            let total = undefined;
+            if(user.role == "STATE"){
+                let ulbs = await Ulb.distinct("_id",{state:ObjectId(user.state)}).exec();
+                if(ulbs){
+                    newFilter["ulb"] = {$in :ulbs};
+                }
+            }
+            if(newFilter && Object.keys(newFilter).length){
+                q.push({$match:newFilter});
+            }
+            if(Object.keys(sort).length){
+                q.push({$sort:sort});
+            }
+            q.push({$skip:skip});
+            q.push({$limit:limit});
+            if(!skip) {
+                let nQ = Object.assign({},query);
+                Object.assign(nQ,newFilter);
+                total = await User.count(nQ);
+            }
+            let users = await User.aggregate(q).exec();
+            return  res.status(200).json({
+                timestamp:moment().unix(),
+                success:true,
+                message:"User list",
+                data:users,
+                total:total
+            });
+        }  catch (e) {
+            console.log(e);
+            return Response.DbError(res, e, e.message);
         }
     }
 };

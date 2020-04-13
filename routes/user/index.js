@@ -16,6 +16,7 @@ router.post('/onboard', passport.authenticate('jwt', {session: false}), (req, re
 
 
 router.post('/', verifyToken,userService.get);
+router.post('/all', verifyToken,userService.getAll);
 router.put('/profile', verifyToken, userService.profileUpdate)
 
 //Profile

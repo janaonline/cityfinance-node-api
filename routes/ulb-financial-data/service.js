@@ -2,7 +2,9 @@ const Ulb = require("../../models/Ulb");
 const UlbFinancialData = require("../../models/UlbFinancialData");
 const User = require("../../models/User");
 const Response = require("../../service").response;
+const Service = require("../../service");
 const ObjectId = require('mongoose').Types.ObjectId;
+const moment = require('moment');
 module.exports.create = async (req, res)=>{
     let user = req.decoded;
     let data = req.body;
@@ -167,6 +169,221 @@ module.exports.get = async (req, res)=>{
         return Response.BadRequest(res,{}, 'Action not allowed.')
     }
 }
+module.exports.getAll = async (req, res)=>{
+    let user = req.decoded,
+        filter= req.body.filter,
+        sort=  req.body.sort,
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 50,
+        actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
+    if(actionAllowed.indexOf(user.role) > -1){
+        let q = [
+            {
+                $lookup:{
+                    from:"ulbs",
+                    localField:"ulb",
+                    foreignField:"_id",
+                    as : "ulb"
+                }
+            },
+            {
+                $lookup:{
+                    from:"ulbtypes",
+                    localField:"ulb.ulbType",
+                    foreignField:"_id",
+                    as : "ulbType"
+                }
+            },
+            {
+                $lookup:{
+                    from:"states",
+                    localField:"ulb.state",
+                    foreignField:"_id",
+                    as : "state"
+                }
+            },
+            {
+                $lookup:{
+                    from:"users",
+                    localField:"actionTakenBy",
+                    foreignField:"_id",
+                    as : "actionTakenBy"
+                }
+            },
+            {$unwind:"$ulb"},
+            {$unwind:"$ulbType"},
+            {$unwind:"$state"},
+            {$unwind:"$actionTakenBy"},
+            {
+                $project:{
+                    _id:1,
+                    audited:1,
+                    completeness:1,
+                    correctness:1,
+                    status:1,
+                    financialYear:1,
+                    ulbType:"$ulbType.name",
+                    ulb:"$ulb._id",
+                    ulbName:"$ulb.name",
+                    ulbCode:"$ulb.code",
+                    state:"$state._id",
+                    stateName:"$state.name",
+                    stateCode:"$state.code",
+                    actionTakenByUserName:"$actionTakenBy.name",
+                    actionTakenByUserRole:"$actionTakenBy.role"
+                }
+            }
+        ]
+        let newFilter = await Service.mapFilter(filter);
+        let total = undefined;
+        if(user.role == "STATE"){
+            newFilter["state"] = ObjectId(user.state);
+        }
+        if(user.role == "ULB"){
+            newFilter["ulb"] = ObjectId(user.ulb);
+        }
+        if(newFilter && Object.keys(newFilter).length){
+            q.push({$match:newFilter});
+        }
+        if(sort && Object.keys(sort).length){
+            q.push({$sort:sort});
+        }
+        q.push({$skip:skip});
+        q.push({$limit:limit});
+        if(!skip) {
+            let qrr = [...q,{$count:"count"}]
+            let d = await UlbFinancialData.aggregate(qrr);
+            total = d.length ? d[0].count : 0;
+        }
+        let arr = await UlbFinancialData.aggregate(q).exec();
+        return  res.status(200).json({
+            timestamp:moment().unix(),
+            success:true,
+            message:"Ulb update request list",
+            data:arr,
+            total:total
+        });
+    }else{
+        return Response.BadRequest(res,{}, 'Action not allowed.')
+    }
+}
+module.exports.getHistories = async (req, res)=>{
+    let user = req.decoded,
+        filter= req.body.filter,
+        sort=  req.body.sort,
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 50,
+        actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
+    if(actionAllowed.indexOf(user.role) > -1){
+        let q = [
+            {$match:{_id:ObjectId(req.params._id)}},
+            {$unwind:"$history"},
+            {
+                $lookup:{
+                    from:"ulbs",
+                    localField:"history.ulb",
+                    foreignField:"_id",
+                    as : "ulb"
+                }
+            },
+            {
+                $lookup:{
+                    from:"ulbtypes",
+                    localField:"ulb.ulbType",
+                    foreignField:"_id",
+                    as : "ulbType"
+                }
+            },
+            {
+                $lookup:{
+                    from:"states",
+                    localField:"ulb.state",
+                    foreignField:"_id",
+                    as : "state"
+                }
+            },
+            {
+                $lookup:{
+                    from:"users",
+                    localField:"history.actionTakenBy",
+                    foreignField:"_id",
+                    as : "actionTakenBy"
+                }
+            },
+            {$unwind:{path:"$ulb",preserveNullAndEmptyArrays: true}},
+            {$unwind:{path:"$ulbType",preserveNullAndEmptyArrays: true}},
+            {$unwind:{path:"$state",preserveNullAndEmptyArrays: true}},
+            {$unwind:{path:"$actionTakenBy",preserveNullAndEmptyArrays: true}},
+            {
+                $project:{
+                    _id:1,
+                    audited:"$history.audited",
+                    completeness:"$history.completeness",
+                    correctness:"$history.correctness",
+                    status:"$history.status",
+                    financialYear:"$history.financialYear",
+                    ulbType:"$ulbType.name",
+                    ulb:"$ulb._id",
+                    ulbName:"$ulb.name",
+                    ulbCode:"$ulb.code",
+                    state:"$state._id",
+                    stateName:"$state.name",
+                    stateCode:"$state.code",
+                    actionTakenByUserName:"$actionTakenBy.name",
+                    actionTakenByUserRole:"$actionTakenBy.role",
+                    modifiedAt:"$history.modifiedAt"
+                }
+            }
+        ]
+        let newFilter = await Service.mapFilter(filter);
+        let total = undefined;
+        if(user.role == "STATE"){
+            newFilter["state"] = ObjectId(user.state);
+        }
+        if(user.role == "ULB"){
+            newFilter["ulb"] = ObjectId(user.ulb);
+        }
+        if(newFilter && Object.keys(newFilter).length){
+            q.push({$match:newFilter});
+        }
+        if(sort && Object.keys(sort).length){
+            q.push({$sort:sort});
+        }
+        q.push({$skip:skip});
+        q.push({$limit:limit});
+        if(!skip) {
+            let qrr = [...q,{$count:"count"}]
+            let d = await UlbFinancialData.aggregate(qrr);
+            total = d.length ? d[0].count : 0;
+        }
+        let arr = await UlbFinancialData.aggregate(q).exec();
+        return  res.status(200).json({
+            timestamp:moment().unix(),
+            success:true,
+            message:"Ulb update request list",
+            data:arr,
+            total:total
+        });
+    }else{
+        return Response.BadRequest(res,{}, 'Action not allowed.')
+    }
+}
+module.exports.getDetails = async (req, res)=>{
+    let user = req.decoded,
+    actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
+    if(actionAllowed.indexOf(user.role) > -1){
+        let query = {_id:ObjectId(req.params._id)};
+        let data = await UlbFinancialData.findOne(query,"-history").exec();
+        return  res.status(200).json({
+            timestamp:moment().unix(),
+            success:true,
+            message:"Ulb update request list",
+            data:data
+        });
+    }else{
+        return Response.BadRequest(res,{}, 'Action not allowed.')
+    }
+}
 module.exports.update = async (req, res)=>{
     let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
     let actionAllowed = ['ULB'];
@@ -177,11 +394,11 @@ module.exports.update = async (req, res)=>{
     ];
     if(actionAllowed.indexOf(user.role) > -1){
         try{
-            let d = await UlbFinancialData.findOne({_id:_id}, "-history").lean();
-            if(!d){
+            let prevState = await UlbFinancialData.findOne({_id:_id}, "-history").lean();
+            let history = Object.assign({}, prevState);
+            if(!prevState){
                 return Response.BadRequest(res,{}, "Requested record not found.")
-            }else if(d.completeness == "REJECTED" || d.correctness == "REJECTED"){
-                let prevState = JSON.parse(JSON.stringify(d));
+            }else if(prevState.completeness == "REJECTED" || prevState.correctness == "REJECTED"){
                 for(let key of keys){
                     if(data[key]){
                         if(key == "auditReport" && prevState.audited){
@@ -199,9 +416,7 @@ module.exports.update = async (req, res)=>{
                 prevState["correctness"] = "PENDING";
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
-                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState});
-                delete d.history;
-                let duu = await UlbFinancialData.update({_id:d._id},{$push:{history:d}});
+                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
                 return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
             }else{
                 return Response.BadRequest(res,{}, "Update not allowed.")
@@ -230,13 +445,13 @@ module.exports.completeness = async (req, res)=>{
                     return  Response.BadRequest(res,{}, message)
                 }
             }
-            let d = await UlbFinancialData.findOne({_id:_id},"-history").lean();
-            if(!d){
+            let prevState = await UlbFinancialData.findOne({_id:_id},"-history").lean();
+            let history = Object.assign({},prevState);
+            if(!prevState){
                 return Response.BadRequest(res,{}, "Requested record not found.")
-            }else if(d.completeness == "APPROVED"){
+            }else if(prevState.completeness == "APPROVED"){
                 return Response.BadRequest(res,{}, "Already approved.")
             }else{
-                let prevState = JSON.parse(JSON.stringify(d));
                 let rejected = keys.filter(key=>{
                     return data[key] && data[key].completeness == "REJECTED";
                 })
@@ -253,8 +468,8 @@ module.exports.completeness = async (req, res)=>{
                 prevState["completeness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
-                let duu = await UlbFinancialData.update({_id:d._id},{$set:prevState, $push:{history:d}});
-                return Response.OK(res,duu,`completeness status changed to ${prevState.completeness}`);
+                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState, $push:{history:history}});
+                return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
             }
         }catch (e) {
             return Response.DbError(res,e.message, 'Caught Database Exception')
@@ -279,15 +494,15 @@ module.exports.correctness = async (req, res)=>{
                     return  Response.BadRequest(res,{}, message)
                 }
             }
-            let d = await UlbFinancialData.findOne({_id:_id}).lean();
-            if(!d){
+            let prevState = await UlbFinancialData.findOne({_id:_id}).lean();
+            let history = Object.assign({},prevState);
+            if(!prevState){
                 return Response.BadRequest(res,{}, "Requested record not found.")
-            }else if(d.completeness != "APPROVED"){
+            }else if(prevState.completeness != "APPROVED"){
                 return Response.BadRequest(res,{}, "Completeness is on allowed after correctness.")
-            }else if(d.correctness == "APPROVED"){
+            }else if(prevState.correctness == "APPROVED"){
                 return Response.BadRequest(res,{}, "Already approved.")
             }else{
-                let prevState = JSON.parse(JSON.stringify(d));
                 let rejected = keys.filter(key=>{
                     return data[key] && data[key].correctness == "REJECTED";
                 })
@@ -304,9 +519,7 @@ module.exports.correctness = async (req, res)=>{
                 prevState["correctness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
-                let du = await UlbFinancialData.update({_id:d._id},{$set:prevState});
-                delete d.history;
-                let duu = await UlbFinancialData.update({_id:d._id},{$push:{history:d}});
+                let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
                 return Response.OK(res,du,`correctness status changed to ${prevState.correctness}`);
             }
         }catch (e) {
