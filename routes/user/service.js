@@ -27,13 +27,36 @@ module.exports.get = async (req, res)=> {
             if(user.role == "STATE"){
                 let ulbs = await Ulb.distinct("_id",{state:ObjectId(user.state)}).exec();
                 if(ulbs){
-                    query["ulb"] = {$in:ulbs};
+                    query["ulb"] = {$in :ulbs};
                 }
             }
             if(!skip) {
                 total = await User.count(query);
             }
-            let users = await User.find(query).sort(sort?sort:{modifiedAt:-1}).skip(skip).limit(limit).exec();
+            let users = await User
+                .find(query)
+                .sort(sort?sort:{modifiedAt:-1})
+                .skip(skip)
+                .limit(limit)
+                .populate([
+                    {
+                        path:"ulb",
+                        select:"_id name code state",
+                        populate:{
+                            path:"state",
+                            select:"_id name code"
+                        }
+                    },
+                    {
+                        path:"state",
+                        select:"_id name code"
+                    },
+                    {
+                        path:"createdBy",
+                        select:"_id name email role"
+                    }
+                ])
+                .exec();
             return  res.status(200).json({
                 timestamp:moment().unix(),
                 success:true,

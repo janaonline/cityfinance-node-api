@@ -73,7 +73,7 @@ module.exports.get = async (req, res)=>{
                         {
                             path:"ulb",
                             select:"_id name code state",
-                            popolate:{
+                            populate:{
                                 path:"state",
                                 select:"_id name code"
                             }
@@ -92,7 +92,7 @@ module.exports.get = async (req, res)=>{
                         {
                             path:"history.ulb",
                             select:"_id name code state",
-                            popolate:{
+                            populate:{
                                 path:"state",
                                 select:"_id name code"
                             }
