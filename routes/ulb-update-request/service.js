@@ -228,12 +228,13 @@ module.exports.getById = async (req, res)=>{
     }
 }
 module.exports.action = async (req, res)=>{
+    console.log(req.params._id);
     let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
         try{
             let prevState = await UlbUpdateRequest.findOne({_id:_id},"-history");
-            let ulb = prevState ? await Ulb.find({_id:prevState.ulb},'_id name code state').populate({
+            let ulb = prevState ? await Ulb.findOne({_id:prevState.ulb},'_id name code state').populate({
                 path:"state",
                 select:"_id name code"
             }) : null;
