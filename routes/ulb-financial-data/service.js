@@ -7,6 +7,11 @@ module.exports.create = async (req, res)=>{
     let user = req.decoded;
     let data = req.body;
     if(user.role == "ULB"){
+        let ulb = await Ulb.findOne({_id:user.ulb},"_id name code").lean();
+        if(!ulb){
+            return Response.BadRequest(res,{}, `Ulb not found.`)
+        }
+        data.referenceCode = `${ulb.code}_${data.financialYear}`;
         data.ulb = user.ulb;
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbFinancialData(data);
@@ -32,7 +37,38 @@ module.exports.get = async (req, res)=>{
         if(req.query._id){
             try{
                 let query = {_id : ObjectId(req.query._id) };
-                let data = await UlbFinancialData.findOne(query).sort({modifiedAt: -1}).populate("actionTakenBy","_id name email role").lean().exec();
+                let data = await UlbFinancialData
+                    .findOne(query)
+                    .populate([
+                        {
+                            path:"ulb",
+                            select:"_id name code state",
+                            populate:{
+                                path:"state",
+                                select:"_id name code"
+                            }
+                        },
+                        {
+                            path:"actionTakenBy",
+                            select:"_id name email role"
+                        }
+                    ])
+                    .populate([
+                        {
+                            path:"history.actionTakenBy",
+                            model:User,
+                            select:"_id name email role"
+                        },
+                        {
+                            path:"history.ulb",
+                            select:"_id name code state",
+                            populate:{
+                                path:"state",
+                                select:"_id name code"
+                            }
+                        }
+                    ])
+                    .lean().exec();
                 return Response.OK(res,data, 'Request fetched.')
             }catch (e) {
                 console.log("Exception:",e)
