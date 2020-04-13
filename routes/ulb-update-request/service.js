@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 const Config = require('../../config/app_config');
 const UlbUpdateRequest = require("../../models/UlbUpdateRequest");
+const Service = require("../../service");
 const Response = require("../../service").response;
 const SendEmail = require("../../service").sendEmail;
 const moment = require("moment");
@@ -61,11 +62,8 @@ module.exports.get = async (req, res)=>{
     if(actionAllowed.indexOf(user.role) > -1){
         let query = {};
         if(filter){
-            for(key in filter){
-                if( (typeof filter[key] == "string" && filter[key]) || typeof filter[key] == "boolean"){
-                    query[key] = typeof filter[key] == "string" ? {$regex:filter[key]} : filter[key];
-                }
-            }
+            let f = await Service.mapFilter(filter);
+            Object.assign(query,f);
         }
         if(req.params._id){
             try{
