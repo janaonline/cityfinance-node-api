@@ -113,12 +113,35 @@ module.exports.get = async (req, res)=>{
                     .sort(sort?sort:{modifiedAt: -1})
                     .skip(skip)
                     .limit(limit)
-                    .populate("actionTakenBy","_id name email role")
-                    .populate({
-                        path:"history.actionTakenBy",
-                        model:User,
-                        select:"_id name email role"
-                    })
+                    .populate([
+                        {
+                            path:"ulb",
+                            select:"_id name code state",
+                            popolate:{
+                                path:"state",
+                                select:"_id name code"
+                            }
+                        },
+                        {
+                            path:"actionTakenBy",
+                            select:"_id name email role"
+                        }
+                    ])
+                    .populate([
+                        {
+                            path:"history.actionTakenBy",
+                            model:User,
+                            select:"_id name email role"
+                        },
+                        {
+                            path:"history.ulb",
+                            select:"_id name code state",
+                            popolate:{
+                                path:"state",
+                                select:"_id name code"
+                            }
+                        },
+                    ])
                     .lean().exec();
                 return  res.status(200).json({
                     timestamp:moment().unix(),
@@ -172,10 +195,16 @@ module.exports.getById = async (req, res)=>{
                         .populate({
                             path:"ulb",
                             select:ulbkeys.join(" "),
-                            populate:{
-                                path:"ulbType",
-                                select:"_id name"
-                            }
+                            populate:[
+                                {
+                                    path:"ulbType",
+                                    select:"_id name"
+                                },
+                                {
+                                    path:"state",
+                                    select: "_id name code"
+                                }
+                            ]
                         })
                         .lean()
                         .exec();
@@ -196,23 +225,35 @@ module.exports.getById = async (req, res)=>{
 }
 module.exports.action = async (req, res)=>{
     let user = req.decoded, data = req.body, _id = ObjectId(req.params._id);
-    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
+    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
         try{
+            let prevState = await UlbUpdateRequest.findOne({_id:_id},"-history");
+            let ulb = prevState ? await Ulb.find({_id:prevState.ulb},'_id name code state').populate({
+                path:"state",
+                select:"_id name code"
+            }) : null;
             if(user.role == "STATE"){
-                let ulb = await Ulb.findOne({_id:ObjectId(data.ulb)}).exec();
-                if(!(ulb && ulb.state && ulb.state.toString() == user.state)){
+                if(!(ulb && ulb.state && ulb.state._id.toString() == user.state)){
                     let message = !ulb ? 'Ulb not found.' : 'State is not matching.'
                     return  Response.BadRequest(res,{}, message);
                 }
+            }else if(user.role == "ULB"){
+                if(!(ulb && ulb._id.toString() == user.ulb)){
+                    let message = !ulb ? 'Ulb not found.' : 'Ulb is not matching.'
+                    return  Response.BadRequest(res,{}, message);
+                }else if(data.status != "CANCELLED"){
+                    return  Response.BadRequest(res,{}, `Requested status(${data.status}) is not allowed.`);
+                }
             }
             try{
-                let prevState = await UlbUpdateRequest.findOne({_id:_id},"-history");
                 let updateData = {status:data.status, modifiedAt:new Date()};
                 if(!prevState){
                     return Response.BadRequest(res,{}, 'Requested record not found.')
                 }else if(prevState.status == "APPROVED"){
                     return Response.BadRequest(res,{}, 'The record is already approved.')
+                }else if(prevState.status == "CANCELLED"){
+                    return Response.BadRequest(res,{}, 'The record is already cancelled.')
                 }else{
                     if(updateData.status == "APPROVED"){
                         updateData.isActive = false;
@@ -237,7 +278,7 @@ module.exports.action = async (req, res)=>{
                             let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
                             if(emailCheck){
                                 if(emailCheck.ulb.toString() != updateData.ulb.toString()){
-                                      return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
+                                    return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
                                 }
                             }
                             pObj["email"] = pObj["commissionerEmail"];

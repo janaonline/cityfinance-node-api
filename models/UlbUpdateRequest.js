@@ -24,7 +24,7 @@ const UlbUpdateRequestSchema = new Schema({
     accountantName:{type:String, default:null},
     accountantEmail:{type:String, default:null},
     accountantConatactNumber:{type:String, default:null},
-    status:{type:String, enum:["PENDING","APPROVED","REJECTED"], default:"PENDING"},
+    status:{type:String, enum:["PENDING","APPROVED","REJECTED","CANCELLED"], default:"PENDING"},
     actionTakenBy:{ type: Schema.Types.ObjectId, ref: 'User' ,required : true},
     history:{type:Array, default:[]},
     modifiedAt : { type: Date, default : Date.now() },

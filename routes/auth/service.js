@@ -80,11 +80,13 @@ module.exports.register = async (req, res)=>{
 module.exports.login = async (req, res)=>{
     User.findOne({email: req.body.email}, async (err, user)=>{
         if(err){
-            return res.status(400).json({success: false, msg:'Db Error'});
+            return Response.BadRequest(res, err,'Db Error');
         }else if(!user){
-            return res.status(400).json({success: false, msg:'User not found'});
+            return Response.BadRequest(res, err,'User not found');
         }else if(!user.isEmailVerified){
-            return res.status(400).json({success: false, msg:'Email not verified yet.'});
+            return Response.BadRequest(res, err,'Email not verified yet.');
+        } else if(user.isDeleted){
+            return Response.BadRequest(res, err,'User is deleted.');
         }else {
             try{
                 let isMatch = await Service.compareHash(req.body.password, user.password);
