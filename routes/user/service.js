@@ -228,7 +228,7 @@ module.exports.create = async (req, res)=>{
         });
     }
 }
-    module.exports.delete = async (req, res) =>{
+module.exports.delete = async (req, res) =>{
     let user = req.decoded; role = req.body.role, filter = req.body.filter, sort = req.body.sort;
     let access = Constants.USER.LEVEL_ACCESS;
     try {

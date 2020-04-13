@@ -13,7 +13,7 @@ module.exports.create = async (req, res)=>{
         }
         data.referenceCode = `${ulb.code}_${data.financialYear}_${data.audited ? "Audited":"Unaudited"}`;
         data.ulb = user.ulb;
-        data.actionTakenBy = user._id;
+        data.actionTakenBy = ObjectId(user._id);
         let ulbUpdateRequest = new UlbFinancialData(data);
         ulbUpdateRequest.save((err, dt)=>{
             if(err){
