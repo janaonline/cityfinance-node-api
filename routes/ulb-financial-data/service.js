@@ -69,12 +69,35 @@ module.exports.get = async (req, res)=>{
                     .sort(sort ? sort : {modifiedAt: -1})
                     .skip(skip)
                     .limit(limit)
-                    .populate("actionTakenBy","_id name email role")
-                    .populate({
-                        path:"history.actionTakenBy",
-                        model:User,
-                        select:"_id name email role"
-                    })
+                    .populate([
+                        {
+                            path:"ulb",
+                            select:"_id name code state",
+                            popolate:{
+                                path:"state",
+                                select:"_id name code"
+                            }
+                        },
+                        {
+                            path:"actionTakenBy",
+                            select:"_id name email role"
+                        }
+                    ])
+                    .populate([
+                        {
+                            path:"history.actionTakenBy",
+                            model:User,
+                            select:"_id name email role"
+                        },
+                        {
+                            path:"history.ulb",
+                            select:"_id name code state",
+                            popolate:{
+                                path:"state",
+                                select:"_id name code"
+                            }
+                        }
+                    ])
                     .lean().exec();
                 for(s of data){
                     s["status"] = getStatus(s);

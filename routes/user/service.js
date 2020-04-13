@@ -20,7 +20,7 @@ module.exports.get = async (req, res)=> {
         Response.BadRequest(res, req.body, `Action not allowed for the role:${role} by the role:${user.role}`);
     }else{
         try {
-            let query = {role:role};
+            let query = {role:role, isDeleted: false};
             let f = await Service.mapFilter(filter);
             Object.assign(query, f);
             let total = undefined;
@@ -205,7 +205,7 @@ module.exports.create = async (req, res)=>{
         });
     }
 }
-module.exports.delete = async (req, res) =>{
+    module.exports.delete = async (req, res) =>{
     let user = req.decoded; role = req.body.role, filter = req.body.filter, sort = req.body.sort;
     let access = Constants.USER.LEVEL_ACCESS;
     try {

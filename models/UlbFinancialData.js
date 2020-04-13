@@ -13,6 +13,7 @@ const ContentSchema = new Schema({
     message:{type:String, default:""}
 });
 const UlbFinancialDataSchema = new Schema({
+    referenceCode:{type:String, default:""},
     ulb:{ type: Schema.Types.ObjectId, ref: 'Ulb' ,required : true},
     financialYear:{ type: String,required : true},
     audited:{type:Boolean, default:false},

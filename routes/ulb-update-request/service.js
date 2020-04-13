@@ -174,11 +174,17 @@ module.exports.getById = async (req, res)=>{
                             },
                             {
                                 path: "ulb",
-                                select: "_id name code ulbType",
-                                populate:{
-                                    path:"ulbType",
-                                    select:"_id name"
-                                }
+                                select: "_id name code ulbType state",
+                                populate:[
+                                    {
+                                        path:"ulbType",
+                                        select:"_id name"
+                                    },
+                                    {
+                                        path:"state",
+                                        select:"_id name code"
+                                    }
+                                ]
                             },
                             {
                                 path:"ulbType",
