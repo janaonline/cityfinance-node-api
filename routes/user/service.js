@@ -3,7 +3,6 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const User = require('../../models/User');
 const Ulb = require('../../models/Ulb');
 const Config = require('../../config/app_config');
-const bcrypt = require('bcryptjs');
 const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
