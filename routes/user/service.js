@@ -130,7 +130,7 @@ module.exports.profileGet = async (req, res) =>{
             select:"role ulb name email mobile status accountantConatactNumber accountantEmail accountantName commissionerConatactNumber commissionerEmail commissionerName"
         },
         STATE:{
-            select:"role name state status",
+            select:"role name email mobile designation organization status",
             populate:{
                 path:"state",
                 select:"_id name"
@@ -138,7 +138,7 @@ module.exports.profileGet = async (req, res) =>{
         }
     }
     let role = req.query.role ? req.query.role : user.role;
-    let select = keyObj[role] ? keyObj[role].select : "_id name email role";
+    let select = keyObj[role] ? keyObj[role].select : "role name email mobile designation organization status";
     let _condition = {_id : _id ? ObjectId(_id) :ObjectId(user._id)};
     let uModel = User.findOne(_condition, select);
     if(keyObj[role] && keyObj[role].populate){
