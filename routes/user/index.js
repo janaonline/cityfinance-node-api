@@ -23,8 +23,7 @@ router.get('/profile', verifyToken, userService.profileGet);
 
 // @Create
 router.post('/create',verifyToken, userService.create);
-//Validate
-router.get('/validate', (req, res, next)=>{
-    res.send('Validate');
-});
+
+// @Delete
+router.delete('/:_id',verifyToken, userService.delete);
 module.exports = router;

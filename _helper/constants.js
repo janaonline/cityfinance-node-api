@@ -5,7 +5,7 @@ module.exports = {
         ONBOARD_AUTHORITY: 'SUPERADMIN',
         LEDGER_AUTHORITY: 'SUPERADMIN',
         LEVEL_ACCESS:{
-            ADMIN:['MoHUA','PARTNER','STATE','ULB'],
+            ADMIN:['MoHUA','PARTNER','STATE','ULB','USER'],
             MoHUA:['PARTNER','STATE','ULB'],
             PARTNER:['STATE','ULB'],
             STATE:['ULB']

@@ -205,11 +205,28 @@ module.exports.create = async (req, res)=>{
         });
     }
 }
-module.exports.delete = function (req, res) {
-    User.updateOne({_id: req.body._id}, req.body, (err, out) => {
-        if (err) {
-            res.json({success: false, msg: 'Invalid Payload', data: err.toString() });
+module.exports.delete = async (req, res) =>{
+    let user = req.decoded; role = req.body.role, filter = req.body.filter, sort = req.body.sort;
+    let access = Constants.USER.LEVEL_ACCESS;
+    try {
+        let condition = {_id:ObjectId(req.params._id)};
+        let userData = await User.findOne(condition).lean();
+        if(userData){
+            if(access[user.role].indexOf(userData.role)){
+                try {
+                    let newEmail = `${userData.email}.deleted.${moment().unix()}`;
+                    let u = await User.update(condition,{$set:{isDeleted:true,email:newEmail}});
+                    Response.OK(res, u, `deleted successfully.`);
+                }catch (e) {
+                    Response.DbError(res, e, `Something went wrong.`)
+                }
+            }else{
+                Response.BadRequest(res, req.body, `Action not allowed for the role:${userData.role} by the role:${user.role}`);
+            }
+        }else {
+            Response.BadRequest(res,{},`User not found.`)
         }
-        res.json({success: true, msg: 'Success', data: out });
-    })
+    }catch (e) {
+        Response.BadRequest(res, e,`Something went wrong.`)
+    }
 };
