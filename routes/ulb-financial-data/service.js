@@ -11,7 +11,7 @@ module.exports.create = async (req, res)=>{
         if(!ulb){
             return Response.BadRequest(res,{}, `Ulb not found.`)
         }
-        data.referenceCode = `${ulb.code}_${data.financialYear}`;
+        data.referenceCode = `${ulb.code}_${data.financialYear}_${data.audited ? "Audited":"Unaudited"}`;
         data.ulb = user.ulb;
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbFinancialData(data);
