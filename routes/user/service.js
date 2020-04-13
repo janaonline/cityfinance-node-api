@@ -229,7 +229,7 @@ module.exports.create = async (req, res)=>{
     }
 }
 module.exports.delete = async (req, res) =>{
-    let user = req.decoded; role = req.body.role, filter = req.body.filter, sort = req.body.sort;
+    let user = req.decoded;
     let access = Constants.USER.LEVEL_ACCESS;
     try {
         let condition = {_id:ObjectId(req.params._id)};
@@ -253,3 +253,28 @@ module.exports.delete = async (req, res) =>{
         Response.BadRequest(res, e,`Something went wrong.`)
     }
 };
+module.exports.ulbSignupAction = async (req, res)=> {
+    let user = req.decoded, data = req.body;
+    let access = Constants.USER.LEVEL_ACCESS;
+    try {
+        let condition = {_id:ObjectId(req.params._id)};
+        let userData = await User.findOne(condition).lean();
+        if(userData){
+            if(access[user.role].indexOf(userData.role)){
+                try {
+                    let d = {modifiedAt:new Date(),status:data.status, message:data.message};
+                    let u = await User.update(condition,{$set:d});
+                    Response.OK(res, u, `${data.status} successfully.`);
+                }catch (e) {
+                    Response.DbError(res, e, `Something went wrong.`)
+                }
+            }else{
+                Response.BadRequest(res, req.body, `Action not allowed for the role:${userData.role} by the role:${user.role}`);
+            }
+        }else {
+            Response.BadRequest(res,{},`User not found.`)
+        }
+    }catch (e) {
+        Response.BadRequest(res, e,`Something went wrong.`)
+    }
+}

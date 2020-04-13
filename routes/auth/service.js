@@ -10,6 +10,7 @@ module.exports.register = async (req, res)=>{
         let data = req.body;
         data.role = data.role ? data.role : Constants.USER.DEFAULT_ROLE;
         if(data.role == "ULB"){
+            data.status = "PENDING";
             if(data.commissionerEmail && data.ulb){
                 let user = await User.findOne({ulb:ObjectId(data.ulb), role:data.role}).lean().exec();
                 if(user){
@@ -87,6 +88,10 @@ module.exports.login = async (req, res)=>{
             return Response.BadRequest(res, err,'Email not verified yet.');
         } else if(user.isDeleted){
             return Response.BadRequest(res, err,'User is deleted.');
+        }else if(user.status == "PENDING"){
+            return Response.BadRequest(res, {},'Waiting for admin action on request.');
+        }else if(user.status == "REJECTED"){
+            return Response.BadRequest(res, {},`Your request has been rejected. Reason: ${user.message}`);
         }else {
             try{
                 let isMatch = await Service.compareHash(req.body.password, user.password);

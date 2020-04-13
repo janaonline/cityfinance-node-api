@@ -26,4 +26,6 @@ router.post('/create',verifyToken, userService.create);
 
 // @Delete
 router.delete('/:_id',verifyToken, userService.delete);
+// @Ulb SignUp action
+router.put('/ulb-status/:_id',verifyToken, userService.ulbSignupAction);
 module.exports = router;

@@ -23,11 +23,13 @@ const UserSchema = mongoose.Schema({
 	accountantName:{type:String, required:ulbRole},
 	accountantEmail:{type:String, required:ulbRole},
 	accountantConatactNumber:{type:String, required:ulbRole},
-	isActive: { type: Boolean, default: true },
-	isEmailVerified:{ type: Boolean, default: false },
 	createdBy:{ type: Schema.Types.ObjectId, ref: 'User', default:null},
 	createdAt: { type: Date, default: Date.now },
-	updatedAt: { type: Date, default: Date.now },
+	modifiedAt: { type: Date, default: Date.now },
+	status:{type:String, enum:["PENDING","APPROVED","REJECTED","NA"], default:"NA"},
+	message:{type:String, default:""},
+	isActive: { type: Boolean, default: true },
+	isEmailVerified:{ type: Boolean, default: false },
 	isDeleted: { type: Boolean, default: false }
 });
 module.exports = mongoose.model('User', UserSchema);;
