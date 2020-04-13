@@ -107,7 +107,8 @@ module.exports.login = async (req, res)=>{
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.TOKEN_EXPIRY
                     });
-                    return res.json({
+
+                    return res.status(200).json({
                         success: true,
                         token: token,
                         user: {
@@ -118,11 +119,11 @@ module.exports.login = async (req, res)=>{
                         }
                     });
                 } else {
-                    return res.status(400).json({success: false, msg: 'Invalid username or password'});
+                    return Response.BadRequest(res, {}, `Invalid username or password`);
                 }
             }catch (e) {
                 console.log("Error",e.message, e);
-                return res.status(400).json({success: false, msg: 'Erorr while comparing password.'});
+                return Response.BadRequest(res, {}, `Erorr while comparing password.`);
             }
         }
     })
@@ -134,7 +135,7 @@ module.exports.verifyToken = (req, res, next)=>{
         jwt.verify(token, Config.JWT.SECRET, function(err, decoded) {
             if (err) {
                 console.log("verify-token jwt.verify : ",err.message);
-                return res.status(401).send({ success: false, message: 'Failed to authenticate token.',err:err });
+                return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
             } else {
                 req.decoded = decoded;
                 next();
@@ -172,12 +173,12 @@ module.exports.resendVerificationLink = async (req, res)=>{
                 ` // html body
             };
             Service.sendEmail(mailOptions);
-            Response.OK(res, user, `Email verification link sent to ${user.email}.`);
+            return Response.OK(res, user, `Email verification link sent to ${user.email}.`);
         }else{
-            Response.BadRequest(res, req.body, `Email not found.`)
+            return Response.BadRequest(res, req.body, `Email not found.`)
         }
     }catch (e) {
-        Response.BadRequest(res, req.body, `Exception occurred.`)
+        return Response.BadRequest(res, req.body, `Exception occurred.`)
     }
 };
 module.exports.emailVerification = async (req, res)=>{
@@ -213,15 +214,9 @@ module.exports.forgotPassword = async (req, res)=>{
         let user = await User.findOne({email: req.body.email}).exec();
         if(user){
             if(user.isDeleted){
-                return res.status(400).json({
-                    success:false,
-                    message:`Requested email:${req.body.email} is not registered.`
-                })
+                return Response.BadRequest(res, {},`Requested email:${req.body.email} is not registered.`);
             }else if(!user.isActive){
-                return res.status(400).json({
-                    success:false,
-                    message:`Requested email:${req.body.email} is not activated.`
-                });
+                return Response.BadRequest(res, {},`Requested email:${req.body.email} is not activated.`);
             }else {
                 let newPassword = Service.getRndInteger(10000,99999).toString();
                 let passwordHash = await Service.getHash(newPassword);
@@ -250,26 +245,16 @@ module.exports.forgotPassword = async (req, res)=>{
                                 ` // html body
                     };
                     Service.sendEmail(mailOptions);
-                    return  res.status(200).json({success:true, message:`Link sent to email ${user.email}`});
+                    return Response.OK(res, {},`Link sent to email ${user.email}`);
                 }catch (e) {
-                    console.log("Exception",e);
-                    return res.status(400).json({
-                        success:false,
-                        message:`Exception: ${e.message}.`
-                    })
+                    return Response.BadRequest(res, {},`Exception: ${e.message}.`);
                 }
             }
         }else{
-            return res.status(400).json({
-                success:false,
-                message:`Requested email:${req.body.email} is not registered.`
-            })
+            return Response.BadRequest(res, {},`Requested email:${req.body.email} is not registered.`);
         }
     }catch (e) {
-        return res.status(400).json({
-            success:false,
-            message:`Exception:${e.message}`
-        })
+        return Response.BadRequest(res, {},`Exception:${e.message}`);
     }
 };
 module.exports.resetPassword = async (req, res)=>{
@@ -288,17 +273,11 @@ module.exports.resetPassword = async (req, res)=>{
                     ` // html body
             };
             Service.sendEmail(mailOptions);
-            return  res.json({success:true, msg:'User reset'})
+            return Response.OK(res, {},'Password reset');
         }else{
-            return res.status(400).json({
-                success:false,
-                message:`Password is required field.`
-            })
+            return Response.BadRequest(res, {},`Password is required field.`);
         }
     }catch (e) {
-        return res.status(400).json({
-            success:false,
-            message:`Exception:${e.message}`
-        })
+        return Response.BadRequest(res, {},`Exception:${e.message}`);
     }
 };
