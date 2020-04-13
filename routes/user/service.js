@@ -111,12 +111,12 @@ module.exports.profileGet = async (req, res) =>{
     let obj = {}; let _id = req.query._id; let user = req.decoded;
     let keyObj = {
         USER:{
-            select:"role name email mobile designation organization"
+            select:"role name email mobile designation organization status"
         },
         ULB: {
             populate:{
                 path:"ulb",
-                select:"_id name code wards area population ulbType",
+                select:"_id name code wards area population ulbType status",
                 populate:[
                     {
                         path:"state",
@@ -128,10 +128,10 @@ module.exports.profileGet = async (req, res) =>{
                     }
                 ]
             },
-            select:"role ulb name email mobile accountantConatactNumber accountantEmail accountantName commissionerConatactNumber commissionerEmail commissionerName"
+            select:"role ulb name email mobile status accountantConatactNumber accountantEmail accountantName commissionerConatactNumber commissionerEmail commissionerName"
         },
         STATE:{
-            select:"role name state",
+            select:"role name state status",
             populate:{
                 path:"state",
                 select:"_id name"
