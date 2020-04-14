@@ -3,7 +3,7 @@ const audited = function () {
     return this.audited;
 }
 const statusType = ()=>{
-    return {type:String, enum: ["PENDING","APPROVED","REJECTED"], default:"PENDING"};
+    return {type:String, enum: ["PENDING","APPROVED","REJECTED","NA"], default:"NA"};
 }
 const ContentSchema = new Schema({
     pdfUrl:{type:String},
