@@ -201,7 +201,7 @@ module.exports.emailVerification = async (req, res)=>{
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
-        let pageRoute = req.decoded.role == "USER" ? "login" : "password/request";
+        let pageRoute = req.decoded.role == "USER" && !req.decoded.forgotPassword ? "login" : "password/request";
         let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=Email verified.`
         let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
         return res.redirect(url);
@@ -230,6 +230,7 @@ module.exports.forgotPassword = async (req, res)=>{
                         }
                     }
                     data['purpose'] = 'EMAILVERFICATION';
+                    data["forgotPassword"] = true;
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
                     });

@@ -228,11 +228,11 @@ module.exports.profileUpdate =  (req, res) =>{
     }
     User.updateOne({_id:ObjectId(user._id)}, {$set:obj}, (err, out) => {
         if (err) {
-            return res.status(400).json({success: false, msg: 'Invalid Payload', data: err.toString() });
+            return Response.DbError(res, err, `Something went wrong.`)
         }else if(!out.n){
-            return res.status(200).json({success: true, msg: 'No matching key', data: out });
+            return Response.BadRequest(res, {}, `No matching key.`)
         }else{
-            return res.status(200).json({success: true, msg: 'Success', data: out });
+            return Response.OK(res, out, `Success updated.`);
         }
     });
 };
@@ -276,9 +276,9 @@ module.exports.profileGet = async (req, res) =>{
     }
     uModel.exec((err, out) => {
         if (err) {
-            res.json({success: false, msg: 'Invalid Payload', data: err.toString() });
+            return Response.DbError(res, err, `Something went wrong.`)
         }else{
-            res.json({success: true, msg: 'Success', data: out });
+            return Response.OK(res, out, `Success updated.`);
         }
     })
 };
@@ -337,24 +337,13 @@ module.exports.create = async (req, res)=>{
                 for(k in e.errors){
                     o[k] = e.errors[k].message
                 }
-                return res.status(400).json({
-                    success:false,
-                    message:"Validation error",
-                    errors:o
-                });
+                return Response.DbError(res, o, `Validation error.`)
             }else {
-                return res.status(400).json({
-                    success:false,
-                    message:"Validation error",
-                    errors:e
-                });
+                return Response.DbError(res, e, `Validation error.`)
             }
         }
     }else{
-        return res.status(400).json({
-            success:false,
-            message:`Unauthorized to create user of role:${data.role}`
-        });
+        return Response.BadRequest(res, {}, `Unauthorized to create user of role:${data.role}.`)
     }
 }
 module.exports.delete = async (req, res) =>{
