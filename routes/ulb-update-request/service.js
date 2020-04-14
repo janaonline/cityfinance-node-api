@@ -158,11 +158,12 @@ module.exports.get = async (req, res)=>{
 }
 module.exports.getAll = async (req, res)=>{
     let user = req.decoded,
-        filter= req.body.filter,
-        sort=  req.body.sort,
-        skip = req.query.skip ? parseInt(req.query.skip) : 0,
-        limit = req.query.limit ? parseInt(req.query.limit) : 50,
-        actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
+    filter = req.query.filter ? JSON.parse(req.query.filter) : req.query.body,
+    sort = req.query.sort ? JSON.parse(req.query.sort) : req.body.sort,
+    skip = req.query.skip ? parseInt(req.query.skip) : 0,
+    limit = req.query.limit ? parseInt(req.query.limit) : 50,
+    csv = req.query.csv,
+    actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
     if(actionAllowed.indexOf(user.role) > -1){
         let q = [
             {
@@ -229,21 +230,26 @@ module.exports.getAll = async (req, res)=>{
         if(Object.keys(sort).length){
             q.push({$sort:sort});
         }
-        q.push({$skip:skip});
-        q.push({$limit:limit});
-        if(!skip) {
-            let qrr = [...q,{$count:"count"}]
-            let d = await UlbUpdateRequest.aggregate(qrr);
-            total = d.length ? d[0].count : 0;
+        if(csv){
+            let arr = await UlbUpdateRequest.aggregate(q).exec();
+            return res.xls('ulb-update-request.xlsx',arr);
+        }else{
+            q.push({$skip:skip});
+            q.push({$limit:limit});
+            if(!skip) {
+                let qrr = [...q,{$count:"count"}];
+                let d = await UlbUpdateRequest.aggregate(qrr);
+                total = d.length ? d[0].count : 0;
+            }
+            let arr = await UlbUpdateRequest.aggregate(q).exec();
+            return  res.status(200).json({
+                timestamp:moment().unix(),
+                success:true,
+                message:"Ulb update request list",
+                data:arr,
+                total:total
+            });
         }
-        let arr = await UlbUpdateRequest.aggregate(q).exec();
-        return  res.status(200).json({
-            timestamp:moment().unix(),
-            success:true,
-            message:"Ulb update request list",
-            data:arr,
-            total:total
-        });
     }else{
         return Response.BadRequest(res,{}, 'Action not allowed.')
     }

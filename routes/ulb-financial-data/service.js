@@ -171,207 +171,222 @@ module.exports.get = async (req, res)=>{
     }
 }
 module.exports.getAll = async (req, res)=>{
-    let user = req.decoded,
-        filter= req.query.filter,
-        sort=  req.query.sort,
-        skip = req.query.skip ? parseInt(req.query.skip) : 0,
-        limit = req.query.limit ? parseInt(req.query.limit) : 50,
-        actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
-    if(actionAllowed.indexOf(user.role) > -1){
-        let q = [
-            {
-                $lookup:{
-                    from:"ulbs",
-                    localField:"ulb",
-                    foreignField:"_id",
-                    as : "ulb"
+    try {
+        let user = req.decoded,
+            filter = req.query.filter ? JSON.parse(req.query.filter):req.query.body,
+            sort = req.query.sort ? JSON.parse(req.query.sort):req.body.sort,
+            skip = req.query.skip ? parseInt(req.query.skip) : 0,
+            limit = req.query.limit ? parseInt(req.query.limit) : 50,
+            csv = req.query.csv,
+            actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+        if (actionAllowed.indexOf(user.role) > -1) {
+            let q = [
+                {
+                    $lookup: {
+                        from: "ulbs",
+                        localField: "ulb",
+                        foreignField: "_id",
+                        as: "ulb"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "ulbtypes",
+                        localField: "ulb.ulbType",
+                        foreignField: "_id",
+                        as: "ulbType"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "states",
+                        localField: "ulb.state",
+                        foreignField: "_id",
+                        as: "state"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "actionTakenBy",
+                        foreignField: "_id",
+                        as: "actionTakenBy"
+                    }
+                },
+                {$unwind: "$ulb"},
+                {$unwind: "$ulbType"},
+                {$unwind: "$state"},
+                {$unwind: "$actionTakenBy"},
+                {
+                    $project: {
+                        _id: 1,
+                        audited: 1,
+                        completeness: 1,
+                        correctness: 1,
+                        status: 1,
+                        financialYear: 1,
+                        ulbType: "$ulbType.name",
+                        ulb: "$ulb._id",
+                        ulbName: "$ulb.name",
+                        ulbCode: "$ulb.code",
+                        state: "$state._id",
+                        stateName: "$state.name",
+                        stateCode: "$state.code",
+                        actionTakenByUserName: "$actionTakenBy.name",
+                        actionTakenByUserRole: "$actionTakenBy.role"
+                    }
                 }
-            },
-            {
-                $lookup:{
-                    from:"ulbtypes",
-                    localField:"ulb.ulbType",
-                    foreignField:"_id",
-                    as : "ulbType"
-                }
-            },
-            {
-                $lookup:{
-                    from:"states",
-                    localField:"ulb.state",
-                    foreignField:"_id",
-                    as : "state"
-                }
-            },
-            {
-                $lookup:{
-                    from:"users",
-                    localField:"actionTakenBy",
-                    foreignField:"_id",
-                    as : "actionTakenBy"
-                }
-            },
-            {$unwind:"$ulb"},
-            {$unwind:"$ulbType"},
-            {$unwind:"$state"},
-            {$unwind:"$actionTakenBy"},
-            {
-                $project:{
-                    _id:1,
-                    audited:1,
-                    completeness:1,
-                    correctness:1,
-                    status:1,
-                    financialYear:1,
-                    ulbType:"$ulbType.name",
-                    ulb:"$ulb._id",
-                    ulbName:"$ulb.name",
-                    ulbCode:"$ulb.code",
-                    state:"$state._id",
-                    stateName:"$state.name",
-                    stateCode:"$state.code",
-                    actionTakenByUserName:"$actionTakenBy.name",
-                    actionTakenByUserRole:"$actionTakenBy.role"
-                }
+            ]
+            let newFilter = await Service.mapFilter(filter);
+            let total = undefined;
+            if (user.role == "STATE") {
+                newFilter["state"] = ObjectId(user.state);
             }
-        ]
-        let newFilter = await Service.mapFilter(filter);
-        let total = undefined;
-        if(user.role == "STATE"){
-            newFilter["state"] = ObjectId(user.state);
-        }
-        if(user.role == "ULB"){
-            newFilter["ulb"] = ObjectId(user.ulb);
-        }
-        if(newFilter && Object.keys(newFilter).length){
-            q.push({$match:newFilter});
-        }
-        if(sort && Object.keys(sort).length){
-            q.push({$sort:sort});
-        }
-        if(csv){
-            let arr = await UlbFinancialData.aggregate(q).exec();
-        }else{
-            q.push({$skip:skip});
-            q.push({$limit:limit});
-            if(!skip) {
-                let qrr = [...q,{$count:"count"}]
-                let d = await UlbFinancialData.aggregate(qrr);
-                total = d.length ? d[0].count : 0;
+            if (user.role == "ULB") {
+                newFilter["ulb"] = ObjectId(user.ulb);
             }
-            let arr = await UlbFinancialData.aggregate(q).exec();
-            return  res.status(200).json({
-                timestamp:moment().unix(),
-                success:true,
-                message:"Ulb update request list",
-                data:arr,
-                total:total
-            });
+            if (newFilter && Object.keys(newFilter).length) {
+                q.push({$match: newFilter});
+            }
+            if (sort && Object.keys(sort).length) {
+                q.push({$sort: sort});
+            }
+            if (csv) {
+                let arr = await UlbFinancialData.aggregate(q).exec();
+                return res.xls('financial-data.xlsx', arr);
+            } else {
+                q.push({$skip: skip});
+                q.push({$limit: limit});
+                if (!skip) {
+                    let qrr = [...q, {$count: "count"}]
+                    let d = await UlbFinancialData.aggregate(qrr);
+                    total = d.length ? d[0].count : 0;
+                }
+                let arr = await UlbFinancialData.aggregate(q).exec();
+                return res.status(200).json({
+                    timestamp: moment().unix(),
+                    success: true,
+                    message: "Ulb update request list",
+                    data: arr,
+                    total: total
+                });
+            }
+        } else {
+            return Response.BadRequest(res, {}, 'Action not allowed.')
         }
-
-    }else{
-        return Response.BadRequest(res,{}, 'Action not allowed.')
+    }catch (e) {
+        return Response.BadRequest(res,e,e.message);
     }
 }
 module.exports.getHistories = async (req, res)=>{
-    let user = req.decoded,
-        filter= req.body.filter,
-        sort=  req.body.sort,
+    try {
+        let user = req.decoded,
+        filter = req.query.filter ? JSON.parse(req.query.filter) : req.query.body,
+        sort = req.query.sort ? JSON.parse(req.query.sort) : req.body.sort,
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
-        actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
-    if(actionAllowed.indexOf(user.role) > -1){
-        let q = [
-            {$match:{_id:ObjectId(req.params._id)}},
-            {$unwind:"$history"},
-            {
-                $lookup:{
-                    from:"ulbs",
-                    localField:"history.ulb",
-                    foreignField:"_id",
-                    as : "ulb"
+        csv = req.query.csv,
+        actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+        if (actionAllowed.indexOf(user.role) > -1) {
+            let q = [
+                {$match: {_id: ObjectId(req.params._id)}},
+                {$unwind: "$history"},
+                {
+                    $lookup: {
+                        from: "ulbs",
+                        localField: "history.ulb",
+                        foreignField: "_id",
+                        as: "ulb"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "ulbtypes",
+                        localField: "ulb.ulbType",
+                        foreignField: "_id",
+                        as: "ulbType"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "states",
+                        localField: "ulb.state",
+                        foreignField: "_id",
+                        as: "state"
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "history.actionTakenBy",
+                        foreignField: "_id",
+                        as: "actionTakenBy"
+                    }
+                },
+                {$unwind: {path: "$ulb", preserveNullAndEmptyArrays: true}},
+                {$unwind: {path: "$ulbType", preserveNullAndEmptyArrays: true}},
+                {$unwind: {path: "$state", preserveNullAndEmptyArrays: true}},
+                {$unwind: {path: "$actionTakenBy", preserveNullAndEmptyArrays: true}},
+                {
+                    $project: {
+                        _id: 1,
+                        audited: "$history.audited",
+                        completeness: "$history.completeness",
+                        correctness: "$history.correctness",
+                        status: "$history.status",
+                        financialYear: "$history.financialYear",
+                        ulbType: "$ulbType.name",
+                        ulb: "$ulb._id",
+                        ulbName: "$ulb.name",
+                        ulbCode: "$ulb.code",
+                        state: "$state._id",
+                        stateName: "$state.name",
+                        stateCode: "$state.code",
+                        actionTakenByUserName: "$actionTakenBy.name",
+                        actionTakenByUserRole: "$actionTakenBy.role",
+                        modifiedAt: "$history.modifiedAt"
+                    }
                 }
-            },
-            {
-                $lookup:{
-                    from:"ulbtypes",
-                    localField:"ulb.ulbType",
-                    foreignField:"_id",
-                    as : "ulbType"
-                }
-            },
-            {
-                $lookup:{
-                    from:"states",
-                    localField:"ulb.state",
-                    foreignField:"_id",
-                    as : "state"
-                }
-            },
-            {
-                $lookup:{
-                    from:"users",
-                    localField:"history.actionTakenBy",
-                    foreignField:"_id",
-                    as : "actionTakenBy"
-                }
-            },
-            {$unwind:{path:"$ulb",preserveNullAndEmptyArrays: true}},
-            {$unwind:{path:"$ulbType",preserveNullAndEmptyArrays: true}},
-            {$unwind:{path:"$state",preserveNullAndEmptyArrays: true}},
-            {$unwind:{path:"$actionTakenBy",preserveNullAndEmptyArrays: true}},
-            {
-                $project:{
-                    _id:1,
-                    audited:"$history.audited",
-                    completeness:"$history.completeness",
-                    correctness:"$history.correctness",
-                    status:"$history.status",
-                    financialYear:"$history.financialYear",
-                    ulbType:"$ulbType.name",
-                    ulb:"$ulb._id",
-                    ulbName:"$ulb.name",
-                    ulbCode:"$ulb.code",
-                    state:"$state._id",
-                    stateName:"$state.name",
-                    stateCode:"$state.code",
-                    actionTakenByUserName:"$actionTakenBy.name",
-                    actionTakenByUserRole:"$actionTakenBy.role",
-                    modifiedAt:"$history.modifiedAt"
-                }
+            ]
+            let newFilter = await Service.mapFilter(filter);
+            let total = undefined;
+            if (user.role == "STATE") {
+                newFilter["state"] = ObjectId(user.state);
             }
-        ]
-        let newFilter = await Service.mapFilter(filter);
-        let total = undefined;
-        if(user.role == "STATE"){
-            newFilter["state"] = ObjectId(user.state);
+            if (user.role == "ULB") {
+                newFilter["ulb"] = ObjectId(user.ulb);
+            }
+            if (newFilter && Object.keys(newFilter).length) {
+                q.push({$match: newFilter});
+            }
+            if (sort && Object.keys(sort).length) {
+                q.push({$sort: sort});
+            }
+            if(csv){
+                let arr = await UlbFinancialData.aggregate(q).exec();
+                return res.xls('financial-data-history.xlsx', arr);
+            }else{
+                q.push({$skip: skip});
+                q.push({$limit: limit});
+                if (!skip) {
+                    let qrr = [...q, {$count: "count"}]
+                    let d = await UlbFinancialData.aggregate(qrr);
+                    total = d.length ? d[0].count : 0;
+                }
+                let arr = await UlbFinancialData.aggregate(q).exec();
+                return res.status(200).json({
+                    timestamp: moment().unix(),
+                    success: true,
+                    message: "Ulb update request list",
+                    data: arr,
+                    total: total
+                });
+            }
+        } else {
+            return Response.BadRequest(res, {}, 'Action not allowed.')
         }
-        if(user.role == "ULB"){
-            newFilter["ulb"] = ObjectId(user.ulb);
-        }
-        if(newFilter && Object.keys(newFilter).length){
-            q.push({$match:newFilter});
-        }
-        if(sort && Object.keys(sort).length){
-            q.push({$sort:sort});
-        }
-        q.push({$skip:skip});
-        q.push({$limit:limit});
-        if(!skip) {
-            let qrr = [...q,{$count:"count"}]
-            let d = await UlbFinancialData.aggregate(qrr);
-            total = d.length ? d[0].count : 0;
-        }
-        let arr = await UlbFinancialData.aggregate(q).exec();
-        return  res.status(200).json({
-            timestamp:moment().unix(),
-            success:true,
-            message:"Ulb update request list",
-            data:arr,
-            total:total
-        });
-    }else{
-        return Response.BadRequest(res,{}, 'Action not allowed.')
+    }catch (e) {
+        return Response.BadRequest(res,e,e.message);
     }
 }
 module.exports.getDetails = async (req, res)=>{

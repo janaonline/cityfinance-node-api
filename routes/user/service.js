@@ -128,6 +128,10 @@ module.exports.getAll = async (req, res)=> {
                         "email": 1,
                         "designation": 1,
                         "organization": 1,
+                        "departmentName":1,
+                        "departmentContactNumber":1,
+                        "departmentEmail":1,
+                        "address":1,
                         "state": { $cond:[{$eq:["$state._id",""]},"$stateUlb._id","$state._id"]},
                         "stateName": { $cond:[{$eq:["$state.name",""]},"$stateUlb.name","$state.name"]},
                         "stateCode": { $cond:[{$eq:["$state.code",""]},"$stateUlb.code","$state.code"]},
@@ -141,7 +145,7 @@ module.exports.getAll = async (req, res)=> {
                         "createdAt": 1
                     }
                 }
-            ]
+            ];
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
             if(user.role == "STATE"){

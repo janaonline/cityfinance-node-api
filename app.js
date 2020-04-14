@@ -9,7 +9,8 @@ const logger = require('morgan');
 const app = express();
 require("./initialization/initialize")();
 const Service = require('./service');
-
+const json2xls = require('json2xls');
+app.use(json2xls.middleware);;
 //Port Number
 const port = config.APP.PORT;
 
