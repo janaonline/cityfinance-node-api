@@ -474,14 +474,14 @@ module.exports.completeness = async (req, res)=>{
                 return Response.BadRequest(res,{}, "Already approved.")
             }else{
                 let rejected = keys.filter(key=>{
-                    return data[key] && data[key].completeness == "REJECTED";
+                    return data[key] && data[key].completeness && data[key].completeness == "REJECTED";
                 })
                 let pending = keys.filter(key=>{
-                    return data[key] && data[key].completeness == "PENDING";
+                    return data[key] && data[key].completeness && data[key].completeness == "PENDING";
                 });
                 console.log(rejected.length,pending.length);
                 for(let key of keys){
-                    if(data[key]){
+                    if(data[key] && data[key].completeness){
                         prevState[key].completeness = data[key].completeness;
                         prevState[key].message = data[key].message;
                     }
@@ -525,14 +525,14 @@ module.exports.correctness = async (req, res)=>{
                 return Response.BadRequest(res,{}, "Already approved.")
             }else{
                 let rejected = keys.filter(key=>{
-                    return data[key] && data[key].correctness == "REJECTED";
+                    return data[key] && data[key].correctness && data[key].correctness == "REJECTED";
                 })
                 let pending = keys.filter(key=>{
-                    return data[key] && data[key].correctness == "PENDING";
+                    return data[key] && data[key].correctness && data[key].correctness == "PENDING";
                 });
                 console.log(rejected.length,pending.length);
                 for(let key of keys){
-                    if(data[key]){
+                    if(data[key] && data[key].correctness){
                         prevState[key].correctness = data[key].correctness;
                         prevState[key].message = data[key].message;
                     }
