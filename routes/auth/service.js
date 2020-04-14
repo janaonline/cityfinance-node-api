@@ -48,12 +48,23 @@ module.exports.register = async (req, res)=>{
                     subject: "Registration successfull", // Subject line
                     text: 'Registration completed', // plain text body
                     html: `
-                                    <b>Hi ${user.name},</b>
-                                    <p>Registration is completed.</p>
-                                    <a href="${baseUrl}/email_verification?token=${token}">click to activate</a>
-                                ` // html body
+                        <b>Hi ${user.name},</b>
+                        <p>Registration request is sent to admin. </p>
+                        <a href="${baseUrl}/email_verification?token=${token}">click to activate</a>
+                    ` // html body
                 };
                 Service.sendEmail(mailOptions);
+                if(data.role == "ULB"){
+                    let mailOptions = {
+                        to: user.accountantEmail, // list of receivers
+                        subject: "Registration successfull", // Subject line
+                        text: 'Registration completed', // plain text body
+                        html: `
+                            <b>Hi ${user.accountantName},</b>
+                            <p>Registration request is sent to admin. </p>
+                        ` // html body
+                    };
+                }
                 return  res.json({success:true, msg:'User registered',data:user})
             }
         });
