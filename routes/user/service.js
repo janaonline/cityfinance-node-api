@@ -210,7 +210,9 @@ module.exports.profileUpdate =  (req, res) =>{
     let keyObj = {
         USER:["name","mobile", "designation", "organization"],
         ULB:["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"],
-        STATE:["name"]
+        STATE:["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"],
+        PARTNER: ["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"],
+        MoHUA:["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"]
     }
     console.log(user);
     if(Object.keys(keyObj).indexOf(user.role) < 0 ){
@@ -232,7 +234,7 @@ module.exports.profileUpdate =  (req, res) =>{
         }else{
             return res.status(200).json({success: true, msg: 'Success', data: out });
         }
-    })
+    });
 };
 module.exports.profileGet = async (req, res) =>{
     let obj = {}; let _id = req.query._id; let user = req.decoded;
