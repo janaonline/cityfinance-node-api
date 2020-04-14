@@ -13,7 +13,7 @@ module.exports.create = async (req, res)=>{
         if(!ulb){
             return Response.BadRequest(res,{}, `Ulb not found.`)
         }
-        data.referenceCode = `${ulb.code}_${data.financialYear}_${data.audited ? "Audited":"Unaudited"}`;
+        data.referenceCode = `${ulb.code}_${data.financialYear}_${ data.audited ? "Audited":"Unaudited"}`;
         data.ulb = user.ulb;
         data.actionTakenBy = ObjectId(user._id);
         let ulbUpdateRequest = new UlbFinancialData(data);
@@ -171,8 +171,8 @@ module.exports.get = async (req, res)=>{
 }
 module.exports.getAll = async (req, res)=>{
     let user = req.decoded,
-        filter= req.body.filter,
-        sort=  req.body.sort,
+        filter= req.query.filter,
+        sort=  req.query.sort,
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
         actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
@@ -248,21 +248,26 @@ module.exports.getAll = async (req, res)=>{
         if(sort && Object.keys(sort).length){
             q.push({$sort:sort});
         }
-        q.push({$skip:skip});
-        q.push({$limit:limit});
-        if(!skip) {
-            let qrr = [...q,{$count:"count"}]
-            let d = await UlbFinancialData.aggregate(qrr);
-            total = d.length ? d[0].count : 0;
+        if(csv){
+            let arr = await UlbFinancialData.aggregate(q).exec();
+        }else{
+            q.push({$skip:skip});
+            q.push({$limit:limit});
+            if(!skip) {
+                let qrr = [...q,{$count:"count"}]
+                let d = await UlbFinancialData.aggregate(qrr);
+                total = d.length ? d[0].count : 0;
+            }
+            let arr = await UlbFinancialData.aggregate(q).exec();
+            return  res.status(200).json({
+                timestamp:moment().unix(),
+                success:true,
+                message:"Ulb update request list",
+                data:arr,
+                total:total
+            });
         }
-        let arr = await UlbFinancialData.aggregate(q).exec();
-        return  res.status(200).json({
-            timestamp:moment().unix(),
-            success:true,
-            message:"Ulb update request list",
-            data:arr,
-            total:total
-        });
+
     }else{
         return Response.BadRequest(res,{}, 'Action not allowed.')
     }
@@ -494,7 +499,7 @@ module.exports.correctness = async (req, res)=>{
                     return  Response.BadRequest(res,{}, message)
                 }
             }
-            let prevState = await UlbFinancialData.findOne({_id:_id}).lean();
+            let prevState = await UlbFinancialData.findOne({_id:_id},"-history").lean();
             let history = Object.assign({},prevState);
             if(!prevState){
                 return Response.BadRequest(res,{}, "Requested record not found.")
