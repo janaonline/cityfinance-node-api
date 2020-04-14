@@ -173,12 +173,12 @@ module.exports.get = async (req, res)=>{
 module.exports.getAll = async (req, res)=>{
     try {
         let user = req.decoded,
-            filter = req.query.filter ? JSON.parse(req.query.filter):req.query.body,
-            sort = req.query.sort ? JSON.parse(req.query.sort):req.body.sort,
-            skip = req.query.skip ? parseInt(req.query.skip) : 0,
-            limit = req.query.limit ? parseInt(req.query.limit) : 50,
-            csv = req.query.csv,
-            actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+        filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+        sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 50,
+        csv = req.query.csv,
+        actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
                 {
@@ -281,8 +281,8 @@ module.exports.getAll = async (req, res)=>{
 module.exports.getHistories = async (req, res)=>{
     try {
         let user = req.decoded,
-        filter = req.query.filter ? JSON.parse(req.query.filter) : req.query.body,
-        sort = req.query.sort ? JSON.parse(req.query.sort) : req.body.sort,
+        filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+        sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
         csv = req.query.csv,

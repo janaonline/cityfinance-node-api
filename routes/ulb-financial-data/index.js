@@ -8,6 +8,7 @@ router.post("/list", verifyToken,ufdService.get);
 router.post("/all", verifyToken,ufdService.getAll);
 router.get("/all", verifyToken,ufdService.getAll);
 router.post("/history/:_id", verifyToken,ufdService.getHistories);
+router.get("/history/:_id", verifyToken,ufdService.getHistories);
 router.get("/details/:_id", verifyToken,ufdService.getDetails);
 
 router.post("/",verifyToken,ufdService.create);
