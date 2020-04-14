@@ -204,17 +204,16 @@ module.exports.update = function (req, res) {
         res.json({success: true, msg: 'Success', data: out });
     })
 };
-module.exports.profileUpdate =  (req, res) =>{
+module.exports.profileUpdate =  async (req, res) =>{
     let obj = {}; let body = req.body; let user = req.decoded;
     // ["mobile", "designation", "organization", "isActive", "isDeleted", "_id", "role", "email", "password", "name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName", "ulb", "createdAt", "updatedAt", "__v"]
     let keyObj = {
         USER:["name","mobile", "designation", "organization"],
-        ULB:["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"],
+        ULB:["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerName"],
         STATE:["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"],
         PARTNER: ["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"],
         MoHUA:["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"]
     }
-    console.log(user);
     if(Object.keys(keyObj).indexOf(user.role) < 0 ){
         return res.status(400).json({
             success:false,
@@ -226,15 +225,28 @@ module.exports.profileUpdate =  (req, res) =>{
             obj[key] = req.body[key];
         }
     }
-    User.updateOne({_id:ObjectId(user._id)}, {$set:obj}, (err, out) => {
-        if (err) {
-            return Response.DbError(res, err, `Something went wrong.`)
-        }else if(!out.n){
-            return Response.BadRequest(res, {}, `No matching key.`)
+    try{
+        let _id = req.params._id ? req.params._id: user._id;
+        let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role").lean().exec();
+        if(userInfo){
+            if(Constants.USER.LEVEL_ACCESS[user.role].indexOf(userInfo.role) > -1 || (user.role == userInfo.role && userInfo._id.toString() == user._id)){
+                 try{
+                     let out = await User.updateOne({_id:userInfo._id}, {$set:obj});
+                     return Response.OK(res, out, `Successfully updated.`);
+                 } catch (e) {
+                     console.log("Exception",e);
+                     return Response.DbError(res, e, `Something went wrong.`)
+                 }
+            }else {
+                return Response.BadRequest(res, userInfo, `Unauthorized to create user of role:${userInfo.role}.`)
+            }
         }else{
-            return Response.OK(res, out, `Success updated.`);
+            return Response.BadRequest(res, {}, `User not found.`)
         }
-    });
+    }catch (e) {
+        console.log("Exception",e);
+        return Response.DbError(res, e, `Something went wrong.`)
+    }
 };
 module.exports.profileGet = async (req, res) =>{
     let obj = {}; let _id = req.query._id; let user = req.decoded;

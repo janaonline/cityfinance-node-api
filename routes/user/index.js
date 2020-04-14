@@ -19,6 +19,7 @@ router.post('/', verifyToken,userService.get);
 router.post('/all', verifyToken,userService.getAll);
 router.get('/all', verifyToken,userService.getAll);
 router.put('/profile', verifyToken, userService.profileUpdate)
+router.put('/profile/:_id', verifyToken, userService.profileUpdate)
 
 //Profile
 router.get('/profile', verifyToken, userService.profileGet);
