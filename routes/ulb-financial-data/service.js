@@ -9,6 +9,15 @@ module.exports.create = async (req, res)=>{
     let user = req.decoded;
     let data = req.body;
     if(user.role == "ULB"){
+        for(k in data){
+            if(data[k] && typeof data[k] == 'object' && Object.keys(data[k]).length){
+                if(!(data[k].pdfUrl || data[k].excelUrl)){
+                    data[k].completeness = "NA";
+                }else{
+                    data[k].completeness = "PENDING";
+                }
+            }
+        }
         let ulb = await Ulb.findOne({_id:user.ulb},"_id name code").lean();
         if(!ulb){
             return Response.BadRequest(res,{}, `Ulb not found.`)
