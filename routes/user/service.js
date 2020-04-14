@@ -238,12 +238,13 @@ module.exports.profileGet = async (req, res) =>{
     let obj = {}; let _id = req.query._id; let user = req.decoded;
     let keyObj = {
         USER:{
-            select:"role name email mobile designation organization status"
+            select:"-password"
         },
         ULB: {
+            select:"-password",
             populate:{
                 path:"ulb",
-                select:"_id name code wards area population ulbType status",
+                select:"-password",
                 populate:[
                     {
                         path:"state",
@@ -254,11 +255,10 @@ module.exports.profileGet = async (req, res) =>{
                         select:"_id name"
                     }
                 ]
-            },
-            select:"role ulb name email mobile status accountantConatactNumber accountantEmail accountantName commissionerConatactNumber commissionerEmail commissionerName"
+            }
         },
         STATE:{
-            select:"role name email mobile designation organization status",
+            select:"-password",
             populate:{
                 path:"state",
                 select:"_id name"
@@ -266,7 +266,7 @@ module.exports.profileGet = async (req, res) =>{
         }
     }
     let role = req.query.role ? req.query.role : user.role;
-    let select = keyObj[role] ? keyObj[role].select : "role name email mobile designation organization status";
+    let select = keyObj[role] ? keyObj[role].select : "-password";
     let _condition = {_id : _id ? ObjectId(_id) :ObjectId(user._id)};
     let uModel = User.findOne(_condition, select);
     if(keyObj[role] && keyObj[role].populate){
@@ -296,7 +296,7 @@ module.exports.create = async (req, res)=>{
             newUser.save((err, user)=>{
                 if(err){
                     console.log("Err",err)
-                    return res.json({success:false, msg: err.code == 11000 ? 'Duplicate entry.':'Failed to register user'});
+                    return res.json({success:false, msg: err.code == 11000 ? 'Email     ID already exists.':'Failed to register user'});
                 }else{
                     let keys  = ["_id","email","role","name"];
                     let data = {};
