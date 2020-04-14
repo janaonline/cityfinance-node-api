@@ -13,8 +13,10 @@ module.exports.create = async (req, res)=>{
             if(data[k] && typeof data[k] == 'object' && Object.keys(data[k]).length){
                 if(!(data[k].pdfUrl || data[k].excelUrl)){
                     data[k].completeness = "NA";
+                    data[k].correctness = "NA";
                 }else{
                     data[k].completeness = "PENDING";
+                    data[k].correctness = "PENDING";
                 }
             }
         }
