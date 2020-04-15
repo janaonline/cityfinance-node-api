@@ -159,32 +159,32 @@ module.exports.getAll = async (req, res)=> {
                         newFilter["ulb"] = {$in :ulbs};
                     }
                 }
-                if(newFilter && Object.keys(newFilter).length){
-                    q.push({$match:newFilter});
-                }
-                if(csv){
-                    let arr = await User.aggregate(q).exec();
-                    return res.xls('user.xlsx',arr);
-                }else{
-                    if(Object.keys(sort).length){
-                        q.push({$sort:sort});
+                    if(newFilter && Object.keys(newFilter).length){
+                        q.push({$match:newFilter});
                     }
-                    q.push({$skip:skip});
-                    q.push({$limit:limit});
-                    if(!skip) {
-                        let nQ = Object.assign({},query);
-                        Object.assign(nQ,newFilter);
-                        total = await User.count(nQ);
+                    if(csv){
+                        let arr = await User.aggregate(q).exec();
+                        return res.xls('user.xlsx',arr);
+                    }else{
+                        if(Object.keys(sort).length){
+                            q.push({$sort:sort});
+                        }
+                        q.push({$skip:skip});
+                        q.push({$limit:limit});
+                        if(!skip) {
+                            let nQ = Object.assign({},query);
+                            Object.assign(nQ,newFilter);
+                            total = await User.count(nQ);
+                        }
+                        let users = await User.aggregate(q).exec();
+                        return  res.status(200).json({
+                            timestamp:moment().unix(),
+                            success:true,
+                            message:"User list",
+                            data:users,
+                            total:total
+                        });
                     }
-                    let users = await User.aggregate(q).exec();
-                    return  res.status(200).json({
-                        timestamp:moment().unix(),
-                        success:true,
-                        message:"User list",
-                        data:users,
-                        total:total
-                    });
-                }
 
             }  catch (e) {
                 console.log(e);
@@ -214,12 +214,12 @@ module.exports.profileUpdate =  async (req, res) =>{
         PARTNER: ["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"],
         MoHUA:["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"]
     }
-    if(Object.keys(keyObj).indexOf(user.role) < 0 ){
-        return res.status(400).json({
-            success:false,
-            message:"User role not supported."
-        });
-    }
+    // if(Object.keys(keyObj).indexOf(user.role) < 0 ){
+    //     return res.status(400).json({
+    //         success:false,
+    //         message:"User role not supported."
+    //     });
+    // }
     for(key in body){
         if(body[key] && keyObj[user.role].indexOf(key) > -1){
             obj[key] = req.body[key];
