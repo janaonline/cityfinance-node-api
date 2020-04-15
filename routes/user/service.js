@@ -220,15 +220,15 @@ module.exports.profileUpdate =  async (req, res) =>{
     //         message:"User role not supported."
     //     });
     // }
-    for(key in body){
-        if(body[key] && keyObj[user.role].indexOf(key) > -1){
-            obj[key] = req.body[key];
-        }
-    }
     try{
         let _id = req.params._id ? req.params._id: user._id;
         let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role").lean().exec();
         if(userInfo){
+            for(key in body){
+                if(body[key] && keyObj[userInfo.role].indexOf(key) > -1){
+                    obj[key] = body[key];
+                }
+            }
             if(Constants.USER.LEVEL_ACCESS[user.role].indexOf(userInfo.role) > -1 || (user.role == userInfo.role && userInfo._id.toString() == user._id)){
                  try{
                      let out = await User.updateOne({_id:userInfo._id}, {$set:obj});
