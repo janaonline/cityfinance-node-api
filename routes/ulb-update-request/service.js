@@ -11,8 +11,9 @@ const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.create = async (req, res)=>{
     let user = req.decoded;
     let data = req.body;
-    delete data.ulb;
+    let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
     if(user.role == "ULB"){
+        delete data.ulb;
         data.ulb = user.ulb;
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbUpdateRequest(data);
@@ -47,6 +48,59 @@ module.exports.create = async (req, res)=>{
                     return Response.OK(res,dt, 'Request accepted.');
                 }
             })
+        }
+    } else if(actionAllowed.indexOf(user.role) > -1){
+        let keys = [
+            "name","regionalName","code","state","ulbType","natureOfUlb","wards",
+            "area","population","location","amrut"
+        ];
+        let obj = {};
+        for(key of keys){
+            if(data[key]){
+                obj[key] = data[key];
+            }
+        }
+        let profileKeys = ["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"];
+        let pObj = {};
+        for(key of profileKeys){
+            if(data[key]){
+                pObj[key] = data[key];
+            }
+        }
+        if(pObj["commissionerEmail"]){
+            let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
+            if(emailCheck){
+                if(emailCheck.ulb.toString() != updateData.ulb.toString()){
+                    return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
+                }
+            }
+            pObj["email"] = pObj["commissionerEmail"];
+            pObj["isEmailVerified"] = false;
+            let data = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id,email,role,name").lean();
+            data['purpose'] = 'EMAILVERFICATION';
+            const token = jwt.sign(data, Config.JWT.SECRET, {
+                expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
+            });
+            let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+            let mailOptions = {
+                to: data.email, // list of receivers
+                subject: "Approved: Email change request", // Subject line
+                text: 'Approved: Email change request.', // plain text body
+                html: `
+                                    <b>Hi ${data.name},</b>
+                                    <p>Reset password.</p>
+                                    <a href="${baseUrl}/email_verification?token=${token}">click to reset password</a>
+                                ` // html body
+            };
+            SendEmail(mailOptions);
+        }
+        try{
+            let dulb = await Ulb.update({_id:ObjectId(obj.ulb)},{$set:obj});
+            let du = await User.update({ulb:ObjectId(obj.ulb), role:"ULB"},{$set:pObj});
+            return Response.OK(res, {user:dulb,du:du},`updated successfully.`)
+        }catch (e) {
+            console.log("Exception",e);
+            return Response.DbError(res,e);
         }
     }else{
         return Response.BadRequest(res,{},'This action is only allowed by ULB');
