@@ -426,6 +426,18 @@ module.exports.update = async (req, res)=>{
     ];
     if(actionAllowed.indexOf(user.role) > -1){
         try{
+            for(k in data){
+                if(data[k] && typeof data[k] == 'object' && Object.keys(data[k]).length){
+                    if(!(data[k].pdfUrl || data[k].excelUrl)){
+                        data[k].completeness = "NA";
+                        data[k].correctness = "NA";
+                    }else{
+                        data[k].completeness = "PENDING";
+                        data[k].correctness = "PENDING";
+                    }
+                }
+            }
+
             let prevState = await UlbFinancialData.findOne({_id:_id}, "-history").lean();
             let history = Object.assign({}, prevState);
             if(!prevState){
