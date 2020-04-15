@@ -2,20 +2,12 @@ const passport = require('passport');
 const express = require('express');
 const router = express.Router();
 const Ulb = require('./service')
-
+const verifyToken = require('../auth/service').verifyToken;
 router.get('/ulb', Ulb.get);
 router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
-router.put(
-    '/Ulb/:_id',
-    passport.authenticate('jwt', { session: false }),
-    Ulb.put
-);
-router.post('/Ulb', passport.authenticate('jwt', { session: false }), Ulb.post);
-router.delete(
-    '/Ulb/:_id',
-    passport.authenticate('jwt', { session: false }),
-    Ulb.delete
-);
+router.put('/ulb/:_id', verifyToken,Ulb.put);
+router.post('/Ulb', verifyToken, Ulb.post);
+router.delete('/Ulb/:_id',verifyToken,Ulb.delete);
 router.get('/ulblist', Ulb.getPopulate);
 router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 // Get ULBs by state

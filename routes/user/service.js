@@ -214,12 +214,6 @@ module.exports.profileUpdate =  async (req, res) =>{
         PARTNER: ["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"],
         MoHUA:["name", "mobile", "designation", "address", "departmentName", "departmentEmail", "departmentContactNumber"]
     }
-    // if(Object.keys(keyObj).indexOf(user.role) < 0 ){
-    //     return res.status(400).json({
-    //         success:false,
-    //         message:"User role not supported."
-    //     });
-    // }
     try{
         let _id = req.params._id ? req.params._id: user._id;
         let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role").lean().exec();

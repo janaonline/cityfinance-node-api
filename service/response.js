@@ -1,5 +1,5 @@
 const moment = require("moment");
-const BadRequest = (res,data = {},message = "",status = 400)=>{
+const BadRequest = (res,data = {},message = "Something went wrong.",status = 400)=>{
     //let res = this;
     let resData = {
         timestamp : moment().unix(),
@@ -9,7 +9,7 @@ const BadRequest = (res,data = {},message = "",status = 400)=>{
     };
     return res.status(status).json(resData);
 }
-const DbError = (res,data = {},message = "",status = 400)=>{
+const DbError = (res,data = {},message = "Something went wrong.",status = 400)=>{
     //let res = this;
     let resData = {
         timestamp : moment().unix(),
@@ -19,7 +19,7 @@ const DbError = (res,data = {},message = "",status = 400)=>{
     };
     return res.status(status).json(resData);
 }
-const InternalError = (res,data = {},message = "",status = 400)=>{
+const InternalError = (res,data = {},message = "Something went wrong.",status = 400)=>{
     //let res = this;
     let resData = {
         timestamp : moment().unix(),
@@ -29,7 +29,7 @@ const InternalError = (res,data = {},message = "",status = 400)=>{
     };
     return res.status(status).json(resData);
 }
-const OK = (res,  data = [], message = "",status = 200)=>{
+const OK = (res,  data = [], message = "Success.",status = 200)=>{
   //  let res = this;
     return res.status(status).json({
         timestamp : moment().unix(),
@@ -38,7 +38,7 @@ const OK = (res,  data = [], message = "",status = 200)=>{
         data : data
     });
 }
-const UnAuthorized = (res,data = {},message = "",status = 401)=>{
+const UnAuthorized = (res,data = {},message = "Unauthorized user",status = 401)=>{
    // let res = this;
     let resData = {
         timestamp : moment().unix(),
