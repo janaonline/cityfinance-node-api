@@ -445,14 +445,19 @@ module.exports.update = async (req, res)=>{
             }else if(prevState.completeness == "REJECTED" || prevState.correctness == "REJECTED"){
                 for(let key of keys){
                     if(data[key] && typeof data[key] == 'object' && Object.keys(data[key]).length){
-                        if(key == "auditReport" && prevState.audited){
-                            Object.assign(prevState[key],data[key]);
-                            prevState[key]["completeness"] = "PENDING";
-                            prevState[key]["correctness"] = "PENDING";
-                        }else if(key != "auditReport"){
-                            Object.assign(prevState[key],data[key]);
-                            prevState[key]["completeness"] = "PENDING";
-                            prevState[key]["correctness"] = "PENDING";
+                        if(!(data[key].pdfUrl || data[key].excelUrl)){
+                            data[key].completeness = "NA";
+                            data[key].correctness = "NA";
+                        }else{
+                            if(key == "auditReport" && prevState.audited){
+                                Object.assign(prevState[key],data[key]);
+                                prevState[key]["completeness"] = "PENDING";
+                                prevState[key]["correctness"] = "PENDING";
+                            }else if(key != "auditReport"){
+                                Object.assign(prevState[key],data[key]);
+                                prevState[key]["completeness"] = "PENDING";
+                                prevState[key]["correctness"] = "PENDING";
+                            }
                         }
                     }
                 }
