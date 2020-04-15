@@ -95,8 +95,8 @@ module.exports.create = async (req, res)=>{
             SendEmail(mailOptions);
         }
         try{
-            let dulb = await Ulb.update({_id:ObjectId(obj.ulb)},{$set:obj});
-            let du = await User.update({ulb:ObjectId(obj.ulb), role:"ULB"},{$set:pObj});
+            let dulb = await Ulb.update({_id:ObjectId(data.ulb)},{$set:obj});
+            let du = await User.update({ulb:ObjectId(data.ulb), role:"ULB"},{$set:pObj});
             return Response.OK(res, {user:dulb,du:du},`updated successfully.`)
         }catch (e) {
             console.log("Exception",e);
