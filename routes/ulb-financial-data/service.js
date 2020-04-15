@@ -446,6 +446,7 @@ module.exports.update = async (req, res)=>{
                 }
                 prevState["completeness"] = "PENDING";
                 prevState["correctness"] = "PENDING";
+                prevState["status"] = "PENDING";
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
@@ -550,7 +551,7 @@ module.exports.correctness = async (req, res)=>{
                     }
                 }
                 prevState["correctness"] = pending.length ? "PENDING" : (rejected.length ? "REJECTED" : "APPROVED");
-                prevState["status"] = prevState["correctness"] == "REJECTED" ? "REJECTED" : prevState["correctness"];
+                prevState["status"] = prevState["correctness"];
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
