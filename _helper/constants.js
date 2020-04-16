@@ -7,7 +7,7 @@ module.exports = {
         LEVEL_ACCESS:{
             ADMIN:['MoHUA','PARTNER','STATE','ULB','USER'],
             MoHUA:['PARTNER','STATE','ULB','USER'],
-            PARTNER:['STATE','ULB'],
+            PARTNER:['STATE','ULB','USER'],
             STATE:['ULB']
         }
     }, 
