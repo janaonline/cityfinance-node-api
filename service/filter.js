@@ -4,7 +4,7 @@ module.exports = async (obj)=>{
         let filter = {};
         try {
             for(key in obj){
-                if(obj[key]){
+                if(obj[key] || typeof obj[key] == "boolean"){
                     if(obj[key].length == 24 && ObjectId.isValid(obj[key])){
                         filter[key] = ObjectId(obj[key]);
                     }else if(typeof obj[key] == "boolean"){
