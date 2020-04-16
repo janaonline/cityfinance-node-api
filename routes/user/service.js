@@ -359,7 +359,7 @@ module.exports.delete = async (req, res) =>{
         let condition = {_id:ObjectId(req.params._id)};
         let userData = await User.findOne(condition).lean();
         if(userData){
-            if(access[user.role].indexOf(userData.role)){
+            if(access[user.role].indexOf(userData.role) > -1){
                 try {
                     let newEmail = `${userData.email}.deleted.${moment().unix()}`;
                     let u = await User.update(condition,{$set:{isDeleted:true,email:newEmail}});
