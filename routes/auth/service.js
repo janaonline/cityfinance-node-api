@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
+const VisitSession = require('../../models/VisitSession');
 const Config = require('../../config/app_config');
 const Constants = require('../../_helper/constants');
 const Service = require('../../service');
@@ -12,7 +13,7 @@ module.exports.register = async (req, res)=>{
         if(data.role == "ULB"){
             data.status = "PENDING";
             if(data.commissionerEmail && data.ulb){
-                let user = await User.findOne({ulb:ObjectId(data.ulb), role:data.role}).lean().exec();
+                let user = await User.findOne({ulb:ObjectId(data.ulb), role:data.role, isDeleted:false}).lean().exec();
                 if(user){
                     return Response.BadRequest(res, {data},`Already an user is registered with requested ulb.`)
                 }
@@ -255,3 +256,21 @@ module.exports.resetPassword = async (req, res)=>{
         return Response.BadRequest(res, {},`Exception:${e.message}`);
     }
 };
+module.exports.startSession = (req, res)=>{
+    let visitSession = new VisitSession();
+    visitSession.save((err, data)=>{
+        if(err){
+            return Response.DbError(res, err);
+        }else{
+            return Response.OK(res,{_id:data._id});
+        }
+    });
+}
+module.exports.endSession = async(req, res)=>{
+    try{
+        let visitSession = await VisitSession.update({_id:ObjectId(req.params._id)},{$set:{isActive:false}});
+        return Response.OK(res, visitSession);
+    }catch (e) {
+        return Response.DbError(res, e);
+    }
+}
