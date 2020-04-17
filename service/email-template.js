@@ -449,6 +449,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     mailOptionUlb.html = templateUlb.body;
                 }
                 Email(mailOptionState);
+                Email(mailOptionUlb);
                 resolve('email sent.');
             }else {
                 reject('user not found.');
