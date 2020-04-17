@@ -26,46 +26,39 @@ module.exports.register = async (req, res)=>{
         let newUser = new User(data);
         let ud = await newUser.validate();
         newUser.password = await Service.getHash(newUser.password);
-        newUser.save((err, user)=>{
+        newUser.save(async (err, user)=>{
             if(err){
                 console.log("Err",err)
                 return res.json({success:false, msg: err.code == 11000 ? 'Duplicate entry.':'Failed to register user'});
             }else{
-                let keys  = ["_id","email","role","name"];
-                let data = {};
-                for(k in user){
-                    if(keys.indexOf(k)>-1){
-                        data[k] = user[k];
-                    }
-                }
-                data['purpose'] = 'EMAILVERFICATION';
-                const token = jwt.sign(data, Config.JWT.SECRET, {
-                    expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-                });
-                let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
-                let mailOptions = {
-                    to: user.email, // list of receivers
-                    subject: "Registration successfull", // Subject line
-                    text: 'Registration completed', // plain text body
-                    html: `
-                        <b>Hi ${user.name},</b>
-                        <p>Registration request is sent to admin. </p>
-                        <a href="${baseUrl}/email_verification?token=${token}">click to activate</a>
-                    ` // html body
-                };
-                Service.sendEmail(mailOptions);
+                let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
                 if(data.role == "ULB"){
-                    let mailOptions = {
-                        to: user.accountantEmail, // list of receivers
-                        subject: "Registration successfull", // Subject line
-                        text: 'Registration completed', // plain text body
-                        html: `
-                            <b>Hi ${user.accountantName},</b>
-                            <p>Registration request is sent to admin. </p>
-                        ` // html body
+                    let template = Service.emailTemplate.ulbSignup(user.name);
+                    let mailOptionsCommisioner = {
+                        to: user.email,
+                        subject: template.subject,
+                        html: template.body
                     };
+                    Service.sendEmail(mailOptionsCommisioner);
+
+                    let templateAcountant = Service.emailTemplate.ulbSignupAccountant(user.accountantName);
+                    let mailOptionsAccountant = {
+                        to: user.accountantEmail, // list of receivers
+                        subject: templateAcountant.subject,
+                        html: templateAcountant.body
+                    };
+                    Service.sendEmail(mailOptionsAccountant);
+
+                }else{
+                    let template = Service.emailTemplate.userSignup(user.name, link);
+                    let mailOptions = {
+                        to: user.email,
+                        subject: template.subject,
+                        html: template.body
+                    };
+                    Service.sendEmail(mailOptions);
                 }
-                return  res.json({success:true, msg:'User registered',data:user})
+                return  Response.OK(res, user, `User registered`);
             }
         });
     }catch (e) {
@@ -75,17 +68,9 @@ module.exports.register = async (req, res)=>{
             for(k in e.errors){
                 o[k] = e.errors[k].message
             }
-            return res.status(400).json({
-                success:false,
-                message:"Validation error",
-                errors:o
-            });
+            return Response.DbError(res, o,"Validation error")
         }else {
-            return res.status(400).json({
-                success:false,
-                message:"Validation error",
-                errors:e
-            });
+            return Response.DbError(res, e,"Validation error")
         }
     }
 };
@@ -163,24 +148,14 @@ module.exports.resendVerificationLink = async (req, res)=>{
         let keys  = ["_id","email","role","name"];
         let user = await User.findOne({email:req.body.email}, keys.join(" ")).exec();
         if(user){
-            let data = {};
-            for(k in user){
-                if(keys.indexOf(k)>-1){
-                    data[k] = user[k];
-                }
-            }
-            data['purpose'] = 'EMAILVERFICATION';
-            const token = jwt.sign(data, Config.JWT.SECRET, {
-                expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-            });
-            let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+            let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
             let mailOptions = {
                 to: user.email, //list of receivers
                 subject: "Email Verification", //Subject line
                 html: `
                     <b>Hi ${user.name},</b>
                     <p>Please verify link.</p>
-                    <a href="${baseUrl}/email_verification?token=${token}">click to activate</a>
+                    <a href="${link}">click to activate</a>
                 ` // html body
             };
             Service.sendEmail(mailOptions);
@@ -245,16 +220,12 @@ module.exports.forgotPassword = async (req, res)=>{
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
                     });
-                    let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+                    let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
+                    let template = Service.emailTemplate.userForgotPassword(user.name,link);
                     let mailOptions = {
-                        to: user.email, // list of receivers
-                        subject: "Registration successfull", // Subject line
-                        text: 'Registration completed', // plain text body
-                        html: `
-                                    <b>Hi ${user.name},</b>
-                                    <p>Reset password.</p>
-                                    <a href="${baseUrl}/email_verification?token=${token}">click to reset password</a>
-                                ` // html body
+                        to: user.email,
+                        subject: template.subject,
+                        html:template.body
                     };
                     Service.sendEmail(mailOptions);
                     return Response.OK(res, {},`Link sent to email ${user.email}`);
@@ -276,15 +247,6 @@ module.exports.resetPassword = async (req, res)=>{
             let passwordHash = await Service.getHash(req.body.password);
             console.log("passwordHash",passwordHash);
             let du = await User.update({_id:ObjectId(user._id)},{$set:{password:passwordHash, isEmailVerified:true}});
-            let mailOptions = {
-                to: user.email, // list of receivers
-                subject: "CityFinance", // Subject line
-                text: '', // plain text body
-                html: ` <b>Hi ${user.name},</b>
-                        <p>Your password has been changed.</p>
-                    ` // html body
-            };
-            Service.sendEmail(mailOptions);
             return Response.OK(res, {},'Password reset');
         }else{
             return Response.BadRequest(res, {},`Password is required field.`);

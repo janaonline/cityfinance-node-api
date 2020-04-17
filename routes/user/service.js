@@ -216,7 +216,7 @@ module.exports.profileUpdate =  async (req, res) =>{
     }
     try{
         let _id = req.params._id ? req.params._id: user._id;
-        let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role").lean().exec();
+        let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role name").lean().exec();
         if(userInfo){
             for(key in body){
                 if(body[key] && keyObj[userInfo.role].indexOf(key) > -1){
@@ -226,6 +226,13 @@ module.exports.profileUpdate =  async (req, res) =>{
             if(Constants.USER.LEVEL_ACCESS[user.role].indexOf(userInfo.role) > -1 || (user.role == userInfo.role && userInfo._id.toString() == user._id)){
                  try{
                      let out = await User.updateOne({_id:userInfo._id}, {$set:obj});
+                     let template = Service.emailTemplate.userProfileEdit(userInfo.name);
+                     let mailOptions = {
+                         to: user.email,
+                         subject: template.subject,
+                         html: template.body
+                     };
+                     Service.sendEmail(mailOptions);
                      return Response.OK(res, out, `Successfully updated.`);
                  } catch (e) {
                      console.log("Exception",e);
@@ -301,39 +308,20 @@ module.exports.create = async (req, res)=>{
             newUser.createdBy = user._id;
             newUser.isEmailVerified = true; //@todo need to remove on production
             console.log(newUser)
-            newUser.save((err, user)=>{
+            newUser.save(async (err, user)=>{
                 if(err){
                     console.log("Err",err)
-                    return res.json({success:false, msg: err.code == 11000 ? 'Email     ID already exists.':'Failed to register user'});
+                    return Response.DbError(res, {},err.code == 11000 ? 'Email     ID already exists.':'Failed to register user.')
                 }else{
-                    let keys  = ["_id","email","role","name"];
-                    let data = {};
-                    for(k in user){
-                        if(keys.indexOf(k)>-1){
-                            data[k] = user[k];
-                        }
-                    }
-                    data['purpose'] = 'EMAILVERFICATION';
-                    const token = jwt.sign(data, Config.JWT.SECRET, {
-                        expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-                    });
-                    let baseUrl = process.env.HOSTNAME; //req.protocol+"://"+req.headers.host+"/api/v1";
+                    let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
+                    let template = Service.emailTemplate.userSignup(user.name,link);
                     let mailOptions = {
-                        to: user.email, // list of receivers
-                        subject: "Registration successfull", // Subject line
-                        text: 'Registration completed', // plain text body
-                        html: `
-                                    <b>Hi ${user.name},</b>
-                                    <p>Registration is completed.</p>
-                                    <p>
-                                        Credentials: <br>
-                                        email:${user.email}
-                                    </p>
-                                    <a href="${baseUrl}/password/request?token=${token}">click to reset password.</a>
-                                ` // html body
+                        to: user.email,
+                        subject: template.subject,
+                        html:template.body
                     };
                     Service.sendEmail(mailOptions);
-                    return  res.json({success:true, msg:'User registered',data:user})
+                    return Response.OK(res, user, 'User registered')
                 }
             });
         }catch (e) {
@@ -382,12 +370,14 @@ module.exports.ulbSignupAction = async (req, res)=> {
     let access = Constants.USER.LEVEL_ACCESS;
     try {
         let condition = {_id:ObjectId(req.params._id)};
-        let userData = await User.findOne(condition).lean();
+        let userData = await User.findOne(condition).populate("ulb","state").lean();
         if(userData){
             if(access[user.role].indexOf(userData.role)){
                 try {
                     let d = {modifiedAt:new Date(),status:data.status, message:data.message};
                     let u = await User.update(condition,{$set:d});
+                    let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
+                    let email = await sendUlbSignupStatusEmmail(userData._id, link);
                     Response.OK(res, u, `${data.status} successfully.`);
                 }catch (e) {
                     Response.DbError(res, e, `Something went wrong.`)

@@ -29,10 +29,11 @@ module.exports.create = async (req, res)=>{
         data.ulb = user.ulb;
         data.actionTakenBy = ObjectId(user._id);
         let ulbUpdateRequest = new UlbFinancialData(data);
-        ulbUpdateRequest.save((err, dt)=>{
+        ulbUpdateRequest.save(async (err, dt)=>{
             if(err){
                 return Response.DbError(res,err, err.code == 11000 ? 'Duplicate entry.':'Failed to create entry');
             }else {
+                let email = await Service.emailTemplate.sendFinancialDataStatusEmail(dt._id,"UPLOAD");
                 return Response.OK(res,dt, 'Request accepted.');
             }
         })
@@ -520,6 +521,9 @@ module.exports.completeness = async (req, res)=>{
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState, $push:{history:history}});
+                if(prevState.status == "REJECTED" || prevState.status == "APPROVED"){
+                    let email = await Service.emailTemplate.sendFinancialDataStatusEmail(prevState._id,"ACTION");
+                }
                 return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
             }
         }catch (e) {
@@ -572,6 +576,9 @@ module.exports.correctness = async (req, res)=>{
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
+                if(prevState.status == "REJECTED" || prevState.status == "APPROVED"){
+                    let email = await Service.emailTemplate.sendFinancialDataStatusEmail(prevState._id,"ACTION");
+                }
                 return Response.OK(res,du,`correctness status changed to ${prevState.correctness}`);
             }
         }catch (e) {

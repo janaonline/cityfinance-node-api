@@ -144,5 +144,7 @@ module.exports = {
   getHash:getHash,
   compareHash:compareHash,
   response:require('./response'),
-  mapFilter:require('./filter')
+  mapFilter:require('./filter'),
+  emailTemplate:require('./email-template'),
+  emailVerificationLink:require('./email-verification-link')
 };

@@ -10,7 +10,7 @@ module.exports = {
             PARTNER:['STATE','ULB','USER'],
             STATE:['ULB']
         }
-    }, 
+    },
     BUDGET: {
         YEAR: ['2015-16', '2016-17', '2017-18']
     },
