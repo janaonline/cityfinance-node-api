@@ -411,7 +411,7 @@ module.exports.ulbSignupAction = async (req, res)=> {
                 try {
                     let d = {modifiedAt:new Date(),status:data.status, message:data.message};
                     let u = await User.update(condition,{$set:d});
-                    let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
+                    let link  =  await Service.emailVerificationLink(userData._id,req.currentUrl);
                     let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(userData._id, link);
                     Response.OK(res, u, `${data.status} successfully.`);
                 }catch (e) {

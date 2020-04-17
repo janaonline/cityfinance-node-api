@@ -77,16 +77,13 @@ module.exports.create = async (req, res)=>{
                 }
                 pObj["email"] = pObj["commissionerEmail"];
                 pObj["isEmailVerified"] = false;
-                let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id,email,role,name").lean();
-                userData['purpose'] = 'EMAILVERFICATION';
-                const token = jwt.sign(userData, Config.JWT.SECRET, {
-                    expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-                });
-                let template = await Service.emailTemplate.userProfileEdit(userData.name);
+                let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
+                let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
+                let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
                 let mailOptions = {
                     to: userData.email, // list of receivers
                     subject: template.subject,
-                    html: template.body
+                    html:template.body
                 };
                 SendEmail(mailOptions);
             }
@@ -456,26 +453,16 @@ module.exports.action = async (req, res)=>{
                             }
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
-                            let data = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id,email,role,name").lean();
-                            data['purpose'] = 'EMAILVERFICATION';
-                            const token = jwt.sign(data, Config.JWT.SECRET, {
-                                expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-                            });
-                            let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+                            let userData = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id email role name").lean();
+                            let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
+                            let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
                             let mailOptions = {
-                                to: data.email, // list of receivers
-                                subject: "Approved: Email change request", // Subject line
-                                text: 'Approved: Email change request.', // plain text body
-                                html: `
-                                    <b>Hi ${data.name},</b>
-                                    <p>Reset password.</p>
-                                    <a href="${baseUrl}/email_verification?token=${token}">click to reset password</a>
-                                ` // html body
+                                to: userData.email, // list of receivers
+                                subject: template.subject,
+                                html:template.body
                             };
                             SendEmail(mailOptions);
                         }
-
-                        console.log({_id:prevState.ulb},obj)
                         let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
                         let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
                     }

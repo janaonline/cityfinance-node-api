@@ -439,11 +439,11 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     subject:'',
                     html:''
                 }
-                if(user.status == "APPROVED"){
+                if(data.status == "APPROVED"){
                     let templateUlb = ulbSignupApproval(data.name, link);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
-                }else if(user.status == "REJECTED"){
+                }else if(data.status == "REJECTED"){
                     let templateUlb = ulbSignupRejection(data.name, data.message);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;

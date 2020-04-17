@@ -177,6 +177,7 @@ module.exports.emailVerification = async (req, res)=>{
         }
         let keys  = ["_id","email","role","name",'ulb','state'];
         let query = {_id:ObjectId(req.decoded._id)};
+        console.log(query);
         let user = await User.findOne(query,keys.join(" ")).exec();
         let du = await User.update(query,{$set:ud});
         let data = {};
