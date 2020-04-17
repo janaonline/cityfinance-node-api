@@ -430,7 +430,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
                 data.stateUser.departmentEmail ? stateEmails.push(data.stateUser.departmentEmail) : '';
                 let mailOptionUlb = {
-                    to:ulbEmails.join(),
+                    to:data.commissionerEmail,
                     subject:'',
                     html:''
                 }
