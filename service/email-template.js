@@ -250,7 +250,8 @@ module.exports = {
                     <p>Welcome to City Finance Portal!</p> 
                     <p>
                         Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.
-                        
+                    </p>
+                    <p>    
                         After activation, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
                     Regards,
@@ -264,6 +265,8 @@ module.exports = {
                     <p>Welcome to City Finance Portal!</p> 
                     <p>
                         Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                    </p>
+                    <p>
                         After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
                     Regards,
@@ -321,6 +324,8 @@ module.exports = {
             body:`Dear ${name},<br>
                     <p>
                         Your signup request has been successfully approved. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                    </p>
+                    <p>
                         After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
                 Regards,
@@ -333,9 +338,11 @@ module.exports = {
             body:`Dear ${name},<br>
                     <p>
                         Your signup request has been rejected because of the following reason.
-
+                    </p>
+                    <p>
                         Rejection Reason - ${reason}
-                        
+                    </p>
+                    <p>    
                         Please fill the signup form again to register for City Finance Portal.
                     </p>
                 Regards,
@@ -345,14 +352,18 @@ module.exports = {
     fdUploadUlb:(name,refCode,fy,audited)=>{
         return {
             subject:`Data Upload Form Successfully Submitted`,
-            body:`Dear ${name},<br>
+            body:`Dear ${name},<br xmlns="http://www.w3.org/1999/html">
                     <p>
                         Your data upload form has been successfully submitted with the following details.
+                    </p>
+                    <p>
                         
-                        Reference Number - ${refCode}
-                        Year - ${fy}
-                        Audit Status - ${audited ? "Audited" : "Unaudited"}
-                        
+                        Reference Number - ${refCode} </br>
+                        Year - ${fy}</br>
+                        Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                    </p>
+                    <p>
+                       
                         You will receive a confirmation for data upload on admin approval.
                     </p>
                 Regards,
@@ -365,11 +376,13 @@ module.exports = {
             body:`Dear ${name},<br>
                     <p>
                         The data for the ${ulbName} has been successfully submitted with the following details.
-
-                        Reference Number - ${refCode}
-                        Year - ${fy}
-                        Audit Status - ${audited ? "Audited" : "Unaudited"}
-                        
+                    </p>
+                    <p>
+                        Reference Number - ${refCode}</br>
+                        Year - ${fy}</br>
+                        Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                    </p>
+                    <p>    
                         You will receive a confirmation for data upload on admin approval.
                     </p>
                 Regards,
@@ -382,10 +395,11 @@ module.exports = {
             body:`Dear ${name},<br>
                     <p>
                         Your data upload form has been approved by admin and data has been successfully uploaded on the City Finance Portal with the following details.
-
-                        Reference Number - ${refCode}
-                        Year - ${fy}
-                        Audit Status - ${audited ? "Audited" : "Unaudited"}
+                    </p>
+                    <p>
+                        Reference Number - ${refCode}</br>
+                        Year - ${fy}</br>
+                        Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
                     </p>
                 Regards,
                 City Finance Team`
@@ -397,10 +411,11 @@ module.exports = {
             body:`Dear ${name},<br>
                     <p>
                         The data upload form for the ${ulbName} has been approved by admin and data has been successfully uploaded on the City Finance Portal with the following details.
-                        
-                        Reference Number - ${refCode}
-                        Year - ${fy}
-                        Audit Status - ${audited ? "Audited" : "Unaudited"}
+                    </p>
+                    <p>
+                        Reference Number - ${refCode}</br>
+                        Year - ${fy}</br>
+                        Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
                     </p>
                 Regards,
                 City Finance Team`
@@ -412,11 +427,12 @@ module.exports = {
             body:`Dear ${name},<br>
                     <p>
                         Your data upload form has been approved by admin and data has been successfully uploaded on the City Finance Portal with the following details.
-
-                        Reference Number - ${refCode}
-                        Year - ${fy}
-                        Audit Status - ${audited ? "Audited" : "Unaudited"}
-                        Rejected Reports:   
+                    </p>
+                    <p>
+                        Reference Number - ${refCode}</br>
+                        Year - ${fy}</br>
+                        Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                        Rejected Reports:   </br>
                         ${reports}
                         Please login to City Finance Portal to submit the corrected form.
                     </p>
@@ -430,11 +446,12 @@ module.exports = {
             body:`Dear ${name},<br>
                     <p>
                         The data upload form for the ${ulbName} has been rejected by the admin with the following details.
-
-                        Reference Number - ${refCode}
-                        Year - ${fy}
-                        Audit Status - ${audited ? "Audited" : "Unaudited"}
-                        Rejected Reports:   
+                    </p>
+                    <p>
+                        Reference Number - ${refCode}</br>
+                        Year - ${fy}</br>
+                        Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                        Rejected Reports:   </br>
                         ${reports}
                     </p>
                 Regards,

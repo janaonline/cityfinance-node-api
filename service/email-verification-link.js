@@ -7,7 +7,7 @@ module.exports = (_id, currentUrl)=>{
         try {
             let user  = await User.findOne({_id:_id},select).lean();
             user['purpose'] = 'EMAILVERFICATION';
-            const token = jwt.sign(data, Config.JWT.SECRET, {
+            const token = jwt.sign(user, Config.JWT.SECRET, {
                 expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
             });
             let link  =  `${currentUrl}/email_verification?token=${token}`;
