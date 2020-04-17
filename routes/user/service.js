@@ -178,6 +178,11 @@ module.exports.getAll = async (req, res)=> {
                                 departmentName:"Department"
                             })
                         }
+                        if(["STATE"].indexOf(role) > -1){
+                            Object.assign(field,{
+                                stateName:"State"
+                            })
+                        }
                         if(["ULB"].indexOf(role) > -1){
                             field = {
                                 stateName:"State",
