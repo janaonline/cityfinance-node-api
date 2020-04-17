@@ -71,7 +71,7 @@ module.exports.create = async (req, res)=>{
             if(pObj["commissionerEmail"]){
                 let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
                 if(emailCheck){
-                    if(emailCheck.ulb.toString() != updateData.ulb.toString()){
+                    if(emailCheck.ulb.toString() != data.ulb.toString()){
                         return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
                     }
                 }
@@ -82,16 +82,11 @@ module.exports.create = async (req, res)=>{
                 const token = jwt.sign(userData, Config.JWT.SECRET, {
                     expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
                 });
-                let baseUrl  =  req.protocol+"://"+req.headers.host+"/api/v1";
+                let template = await Service.emailTemplate.userProfileEdit(userData.name);
                 let mailOptions = {
                     to: userData.email, // list of receivers
-                    subject: "Approved: Email change request", // Subject line
-                    text: 'Approved: Email change request.', // plain text body
-                    html: `
-                                    <b>Hi ${userData.name},</b>
-                                    <p>Reset password.</p>
-                                    <a href="${baseUrl}/email_verification?token=${token}">click to reset password</a>
-                                ` // html body
+                    subject: template.subject,
+                    html: template.body
                 };
                 SendEmail(mailOptions);
             }
