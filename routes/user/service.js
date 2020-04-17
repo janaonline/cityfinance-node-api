@@ -258,7 +258,7 @@ module.exports.profileUpdate =  async (req, res) =>{
                     obj[key] = body[key];
                 }
             }
-            if(Constants.USER.LEVEL_ACCESS[user.role].indexOf(userInfo.role) > -1 || (user.role == userInfo.role && userInfo._id.toString() == user._id)){
+            if( (Constants.USER.LEVEL_ACCESS[user.role] && Constants.USER.LEVEL_ACCESS[user.role].indexOf(userInfo.role) > -1) || (user.role == userInfo.role && userInfo._id.toString() == user._id)){
                  try{
                      let out = await User.updateOne({_id:userInfo._id}, {$set:obj});
                      let template = Service.emailTemplate.userProfileEdit(userInfo.name);
