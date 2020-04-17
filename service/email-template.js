@@ -77,12 +77,12 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     City Finance Team`
             }
         }
-    const ulbSignupApproval = (name, link)=>{
+    const ulbSignupApproval = (name, link, edit=false)=>{
             return {
                 subject:`Signup Request Successfully Approved`,
                 body:`Dear ${name},<br>
                         <p>
-                            Your signup request has been successfully approved. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                            Your signup request has been successfully ${edit?"updated":"approved"}. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
                         </p>
                         <p>
                             After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
@@ -365,7 +365,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
         }
     });
     }
-    const sendUlbSignupStatusEmmail =(_id, link)=>{
+    const sendUlbSignupStatusEmmail =(_id, link, edit=false)=>{
         return new Promise(async (resolve, reject)=>{
         try{
             let query = [
@@ -423,24 +423,13 @@ const ObjectId = require('mongoose').Types.ObjectId;
             let user = await User.aggregate(query).exec();
             let data = user && user.length ? user[0] : null;
             if(data){
-                let ulbEmails = [];
-                data.commissionerEmail ? ulbEmails.push(data.commissionerEmail) : '';
-                data.accountantEmail ? ulbEmails.push(data.accountantEmail) : '';
-                let stateEmails = [];
-                data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
-                data.stateUser.departmentEmail ? stateEmails.push(data.stateUser.departmentEmail) : '';
                 let mailOptionUlb = {
                     to:data.commissionerEmail,
                     subject:'',
                     html:''
                 }
-                let mailOptionState = {
-                    to:stateEmails.join(),
-                    subject:'',
-                    html:''
-                }
                 if(data.status == "APPROVED"){
-                    let templateUlb = ulbSignupApproval(data.name, link);
+                    let templateUlb = ulbSignupApproval(data.name, link, edit);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 }else if(data.status == "REJECTED"){
@@ -448,7 +437,6 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 }
-                //Email(mailOptionState);
                 Email(mailOptionUlb);
                 resolve('email sent.');
             }else {

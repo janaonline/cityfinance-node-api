@@ -79,7 +79,7 @@ module.exports.create = async (req, res)=>{
                 pObj["isEmailVerified"] = false;
                 let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
-                let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
+                let template = Service.emailTemplate.ulbSignupApproval(userData.name,link,true);
                 let mailOptions = {
                     to: userData.email, // list of receivers
                     subject: template.subject,
