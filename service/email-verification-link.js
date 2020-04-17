@@ -10,7 +10,7 @@ module.exports = (_id, currentUrl)=>{
             const token = jwt.sign(user, Config.JWT.SECRET, {
                 expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
             });
-            let link  =  `${currentUrl}/email_verification?token=${token}`;
+            let link  =  `${currentUrl}/api/v1/email_verification?token=${token}`;
             resolve(link)
         }catch (e) {
             reject(e);
