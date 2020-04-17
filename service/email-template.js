@@ -254,7 +254,7 @@ module.exports = {
                     <p>    
                         After activation, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
-                    Regards,
+                    Regards,<br>
                     City Finance Team`
             }
     },
@@ -269,7 +269,7 @@ module.exports = {
                     <p>
                         After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
-                    Regards,
+                    Regards,<br>
                     City Finance Team`
         }
     },
@@ -281,7 +281,7 @@ module.exports = {
                     <p>
                         After resetting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
-                    Regards,
+                    Regards,<br>
                     City Finance Team`
         }
     },
@@ -292,7 +292,7 @@ module.exports = {
                     <p>
                         Your account has been successfully updated. Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -303,7 +303,7 @@ module.exports = {
                     <p>
                         Your signup request has been successfully submitted. You will receive a confirmation for signup on admin approval.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -314,7 +314,7 @@ module.exports = {
                     <p>
                         Your signup request has been successfully submitted. You will receive a confirmation for signup on admin approval.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -328,7 +328,7 @@ module.exports = {
                     <p>
                         After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -345,7 +345,7 @@ module.exports = {
                     <p>    
                         Please fill the signup form again to register for City Finance Portal.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -366,7 +366,7 @@ module.exports = {
                        
                         You will receive a confirmation for data upload on admin approval.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -385,7 +385,7 @@ module.exports = {
                     <p>    
                         You will receive a confirmation for data upload on admin approval.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -401,7 +401,7 @@ module.exports = {
                         Year - ${fy}</br>
                         Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -417,7 +417,7 @@ module.exports = {
                         Year - ${fy}</br>
                         Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -436,7 +436,7 @@ module.exports = {
                         ${reports}
                         Please login to City Finance Portal to submit the corrected form.
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
@@ -454,7 +454,7 @@ module.exports = {
                         Rejected Reports:   </br>
                         ${reports}
                     </p>
-                Regards,
+                Regards,<br>
                 City Finance Team`
         }
     },
