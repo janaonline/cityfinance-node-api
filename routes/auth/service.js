@@ -30,7 +30,8 @@ module.exports.register = async (req, res)=>{
         newUser.save(async (err, user)=>{
             if(err){
                 console.log("Err",err)
-                return res.json({success:false, msg: err.code == 11000 ? 'Duplicate entry.':'Failed to register user'});
+                return Response.BadRequest(res, err, err.code == 11000 ? 'Email already in use.':'Failed to register user');
+                // return res.json({success:false, msg: err.code == 11000 ? 'Duplicate entry.':'Failed to register user'});
             }else{
                 let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
                 if(data.role == "ULB"){
