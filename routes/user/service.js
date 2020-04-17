@@ -164,10 +164,16 @@ module.exports.getAll = async (req, res)=> {
                     }
                     if(csv){
                         let arr = await User.aggregate(q).exec();
-                        let field = {
+                        let field = {};
+                        if(["STATE"].indexOf(role) > -1){
+                            Object.assign(field,{
+                                stateName:"State"
+                            })
+                        }
+                        Object.assign(field,{
                             name:"Username",
                             email:"Email ID"
-                        };
+                        })
                         if(["MoHUA","PARTNER","STATE","USER"].indexOf(role) > -1){
                             Object.assign(field,{
                                 designation:"Designation"
@@ -176,11 +182,6 @@ module.exports.getAll = async (req, res)=> {
                         if(["PARTNER","STATE"].indexOf(role) > -1){
                             Object.assign(field,{
                                 departmentName:"Department"
-                            })
-                        }
-                        if(["STATE"].indexOf(role) > -1){
-                            Object.assign(field,{
-                                stateName:"State"
                             })
                         }
                         if(["ULB"].indexOf(role) > -1){
