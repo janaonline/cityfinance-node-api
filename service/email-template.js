@@ -448,7 +448,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 }
-                Email(mailOptionState);
+                //Email(mailOptionState);
                 Email(mailOptionUlb);
                 resolve('email sent.');
             }else {
