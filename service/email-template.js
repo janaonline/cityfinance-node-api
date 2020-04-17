@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const UlbFinancialData = require('../models/UlbFinancialData');
 const Email = require("./email");
+const ObjectId = require('mongoose').Types.ObjectId;
 module.exports = {
     sendFinancialDataStatusEmail: (_id, type="UPLOAD")=>{
         return new Promise(async (resolve, reject)=>{
