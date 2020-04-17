@@ -146,5 +146,6 @@ module.exports = {
   response:require('./response'),
   mapFilter:require('./filter'),
   emailTemplate:require('./email-template'),
-  emailVerificationLink:require('./email-verification-link')
+  emailVerificationLink:require('./email-verification-link'),
+  dataFormating:require('./data-fomatting')
 };

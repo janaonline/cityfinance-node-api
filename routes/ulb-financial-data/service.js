@@ -233,6 +233,7 @@ module.exports.getAll = async (req, res)=>{
                     $project: {
                         _id: 1,
                         audited: 1,
+                        auditStatus: {$cond:{if:"$audited",then:"Audited", else: "Unaudited"}},
                         completeness: 1,
                         correctness: 1,
                         status: 1,
@@ -265,7 +266,14 @@ module.exports.getAll = async (req, res)=>{
             }
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
-                return res.xls('financial-data.xlsx', arr);
+                let xlsData = await Service.dataFormating(arr,{
+                    ulbName:"ULB name",
+                    ulbCode:"ULB Code",
+                    financialYear:"Financial Year",
+                    auditStatus:"Audit Status",
+                    status:"Status"
+                });
+                return res.xls('financial-data.xlsx', xlsData);
             } else {
                 q.push({$skip: skip});
                 q.push({$limit: limit});

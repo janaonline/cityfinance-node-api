@@ -164,7 +164,36 @@ module.exports.getAll = async (req, res)=> {
                     }
                     if(csv){
                         let arr = await User.aggregate(q).exec();
-                        return res.xls('user.xlsx',arr);
+                        let field = {
+                            name:"Username",
+                            email:"Email ID"
+                        };
+                        if(["MoHUA","PARTNER","STATE","USER"].indexOf(role) > -1){
+                            Object.assign(field,{
+                                designation:"Designation"
+                            })
+                        }
+                        if(["PARTNER","STATE"].indexOf(role) > -1){
+                            Object.assign(field,{
+                                departmentName:"Department"
+                            })
+                        }
+                        if(["ULB"].indexOf(role) > -1){
+                            field = {
+                                stateName:"State",
+                                ulbName:"ULB Name",
+                                ulbCode:"ULB Code",
+                                status:"Status"
+                            }
+                        }
+                        if(["USER"].indexOf(role) > -1){
+                            Object.assign(field,{
+                                organization:"Organisation"
+                            })
+                        }
+                        let xlsData = await Service.dataFormating(arr,field);
+                        return res.xls('user.xlsx',xlsData);
+
                     }else{
                         if(Object.keys(sort).length){
                             q.push({$sort:sort});

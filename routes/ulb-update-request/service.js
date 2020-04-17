@@ -295,8 +295,15 @@ module.exports.getAll = async (req, res)=>{
                 q.push({$sort:sort});
             }
             if(csv){
+                let field = {
+                    stateName:"State",
+                    ulbName:"ULB Name",
+                    ulbCode:"ULB Code",
+                    status:"Status"
+                };
                 let arr = await UlbUpdateRequest.aggregate(q).exec();
-                return res.xls('ulb-update-request.xlsx',arr);
+                let xlsData = await Service.dataFormating(arr,field);
+                return res.xls('ulb-update-request.xlsx',xlsData);
             }else{
                 q.push({$skip:skip});
                 q.push({$limit:limit});
