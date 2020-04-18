@@ -597,3 +597,124 @@ module.exports.correctness = async (req, res)=>{
         return Response.BadRequest(res,{},`This action is only allowed by ULB ${actionAllowed.join()}`);
     }
 }
+module.exports.getApprovedFinancialData = async (req, res)=>{
+    try {
+        let user = req.decoded,
+        filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+        sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 50,
+        csv = req.query.csv;
+        let q = [
+            {$match:{status :"APPROVED"}},
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            {
+                $lookup: {
+                    from: "ulbtypes",
+                    localField: "ulb.ulbType",
+                    foreignField: "_id",
+                    as: "ulbType"
+                }
+            },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "ulb.state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            {$unwind: "$ulb"},
+            {$unwind: "$ulbType"},
+            {$unwind: "$state"},
+            {
+                $project: {
+                    _id: 1,
+                    "audited": 1,
+                    "financialYear": 1,
+                    "ulbType": "$ulbType.name",
+                    "ulb": "$ulb._id",
+                    "ulbName": "$ulb.name",
+                    "ulbCode": "$ulb.code",
+                    "state": "$state._id",
+                    "stateName": "$state.name",
+                    "stateCode": "$state.code",
+                    "balanceSheet.pdfUrl":1,
+                    "balanceSheet.excelUrl":1,
+                    "schedulesToBalanceSheet.pdfUrl":1,
+                    "schedulesToBalanceSheet.excelUrl":1,
+                    "incomeAndExpenditure.pdfUrl":1,
+                    "incomeAndExpenditure.excelUrl":1,
+                    "schedulesToIncomeAndExpenditure.pdfUrl":1,
+                    "schedulesToIncomeAndExpenditure.excelUrl":1,
+                    "trialBalance.pdfUrl":1,
+                    "trialBalance.excelUrl":1,
+                    "auditReport.pdfUrl":1,
+                    "auditReport.excelUrl":1
+                }
+            }
+        ]
+        let newFilter = await Service.mapFilter(filter);
+        let total = undefined;
+        if (newFilter && Object.keys(newFilter).length) {
+            q.push({$match: newFilter});
+        }
+        if (sort && Object.keys(sort).length) {
+            q.push({$sort: sort});
+        }
+        if (csv) {
+            let arr = await UlbFinancialData.aggregate(q).exec();
+            let xlsData = await Service.dataFormating(arr,{
+                stateName:"State",
+                ulbName:"ULB name",
+                ulbCode:"ULB Code",
+                financialYear:"Financial Year",
+                auditStatus:"Audit Status",
+                status:"Status"
+            });
+            return res.xls('financial-data.xlsx', xlsData);
+        } else {
+            q.push({$skip: skip});
+            q.push({$limit: limit});
+            if (!skip) {
+                let qrr = [...q, {$count: "count"}]
+                let d = await UlbFinancialData.aggregate(qrr);
+                total = d.length ? d[0].count : 0;
+            }
+            let arr = await UlbFinancialData.aggregate(q).exec();
+            return res.status(200).json({
+                timestamp: moment().unix(),
+                success: true,
+                message: "Ulb update request list",
+                data: arr,
+                total: total
+            });
+        }
+    }catch (e) {
+        return Response.BadRequest(res,e,e.message);
+    }
+}
+module.exports.sourceFiles = async (req, res)=>{
+    try{
+        let _id = ObjectId(req.params._id);
+        let select = {
+            "balanceSheet.pdfUrl":1,"balanceSheet.excelUrl":1,
+            "schedulesToBalanceSheet.pdfUrl":1,"schedulesToBalanceSheet.excelUrl":1,
+            "incomeAndExpenditure.pdfUrl":1,"incomeAndExpenditure.excelUrl":1,
+            "schedulesToIncomeAndExpenditure.pdfUrl":1,"schedulesToIncomeAndExpenditure.excelUrl":1,
+            "trialBalance.pdfUrl":1,"trialBalance.excelUrl":1,
+            "auditReport.pdfUrl":1,"auditReport.excelUrl":1
+        };
+        let data = await UlbFinancialData.find({_id:_id},select).exec();
+        return Response.OK(res, data.length ? data[0] : {});
+    }catch (e) {
+        return Response.DbError(res,e);
+    }
+}
