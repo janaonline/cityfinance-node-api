@@ -219,6 +219,94 @@ module.exports.ulbtypewise = async (req, res)=>{
         return Response.DbError(res,e)
     }
 }
+module.exports.stateandulbtypewise = async (req, res)=>{
+    let financialYear = req.query.financialYear;
+    let query = [
+        {
+            $project:{
+                _id:1,
+                name:1,
+                code:1
+            }
+        },
+        {
+            $lookup:{
+                from:"ulbtypes",
+                let:{state:"$_id"},
+                pipeline:[
+                    {
+                        $project:{
+                            _id:1,
+                            name:1
+                        }
+                    },
+                    {
+                        $lookup:{
+                            from:"ulbs",
+                            let:{ulbType:"$_id",state:"$$state"},
+                            pipeline:[
+                                { $match: { $expr:{$and:[{ $eq: [ "$state",  "$$state" ]},{ $eq: [ "$ulbType",  "$$ulbType" ]}]}}},
+                                {
+                                    $project:{
+                                        _id:1
+                                    }
+                                }
+                            ],
+                            as:"ulbs"
+                        }
+                    },
+                    {$unwind:{path:"$ulbs", preserveNullAndEmptyArrays:true}},
+                    {
+                        $lookup:{
+                            from:"ulbfinancialdatas",
+                            let:{ulb:"$ulbs._id"},
+                            pipeline:[
+                                {$match:{"financialYear" : financialYear}},
+                                { $match: { $expr:{ $eq: [ "$ulb",  "$$ulb" ] }}},
+                                {
+                                    $project:{
+                                        _id:1,
+                                        name:1,
+                                        audited:1,
+                                        status:1
+                                    }
+                                },
+                                {
+                                    $group:{
+                                        _id:"$audited",
+                                        count:{$sum:1},
+                                        pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
+                                        rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
+                                        approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
+                                    }
+                                }
+                            ],
+                            as : "data"
+                        }
+                    },
+                    {
+                        $project:{
+                            _id:1,
+                            name:1,
+                            data:1
+                        }
+                    }
+                ],
+                as:"ulbTypes"
+            }
+        }
+    ];
+    try {
+        let data = await State.aggregate(query).exec();
+        for(el of data){
+            el["el"] = modifyData(el.ulbTypes)
+        }
+        return Response.OK(res, data);
+    }catch (e) {
+        console.log("Exception",e);
+        return Response.DbError(res,e)
+    }
+}
 function modifyData(arr) {
     for(let el of arr){
         el["data"] = formatData(el.data);
