@@ -93,6 +93,7 @@ module.exports.login = async (req, res)=>{
             return Response.BadRequest(res, {},`Your request has been rejected. Reason: ${user.message}`);
         }else {
             try{
+                let sessionId = req.headers.sessionId;
                 let isMatch = await Service.compareHash(req.body.password, user.password);
                 if (isMatch) {
                     let keys  = ["_id","email","role","name",'ulb','state','isActive'];
@@ -102,10 +103,11 @@ module.exports.login = async (req, res)=>{
                             data[k] = user[k];
                         }
                     }
-                    let loginHistory = new LoginHistory({user:user._id, loggedInAt: new Date()});
+                    let loginHistory = new LoginHistory({user:user._id, loggedInAt: new Date(),visitSession:sessionId});
                     let lh = await loginHistory.save();
                     data['purpose'] = 'WEB';
                     data['lh_id'] = lh._id;
+                    data['sessionId'] = sessionId;
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.TOKEN_EXPIRY
                     });
