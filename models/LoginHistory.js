@@ -4,6 +4,7 @@ const LoginHistorySchema = new Schema({
     visitSession : { type: Schema.Types.ObjectId, ref: 'VisitSession' ,default:null},
     loggedInAt : { type: Date, default : Date.now() },
     loggedOutAt : { type: Date, default : null },
+    reports:{type:Array, default:[]},
     isActive : { type  : Boolean, default : 1 }
 });
 module.exports = mongoose.model('LoginHistory', LoginHistorySchema);

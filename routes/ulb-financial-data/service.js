@@ -1,5 +1,6 @@
 const Ulb = require("../../models/Ulb");
 const UlbFinancialData = require("../../models/UlbFinancialData");
+const LoginHistory = require("../../models/LoginHistory");
 const User = require("../../models/User");
 const Response = require("../../service").response;
 const Service = require("../../service");
@@ -703,6 +704,7 @@ module.exports.getApprovedFinancialData = async (req, res)=>{
 }
 module.exports.sourceFiles = async (req, res)=>{
     try{
+        let lh_id = ObjectId(req.decoded.lh_id);// Login history id
         let _id = ObjectId(req.params._id);
         let select = {
             "balanceSheet.pdfUrl":1,"balanceSheet.excelUrl":1,
@@ -713,6 +715,7 @@ module.exports.sourceFiles = async (req, res)=>{
             "auditReport.pdfUrl":1,"auditReport.excelUrl":1
         };
         let data = await UlbFinancialData.find({_id:_id},select).exec();
+        let lh = await LoginHistory.update({_id:lh_id},{$push:{reports:_id}});
         return Response.OK(res, data.length ? getSourceFiles(data[0]) : {});
     }catch (e) {
         return Response.DbError(res,e);
