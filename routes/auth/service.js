@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
+const LoginHistory = require('../../models/LoginHistory');
 const VisitSession = require('../../models/VisitSession');
 const Config = require('../../config/app_config');
 const Constants = require('../../_helper/constants');
@@ -101,11 +102,13 @@ module.exports.login = async (req, res)=>{
                             data[k] = user[k];
                         }
                     }
+                    let loginHistory = new LoginHistory({user:user._id, loggedInAt: new Date()});
+                    let lh = await loginHistory.save();
                     data['purpose'] = 'WEB';
+                    data['lh_id'] = lh._id;
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.TOKEN_EXPIRY
                     });
-
                     return res.status(200).json({
                         success: true,
                         token: token,
