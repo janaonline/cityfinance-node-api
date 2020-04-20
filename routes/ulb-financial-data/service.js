@@ -646,7 +646,7 @@ module.exports.getApprovedFinancialData = async (req, res)=>{
                     "state": "$state._id",
                     "stateName": "$state.name",
                     "stateCode": "$state.code",
-                    "balanceSheet.pdfUrl":1,
+                    /*"balanceSheet.pdfUrl":1,
                     "balanceSheet.excelUrl":1,
                     "schedulesToBalanceSheet.pdfUrl":1,
                     "schedulesToBalanceSheet.excelUrl":1,
@@ -657,10 +657,10 @@ module.exports.getApprovedFinancialData = async (req, res)=>{
                     "trialBalance.pdfUrl":1,
                     "trialBalance.excelUrl":1,
                     "auditReport.pdfUrl":1,
-                    "auditReport.excelUrl":1
+                    "auditReport.excelUrl":1*/
                 }
             }
-        ]
+        ];
         let newFilter = await Service.mapFilter(filter);
         let total = undefined;
         if (newFilter && Object.keys(newFilter).length) {
@@ -713,8 +713,36 @@ module.exports.sourceFiles = async (req, res)=>{
             "auditReport.pdfUrl":1,"auditReport.excelUrl":1
         };
         let data = await UlbFinancialData.find({_id:_id},select).exec();
-        return Response.OK(res, data.length ? data[0] : {});
+        return Response.OK(res, data.length ? getSourceFiles(data[0]) : {});
     }catch (e) {
         return Response.DbError(res,e);
     }
+}
+function getSourceFiles(obj) {
+    let o = {
+        pdf:[
+
+        ],
+        excel:[
+
+        ]
+    };
+    obj.balanceSheet && obj.balanceSheet.pdfUrl ?  o.pdf.push({name:"Balance Sheet", url:obj.balanceSheet.pdfUrl}):'';
+    obj.balanceSheet && obj.balanceSheet.excelUrl ?  o.excel.push({name:"Balance Sheet", url:obj.balanceSheet.excelUrl}):'';
+
+    obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl ?  o.pdf.push({name:"Schedules To Balance Sheet", url:obj.schedulesToBalanceSheet.pdfUrl}):'';
+    obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl ?  o.excel.push({name:"Schedules To Balance Sheet", url:obj.schedulesToBalanceSheet.excelUrl}):'';
+
+    obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl ?  o.pdf.push({name:"Income And Expenditure", url:obj.incomeAndExpenditure.pdfUrl}):'';
+    obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl ?  o.excel.push({name:"Income And Expenditure", url:obj.incomeAndExpenditure.excelUrl}):'';
+
+    obj.schedulesToIncomeAndExpenditure && obj.schedulesToIncomeAndExpenditure.pdfUrl ?  o.pdf.push({name:"Schedules To Income And Expenditure", url:obj.schedulesToIncomeAndExpenditure.pdfUrl}):'';
+    obj.schedulesToIncomeAndExpenditure && obj.schedulesToIncomeAndExpenditure.excelUrl ?  o.excel.push({name:"Schedules To Income And Expenditure", url:obj.schedulesToIncomeAndExpenditure.excelUrl}):'';
+
+    obj.trialBalance && obj.trialBalance.pdfUrl ?  o.pdf.push({name:"Trial Balance", url:obj.trialBalance.pdfUrl}):'';
+    obj.trialBalance && obj.trialBalance.excelUrl ?  o.excel.push({name:"Trial Balance", url:obj.trialBalance.excelUrl}):'';
+
+    obj.auditReport && obj.auditReport.pdfUrl ?  o.pdf.push({name:"Audit Report", url:obj.auditReport.pdfUrl}):'';
+    obj.auditReport && obj.auditReport.excelUrl ?  o.excel.push({name:"Audit Report", url:obj.auditReport.excelUrl}):'';
+    return o;
 }
