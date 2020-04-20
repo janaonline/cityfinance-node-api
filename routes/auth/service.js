@@ -43,13 +43,13 @@ module.exports.register = async (req, res)=>{
                     };
                     Service.sendEmail(mailOptionsCommisioner);
 
-                    let templateAcountant = Service.emailTemplate.ulbSignupAccountant(user.accountantName);
+                    /*let templateAcountant = Service.emailTemplate.ulbSignupAccountant(user.accountantName);
                     let mailOptionsAccountant = {
                         to: user.accountantEmail, // list of receivers
                         subject: templateAcountant.subject,
                         html: templateAcountant.body
                     };
-                    Service.sendEmail(mailOptionsAccountant);
+                    Service.sendEmail(mailOptionsAccountant);*/
 
                 }else{
                     let template = Service.emailTemplate.userSignup(user.name, link);

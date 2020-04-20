@@ -251,7 +251,7 @@ module.exports.profileUpdate =  async (req, res) =>{
     }
     try{
         let _id = req.params._id ? req.params._id: user._id;
-        let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role name").lean().exec();
+        let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role name email").lean().exec();
         if(userInfo){
             for(key in body){
                 if(body[key] && keyObj[userInfo.role].indexOf(key) > -1){
@@ -263,7 +263,7 @@ module.exports.profileUpdate =  async (req, res) =>{
                      let out = await User.updateOne({_id:userInfo._id}, {$set:obj});
                      let template = Service.emailTemplate.userProfileEdit(userInfo.name);
                      let mailOptions = {
-                         to: user.email,
+                         to: userInfo.email,
                          subject: template.subject,
                          html: template.body
                      };
