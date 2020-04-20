@@ -307,6 +307,64 @@ module.exports.stateandulbtypewise = async (req, res)=>{
         return Response.DbError(res,e)
     }
 }
+module.exports.chart = async (req, res)=>{
+    try {
+        let financialYear = req.query.financialYear;
+        let query = [
+            {$match:{financialYear:financialYear}},
+            {
+                $project:{
+                    _id:1,
+                    ulb:1,
+                    status:1
+                }
+            },
+            {
+                $lookup:{
+                    from:"ulbs",
+                    localField:"ulb",
+                    foreignField:"_id",
+                    as:"ulb"
+                }
+            },
+            {$unwind:"$ulb"},
+            {
+                $group:{
+                    _id:"$ulb.state",
+                    count:{$sum:1},
+                    pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
+                    rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
+                    approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
+                }
+            },
+            {
+                $lookup:{
+                    from:"states",
+                    localField:"_id",
+                    foreignField:"_id",
+                    as:"state"
+                }
+            },
+            {$unwind:"$state"},
+            {
+                $project:{
+                    _id:"$state._id",
+                    name:"$state.name",
+                    code:"$state.code",
+                    count:1,
+                    pending:1,
+                    rejected:1,
+                    approved:1
+                }
+            }
+        ];
+        let data = await UlbFinancialData.aggregate(query).exec();
+        return Response.OK(res, data);
+    }catch (e) {
+        console.log("Exception",e);
+        return Response.DbError(res,e);
+    }
+}
 function modifyData(arr) {
     for(let el of arr){
         el["data"] = formatData(el.data);
