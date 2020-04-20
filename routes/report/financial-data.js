@@ -310,8 +310,11 @@ module.exports.stateandulbtypewise = async (req, res)=>{
 module.exports.chart = async (req, res)=>{
     try {
         let financialYear = req.query.financialYear;
-        let query = [
-            {$match:{financialYear:financialYear}},
+        let q = [];
+        if(financialYear){
+            q.push({$match:{financialYear:financialYear}});
+        }
+        let query =  q.concat([
             {
                 $project:{
                     _id:1,
@@ -357,7 +360,7 @@ module.exports.chart = async (req, res)=>{
                     approved:1
                 }
             }
-        ];
+        ]);
         let data = await UlbFinancialData.aggregate(query).exec();
         return Response.OK(res, data);
     }catch (e) {
