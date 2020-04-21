@@ -534,11 +534,13 @@ const ObjectId = require('mongoose').Types.ObjectId;
                }else{
                    emails.push(userInfo.email)
                }
+               /*
                if((userOldInfo.accountantEmail && userOldInfo.accountantEmail != userInfo.accountantEmail) || (userInfo.accountantEmail && !userOldInfo.accountantEmail)){
                    emails.push(userInfo.accountantEmail);
                }else if((userOldInfo.departmentEmail && userOldInfo.departmentEmail != userInfo.departmentEmail)||(userInfo.departmentEmail && userOldInfo.departmentEmail)){
                    emails.push(userInfo.departmentEmail);
                }
+               */
                if(emails.length){
                    let template = userProfileEdit(userInfo.name);
                    let mailOptions = {
