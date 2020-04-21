@@ -32,7 +32,11 @@ module.exports.create = async (req, res)=>{
         let ulbUpdateRequest = new UlbFinancialData(data);
         ulbUpdateRequest.save(async (err, dt)=>{
             if(err){
-                return Response.DbError(res,err, err.code == 11000 ? 'Duplicate entry.':'Failed to create entry');
+                if(err.code == 11000){
+                    return Response.DbError(res,err, `Data for - ${ulb.name}(${ulb.code}) of ${data.financialYear} already benn uploaded.`);
+                }else{
+                    return Response.DbError(res,err, 'Failed to create entry');
+                }
             }else {
                 let email = await Service.emailTemplate.sendFinancialDataStatusEmail(dt._id,"UPLOAD");
                 return Response.OK(res,dt, 'Request accepted.');
