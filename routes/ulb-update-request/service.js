@@ -257,7 +257,7 @@ module.exports.getAll = async (req, res)=>{
                 {$unwind:"$ulb"},
                 {$unwind:"$ulbType"},
                 {$unwind:"$state"},
-                {$unwind:"$actionTakenBy"},
+                {$unwind: {path:"$actionTakenBy",preserveNullAndEmptyArrays:true}},
                 {
                     $project:{
                         _id:1,
@@ -458,27 +458,20 @@ module.exports.action = async (req, res)=>{
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
                             let userData = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id email role name").lean();
-                            let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
-                            let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
-                            let mailOptions = {
-                                to: userData.email, // list of receivers
-                                subject: template.subject,
-                                html:template.body
-                            };
-                            SendEmail(mailOptions);
+                            if(pObj.email != userData.email){
+                                let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
+                                let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
+                                let mailOptions = {
+                                    to: userData.email,
+                                    subject: template.subject,
+                                    html:template.body
+                                };
+                                SendEmail(mailOptions);
+                            }
                         }
                         let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
                         let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
                     }
-                    /*let history = prevState.history ? JSON.parse(JSON.stringify(prevState.history)) :[];
-                    let d = {};
-                    for(k in prevState){
-                        if(k != 'history'){
-                            d[k] = prevState[k];
-                        }
-                    }
-                    history.push(d);
-                    updateData["history"] = history;*/
                     let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:prevState}});
                     if(uur.n){
                         return Response.OK(res,uur, 'Action updated.')
