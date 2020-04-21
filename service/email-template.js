@@ -520,6 +520,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
     const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl)=>{
         return new Promise(async (resolve, reject)=>{
            try {
+               let emails = [];
                let userInfo = await User.findOne({_id:userOldInfo._id}).exec();
                if(userOldInfo.email && userOldInfo.email != userInfo.email){
                    let link = await emailVericationLink(userInfo._id,currentUrl);
@@ -530,17 +531,18 @@ const ObjectId = require('mongoose').Types.ObjectId;
                        html: template.body
                    };
                    Email(mailOptions);
+               }else{
+                   emails.push(userInfo.email)
                }
-               let otherEmail;
                if((userOldInfo.accountantEmail && userOldInfo.accountantEmail != userInfo.accountantEmail) || (userInfo.accountantEmail && !userOldInfo.accountantEmail)){
-                   otherEmail = userInfo.accountantEmail;
+                   emails.push(userInfo.accountantEmail);
                }else if((userOldInfo.departmentEmail && userOldInfo.departmentEmail != userInfo.departmentEmail)||(userInfo.departmentEmail && userOldInfo.departmentEmail)){
-                   otherEmail = userInfo.departmentEmail;
+                   emails.push(userInfo.departmentEmail);
                }
-               if(otherEmail){
+               if(emails.length){
                    let template = userProfileEdit(userInfo.name);
                    let mailOptions = {
-                       to: otherEmail,
+                       to: emails.join(),
                        subject: template.subject,
                        html: template.body
                    };
