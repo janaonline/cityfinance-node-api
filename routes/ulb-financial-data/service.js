@@ -233,7 +233,7 @@ module.exports.getAll = async (req, res)=>{
                 {$unwind: "$ulb"},
                 {$unwind: "$ulbType"},
                 {$unwind: "$state"},
-                {$unwind: "$actionTakenBy"},
+                {$unwind: {path:"$actionTakenBy",preserveNullAndEmptyArrays:true}},
                 {
                     $project: {
                         _id: 1,
