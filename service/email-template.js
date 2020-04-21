@@ -411,8 +411,17 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 {
                     $lookup:{
                         from:"users",
-                        localField:"ulb.state",
-                        foreignField:"state",
+                        let :{state:"$ulb.state"},
+                        pipeline:[
+                            { $match:{ $expr:{$and:[{$eq:["$role","STATE"]},{$eq:["$state","$$state"]},{$eq:["$isDeleted",false]}]}}},
+                            {
+                                $project:{
+                                    name:1,
+                                    email:1,
+                                    departmentEmail:1
+                                }
+                            }
+                        ],
                         as :"stateUser"
                     }
                 },
