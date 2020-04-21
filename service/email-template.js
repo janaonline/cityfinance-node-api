@@ -8,12 +8,15 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 subject:`Registration Successful for City Finance`,
                 body:`Dear ${name},<br>
                     <p>Welcome to City Finance Portal!</p> 
+                    <br>
                     <p>
                         Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.
                     </p>
+                    <br>
                     <p>    
                         After activation, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
+                    <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -23,12 +26,15 @@ const ObjectId = require('mongoose').Types.ObjectId;
             subject:`Registration Successful for City Finance`,
             body:`Dear ${name},<br>
                     <p>Welcome to City Finance Portal!</p> 
+                    <br>
                     <p>
                         Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
                     </p>
+                    <br>
                     <p>
                         After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
+                    <br>
                     <br>Regards,<br>
                     City Finance Team`
         }
@@ -38,9 +44,11 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 subject:`City Finance Account Password Reset`,
                 body:`Dear ${name},<br>
                         <p>Please use the following link to reset your password - <a href="${link}" target="_blank">link</a></p> 
+                        <br>
                         <p>
                             After resetting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                         </p>
+                        <br>
                         <br>Regards,<br>
                         City Finance Team`
             }
@@ -50,9 +58,11 @@ const ObjectId = require('mongoose').Types.ObjectId;
             subject:`Profile Update Successful for City Finance`,
             body:`Dear ${name},<br>
                     <br>
+                    <p>
                         Your account has been successfully updated. <br>
                         Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
+                    <br>
                 <br>Regards,<br>
                 City Finance Team`
         }
@@ -62,9 +72,11 @@ const ObjectId = require('mongoose').Types.ObjectId;
             subject:`Profile Update Successful for City Finance`,
             body:`Dear ${name},<br>
                 <br>
+                <p>    
                     Your email id has been successfully updated. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>. <br>
                     After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                 </p>
+                <br>
             <br>Regards,<br>
             City Finance Team`
         }
@@ -76,6 +88,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your signup request has been successfully submitted. You will receive a confirmation for signup on admin approval.
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -87,6 +100,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your signup request has been successfully submitted. You will receive a confirmation for signup on admin approval.
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -98,9 +112,11 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your signup request has been successfully ${edit?"updated":"approved"}. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
                         </p>
+                        <br>
                         <p>
                             After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -112,9 +128,11 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your signup request has been rejected because of the following reason.
                         </p>
+                        <br>
                         <p>
                             Rejection Reason - ${reason}
                         </p>
+                        <br>
                         <p>    
                             Please fill the signup form again to register for City Finance Portal.
                         </p>
@@ -129,16 +147,18 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your data upload form has been successfully submitted with the following details.
                         </p>
+                        <br>
                         <p>
                             
-                            Reference Number - ${refCode} </br>
-                            Year - ${fy}</br>
-                            Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                            Reference Number - ${refCode} <br>
+                            Year - ${fy} <br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"}<br>
                         </p>
+                        <br>
                         <p>
-                           
                             You will receive a confirmation for data upload on admin approval.
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -150,14 +170,17 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             The data for the ${ulbName} has been successfully submitted with the following details.
                         </p>
+                        <br>
                         <p>
-                            Reference Number - ${refCode}</br>
-                            Year - ${fy}</br>
-                            Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                            Reference Number - ${refCode}<br>
+                            Year - ${fy}<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"}<br>
                         </p>
+                        <br>
                         <p>    
                             You will receive a confirmation for data upload on admin approval.
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -169,11 +192,13 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your data upload form has been approved by admin and data has been successfully uploaded on the City Finance Portal with the following details.
                         </p>
+                        <br>
                         <p>
-                            Reference Number - ${refCode}</br>
-                            Year - ${fy}</br>
-                            Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                            Reference Number - ${refCode}<br>
+                            Year - ${fy}<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"}<br>
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -185,48 +210,55 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             The data upload form for the ${ulbName} has been approved by admin and data has been successfully uploaded on the City Finance Portal with the following details.
                         </p>
+                        <br>
                         <p>
-                            Reference Number - ${refCode}</br>
-                            Year - ${fy}</br>
-                            Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
+                            Reference Number - ${refCode}<br>
+                            Year - ${fy} <br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"}<br>
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
         }
     const fdUploadRejectionUlb = (name,refCode,fy,audited, reports)=>{
             return {
-                subject:`Data Upload Form Rejected - ${ulbName}`,
+                subject:`Data Upload Form Rejected`,
                 body:`Dear ${name},<br>
                         <p>
-                            The data upload form for the ${ulbName} has been rejected by the admin with the following details.
+                            Your data upload form has been rejected by the admin with the following details.
                         </p>
+                        <br>
                         <p>
-                            Reference Number - ${refCode}</br>
-                            Year - ${fy}</br>
-                            Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
-                            Rejected Reports:   </br>
+                            Reference Number - ${refCode}<br>
+                            Year - ${fy}<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"}<br>
+                            Rejected Reports:   <br>
                             ${reports}
+                            <br>
                             Please login to City Finance Portal to submit the corrected form.
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
         }
     const fdUploadRejectionState = (name,ulbName,refCode,fy,audited,reports)=>{
             return {
-                subject:`Data Upload Form Successfully Approved - ${ulbName}`,
+                subject:`Data Upload Form Rejected - ${ulbName}`,
                 body:`Dear ${name},<br>
                         <p>
                             The data upload form for the ${ulbName} has been rejected by the admin with the following details.
                         </p>
+                        <br>
                         <p>
-                            Reference Number - ${refCode}</br>
-                            Year - ${fy}</br>
-                            Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
-                            Rejected Reports:   </br>
+                            Reference Number - ${refCode}<br>
+                            Year - ${fy}<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"}<br>
+                            Rejected Reports:   <br>
                             ${reports}
                         </p>
+                        <br>
                     <br>Regards,<br>
                     City Finance Team`
             }
@@ -348,11 +380,11 @@ const ObjectId = require('mongoose').Types.ObjectId;
             }
             if(data && (type == "UPLOAD" || type == "ACTION")){
                 if(type == "UPLOAD"){
-                    let templateUlb = fdUploadUlb(data.ulbUser.name, data.referenceCode, data.audited);
+                    let templateUlb = fdUploadUlb(data.ulbUser.name, data.referenceCode, data.financialYear, data.audited);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
 
-                    let templateState = fdUploadState(data.stateUser.name, data.ulbUser.name, data.referenceCode, data.audited);
+                    let templateState = fdUploadState(data.stateUser.name, data.ulbUser.name, data.referenceCode,data.financialYear,  data.audited);
                     mailOptionState.subject = templateState.subject;
                     mailOptionState.html = templateState.body;
 
@@ -367,18 +399,17 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         mailOptionState.html = templateState.body;
 
                     }else if(data.status == "REJECTED"){
-                        let reports = ``;
+                        let reportsStr = ``;
                         for(let m of data.reports){
                             if(m.message){
-                                reportsStr = reportsStr+`${m.name} : ${m.message} <br>`
+                                reportsStr += `${m.name} : ${m.message} <br>`
                             }
                         }
                         // data.reports.map(m=>{ return m.message ? `${m.name} : ${m.message} <br>` : '' });
-                        let templateUlb = fdUploadRejectionUlb(data.ulbUser.name, data.referenceCode, data.financialYear,data.audited,reports);
+                        let templateUlb = fdUploadRejectionUlb(data.ulbUser.name, data.referenceCode, data.financialYear,data.audited,reportsStr);
                         mailOptionUlb.subject = templateUlb.subject;
                         mailOptionUlb.html = templateUlb.body;
-
-                        let templateState = fdUploadRejectionState(data.stateUser.name,data.ulbUser.name, data.referenceCode, data.financialYear,data.audited,reports);
+                        let templateState = fdUploadRejectionState(data.stateUser.name,data.ulbUser.name, data.referenceCode, data.financialYear,data.audited,reportsStr);
                         mailOptionState.subject = templateState.subject;
                         mailOptionState.html = templateState.body;
                     }
@@ -390,6 +421,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 reject(`Record not found.`);
             }
         }catch (e) {
+            console.log("Exception",e);
             reject(e);
         }
     });
