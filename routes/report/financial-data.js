@@ -299,7 +299,7 @@ module.exports.stateandulbtypewise = async (req, res)=>{
     try {
         let data = await State.aggregate(query).exec();
         for(el of data){
-            el["el"] = modifyData(el.ulbTypes)
+            el["ulbTypes"] = modifyData(el.ulbTypes)
         }
         return Response.OK(res, data);
     }catch (e) {
