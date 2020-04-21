@@ -370,7 +370,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         let reports = ``;
                         for(let m of data.reports){
                             if(m.message){
-                                reportsStr+`${m.name} : ${m.message} <br>`
+                                reportsStr = reportsStr+`${m.name} : ${m.message} <br>`
                             }
                         }
                         // data.reports.map(m=>{ return m.message ? `${m.name} : ${m.message} <br>` : '' });
