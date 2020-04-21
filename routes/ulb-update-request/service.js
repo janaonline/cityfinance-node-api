@@ -268,6 +268,7 @@ module.exports.getAll = async (req, res)=>{
                         state:"$state._id",
                         stateName:"$state.name",
                         stateCode:"$state.code",
+                        createdAt:1,
                         status:1
                     }
                 }
@@ -277,8 +278,8 @@ module.exports.getAll = async (req, res)=>{
             if(user.role == "STATE"){
                 newFilter["state"] = ObjectId(user.state);
             }
-            if(user.role == "STATE"){
-                newFilter["state"] = ObjectId(user.state);
+            if(user.role == "ULB"){
+                newFilter["ulb"] = ObjectId(user.ulb);
             }
             if(newFilter && Object.keys(newFilter).length){
                 q.push({$match:newFilter});
@@ -287,7 +288,10 @@ module.exports.getAll = async (req, res)=>{
                 q.push({$sort:sort});
             }
             if(csv){
-                let field = {
+                let field = user.role == "ULB" ? {
+                    createdAt:"Created At",
+                    status:"Status"
+                } : {
                     stateName:"State",
                     ulbName:"ULB Name",
                     ulbCode:"ULB Code",
