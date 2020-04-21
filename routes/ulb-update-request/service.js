@@ -470,7 +470,7 @@ module.exports.action = async (req, res)=>{
                             }
                         }
                         let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
-                        let du = await User.update({ulb:prevState.ulb, role:"ULB"},{$set:pObj});
+                        let du = await User.update({ulb:prevState.ulb, role:"ULB",isDeleted:false},{$set:pObj});
                     }
                     let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:prevState}});
                     if(uur.n){
