@@ -251,23 +251,26 @@ module.exports.profileUpdate =  async (req, res) =>{
     }
     try{
         let _id = req.params._id ? req.params._id: user._id;
-        let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role name email").lean().exec();
+        let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role name email accountantEmail departmentEmail").lean().exec();
         if(userInfo){
             for(key in body){
-                if(body[key] && keyObj[userInfo.role].indexOf(key) > -1){
+                if(body[key]){
                     obj[key] = body[key];
+                }
+            }
+            if(userInfo.role == "ULB" && obj.commissionerEmail && obj.commissionerEmail != userInfo.email){
+                obj["email"] = obj.commissionerEmail;
+            }
+            if(obj.email != userInfo.email){
+                let emailExists = await User.findOne({email:obj.email}).exec();
+                if(emailExists){
+                    return Response.BadRequest(res, obj,`Email: '${obj.email}' already in use`)
                 }
             }
             if( (Constants.USER.LEVEL_ACCESS[user.role] && Constants.USER.LEVEL_ACCESS[user.role].indexOf(userInfo.role) > -1) || (user.role == userInfo.role && userInfo._id.toString() == user._id)){
                  try{
                      let out = await User.updateOne({_id:userInfo._id}, {$set:obj});
-                     let template = Service.emailTemplate.userProfileEdit(userInfo.name);
-                     let mailOptions = {
-                         to: userInfo.email,
-                         subject: template.subject,
-                         html: template.body
-                     };
-                     Service.sendEmail(mailOptions);
+                     let mail = await Service.emailTemplate.sendProfileUpdateStatusEmail(userInfo,req.currentUrl);
                      return Response.OK(res, out, `Successfully updated.`);
                  } catch (e) {
                      console.log("Exception",e);

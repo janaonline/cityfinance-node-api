@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const UlbFinancialData = require('../models/UlbFinancialData');
 const Email = require("./email");
+const emailVericationLink = require('./email-verification-link')
 const ObjectId = require('mongoose').Types.ObjectId;
     const userSignup = (name, link)=>{
             return {
@@ -13,7 +14,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     <p>    
                         After activation, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
     }
@@ -28,7 +29,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     <p>
                         After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                     </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
         }
     }
@@ -40,21 +41,34 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             After resetting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                         </p>
-                        Regards,<br>
+                        <br>Regards,<br>
                         City Finance Team`
             }
             }
     const userProfileEdit = (name)=>{
-            return {
-                subject:`Profile Update Successful for City Finance`,
-                body:`Dear ${name},<br>
-                        <p>
-                            Your account has been successfully updated. Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
-                        </p>
-                    Regards,<br>
-                    City Finance Team`
-            }
+        return {
+            subject:`Profile Update Successful for City Finance`,
+            body:`Dear ${name},<br>
+                    <br>
+                        Your account has been successfully updated. <br>
+                        Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                    </p>
+                <br>Regards,<br>
+                City Finance Team`
         }
+    }
+    const userEmailEdit = (name,link)=>{
+        return {
+            subject:`Profile Update Successful for City Finance`,
+            body:`Dear ${name},<br>
+                <br>
+                    Your email id has been successfully updated. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>. <br>
+                    After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                </p>
+            <br>Regards,<br>
+            City Finance Team`
+        }
+    }
     const ulbSignup = (name)=>{
             return {
                 subject:`Signup Request Successfully Submitted`,
@@ -62,7 +76,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your signup request has been successfully submitted. You will receive a confirmation for signup on admin approval.
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -73,7 +87,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             Your signup request has been successfully submitted. You will receive a confirmation for signup on admin approval.
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -87,7 +101,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>
                             After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -104,7 +118,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>    
                             Please fill the signup form again to register for City Finance Portal.
                         </p>
-                    Regards,<br>
+                   <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -125,7 +139,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                            
                             You will receive a confirmation for data upload on admin approval.
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -144,7 +158,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         <p>    
                             You will receive a confirmation for data upload on admin approval.
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -160,7 +174,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                             Year - ${fy}</br>
                             Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -176,16 +190,16 @@ const ObjectId = require('mongoose').Types.ObjectId;
                             Year - ${fy}</br>
                             Audit Status - ${audited ? "Audited" : "Unaudited"}</br>
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
     const fdUploadRejectionUlb = (name,refCode,fy,audited, reports)=>{
             return {
-                subject:`Data Upload Form Successfully Approved`,
+                subject:`Data Upload Form Rejected - ${ulbName}`,
                 body:`Dear ${name},<br>
                         <p>
-                            Your data upload form has been approved by admin and data has been successfully uploaded on the City Finance Portal with the following details.
+                            The data upload form for the ${ulbName} has been rejected by the admin with the following details.
                         </p>
                         <p>
                             Reference Number - ${refCode}</br>
@@ -195,7 +209,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                             ${reports}
                             Please login to City Finance Portal to submit the corrected form.
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -213,7 +227,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                             Rejected Reports:   </br>
                             ${reports}
                         </p>
-                    Regards,<br>
+                    <br>Regards,<br>
                     City Finance Team`
             }
         }
@@ -241,8 +255,17 @@ const ObjectId = require('mongoose').Types.ObjectId;
             {
                 $lookup:{
                     from:"users",
-                    localField:"ulb.state",
-                    foreignField:"state",
+                    let :{state:"$ulb.state"},
+                    pipeline:[
+                        { $match:{ $expr:{$and:[{$eq:["$role","STATE"]},{$eq:["$state","$$state"]},{$eq:["$isDeleted",false]}]}}},
+                        {
+                            $project:{
+                                name:1,
+                                email:1,
+                                departmentEmail:1
+                            }
+                        }
+                    ],
                     as :"stateUser"
                 }
             },
@@ -344,7 +367,13 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         mailOptionState.html = templateState.body;
 
                     }else if(data.status == "REJECTED"){
-                        let reports = data.reports.map(m=>{ return m.message ? `<p>${m.name} : ${m.message} </p>` : '' });
+                        let reports = ``;
+                        for(let m of data.reports){
+                            if(m.message){
+                                reportsStr+`${m.name} : ${m.message} <br>`
+                            }
+                        }
+                        // data.reports.map(m=>{ return m.message ? `${m.name} : ${m.message} <br>` : '' });
                         let templateUlb = fdUploadRejectionUlb(data.ulbUser.name, data.referenceCode, data.financialYear,data.audited,reports);
                         mailOptionUlb.subject = templateUlb.subject;
                         mailOptionUlb.html = templateUlb.body;
@@ -447,14 +476,50 @@ const ObjectId = require('mongoose').Types.ObjectId;
         }
     });
     }
-
+    const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl)=>{
+        return new Promise(async (resolve, reject)=>{
+           try {
+               let userInfo = await User.findOne({_id:userOldInfo._id}).exec();
+               if(userOldInfo.email && userOldInfo.email != userInfo.email){
+                   let link = await emailVericationLink(userInfo._id,currentUrl);
+                   let template = userEmailEdit(userInfo.name,link);
+                   let mailOptions = {
+                       to: userInfo.email,
+                       subject: template.subject,
+                       html: template.body
+                   };
+                   Email(mailOptions);
+               }
+               let otherEmail;
+               if((userOldInfo.accountantEmail && userOldInfo.accountantEmail != userInfo.accountantEmail) || (userInfo.accountantEmail && !userOldInfo.accountantEmail)){
+                   otherEmail = userInfo.accountantEmail;
+               }else if((userOldInfo.departmentEmail && userOldInfo.departmentEmail != userInfo.departmentEmail)||(userInfo.departmentEmail && userOldInfo.departmentEmail)){
+                   otherEmail = userInfo.departmentEmail;
+               }
+               if(otherEmail){
+                   let template = userProfileEdit(userInfo.name);
+                   let mailOptions = {
+                       to: otherEmail,
+                       subject: template.subject,
+                       html: template.body
+                   };
+                   Email(mailOptions);
+               }
+               resolve('done');
+           } catch (e) {
+               reject(e);
+           }
+        });
+    }
 module.exports = {
     sendFinancialDataStatusEmail: sendFinancialDataStatusEmail,
     sendUlbSignupStatusEmmail:sendUlbSignupStatusEmmail,
+    sendProfileUpdateStatusEmail:sendProfileUpdateStatusEmail,
     userSignup:userSignup,
     userCreation:userCreation,
     userForgotPassword:userForgotPassword,
     userProfileEdit:userProfileEdit,
+    userEmailEdit:userEmailEdit,
     ulbSignup:ulbSignup,
     ulbSignupAccountant:ulbSignupAccountant,
     ulbSignupApproval:ulbSignupApproval,
