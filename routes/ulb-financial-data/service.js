@@ -698,8 +698,8 @@ module.exports.getApprovedFinancialData = async (req, res)=>{
                 let d = await UlbFinancialData.aggregate(qrr);
                 total = d.length ? d[0].count : 0;
             }
-            q.push({$skip: skip});
-            q.push({$limit: limit});
+           /* q.push({$skip: skip});
+            q.push({$limit: limit});*/
             let arr = await UlbFinancialData.aggregate(q).exec();
             return res.status(200).json({
                 timestamp: moment().unix(),
