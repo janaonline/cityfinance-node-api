@@ -309,13 +309,13 @@ module.exports.getAll = async (req, res)=>{
                 let xlsData = await Service.dataFormating(arr,field);
                 return res.xls('ulb-update-request.xlsx',xlsData);
             }else{
-                q.push({$skip:skip});
-                q.push({$limit:limit});
                 if(!skip) {
                     let qrr = [...q,{$count:"count"}];
                     let d = await UlbUpdateRequest.aggregate(qrr);
                     total = d.length ? d[0].count : 0;
                 }
+                q.push({$skip:skip});
+                q.push({$limit:limit});
                 let arr = await UlbUpdateRequest.aggregate(q).exec();
                 return  res.status(200).json({
                     timestamp:moment().unix(),

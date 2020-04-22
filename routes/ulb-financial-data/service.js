@@ -280,13 +280,13 @@ module.exports.getAll = async (req, res)=>{
                 });
                 return res.xls('financial-data.xlsx', xlsData);
             } else {
-                q.push({$skip: skip});
-                q.push({$limit: limit});
                 if (!skip) {
                     let qrr = [...q, {$count: "count"}]
                     let d = await UlbFinancialData.aggregate(qrr);
                     total = d.length ? d[0].count : 0;
                 }
+                q.push({$skip: skip});
+                q.push({$limit: limit});
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 return res.status(200).json({
                     timestamp: moment().unix(),
