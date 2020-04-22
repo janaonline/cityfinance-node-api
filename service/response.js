@@ -4,6 +4,7 @@ const BadRequest = (res,data = {},message = "Something went wrong.",status = 400
     let resData = {
         timestamp : moment().unix(),
         success : false,
+        msg : message,
         message : message,
         errors : data
     };
@@ -14,6 +15,7 @@ const DbError = (res,data = {},message = "Something went wrong.",status = 400)=>
     let resData = {
         timestamp : moment().unix(),
         success : false,
+        msg : message,
         message : message,
         errors : data
     };
@@ -24,6 +26,7 @@ const InternalError = (res,data = {},message = "Something went wrong.",status = 
     let resData = {
         timestamp : moment().unix(),
         success : false,
+        msg : message,
         message : message,
         errors : data
     };
@@ -34,6 +37,7 @@ const OK = (res,  data = [], message = "Success.",status = 200)=>{
     return res.status(status).json({
         timestamp : moment().unix(),
         success : true,
+        msg : message,
         message : message,
         data : data
     });
@@ -43,6 +47,7 @@ const UnAuthorized = (res,data = {},message = "Unauthorized user",status = 401)=
     let resData = {
         timestamp : moment().unix(),
         success : false,
+        msg : message,
         message : message,
         data : data
     };

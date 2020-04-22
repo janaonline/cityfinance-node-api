@@ -269,6 +269,7 @@ module.exports.getAll = async (req, res)=>{
             if (sort && Object.keys(sort).length) {
                 q.push({$sort: sort});
             }
+
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 let xlsData = await Service.dataFormating(arr,{
@@ -280,21 +281,27 @@ module.exports.getAll = async (req, res)=>{
                 });
                 return res.xls('financial-data.xlsx', xlsData);
             } else {
-                if (!skip) {
-                    let qrr = [...q, {$count: "count"}]
-                    let d = await UlbFinancialData.aggregate(qrr);
-                    total = d.length ? d[0].count : 0;
+                try {
+                    if (!skip) {
+                        let qrr = [...q, {$count: "count"}]
+                        let d = await UlbFinancialData.aggregate(qrr);
+
+                        total = d.length ? d[0].count : 0;
+                    }
+                    q.push({$skip: skip});
+                    q.push({$limit: limit});
+                    let arr = await UlbFinancialData.aggregate(q).exec();
+                    return res.status(200).json({
+                        timestamp: moment().unix(),
+                        success: true,
+                        message: "Ulb update request list",
+                        data: arr,
+                        total: total
+                    });
+                }catch (e) {
+                    console.log("exception",e);
+                    return Response.DbError(res,q);
                 }
-                q.push({$skip: skip});
-                q.push({$limit: limit});
-                let arr = await UlbFinancialData.aggregate(q).exec();
-                return res.status(200).json({
-                    timestamp: moment().unix(),
-                    success: true,
-                    message: "Ulb update request list",
-                    data: arr,
-                    total: total
-                });
             }
         } else {
             return Response.BadRequest(res, {}, 'Action not allowed.')
