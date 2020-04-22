@@ -52,7 +52,7 @@ module.exports.stateandulbtypewise = async (req, res)=>{
         for(el of data){
             let state = statewiseData.find(f=> f.code == el.code);
             el["overall"] = state ? {total:state.total,data:state.data} : {total:0,data:[]};
-            el["ulbTypes"] = modifyData(el.ulbTypes)
+            el["data"] = modifyData(el.data)
         }
         return Response.OK(res, data);
     }catch (e) {
@@ -124,8 +124,16 @@ module.exports.chart = async (req, res)=>{
 function modifyData(arr) {
     for(let el of arr){
         el["data"] = formatData(el.data);
+        el["total"] = getTotal(el["data"]);
     }
     return arr;
+}
+function getTotal(arr) {
+    let count = 0;
+    for(el of arr){
+        count += el.count;
+    }
+    return count;
 }
 function formatData(data) {
     if(data.length){
@@ -440,7 +448,7 @@ function getStateAndUlbtypewsiseQuery(financialYear) {
                         }
                     }
                 ],
-                as:"ulbTypes"
+                as:"data"
             }
         }
     ];
