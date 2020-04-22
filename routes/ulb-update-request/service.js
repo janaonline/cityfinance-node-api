@@ -78,13 +78,21 @@ module.exports.create = async (req, res)=>{
                 pObj["email"] = pObj["commissionerEmail"];
                 pObj["isEmailVerified"] = false;
                 let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
-                let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
-                let template = Service.emailTemplate.ulbSignupApproval(userData.name,link,true);
                 let mailOptions = {
-                    to: userData.email, // list of receivers
-                    subject: template.subject,
-                    html:template.body
+                    to: userData.email,
+                    subject: "",
+                    html:""
                 };
+                if(pObj.email != userData.email){
+                    let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
+                    let template = Service.emailTemplate.userEmailEdit(userData.name,link);
+                    mailOptions.subject=  template.subject;
+                    mailOptions.html=  template.body;
+                }else{
+                    let template = Service.emailTemplate.userProfileEdit(userData.name)
+                    mailOptions.subject=  template.subject;
+                    mailOptions.html=  template.body;
+                }
                 SendEmail(mailOptions);
             }
             try{
@@ -458,16 +466,22 @@ module.exports.action = async (req, res)=>{
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
                             let userData = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id email role name").lean();
+                            let mailOptions = {
+                                to: userData.email,
+                                subject: "",
+                                html:""
+                            };
                             if(pObj.email != userData.email){
                                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
                                 let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
-                                let mailOptions = {
-                                    to: userData.email,
-                                    subject: template.subject,
-                                    html:template.body
-                                };
-                                SendEmail(mailOptions);
+                                mailOptions.subject=  template.subject;
+                                mailOptions.html=  template.body;
+                            }else{
+                                let template = Service.emailTemplate.userProfileEdit(userData.name)
+                                mailOptions.subject=  template.subject;
+                                mailOptions.html=  template.body;
                             }
+                            SendEmail(mailOptions);
                         }
                         let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
                         let du = await User.update({ulb:prevState.ulb, role:"ULB",isDeleted:false},{$set:pObj});
