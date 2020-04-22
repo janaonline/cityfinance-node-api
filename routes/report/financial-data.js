@@ -50,7 +50,7 @@ module.exports.stateandulbtypewise = async (req, res)=>{
         let statewiseData = await State.aggregate(getStatewiseQuery(financialYear)).exec();
         let data = await State.aggregate(query).exec();
         for(el of data){
-            let state = statewiseData.find(f=> f.code == el.code);
+            let state = statewiseData.find(f=> f.name == el.name);
             el["overall"] = state ? {total:state.total,data:state.data} : {total:0,data:[]};
             el["data"] = modifyData(el.data)
         }
@@ -381,9 +381,8 @@ function getStateAndUlbtypewsiseQuery(financialYear) {
     return [
         {
             $project:{
-                _id:1,
-                name:1,
-                code:1
+                _id:0,
+                name:1
             }
         },
         {
@@ -443,7 +442,7 @@ function getStateAndUlbtypewsiseQuery(financialYear) {
                     },
                     {
                         $project:{
-                            _id:1,
+                            _id:0,
                             name:1,
                             data:1
                         }
