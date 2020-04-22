@@ -232,6 +232,7 @@ function getOverallQuery(financialYear) {
                 total:1,
                 data:{
                     audited:"$_id",
+                    count:"$count",
                     uploaded:"$count",
                     pending:"$pending",
                     rejected:"$rejected",
