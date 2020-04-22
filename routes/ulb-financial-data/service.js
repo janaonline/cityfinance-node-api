@@ -716,7 +716,8 @@ module.exports.sourceFiles = async (req, res)=>{
             "incomeAndExpenditure.pdfUrl":1,"incomeAndExpenditure.excelUrl":1,
             "schedulesToIncomeAndExpenditure.pdfUrl":1,"schedulesToIncomeAndExpenditure.excelUrl":1,
             "trialBalance.pdfUrl":1,"trialBalance.excelUrl":1,
-            "auditReport.pdfUrl":1,"auditReport.excelUrl":1
+            "auditReport.pdfUrl":1,"auditReport.excelUrl":1,
+            "overallReport.pdfUrl":1,"overallReport.excelUrl":1
         };
         let data = await UlbFinancialData.find({_id:_id},select).exec();
         let lh = await LoginHistory.update({_id:lh_id},{$push:{reports:_id}});
@@ -751,5 +752,9 @@ function getSourceFiles(obj) {
 
     obj.auditReport && obj.auditReport.pdfUrl ?  o.pdf.push({name:"Audit Report", url:obj.auditReport.pdfUrl}):'';
     obj.auditReport && obj.auditReport.excelUrl ?  o.excel.push({name:"Audit Report", url:obj.auditReport.excelUrl}):'';
+
+    obj.overallReport && obj.overallReport.pdfUrl ?  o.pdf.push({name:"Overall Report", url:obj.overallReport.pdfUrl}):'';
+    obj.overallReport && obj.overallReport.excelUrl ?  o.excel.push({name:"Overall Report", url:obj.overallReport.excelUrl}):'';
+
     return o;
 }

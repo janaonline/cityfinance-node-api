@@ -26,6 +26,7 @@ const UlbFinancialDataSchema = new Schema({
     schedulesToIncomeAndExpenditure: { type:ContentSchema, required:true},
     trialBalance: { type:ContentSchema, required:true},
     auditReport: { type:ContentSchema, required:audited},
+    overallReport: { type:ContentSchema, default:null},
     completeness:overallStatusType(),
     correctness:overallStatusType(),
     status:overallStatusType(),
