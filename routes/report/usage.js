@@ -55,7 +55,7 @@ module.exports = async (req,res)=>{
             let lhForMonth = lhData.find(f=> f._id == month.num);
             !lhForMonth ? lhForMonth = {"intTheMonth": 0,"moreThan10Times": 0,"moreThan5Times": 0,"moreThan1Times": 0,"oneTime": 0,"numReportDownloads":0} :'';
             let vsForMonth = vsData.find(f=> f._id == month.num);
-            !vsForMonth ? vsForMonth = {"numOfVisit": 0} :'';
+            !vsForMonth ? vsForMonth = {"visitCount": 0} :'';
             let uForMonth = uData.find(f=> f._id == month.num);
             !uForMonth ? uForMonth = {"numOfRegUser": 0} :'';
             Object.assign(month,lhForMonth);
