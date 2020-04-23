@@ -22,7 +22,7 @@ const generateSignedUrl  = function(data) {
         try{
             fs.closeSync(fs.openSync(baseDir+file_alias, 'w'));
             // url and file_alias has been created
-            data["url"] = data.host+"/api/admin/v1/putDataIntoFile/"+urlencode(file_alias);
+            data["url"] = data.host+"/api/v1/putDataIntoFile/"+urlencode(file_alias);
             data["file_alias"] = data.host+"/"+file_alias;
             resolve(data)
         }catch (e) {
