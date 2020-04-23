@@ -143,6 +143,7 @@ function formatData(data) {
                     data[0],
                     {
                         "count" : 0,
+                        "uploaded":0,
                         "pending" : 0,
                         "rejected" : 0,
                         "approved" : 0,
@@ -153,6 +154,7 @@ function formatData(data) {
                 return [
                     {
                         "count" : 0,
+                        "uploaded":0,
                         "pending" : 0,
                         "rejected" : 0,
                         "approved" : 0,
@@ -175,6 +177,7 @@ function formatData(data) {
         return [
             {
                 "count" : 0,
+                "uploaded":0,
                 "pending" : 0,
                 "rejected" : 0,
                 "approved" : 0,
@@ -182,6 +185,7 @@ function formatData(data) {
             },
             {
                 "count" : 0,
+                "uploaded":0,
                 "pending" : 0,
                 "rejected" : 0,
                 "approved" : 0,
@@ -310,6 +314,7 @@ function getStatewiseQuery(financialYear) {
                             _id:0,
                             audited:"$_id",
                             count:1,
+                            uploaded:"$count",
                             pending:1,
                             rejected:1,
                             approved:1
@@ -359,6 +364,7 @@ function getUlbtypewiseQuery(financialYear) {
                             _id:0,
                             audited:"$_id",
                             count:1,
+                            uploaded:"$count",
                             pending:1,
                             rejected:1,
                             approved:1
@@ -434,6 +440,16 @@ function getStateAndUlbtypewsiseQuery(financialYear) {
                                         pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
                                         rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
                                         approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
+                                    }
+                                },
+                                {
+                                    $project:{
+                                        _id:1,
+                                        count:1,
+                                        uploaded:"$count",
+                                        pending:1,
+                                        rejected:1,
+                                        approved:1
                                     }
                                 }
                             ],
