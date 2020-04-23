@@ -34,7 +34,7 @@ module.exports = async (req,res)=>{
             {
                 $group:{
                     _id:{$month:"$createdAt"},
-                    count:{$sum:1}
+                    visitCount:{$sum:1}
                 }
             }
         ];
@@ -43,7 +43,7 @@ module.exports = async (req,res)=>{
             {
                 $group:{
                     _id:{$month:"$createdAt"},
-                    count:{$sum:1}
+                    numOfRegUser:{$sum:1}
                 }
             }
         ];
