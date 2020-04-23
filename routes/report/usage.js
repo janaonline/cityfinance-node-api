@@ -23,8 +23,8 @@ module.exports = async (req,res)=>{
                     numReportDownloads:{$sum:"$numReportDownloads"},
                     intTheMonth:{$sum:{$cond:{if:{$gt:["$count",0]},then:1,else:0}}},
                     moreThan10Times:{$sum:{$cond:{if:{$gt:["$count",10]},then:1,else:0}}},
-                    moreThan5Times:{$sum:{$cond:{if:{ $and : [{$gt:["$count",5]},{$lte:["$count",10]}]},then:1,else:0}}},
-                    moreThan1Times:{$sum:{$cond:{if:{ $and : [{$gt:["$count",1]},{$lte:["$count",5]}]},then:1,else:0}}},
+                    moreThan5Times:{$sum:{$cond:{if:{$gt:["$count",5]},then:1,else:0}}},
+                    moreThan1Times:{$sum:{$cond:{if:{$gt:["$count",1]},then:1,else:0}}},
                     oneTime:{$sum:{$cond:{if:{$eq:["$count",1]},then:1, else:0}}}
                 }
             }
