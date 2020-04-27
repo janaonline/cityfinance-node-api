@@ -2,6 +2,7 @@ const UlbFinancialData = require('../../models/UlbFinancialData');
 const State = require('../../models/State');
 const UlbType = require('../../models/UlbType');
 const Response = require('../../service/response');
+const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.filter = async (req, res, next)=>{
     if(req.query.financialYear){
         next();
@@ -10,8 +11,9 @@ module.exports.filter = async (req, res, next)=>{
     }
 }
 module.exports.overall = async (req, res)=>{
+    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getOverallQuery(financialYear);
+    let query = getOverallQuery(financialYear,stateId);
     try {
         let data = await UlbFinancialData.aggregate(query).exec();
         return Response.OK(res, modifyData(data));
@@ -21,8 +23,9 @@ module.exports.overall = async (req, res)=>{
     }
 }
 module.exports.statewise = async (req, res)=>{
+    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getStatewiseQuery(financialYear);
+    let query = getStatewiseQuery(financialYear,stateId);
     try {
         let data = await State.aggregate(query).exec();
         return Response.OK(res, modifyData(data));
@@ -32,10 +35,11 @@ module.exports.statewise = async (req, res)=>{
     }
 }
 module.exports.ulbtypewise = async (req, res)=>{
+    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getUlbtypewiseQuery(financialYear);
+    let query = getUlbtypewiseQuery(financialYear,stateId);
     try {
-        let overallData = await UlbFinancialData.aggregate(getOverallQuery(financialYear)).exec();
+        let overallData = await UlbFinancialData.aggregate(getOverallQuery(financialYear,stateId)).exec();
         let data = await UlbType.aggregate(query).exec();
         let overall = {total:0,data:formatData([])};
         if(overallData.length){
@@ -50,10 +54,11 @@ module.exports.ulbtypewise = async (req, res)=>{
     }
 }
 module.exports.stateandulbtypewise = async (req, res)=>{
+    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getStateAndUlbtypewsiseQuery(financialYear);
+    let query = getStateAndUlbtypewsiseQuery(financialYear,stateId);
     try {
-        let statewiseData = await State.aggregate(getStatewiseQuery(financialYear)).exec();
+        let statewiseData = await State.aggregate(getStatewiseQuery(financialYear,stateId)).exec();
         let data = await State.aggregate(query).exec();
         for(el of data){
             let state = statewiseData.find(f=> f.name == el.name);
@@ -67,6 +72,7 @@ module.exports.stateandulbtypewise = async (req, res)=>{
     }
 }
 module.exports.chart = async (req, res)=>{
+    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
     try {
         let financialYear = req.query.financialYear;
         let q = [];
@@ -120,6 +126,9 @@ module.exports.chart = async (req, res)=>{
                 }
             }
         ]);
+        if(stateId){
+            query.push({$match:{_id:stateId}});
+        }
         let data = await UlbFinancialData.aggregate(query).exec();
         return Response.OK(res, data);
     }catch (e) {
@@ -200,16 +209,27 @@ function formatData(data) {
         ];
     }
 }
-function getOverallQuery(financialYear) {
+function getOverallQuery(financialYear, state = null) {
+    let overallulbs = state ? {
+        $lookup:{
+            from:"overallulbs",
+            pipeline:[
+                {$match:{state:state }},
+                {$count:"count"}
+            ],
+            as :"overallulbs"
+        }
+    } : {
+        $lookup:{
+            from:"overallulbs",
+            pipeline:[{$count:"count"}],
+            as :"overallulbs"
+        }
+    };
+
     return [
         {$match:{financialYear:financialYear}},
-        {
-            $lookup:{
-                from:"overallulbs",
-                pipeline:[{$count:"count"}],
-                as :"overallulbs"
-            }
-        },
+        overallulbs,
         {
             $project:{
                 _id:1,
@@ -232,7 +252,7 @@ function getOverallQuery(financialYear) {
                 total:{$first:"$total"},
                 count:{$sum:1},
                 pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
-                rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTION"]}, then:1, else:0}}},
+                rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
                 approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
             }
         },
@@ -266,8 +286,9 @@ function getOverallQuery(financialYear) {
         }
     ];
 }
-function getStatewiseQuery(financialYear) {
-    return [
+function getStatewiseQuery(financialYear, state = null) {
+    let queryArr = state ? [{$match:{_id : state}}] : [];
+    return queryArr.concat([
         {
             $lookup:{
                 from:"overallulbs",
@@ -330,9 +351,10 @@ function getStatewiseQuery(financialYear) {
                 as : "data"
             }
         }
-    ];
+    ]);
 }
-function getUlbtypewiseQuery(financialYear) {
+function getUlbtypewiseQuery(financialYear, state=null) {
+    let stateCondition =  state ? {state:state} : {};
     return [
         {
             $lookup:{
@@ -340,6 +362,7 @@ function getUlbtypewiseQuery(financialYear) {
                 let:{ulbType:"$_id"},
                 pipeline:[
                     {$match:{ $expr : { $eq:["$ulbType","$$ulbType"]}}},
+                    {$match:stateCondition},
                     {
                         $lookup:{
                             from:"ulbfinancialdatas",
@@ -389,8 +412,9 @@ function getUlbtypewiseQuery(financialYear) {
 
     ];
 }
-function getStateAndUlbtypewsiseQuery(financialYear) {
-    return [
+function getStateAndUlbtypewsiseQuery(financialYear, state=null) {
+    let queryArr = state ? [{$match:{_id:state}}] : [];
+    return queryArr.concat([
         {
             $project:{
                 _id:0,
@@ -473,5 +497,5 @@ function getStateAndUlbtypewsiseQuery(financialYear) {
                 as:"data"
             }
         }
-    ];
+    ]);
 }
