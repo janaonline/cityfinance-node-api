@@ -37,7 +37,13 @@ module.exports.ulbtypewise = async (req, res)=>{
     try {
         let overallData = await UlbFinancialData.aggregate(getOverallQuery(financialYear)).exec();
         let data = await UlbType.aggregate(query).exec();
-        return Response.OK(res, {overall:overallData.length?overallData[0]:{},data:modifyData(data)});
+        let overall = {total:0,data:formatData([])};
+        if(overallData.length){
+            overall = {total:overallData[0].total,data:formatData(overallData[0].data) };
+        }
+        return Response.OK(res, {
+            overall:overall,
+            data:modifyData(data)});
     }catch (e) {
         console.log("Exception",e);
         return Response.DbError(res,e)
@@ -51,7 +57,7 @@ module.exports.stateandulbtypewise = async (req, res)=>{
         let data = await State.aggregate(query).exec();
         for(el of data){
             let state = statewiseData.find(f=> f.name == el.name);
-            el["overall"] = state ? {total:state.total,data:state.data} : {total:0,data:[]};
+            el["overall"] = state ? {total:state.total,data:formatData(state.data)} : {total:0,data:formatData([])};
             el["data"] = modifyData(el.data)
         }
         return Response.OK(res, data);
