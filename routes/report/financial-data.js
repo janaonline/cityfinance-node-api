@@ -417,7 +417,7 @@ function getStateAndUlbtypewsiseQuery(financialYear, state=null) {
     return queryArr.concat([
         {
             $project:{
-                _id:0,
+                _id:1,
                 name:1
             }
         },
@@ -442,25 +442,25 @@ function getStateAndUlbtypewsiseQuery(financialYear, state=null) {
                                     $project:{
                                         _id:1
                                     }
-                                }
-                            ],
-                            as:"ulbs"
-                        }
-                    },
-                    {$unwind:{path:"$ulbs", preserveNullAndEmptyArrays:true}},
-                    {
-                        $lookup:{
-                            from:"ulbfinancialdatas",
-                            let:{ulb:"$ulbs._id"},
-                            pipeline:[
-                                {$match:{"financialYear" : financialYear}},
-                                { $match: { $expr:{ $eq: [ "$ulb",  "$$ulb" ] }}},
+                                },
+                                {
+                                    $lookup:{
+                                        from:"ulbfinancialdatas",
+                                        let:{ulb:"$_id"},
+                                        pipeline:[
+                                            {$match:{"financialYear" : financialYear}},
+                                            { $match: { $expr:{ $eq: [ "$ulb",  "$$ulb" ] }}}
+                                        ],
+                                        as:"ulbfinancialdatas"
+                                    }
+                                },
+                                {"$unwind":{path:"$ulbfinancialdatas"}},
                                 {
                                     $project:{
-                                        _id:1,
-                                        name:1,
-                                        audited:1,
-                                        status:1
+                                        _id:0,
+                                        name:"$ulbfinancialdatas.name",
+                                        audited:"$ulbfinancialdatas.audited",
+                                        status:"$ulbfinancialdatas.status"
                                     }
                                 },
                                 {
@@ -474,7 +474,8 @@ function getStateAndUlbtypewsiseQuery(financialYear, state=null) {
                                 },
                                 {
                                     $project:{
-                                        _id:1,
+                                        _id:0,
+                                        audited:"$_id",
                                         count:1,
                                         uploaded:"$count",
                                         pending:1,
@@ -483,7 +484,15 @@ function getStateAndUlbtypewsiseQuery(financialYear, state=null) {
                                     }
                                 }
                             ],
-                            as : "data"
+                            as:"data"
+                        }
+                    },
+                    {$unwind:{path:"$data", preserveNullAndEmptyArrays:true}},
+                    {
+                        $group:{
+                            _id : "$_id",
+                            name:{$first:"$name"},
+                            data:{$push:"$data"}
                         }
                     },
                     {
