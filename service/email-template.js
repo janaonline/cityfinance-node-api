@@ -67,6 +67,20 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 City Finance Team`
         }
     }
+    const userProfileRequestAction = (name, status)=>{
+        return {
+            subject:`${status}: Profile Update Request for City Finance`,
+            body:`Dear ${name},<br>
+                        <br>
+                        <p>
+                            Your account has been ${status}. <br>
+                            Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`
+        }
+    }
     const userEmailEdit = (name,link)=>{
         return {
             subject:`Profile Update Successful for City Finance`,
@@ -564,6 +578,7 @@ module.exports = {
     userCreation:userCreation,
     userForgotPassword:userForgotPassword,
     userProfileEdit:userProfileEdit,
+    userProfileRequestAction:userProfileRequestAction,
     userEmailEdit:userEmailEdit,
     ulbSignup:ulbSignup,
     ulbSignupAccountant:ulbSignupAccountant,

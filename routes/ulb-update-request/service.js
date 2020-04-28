@@ -15,15 +15,15 @@ module.exports.create = async (req, res)=>{
     if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;
+
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbUpdateRequest(data);
         ulbUpdateRequest.ulb = user.ulb;
         ulbUpdateRequest.actionTakenBy = user._id;
-
         if(ulbUpdateRequest.commissionerEmail){
             let emailCheck = await User.findOne({email:ulbUpdateRequest.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
-            if(emailCheck && (emailCheck.role != "ULB" || emailCheck.ulb.toString() != user._id.toString())){
-                return Response.BadRequest(res, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
+            if(emailCheck && (emailCheck.role != "ULB" || emailCheck.ulb.toString() != user.ulb.toString())){
+                return Response.BadRequest(res, {},`Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
             }
         }
 
@@ -33,7 +33,7 @@ module.exports.create = async (req, res)=>{
             try{
                 let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus});
                 if(du.n){
-                    return  Response.OK(res,du,'Successfully updated');
+                    return  Response.OK(res,du,'Request updated');
                 }else{
                     return Response.BadRequest(res,getPrevStatus, 'Row not found! Something wring in code.');
                 }
@@ -72,7 +72,7 @@ module.exports.create = async (req, res)=>{
                 let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
                 if(emailCheck){
                     if(emailCheck.ulb.toString() != data.ulb.toString()){
-                        return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by ${emailCheck.role} user.`)
+                        return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
                     }
                 }
                 pObj["email"] = pObj["commissionerEmail"];
@@ -437,6 +437,7 @@ module.exports.action = async (req, res)=>{
                 }else if(prevState.status == "CANCELLED"){
                     return Response.BadRequest(res,{}, 'The record is already cancelled.')
                 }else{
+                    let userData = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id email role name").lean();
                     if(updateData.status == "APPROVED"){
                         updateData.isActive = false;
                         let keys = [
@@ -465,7 +466,6 @@ module.exports.action = async (req, res)=>{
                             }
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
-                            let userData = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id email role name").lean();
                             let mailOptions = {
                                 to: userData.email,
                                 subject: "",
@@ -485,6 +485,11 @@ module.exports.action = async (req, res)=>{
                         }
                         let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
                         let du = await User.update({ulb:prevState.ulb, role:"ULB",isDeleted:false},{$set:pObj});
+                    }else{
+                        let template = Service.emailTemplate.userProfileRequestAction(userData.name,updateData.status);
+                        mailOptions.subject=  template.subject;
+                        mailOptions.html=  template.body;
+                        SendEmail(mailOptions);
                     }
                     let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:prevState}});
                     if(uur.n){
