@@ -263,6 +263,7 @@ module.exports.getAll = async (req, res)=>{
             if (user.role == "ULB") {
                 newFilter["ulb"] = ObjectId(user.ulb);
             }
+            newFilter["isActive"] = true;
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({$match: newFilter});
             }

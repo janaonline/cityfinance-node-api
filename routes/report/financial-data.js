@@ -77,7 +77,7 @@ module.exports.chart = async (req, res)=>{
         let financialYear = req.query.financialYear;
         let q = [];
         if(financialYear){
-            q.push({$match:{financialYear:financialYear}});
+            q.push({$match:{financialYear:financialYear,isActive:true}});
         }
         let query =  q.concat([
             {
