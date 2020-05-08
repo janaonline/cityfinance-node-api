@@ -477,7 +477,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         name:1,
                         email:1,
                         status:1,
-                        message:1,
+                        rejectReason:1,
                         commissionerName:1,
                         commissionerEmail:1,
                         accountantName:1,
@@ -491,7 +491,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                         name:1,
                         email:1,
                         status:1,
-                        message:1,
+                        rejectReason:1,
                         commissionerName:1,
                         commissionerEmail:1,
                         accountantName:1,
@@ -517,7 +517,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 }else if(data.status == "REJECTED"){
-                    let templateUlb = ulbSignupRejection(data.name, data.message);
+                    let templateUlb = ulbSignupRejection(data.name, data.rejectReason);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 }

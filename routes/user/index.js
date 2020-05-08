@@ -22,7 +22,7 @@ router.put('/profile', verifyToken, userService.profileUpdate)
 router.put('/profile/:_id', verifyToken, userService.profileUpdate)
 
 //Profile
-router.get('/profile', verifyToken, userService.profileGet);
+router.get('/profile', verifyToken,userService.profileGet);
 
 // @Create
 router.post('/create',verifyToken, userService.create);

@@ -31,7 +31,7 @@ const UserSchema = mongoose.Schema({
 	createdAt: { type: Date, default: Date.now },
 	modifiedAt: { type: Date, default: Date.now },
 	status:{type:String, enum:["PENDING","APPROVED","REJECTED","NA"], default:"NA"},
-	message:{type:String, default:""},
+	rejectReason:{type:String, default:""},
 	isActive: { type: Boolean, default: true },
 	isEmailVerified:{ type: Boolean, default: false },
 	isDeleted: { type: Boolean, default: false }

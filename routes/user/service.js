@@ -145,7 +145,7 @@ module.exports.getAll = async (req, res)=> {
                             "ulbCode":"$ulb.code",
                             "ulbType": "$ulbType.name",
                             "status": { $cond:[{ $ifNull:["$status",false]},"$status","NA"]},
-                            "message": 1,
+                            "rejectReason": 1,
                             "modifiedAt": 1,
                             "createdAt": 1
                         }
@@ -288,6 +288,7 @@ module.exports.profileUpdate =  async (req, res) =>{
     }
 };
 module.exports.profileGet = async (req, res) =>{
+
     let obj = {}; let _id = req.query._id; let user = req.decoded;
     let keyObj = {
         USER:{
@@ -404,15 +405,17 @@ module.exports.delete = async (req, res) =>{
     }
 };
 module.exports.ulbSignupAction = async (req, res)=> {
+
     let user = req.decoded, data = req.body;
     let access = Constants.USER.LEVEL_ACCESS;
     try {
         let condition = {_id:ObjectId(req.params._id)};
         let userData = await User.findOne(condition).populate("ulb","state").lean();
+
         if(userData){
             if(access[user.role].indexOf(userData.role)){
                 try {
-                    let d = {modifiedAt:new Date(),status:data.status, message:data.message};
+                    let d = {modifiedAt:new Date(),status:data.status, rejectReason:data.rejectReason};
                     let u = await User.update(condition,{$set:d});
                     let link  =  await Service.emailVerificationLink(userData._id,req.currentUrl);
                     let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(userData._id, link);
@@ -427,6 +430,8 @@ module.exports.ulbSignupAction = async (req, res)=> {
             Response.BadRequest(res,{},`User not found.`)
         }
     }catch (e) {
+
+        console.log(e);
         Response.BadRequest(res, e,`Something went wrong.`)
     }
 }
