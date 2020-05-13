@@ -33,9 +33,9 @@ module.exports.create = async (req, res)=>{
             try{
                 let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus});
                 if(du.n){
-                    return  Response.OK(res,du,'Request updated');
+                    return  Response.OK(res,du,'Request for change has been sent to admin to approval');
                 }else{
-                    return Response.BadRequest(res,getPrevStatus, 'Row not found! Something wring in code.');
+                    return Response.BadRequest(res,getPrevStatus, 'Row not found! Something wrong in code.');
                 }
             }catch (e) {
                 return Response.DbError(res,e, e.message);
@@ -45,7 +45,7 @@ module.exports.create = async (req, res)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)
                 }else {
-                    return Response.OK(res,dt, 'Request accepted.');
+                    return Response.OK(res,dt, 'Request for change has been sent to admin to approval');
                 }
             })
         }
