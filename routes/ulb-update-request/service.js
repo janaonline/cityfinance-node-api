@@ -438,6 +438,11 @@ module.exports.action = async (req, res)=>{
                     return Response.BadRequest(res,{}, 'The record is already cancelled.')
                 }else{
                     let userData = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id email role name").lean();
+                    let mailOptions = {
+                        to: userData.email,
+                        subject: "",
+                        html:""
+                    };
                     if(updateData.status == "APPROVED"){
                         updateData.isActive = false;
                         let keys = [
@@ -466,11 +471,6 @@ module.exports.action = async (req, res)=>{
                             }
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
-                            let mailOptions = {
-                                to: userData.email,
-                                subject: "",
-                                html:""
-                            };
                             if(pObj.email != userData.email){
                                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
                                 let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
