@@ -21,7 +21,7 @@ module.exports.create = async (req, res)=>{
         ulbUpdateRequest.ulb = user.ulb;
         ulbUpdateRequest.actionTakenBy = user._id;
         if(ulbUpdateRequest.commissionerEmail){
-            let emailCheck = await User.findOne({email:ulbUpdateRequest.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
+            let emailCheck = await Service.checkUnique.email(ulbUpdateRequest.commissionerEmail,true);
             if(emailCheck && (emailCheck.role != "ULB" || emailCheck.ulb.toString() != user.ulb.toString())){
                 return Response.BadRequest(res, {},`Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
             }

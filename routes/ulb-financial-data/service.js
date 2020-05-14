@@ -205,6 +205,9 @@ module.exports.getAll = async (req, res)=>{
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
                 {
+                    $match:{overallReport:null}
+                },
+                {
                     $lookup: {
                         from: "ulbs",
                         localField: "ulb",
