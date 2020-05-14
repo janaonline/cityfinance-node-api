@@ -27,7 +27,7 @@ module.exports.register = async (req, res)=>{
             //data["password"] = Service.getRndInteger(10000,99999).toString();
         }
 
-        if(data["password"].length <8){
+        if(data["password"].length < 8){
             return  Response.BadRequest(res,"",`password contain at least 8 characters`)
         }
         if(!checkPassword(data["password"])){
@@ -166,6 +166,9 @@ module.exports.verifyToken = (req, res, next)=>{
                 return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
             } else {
                 req.decoded = decoded;
+                if (req.decoded["passwordExpires"] && req.decoded["passwordExpires"] < Date.now()) {
+                  //return Response.UnAuthorized(res, {},`Please reset your password.`);
+                }
                 next();
             }
         });
@@ -239,10 +242,11 @@ module.exports.forgotPassword = async (req, res)=>{
             }else {
                 let newPassword = Service.getRndInteger(10000,99999).toString();
                 let passwordHash = await Service.getHash(newPassword);
-                passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+                let passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+                let passwordHistory = setPasswordHistory(user,passwordHash);    
 
                 try{
-                    let du = await User.update({_id:user._id},{$set:{password:passwordHash,passwordExpires:passwordExpires}});
+                    let du = await User.update({_id:user._id},{$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires}});
                     let keys  = ["_id","email","role","name"];
                     let data = {};
                     for(k in user){
@@ -279,25 +283,34 @@ module.exports.resetPassword = async (req, res)=>{
     try{
         if(req.body.password){
 
-            let user = req.decoded;
-            let passwordHash = await Service.getHash(req.body.password);
-            passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+            if(req.body.password.length < 8){
+                return  Response.BadRequest(res,"",`password contain at least 8 characters`)
+            }
+            if(!checkPassword(req.body.password)){
+               return  Response.BadRequest(res,"",`Password should be alphanumeric with at least one Uppercase/Lowercase and special character`)
+            }
 
-            if(Array.isArray(user.passwordHistory) && user.passwordHistory.length < 3  ){
-                user.passwordHistory.push(passwordHash);
+            let user = await User.findOne({_id:ObjectId(req.decoded._id)}).exec();
+            if(user){
+                let passwordHash = await Service.getHash(req.body.password);
+
+                console.log(passwordHash);return;
+
+                let passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+                let passwordHistory = setPasswordHistory(user,passwordHash);    
+                let update = {$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires,isEmailVerified:true}};
+                let du = await User.update({_id:ObjectId(user._id)},update);
+                return Response.OK(res, {},'Password reset');
             }
             else{
-                user.passwordHistory.shift();
-                user.password.push(passwordHash)
+                return Response.BadRequest(res, {},`user not found.`);
             }
 
-            let update = {$set:{passwordHistory:user.passwordHistory,password:passwordHash,passwordExpires:passwordExpires,isEmailVerified:true}};
-            let du = await User.update({_id:ObjectId("5e83f2d3d6f1c5ee2eda7587")},update);
-            return Response.OK(res, {},'Password reset');
         }else{
             return Response.BadRequest(res, {},`Password is required field.`);
         }
     }catch (e) {
+
         return Response.BadRequest(res, {},`Exception:${e.message}`);
     }
 };
@@ -324,4 +337,16 @@ function checkPassword(str)
 {   
     var re = /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
     return re.test(str);
+}
+
+function setPasswordHistory(user,passwordHash)
+{
+    if(Array.isArray(user.passwordHistory) && user.passwordHistory.length < 3  ){
+        user.passwordHistory.push(passwordHash);
+    }
+    else{
+        user.passwordHistory.shift();
+        user.passwordHistory.push(passwordHash);
+    }
+    return user.passwordHistory;
 }
