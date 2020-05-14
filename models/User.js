@@ -6,11 +6,15 @@ const ulbRole = function () {
 const stateRole = function () {
 	return this.role == "STATE";
 }
+
 const UserSchema = mongoose.Schema({
 	name: { type: String,required : true },
 	mobile: { type: String, default:null },
 	email:	{ type: String, required: true, index:{unique:true}},
 	password: { type: String, required: true },
+	loginAttempts: { type: Number, required: true, default: 0 },
+	lockUntil: { type: Number },
+	isLocked : {type: Boolean,default:false},
 	role: { type: String, enum: CONSTANTS.USER.ROLES, required: true },
 	username: { type: String, required: false }, // depricated
 	designation:{ type:String, default:""},

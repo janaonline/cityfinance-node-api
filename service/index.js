@@ -134,6 +134,25 @@ function compareHash(str1, str2) {
     });
   })
 }
+
+function incLoginAttempts(user) {
+
+  const MAX_LOGIN_ATTEMPTS = 5;
+  const LOCK_TIME = 60 * 1000       
+  // if we have a previous lock that has expired, restart at 1
+  if (user.lockUntil && user.lockUntil < Date.now()) {
+    return updates = {$set: { loginAttempts: 1,isLocked:false }}
+  }
+  // otherwise we're incrementing
+  var updates = { $inc: { loginAttempts: 1 } };
+  // lock the account if we've reached max attempts and it's not locked already
+  if (user.loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS && !user.isLocked) {
+      updates = {$set:{ lockUntil: Date.now() + LOCK_TIME, isLocked:true}};
+  }
+  return updates;
+};
+
+
 module.exports = {
   find: find,
   put: put,
@@ -143,6 +162,7 @@ module.exports = {
   getRndInteger:getRndInteger,
   getHash:getHash,
   compareHash:compareHash,
+  incLoginAttempts:incLoginAttempts,
   response:require('./response'),
   mapFilter:require('./filter'),
   emailTemplate:require('./email-template'),

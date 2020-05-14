@@ -23,8 +23,16 @@ module.exports.register = async (req, res)=>{
             }
             data["isActive"] = false;
             data["email"] = data.commissionerEmail;
-            data["password"] = Service.getRndInteger(10000,99999).toString();
+            //data["password"] = Service.getRndInteger(10000,99999).toString();
         }
+
+        if(data["password"].length <8){
+            return  Response.BadRequest(res,"",`password contain at least 8 characters`)
+        }
+        if(!checkPassword(data["password"])){
+            return  Response.BadRequest(res,"",`Password should be alphanumeric with at least one Uppercase/Lowercase and special character`)
+        }
+
         let newUser = new User(data);
         let ud = await newUser.validate();
         newUser.password = await Service.getHash(newUser.password);
@@ -93,6 +101,13 @@ module.exports.login = async (req, res)=>{
             return Response.BadRequest(res, {},`Your request has been rejected. Reason: ${user.message}`);
         }else {
             try{
+
+                if (user.isLocked) {
+                    // just increment login attempts if account is already locked
+                    let update = Service.incLoginAttempts(user);
+                    await User.update({email:user.email},update).exec();  
+                    return Response.BadRequest(res, {}, `Your account is temporarily locked`);
+                }
                 let sessionId = req.headers.sessionId;
                 let isMatch = await Service.compareHash(req.body.password, user.password);
                 if (isMatch) {
@@ -111,6 +126,11 @@ module.exports.login = async (req, res)=>{
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.TOKEN_EXPIRY
                     });
+
+                    var updates = {
+                        $set: { loginAttempts: 0 }
+                    };
+                    await User.update({email:user.email},updates).exec()// set     
                     return res.status(200).json({
                         success: true,
                         token: token,
@@ -122,6 +142,8 @@ module.exports.login = async (req, res)=>{
                         }
                     });
                 } else {
+                    let update = Service.incLoginAttempts(user);
+                    await User.update({"email":user.email},update).exec();   
                     return Response.BadRequest(res, {}, `Invalid username or password`);
                 }
             }catch (e) {
@@ -280,4 +302,11 @@ module.exports.endSession = async(req, res)=>{
     }catch (e) {
         return Response.DbError(res, e);
     }
+}
+
+function checkPassword(str)
+{   
+
+    var re = /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
+    return re.test(str);
 }
