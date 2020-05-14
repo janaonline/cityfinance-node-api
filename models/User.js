@@ -38,6 +38,10 @@ const UserSchema = mongoose.Schema({
 	rejectReason:{type:String, default:""},
 	isActive: { type: Boolean, default: true },
 	isEmailVerified:{ type: Boolean, default: false },
-	isDeleted: { type: Boolean, default: false }
+	isDeleted: { type: Boolean, default: false },
+	passwordExpires: {type: Number},
+	passwordHistory: {type: Array,default:[]}
+
+
 });
 module.exports = mongoose.model('User', UserSchema);;

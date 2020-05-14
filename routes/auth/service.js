@@ -7,6 +7,7 @@ const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
+const passwordExpiresTime = 3600000; // 1 hour
 module.exports.register = async (req, res)=>{
     try{
         let data = req.body;
@@ -123,12 +124,14 @@ module.exports.login = async (req, res)=>{
                     data['purpose'] = 'WEB';
                     data['lh_id'] = lh._id;
                     data['sessionId'] = sessionId;
+                    data["passwordExpires"] = user.passwordExpires;
+                    data["passwordHistory"] = user.passwordHistory;
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.TOKEN_EXPIRY
                     });
 
                     var updates = {
-                        $set: { loginAttempts: 0 }
+                        $set: { loginAttempts: 0}
                     };
                     await User.update({email:user.email},updates).exec()// set     
                     return res.status(200).json({
@@ -236,8 +239,10 @@ module.exports.forgotPassword = async (req, res)=>{
             }else {
                 let newPassword = Service.getRndInteger(10000,99999).toString();
                 let passwordHash = await Service.getHash(newPassword);
+                passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+
                 try{
-                    let du = await User.update({_id:user._id},{$set:{password:passwordHash}});
+                    let du = await User.update({_id:user._id},{$set:{password:passwordHash,passwordExpires:passwordExpires}});
                     let keys  = ["_id","email","role","name"];
                     let data = {};
                     for(k in user){
@@ -273,10 +278,21 @@ module.exports.forgotPassword = async (req, res)=>{
 module.exports.resetPassword = async (req, res)=>{
     try{
         if(req.body.password){
+
             let user = req.decoded;
             let passwordHash = await Service.getHash(req.body.password);
-            console.log("passwordHash",passwordHash);
-            let du = await User.update({_id:ObjectId(user._id)},{$set:{password:passwordHash, isEmailVerified:true}});
+            passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+
+            if(Array.isArray(user.passwordHistory) && user.passwordHistory.length < 3  ){
+                user.passwordHistory.push(passwordHash);
+            }
+            else{
+                user.passwordHistory.shift();
+                user.password.push(passwordHash)
+            }
+
+            let update = {$set:{passwordHistory:user.passwordHistory,password:passwordHash,passwordExpires:passwordExpires,isEmailVerified:true}};
+            let du = await User.update({_id:ObjectId("5e83f2d3d6f1c5ee2eda7587")},update);
             return Response.OK(res, {},'Password reset');
         }else{
             return Response.BadRequest(res, {},`Password is required field.`);
@@ -306,7 +322,6 @@ module.exports.endSession = async(req, res)=>{
 
 function checkPassword(str)
 {   
-
     var re = /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
     return re.test(str);
 }
