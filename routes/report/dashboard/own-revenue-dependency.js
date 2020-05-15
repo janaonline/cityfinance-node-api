@@ -272,14 +272,25 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                 "ownRevenue": "$ownRevenue",
                 "revenueExpenditure": "$revenueExpenditure",
                 "ownRevenuePercentage": {
-                    "$multiply": [
+                    "$cond": [
                         {
-                            "$divide": [
-                                "$ownRevenue",
-                                "$revenueExpenditure"
+                            "$ne": [
+                                "$revenueExpenditure",
+                                0
                             ]
                         },
-                        100
+                        {
+                            "$multiply": [
+                                {
+                                    "$divide": [
+                                        "$ownRevenue",
+                                        "$revenueExpenditure"
+                                    ]
+                                },
+                                100
+                            ]
+                        },
+                        0
                     ]
                 },
                 "ownRevenueUlb": 1
@@ -304,9 +315,10 @@ const modifyData = (obj)=>{
         return 0 //default return value (no sorting)
     })
     obj["ownRevenueUlb"] = obj["ownRevenueUlb"].filter(f=> f.value >0 );
-    obj["maxOwnRevenuePercentage"] = JSON.parse(JSON.stringify(obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1]))
+    console.log(JSON.stringify(obj,0,3))
+    obj["maxOwnRevenuePercentage"] = obj["ownRevenueUlb"] && obj["ownRevenueUlb"].length ? JSON.parse(JSON.stringify(obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1])):{name:"0",value:0};
 
-    obj["minOwnRevenuePercentage"] = JSON.parse(JSON.stringify(obj["ownRevenueUlb"][0]))
+    obj["minOwnRevenuePercentage"] = obj["ownRevenueUlb"] && obj["ownRevenueUlb"].length ? JSON.parse(JSON.stringify(obj["ownRevenueUlb"][0])):{name:"0",value:0};
 
     obj["maxOwnRevenuePercentage"].value = obj["maxOwnRevenuePercentage"].value.toFixed(2)
     obj["minOwnRevenuePercentage"].value = obj["minOwnRevenuePercentage"].value.toFixed(2)
