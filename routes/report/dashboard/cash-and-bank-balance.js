@@ -65,7 +65,7 @@ const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {
   },
   {
       "$project": {
-          "numOfUlb": numOfUlb,
+          "numOfUlb":{ $literal: numOfUlb },
           "range": range,
           "financialYear": 1,
           "ulb": 1,
