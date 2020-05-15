@@ -261,7 +261,8 @@ module.exports.getAll = async (req, res)=>{
                         stateCode: "$state.code",
                         actionTakenByUserName: "$actionTakenBy.name",
                         actionTakenByUserRole: "$actionTakenBy.role",
-                        isActive:"$isActive"
+                        isActive:"$isActive",
+                        createdAt:"$createdAt"
                     }
                 }
             ]
@@ -279,6 +280,8 @@ module.exports.getAll = async (req, res)=>{
             }
             if (sort && Object.keys(sort).length) {
                 q.push({$sort: sort});
+            }else {
+                q.push({$sort:{createdAt:-1 }})
             }
 
             if (csv) {
