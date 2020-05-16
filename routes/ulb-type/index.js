@@ -1,26 +1,27 @@
-const passport = require('passport');
 const express = require('express');
 const router = express.Router();
 
 //--> ULB Type Routes <---//
 const UlbType = require('./service');
+const verifyToken = require('../auth/service').verifyToken;
+
 router.get(
     '/UlbType',
     UlbType.get
 );
 router.put(
     '/UlbType/:_id',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     UlbType.put
 );
 router.post(
     '/UlbType',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     UlbType.post
 );
 router.delete(
     '/UlbType/:_id',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     UlbType.delete
 );
 module.exports = router;

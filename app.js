@@ -10,6 +10,7 @@ const app = express();
 require("./initialization/initialize")();
 const Service = require('./service');
 const json2xls = require('json2xls');
+const expressSanitizer = require('express-sanitizer');
 app.use(json2xls.middleware);;
 //Port Number
 const port = config.APP.PORT;
@@ -18,7 +19,7 @@ app.use(logger('dev'));
 
 // CORS middleware
 app.use(cors());
-
+app.use(expressSanitizer());
 
 //Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -33,6 +34,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 require('./config/passport')(passport);
+
 const routes = require("./routes");
 // app.use(Service.response);
 app.use('/api/v1/', routes);

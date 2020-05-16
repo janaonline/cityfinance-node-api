@@ -87,7 +87,7 @@ module.exports.register = async (req, res)=>{
     }
 };
 module.exports.login = async (req, res)=>{
-    User.findOne({email: req.body.email}, async (err, user)=>{
+    User.findOne({email: req.sanitize(req.body.email)}, async (err, user)=>{
         if(err){
             return Response.BadRequest(res, err,'Db Error');
         }else if(!user){
@@ -109,6 +109,12 @@ module.exports.login = async (req, res)=>{
                     await User.update({email:user.email},update).exec();  
                     return Response.BadRequest(res, {}, `Your account is temporarily locked`);
                 }
+
+                // check Password Expiry 
+                if (user.passwordExpires && user.passwordExpires < Date.now()) {
+                  //return Response.UnAuthorized(res, {},`Please reset your password.`);
+                }
+
                 let sessionId = req.headers.sessionId;
                 let isMatch = await Service.compareHash(req.body.password, user.password);
                 if (isMatch) {
@@ -166,9 +172,6 @@ module.exports.verifyToken = (req, res, next)=>{
                 return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
             } else {
                 req.decoded = decoded;
-                if (req.decoded["passwordExpires"] && req.decoded["passwordExpires"] < Date.now()) {
-                  //return Response.UnAuthorized(res, {},`Please reset your password.`);
-                }
                 next();
             }
         });
@@ -293,9 +296,6 @@ module.exports.resetPassword = async (req, res)=>{
             let user = await User.findOne({_id:ObjectId(req.decoded._id)}).exec();
             if(user){
                 let passwordHash = await Service.getHash(req.body.password);
-
-                console.log(passwordHash);return;
-
                 let passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
                 let passwordHistory = setPasswordHistory(user,passwordHash);    
                 let update = {$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires,isEmailVerified:true}};

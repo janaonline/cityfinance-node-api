@@ -2,6 +2,7 @@ const passport = require('passport');
 const express = require('express');
 const router = express.Router();
 const State = require('./service')
+const verifyToken = require('../auth/service').verifyToken;
 
 router.get(
     '/state',
@@ -9,18 +10,17 @@ router.get(
 );
 router.put(
     '/state/:_id',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     State.put
 );
-router.post(
-    '/state',
-    passport.authenticate('jwt', { session: false }),
+router.post('/state',
     State.post
 );
+
 router.delete(
     '/state/:_id',
-    passport.authenticate('jwt', { session: false }),
+    verifyToken,
     State.delete
 );
-router.post('/states-with-ulb-count', State.getStateListWithCoveredUlb);
+router.post('/states-with-ulb-count',State.getStateListWithCoveredUlb);
 module.exports = router;
