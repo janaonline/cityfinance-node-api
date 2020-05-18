@@ -12,6 +12,11 @@ module.exports.create = async (req, res)=>{
     let user = req.decoded;
     let data = req.body;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
+
+    let inValid = await Service.checkUnique.validate(data, "ULB");
+    if(inValid && inValid.length){
+        return Response.BadRequest(res, {},`${inValid.join("\n")}`);
+    }
     if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;
@@ -20,22 +25,15 @@ module.exports.create = async (req, res)=>{
         let ulbUpdateRequest = new UlbUpdateRequest(data);
         ulbUpdateRequest.ulb = user.ulb;
         ulbUpdateRequest.actionTakenBy = user._id;
-        if(ulbUpdateRequest.commissionerEmail){
-            let emailCheck = await User.findOne({email:ulbUpdateRequest.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
-            if(emailCheck && (emailCheck.role != "ULB" || emailCheck.ulb.toString() != user.ulb.toString())){
-                return Response.BadRequest(res, {},`Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
-            }
-        }
-
         let getPrevStatus = await UlbUpdateRequest.findOne({ulb:ulbUpdateRequest.ulb, status:"PENDING"}).lean().exec();
         if(getPrevStatus){
             Object.assign(getPrevStatus,data);
             try{
                 let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus});
                 if(du.n){
-                    return  Response.OK(res,du,'Request updated');
+                    return  Response.OK(res,du,'Request for change has been sent to admin to approval');
                 }else{
-                    return Response.BadRequest(res,getPrevStatus, 'Row not found! Something wring in code.');
+                    return Response.BadRequest(res,getPrevStatus, 'Row not found! Something wrong in code.');
                 }
             }catch (e) {
                 return Response.DbError(res,e, e.message);
@@ -45,7 +43,7 @@ module.exports.create = async (req, res)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)
                 }else {
-                    return Response.OK(res,dt, 'Request accepted.');
+                    return Response.OK(res,dt, 'Request for change has been sent to admin to approval');
                 }
             })
         }
@@ -294,6 +292,8 @@ module.exports.getAll = async (req, res)=>{
             }
             if(Object.keys(sort).length){
                 q.push({$sort:sort});
+            }else {
+                q.push({$sort:{createdAt:-1 }})
             }
             if(csv){
                 let field = user.role == "ULB" ? {
@@ -438,6 +438,11 @@ module.exports.action = async (req, res)=>{
                     return Response.BadRequest(res,{}, 'The record is already cancelled.')
                 }else{
                     let userData = await User.findOne({ulb:prevState.ulb, role:"ULB"},"_id email role name").lean();
+                    let mailOptions = {
+                        to: userData.email,
+                        subject: "",
+                        html:""
+                    };
                     if(updateData.status == "APPROVED"){
                         updateData.isActive = false;
                         let keys = [
@@ -466,11 +471,6 @@ module.exports.action = async (req, res)=>{
                             }
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
-                            let mailOptions = {
-                                to: userData.email,
-                                subject: "",
-                                html:""
-                            };
                             if(pObj.email != userData.email){
                                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
                                 let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)

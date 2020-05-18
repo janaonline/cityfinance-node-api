@@ -167,5 +167,6 @@ module.exports = {
   mapFilter:require('./filter'),
   emailTemplate:require('./email-template'),
   emailVerificationLink:require('./email-verification-link'),
-  dataFormating:require('./data-fomatting')
+  dataFormating:require('./data-fomatting'),
+  checkUnique:require('./check-unique')
 };

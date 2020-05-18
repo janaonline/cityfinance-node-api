@@ -231,13 +231,17 @@ module.exports.getAll = async (req, res)=> {
         return Response.BadRequest(res, e, e.message);
     }
 };
-module.exports.update = function (req, res) {
-    User.updateOne({_id: req.body._id}, req.body, (err, out) => {
-        if (err) {
-            res.json({success: false, msg: 'Invalid Payload', data: err.toString() });
+module.exports.update = async (req, res) =>{
+    try{
+        let inValid = await Service.checkUnique.validate(data, data.role);
+        if(inValid && inValid.length){
+            return Response.BadRequest(res, {},`${inValid.join("\n")}`);
         }
-        res.json({success: true, msg: 'Success', data: out });
-    })
+        let du = await User.updateOne({_id: req.body._id}, req.body);
+        return Response.OK(res,du,`Successfully updated.`)
+    }catch (e) {
+        return Response.DbError(res, e,e.message);
+    }
 };
 module.exports.profileUpdate =  async (req, res) =>{
     let obj = {}; let body = req.body; let user = req.decoded;
@@ -253,6 +257,10 @@ module.exports.profileUpdate =  async (req, res) =>{
         let _id = req.params._id ? req.params._id: user._id;
         let userInfo = await User.findOne({_id:ObjectId(_id)},"_id role name email accountantEmail departmentEmail").lean().exec();
         if(userInfo){
+            let inValid = await Service.checkUnique.validate(body, userInfo.role,userInfo._id);
+            if(inValid && inValid.length){
+                return Response.BadRequest(res, {},`${inValid.join("\n")}`);
+            }
             for(key in body){
                 if(body[key]){
                     obj[key] = body[key];
@@ -338,6 +346,10 @@ module.exports.create = async (req, res)=>{
     let user = req.decoded; let data = req.body;
     if(Constants.USER.LEVEL_ACCESS[user.role].indexOf(data.role) > -1){
         try{
+            let inValid = await Service.checkUnique.validate(data, data.role);
+            if(inValid && inValid.length){
+                return Response.BadRequest(res, {},`${inValid.join("\n")}`);
+            }
             let newUser = new User(data);
             let password = Service.getRndInteger(10000,99999).toString(); // dummy password for user creation.
             newUser.password = await Service.getHash(password);

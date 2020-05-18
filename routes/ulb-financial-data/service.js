@@ -28,12 +28,18 @@ module.exports.create = async (req, res)=>{
         let audited = typeof data.audited == "boolean" ? data.audited : (typeof data.audited == "string" && data.audited == "true");
         data.referenceCode = `${ulb.code}_${data.financialYear}_${ audited ? "Audited":"Unaudited"}`;
         data.ulb = user.ulb;
+        let checkData = await UlbFinancialData.count({ulb:data.ulb, financialYear:data.financialYear,audited:true});
+        if(checkData){
+            return Response.BadRequest(res, {},`Audited data already been uploaded for ${data.financialYear}.`);
+        }
+        console.log("checkData",checkData)
         data.actionTakenBy = ObjectId(user._id);
+        console.log(JSON.stringify(data,0,3))
         let ulbUpdateRequest = new UlbFinancialData(data);
         ulbUpdateRequest.save(async (err, dt)=>{
             if(err){
                 if(err.code == 11000){
-                    return Response.DbError(res,err, `Data for - ${ulb.name}(${ulb.code}) of ${data.financialYear} already benn uploaded.`);
+                    return Response.DbError(res,err, `Data for - ${ulb.name}(${ulb.code}) of ${data.financialYear} already been uploaded.`);
                 }else{
                     return Response.DbError(res,err, 'Failed to create entry');
                 }
@@ -199,6 +205,9 @@ module.exports.getAll = async (req, res)=>{
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
                 {
+                    $match:{overallReport:null}
+                },
+                {
                     $lookup: {
                         from: "ulbs",
                         localField: "ulb",
@@ -251,7 +260,9 @@ module.exports.getAll = async (req, res)=>{
                         stateName: "$state.name",
                         stateCode: "$state.code",
                         actionTakenByUserName: "$actionTakenBy.name",
-                        actionTakenByUserRole: "$actionTakenBy.role"
+                        actionTakenByUserRole: "$actionTakenBy.role",
+                        isActive:"$isActive",
+                        createdAt:"$createdAt"
                     }
                 }
             ]
@@ -263,11 +274,14 @@ module.exports.getAll = async (req, res)=>{
             if (user.role == "ULB") {
                 newFilter["ulb"] = ObjectId(user.ulb);
             }
+            newFilter["isActive"] = true;
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({$match: newFilter});
             }
             if (sort && Object.keys(sort).length) {
                 q.push({$sort: sort});
+            }else {
+                q.push({$sort:{createdAt:-1 }})
             }
 
             if (csv) {
@@ -290,6 +304,7 @@ module.exports.getAll = async (req, res)=>{
                     }
                     q.push({$skip: skip});
                     q.push({$limit: limit});
+                    // return res.json(q)
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
@@ -314,7 +329,7 @@ module.exports.getHistories = async (req, res)=>{
     try {
         let user = req.decoded,
         filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
-        sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+        sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {modifiedAt:-1}),
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
         csv = req.query.csv,
@@ -322,6 +337,37 @@ module.exports.getHistories = async (req, res)=>{
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
                 {$match: {_id: ObjectId(req.params._id)}},
+                {
+                    "$project": {
+                        "history": {
+                            "$concatArrays": [
+                                [
+                                    {
+                                        "_id": "$_id",
+                                        "referenceCode": "$referenceCode",
+                                        "audited": "$audited",
+                                        "overallReport": "$overallReport",
+                                        "completeness": "$completeness",
+                                        "correctness": "$correctness",
+                                        "status": "$status",
+                                        "modifiedAt": "$modifiedAt",
+                                        "createdAt": "$createdAt",
+                                        "isActive": "$isActive",
+                                        "balanceSheet": "$balanceSheet",
+                                        "schedulesToBalanceSheet": "$schedulesToBalanceSheet",
+                                        "incomeAndExpenditure": "$incomeAndExpenditure",
+                                        "schedulesToIncomeAndExpenditure": "$schedulesToIncomeAndExpenditure",
+                                        "trialBalance": "$trialBalance",
+                                        "financialYear": "$financialYear",
+                                        "ulb": "$ulb",
+                                        "actionTakenBy": "$actionTakenBy"
+                                    }
+                                ],
+                                "$history"
+                            ]
+                        }
+                    }
+                },
                 {$unwind: "$history"},
                 {
                     $lookup: {
