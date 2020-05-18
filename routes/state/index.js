@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const State = require('./service')
 const verifyToken = require('../auth/service').verifyToken;
+const constants = require('../../service/inactivityTimeout');
+
+router.use(constants);
 
 router.get(
     '/state',

@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const service = require('./service');
-
 router.get('/start_session',service.startSession);
 router.get('/end_session/:_id',service.endSession);
 router.post('/register',service.register);

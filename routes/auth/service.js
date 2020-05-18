@@ -3,11 +3,11 @@ const User = require('../../models/User');
 const LoginHistory = require('../../models/LoginHistory');
 const VisitSession = require('../../models/VisitSession');
 const Config = require('../../config/app_config');
+const Helper = require('../../_helper/constants');
 const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
-const passwordExpiresTime = 3600000; // 1 hour
 module.exports.register = async (req, res)=>{
     try{
         let data = req.body;
@@ -112,10 +112,10 @@ module.exports.login = async (req, res)=>{
 
                 // check Password Expiry 
                 if (user.passwordExpires && user.passwordExpires < Date.now()) {
-                  //return Response.UnAuthorized(res, {},`Please reset your password.`);
+                    //return Response.UnAuthorized(res, {},`Please reset your password.`);
                 }
 
-                let sessionId = req.headers.sessionId;
+                let sessionId = req.headers.sessionid;
                 let isMatch = await Service.compareHash(req.body.password, user.password);
                 if (isMatch) {
                     let keys  = ["_id","email","role","name",'ulb','state','isActive'];
@@ -125,7 +125,9 @@ module.exports.login = async (req, res)=>{
                             data[k] = user[k];
                         }
                     }
-                    let loginHistory = new LoginHistory({user:user._id, loggedInAt: new Date(),visitSession:sessionId});
+
+                    let inactiveTime = Date.now()+ Helper.INACTIVETIME.TIME; 
+                    let loginHistory = new LoginHistory({user:user._id, loggedInAt: new Date(),visitSession:ObjectId(sessionId),inactiveSessionTime:inactiveTime});
                     let lh = await loginHistory.save();
                     data['purpose'] = 'WEB';
                     data['lh_id'] = lh._id;
@@ -245,7 +247,7 @@ module.exports.forgotPassword = async (req, res)=>{
             }else {
                 let newPassword = Service.getRndInteger(10000,99999).toString();
                 let passwordHash = await Service.getHash(newPassword);
-                let passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+                let passwordExpires = Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
                 let passwordHistory = setPasswordHistory(user,passwordHash);    
 
                 try{
@@ -296,7 +298,7 @@ module.exports.resetPassword = async (req, res)=>{
             let user = await User.findOne({_id:ObjectId(req.decoded._id)}).exec();
             if(user){
                 let passwordHash = await Service.getHash(req.body.password);
-                let passwordExpires = Date.now() + passwordExpiresTime; // 1 hour
+                let passwordExpires = Date.now() + Helper.PASSWORDEXPIRETIME.TIME;; // 1 hour
                 let passwordHistory = setPasswordHistory(user,passwordHash);    
                 let update = {$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires,isEmailVerified:true}};
                 let du = await User.update({_id:ObjectId(user._id)},update);
