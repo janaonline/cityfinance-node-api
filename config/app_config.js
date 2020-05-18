@@ -9,5 +9,8 @@ module.exports = {
 		SECRET: process.env.SECRET,
 		TOKEN_EXPIRY: '10h',
 		EMAIL_VERFICATION_EXPIRY:'10m'
-	}
+	},
+	REDIS:{
+        "demo":process.env.REDIS_DEMO
+    }
 }

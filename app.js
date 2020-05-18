@@ -32,8 +32,8 @@ app.use(bodyParser.urlencoded({ limit: '20mb', extended: false }));
 //Passport Middleware
 app.use(passport.initialize());
 app.use(passport.session());
-
 require('./config/passport')(passport);
+require("./service/redis");
 
 const routes = require("./routes");
 // app.use(Service.response);
