@@ -8,6 +8,7 @@ const dashboard = {
     sourceRevenue: require('./source-revenue'),
     ulbCoverage: require('./ulb-coverage'),
     filterUlbs: require('./filter-ulbs'),
+    homePageData: require('./home-page')
 }
 const express = require('express');
 const router = express.Router();
@@ -18,4 +19,5 @@ router.get("/revenue-expenditure", dashboard.filterUlbs, dashboard.revenueExpend
 router.get("/source-financial-revenue-expenditure", dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
 router.get("/source-revenue", dashboard.filterUlbs, dashboard.sourceRevenue);
 router.get("/ulb-coverage", dashboard.ulbCoverage);
+router.get("/home-page-data",dashboard.homePageData);
 module.exports = router;
