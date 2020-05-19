@@ -10,6 +10,7 @@ const dashboard = {
     filterUlbs: require('./filter-ulbs'),
     homePageData: require('./home-page')
 }
+const compression = require('compression')
 const Redis = require('../../../service/redis');
 const Response = require('../../../service/response');
 const redisCheck = (req, res, next)=>{
@@ -31,6 +32,8 @@ const redisCheck = (req, res, next)=>{
 }
 // Redis.resetDashboard();
 const express = require('express');
+const app = express();
+app.use(compression())
 const router = express.Router();
 router.get("/cash-and-bank", redisCheck,dashboard.filterUlbs, dashboard.cashAndBank);
 router.get("/outstanding-debt", redisCheck,dashboard.filterUlbs, dashboard.outstandingDebt);
