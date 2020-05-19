@@ -2,7 +2,7 @@ const UlbLedger = require('../../../models/UlbLedger');
 const OverallUlb = require('../../../models/OverallUlb');
 const BondIssuerItem = require('../../../models/BondIssuerItem');
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const Redis = require("../../../service/redis");
 module.exports =  (req,res)=>{
 
     let query = {};
@@ -68,13 +68,14 @@ module.exports =  (req,res)=>{
     })
 
     Promise.all([totalULB,munciapalBond,financialStatement]).then((values)=>{
-        
-        return res.status(200).json({success : true, message : "Data fetched", data : {
+        let data = {
             totalULB : values[0],
             financialStatements: values[2].length>0 ? values[2][0].count : 0,
             totalMunicipalBonds : values[1]
 
-        }});
+        };
+        Redis.set(req.redisKey,JSON.stringify(data))
+        return res.status(200).json({success : true, message : "Data fetched", data : data});
 
         },(rejectError)=>{
 
