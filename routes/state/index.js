@@ -4,8 +4,6 @@ const router = express.Router();
 const State = require('./service')
 const verifyToken = require('../auth/service').verifyToken;
 const constants = require('../../service/inactivityTimeout');
-
-
 router.get(
     '/state',
     State.get

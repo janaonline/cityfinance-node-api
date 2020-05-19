@@ -57,7 +57,8 @@ const BondIssuerItemSchema = new Schema(
     // ---------------------------- //
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
-    isActive: { type: Boolean, default: 1 }
+    isActive: { type: Boolean, default: 1 },
+    state: {type:Schema.Types.ObjectId,ref:"State",required:true}
   },
   { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );

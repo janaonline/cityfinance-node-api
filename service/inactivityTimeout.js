@@ -17,7 +17,6 @@ module.exports = async function(req, res, next) {
                 req.decoded = decoded;
                 if(req.decoded.sessionId)
                 {   
-                    
                     userId = ObjectId(req.decoded._id);
                     let query = {user:ObjectId(userId),visitSession:ObjectId(req.decoded.sessionId)}
                     let login = await LoginHistory.findOne(query).sort({_id:-1}).exec();
@@ -32,12 +31,9 @@ module.exports = async function(req, res, next) {
                     else{
                         return Response.UnAuthorized(res, {},`LoginHistory Not found`,400);
                     }
-
                 }
                 else{
-
                     return Response.UnAuthorized(res, {},`No sessionId provided`);
-
                 }  
                 
                 next();

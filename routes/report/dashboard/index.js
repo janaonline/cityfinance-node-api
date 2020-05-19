@@ -7,7 +7,8 @@ const dashboard = {
     sourceFinancialRevenueExpenditure: require('./source-financial-revenue-expenditure'),
     sourceRevenue: require('./source-revenue'),
     ulbCoverage: require('./ulb-coverage'),
-    filterUlbs: require('./filter-ulbs')
+    filterUlbs: require('./filter-ulbs'),
+    homePageData: require('./home-page')
 }
 const Redis = require('../../../service/redis');
 const Response = require('../../../service/response');
@@ -38,4 +39,5 @@ router.get("/revenue-expenditure", redisCheck,dashboard.filterUlbs, dashboard.re
 router.get("/source-financial-revenue-expenditure", redisCheck,dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
 router.get("/source-revenue", redisCheck,dashboard.filterUlbs, dashboard.sourceRevenue);
 router.get("/ulb-coverage", redisCheck,dashboard.ulbCoverage);
+router.get("/home-page-data",dashboard.homePageData);
 module.exports = router;
