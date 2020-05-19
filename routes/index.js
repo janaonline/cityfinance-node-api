@@ -46,7 +46,7 @@ router.use(BulkUploadRoute);
 
 // @Report
 const ReportRoutes = require('./report');
-router.use('/report', ReportRoutes);
+router.use('/report',ReportRoutes);
 
 // @Fileupload
 const fileUploadRoutes = require('./file-upload');

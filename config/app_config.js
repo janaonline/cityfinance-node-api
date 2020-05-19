@@ -11,6 +11,8 @@ module.exports = {
 		EMAIL_VERFICATION_EXPIRY:'10m'
 	},
 	REDIS:{
-        "demo":process.env.REDIS_DEMO
+		"production":process.env.REDIS_PROD,
+		"demo":process.env.REDIS_DEMO,
+		"staging":process.env.REDIS_DEMO
     }
 }

@@ -37,7 +37,7 @@ require("./service/redis");
 
 const routes = require("./routes");
 // app.use(Service.response);
-app.use('/api/v1/', routes);
+app.use('/api/v1/',routes);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
 	return res.status(404).json({

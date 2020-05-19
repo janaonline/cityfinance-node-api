@@ -15,7 +15,7 @@ const revenueExpenditureCode = [
     '272',
     '200'
 ];
-
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next) => {
 
     try {
@@ -61,6 +61,7 @@ module.exports = async (req, res, next) => {
             obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure','totalUlb','audited','unaudited','auditNA']);
             output.push(obj);
         }
+        Redis.set(req.redisKey, JSON.stringify(output));
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
@@ -315,7 +316,6 @@ const modifyData = (obj)=>{
         return 0 //default return value (no sorting)
     })
     obj["ownRevenueUlb"] = obj["ownRevenueUlb"].filter(f=> f.value >0 );
-    console.log(JSON.stringify(obj,0,3))
     obj["maxOwnRevenuePercentage"] = obj["ownRevenueUlb"] && obj["ownRevenueUlb"].length ? JSON.parse(JSON.stringify(obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1])):{name:"0",value:0};
 
     obj["minOwnRevenuePercentage"] = obj["ownRevenueUlb"] && obj["ownRevenueUlb"].length ? JSON.parse(JSON.stringify(obj["ownRevenueUlb"][0])):{name:"0",value:0};

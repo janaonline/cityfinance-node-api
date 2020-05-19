@@ -1,6 +1,7 @@
 const UlbLedger = require("../../models/UlbLedger");
 const Ulb = require("../../models/Ulb");
 const LineItem = require("../../models/LineItem");
+const Redis = require('../../service/redis');
 const lineItems  = {
     "Audit report": "1001",
     "Balance sheet": "1002",
@@ -45,6 +46,7 @@ module.exports = async (req, res)=>{
             }
             let d = await UlbLedger.findOneAndUpdate(du.query,du.update,du.options);
         }
+        Redis.resetDashboard();
         return res.status(200).json({success:true, data:dataArr});
     }catch (e) {
         console.log("Exception:",e);

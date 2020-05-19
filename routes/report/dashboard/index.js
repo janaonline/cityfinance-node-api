@@ -7,15 +7,35 @@ const dashboard = {
     sourceFinancialRevenueExpenditure: require('./source-financial-revenue-expenditure'),
     sourceRevenue: require('./source-revenue'),
     ulbCoverage: require('./ulb-coverage'),
-    filterUlbs: require('./filter-ulbs'),
+    filterUlbs: require('./filter-ulbs')
 }
+const Redis = require('../../../service/redis');
+const Response = require('../../../service/response');
+const redisCheck = (req, res, next)=>{
+    let key = "dashboard|"+Buffer.from(JSON.stringify(req.originalUrl)).toString('base64')
+    Redis.get(key,(err, data)=>{
+        if(err || !data){
+            req["redisKey"] = key;
+            next()
+        }else {
+            let d;
+            try {
+                d = JSON.parse(data)
+            }catch (e) {
+                d = data;
+            }
+            return Response.OK(res, d);
+        }
+    });
+}
+// Redis.resetDashboard();
 const express = require('express');
 const router = express.Router();
-router.get("/cash-and-bank", dashboard.filterUlbs, dashboard.cashAndBank);
-router.get("/outstanding-debt", dashboard.filterUlbs, dashboard.outstandingDebt);
-router.get("/own-revenue-dependency", dashboard.filterUlbs, dashboard.ownRevenueDependency);
-router.get("/revenue-expenditure", dashboard.filterUlbs, dashboard.revenueExpenditure);
-router.get("/source-financial-revenue-expenditure", dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
-router.get("/source-revenue", dashboard.filterUlbs, dashboard.sourceRevenue);
-router.get("/ulb-coverage", dashboard.ulbCoverage);
+router.get("/cash-and-bank", redisCheck,dashboard.filterUlbs, dashboard.cashAndBank);
+router.get("/outstanding-debt", redisCheck,dashboard.filterUlbs, dashboard.outstandingDebt);
+router.get("/own-revenue-dependency",redisCheck, dashboard.filterUlbs, dashboard.ownRevenueDependency);
+router.get("/revenue-expenditure", redisCheck,dashboard.filterUlbs, dashboard.revenueExpenditure);
+router.get("/source-financial-revenue-expenditure", redisCheck,dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
+router.get("/source-revenue", redisCheck,dashboard.filterUlbs, dashboard.sourceRevenue);
+router.get("/ulb-coverage", redisCheck,dashboard.ulbCoverage);
 module.exports = router;

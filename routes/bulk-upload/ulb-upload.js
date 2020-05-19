@@ -4,7 +4,6 @@ const service = require("../../service");
 const Ulb =require("../../models/Ulb");
 const State = require("../../models/State");
 const UlbType = require("../../models/UlbType");
-
 module.exports = async function(req,res,next){
     if(req.file){
         var reqFile = req.file;

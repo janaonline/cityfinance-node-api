@@ -5,25 +5,29 @@ const State = require('./service')
 const verifyToken = require('../auth/service').verifyToken;
 const constants = require('../../service/inactivityTimeout');
 
-router.use(constants);
 
 router.get(
     '/state',
     State.get
 );
+router.post('/states-with-ulb-count',State.getStateListWithCoveredUlb);
 router.put(
     '/state/:_id',
+    constants,
     verifyToken,
     State.put
 );
 router.post('/state',
+    constants,
+    verifyToken,
     State.post
 );
 
 router.delete(
     '/state/:_id',
+    constants,
     verifyToken,
     State.delete
 );
-router.post('/states-with-ulb-count',State.getStateListWithCoveredUlb);
+
 module.exports = router;

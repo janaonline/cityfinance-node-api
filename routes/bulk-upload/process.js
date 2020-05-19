@@ -9,6 +9,7 @@ const Ulb = require("../../models/Ulb");
 const LineItem = require("../../models/LineItem");
 const UlbLedger = require("../../models/UlbLedger");
 const LedgerLog = require("../../models/LedgerLog");
+const Redis = require('../../service/redis')
 const overViewSheet = {
     'State Code': 'state_code',
     'Name of the state': 'state',
@@ -164,6 +165,7 @@ module.exports = function (req, res) {
                 }else {
                     //await session.commitTransaction();
                     await updateLog(reqId, {message:`Completed`, completed:1, status:"SUCCESS"});
+                    Redis.resetDashboard();
                 }
 
             }catch (e) {
