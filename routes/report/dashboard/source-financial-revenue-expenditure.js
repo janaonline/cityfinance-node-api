@@ -1,6 +1,7 @@
 const moment = require('moment');
 const UlbLedger = require("../../../models/UlbLedger");
 const ITEMS = require('./itemcode').REVENUE_EXPENDITURE_SOURCES;
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next)=>{
     let queryArr = req.body.queryArr;
     let data =  [];
@@ -19,91 +20,13 @@ module.exports = async (req, res, next)=>{
         }
         data.push(obj);
     }
+    Redis.set(req.redisKey,JSON.stringify(data))
     return res.status(200).json({
         timestamp:moment().unix(),
         success:true,
         message:"Data fetched.",
         data:data
     });
-    /*return res.status(200).json({
-        timestamp:moment().unix(),
-        success:true,
-        message:"",
-        data:[
-            {
-                year:"2016-17",
-                data:[
-                    {
-                        populationCategory:"> 10 Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"1Lakh to 10Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"< 1 Lakh",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    }
-                ]
-            },
-            {
-                year:"2017-18",
-                data:[
-                    {
-                        populationCategory:"> 10 Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"1Lakh to 10Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"< 1 Lakh",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    }
-                ]
-            }
-        ].map(d=>{
-            return {
-                year:d.year,
-                data: d.data.map(m=>{
-                    m["ulbName"] = 'E';
-                    return m;
-                })
-            }
-        })
-    })*/
 }
 const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUlb)=>{
 

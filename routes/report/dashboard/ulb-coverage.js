@@ -1,6 +1,7 @@
 const moment = require('moment');
 const UlbLedger = require('../../../models/UlbLedger');
 const State = require('../../../models/State');
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next)=>{
     try{
        let totalUlbQuery = [
@@ -33,6 +34,7 @@ module.exports = async (req, res, next)=>{
            }
         ];
         let data = await UlbLedger.aggregate(coveredUlbCountQuery).exec();
+        Redis.set(req.redisKey,JSON.stringify(data))
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,

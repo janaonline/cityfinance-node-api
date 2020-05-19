@@ -1,6 +1,6 @@
 const UlbLedger = require('../../../models/UlbLedger');
 const Ulb = require('../../../models/Ulb');
-
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next) => {
   try {
     let query;
@@ -43,6 +43,7 @@ module.exports = async (req, res, next) => {
       }
     }
     console.log(output);
+    Redis.set(req.redisKey,JSON.stringify(output))
     res.send(output);
   } catch (error) {
     console.log(error);

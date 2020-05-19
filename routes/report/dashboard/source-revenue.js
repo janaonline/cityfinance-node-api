@@ -1,6 +1,6 @@
 const moment = require('moment');
 const UlbLedger = require('../../../models/UlbLedger');
-
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next) => {
   try {
     let output = [];
@@ -26,6 +26,7 @@ module.exports = async (req, res, next) => {
       }
       output.push(obj);
     }
+    Redis.set(req.redisKey,JSON.stringify(output))
     return res.status(200).json({
       timestamp: moment().unix(),
       success: true,
