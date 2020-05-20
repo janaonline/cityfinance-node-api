@@ -32,17 +32,16 @@ module.exports =  (req,res)=>{
         if(req.query.state){
         
             query = [ 
-                {
-                "$lookup":{
-                "from":"ulbs",
-                "localField":"ulb",
-                "foreignField":"_id",
-                "as":"ulb"
-                }
-                },
-                {$unwind:"$ulb"},
-                {$match:{"ulb.state":ObjectId(req.query.state)}},
                 {$group:{"_id":{"financialYear":"$financialYear","ulb":"$ulb._id"}}},
+                {
+                    "$lookup":{
+                    "from":"ulbs",
+                    "localField":"_id.ulb",
+                    "foreignField":"_id",
+                    "as":"ulb"
+                    }
+                },
+                {$match:{"ulb.state":ObjectId(req.query.state)}},
                 {$count:"count"} 
             ]
         }  
@@ -74,7 +73,7 @@ module.exports =  (req,res)=>{
             totalMunicipalBonds : values[1]
 
         };
-        Redis.set(req.redisKey,JSON.stringify(data))
+        //Redis.set(req.redisKey,JSON.stringify(data))
         return res.status(200).json({success : true, message : "Data fetched", data : data});
 
         },(rejectError)=>{
