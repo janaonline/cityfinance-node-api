@@ -78,6 +78,7 @@ module.exports = async (req, res, next) => {
                     if(year.data && year.data.length){
                         for(data of year.data){
                             data["ulbs"] = undefined;
+                            data["ownRevenueUlb"] = undefined;
                         }
                     }
                 }
@@ -317,7 +318,7 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                         0
                     ]
                 },
-                // "ownRevenueUlb": 1
+                "ownRevenueUlb": 1
             }
         },
         {
