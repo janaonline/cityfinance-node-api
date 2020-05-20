@@ -26,13 +26,36 @@ module.exports = async (req, res, next) => {
       }
       output.push(obj);
     }
-    Redis.set(req.redisKey,JSON.stringify(output))
-    return res.status(200).json({
-      timestamp: moment().unix(),
-      success: true,
-      message: '',
-      data: output
-    });
+      let resData = [];
+      if(req.query.ulbList && req.query.populationCategory){
+          let years = req.body.queryArr.map(m=> m.financialYear);
+          let year = years.length ? years[0] : '';
+          if(output.length){
+              let yearData = output.find(f=> f.year == year);
+              if(yearData && yearData.data && yearData.data.length){
+                  let pcatData = yearData.data.find(f=> f.populationCategory == req.query.populationCategory)
+                  resData = pcatData ? pcatData.ulbs : []
+              }
+          }
+      }else{
+          if(output){
+              for(year of output){
+                  if(year.data && year.data.length){
+                      for(data of year.data){
+                          data["ulbs"] = undefined;
+                      }
+                  }
+              }
+          }
+          resData = output;
+      }
+      Redis.set(req.redisKey,JSON.stringify(resData))
+      return res.status(200).json({
+          timestamp: moment().unix(),
+          success: true,
+          message: '',
+          data: resData
+      });
   } catch (e) {
     console.log('Exception:', e);
     return res.status(400).json({

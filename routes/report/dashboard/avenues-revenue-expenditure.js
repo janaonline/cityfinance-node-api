@@ -7,7 +7,7 @@ module.exports = async (req, res, next) => {
     let output = [];
     let query;
     //console.log(req.body.queryArr);
-    for (let q of req.body.queryArr) {
+      for (let q of req.body.queryArr) {
       let obj = {
         year: q.financialYear,
         data: []
@@ -29,13 +29,36 @@ module.exports = async (req, res, next) => {
       }
       output.push(obj);
     }
-    Redis.set(req.redisKey,JSON.stringify(output))
-    return res.status(200).json({
-      timestamp: moment().unix(),
-      success: true,
-      message: '',
-      data: output
-    });
+      let resData = [];
+      if(req.query.ulbList && req.query.populationCategory){
+          let years = req.body.queryArr.map(m=> m.financialYear);
+          let year = years.length ? years[0] : '';
+          if(output.length){
+              let yearData = output.find(f=> f.year == year);
+              if(yearData && yearData.data && yearData.data.length){
+                  let pcatData = yearData.data.find(f=> f.populationCategory == req.query.populationCategory)
+                  resData = pcatData ? pcatData.ulbs : []
+              }
+          }
+      }else{
+          if(output){
+              for(year of output){
+                  if(year.data && year.data.length){
+                      for(data of year.data){
+                          data["ulbs"] = undefined;
+                      }
+                  }
+              }
+          }
+          resData = output;
+      }
+      Redis.set(req.redisKey,JSON.stringify(resData))
+      return res.status(200).json({
+          timestamp: moment().unix(),
+          success: true,
+          message: '',
+          data: resData
+      });
   } catch (e) {
     console.log('Exception:', e);
     return res.status(400).json({
@@ -46,85 +69,6 @@ module.exports = async (req, res, next) => {
       query: req.query.years
     });
   }
-  /*return res.status(200).json({
-    timestamp: moment().unix(),
-    success: true,
-    message: '',
-    data: [
-      {
-        year: '2016-17',
-        data: [
-          {
-            populationCategory: '> 10 Lakhs',
-            numOfUlb: 100,
-            establishmentExpense: 20,
-            administrativeExpense: 11,
-            operationalAndMaintananceExpense: 10,
-            interestAndFinanceExpense: 8,
-            other: 20
-          },
-          {
-            populationCategory: '1Lakh to 10Lakhs',
-            numOfUlb: 100,
-            establishmentExpense: 30,
-            administrativeExpense: 30,
-            operationalAndMaintananceExpense: 10,
-            interestAndFinanceExpense: 8,
-            other: 20
-          },
-          {
-            populationCategory: '< 1 Lakh',
-            numOfUlb: 100,
-            establishmentExpense: 20,
-            administrativeExpense: 40,
-            operationalAndMaintananceExpense: 10,
-            interestAndFinanceExpense: 8,
-            other: 20
-          }
-        ]
-      },
-      {
-        year: '2017-18',
-        data: [
-          {
-            populationCategory: '> 10 Lakhs',
-            numOfUlb: 100,
-            establishmentExpense: 10,
-            administrativeExpense: 10,
-            operationalAndMaintananceExpense: 10,
-            interestAndFinanceExpense: 8,
-            other: 20
-          },
-          {
-            populationCategory: '1Lakh to 10Lakhs',
-            numOfUlb: 100,
-            establishmentExpense: 10,
-            administrativeExpense: 10,
-            operationalAndMaintananceExpense: 10,
-            interestAndFinanceExpense: 8,
-            other: 20
-          },
-          {
-            populationCategory: '< 1 Lakh',
-            numOfUlb: 100,
-            establishmentExpense: 10,
-            administrativeExpense: 10,
-            operationalAndMaintananceExpense: 10,
-            interestAndFinanceExpense: 8,
-            other: 20
-          }
-        ]
-      }
-    ].map(d => {
-      return {
-        year: d.year,
-        data: d.data.map(m => {
-          m['ulbName'] = 'A';
-          return m;
-        })
-      };
-    })
-  });*/
 };
 
 const getQuery = (year, ulb, range, numOfUlb,totalUlb) => {

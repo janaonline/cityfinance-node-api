@@ -20,12 +20,35 @@ module.exports = async (req, res, next)=>{
         }
         data.push(obj);
     }
-    Redis.set(req.redisKey,JSON.stringify(data))
+    let resData = [];
+    if(req.query.ulbList && req.query.populationCategory){
+        let years = req.body.queryArr.map(m=> m.financialYear);
+        let year = years.length ? years[0] : '';
+        if(data.length){
+            let yearData = data.find(f=> f.year == year);
+            if(yearData && yearData.data && yearData.data.length){
+                let pcatData = yearData.data.find(f=> f.populationCategory == req.query.populationCategory)
+                resData = pcatData ? pcatData.ulbs : []
+            }
+        }
+    }else{
+        if(data){
+            for(year of data){
+                if(year.data && year.data.length){
+                    for(data of year.data){
+                        data["ulbs"] = undefined;
+                    }
+                }
+            }
+        }
+        resData = data;
+    }
+    Redis.set(req.redisKey,JSON.stringify(resData))
     return res.status(200).json({
-        timestamp:moment().unix(),
-        success:true,
-        message:"Data fetched.",
-        data:data
+        timestamp: moment().unix(),
+        success: true,
+        message: '',
+        data: resData
     });
 }
 const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUlb)=>{

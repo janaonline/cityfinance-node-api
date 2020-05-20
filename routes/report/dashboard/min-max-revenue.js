@@ -42,7 +42,6 @@ module.exports = async (req, res, next) => {
         output.push(data[0]);
       }
     }
-    console.log(output);
     Redis.set(req.redisKey,JSON.stringify(output))
     res.send(output);
   } catch (error) {
