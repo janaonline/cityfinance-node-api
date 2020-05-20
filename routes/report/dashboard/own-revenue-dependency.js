@@ -317,7 +317,7 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                         0
                     ]
                 },
-                "ownRevenueUlb": 1
+                // "ownRevenueUlb": 1
             }
         },
         {
