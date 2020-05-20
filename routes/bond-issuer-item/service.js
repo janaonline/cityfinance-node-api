@@ -1,8 +1,14 @@
 const BondIssuerItem = require('../../models/BondIssuerItem');
 const BondIssuerJson = require('../../models/bondIssuer');
 const service = require('../../service');
+const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req, res) {
-    let query = { isActive: true };
+    let query = { isActive: true, };
+    if(req.query.state){
+        let state = req.query.state; 
+        query = Object.assign(query,{"state":ObjectId(state)})    
+    }
+
     // if(req.query.ulb){
     //   query['ulb'] = req.query.ulb
     // }
