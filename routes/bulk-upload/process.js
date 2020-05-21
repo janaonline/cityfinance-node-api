@@ -64,40 +64,43 @@ module.exports = function (req, res) {
             }else {
                 try{
                     let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:financialYear});
-                    if(!reqLog){
-                        let requestLog = new RequestLog({
-                            user:req.decoded ? req.decoded.id : null,
-                            url:req.body.alias,
-                            message:"Data Processing",
-                            financialYear:financialYear
-                        });
-                        requestLog.save(async(err, data)=> {
-                            if(err){
-                                return res.status(400).json({
-                                    timestamp:moment().unix(),
-                                    success:false,
-                                    message:err.message,
-                                    data:err
-                                })
-                            } else {
-                                try {
-                                    processData(file, financialYear, data._id,balanceSheet);
-                                    return res.status(200).json({
-                                        timestamp:moment().unix(),
-                                        success:true,
-                                        message:`Request recieved.`,
-                                        data:data
-                                    })
-                                }catch (e) {
-                                    return res.status(400).json({
-                                        timestamp:moment().unix(),
-                                        success:false,
-                                        message:`${e.message} \n ${e.errMessage}.`
-                                    })
-                                }
+                    if(reqLog){
+                        // let requestLog = new RequestLog({
+                        //     user:req.decoded ? req.decoded.id : null,
+                        //     url:req.body.alias,
+                        //     message:"Data Processing",
+                        //     financialYear:financialYear
+                        // });
+                        // requestLog.save(async(err, data)=> {
+                        //     if(err){
+                        //         return res.status(400).json({
+                        //             timestamp:moment().unix(),
+                        //             success:false,
+                        //             message:err.message,
+                        //             data:err
+                        //         })
+                        //     } else {
+                        //         try {
+                        //             processData(file, financialYear, data._id,balanceSheet);
+                        //             return res.status(200).json({
+                        //                 timestamp:moment().unix(),
+                        //                 success:true,
+                        //                 message:`Request recieved.`,
+                        //                 data:data
+                        //             })
+                        //         }catch (e) {
+                        //             return res.status(400).json({
+                        //                 timestamp:moment().unix(),
+                        //                 success:false,
+                        //                 message:`${e.message} \n ${e.errMessage}.`
+                        //             })
+                        //         }
 
-                            }
-                        });
+                        //     }
+                        // });
+
+                        processData(file, financialYear,null,balanceSheet);
+
                     }else {
                         return res.status(400).json({
                             timestamp:moment().unix(),
@@ -244,7 +247,6 @@ module.exports = function (req, res) {
 
                 let d = Object.keys(data[0]);
                 var filtered = d.filter(function(el) { return el; });
-
                 if(filtered.length!=overviewHeader.length){
                     console.log("===>overview header length mismatch");
                     reject({message:"Overview header length mismatch"});
@@ -253,7 +255,7 @@ module.exports = function (req, res) {
                     for(let i=0;i<overviewHeader.length;i++) 
                     {    
                         let name = overviewHeader[i].toLowerCase();
-                        if(name.indexOf(filtered)  === -1){
+                        if(filtered.indexOf(name)  === -1){
                             reject({message:"Overview header name mismatch"});
                         }
                     } 
@@ -306,7 +308,7 @@ module.exports = function (req, res) {
                 for(let i=0;i<inputHeader.length;i++) 
                 {    
                     let name = inputHeader[i].toLowerCase();
-                    if(name.indexOf(filtered)  === -1){
+                    if(filtered.indexOf(name)  === -1){
                         reject({message:"Input sheet header name mismatch"});
                     }
                 } 
