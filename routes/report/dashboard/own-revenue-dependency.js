@@ -73,7 +73,7 @@ module.exports = async (req, res, next) => {
                 }
             }
         }else{
-            if(output){
+            if(output && !req.query.ulb){
                 for(year of output){
                     if(year.data && year.data.length){
                         for(d of year.data){
