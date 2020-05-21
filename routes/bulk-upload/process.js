@@ -27,7 +27,8 @@ const overViewSheet = {
     'Date of Re-verification': 'reverified_at',
     'Re-verified by': 'reverified_by'
 };
-
+const inputHeader = ['',"Head of Account","Code","Line Item","Amount in INR"];
+const overviewHeader = ['',"Basic Details","Value"];
 
 module.exports = function (req, res) {
     let financialYear = req.body.financialYear;
@@ -121,8 +122,9 @@ module.exports = function (req, res) {
             try {
                 // extract the overviewSheet and dataSheet
                 let {overviewSheet, dataSheet} = await readXlsxFile(reqFile);
-
                 // validate overview sheet 
+                //console.log(dataSheet);return;    
+
                 let objOfSheet = await validateOverview(overviewSheet,financialYear); // rejection in case of error
                 delete objOfSheet['state'];
                 objOfSheet['state']  = objOfSheet.state_name;
@@ -239,11 +241,28 @@ module.exports = function (req, res) {
                 console.log("validateOverview : data.length < 2")
                 reject( {message : "Overview sheet has less than two rows, Please check"} );
             }else {
+
+                let d = Object.keys(data[0]);
+                if(d.length!=overviewHeader.length){
+                    console.log("===>overview header length mismatch");
+                    reject({message:"Overview header length mismatch"});
+                }
+                else{
+                    for(let i=0;i<overviewHeader.length;i++) 
+                    {    
+                        let name = overviewHeader[i].toLowerCase();
+                        if(name.indexOf(d)  === -1){
+                            reject({message:"Overview header name mismatch"});
+                        }
+                    } 
+                }
+
                 let objOfSheet = {};
                 for(let eachRow of data){
                     // converting data in rows here in obj;
                     eachRow["basic details"] ? objOfSheet[eachRow["basic details"] ] = eachRow.value : "Means row is empty remove it"
                 }
+
                 for(let key of Object.keys(objOfSheet)){
                     objOfSheet[ overViewSheet[key]] = objOfSheet[key] ;
                     delete objOfSheet[key];
@@ -274,16 +293,33 @@ module.exports = function (req, res) {
             let inputSheetObj = { }
             let errors = [];
 
+            let d = Object.keys(data[0]);
+            if(d.length!=inputHeader.length){
+                console.log("===>Header length mismatch");
+                reject({message:"Input sheet header length mismatch"});
+            }
+            else{
+
+                for(let i=0;i<inputHeader.length;i++) 
+                {    
+                    let name = inputHeader[i].toLowerCase();
+                    if(name.indexOf(d)  === -1){
+                        reject({message:"Input sheet header name mismatch"});
+                    }
+                } 
+            }
+
             for(let eachRow of data){
 
+                //console.log(eachRow["amount in inr"].trim());return;
                 // removing all the - values and converting them to 0
                 eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;
                 
                 // removing commas from all the values
-                eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='' ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
+                (eachRow["amount in inr"]!== undefined) && (eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='') ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
 
                 // removing brackets from values and converting them to -ve values
-                if((eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
+                if((eachRow["amount in inr"]!== undefined) && (eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
                     eachRow["amount in inr"] = "-" + eachRow["amount in inr"].replace("(", "").replace(")","")
 
                 if(eachRow["code"]){
