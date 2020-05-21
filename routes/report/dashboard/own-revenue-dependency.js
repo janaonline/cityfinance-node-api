@@ -76,9 +76,9 @@ module.exports = async (req, res, next) => {
             if(output){
                 for(year of output){
                     if(year.data && year.data.length){
-                        for(data of year.data){
-                            data["ulbs"] = undefined;
-                            data["ownRevenueUlb"] = undefined;
+                        for(d of year.data){
+                            d["ulbs"] = undefined;
+                            d["ownRevenueUlb"] = undefined;
                         }
                     }
                 }
