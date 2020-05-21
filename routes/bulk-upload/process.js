@@ -311,16 +311,12 @@ module.exports = function (req, res) {
                     }
                 } 
             }
-
             for(let eachRow of data){
-
-                //console.log(eachRow["amount in inr"].trim());return;
                 // removing all the - values and converting them to 0
-                eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;
-                
+                eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;                
                 // removing commas from all the values
-                (eachRow["amount in inr"]!== undefined) && (eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='') ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
-
+                eachRow["amount in inr"] = (eachRow["amount in inr"]!== undefined) && (eachRow["amount in inr"] == eachRow["amount in inr"].trim()!='') ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
+                
                 // removing brackets from values and converting them to -ve values
                 if((eachRow["amount in inr"]!== undefined) && (eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
                     eachRow["amount in inr"] = "-" + eachRow["amount in inr"].replace("(", "").replace(")","")

@@ -32,7 +32,7 @@ module.exports =  (req,res)=>{
         if(req.query.state){
         
             query = [ 
-                {$group:{"_id":{"financialYear":"$financialYear","ulb":"$ulb._id"}}},
+                {$group:{"_id":{"financialYear":"$financialYear","ulb":"$ulb"}}},
                 {
                     "$lookup":{
                     "from":"ulbs",
@@ -44,6 +44,7 @@ module.exports =  (req,res)=>{
                 {$match:{"ulb.state":ObjectId(req.query.state)}},
                 {$count:"count"} 
             ]
+
         }  
 
         try{
@@ -67,6 +68,7 @@ module.exports =  (req,res)=>{
     })
 
     Promise.all([totalULB,munciapalBond,financialStatement]).then((values)=>{
+
         let data = {
             totalULB : values[0],
             financialStatements: values[2].length>0 ? values[2][0].count : 0,
