@@ -27,8 +27,8 @@ const overViewSheet = {
     'Date of Re-verification': 'reverified_at',
     'Re-verified by': 'reverified_by'
 };
-const inputHeader = ['',"Head of Account","Code","Line Item","Amount in INR"];
-const overviewHeader = ['',"Basic Details","Value"];
+const inputHeader = ["Head of Account","Code","Line Item","Amount in INR"];
+const overviewHeader = ["Basic Details","Value"];
 
 module.exports = function (req, res) {
     let financialYear = req.body.financialYear;
@@ -243,7 +243,9 @@ module.exports = function (req, res) {
             }else {
 
                 let d = Object.keys(data[0]);
-                if(d.length!=overviewHeader.length){
+                var filtered = d.filter(function(el) { return el; });
+
+                if(filtered.length!=overviewHeader.length){
                     console.log("===>overview header length mismatch");
                     reject({message:"Overview header length mismatch"});
                 }
@@ -251,7 +253,7 @@ module.exports = function (req, res) {
                     for(let i=0;i<overviewHeader.length;i++) 
                     {    
                         let name = overviewHeader[i].toLowerCase();
-                        if(name.indexOf(d)  === -1){
+                        if(name.indexOf(filtered)  === -1){
                             reject({message:"Overview header name mismatch"});
                         }
                     } 
@@ -294,7 +296,8 @@ module.exports = function (req, res) {
             let errors = [];
 
             let d = Object.keys(data[0]);
-            if(d.length!=inputHeader.length){
+            var filtered = d.filter(function(el) { return el; });
+            if(filtered.length!=inputHeader.length){
                 console.log("===>Header length mismatch");
                 reject({message:"Input sheet header length mismatch"});
             }
@@ -303,7 +306,7 @@ module.exports = function (req, res) {
                 for(let i=0;i<inputHeader.length;i++) 
                 {    
                     let name = inputHeader[i].toLowerCase();
-                    if(name.indexOf(d)  === -1){
+                    if(name.indexOf(filtered)  === -1){
                         reject({message:"Input sheet header name mismatch"});
                     }
                 } 

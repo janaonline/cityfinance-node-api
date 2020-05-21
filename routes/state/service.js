@@ -123,7 +123,7 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
                 obj["coveredUlbCount"]++;
                 if(m.auditStatus=="audited"){
                     obj["audited"]++;
-                }else if(m.auditStatus=="nonaudited"){
+                }else if(m.auditStatus=="unaudited"){
                     obj["unaudited"]++;
                 }else{
                     obj["auditNA"]++;
