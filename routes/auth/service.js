@@ -24,14 +24,7 @@ module.exports.register = async (req, res)=>{
             }
             data["isActive"] = false;
             data["email"] = data.commissionerEmail;
-            //data["password"] = Service.getRndInteger(10000,99999).toString();
-        }
-
-        if(data["password"].length < 8){
-            return  Response.BadRequest(res,"",`password contain at least 8 characters`)
-        }
-        if(!checkPassword(data["password"])){
-            return  Response.BadRequest(res,"",`Password should be alphanumeric with at least one Uppercase/Lowercase and special character`)
+            data["password"] = Service.getRndInteger(10000,99999).toString();
         }
 
         let newUser = new User(data);
@@ -45,13 +38,37 @@ module.exports.register = async (req, res)=>{
             }else{
                 let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
                 if(data.role == "ULB"){
-                    let template = Service.emailTemplate.ulbSignup(user.name);
+                    let template = Service.emailTemplate.ulbSignup(user.name,"ULB");
                     let mailOptionsCommisioner = {
                         to: user.email,
                         subject: template.subject,
                         html: template.body
                     };
                     Service.sendEmail(mailOptionsCommisioner);
+                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
+                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();    
+                   
+                    for(s of state){
+
+                        let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
+                        let mailOptions = {
+                            to: s.email,
+                            subject: template.subject,
+                            html: template.body
+                        };
+                        Service.sendEmail(mailOptions);
+                    }
+
+                    for(p of partner){
+                        
+                        let template = Service.emailTemplate.ulbSignup(user.name,"STATE",p.name);
+                        let mailOptions = {
+                            to: p.email,
+                            subject: template.subject,
+                            html: template.body
+                        };
+                        Service.sendEmail(mailOptions);
+                    }
 
                     /*let templateAcountant = Service.emailTemplate.ulbSignupAccountant(user.accountantName);
                     let mailOptionsAccountant = {
@@ -173,6 +190,8 @@ module.exports.verifyToken = (req, res, next)=>{
                 console.log("verify-token jwt.verify : ",err.message);
                 return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
             } else {
+
+                console.log(decoded);return;
                 req.decoded = decoded;
                 next();
             }

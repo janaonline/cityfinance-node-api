@@ -39,10 +39,34 @@ module.exports.create = async (req, res)=>{
                 return Response.DbError(res,e, e.message);
             }
         }else{
-            ulbUpdateRequest.save((err, dt)=>{
+            ulbUpdateRequest.save(async(err, dt)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)
                 }else {
+
+                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
+                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec(); 
+
+                    for(s of state){
+                        let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
+                        let mailOptions = {
+                            to: s.email,
+                            subject: template.subject,
+                            html: template.body
+                        };
+                        Service.sendEmail(mailOptions);
+                    }
+
+                    for(p of partner){
+                        let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
+                        let mailOptions = {
+                            to: p.email,
+                            subject: template.subject,
+                            html: template.body
+                        };
+                        Service.sendEmail(mailOptions);
+                    }
+                    
                     return Response.OK(res,dt, 'Request for change has been sent to admin to approval');
                 }
             })

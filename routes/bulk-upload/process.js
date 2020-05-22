@@ -246,8 +246,8 @@ module.exports = function (req, res) {
                 let d = Object.keys(data[0]);
                 var filtered = d.filter(function(el) { return el; });
                 if(filtered.length!=overviewHeader.length){
-                    console.log("===>overview header length mismatch");
-                    reject({message:"Overview header length mismatch"});
+                    console.log("===>overview header is missing");
+                    reject({message:"Overview header is missing"});
                 }
                 else{
                     for(let i=0;i<overviewHeader.length;i++) 
@@ -298,8 +298,8 @@ module.exports = function (req, res) {
             let d = Object.keys(data[0]);
             var filtered = d.filter(function(el) { return el; });
             if(filtered.length!=inputHeader.length){
-                console.log("===>Header length mismatch");
-                reject({message:"Input sheet header length mismatch"});
+                console.log("===>Input sheet header is missing");
+                reject({message:"Input sheet header is missing"});
             }
             else{
 

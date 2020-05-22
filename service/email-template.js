@@ -95,7 +95,9 @@ const ObjectId = require('mongoose').Types.ObjectId;
             City Finance Team`
         }
     }
-    const ulbSignup = (name)=>{
+    const ulbSignup = (name,type,stateName)=>{
+
+        if(type=="ULB"){
             return {
                 subject:`Signup Request Successfully Submitted`,
                 body:`Dear ${name},<br>
@@ -107,6 +109,37 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     City Finance Team`
             }
         }
+        else{
+
+            return {
+                subject:`Signup Request - ${name}`,
+                body:`Dear ${stateName},<br>
+                        <p>
+                           A profile edit request has been submitted by ${name}. Kindly review the same.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`
+            }
+
+        }
+    }
+
+    const ulbProfileEdit = (name,stateName)=>{
+
+        return {
+            subject:`Profile Update Request - ${name}`,
+            body:`Dear ${stateName},<br>
+                    <p>
+                        A profile edit request has been submitted by ${name}. Kindly review the same.
+                    </p>
+                    <br>
+                <br>Regards,<br>
+                City Finance Team`
+        }
+        
+    }    
+
     const ulbSignupAccountant = (name)=>{
             return {
                 subject:`Signup Request Successfully Submitted`,
