@@ -1,3 +1,4 @@
+const verifyToken = require('../auth/service').verifyToken;
 const BulkUpload = {
     processData:require('./process'),
     getProcessStatus:require('./get-process-status'),
@@ -23,8 +24,8 @@ const multerUpload = multer({ storage: storage1 });
 const router = express.Router();
 
 
-router.post('/processData', BulkUpload.processData);
-router.get('/getProcessStatus/:_id', BulkUpload.getProcessStatus);
+router.post('/processData',verifyToken,BulkUpload.processData);
+router.get('/getProcessStatus/:_id',verifyToken,BulkUpload.getProcessStatus);
 router.post('/uploadLedger', multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.uploadLedger);
 
 router.post('/bulk/bonds-upload',multerUpload.single('files'),BulkUpload.bondUpload);

@@ -54,7 +54,7 @@ module.exports.create = async (req, res)=>{
                             subject: template.subject,
                             html: template.body
                         };
-                        Service.sendEmail(mailOptions);
+                        SendEmail(mailOptions);
                     }
 
                     for(p of partner){
@@ -64,7 +64,7 @@ module.exports.create = async (req, res)=>{
                             subject: template.subject,
                             html: template.body
                         };
-                        Service.sendEmail(mailOptions);
+                        SendEmail(mailOptions);
                     }
                     
                     return Response.OK(res,dt, 'Request for change has been sent to admin to approval');

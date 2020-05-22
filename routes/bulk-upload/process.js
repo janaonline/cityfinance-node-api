@@ -10,6 +10,8 @@ const LineItem = require("../../models/LineItem");
 const UlbLedger = require("../../models/UlbLedger");
 const LedgerLog = require("../../models/LedgerLog");
 const Redis = require('../../service/redis')
+const ObjectId = require('mongoose').Types.ObjectId;
+
 const overViewSheet = {
     'State Code': 'state_code',
     'Name of the state': 'state',
@@ -66,7 +68,7 @@ module.exports = function (req, res) {
                     let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:financialYear});
                     if(!reqLog){
                         let requestLog = new RequestLog({
-                            user:req.decoded ? req.decoded.id : null,
+                            user:req.decoded ? ObjectId(req.decoded.id) : null,
                             url:req.body.alias,
                             message:"Data Processing",
                             financialYear:financialYear
