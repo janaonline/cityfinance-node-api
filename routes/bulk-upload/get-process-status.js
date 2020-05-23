@@ -28,7 +28,6 @@ module.exports = function (req, res) {
                 if(user["role"]=="ULB"){
                     let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec()
                     for(p of partner){
-
                         let template = Service.emailTemplate.ulbBulkUpload(user.name,p.name);
                         let mailOptions = {
                             to: p.email,

@@ -115,7 +115,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 subject:`Signup Request - ${name}`,
                 body:`Dear ${stateName},<br>
                         <p>
-                           A profile edit request has been submitted by ${name}. Kindly review the same.
+                           A signup request has been submitted by ${name}. Kindly review the same.
                         </p>
                         <br>
                     <br>Regards,<br>

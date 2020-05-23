@@ -38,7 +38,7 @@ module.exports.register = async (req, res)=>{
             }else{
                 let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
                 if(data.role == "ULB"){
-                    let template = Service.emailTemplate.ulbSignup(user.name,"ULB");
+                    let template = Service.emailTemplate.ulbSignup(user.name,"ULB",null);
                     let mailOptionsCommisioner = {
                         to: user.email,
                         subject: template.subject,
@@ -47,27 +47,31 @@ module.exports.register = async (req, res)=>{
                     Service.sendEmail(mailOptionsCommisioner);
                     let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
                     let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();    
-                   
-                    for(s of state){
+                    
+                    if(state){
+                        for(s of state){
 
-                        let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
-                        let mailOptions = {
-                            to: "arjun.malik@dhwaniris.com",
-                            subject: template.subject,
-                            html: template.body
-                        };
-                        Service.sendEmail(mailOptions);
+                            let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
+                            let mailOptions = {
+                                to: "arjun.malik@dhwaniris.com",
+                                subject: template.subject,
+                                html: template.body
+                            };
+                            Service.sendEmail(mailOptions);
+                        }
                     }
 
-                    for(p of partner){
-                        
-                        let template = Service.emailTemplate.ulbSignup(user.name,"PARTNER",p.name);
-                        let mailOptions = {
-                            to: "arjun.malik@dhwaniris.com",
-                            subject: template.subject,
-                            html: template.body
-                        };
-                        Service.sendEmail(mailOptions);
+                    if(partner){
+                        for(p of partner){
+                            
+                            let template = Service.emailTemplate.ulbSignup(user.name,"PARTNER",p.name);
+                            let mailOptions = {
+                                to: "arjun.malik@dhwaniris.com",
+                                subject: template.subject,
+                                html: template.body
+                            };
+                            Service.sendEmail(mailOptions);
+                        }
                     }
 
                     /*let templateAcountant = Service.emailTemplate.ulbSignupAccountant(user.accountantName);

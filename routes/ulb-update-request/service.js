@@ -31,6 +31,11 @@ module.exports.create = async (req, res)=>{
             try{
                 let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus});
                 if(du.n){
+
+                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
+                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();
+                    emailNotificationToStateANDPartner(user,state,partner);
+
                     return  Response.OK(res,du,'Request for change has been sent to admin to approval');
                 }else{
                     return Response.BadRequest(res,getPrevStatus, 'Row not found! Something wrong in code.');
@@ -43,30 +48,10 @@ module.exports.create = async (req, res)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)
                 }else {
-
                     let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
                     let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec(); 
+                    emailNotificationToStateANDPartner(user,state,partner);
 
-                    for(s of state){
-                        let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
-                        let mailOptions = {
-                            to: "arjun.malik@dhwaniris.com",
-                            subject: template.subject,
-                            html: template.body
-                        };
-                        SendEmail(mailOptions);
-                    }
-
-                    for(p of partner){
-                        let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
-                        let mailOptions = {
-                            to: "arjun.malik@dhwaniris.com",
-                            subject: template.subject,
-                            html: template.body
-                        };
-                        SendEmail(mailOptions);
-                    }
-                    
                     return Response.OK(res,dt, 'Request for change has been sent to admin to approval');
                 }
             })
@@ -531,4 +516,31 @@ module.exports.action = async (req, res)=>{
     }else{
         return Response.BadRequest(res,{},'This action is only allowed by ULB');
     }
+}
+
+function emailNotificationToStateANDPartner(user,state,partner){
+
+    if(state){
+        for(s of state){
+            let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
+            let mailOptions = {
+                to: "arjun.malik@dhwaniris.com",
+                subject: template.subject,
+                html: template.body
+            };
+            SendEmail(mailOptions);
+        }
+    }
+    if(partner){
+        for(p of partner){
+            let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
+            let mailOptions = {
+                to: "arjun.malik@dhwaniris.com",
+                subject: template.subject,
+                html: template.body
+            };
+            SendEmail(mailOptions);
+        }
+    }
+    return;
 }
