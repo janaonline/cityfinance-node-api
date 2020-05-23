@@ -138,6 +138,21 @@ const ObjectId = require('mongoose').Types.ObjectId;
                 City Finance Team`
         }
         
+    }
+
+    const ulbBulkUpload = (name,partner)=>{
+
+        return {
+            subject:`Data Upload Request - ${name}`,
+            body:`Dear ${partner},<br>
+                    <p>
+                        A data upload form has been submitted by ${name}. Kindly review the same.
+                    </p>
+                    <br>
+                <br>Regards,<br>
+                City Finance Team`
+        }
+        
     }    
 
     const ulbSignupAccountant = (name)=>{
@@ -622,5 +637,7 @@ module.exports = {
     fdUploadApprovalUlb:fdUploadApprovalUlb,
     fdUploadApprovalState:fdUploadApprovalState,
     fdUploadRejectionUlb:fdUploadRejectionUlb,
-    fdUploadRejectionState:fdUploadRejectionState
+    fdUploadRejectionState:fdUploadRejectionState,
+    ulbBulkUpload:ulbBulkUpload,
+    ulbProfileEdit:ulbProfileEdit
 }

@@ -50,7 +50,7 @@ module.exports.create = async (req, res)=>{
                     for(s of state){
                         let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
                         let mailOptions = {
-                            to: s.email,
+                            to: "arjun.malik@dhwaniris.com",
                             subject: template.subject,
                             html: template.body
                         };
@@ -60,7 +60,7 @@ module.exports.create = async (req, res)=>{
                     for(p of partner){
                         let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
                         let mailOptions = {
-                            to: p.email,
+                            to: "arjun.malik@dhwaniris.com",
                             subject: template.subject,
                             html: template.body
                         };

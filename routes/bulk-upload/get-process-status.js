@@ -23,24 +23,13 @@ module.exports = function (req, res) {
         }else {
 
             if(data.completed){
-                let state = req.decoded.state;
-                if(state){
-                    let state = await User.find({"state":ObjectId(state),isActive:true,"role" : "STATE"}).exec();
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();
-                    for(s of state){
 
-                        let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
-                        let mailOptions = {
-                            to: s.email,
-                            subject: template.subject,
-                            html: template.body
-                        };
-                        Service.sendEmail(mailOptions);
-                    }
-
+                let user = req.decoded;
+                if(user["role"]=="ULB"){
+                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec()
                     for(p of partner){
-                        
-                        let template = Service.emailTemplate.ulbSignup(user.name,"STATE",p.name);
+
+                        let template = Service.emailTemplate.ulbBulkUpload(user.name,p.name);
                         let mailOptions = {
                             to: p.email,
                             subject: template.subject,

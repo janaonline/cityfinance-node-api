@@ -52,7 +52,7 @@ module.exports.register = async (req, res)=>{
 
                         let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
                         let mailOptions = {
-                            to: s.email,
+                            to: "arjun.malik@dhwaniris.com",
                             subject: template.subject,
                             html: template.body
                         };
@@ -61,9 +61,9 @@ module.exports.register = async (req, res)=>{
 
                     for(p of partner){
                         
-                        let template = Service.emailTemplate.ulbSignup(user.name,"STATE",p.name);
+                        let template = Service.emailTemplate.ulbSignup(user.name,"PARTNER",p.name);
                         let mailOptions = {
-                            to: p.email,
+                            to: "arjun.malik@dhwaniris.com",
                             subject: template.subject,
                             html: template.body
                         };
@@ -190,8 +190,6 @@ module.exports.verifyToken = (req, res, next)=>{
                 console.log("verify-token jwt.verify : ",err.message);
                 return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
             } else {
-
-                console.log(decoded);return;
                 req.decoded = decoded;
                 next();
             }
