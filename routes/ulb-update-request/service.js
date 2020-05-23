@@ -524,7 +524,7 @@ function emailNotificationToStateANDPartner(user,state,partner){
         for(s of state){
             let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
             let mailOptions = {
-                to: "arjun.malik@dhwaniris.com",
+                to: s.email,
                 subject: template.subject,
                 html: template.body
             };
@@ -535,7 +535,7 @@ function emailNotificationToStateANDPartner(user,state,partner){
         for(p of partner){
             let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
             let mailOptions = {
-                to: "arjun.malik@dhwaniris.com",
+                to: p.email,
                 subject: template.subject,
                 html: template.body
             };
