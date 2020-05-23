@@ -45,34 +45,34 @@ module.exports.register = async (req, res)=>{
                         html: template.body
                     };
                     Service.sendEmail(mailOptionsCommisioner);
-                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();    
+                    // let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
+                    // let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();    
                     
-                    if(state){
-                        for(s of state){
+                    // if(state){
+                    //     for(s of state){
 
-                            let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
-                            let mailOptions = {
-                                to: "arjun.malik@dhwaniris.com",
-                                subject: template.subject,
-                                html: template.body
-                            };
-                            Service.sendEmail(mailOptions);
-                        }
-                    }
+                    //         let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
+                    //         let mailOptions = {
+                    //             to: "arjun.malik@dhwaniris.com",
+                    //             subject: template.subject,
+                    //             html: template.body
+                    //         };
+                    //         Service.sendEmail(mailOptions);
+                    //     }
+                    // }
 
-                    if(partner){
-                        for(p of partner){
+                    // if(partner){
+                    //     for(p of partner){
                             
-                            let template = Service.emailTemplate.ulbSignup(user.name,"PARTNER",p.name);
-                            let mailOptions = {
-                                to: "arjun.malik@dhwaniris.com",
-                                subject: template.subject,
-                                html: template.body
-                            };
-                            Service.sendEmail(mailOptions);
-                        }
-                    }
+                    //         let template = Service.emailTemplate.ulbSignup(user.name,"PARTNER",p.name);
+                    //         let mailOptions = {
+                    //             to: "arjun.malik@dhwaniris.com",
+                    //             subject: template.subject,
+                    //             html: template.body
+                    //         };
+                    //         Service.sendEmail(mailOptions);
+                    //     }
+                    // }
 
                     /*let templateAcountant = Service.emailTemplate.ulbSignupAccountant(user.accountantName);
                     let mailOptionsAccountant = {
