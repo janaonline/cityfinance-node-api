@@ -1,5 +1,6 @@
 const UlbLedger = require('../../../models/UlbLedger');
 const OverallUlb = require('../../../models/OverallUlb');
+const Ulb = require('../../../models/Ulb');
 const BondIssuerItem = require('../../../models/BondIssuerItem');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../../service/redis");
@@ -63,17 +64,45 @@ module.exports =  (req,res)=>{
         }
         catch(err){
             rjct(err);
-        }
-            
+        }            
     })
 
-    Promise.all([totalULB,munciapalBond,financialStatement]).then((values)=>{
+    let coveredUlbCount = new Promise(async(rslv,rjct)=>{
+        try{
+            if(req.query.state){
+                query = [ 
+                    {$group:{"_id":"$ulb"}},
+                    {
+                        "$lookup":{
+                        "from":"ulbs",
+                        "localField":"_id",
+                        "foreignField":"_id",
+                        "as":"ulb"
+                        }
+                    },
+                    {$match:{"ulb.state":ObjectId(req.query.state)}},
+                    {$count:"count"} 
+                ]
+                count = await UlbLedger.aggregate(query).exec();
+                count.length>0 ? rslv(count[0].count):rslv(0);                
+            }
+            else{ 
+                let count = await Ulb.count({}).exec();
+                rslv(count)
+            }
+        } 
+        catch(err){
+          rjct(err)
+        }
+    })
+
+    Promise.all([totalULB,munciapalBond,financialStatement,coveredUlbCount]).then((values)=>{
 
         let data = {
             totalULB : values[0],
             financialStatements: values[2].length>0 ? values[2][0].count : 0,
-            totalMunicipalBonds : values[1]
-
+            totalMunicipalBonds : values[1],
+            coveredUlbCount : values[3]
         };
         //Redis.set(req.redisKey,JSON.stringify(data))
         return res.status(200).json({success : true, message : "Data fetched", data : data});
