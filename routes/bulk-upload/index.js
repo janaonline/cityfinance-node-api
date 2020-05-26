@@ -23,6 +23,7 @@ const storage1 = multer.diskStorage({
 });
 
 const storage2 = multer.diskStorage({
+
     destination: function (req, file, cb) {
         cb(null, 'uploads/resource')
     },
@@ -34,7 +35,7 @@ const multerUpload = multer({ storage: storage1 });
 const resourceUpload = multer({ storage: storage2 });
 const router = express.Router();
 
-router.post('/upload-resource',resourceUpload.single('pdf'),BulkUpload.resourceUpload);
+router.post('/upload-resource',resourceUpload.fields([{name:'pdf'},{name:'image'}]),BulkUpload.resourceUpload);
 
 router.post('/processData',verifyToken,BulkUpload.processData);
 router.get('/getProcessStatus/:_id',verifyToken,BulkUpload.getProcessStatus);
