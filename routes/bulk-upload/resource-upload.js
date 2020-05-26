@@ -37,7 +37,6 @@ module.exports = async function(req,res){
 
 		let d = await resource.findOne({"downloadUrl":reqBody["downloadUrl"],imageUrl:reqBody["imageUrl"]}).exec();
 		if(d){
-
 			let update = {$set:{imageUrl:reqBody["imageUrl"],downloadUrl:reqBody["downloadUrl"]}}
 			let ud = await resource.update({"downloadUrl":reqBody["downloadUrl"]},)
 			return Response.OK(res,ud,"update successfully");
