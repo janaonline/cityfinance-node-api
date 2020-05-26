@@ -9,8 +9,11 @@ const BulkUpload = {
     bondUpload:require('./bonds-upload'),
     ulbUlpload:require('./ulb-upload'),
     overallUlbUlpload:require('./overall-ulb-upload'),
-    resourceUpload:require('./resource-upload')
+    resourceUpload:require('./resource-upload'),
+    getResource:require('./resource-upload').getResource
+
 }
+
 const express = require('express');
 const multer = require('multer');
 const storage1 = multer.diskStorage({
@@ -32,10 +35,11 @@ const storage2 = multer.diskStorage({
     }
 });
 const multerUpload = multer({ storage: storage1 });
-const resourceUpload = multer({ storage: storage2 });
+const resourceMulterUpload = multer({ storage: storage2 });
 const router = express.Router();
 
-router.post('/upload-resource',resourceUpload.fields([{name:'pdf'},{name:'image'}]),BulkUpload.resourceUpload);
+router.post('/upload-resource',resourceMulterUpload.fields([{name:'pdf'},{name:'image'}]),BulkUpload.resourceUpload);
+router.get('/resource/all',BulkUpload.getResource);
 
 router.post('/processData',verifyToken,BulkUpload.processData);
 router.get('/getProcessStatus/:_id',verifyToken,BulkUpload.getProcessStatus);

@@ -1,8 +1,6 @@
 const resource = require("../../models/Resources");
 const service = require("../../service");
-const Response = require("../../service/response");
-const baseDir = "uploads/";
-const fs = require("fs");
+const Response = require("../../service").response;
 
 module.exports = async function(req,res){
 
@@ -48,4 +46,12 @@ module.exports = async function(req,res){
 		}
 
 	}	
+}
+
+module.exports.getResource =  function(req,res){
+
+	service.find({},resource,function(response,value){	
+
+		return  Response.OK(res,value,`success`);
+	})
 }
