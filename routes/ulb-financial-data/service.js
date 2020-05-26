@@ -534,7 +534,9 @@ module.exports.update = async (req, res)=>{
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
-                return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
+                let ulbFinancialDataobj = await UlbFinancialData.findOne({_id:prevState._id}).exec();
+
+                return Response.OK(res,ulbFinancialDataobj,`completeness status changed to ${prevState.completeness}`);
             }else{
                 return Response.BadRequest(res,{}, "Update not allowed.")
             }
