@@ -8,7 +8,8 @@ const BulkUpload = {
     uploadLedger: require('./upload-ledger'),
     bondUpload:require('./bonds-upload'),
     ulbUlpload:require('./ulb-upload'),
-    overallUlbUlpload:require('./overall-ulb-upload')
+    overallUlbUlpload:require('./overall-ulb-upload'),
+    resourceUpload:require('./resource-upload')
 }
 const express = require('express');
 const multer = require('multer');
@@ -20,16 +21,27 @@ const storage1 = multer.diskStorage({
         cb(null, Date.now() + "_" + file.originalname)
     }
 });
+
+const storage2 = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/resource')
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + "_" + file.originalname)
+    }
+});
 const multerUpload = multer({ storage: storage1 });
+const resourceUpload = multer({ storage: storage2 });
 const router = express.Router();
 
+router.post('/upload-resource',resourceUpload.single('pdf'),BulkUpload.resourceUpload);
 
 router.post('/processData',verifyToken,BulkUpload.processData);
 router.get('/getProcessStatus/:_id',verifyToken,BulkUpload.getProcessStatus);
 router.post('/uploadLedger', multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.uploadLedger);
 
 router.post('/bulk/bonds-upload',multerUpload.single('files'),BulkUpload.bondUpload);
-router.post('/bulk/ulb-upload',multerUpload.single('files'),BulkUpload.ulbUlpload);
+router.post('/bulk/ulb-upload',multerUpload.single('file'),BulkUpload.ulbUlpload);
 router.post('/bulk/overall-ulb-upload',multerUpload.single('files'),BulkUpload.overallUlbUlpload);
 router.post("/bulk/ulb-location-update", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate);
 router.post("/bulk/state-ulb-count-update", multerUpload.single('csv'), BulkUpload.csvToJSON,BulkUpload.stateUlbCountUpdate);
