@@ -8,7 +8,6 @@ module.exports = async function(req,res){
 
 		let reqBody ={};
 		reqBody["name"] = req.body.name;
-
 		var reqFile = req.files;
 		if(reqFile.pdf){
 			for(e of reqFile.pdf){
@@ -33,7 +32,7 @@ module.exports = async function(req,res){
 			}
 		}
 
-		let d = await resource.findOne({"downloadUrl":reqBody["downloadUrl"],imageUrl:reqBody["imageUrl"]}).exec();
+		let d = await resource.findOne({"downloadUrl":reqBody["downloadUrl"]}).exec();
 		if(d){
 			let update = {$set:{imageUrl:reqBody["imageUrl"],downloadUrl:reqBody["downloadUrl"]}}
 			let ud = await resource.update({"downloadUrl":reqBody["downloadUrl"]},)
