@@ -1,9 +1,13 @@
 const service = require("../../service");
+const Response = require("../../service").response;
+
 const UlbLedger= require("../../models/UlbLedger");
 const Ulb =require("../../models/Ulb");
+const XVFcForms =require("../../models/XVFinanceComissionReForms");
 const OverallUlb= require("../../models/OverallUlb");
 const State= require("../../models/State");
 const LineItem= require("../../models/LineItem");
+const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req,res) {
 
     let query = {};
@@ -138,6 +142,43 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
         return res.status(400).json({message:"", errMessage: e.message,success:false});
     }
 }
+
+module.exports.form = function(req,res){
+
+    if(req.decoded["role"]=="STATE"){
+        let query = {}
+        if(req.query.state){
+            query["state"] = ObjectId(req.query.state);
+            service.find(query,XVFcForms,function(response,value){
+            return res.status(response ? 200 : 400).send(value);
+            });
+        }
+
+        else{
+
+            req.body["state"] = req.decoded["state"];
+            service.post(XVFcForms,req.body,function(response,value){
+                return res.status(response ? 200 : 400).send(value);
+            });
+        }
+    }
+ 
+}
+
+module.exports.updateXvForm = function(req,res){
+
+    if(req.decoded["role"]=="STATE"){
+        let query = {}
+        if(req.params.state){
+            query["state"] =   ObjectId(req.params.state);
+            service.put(query,req.body,XVFcForms,function(response,value){
+            return res.status(response ? 200 : 400).send(value);
+            });
+        }
+    }
+ 
+}
+
 const getBackYears = (num=  3,before = '') =>{
     let yr = before ? `${before}-01-01` : moment().format("YYYY-MM-DD");
     let years = [];
