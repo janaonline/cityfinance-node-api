@@ -31,6 +31,12 @@ router.post(
     State.form
 );
 
+router.get(
+    '/state/form',
+    verifyToken,
+    State.form
+);
+
 router.put(
     '/state/form/:_id',
     verifyToken,

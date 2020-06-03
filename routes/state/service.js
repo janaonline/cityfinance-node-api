@@ -146,20 +146,27 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
 module.exports.form = function(req,res){
 
     if(req.decoded["role"]=="STATE"){
-        let query = {}
-        if(req.query.state){
-            query["state"] = ObjectId(req.query.state);
-            service.find(query,XVFcForms,function(response,value){
-            return res.status(response ? 200 : 400).send(value);
-            });
+
+        if(req.method=="GET"){    
+            let query = {}
+            if(req.query.state){
+                query["state"] = ObjectId(req.query.state);
+                service.find(query,XVFcForms,function(response,value){
+                return res.status(response ? 200 : 400).send(value);
+                });
+            }
+            else{
+
+                return res.status(400).send({ success: false,message: 'No State provided.'});    
+            }
         }
 
-        else{
-
+        if(req.method=="POST"){         
             req.body["state"] = req.decoded["state"];
             service.post(XVFcForms,req.body,function(response,value){
                 return res.status(response ? 200 : 400).send(value);
             });
+        
         }
     }
  
