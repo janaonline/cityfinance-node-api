@@ -168,7 +168,8 @@ module.exports.login = async (req, res)=>{
                             name: user.name,
                             email: user.email,
                             isActive: user.isActive,
-                            role:user.role
+                            role:user.role,
+                            state:user.state
                         }
                     });
                 } else {
