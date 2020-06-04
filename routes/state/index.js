@@ -43,4 +43,6 @@ router.put(
     State.updateXvForm
 );
 
+router.get('/state/form/all',State.getAllForms);
+
 module.exports = router;

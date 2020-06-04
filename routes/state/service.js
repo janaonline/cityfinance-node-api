@@ -1,6 +1,6 @@
 const service = require("../../service");
 const Response = require("../../service").response;
-
+const moment = require("moment");
 const UlbLedger= require("../../models/UlbLedger");
 const Ulb =require("../../models/Ulb");
 const XVFcForms =require("../../models/XVFinanceComissionReForms");
@@ -184,6 +184,51 @@ module.exports.updateXvForm = function(req,res){
         }
     }
  
+}
+
+module.exports.getAllForms = async function(req,res){
+
+    let user = req.decoded,
+    filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+    sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+    skip = req.query.skip ? parseInt(req.query.skip) : 0,
+    limit = req.query.limit ? parseInt(req.query.limit) : 50,
+    actionAllowed = ['ADMIN','MoHUA','PARTNER'];
+
+    if(actionAllowed.indexOf(user.role) > -1){
+        try {
+                let query = {};
+                let newFilter = await service.mapFilter(filter);
+                let q = [{$project:{"state":1,"createdAt":1}}];
+                if(newFilter && Object.keys(newFilter).length){
+                    q.push({$match:newFilter});
+                }
+                if(Object.keys(sort).length){
+                    q.push({$sort:sort});
+                }
+                q.push({$skip:skip});
+                q.push({$limit:limit});
+                if(!skip) {
+                    let nQ = Object.assign({},query);
+                    Object.assign(nQ,newFilter);
+                    total = await XVFcForms.count(nQ);
+                }
+                let forms = await XVFcForms.aggregate(q).exec();
+                return  res.status(200).json({
+                    timestamp:moment().unix(),
+                    success:true,
+                    message:"list",
+                    total:total,
+                    data:forms
+                });            
+        }catch (e) {
+            console.log(e);
+            return Response.DbError(res, e, e.message);
+        }
+    }
+    else{
+        Response.BadRequest(res,req.body,`Action not allowed for the role:${user.role}`);
+    }
 }
 
 const getBackYears = (num=  3,before = '') =>{
