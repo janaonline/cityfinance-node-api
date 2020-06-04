@@ -195,11 +195,24 @@ module.exports.getAllForms = async function(req,res){
     limit = req.query.limit ? parseInt(req.query.limit) : 50,
     actionAllowed = ['ADMIN','MoHUA','PARTNER'];
 
-    if(actionAllowed.indexOf(user.role) > -1){
+    if(actionAllowed.indexOf("ADMIN") > -1){
         try {
                 let query = {};
                 let newFilter = await service.mapFilter(filter);
-                let q = [{$project:{"state":1,"createdAt":1}}];
+                let q = [
+
+                    {
+                        $lookup:{
+                            from:"states",
+                            localField:"state",
+                            foreignField:"_id",
+                            as:"state"
+                        }
+                    },
+                    {$unwind:{path:"$state",preserveNullAndEmptyArrays:true}},
+                    {$project:{"state":"$state._id","stateName":"$state.name","createdAt":1}}
+
+                ];
                 if(newFilter && Object.keys(newFilter).length){
                     q.push({$match:newFilter});
                 }
