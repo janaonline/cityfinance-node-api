@@ -41,6 +41,93 @@ var XVFcReFormsSchema = new Schema({
         Implement_Plan_UC_B : {type:String,default:""},
         Implement_Date_UC_B : {type:Date,default:Date.now()}
     },
+
+    documents:{
+
+        State_Acts_Doc:{
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[],
+            required:true
+        },
+        
+        State_Amendments_Doc : {
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        },
+        City_Acts_Doc :{
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        },
+        State_Rules_Doc :{
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        },
+        City_Amendments_Doc : {
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        },
+        City_Rules_Doc : {
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        },
+        Admin_Doc : {
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        },       
+        Implement_Doc : {
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        },       
+        Other_Doc : {
+            type:[
+                {
+                    name :{ type : String, required : true},  
+                    url : { type: String, required: true}    
+                }
+            ],
+            default:[]
+        }    
+    },
     state:{type: Schema.Types.ObjectId, ref: 'State',unique:true,required : true},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() }

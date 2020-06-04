@@ -168,8 +168,8 @@ module.exports.form = function(req,res){
 
     if(req.method=="POST"){         
 
-        if(req.decoded["role"]=="STATE"){
-            req.body["state"] = req.state;
+        if(user.role=="STATE"){
+            req.body["state"] = user.state;
             service.post(XVFcForms,req.body,function(response,value){
                 return res.status(response ? 200 : 400).send(value);
             });        
