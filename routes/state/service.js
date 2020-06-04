@@ -145,9 +145,11 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
 
 module.exports.form = function(req,res){
 
-    if(req.decoded["role"]=="STATE"){
+    let user = req.decoded
+    actionAllowed = ['ADMIN','MoHUA','PARTNER'];
+    if(req.method=="GET"){
 
-        if(req.method=="GET"){    
+        if(actionAllowed.indexOf(user.role) > -1){
             let query = {}
             if(req.query.state){
                 query["state"] = ObjectId(req.query.state);
@@ -156,20 +158,26 @@ module.exports.form = function(req,res){
                 });
             }
             else{
-
                 return res.status(400).send({ success: false,message: 'No State provided.'});    
             }
         }
-
-        if(req.method=="POST"){         
-            req.body["state"] = req.decoded["state"];
-            service.post(XVFcForms,req.body,function(response,value){
-                return res.status(response ? 200 : 400).send(value);
-            });
-        
+        else{
+            Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
         }
     }
- 
+
+    if(req.method=="POST"){         
+
+        if(req.decoded["role"]=="STATE"){
+            req.body["state"] = req.state;
+            service.post(XVFcForms,req.body,function(response,value){
+                return res.status(response ? 200 : 400).send(value);
+            });        
+        }
+        else{
+            Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
+        }  
+    }  
 }
 
 module.exports.updateXvForm = function(req,res){
@@ -195,7 +203,7 @@ module.exports.getAllForms = async function(req,res){
     limit = req.query.limit ? parseInt(req.query.limit) : 50,
     actionAllowed = ['ADMIN','MoHUA','PARTNER'];
 
-    if(actionAllowed.indexOf("ADMIN") > -1){
+    if(actionAllowed.indexOf(user.role) > -1){
         try {
                 let query = {};
                 let newFilter = await service.mapFilter(filter);
