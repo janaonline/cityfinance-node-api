@@ -43,6 +43,7 @@ router.put(
     State.updateXvForm
 );
 
-router.get('/state/form/all',State.getAllForms);
+router.get('/state/form/all',verifyToken,State.getAllForms);
+
 
 module.exports = router;
