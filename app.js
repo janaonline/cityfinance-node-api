@@ -21,9 +21,8 @@ app.use(logger('dev'));
 app.use(cors());
 app.use(expressSanitizer());
 
-//Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'uploads'))); // to serve file objects in public
+app.use('/resource',express.static(path.join(__dirname, 'uploads/resource'))); // to serve file objects in public
 
 //Body Parser Middleware
 app.use(bodyParser.json({limit: '20mb'}));
