@@ -169,10 +169,13 @@ module.exports.form = function(req,res){
     if(req.method=="POST"){         
 
         if(user.role=="STATE"){
-            req.body["state"] = user.state;
-            service.post(XVFcForms,req.body,function(response,value){
+            req.body["state"] = req.body["state"] ? req.body["state"] : user.state;
+
+            let query = {}
+            query["state"] = ObjectId(req.body["state"]);
+            service.put(query,req.body,XVFcForms,function(response,value){
                 return res.status(response ? 200 : 400).send(value);
-            });        
+            });                   
         }
         else{
             Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
