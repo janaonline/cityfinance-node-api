@@ -146,7 +146,7 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
 module.exports.form = function(req,res){
 
     let user = req.decoded
-    actionAllowed = ['ADMIN','MoHUA','PARTNER'];
+    actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
     if(req.method=="GET"){
 
         if(actionAllowed.indexOf(user.role) > -1){
