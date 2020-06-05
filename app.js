@@ -11,6 +11,7 @@ require("./initialization/initialize")();
 const Service = require('./service');
 const json2xls = require('json2xls');
 const expressSanitizer = require('express-sanitizer');
+const verifyToken = require('./routes/auth/service').verifyToken;
 app.use(json2xls.middleware);;
 //Port Number
 const port = config.APP.PORT;
@@ -37,6 +38,15 @@ require("./service/redis");
 const routes = require("./routes");
 // app.use(Service.response);
 app.use('/api/v1/',routes);
+
+app.use('/objects',verifyToken,(req, res, next) => {
+	if (!req.decoded) {
+	    return res.status(403).end('Access Forbidden')
+	}	
+  	next()
+})
+app.use('/objects',express.static(path.join(__dirname,'uploads/objects')));
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
 	return res.status(404).json({
