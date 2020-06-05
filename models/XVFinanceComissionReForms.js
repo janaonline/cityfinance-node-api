@@ -6,7 +6,7 @@ const type = ()=>{
 var XVFcReFormsSchema = new Schema({
 
     propertyTax:{
-        Act_Linking_PT_A:type(),
+        Act_Linking_PT_A:{type:String,default:""},
         Existing_Status_PT_A : {type:String,default:""},
         Relevent_Sections_PT_A : {type:String,default:""},
         Legislative_Changes_PT_A:{type:String,default:""},
@@ -14,7 +14,7 @@ var XVFcReFormsSchema = new Schema({
         Relevent_Sections_No_PT_A:{type:String,default:""},
         Adoption_Plan_PT_A:{type:String,default:""},
         Implement_Date_PT_A:{type:Date,default:Date.now()},
-        Periodic_Increase_PT_B:type(),
+        Periodic_Increase_PT_B:{type:String,default:""},
         Existing_Status_Yes_PT_B:{type:String,default:""},
         Relevent_Sections_PT_B:{type:String,default:""},
         Legislative_Changes_PT_B:{type:String,default:""},
@@ -24,7 +24,7 @@ var XVFcReFormsSchema = new Schema({
         Implement_Date_PT_B:{type:Date,default:Date.now()}
     },
     userCharges:{
-        Byelaws_UC_A:type(),
+        Byelaws_UC_A:{type:String,default:""},
         Existing_Status_Yes_UC_A : {type:String,default:""},
         Relevant_Section_UC_A : {type:String,default:""},
         State_Approval_UC_A :{type:String,default:""},
@@ -32,7 +32,7 @@ var XVFcReFormsSchema = new Schema({
         Existing_Status_No_UC_A : {type:String,default:""},
         Implement_Plan_UC_A : {type:String,default:""},
         Implement_Date_UC_A : {type:String,default:""},
-        Periodic_Increase_UC_B : type(),
+        Periodic_Increase_UC_B : {type:String,default:""},
         Existing_Status_Yes_UC_B : {type:String,default:""},
         Relevant_Section_UC_B : {type:String,default:""},
         State_Approval_UC_B : {type:String,default:""},
@@ -128,6 +128,7 @@ var XVFcReFormsSchema = new Schema({
             default:[]
         }    
     },
+    isCompleted:{type:Boolean,default:0},
     state:{type: Schema.Types.ObjectId, ref: 'State',unique:true,required : true},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() }
