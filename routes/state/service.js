@@ -2,6 +2,7 @@ const service = require("../../service");
 const Response = require("../../service").response;
 const moment = require("moment");
 const UlbLedger= require("../../models/UlbLedger");
+const User= require("../../models/User");
 const Ulb =require("../../models/Ulb");
 const XVFcForms =require("../../models/XVFinanceComissionReForms");
 const OverallUlb= require("../../models/OverallUlb");
@@ -187,23 +188,23 @@ module.exports.form = function(req,res){
                     let mohua = await User.find({isActive:true,"role" : "MoHUA"}).exec();    
                     
                     if(state){
-                        let template = Service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
+                        let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
                         let mailOptions = {
                             to: "arjun.malik@dhwaniris.com",
                             subject: template.subject,
                             html: template.body
                         };
-                        Service.sendEmail(mailOptions);
+                        service.sendEmail(mailOptions);
                     }
                     if(mohua.length >0 ){
                         for(mo of mohua){
-                            let template = Service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
+                            let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
                             let mailOptions = {
                                 to: "arjun.malik@dhwaniris.com",
                                 subject: template.subject,
                                 html: template.body
                             };
-                            Service.sendEmail(mailOptions);
+                            service.sendEmail(mailOptions);
                         }
                     }
                 }
