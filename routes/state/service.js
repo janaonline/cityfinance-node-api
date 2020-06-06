@@ -179,7 +179,35 @@ module.exports.form = function(req,res){
 
             let query = {}
             query["state"] = ObjectId(req.body["state"]);
-            service.put(query,req.body,XVFcForms,function(response,value){
+            service.put(query,req.body,XVFcForms,async function(response,value){
+
+                if(response){
+
+                    let state = await User.findOne({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
+                    let mohua = await User.find({isActive:true,"role" : "MoHUA"}).exec();    
+                    
+                    if(state){
+                        let template = Service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
+                        let mailOptions = {
+                            to: "arjun.malik@dhwaniris.com",
+                            subject: template.subject,
+                            html: template.body
+                        };
+                        Service.sendEmail(mailOptions);
+                    }
+                    if(mohua.length >0 ){
+                        for(mo of mohua){
+                            let template = Service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
+                            let mailOptions = {
+                                to: "arjun.malik@dhwaniris.com",
+                                subject: template.subject,
+                                html: template.body
+                            };
+                            Service.sendEmail(mailOptions);
+                        }
+                    }
+                }
+
                 return res.status(response ? 200 : 400).send(value);
             });                   
         }
