@@ -15,6 +15,13 @@ module.exports.get = async function(req,res) {
     if(req.params && req.params._code){
         query["code"] = req.params._code
     }
+    if(req.query.type=="filter"){
+            
+        let stateId = await XVFcForms.find({isCompleted:true},{_id:0,state:1}).exec();
+        let stateArray = stateId.map((s)=>{  return ObjectId(s.state)})
+        query["_id"] = {$nin:stateArray};
+    }
+
     // Get any state
     // State is model name
     service.find(query,State,function(response,value){
