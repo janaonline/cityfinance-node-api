@@ -183,22 +183,13 @@ module.exports.form = function(req,res){
             service.put(query,req.body,XVFcForms,async function(response,value){
 
                 if(response){
-
-                    let state = await User.findOne({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
-                    let mohua = await User.find({isActive:true,"role" : "MoHUA"}).exec();    
-                    
-                    if(state){
-                        let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
-                        let mailOptions = {
-                            to: "arjun.malik@dhwaniris.com",
-                            subject: template.subject,
-                            html: template.body
-                        };
-                        service.sendEmail(mailOptions);
-                    }
-                    if(mohua.length >0 ){
-                        for(mo of mohua){
-                            let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
+                    if(req.body["isCompleted"])
+                    {    
+                        let state = await User.findOne({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
+                        let mohua = await User.find({isActive:true,"role" : "MoHUA"}).exec();    
+                        
+                        if(state){
+                            let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
                             let mailOptions = {
                                 to: "arjun.malik@dhwaniris.com",
                                 subject: template.subject,
@@ -206,9 +197,23 @@ module.exports.form = function(req,res){
                             };
                             service.sendEmail(mailOptions);
                         }
-                    }
-                }
+                        let c= 0;
+                        if(mohua.length >0 ){
+                            for(mo of mohua){
 
+                                let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
+                                let mailOptions = {
+                                    to: "arjun.malik@dhwaniris.com",
+                                    subject: template.subject,
+                                    html: template.body
+                                };
+                                service.sendEmail(mailOptions);
+                                c++;
+                                console.log(c)
+                            }
+                        }
+                    }    
+                }
                 return res.status(response ? 200 : 400).send(value);
             });                   
         }
