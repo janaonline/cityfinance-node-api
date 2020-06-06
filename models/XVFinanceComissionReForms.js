@@ -10,25 +10,25 @@ var XVFcReFormsSchema = new Schema({
         Existing_Status_PT_A : {type:String,default:""},
         Relevent_Sections_PT_A : {type:String,default:""},
         Legislative_Changes_PT_A:{type:String,default:""},
-        Action_Date_PT_A:{type:Date,default:Date.now()},
+        Action_Date_PT_A:{type:Date,default:Date.now},
         Relevent_Sections_No_PT_A:{type:String,default:""},
         Adoption_Plan_PT_A:{type:String,default:""},
-        Implement_Date_PT_A:{type:Date,default:Date.now()},
+        Implement_Date_PT_A:{type:Date,default:Date.now},
         Periodic_Increase_PT_B:{type:String,default:""},
         Existing_Status_Yes_PT_B:{type:String,default:""},
         Relevent_Sections_PT_B:{type:String,default:""},
         Legislative_Changes_PT_B:{type:String,default:""},
-        Action_Date_PT_B:{type:Date,default:Date.now()},
+        Action_Date_PT_B:{type:Date,default:Date.now},
         Existing_Status_No_PT_B:{type:String,default:""},
         Implement_Plan_PT_B:{type:String,default:""},
-        Implement_Date_PT_B:{type:Date,default:Date.now()}
+        Implement_Date_PT_B:{type:Date,default:Date.now}
     },
     userCharges:{
         Byelaws_UC_A:{type:String,default:""},
         Existing_Status_Yes_UC_A : {type:String,default:""},
         Relevant_Section_UC_A : {type:String,default:""},
         State_Approval_UC_A :{type:String,default:""},
-        Action_Date_UC_A : {type:Date,default:Date.now()},
+        Action_Date_UC_A : {type:Date,default:Date.now},
         Existing_Status_No_UC_A : {type:String,default:""},
         Implement_Plan_UC_A : {type:String,default:""},
         Implement_Date_UC_A : {type:String,default:""},
@@ -36,10 +36,10 @@ var XVFcReFormsSchema = new Schema({
         Existing_Status_Yes_UC_B : {type:String,default:""},
         Relevant_Section_UC_B : {type:String,default:""},
         State_Approval_UC_B : {type:String,default:""},
-        Action_Date_UC_B : {type:Date,default:Date.now()},
+        Action_Date_UC_B : {type:Date,default:Date.now},
         Existing_Status_No_UC_B : {type:String,default:""},
         Implement_Plan_UC_B : {type:String,default:""},
-        Implement_Date_UC_B : {type:Date,default:Date.now()}
+        Implement_Date_UC_B : {type:Date,default:Date.now}
     },
 
     documents:{
@@ -134,9 +134,12 @@ var XVFcReFormsSchema = new Schema({
     createdAt : { type: Date, default : Date.now }
 },
 
-{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}}
+{timestamp : {createdAt : "createdAt", modifiedAt : "modifiedAt"}}
 );
 
-
-
 module.exports = mongoose.model('XVFinanceComissionReForms', XVFcReFormsSchema);
+
+XVFcReFormsSchema.pre('save', function(next) {
+    this.modifiedAt = new Date(); 
+    next();
+})
