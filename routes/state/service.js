@@ -21,7 +21,6 @@ module.exports.get = async function(req,res) {
         let stateArray = stateId.map((s)=>{  return ObjectId(s.state)})
         query["_id"] = {$nin:stateArray};
     }
-
     // Get any state
     // State is model name
     service.find(query,State,function(response,value){
@@ -175,7 +174,7 @@ module.exports.form = function(req,res){
 
     if(req.method=="POST"){         
 
-        if(user.role=="STATE"){
+        if(actionAllowed.indexOf(user.role) > -1){
             req.body["state"] = req.body["state"] ? req.body["state"] : user.state;
 
             let query = {}
