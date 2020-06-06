@@ -673,5 +673,6 @@ module.exports = {
     fdUploadRejectionUlb:fdUploadRejectionUlb,
     fdUploadRejectionState:fdUploadRejectionState,
     ulbBulkUpload:ulbBulkUpload,
-    ulbProfileEdit:ulbProfileEdit
+    ulbProfileEdit:ulbProfileEdit,
+    stateFormSubmission
 }
