@@ -191,7 +191,7 @@ module.exports.form = function(req,res){
                         if(state){
                             let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
                             let mailOptions = {
-                                to: "arjun.malik@dhwaniris.com",
+                                to: state.email,
                                 subject: template.subject,
                                 html: template.body
                             };
@@ -203,7 +203,7 @@ module.exports.form = function(req,res){
 
                                 let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
                                 let mailOptions = {
-                                    to: "arjun.malik@dhwaniris.com",
+                                    to: mo.email,
                                     subject: template.subject,
                                     html: template.body
                                 };
