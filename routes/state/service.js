@@ -160,9 +160,34 @@ module.exports.form = function(req,res){
             let query = {}
             if(req.query.state){
                 query["state"] = ObjectId(req.query.state);
-                service.find(query,XVFcForms,function(response,value){
-                return res.status(response ? 200 : 400).send(value);
-                });
+                let cond = [
+                    {$match:{state:query["state"]}}, 
+                    {
+                        $lookup: {
+                            from: "states",
+                            localField: "state",
+                            foreignField: "_id",
+                            as: "state"
+                        }
+                    },
+                    {$unwind:"$state"},
+                    {$project:{
+                        isCompleted:1,
+                        createdAt:1,
+                        modifiedAt:1,
+                        stateName:"$state.name",
+                        state:"$state._id",
+                        documents:"$documents",
+                        propertyTax:"$propertyTax",
+                        userCharges:"$userCharges"
+                        }
+                    }
+                ]
+
+                service.aggregate(cond,XVFcForms,function(response,value){
+
+                    return res.status(response ? 200 : 400).send(value);
+                })
             }
             else{
                 return res.status(400).send({ success: false,message: 'No State provided.'});    
