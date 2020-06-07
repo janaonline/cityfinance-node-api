@@ -301,7 +301,7 @@ module.exports.getAllForms = async function(req,res){
                         }
                     },
                     {$unwind:{path:"$state",preserveNullAndEmptyArrays:true}},
-                    {$project:{"state":"$state._id","stateName":"$state.name","createdAt":1}}
+                    {$project:{"isCompleted":1,"state":"$state._id","stateName":"$state.name","createdAt":1}}
 
                 ];
                 if(newFilter && Object.keys(newFilter).length){
