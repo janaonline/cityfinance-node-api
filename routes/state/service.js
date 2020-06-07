@@ -186,7 +186,22 @@ module.exports.form = function(req,res){
 
                 service.aggregate(cond,XVFcForms,function(response,value){
 
-                    return res.status(response ? 200 : 400).send(value);
+
+                    if(value.data.length==0){
+
+                        let cond = [{$match:{_id:query["state"]}},{$project:{state:"$_id",stateName:"$name"}}]
+
+                        service.aggregate(cond,State, function(resp,stateData){
+
+                            return res.status(resp ? 200 : 400).send(stateData);
+                        })
+                    }
+
+                    else{
+
+                        return res.status(response ? 200 : 400).send(value);
+
+                    }
                 })
             }
             else{
