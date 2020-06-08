@@ -8,7 +8,7 @@ var XVFcReFormsSchema = new Schema({
     propertyTax:{
         Act_Linking_PT_A:{type:String,default:""},
         Existing_Status_PT_A : {type:String,default:""},
-        Relevent_Sections_PT_A : {type:String,default:""},
+        Relevent_Sections_Yes_PT_A : {type:String,default:""},
         Legislative_Changes_PT_A:{type:String,default:""},
         Action_Date_PT_A:{type:Date,default:Date.now},
         Relevent_Sections_No_PT_A:{type:String,default:""},
