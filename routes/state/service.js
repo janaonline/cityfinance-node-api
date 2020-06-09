@@ -225,7 +225,7 @@ module.exports.form = function(req,res){
                 if(response){
                     if(req.body["isCompleted"])
                     {    
-                        let state = await User.findOne({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
+                        let state = await User.findOne({"state":ObjectId(req.body["state"]),isActive:true,"role" : "STATE"}).exec();
                         let mohua = await User.find({isActive:true,"role" : "MoHUA"}).exec();    
                         
                         if(state){
