@@ -50,7 +50,7 @@ module.exports = async function(req,res){
 
 module.exports.getResource =  function(req,res){
 
-	service.find({},resource,function(response,value){	
+	service.find({isActive:true},resource,function(response,value){	
 
 		return  Response.OK(res,value,`success`);
 	})
