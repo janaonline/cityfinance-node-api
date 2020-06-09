@@ -236,21 +236,23 @@ module.exports.form = function(req,res){
                                 html: template.body
                             };
                             service.sendEmail(mailOptions);
-                        }
-                        let c= 0;
-                        if(mohua.length >0 ){
-                            for(mo of mohua){
+                            let c= 0;
+                            if(mohua.length >0 ){
 
-                                let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
-                                let mailOptions = {
-                                    to: mo.email,
-                                    subject: template.subject,
-                                    html: template.body
-                                };
-                                service.sendEmail(mailOptions);
-                                c++;
-                                console.log(c)
+                                for(mo of mohua){
+
+                                    let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
+                                    let mailOptions = {
+                                        to: mo.email,
+                                        subject: template.subject,
+                                        html: template.body
+                                    };
+                                    service.sendEmail(mailOptions);
+                                    c++;
+                                    console.log(c)
+                                }
                             }
+
                         }
                     }    
                 }
