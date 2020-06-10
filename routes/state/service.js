@@ -11,16 +11,20 @@ const LineItem= require("../../models/LineItem");
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req,res) {
 
+
     let query = {};
+    let query1 = {};
     query["isActive"] = true;
     if(req.params && req.params._code){
         query["code"] = req.params._code
     }
     if(req.query.type=="filter"){
             
-        let stateId = await XVFcForms.find({isCompleted:true},{_id:0,state:1}).exec();
+        let userStateId = await User.distinct("state",{"isActive":true,"role":"STATE"}).exec(); 
+        query1["state"] = {$in:userStateId};
+        let stateId = await XVFcForms.find(query1,{_id:0,state:1}).exec();
         let stateArray = stateId.map((s)=>{  return ObjectId(s.state)})
-        query["_id"] = {$nin:stateArray};
+        query["_id"] = {$in:userStateId,$nin:stateArray};
     }
     // Get any state
     // State is model name
@@ -303,7 +307,7 @@ module.exports.getAllForms = async function(req,res){
                         }
                     },
                     {$unwind:{path:"$state",preserveNullAndEmptyArrays:true}},
-                    {$project:{"isCompleted":1,"state":"$state._id","stateName":"$state.name","createdAt":1}}
+                    {$project:{"isCompleted":1,"state":"$state._id","stateName":"$state.name","createdAt":1,"modifiedAt":1}}
 
                 ];
                 if(newFilter && Object.keys(newFilter).length){
