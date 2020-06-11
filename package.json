@@ -18,6 +18,7 @@
     "dotenv": "^8.2.0",
     "express": "4.16.4",
     "express-sanitizer": "^1.0.5",
+    "html-pdf": "^2.2.0",
     "json2xls": "^0.1.2",
     "jsonwebtoken": "8.3.0",
     "moment": "^2.24.0",
