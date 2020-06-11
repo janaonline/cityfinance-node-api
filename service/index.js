@@ -41,7 +41,7 @@ const post = function(schema, body, callback) {
       let obj = {
         timestamp: moment().unix(),
         success: true,
-        message: 'Successfully updated',
+        message: 'Successfully created',
         data: data
       };
       return callback(true, obj);

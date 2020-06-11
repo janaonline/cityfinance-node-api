@@ -394,6 +394,7 @@ function condition(ulbs){
                 line_item:{$first:"$lineitems.name"},
                 code:{$first:"$lineitems.code"},
                 head_of_account:{$first:"$lineitems.headOfAccount"},
+                population:{$first:"$ulbs.population"}
             }
         },
         {$project:{
@@ -402,7 +403,8 @@ function condition(ulbs){
                 code:1,
                 ulb_code:1,
                 line_item:1,
-                budget:1
+                budget:1,
+                population:1
             }
         }]
 }

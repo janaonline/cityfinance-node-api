@@ -82,14 +82,27 @@ module.exports.BondUlbs = function(req, res) {
         {
             $group: {
                 _id: '$ulb',
-                years: { $addToSet: '$yearOfBondIssued' }
+                years: { $addToSet: '$yearOfBondIssued' },
+                state:{"$first":"$state"}
+
             }
         },
+        {
+            "$lookup":{
+            "from":"states",
+            "localField":"state",
+            "foreignField":"_id",
+            "as":"state"
+            }
+        },
+        {$unwind:{"path":"$state","preserveNullAndEmptyArrays":true}},
         {
             $project: {
                 _id: 0,
                 name: '$_id',
-                years: '$years'
+                years: '$years',
+                state: "$state._id",
+                stateName: "$state.name" 
             }
         }
     ];

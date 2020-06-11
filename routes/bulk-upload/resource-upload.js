@@ -1,18 +1,57 @@
-const UlbType = require("../../models/Resources");
+const resource = require("../../models/Resources");
+const service = require("../../service");
+const Response = require("../../service").response;
 
 module.exports = async function(req,res){
 
-	if(req.file){
+	if(req.files){
 
-		var reqFile = req.file;
-		if (reqFile.originalname.split('.')[reqFile.originalname.split('.').length - 1] === 'pdf') {
+		let reqBody ={};
+		reqBody["name"] = req.body.name;
+		var reqFile = req.files;
+		if(reqFile.pdf){
+			for(e of reqFile.pdf){
+				if (e.originalname.split('.')[e.originalname.split('.').length - 1] === 'pdf') {
+					let dir = e.destination.split('/')[e.destination.split('/').length - 1];
+					let downloadUrl = req.currentUrl+"/"+dir+"/"+e.filename;
+					reqBody["downloadUrl"] = downloadUrl;
+				}
+			}
+		}
 
-			var fullUrl = req.protocol + '://' + req.get('host')
+		if(reqFile.image){
+			
+			for(i of reqFile.image){
+			
+				let type = i.originalname.split('.')[i.originalname.split('.').length - 1]	
+				if (type =='png' || type =='jpg') {
+					let dir = i.destination.split('/')[i.destination.split('/').length - 1];
+					let image = req.currentUrl+"/"+dir+"/"+i.filename;
+					reqBody["imageUrl"] = image;					
+				}
+			}
+		}
 
-			console.log(req.filepath);return;
+		let d = await resource.findOne({"downloadUrl":reqBody["downloadUrl"]}).exec();
 
-
+		if(d){
+			let update = {$set:{imageUrl:reqBody["imageUrl"],downloadUrl:reqBody["downloadUrl"]}}
+			let ud = await resource.update({"_id":d._id},update);
+			return Response.OK(res,ud,"update successfully");
+		}
+		else{
+			service.post(resource, reqBody, function(response, value) {
+    			return res.status(response ? 200 : 400).send(value);
+			});
 		}
 
 	}	
+}
+
+module.exports.getResource =  function(req,res){
+
+	service.find({isActive:true},resource,function(response,value){	
+
+		return  Response.OK(res,value,`success`);
+	})
 }

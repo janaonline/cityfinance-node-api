@@ -10,6 +10,7 @@ module.exports = async (req, res)=>{
                 // Set host for generating signed Url
 
                 single["host"] = (h.includes("local") || process.env.ENV=="staging" ?  'http://' : 'https://') + req.get('host');
+                single["headers"] = req["headers"];
 
                 // Generate signed url using the function generateSignedUrl
                 let data = await generateSignedUrl(single);

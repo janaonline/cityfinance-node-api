@@ -11,21 +11,39 @@ router.get(
 router.post('/states-with-ulb-count',State.getStateListWithCoveredUlb);
 router.put(
     '/state/:_id',
-    constants,
     verifyToken,
     State.put
 );
 router.post('/state',
-    constants,
     verifyToken,
     State.post
 );
 
 router.delete(
     '/state/:_id',
-    constants,
     verifyToken,
     State.delete
 );
+
+router.post(
+    '/state/form',
+    verifyToken,
+    State.form
+);
+
+router.get(
+    '/state/form',
+    verifyToken,
+    State.form
+);
+
+router.put(
+    '/state/form/:_id',
+    verifyToken,
+    State.updateXvForm
+);
+
+router.get('/state/form/all',verifyToken,State.getAllForms);
+
 
 module.exports = router;

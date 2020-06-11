@@ -325,6 +325,40 @@ const ObjectId = require('mongoose').Types.ObjectId;
                     City Finance Team`
             }
         }
+
+    const stateFormSubmission = (name,stateName,type)=>{
+        
+        if(type=="STATE"){        
+            return {
+            subject:`Property Tax and User Charges Form Successfully Submitted`,
+            body:`Dear ${name},<br>
+                    <p>
+                        Your Property Tax and User Charges Form has been successfully submitted. You can view your response <br>
+                        by logging in to http://www.cityfinance.in.
+                    </p>
+                    <br>
+                <br>Regards,<br>
+                City Finance Team`
+            }
+        }
+
+        else{
+            return {
+            subject:`Property Tax and User Charges Form Successfully Submitted - ${stateName}`,
+            body:`Dear ${name},<br>
+                    <p>
+                        The Property Tax and User Charges Form for ${stateName} has been successfully submitted. You can view <br>
+                        your response by logging in to http://www.cityfinance.in.
+                    </p>
+                    <br>
+                <br>Regards,<br>
+                City Finance Team`
+            }
+
+        }
+    }    
+
+
     const sendFinancialDataStatusEmail = (_id, type="UPLOAD")=>{
         return new Promise(async (resolve, reject)=>{
         let query = [
@@ -639,5 +673,6 @@ module.exports = {
     fdUploadRejectionUlb:fdUploadRejectionUlb,
     fdUploadRejectionState:fdUploadRejectionState,
     ulbBulkUpload:ulbBulkUpload,
-    ulbProfileEdit:ulbProfileEdit
+    ulbProfileEdit:ulbProfileEdit,
+    stateFormSubmission
 }

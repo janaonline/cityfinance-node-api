@@ -534,7 +534,9 @@ module.exports.update = async (req, res)=>{
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
-                return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
+                let ulbFinancialDataobj = await UlbFinancialData.findOne({_id:prevState._id}).exec();
+
+                return Response.OK(res,ulbFinancialDataobj,`completeness status changed to ${prevState.completeness}`);
             }else{
                 return Response.BadRequest(res,{}, "Update not allowed.")
             }
@@ -587,10 +589,12 @@ module.exports.completeness = async (req, res)=>{
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState, $push:{history:history}});
+                let ulbFinancialDataobj = await UlbFinancialData.findOne({_id:prevState._id}).exec();
+ 
                 if(prevState.status == "REJECTED" || prevState.status == "APPROVED"){
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(prevState._id,"ACTION");
                 }
-                return Response.OK(res,du,`completeness status changed to ${prevState.completeness}`);
+                return Response.OK(res,ulbFinancialDataobj,`completeness status changed to ${prevState.completeness}`);
             }
         }catch (e) {
             return Response.DbError(res,e.message, 'Caught Database Exception')
@@ -642,10 +646,12 @@ module.exports.correctness = async (req, res)=>{
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy  = user._id;
                 let du = await UlbFinancialData.update({_id:prevState._id},{$set:prevState,$push:{history:history}});
+                let ulbFinancialDataobj = await UlbFinancialData.findOne({_id:prevState._id}).exec();
+
                 if(prevState.status == "REJECTED" || prevState.status == "APPROVED"){
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(prevState._id,"ACTION");
                 }
-                return Response.OK(res,du,`correctness status changed to ${prevState.correctness}`);
+                return Response.OK(res,ulbFinancialDataobj,`correctness status changed to ${prevState.correctness}`);
             }
         }catch (e) {
             console.log(e);
