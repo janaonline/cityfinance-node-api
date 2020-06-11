@@ -8,6 +8,7 @@ const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
+const request = require("request");
 module.exports.register = async (req, res)=>{
     try{
         let data = req.body;
@@ -336,6 +337,27 @@ module.exports.resetPassword = async (req, res)=>{
         return Response.BadRequest(res, {},`Exception:${e.message}`);
     }
 };
+
+module.exports.captcha = (req,res)=>{
+    const secretKey = Config.CAPTCHA.SECRETKEY;
+    let token = req.body.recaptcha;
+    if(token === null || token === undefined){
+        res.status(201).send({success: false, message: "Token is empty or invalid"})
+        return console.log("token empty");
+    }
+    const url =  "https://www.google.com/recaptcha/api/siteverify?secret="+secretKey+"&response="+token+"&remoteip="+req.connection.remoteAddress
+    request(url, function(err, response, body){
+        body = JSON.parse(body);
+        //check if the validation failed
+        if(body.success !== undefined && !body.success){
+            res.send({success: false, 'message': "recaptcha failed"});
+            return console.log("failed")
+        }
+        //if passed response success message to client
+        res.send({"success": true, 'message': "recaptcha passed"});
+    });
+}
+
 module.exports.startSession = (req, res)=>{
     let visitSession = new VisitSession();
     visitSession.save((err, data)=>{
