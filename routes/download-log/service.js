@@ -41,7 +41,7 @@ module.exports.HtmlToPdf = function(req, res){
         res.status(400).json({success:false, message:"html Missing"});
         return;
     }
-    pdf.create(html,options).toStream(function(err, stream) {
+    pdf.create(req.body.html,options).toStream(function(err, stream) {
 
         if(err){
             return res.status(400).json({success:false, message:"Something went wrong"})
