@@ -9,7 +9,7 @@ router.get('/email_verification',service.verifyToken, service.emailVerification)
 router.post('/forgot_password',service.forgotPassword);
 router.post('/resend_verification_link',service.resendVerificationLink);
 router.post('/reset_password',service.verifyToken,service.resetPassword);
-router.post('/captcha', service.captcha);
+router.post('/captcha_validate', service.captcha);
 
 
 module.exports = router;
