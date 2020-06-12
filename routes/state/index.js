@@ -37,6 +37,19 @@ router.get(
     State.form
 );
 
+
+router.post(
+    '/ulb/form',
+    verifyToken,
+    State.ulbForm
+);
+
+router.get(
+    '/ulb/form',
+    verifyToken,
+    State.ulbForm
+);
+
 router.put(
     '/state/form/:_id',
     verifyToken,

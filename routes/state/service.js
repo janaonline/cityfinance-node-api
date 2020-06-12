@@ -194,17 +194,12 @@ module.exports.form = function(req,res){
                     if(value.data.length==0){
 
                         let cond = [{$match:{_id:query["state"]}},{$project:{state:"$_id",stateName:"$name"}}]
-
                         service.aggregate(cond,State, function(resp,stateData){
-
                             return res.status(resp ? 200 : 400).send(stateData);
                         })
                     }
-
                     else{
-
                         return res.status(response ? 200 : 400).send(value);
-
                     }
                 })
             }
@@ -231,32 +226,33 @@ module.exports.form = function(req,res){
                     {    
                         let state = await User.findOne({"state":ObjectId(req.body["state"]),isActive:true,"role" : "STATE"}).exec();
                         let mohua = await User.find({isActive:true,"role" : "MoHUA"}).exec();    
-                        
-                        if(state){
-                            let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
-                            let mailOptions = {
-                                to: state.email,
-                                subject: template.subject,
-                                html: template.body
-                            };
-                            service.sendEmail(mailOptions);
-                            let c= 0;
-                            if(mohua.length >0 ){
+                            
+                        if(user.role=="STATE"){  
+                            if(state){
+                                let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
+                                let mailOptions = {
+                                    to: state.email,
+                                    subject: template.subject,
+                                    html: template.body
+                                };
+                                service.sendEmail(mailOptions);
+                                let c= 0;
+                                if(mohua.length >0 ){
 
-                                for(mo of mohua){
+                                    for(mo of mohua){
 
-                                    let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
-                                    let mailOptions = {
-                                        to: mo.email,
-                                        subject: template.subject,
-                                        html: template.body
-                                    };
-                                    service.sendEmail(mailOptions);
-                                    c++;
-                                    console.log(c)
+                                        let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
+                                        let mailOptions = {
+                                            to: mo.email,
+                                            subject: template.subject,
+                                            html: template.body
+                                        };
+                                        service.sendEmail(mailOptions);
+                                        c++;
+                                        console.log(c)
+                                    }
                                 }
                             }
-
                         }
                     }    
                 }
@@ -268,6 +264,81 @@ module.exports.form = function(req,res){
         }  
     }  
 }
+
+module.exports.ulbForm = function(req,res){
+
+    let user = req.decoded
+    if(req.method=="GET"){
+
+        if(user.role=="ULB"){
+            let query = {}
+            if(req.query.ulb){
+                query["ulb"] = ObjectId(req.query.ulb);
+                let cond = [
+                    {$match:{ulb:query["ulb"]}}, 
+                    {
+                        $lookup: {
+                            from: "ulbs",
+                            localField: "ulb",
+                            foreignField: "_id",
+                            as: "ulbs"
+                        }
+                    },
+                    {$unwind:"$ulbs"},
+                    {$project:{
+                        isCompleted:1,
+                        createdAt:1,
+                        modifiedAt:1,
+                        ulbName:"$ulbs.name",
+                        ulb:"$ulbs._id",
+                        documents:"$documents",
+                        userCharges:"$userCharges"
+                        }
+                    }
+                ]
+
+                service.aggregate(cond,XVFcForms,function(response,value){
+
+                    if(value.data.length==0){
+
+                        let cond = [{$match:{_id:query["state"]}},{$project:{state:"$_id",stateName:"$name"}}]
+                        service.aggregate(cond,State, function(resp,stateData){
+                            return res.status(resp ? 200 : 400).send(stateData);
+                        })
+                    }
+                    else{
+                        return res.status(response ? 200 : 400).send(value);
+                    }
+                })
+            }
+            else{
+                return res.status(400).send({ success: false,message: 'No State provided.'});    
+            }
+        }
+        else{
+            Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
+        }
+    }
+
+    if(req.method=="POST"){
+
+        if(user.role=="ULB"){
+            req.body["state"] = user.state;
+            req.body["ulb"] = user.ulb;
+            req.body["createdBy"] = user._id;
+            let query = {}
+            query["ulb"] = ObjectId(req.body["ulb"]);
+            service.put(query,req.body,XVFcForms,async function(response,value){
+                return res.status(response ? 200 : 400).send(value);
+            });                   
+        }
+        else{
+            Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
+        }  
+    }
+      
+}
+
 
 module.exports.updateXvForm = function(req,res){
 

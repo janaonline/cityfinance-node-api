@@ -170,7 +170,8 @@ module.exports.login = async (req, res)=>{
                             email: user.email,
                             isActive: user.isActive,
                             role:user.role,
-                            state:user.state
+                            state:user.state,
+                            ulb:user.ulb
                         }
                     });
                 } else {
