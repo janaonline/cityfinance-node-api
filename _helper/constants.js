@@ -1,10 +1,19 @@
 module.exports = {
+    
+    INACTIVETIME:{TIME:15*60*1000},// 15 min
+    PASSWORDEXPIRETIME : {TIME:3600000}, // 1 hour
     USER: {
-        ROLES: ['USER', 'ADMIN', 'SUPERADMIN'],
+        ROLES: ['ADMIN','MoHUA','PARTNER','STATE','ULB','USER'],
         DEFAULT_ROLE: 'USER',
         ONBOARD_AUTHORITY: 'SUPERADMIN',
-        LEDGER_AUTHORITY: 'SUPERADMIN'
-    }, 
+        LEDGER_AUTHORITY: 'SUPERADMIN',
+        LEVEL_ACCESS:{
+            ADMIN:['MoHUA','PARTNER','STATE','ULB','USER'],
+            MoHUA:['PARTNER','STATE','ULB','USER'],
+            PARTNER:['STATE','ULB','USER'],
+            STATE:['ULB']
+        }
+    },
     BUDGET: {
         YEAR: ['2015-16', '2016-17', '2017-18']
     },

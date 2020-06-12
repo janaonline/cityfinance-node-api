@@ -8,7 +8,11 @@ const config = require('./config/app_config');
 const logger = require('morgan');
 const app = express();
 require("./initialization/initialize")();
-
+const Service = require('./service');
+const json2xls = require('json2xls');
+const expressSanitizer = require('express-sanitizer');
+const verifyToken = require('./routes/auth/service').verifyToken;
+app.use(json2xls.middleware);;
 //Port Number
 const port = config.APP.PORT;
 
@@ -16,11 +20,13 @@ app.use(logger('dev'));
 
 // CORS middleware
 app.use(cors());
+app.use(expressSanitizer());
 
-
-//Set static folder
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'uploads'))); // to serve file objects in public
+app.use(express.static(path.join(__dirname, 'uploads')));
+
+//app.use('/resource',express.static(path.join(__dirname, 'uploads/resource'))); // to serve file objects in public
+//app.use('/objects',express.static(path.join(__dirname,'uploads/objects')));
 
 //Body Parser Middleware
 app.use(bodyParser.json({limit: '20mb'}));
@@ -29,23 +35,20 @@ app.use(bodyParser.urlencoded({ limit: '20mb', extended: false }));
 //Passport Middleware
 app.use(passport.initialize());
 app.use(passport.session());
-
 require('./config/passport')(passport);
-
-const userRoutes = require('./routes/user_controller');
-const ledgerRoutes = require('./routes/ledger_controller');
-const downloadLogRoutes = require('./routes/download_log_controller');
+require("./service/redis");
 
 const routes = require("./routes");
+// app.use(Service.response);
+app.use('/api/v1/',routes);
 
-app.use('/users', userRoutes);
-app.use('/ledger', ledgerRoutes);
-app.use('/logs', downloadLogRoutes);
+// app.use('/objects',verifyToken,(req, res, next) => {
+// 	if (!req.decoded) {
+// 	    return res.status(403).end('Access Forbidden')
+// 	}	
+//   	next()
+// })
 
-app.use('/api/admin/v1/', routes);
-app.get('*', (req, res) => {
-	res.sendFile(path.join(__dirname, 'public/index.html'));
-})
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
 	return res.status(404).json({

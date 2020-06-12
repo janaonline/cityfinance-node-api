@@ -1,8 +1,8 @@
-const UlbLedger = require('../../../models/Schema/UlbLedger');
-const Ulb = require('../../../models/Schema/Ulb');
+const UlbLedger = require('../../../models/UlbLedger');
+const Ulb = require('../../../models/Ulb');
 const moment = require('moment');
 const ObjectId = require('mongoose').Types.ObjectId;
-const OverallUlb = require('../../../models/Schema/OverallUlb');
+const OverallUlb = require('../../../models/OverallUlb');
 module.exports = async (req, res, next) => {
     try {
         let years = [];
@@ -40,7 +40,7 @@ module.exports = async (req, res, next) => {
                     "range": {
                         $concat: [
                             { $cond: [{ $gte: ["$population", 1000000] }, "> 10 Lakhs", ""] },
-                            { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, "1 Lakh to 10 Lakhs", ""] },
+                            { $cond: [{ $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 1000000] }] }, "1 to 10 Lakhs", ""] },
                             { $cond: [{ $lte: ["$population", 100000] }, "< 1 Lakh", ""] }
                         ]
                     },
@@ -82,21 +82,26 @@ module.exports = async (req, res, next) => {
         let ulbPopulationRanges = await Ulb.aggregate(rangeQuery).exec();
         let arr = [];
         let len = 0;
+        let d = [];
         for (year of years) {
             let obj = {
                 financialYear: year
             };
-            let rangeArr = [];
-            for (o of ulbPopulationRanges) {
+            let rangeArr = []; let rangeList = [ "> 10 Lakhs", "1 to 10 Lakhs", "< 1 Lakh" ]
+            for (let k of rangeList) {
+                let range = ulbPopulationRanges.find(f=> f.range == k);
+                let o = range ? range : {range:k,ulbs:[]};
                 len += o.ulbs.length;
                 let condition = {populationCategory : o.range}
                 req.query.state ? condition["state"] = mongoose.Types.ObjectId(req.query.state) : null;
                 let overAllUlbs = await OverallUlb.countDocuments(condition).exec();
+                d.push({condition:condition,totalUlb : overAllUlbs, range: o.range});
                 rangeArr.push({ totalUlb : overAllUlbs, range: o.range, ulb: { $in: o.ulbs } });
             }
             obj["data"] = rangeArr;
             arr.push(obj);
         }
+        // res.json({arr,len});
         if(len){
             req.body["queryArr"] = arr;
             next();

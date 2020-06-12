@@ -1,8 +1,8 @@
 var xlstojson = require('xls-to-json-lc');
 var xlsxtojson = require('xlsx-to-json-lc');
 const service = require('../../service');
-const bondIssuerJson = require('../../models/Schema/bondIssuer');
-const BondIssuerItem = require('../../models/Schema/BondIssuerItem');
+const bondIssuerJson = require('../../models/bondIssuer');
+const BondIssuerItem = require('../../models/BondIssuerItem');
 
 module.exports = async function(req, res, next) {
   if (req.file) {

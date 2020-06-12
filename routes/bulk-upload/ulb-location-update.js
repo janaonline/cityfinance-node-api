@@ -1,5 +1,5 @@
 const moment = require("moment");
-const Ulb = require('../../models/Schema/Ulb');
+const Ulb = require('../../models/Ulb');
 const requiredKeys = ["ULBCODE","LAT","LNG"];
 module.exports = async (req, res)=>{
     try {

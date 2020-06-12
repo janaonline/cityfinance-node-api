@@ -532,7 +532,6 @@ module.exports.getAllLegdersCsv = function(req,res){
 // };
 
 
-
 }
 function condition(ulbs){
     return [

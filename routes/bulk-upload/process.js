@@ -1,14 +1,17 @@
 const moment = require("moment");
-const RequestLog = require("../../models/Schema/RequestLog")
+const RequestLog = require("../../models/RequestLog")
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const xlstojson = require("xls-to-json-lc");
 const xlsxtojson = require("xlsx-to-json-lc");
 const CONSTANTS = require('../../_helper/constants');
-const State = require("../../models/Schema/State")
-const Ulb = require("../../models/Schema/Ulb");
-const LineItem = require("../../models/Schema/LineItem");
-const UlbLedger = require("../../models/Schema/UlbLedger");
-const LedgerLog = require("../../models/ledger_log_model");
+const State = require("../../models/State")
+const Ulb = require("../../models/Ulb");
+const LineItem = require("../../models/LineItem");
+const UlbLedger = require("../../models/UlbLedger");
+const LedgerLog = require("../../models/LedgerLog");
+const Redis = require('../../service/redis')
+const ObjectId = require('mongoose').Types.ObjectId;
+
 const overViewSheet = {
     'State Code': 'state_code',
     'Name of the state': 'state',
@@ -26,7 +29,8 @@ const overViewSheet = {
     'Date of Re-verification': 'reverified_at',
     'Re-verified by': 'reverified_by'
 };
-
+const inputHeader = ["Head of Account","Code","Line Item","Amount in INR"];
+const overviewHeader = ["Basic Details","Value"];
 
 module.exports = function (req, res) {
     let financialYear = req.body.financialYear;
@@ -64,7 +68,7 @@ module.exports = function (req, res) {
                     let reqLog = await RequestLog.findOne({url:req.body.alias, financialYear:financialYear});
                     if(!reqLog){
                         let requestLog = new RequestLog({
-                            user:req.decoded ? req.decoded.id : null,
+                            user:req.decoded ? ObjectId(req.decoded.id) : null,
                             url:req.body.alias,
                             message:"Data Processing",
                             financialYear:financialYear
@@ -96,6 +100,7 @@ module.exports = function (req, res) {
 
                             }
                         });
+
                     }else {
                         return res.status(400).json({
                             timestamp:moment().unix(),
@@ -120,8 +125,9 @@ module.exports = function (req, res) {
             try {
                 // extract the overviewSheet and dataSheet
                 let {overviewSheet, dataSheet} = await readXlsxFile(reqFile);
-
                 // validate overview sheet 
+                //console.log(dataSheet);return;    
+
                 let objOfSheet = await validateOverview(overviewSheet,financialYear); // rejection in case of error
                 delete objOfSheet['state'];
                 objOfSheet['state']  = objOfSheet.state_name;
@@ -164,6 +170,7 @@ module.exports = function (req, res) {
                 }else {
                     //await session.commitTransaction();
                     await updateLog(reqId, {message:`Completed`, completed:1, status:"SUCCESS"});
+                    Redis.resetDashboard();
                 }
 
             }catch (e) {
@@ -237,11 +244,29 @@ module.exports = function (req, res) {
                 console.log("validateOverview : data.length < 2")
                 reject( {message : "Overview sheet has less than two rows, Please check"} );
             }else {
+
+                let d = Object.keys(data[0]);
+                var filtered = d.filter(function(el) { return el; });
+                if(filtered.length!=overviewHeader.length){
+                    console.log("===>overview header is missing");
+                    reject({message:"Overview header is missing"});
+                }
+                else{
+                    for(let i=0;i<overviewHeader.length;i++) 
+                    {    
+                        let name = overviewHeader[i].toLowerCase();
+                        if(filtered.indexOf(name)  === -1){
+                            reject({message:"Overview header name mismatch"});
+                        }
+                    } 
+                }
+
                 let objOfSheet = {};
                 for(let eachRow of data){
                     // converting data in rows here in obj;
                     eachRow["basic details"] ? objOfSheet[eachRow["basic details"] ] = eachRow.value : "Means row is empty remove it"
                 }
+
                 for(let key of Object.keys(objOfSheet)){
                     objOfSheet[ overViewSheet[key]] = objOfSheet[key] ;
                     delete objOfSheet[key];
@@ -272,16 +297,30 @@ module.exports = function (req, res) {
             let inputSheetObj = { }
             let errors = [];
 
+            let d = Object.keys(data[0]);
+            var filtered = d.filter(function(el) { return el; });
+            if(filtered.length!=inputHeader.length){
+                console.log("===>Input sheet header is missing");
+                reject({message:"Input sheet header is missing"});
+            }
+            else{
+
+                for(let i=0;i<inputHeader.length;i++) 
+                {    
+                    let name = inputHeader[i].toLowerCase();
+                    if(filtered.indexOf(name)  === -1){
+                        reject({message:"Input sheet header name mismatch"});
+                    }
+                } 
+            }
             for(let eachRow of data){
-
                 // removing all the - values and converting them to 0
-                eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;
-                
+                eachRow["amount in inr"] = eachRow["amount in inr"] =="-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"] ;                
                 // removing commas from all the values
-                eachRow["amount in inr"] = eachRow["amount in inr"].trim()!='' ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
-
+                eachRow["amount in inr"] = (eachRow["amount in inr"]!== undefined) && (eachRow["amount in inr"] == eachRow["amount in inr"].trim()!='') ?  eachRow["amount in inr"].replace(/\,/g,'') : '' ;
+                
                 // removing brackets from values and converting them to -ve values
-                if((eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
+                if((eachRow["amount in inr"]!== undefined) && (eachRow["amount in inr"].indexOf('(')>-1 && eachRow["amount in inr"].indexOf(')')>-1))
                     eachRow["amount in inr"] = "-" + eachRow["amount in inr"].replace("(", "").replace(")","")
 
                 if(eachRow["code"]){

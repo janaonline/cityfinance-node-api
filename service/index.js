@@ -1,4 +1,6 @@
 const moment = require('moment');
+const email = require('./email');
+const bcrypt = require('bcryptjs');
 const find = function(condition = {}, schema, callback) {
   // PUT Function where find condition and schema name would be received and accordingly response will be returned
   schema.find(condition).exec((err, data) => {
@@ -39,7 +41,7 @@ const post = function(schema, body, callback) {
       let obj = {
         timestamp: moment().unix(),
         success: true,
-        message: 'Successfully updated',
+        message: 'Successfully created',
         data: data
       };
       return callback(true, obj);
@@ -101,9 +103,70 @@ const aggregate = function(condition = {}, schema, callback) {
     }
   });
 };
+function getRndInteger(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) ) + min;
+}
+function getHash(str) {
+  return new Promise((resolve, reject)=> {
+    bcrypt.genSalt(10, (err, salt) => {
+      if(err){
+        reject(err)
+      }else{
+        bcrypt.hash(str, salt, (err, hash) => {
+          if(err){
+            reject(err)
+          }else {
+            resolve(hash);
+          }
+        })
+      }
+    });
+  });
+}
+function compareHash(str1, str2) {
+  return new Promise((resolve, reject)=>{
+    bcrypt.compare(str1, str2, (err, isMatch) => {
+      if(err){
+        reject(err)
+      } else {
+        resolve(isMatch);
+      }
+    });
+  })
+}
+
+function incLoginAttempts(user) {
+
+  const MAX_LOGIN_ATTEMPTS = 5;
+  const LOCK_TIME = 60*60 * 1000       
+  // if we have a previous lock that has expired, restart at 1
+  if (user.lockUntil && user.lockUntil < Date.now()) {
+    return updates = {$set: { loginAttempts: 1,isLocked:false }}
+  }
+  // otherwise we're incrementing
+  var updates = { $inc: { loginAttempts: 1 } };
+  // lock the account if we've reached max attempts and it's not locked already
+  if (user.loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS && !user.isLocked) {
+      updates = {$set:{ lockUntil: Date.now() + LOCK_TIME, isLocked:true}};
+  }
+  return updates;
+};
+
+
 module.exports = {
   find: find,
   put: put,
   post: post,
-  aggregate: aggregate
+  aggregate: aggregate,
+  sendEmail:email,
+  getRndInteger:getRndInteger,
+  getHash:getHash,
+  compareHash:compareHash,
+  incLoginAttempts:incLoginAttempts,
+  response:require('./response'),
+  mapFilter:require('./filter'),
+  emailTemplate:require('./email-template'),
+  emailVerificationLink:require('./email-verification-link'),
+  dataFormating:require('./data-fomatting'),
+  checkUnique:require('./check-unique')
 };

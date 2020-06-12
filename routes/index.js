@@ -1,165 +1,67 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
-
-//Define where project photos will be stored
-const storage = multer.diskStorage({
-  destination: function(request, file, callback) {
-    callback(null, 'uploads');
-  },
-  filename: function(request, file, callback) {
-    console.log(file);
-    callback(null, file.originalname);
-  }
+// @Base Url
+router.use((req, res, next)=>{
+    req["currentUrl"] = `${req.protocol+"://"+req.headers.host}`;
+    next();
 });
-const multerUpload = multer({ storage: storage });
-/*
- * END MULTER
- */
-const passport = require('passport');
-const ulbUploadService = require('./bulk-upload/ulb-upload');
+// @Auth
+const Auth = require('./auth');
+router.use(Auth);
 
-//--> State Routes <---//
-const State = require('../models/Schema/State');
-const StateUlbCount = require('../routes/report/state-ulb-count');
-router.get(
-  '/state',
-  passport.authenticate('jwt', { session: false }),
-  State.get
-);
-router.put(
-  '/state/:_id',
-  passport.authenticate('jwt', { session: false }),
-  State.put
-);
-router.post(
-  '/state',
-  passport.authenticate('jwt', { session: false }),
-  State.post
-);
-router.delete(
-  '/state/:_id',
-  passport.authenticate('jwt', { session: false }),
-  State.delete
-);
+// @FinancialYear
+const FinancialYear = require('./financial-year');
+router.use(FinancialYear);
 
-//--> ULB Type Routes <---//
-const UlbType = require('../models/Schema/UlbType');
-router.get(
-  '/UlbType',
-  passport.authenticate('jwt', { session: false }),
-  UlbType.get
-);
-router.put(
-  '/UlbType/:_id',
-  passport.authenticate('jwt', { session: false }),
-  UlbType.put
-);
-router.post(
-  '/UlbType',
-  passport.authenticate('jwt', { session: false }),
-  UlbType.post
-);
-router.delete(
-  '/UlbType/:_id',
-  passport.authenticate('jwt', { session: false }),
-  UlbType.delete
-);
+// @State
+const State = require('./state');
+router.use(State);
 
-//--> ULB Routes <---//
-const Ulb = require('../models/Schema/Ulb');
-router.get('/Ulb', passport.authenticate('jwt', { session: false }), Ulb.get);
-router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
-router.put(
-  '/Ulb/:_id',
-  passport.authenticate('jwt', { session: false }),
-  Ulb.put
-);
-router.post('/Ulb', passport.authenticate('jwt', { session: false }), Ulb.post);
-router.delete(
-  '/Ulb/:_id',
-  passport.authenticate('jwt', { session: false }),
-  Ulb.delete
-);
+// @ULBType
+const UlbType = require('./ulb-type');
+router.use(UlbType);
 
-//---> Line Item Routes <---//
-const LineItem = require('../models/Schema/LineItem');
-router.get(
-  '/LineItem',
-  passport.authenticate('jwt', { session: false }),
-  LineItem.get
-);
-router.put(
-  '/LineItem/:_id',
-  passport.authenticate('jwt', { session: false }),
-  LineItem.put
-);
-router.post(
-  '/LineItem',
-  passport.authenticate('jwt', { session: false }),
-  LineItem.post
-);
-router.delete(
-  '/LineItem/:_id',
-  passport.authenticate('jwt', { session: false }),
-  LineItem.delete
-);
+// @ULB
+const Ulb = require('./ulb');
+router.use(Ulb);
 
-//---> Bond Issuer Item Routes <---//
-const BondIssuerItem = require('../models/Schema/BondIssuerItem');
-router.get('/BondIssuer', BondIssuerItem.getJson);
-router.get('/Bond/Ulbs', BondIssuerItem.BondUlbs);
+// @ULBUPDATEREQUEST
+const ulbUpdateRequest = require('./ulb-update-request');
+router.use('/ulb-update-request',ulbUpdateRequest);
+// @ULBFINANCIALDATA
+const ulbFinancialData = require('./ulb-financial-data');
+router.use('/ulb-financial-data',ulbFinancialData);
 
-router.get('/BondIssuerItem', BondIssuerItem.get);
-router.put(
-  '/BondIssuerItem/:_id',
-  passport.authenticate('jwt', { session: false }),
-  BondIssuerItem.put
-);
-router.post(
-  '/BondIssuerItem',
-  // passport.authenticate('jwt', { session: false }),
-  BondIssuerItem.post
-);
-router.post(
-  '/BondIssuerItem/getList',
-  // passport.authenticate('jwt', { session: false }),
-  BondIssuerItem.get
-);
-router.delete(
-  '/BondIssuerItem/:_id',
-  // passport.authenticate('jwt', { session: false }),
-  BondIssuerItem.delete
-);
+// @LineItem
+const LineItem = require('./line-item');
+router.use(LineItem);
 
-//---> Bulk-Upload Routes <---//
-const BulkUploadRoute = require('../routes/bulk-upload/route');
-router.use("/",BulkUploadRoute);
-//---> Ulb Ranking Routes <---//
-const ReportRoutes = require('../routes/report/route');
-router.use('/report', ReportRoutes);
+// @BondIssuerItem
+const BondIssuerItem = require('./bond-issuer-item');
+router.use(BondIssuerItem);
 
-const fileUploadRoutes = require('../routes/file-upload');
-router.use(
-  '/',
-  (r, s, n) => {
-    console.log('reached');
-    n();
-  },
-  fileUploadRoutes
-);
+// @Bulk-Upload
+const BulkUploadRoute = require('./bulk-upload');
+router.use(BulkUploadRoute);
 
-// Get state list
-router.get('/lookup/states', State.get);
-router.get('/ulblist', Ulb.getPopulate);
+// @Report
+const ReportRoutes = require('./report');
+router.use('/report',ReportRoutes);
 
-router.get('/lookup/states-with-ulb-count', StateUlbCount.getStateListWithCoveredUlb);
-router.get('/ulb-list', Ulb.getUlbs);
+// @Fileupload
+const fileUploadRoutes = require('./file-upload');
+router.use(fileUploadRoutes);
 
-// Get ULBs by state
-router.get('/states/:stateCode/ulbs', Ulb.getByState);
+// @Downloadlog
+const DownloadLog = require('./download-log');
+router.use(DownloadLog);
 
-// Get All Ulbs
-router.get('/ulbs', Ulb.getAllUlbs);
+// @Ledger
+const Ledger = require('./ledger');
+router.use('/ledger', Ledger);
+
+// @User
+const User = require('./user');
+router.use('/user', User);
 
 module.exports = router;

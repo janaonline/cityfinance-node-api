@@ -1,6 +1,6 @@
 const moment = require('moment');
-const UlbLedger = require('../../../models/Schema/UlbLedger');
-const OverallUlb = require('../../../models/Schema/OverallUlb');
+const UlbLedger = require('../../../models/UlbLedger');
+const OverallUlb = require('../../../models/OverallUlb');
 
 const ownRevenueCode = ['110', '130', '140'];
 const revenueExpenditureCode = [
@@ -15,7 +15,7 @@ const revenueExpenditureCode = [
     '272',
     '200'
 ];
-
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next) => {
 
     try {
@@ -26,102 +26,77 @@ module.exports = async (req, res, next) => {
                 year: q.financialYear,
                 data: []
             };
+            let a = [];
             for (let d of q.data) {
                 query = await getQuery(q.financialYear, d.range, d.ulb,d.totalUlb);
                 let data = await UlbLedger.aggregate(query);
                 if(data.length){
                     obj['data'].push(modifyData(data[0]));
+                }else{
+                    obj.data.push({
+                        "ownRevenueUlb": [],
+                        "audited": 0,
+                        "unaudited": 0,
+                        "populationCategory": d.range,
+                        "numOfUlb": 0,
+                        "ulbs":  [],
+                        "auditNA": 0,
+                        "ownRevenue": 0,
+                        "revenueExpenditure": 0,
+                        "ownRevenuePercentage": 0,
+                        "totalUlb": d.totalUlb,
+                        "maxOwnRevenuePercentage": {
+                            "name": "0",
+                            "value": "0"
+                        },
+                        "minOwnRevenuePercentage": {
+                            "name": "0",
+                            "value": "0"
+                        }
+                    })
                 }
             }
-            obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure','totalUlb']);
+            //res.json({query})
+
+            obj.data = calcualteTotal(obj.data, ['numOfUlb','ownRevenue','revenueExpenditure','totalUlb','audited','unaudited','auditNA']);
             output.push(obj);
         }
+        let resData = [];
+        if(req.query.ulbList && req.query.populationCategory){
+            let years = req.body.queryArr.map(m=> m.financialYear);
+            let year = years.length ? years[0] : '';
+            if(output.length){
+                let yearData = output.find(f=> f.year == year);
+                if(yearData && yearData.data && yearData.data.length){
+                    let pcatData = yearData.data.find(f=> f.populationCategory == req.query.populationCategory)
+                    resData = pcatData ? pcatData.ulbs : []
+                }
+            }
+        }else{
+            if(output && !req.query.ulb){
+                for(year of output){
+                    if(year.data && year.data.length){
+                        for(d of year.data){
+                            d["ulbs"] = undefined;
+                            d["ownRevenueUlb"] = undefined;
+                        }
+                    }
+                }
+            }
+            resData = output;
+        }
+        Redis.set(req.redisKey,JSON.stringify(resData))
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
             message: '',
-            data: output
+            data: resData
         });
     } catch (error) {
         console.log("exception",error);
     }
 };
-const getData = ()=>{
-    return [
-        {
-            year: "2016-17",
-            data: [
-                {
-                    populationCategory: "> 10 Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "1Lakh to 10Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "< 1 Lakh",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                }
-            ]
-        },
-        {
-            year: "2017-18",
-            data: [
-                {
-                    populationCategory: "> 10 Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "1Lakh to 10Lakhs",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                },
-                {
-                    populationCategory: "< 1 Lakh",
-                    numOfUlb: 100,
-                    ownRevenue: 1000,
-                    revenueExpenditure: 10000,
-                    ownRevenuePercentage: 10,
-                    minOwnRevenuePercentage: 8,
-                    maxOwnRevenuePercentage: 20
-                }
-            ]
-        }
-    ].map(d => {
-        return {
-            year: d.year,
-            data: d.data.map(m => {
-                m["ulbName"] = 'C';
-                return m;
-            })
-        }
-    });
-}
+
 const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
     return [
         // stage 1
@@ -161,6 +136,28 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                     range: '$range',
                     ulb: '$ulb'
                 },
+                "audited": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                $and:[{"$eq": ["$code","1001"]},{"$gt": ["$amount",0]}]
+                            },
+                            1,
+                            0
+                        ]
+                      }
+                   },
+                "unaudited": {
+                    "$sum": {
+                        "$cond": [
+                        {
+                            $and:[{"$eq": ["$code","1001"]},{"$eq": ["$amount",0]}]
+                        },
+                        1,
+                        0
+                    ]
+                    }
+                },
                 ownRevenue: {
                     $sum: {
                         $cond: [{ $in: ['$code', ownRevenueCode] }, '$amount', 0]
@@ -181,18 +178,31 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
         // stage 6
 
         {
-            $project: {
-                financialYear: '$_id.financialYear',
-                range: '$_id.range',
-                ulb: '$_id.ulb',
-                ownRevenue: 1,
-                revenueExpenditure: 1,
-                ownRevenuePercentageUlB: {
-                    $cond: [
-                        { $ne: ['$revenueExpenditure', 0] },
+            "$project": {
+                "financialYear": "$_id.financialYear",
+                "range": "$_id.range",
+                "ulb": "$_id.ulb",
+                "audited" : 1,
+                "unaudited" : 1,
+                "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
+                "ownRevenue": 1,
+                "revenueExpenditure": 1,
+                "ownRevenuePercentageUlB": {
+                    "$cond": [
                         {
-                            $multiply: [
-                                { $divide: ['$ownRevenue', '$revenueExpenditure'] },
+                            "$ne": [
+                                "$revenueExpenditure",
+                                0
+                            ]
+                        },
+                        {
+                            "$multiply": [
+                                {
+                                    "$divide": [
+                                        "$ownRevenue",
+                                        "$revenueExpenditure"
+                                    ]
+                                },
                                 100
                             ]
                         },
@@ -201,17 +211,17 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                 }
             }
         },
-        // stage 7
         {
-            $lookup:{
-                from: "ulbs",
-                localField: "ulb",
-                foreignField: "_id",
-                as: "ulb"
+            "$lookup": {
+                "from": "ulbs",
+                "localField": "ulb",
+                "foreignField": "_id",
+                "as": "ulb"
             }
         },
-        {$unwind:"$ulb"},
-        // stage 8
+        {
+            "$unwind": "$ulb"
+        },
         {
             "$group": {
                 "_id": {
@@ -223,6 +233,9 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                         "_id": "$ulb._id",
                         "name": "$ulb.name",
                         "population": "$ulb.population",
+                        "audited" : "$audited",
+                        "unaudited" : "$unaudited",
+                        "auditNA" : "$auditNA",
                         "ownRevenue": "$ownRevenue",
                         "revenueExpenditure": "$revenueExpenditure",
                         "ownRevenuePercentage": {
@@ -255,6 +268,12 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                         "value": "$ownRevenuePercentageUlB"
                     }
                 },
+                "audited": {
+                    "$sum": "$audited"
+                },
+                "unaudited": {
+                    "$sum": "$unaudited"
+                },
                 "ownRevenue": {
                     "$sum": "$ownRevenue"
                 },
@@ -272,20 +291,34 @@ const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
                 "populationCategory": "$_id.range",
                 "numOfUlb": "$noOfUlb",
                 "ulbs": "$ulbs",
+                "audited":1,
+                "unaudited" :1,
+                "auditNA" : {$subtract : ["$noOfUlb",{$add : ["$audited","$unaudited"]} ] },
                 "ownRevenue": "$ownRevenue",
                 "revenueExpenditure": "$revenueExpenditure",
                 "ownRevenuePercentage": {
-                    "$multiply": [
+                    "$cond": [
                         {
-                            "$divide": [
-                                "$ownRevenue",
-                                "$revenueExpenditure"
+                            "$ne": [
+                                "$revenueExpenditure",
+                                0
                             ]
                         },
-                        100
+                        {
+                            "$multiply": [
+                                {
+                                    "$divide": [
+                                        "$ownRevenue",
+                                        "$revenueExpenditure"
+                                    ]
+                                },
+                                100
+                            ]
+                        },
+                        0
                     ]
                 },
-                "ownRevenueUlb":1,
+                "ownRevenueUlb": 1
             }
         },
         {
@@ -307,9 +340,9 @@ const modifyData = (obj)=>{
         return 0 //default return value (no sorting)
     })
     obj["ownRevenueUlb"] = obj["ownRevenueUlb"].filter(f=> f.value >0 );
-    obj["maxOwnRevenuePercentage"] = JSON.parse(JSON.stringify(obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1]))
+    obj["maxOwnRevenuePercentage"] = obj["ownRevenueUlb"] && obj["ownRevenueUlb"].length ? JSON.parse(JSON.stringify(obj["ownRevenueUlb"][obj["ownRevenueUlb"].length-1])):{name:"0",value:0};
 
-    obj["minOwnRevenuePercentage"] = JSON.parse(JSON.stringify(obj["ownRevenueUlb"][0]))
+    obj["minOwnRevenuePercentage"] = obj["ownRevenueUlb"] && obj["ownRevenueUlb"].length ? JSON.parse(JSON.stringify(obj["ownRevenueUlb"][0])):{name:"0",value:0};
 
     obj["maxOwnRevenuePercentage"].value = obj["maxOwnRevenuePercentage"].value.toFixed(2)
     obj["minOwnRevenuePercentage"].value = obj["minOwnRevenuePercentage"].value.toFixed(2)

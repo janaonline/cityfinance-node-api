@@ -1,5 +1,6 @@
 const moment = require('moment');
-const UlbLedger = require("../../../models/Schema/UlbLedger");
+const UlbLedger = require("../../../models/UlbLedger");
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next)=>{
     let queryArr = req.body.queryArr;
     let data=  [];
@@ -18,11 +19,35 @@ module.exports = async (req, res, next)=>{
         }
         data.push(obj);
     }
+    let resData = [];
+    if(req.query.ulbList && req.query.populationCategory){
+        let years = req.body.queryArr.map(m=> m.financialYear);
+        let year = years.length ? years[0] : '';
+        if(data.length){
+            let yearData = data.find(f=> f.year == year);
+            if(yearData && yearData.data && yearData.data.length){
+                let pcatData = yearData.data.find(f=> f.populationCategory == req.query.populationCategory)
+                resData = pcatData ? pcatData.ulbs : []
+            }
+        }
+    }else{
+        if(data && !req.query.ulb){
+            for(year of data){
+                if(year.data && year.data.length){
+                    for(d of year.data){
+                        d["ulbs"] = undefined;
+                    }
+                }
+            }
+        }
+        resData = data;
+    }
+    Redis.set(req.redisKey,JSON.stringify(resData))
     return res.status(200).json({
-        timestamp:moment().unix(),
-        success:true,
-        message:"",
-        data:data
+        timestamp: moment().unix(),
+        success: true,
+        message: '',
+        data: resData
     });
 }
 const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb)=>{
@@ -134,6 +159,28 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                         "$size": "$ulbs"
                     }
                 },
+                "audited": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                $and:[{"$eq": ["$lineItem.code","1001"]},{"$gt": ["$amount",0]}]
+                            },
+                            1,
+                            0
+                        ]
+                      }
+                   },
+                "unaudited": {
+                    "$sum": {
+                        "$cond": [
+                        {
+                            $and:[{"$eq": ["$lineItem.code","1001"]},{"$eq": ["$amount",0]}]
+                        },
+                        1,
+                        0
+                    ]
+                    }
+                },
             }
         },
           {
@@ -153,6 +200,9 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
                      "loanFromFIIB":  "$loanFromFIIB",
                     "loanFromStateGovernment":"$loanFromStateGovernment",
                     "bondsAndOtherDebtInstruments": "$bondsAndOtherDebtInstruments",
+                    "audited" :"$audited",
+                    "unaudited" :"$unaudited",
+                    "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
                     "others" : "$others",
                     "total": {
                         "$sum": [
@@ -179,7 +229,10 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             },
             "others": {
                 "$sum": "$others"
-            }
+            },
+            "audited" : {$sum : "$audited"},
+            "unaudited" : {$sum : "$unaudited"},
+            "numOfUlb" : {$sum:1}
         }
     },
     {
@@ -189,6 +242,9 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs,totalUlb
             "populationCategory": "$populationCategory",
             "numOfUlb": 1,
             "LoanFromCentralGovernment": 1,
+            "audited" : 1,
+            "unaudited" : 1,
+            "auditNA" : {$subtract : ["$numOfUlb",{$add : ["$audited","$unaudited"]} ] },
             "loanFromFIIB": 1,
             "loanFromStateGovernment": 1,
             "bondsAndOtherDebtInstruments": 1,

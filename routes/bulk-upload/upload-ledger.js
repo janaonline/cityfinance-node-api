@@ -1,6 +1,7 @@
-const UlbLedger = require("../../models/Schema/UlbLedger");
-const Ulb = require("../../models/Schema/Ulb");
-const LineItem = require("../../models/Schema/LineItem");
+const UlbLedger = require("../../models/UlbLedger");
+const Ulb = require("../../models/Ulb");
+const LineItem = require("../../models/LineItem");
+const Redis = require('../../service/redis');
 const lineItems  = {
     "Audit report": "1001",
     "Balance sheet": "1002",
@@ -13,38 +14,46 @@ const lineItems  = {
 module.exports = async (req, res)=>{
     try {
         const jsonArray = req.body.jsonArray;
-        console.log("jsonArray", jsonArray.length);
-        let dataArr= [ ];
+        //console.log("jsonArray", jsonArray.length);
+        let dataArr= [];
+
         for(let json of jsonArray){
             console.log("json", json);
-            
-            for(let k in json){
-
-                // Find ulb based on ULB Code
-                let ulb = await Ulb.findOne({code : json["ULB Code"]},"_id");
-                if(["YEAR","ULB Code"].indexOf(k) < 0 && lineItems[k]){
-                    
-                    // Find lineItems in existing line items
-                    let lineItem = await LineItem.findOne({code : lineItems[k]},"_id");
-                    if(ulb && lineItem){
-                        dataArr.push({
-                            ulb:ulb._id,
-                            lineItem:lineItem._id,
-                            financialYear:json["YEAR"],
-                            amount: !isNaN(Number(json[k])) ? Number(json[k]) : 0
-                        })
+            let ulb = await Ulb.findOne({code : json["ULB Code"]},"_id");
+            if(ulb){
+                for(let k in json){
+                    // Find ulb based on ULB Code
+                    if(["YEAR","ULB Code"].indexOf(k) < 0 && lineItems[k]){
+                        
+                        // Find lineItems in existing line items
+                        let lineItem = await LineItem.findOne({code : lineItems[k]},"_id");
+                        if(ulb && lineItem){
+                            dataArr.push({
+                                ulb:ulb._id,
+                                lineItem:lineItem._id,
+                                financialYear:json["YEAR"],
+                                amount: !isNaN(Number(json[k])) ? Number(json[k]) : 0
+                            })
+                        }
                     }
                 }
             }
         }
+
+        let i=0;
         for(let data of dataArr){
+
             let du = {
                 query : {ulb:data.ulb, lineItem:data.lineItem, financialYear: data.financialYear},
                 update : data,
                 options : {upsert : true,setDefaultsOnInsert : true,new: true}
             }
             let d = await UlbLedger.findOneAndUpdate(du.query,du.update,du.options);
+            console.log(i);
+
+           i++; 
         }
+        Redis.resetDashboard();
         return res.status(200).json({success:true, data:dataArr});
     }catch (e) {
         console.log("Exception:",e);

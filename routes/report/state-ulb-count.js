@@ -1,7 +1,8 @@
-const UlbLedger= require("../../models/Schema/UlbLedger");
-const Ulb =require("../../models/Schema/Ulb");
-const OverallUlb= require("../../models/Schema/OverallUlb");
-const State= require("../../models/Schema/State");
+const UlbLedger= require("../../models/UlbLedger");
+const Ulb =require("../../models/Ulb");
+const OverallUlb= require("../../models/OverallUlb");
+const State= require("../../models/State");
+const LineItem= require("../../models/LineItem");
 module.exports.getStateListWithCoveredUlb = async (req, res)=>{
     try{
         let query = [
@@ -42,19 +43,83 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
             }
         ];
         let arr = []
+        let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
         let states = await State.find({ isActive:true }).exec();
+        let lineItem = await LineItem.findOne({code:"1001"}).exec();
         for(var el of states){
             let obj = {}
             let ulbs = await Ulb.distinct("_id" , { state : el._id }).exec();
 
-            let coveredUlbs = await UlbLedger.distinct("ulb",{ ulb : { $in : ulbs }}).exec(); 
+            let condition = { ulb : { $in : ulbs }};
+            financialYear ? condition["financialYear"] = {$in: financialYear } : null;
+            //let coveredUlbs = await UlbLedger.distinct("ulb",cond).exec(); 
 
             let overAllUlbs = await OverallUlb.distinct("_id",{ state : el._id }).exec();
+
+            let data =  await UlbLedger.aggregate([
+                {$match : condition},
+                {$group:{
+                        _id: {
+                                ulb : "$ulb",
+                            },
+                            lineItem : {$addToSet : { _id : "$lineItem" ,amount:"$amount" } }
+                    }
+                },
+                {$project:{
+                       ulb : "$_id.ulb",
+                       lineItem :  {
+                          $filter: {
+                             input: "$lineItem",
+                             as: "lineItem",
+                             cond: { $and: [
+                                { $eq: [ "$$lineItem._id",lineItem._id] },
+                              ] }
+                          }
+                        }
+                    }
+                },
+                {$project:{
+                        "ulb" : 1,
+                        "lineItem" : { $arrayElemAt  :  [ "$lineItem",0]},
+                    }
+                },
+                {$project:{
+                        "ulb" : 1,
+                        amount  : "$lineItem.amount",
+                    }
+                },
+                {$project:{
+                        "ulb" : 1,
+                        auditStatus  : {
+                           $switch: {
+                              branches: [
+                                 { case: { $eq: [ "$amount", 0 ] }, then:"unaudited"},
+                                 { case: { $gt: [ "$amount", 0 ] }, then: "audited" }
+                              ],
+                              default:"auditNA"
+                           }
+                        },
+                    }
+                }
+            ])
             obj["code"] = el.code
             obj["name"] = el.name
             obj["_id"] = el._id
             obj["totalUlbs"] = overAllUlbs.length
-            obj["coveredUlbCount"] = coveredUlbs.length
+            obj["coveredUlbCount"] = 0
+            obj["audited"] = 0
+            obj["unaudited"] = 0
+            obj["auditNA"] = 0
+            data.map(m=> { 
+                obj["coveredUlbCount"]++;
+                if(m.auditStatus=="audited"){
+                    obj["audited"]++;
+                }else if(m.auditStatus=="unaudited"){
+                    obj["unaudited"]++;
+                }else{
+                    obj["auditNA"]++; 
+                }
+            });
             obj["coveredUlbPercentage"] = (obj["coveredUlbCount"]/obj["totalUlbs"])*100 ?  ((obj["coveredUlbCount"]/obj["totalUlbs"])*100).toFixed(2) : 0
             arr.push(obj);
         }

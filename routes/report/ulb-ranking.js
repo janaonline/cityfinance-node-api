@@ -1,4 +1,4 @@
-const Ulb = require("../../models/Schema/Ulb");
+const Ulb = require("../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
 const CONSTANTS = require("../../_helper/constants")
 module.exports = async(req, res)=>{

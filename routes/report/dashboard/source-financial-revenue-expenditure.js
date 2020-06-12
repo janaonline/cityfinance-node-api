@@ -1,6 +1,7 @@
 const moment = require('moment');
-const UlbLedger = require("../../../models/Schema/UlbLedger");
+const UlbLedger = require("../../../models/UlbLedger");
 const ITEMS = require('./itemcode').REVENUE_EXPENDITURE_SOURCES;
+const Redis = require('../../../service/redis');
 module.exports = async (req, res, next)=>{
     let queryArr = req.body.queryArr;
     let data =  [];
@@ -19,91 +20,36 @@ module.exports = async (req, res, next)=>{
         }
         data.push(obj);
     }
+    let resData = [];
+    if(req.query.ulbList && req.query.populationCategory){
+        let years = req.body.queryArr.map(m=> m.financialYear);
+        let year = years.length ? years[0] : '';
+        if(data.length){
+            let yearData = data.find(f=> f.year == year);
+            if(yearData && yearData.data && yearData.data.length){
+                let pcatData = yearData.data.find(f=> f.populationCategory == req.query.populationCategory)
+                resData = pcatData ? pcatData.ulbs : []
+            }
+        }
+    }else{
+        if(data && !req.query.ulb){
+            for(year of data){
+                if(year.data && year.data.length){
+                    for(d of year.data){
+                        d["ulbs"] = undefined;
+                    }
+                }
+            }
+        }
+        resData = data;
+    }
+    Redis.set(req.redisKey,JSON.stringify(resData))
     return res.status(200).json({
-        timestamp:moment().unix(),
-        success:true,
-        message:"Data fetched.",
-        data:data
+        timestamp: moment().unix(),
+        success: true,
+        message: '',
+        data: resData
     });
-    /*return res.status(200).json({
-        timestamp:moment().unix(),
-        success:true,
-        message:"",
-        data:[
-            {
-                year:"2016-17",
-                data:[
-                    {
-                        populationCategory:"> 10 Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"1Lakh to 10Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"< 1 Lakh",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    }
-                ]
-            },
-            {
-                year:"2017-18",
-                data:[
-                    {
-                        populationCategory:"> 10 Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"1Lakh to 10Lakhs",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    },
-                    {
-                        populationCategory:"< 1 Lakh",
-                        numOfUlb:100,
-                        ownRevenue:1000,
-                        interestIncome: 10000,
-                        deficitFinanceByCapitalGrants:10,
-                        assignedRevenueAndRevenueGrants:8,
-                        otherIncome:20
-                    }
-                ]
-            }
-        ].map(d=>{
-            return {
-                year:d.year,
-                data: d.data.map(m=>{
-                    m["ulbName"] = 'E';
-                    return m;
-                })
-            }
-        })
-    })*/
 }
 const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUlb)=>{
 
@@ -142,6 +88,28 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                 saleAndHireCharges:{$sum:{$cond: [{$in: ['$lineItem.code', ITEMS.SALE_AND_HIRE_CHARGES]}, '$amount', 0]}},
                 otherIncome:{$sum:{$cond: [{$in: ['$lineItem.code', ITEMS.OTHER_INCOME]}, '$amount', 0]}},
                 totalExpediture:{$sum:{$cond: [{$in: ['$lineItem.code', ITEMS.TOTAL_EXPENDITURE]}, '$amount', 0]}},
+                "audited": {
+                    "$sum": {
+                        "$cond": [
+                            {
+                                $and:[{"$eq": ["$lineItem.code","1001"]},{"$gt": ["$amount",0]}]
+                            },
+                            1,
+                            0
+                        ]
+                      }
+                   },
+                "unaudited": {
+                    "$sum": {
+                        "$cond": [
+                        {
+                            $and:[{"$eq": ["$lineItem.code","1001"]},{"$eq": ["$amount",0]}]
+                        },
+                        1,
+                        0
+                    ]
+                    }
+                },
             }
         },
         {
@@ -164,6 +132,9 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                       name:"$ulb.name",
                       population:"$ulb.population",
                       populationCategory:"$populationCategory",
+                      "audited" :"$audited",
+                      "unaudited" :"$unaudited",
+                      "auditNA" : {$cond : [ {$and:[    {"$eq": ["$audited",0] },{"$eq": ["$unaudited",0]}  ] }, 1,0 ]  },
                       ownRevenue:"$ownRevenue",
                       interestIncome:"$interestIncome",
                       assignedRevenueAndCompensation:"$assignedRevenueAndCompensation",
@@ -181,12 +152,21 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
                 saleAndHireCharges:{$sum:"$saleAndHireCharges"},
                 otherIncome:{$sum:"$otherIncome"},
                 totalExpediture:{$sum:"$totalExpediture"},
+                "audited": {
+                    "$sum": "$audited"
+                },
+                "unaudited": {
+                    "$sum": "$unaudited"
+                }
             }
         },
         {
             $project:{
                 _id:0,
                 populationCategory:"$populationCategory",
+                "audited" :"$audited",
+                "unaudited" :"$unaudited",
+                "auditNA" : {$subtract : ["$numOfUlb",{$add : ["$audited","$unaudited"]} ] },
                 numOfUlb:1,
                 ulbs:1,
                 ownRevenue:1,
@@ -207,7 +187,7 @@ const getAggregatedDataQuery = (financialYear, populationCategory, ulbs, totalUl
 }
 const getDeficit = (d = {})=>{
     // let d = JSON.parse(JSON.stringify(o));
-    let to = {};
+    let o = {};
     let remainingExpediture = d.totalExpediture;
     o.ulbs = d.ulbs;
     o.ownRevenueCoverPercentage = 0;
@@ -288,6 +268,9 @@ const getDeficit = (d = {})=>{
         o.otherIncomeCoverPercentage = parseFloat(o.otherIncomeCoverPercentage.toFixed(2));
         o.deficitFinanceByCapitalGrantsCoverPercentage = parseFloat(o.deficitFinanceByCapitalGrantsCoverPercentage.toFixed(2));
         o.population = d.population;
+        o["audited"] = d.audited;
+        o["unaudited"] = d.unaudited
+        o["auditNA"] = d.auditNA
         o._id = d._id
         total+=o.ownRevenueCoverPercentage;
         total+=o.assignedRevenueAndCompensationCoverPercentage;
@@ -350,6 +333,9 @@ const getDeficit = (d = {})=>{
     o["ulbs"] = arr;
     o["totalUlb"] = d.totalUlb
     o["numOfUlb"] = d.numOfUlb
+    o["audited"] = d.audited;
+    o["unaudited"] = d.unaudited
+    o["auditNA"] = d.auditNA
     o.ownRevenueCoverPercentage = parseFloat(o.ownRevenueCoverPercentage.toFixed(2));
     o.assignedRevenueAndCompensationCoverPercentage = parseFloat(o.assignedRevenueAndCompensationCoverPercentage.toFixed(2));
     o.saleAndHireChargesCoverPercentage = parseFloat(o.saleAndHireChargesCoverPercentage.toFixed(2));
