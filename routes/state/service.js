@@ -221,7 +221,7 @@ module.exports.form = function(req,res){
 
         if(actionAllowed.indexOf(user.role) > -1){
             req.body["state"] = req.body["state"] ? req.body["state"] : user.state;
-
+            req.body["createdBy"] = user._id;
             let query = {}
             query["state"] = ObjectId(req.body["state"]);
             service.put(query,req.body,XVFcForms,async function(response,value){
