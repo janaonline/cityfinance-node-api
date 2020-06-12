@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const ObjectId = require('mongoose').Types.ObjectId;
 const User = require('../../models/User');
 const Ulb = require('../../models/Ulb');
+const XVFcForms =require("../../models/XVFinanceComissionReForms");
 const Config = require('../../config/app_config');
 const Constants = require('../../_helper/constants');
 const Service = require('../../service');
@@ -400,6 +401,14 @@ module.exports.delete = async (req, res) =>{
         if(userData){
             if(access[user.role].indexOf(userData.role) > -1){
                 try {
+
+                    if(userData.role=="STATE"){
+                        let stateForm = await XVFcForms.findOne({state:ObjectId(userData.state)}).exec();
+                        if(stateForm){
+                            Response.BadRequest(res, req.body,`Action not allowed the User`);
+                        }
+                    }
+
                     let newEmail = `${userData.email}.deleted.${moment().unix()}`;
                     let u = await User.update(condition,{$set:{isDeleted:true,email:newEmail}});
                     Response.OK(res, u, `deleted successfully.`);

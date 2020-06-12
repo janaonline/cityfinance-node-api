@@ -175,8 +175,10 @@ module.exports.login = async (req, res)=>{
                     });
                 } else {
                     let update = Service.incLoginAttempts(user);
-                    await User.update({"email":user.email},update).exec();   
-                    return Response.BadRequest(res, {}, `Invalid username or password`);
+                    console.log(update);
+                    await User.update({"email":user.email},update).exec();
+                    let attempt = await User.findOne({"email":user.email}).exec();   
+                    return Response.BadRequest(res, {"loginAttempts":attempt.loginAttempts}, `Invalid username or password`);
                 }
             }catch (e) {
                 console.log("Error",e.message, e);
