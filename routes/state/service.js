@@ -267,10 +267,11 @@ module.exports.form = function(req,res){
 
 module.exports.ulbForm = function(req,res){
 
+    const actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
     let user = req.decoded
     if(req.method=="GET"){
 
-        if(user.role=="ULB"){
+        if(actionAllowed.indexOf(user.role) > -1){
             let query = {}
             if(req.query.ulb){
                 query["ulb"] = ObjectId(req.query.ulb);

@@ -361,6 +361,18 @@ module.exports.captcha = (req,res)=>{
     });
 }
 
+module.exports.totalVisit = (req,res)=>{
+
+    VisitSession.count((err, count)=>{
+        if(err){
+            return Response.DbError(res, err);
+        }else{
+            return Response.OK(res,count);
+        }
+    });
+
+}
+
 module.exports.startSession = (req, res)=>{
     let visitSession = new VisitSession();
     visitSession.save((err, data)=>{

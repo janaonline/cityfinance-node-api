@@ -10,6 +10,7 @@ router.post('/forgot_password',service.forgotPassword);
 router.post('/resend_verification_link',service.resendVerificationLink);
 router.post('/reset_password',service.verifyToken,service.resetPassword);
 router.post('/captcha_validate', service.captcha);
+router.get('/visit_count', service.totalVisit);
 
 
 module.exports = router;
