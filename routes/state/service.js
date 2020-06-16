@@ -271,7 +271,7 @@ module.exports.ulbForm = function(req,res){
     let user = req.decoded
     if(req.method=="GET"){
 
-        if(actionAllowed.indexOf('ULB') > -1){
+        if(actionAllowed.indexOf(user.role) > -1){
             let query = {}
             if(req.query.ulb){
                 query["ulb"] = ObjectId(req.query.ulb);
@@ -380,6 +380,64 @@ module.exports.getAllForms = async function(req,res){
                     },
                     {$unwind:{path:"$state",preserveNullAndEmptyArrays:true}},
                     {$project:{"isCompleted":1,"state":"$state._id","stateName":"$state.name","createdAt":1,"modifiedAt":1}}
+
+                ];
+                if(newFilter && Object.keys(newFilter).length){
+                    q.push({$match:newFilter});
+                }
+                if(Object.keys(sort).length){
+                    q.push({$sort:sort});
+                }
+                q.push({$skip:skip});
+                q.push({$limit:limit});
+                if(!skip) {
+                    let nQ = Object.assign({},query);
+                    Object.assign(nQ,newFilter);
+                    total = await XVFcForms.count(nQ);
+                }
+                let forms = await XVFcForms.aggregate(q).exec();
+                return  res.status(200).json({
+                    timestamp:moment().unix(),
+                    success:true,
+                    message:"list",
+                    total:total,
+                    data:forms
+                });            
+        }catch (e) {
+            console.log(e);
+            return Response.DbError(res, e, e.message);
+        }
+    }
+    else{
+        Response.BadRequest(res,req.body,`Action not allowed for the role:${user.role}`);
+    }
+}
+
+module.exports.getAllUlbForms = async function(req,res){
+
+    let user = req.decoded,
+    filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+    sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+    skip = req.query.skip ? parseInt(req.query.skip) : 0,
+    limit = req.query.limit ? parseInt(req.query.limit) : 50,
+    actionAllowed = ['ADMIN','MoHUA','PARTNER'];
+
+    if(actionAllowed.indexOf(user.role) > -1){
+        try {
+                let query = {};
+                let newFilter = await service.mapFilter(filter);
+                let q = [
+
+                    {
+                        $lookup:{
+                            from:"ulbs",
+                            localField:"ulb",
+                            foreignField:"_id",
+                            as:"ulb"
+                        }
+                    },
+                    {$unwind:{path:"$ulb",preserveNullAndEmptyArrays:true}},
+                    {$project:{"isCompleted":1,"ulb":"$ulb._id","ulbName":"$ulb.name","createdAt":1,"modifiedAt":1}}
 
                 ];
                 if(newFilter && Object.keys(newFilter).length){
