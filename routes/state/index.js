@@ -37,6 +37,19 @@ router.get(
     State.form
 );
 
+
+router.post(
+    '/ulb/form',
+    verifyToken,
+    State.ulbForm
+);
+
+router.get(
+    '/ulb/form',
+    verifyToken,
+    State.ulbForm
+);
+
 router.put(
     '/state/form/:_id',
     verifyToken,
@@ -44,6 +57,8 @@ router.put(
 );
 
 router.get('/state/form/all',verifyToken,State.getAllForms);
+
+router.get('/ulb/form/all',verifyToken,State.getAllUlbForms);
 
 
 module.exports = router;

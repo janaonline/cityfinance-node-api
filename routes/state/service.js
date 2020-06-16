@@ -194,17 +194,12 @@ module.exports.form = function(req,res){
                     if(value.data.length==0){
 
                         let cond = [{$match:{_id:query["state"]}},{$project:{state:"$_id",stateName:"$name"}}]
-
                         service.aggregate(cond,State, function(resp,stateData){
-
                             return res.status(resp ? 200 : 400).send(stateData);
                         })
                     }
-
                     else{
-
                         return res.status(response ? 200 : 400).send(value);
-
                     }
                 })
             }
@@ -231,32 +226,33 @@ module.exports.form = function(req,res){
                     {    
                         let state = await User.findOne({"state":ObjectId(req.body["state"]),isActive:true,"role" : "STATE"}).exec();
                         let mohua = await User.find({isActive:true,"role" : "MoHUA"}).exec();    
-                        
-                        if(state){
-                            let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
-                            let mailOptions = {
-                                to: state.email,
-                                subject: template.subject,
-                                html: template.body
-                            };
-                            service.sendEmail(mailOptions);
-                            let c= 0;
-                            if(mohua.length >0 ){
+                            
+                        if(user.role=="STATE"){  
+                            if(state){
+                                let template = service.emailTemplate.stateFormSubmission(state.name,null,'STATE');
+                                let mailOptions = {
+                                    to: state.email,
+                                    subject: template.subject,
+                                    html: template.body
+                                };
+                                service.sendEmail(mailOptions);
+                                let c= 0;
+                                if(mohua.length >0 ){
 
-                                for(mo of mohua){
+                                    for(mo of mohua){
 
-                                    let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
-                                    let mailOptions = {
-                                        to: mo.email,
-                                        subject: template.subject,
-                                        html: template.body
-                                    };
-                                    service.sendEmail(mailOptions);
-                                    c++;
-                                    console.log(c)
+                                        let template = service.emailTemplate.stateFormSubmission(mo.name,state.name,'MoHUA');
+                                        let mailOptions = {
+                                            to: mo.email,
+                                            subject: template.subject,
+                                            html: template.body
+                                        };
+                                        service.sendEmail(mailOptions);
+                                        c++;
+                                        console.log(c)
+                                    }
                                 }
                             }
-
                         }
                     }    
                 }
@@ -268,6 +264,82 @@ module.exports.form = function(req,res){
         }  
     }  
 }
+
+module.exports.ulbForm = function(req,res){
+
+    const actionAllowed = ['ADMIN','MoHUA','PARTNER','ULB'];
+    let user = req.decoded
+    if(req.method=="GET"){
+
+        if(actionAllowed.indexOf(user.role) > -1){
+            let query = {}
+            if(req.query.ulb){
+                query["ulb"] = ObjectId(req.query.ulb);
+                let cond = [
+                    {$match:{ulb:query["ulb"]}}, 
+                    {
+                        $lookup: {
+                            from: "ulbs",
+                            localField: "ulb",
+                            foreignField: "_id",
+                            as: "ulbs"
+                        }
+                    },
+                    {$unwind:"$ulbs"},
+                    {$project:{
+                        isCompleted:1,
+                        createdAt:1,
+                        modifiedAt:1,
+                        ulbName:"$ulbs.name",
+                        ulb:"$ulbs._id",
+                        documents:"$documents",
+                        userCharges:"$userCharges"
+                        }
+                    }
+                ]
+
+                service.aggregate(cond,XVFcForms,function(response,value){
+
+                    if(value.data.length==0){
+
+                        let cond = [{$match:{_id:query["state"]}},{$project:{state:"$_id",stateName:"$name"}}]
+                        service.aggregate(cond,State, function(resp,stateData){
+                            return res.status(resp ? 200 : 400).send(stateData);
+                        })
+                    }
+                    else{
+                        return res.status(response ? 200 : 400).send(value);
+                    }
+                })
+            }
+            else{
+                return res.status(400).send({ success: false,message: 'No State provided.'});    
+            }
+        }
+        else{
+            Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
+        }
+    }
+
+    if(req.method=="POST"){
+
+        if(actionAllowed.indexOf(user.role) > -1){
+            req.body["state"] = user.state;
+            req.body["ulb"] = user.ulb;
+            req.body["createdBy"] = user._id;
+            let query = {}
+            query["ulb"] = ObjectId(req.body["ulb"]);
+            service.put(query,req.body,XVFcForms,async function(response,value){
+                return res.status(response ? 200 : 400).send(value);
+            });                   
+        }
+        else{
+            Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
+        }  
+    }
+      
+}
+
 
 module.exports.updateXvForm = function(req,res){
 
@@ -308,6 +380,64 @@ module.exports.getAllForms = async function(req,res){
                     },
                     {$unwind:{path:"$state",preserveNullAndEmptyArrays:true}},
                     {$project:{"isCompleted":1,"state":"$state._id","stateName":"$state.name","createdAt":1,"modifiedAt":1}}
+
+                ];
+                if(newFilter && Object.keys(newFilter).length){
+                    q.push({$match:newFilter});
+                }
+                if(Object.keys(sort).length){
+                    q.push({$sort:sort});
+                }
+                q.push({$skip:skip});
+                q.push({$limit:limit});
+                if(!skip) {
+                    let nQ = Object.assign({},query);
+                    Object.assign(nQ,newFilter);
+                    total = await XVFcForms.count(nQ);
+                }
+                let forms = await XVFcForms.aggregate(q).exec();
+                return  res.status(200).json({
+                    timestamp:moment().unix(),
+                    success:true,
+                    message:"list",
+                    total:total,
+                    data:forms
+                });            
+        }catch (e) {
+            console.log(e);
+            return Response.DbError(res, e, e.message);
+        }
+    }
+    else{
+        Response.BadRequest(res,req.body,`Action not allowed for the role:${user.role}`);
+    }
+}
+
+module.exports.getAllUlbForms = async function(req,res){
+
+    let user = req.decoded,
+    filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+    sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+    skip = req.query.skip ? parseInt(req.query.skip) : 0,
+    limit = req.query.limit ? parseInt(req.query.limit) : 50,
+    actionAllowed = ['ADMIN','MoHUA','PARTNER'];
+
+    if(actionAllowed.indexOf(user.role) > -1){
+        try {
+                let query = {};
+                let newFilter = await service.mapFilter(filter);
+                let q = [
+
+                    {
+                        $lookup:{
+                            from:"ulbs",
+                            localField:"ulb",
+                            foreignField:"_id",
+                            as:"ulb"
+                        }
+                    },
+                    {$unwind:{path:"$ulb",preserveNullAndEmptyArrays:true}},
+                    {$project:{"isCompleted":1,"ulb":"$ulb._id","ulbName":"$ulb.name","createdAt":1,"modifiedAt":1}}
 
                 ];
                 if(newFilter && Object.keys(newFilter).length){

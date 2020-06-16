@@ -129,7 +129,8 @@ var XVFcReFormsSchema = new Schema({
         }    
     },
     isCompleted:{type:Boolean,default:1},
-    state:{type: Schema.Types.ObjectId, ref: 'State',unique:true,required : true},
+    state:{type: Schema.Types.ObjectId, ref: 'State',required : true},
+    ulb:{type: Schema.Types.ObjectId, ref: 'Ulb',required : true,default:null},
     createdBy:{type: Schema.Types.ObjectId, ref: 'User',required : true},
     modifiedAt : { type: Date, default : Date.now },
     createdAt : { type: Date, default : Date.now }

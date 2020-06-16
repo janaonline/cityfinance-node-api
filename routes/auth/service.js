@@ -170,7 +170,8 @@ module.exports.login = async (req, res)=>{
                             email: user.email,
                             isActive: user.isActive,
                             role:user.role,
-                            state:user.state
+                            state:user.state,
+                            ulb:user.ulb
                         }
                     });
                 } else {
@@ -358,6 +359,18 @@ module.exports.captcha = (req,res)=>{
         //if passed response success message to client
         res.send({"success": true, 'message': "recaptcha passed"});
     });
+}
+
+module.exports.totalVisit = (req,res)=>{
+
+    VisitSession.count((err, count)=>{
+        if(err){
+            return Response.DbError(res, err);
+        }else{
+            return Response.OK(res,count);
+        }
+    });
+
 }
 
 module.exports.startSession = (req, res)=>{
