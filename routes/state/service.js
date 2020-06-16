@@ -271,7 +271,7 @@ module.exports.ulbForm = function(req,res){
     let user = req.decoded
     if(req.method=="GET"){
 
-        if(actionAllowed.indexOf(user.role) > -1){
+        if(actionAllowed.indexOf('ULB') > -1){
             let query = {}
             if(req.query.ulb){
                 query["ulb"] = ObjectId(req.query.ulb);

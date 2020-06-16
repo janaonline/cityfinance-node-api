@@ -46,7 +46,7 @@ router.post(
 
 router.get(
     '/ulb/form',
-    verifyToken,
+    //verifyToken,
     State.ulbForm
 );
 
