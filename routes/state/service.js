@@ -267,7 +267,7 @@ module.exports.form = function(req,res){
 
 module.exports.ulbForm = function(req,res){
 
-    const actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE','ULB'];
+    const actionAllowed = ['ADMIN','MoHUA','PARTNER','ULB'];
     let user = req.decoded
     if(req.method=="GET"){
 
@@ -323,7 +323,7 @@ module.exports.ulbForm = function(req,res){
 
     if(req.method=="POST"){
 
-        if(user.role=="ULB"){
+        if(actionAllowed.indexOf(user.role) > -1){
             req.body["state"] = user.state;
             req.body["ulb"] = user.ulb;
             req.body["createdBy"] = user._id;
