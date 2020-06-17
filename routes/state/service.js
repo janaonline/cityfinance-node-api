@@ -22,6 +22,7 @@ module.exports.get = async function(req,res) {
             
         let userStateId = await User.distinct("state",{"isActive":true,"role":"STATE"}).exec(); 
         query1["state"] = {$in:userStateId};
+        query1["questionnaireType"] = "state"
         let stateId = await XVFcForms.find(query1,{_id:0,state:1}).exec();
         let stateArray = stateId.map((s)=>{  return ObjectId(s.state)})
         query["_id"] = {$in:userStateId,$nin:stateArray};

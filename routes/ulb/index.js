@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const Ulb = require('./service')
 const verifyToken = require('../auth/service').verifyToken;
+
+router.get('/ulb/filtered', Ulb.getFilteredUlb);  // ulb have no questionnaire
+
 router.get('/ulb', Ulb.get);
 router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
 router.put('/ulb/:_id', verifyToken,Ulb.put);
