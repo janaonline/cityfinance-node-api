@@ -56,7 +56,7 @@ router.put(
     State.updateXvForm
 );
 
-router.get('/state/form/all',verifyToken,State.getAllForms);
+router.get('/state/form/all',State.getAllForms);
 
 router.get('/ulb/form/all',verifyToken,State.getAllUlbForms);
 

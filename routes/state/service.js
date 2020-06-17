@@ -385,6 +385,7 @@ module.exports.getAllForms = async function(req,res){
                 if(newFilter && Object.keys(newFilter).length){
                     q.push({$match:newFilter});
                 }
+
                 if(Object.keys(sort).length){
                     q.push({$sort:sort});
                 }
