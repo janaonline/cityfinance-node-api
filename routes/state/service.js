@@ -217,6 +217,8 @@ module.exports.form = function(req,res){
         if(actionAllowed.indexOf(user.role) > -1){
             req.body["state"] = req.body["state"] ? req.body["state"] : user.state;
             req.body["createdBy"] = user._id;
+            req.body["questionnaireType"] = "state";
+
             let query = {}
             query["state"] = ObjectId(req.body["state"]);
             service.put(query,req.body,XVFcForms,async function(response,value){
@@ -265,7 +267,7 @@ module.exports.form = function(req,res){
     }  
 }
 
-module.exports.ulbForm = function(req,res){
+module.exports.ulbForm = async function(req,res){
 
     const actionAllowed = ['ADMIN','MoHUA','PARTNER','ULB'];
     let user = req.decoded
@@ -324,11 +326,14 @@ module.exports.ulbForm = function(req,res){
     if(req.method=="POST"){
 
         if(actionAllowed.indexOf(user.role) > -1){
-            req.body["state"] = user.state;
-            req.body["ulb"] = user.ulb;
+
+            let ulb = req.body["ulb"] ? req.body["ulb"] : user.ulb;
+            let ulbObj = await Ulb.findOne({"_id":ObjectId(ulb)},{state:1});
+            req.body["state"] = ulbObj.state;
             req.body["createdBy"] = user._id;
+            req.body["questionnaireType"] = "ulb";
             let query = {}
-            query["ulb"] = ObjectId(req.body["ulb"]);
+            query["ulb"] = ObjectId(ulb);
             service.put(query,req.body,XVFcForms,async function(response,value){
                 return res.status(response ? 200 : 400).send(value);
             });                   
@@ -370,6 +375,7 @@ module.exports.getAllForms = async function(req,res){
                 let newFilter = await service.mapFilter(filter);
                 let q = [
 
+                    {$match:{"questionnaireType":"state"}},
                     {
                         $lookup:{
                             from:"states",
@@ -428,6 +434,8 @@ module.exports.getAllUlbForms = async function(req,res){
                 let query = {};
                 let newFilter = await service.mapFilter(filter);
                 let q = [
+
+                    {$match:{"questionnaireType":"ulb"}},
 
                     {
                         $lookup:{
