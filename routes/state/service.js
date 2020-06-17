@@ -371,7 +371,7 @@ module.exports.getAllForms = async function(req,res){
 
     if(actionAllowed.indexOf(user.role) > -1){
         try {
-                let query = {};
+                let query = {"questionnaireType":"state"}
                 let newFilter = await service.mapFilter(filter);
                 let q = [
 
@@ -431,7 +431,7 @@ module.exports.getAllUlbForms = async function(req,res){
 
     if(actionAllowed.indexOf(user.role) > -1){
         try {
-                let query = {};
+                let query = {"questionnaireType":"ulb"};
                 let newFilter = await service.mapFilter(filter);
                 let q = [
 
