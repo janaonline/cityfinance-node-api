@@ -326,7 +326,7 @@ module.exports.ulbForm = async function(req,res){
 
     if(req.method=="POST"){
 
-        if(actionAllowed.indexOf(user.role) > -1){
+        if(user.role=="ULB"){
 
             let ulb = req.body["ulb"] ? req.body["ulb"] : user.ulb;
             let ulbObj = await Ulb.findOne({"_id":ObjectId(ulb)},{state:1});
