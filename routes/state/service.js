@@ -402,12 +402,12 @@ module.exports.getAllForms = async function(req,res){
                     let nQ = Object.assign({},query);
                     Object.assign(nQ,newFilter);
                     console.log("total Condition",nQ);
-                    total = await XVFcForms.count(nQ);
+                    var total = await XVFcForms.count(nQ);
                 }
                 let forms = await XVFcForms.aggregate(q).exec();
 
-                console.log("total",total);
-                console.log("form",forms);
+                console.log("STATE total",total);
+                console.log("STATE data",forms);
 
                 return  res.status(200).json({
                     timestamp:moment().unix(),
@@ -468,13 +468,12 @@ module.exports.getAllUlbForms = async function(req,res){
                     Object.assign(nQ,newFilter);
 
                     console.log("total Condition",nQ);
-
-                    total = await XVFcForms.count(nQ);
+                    var total = await XVFcForms.count(nQ);
                 }
                 let forms = await XVFcForms.aggregate(q).exec();
 
-                console.log("total",total);
-                console.log("form",forms);
+                console.log("ULB total",total);
+                console.log("ULB data",forms);
 
                 return  res.status(200).json({
                     timestamp:moment().unix(),
