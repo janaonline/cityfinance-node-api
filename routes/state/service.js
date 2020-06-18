@@ -401,14 +401,9 @@ module.exports.getAllForms = async function(req,res){
                 if(!skip) {
                     let nQ = Object.assign({},query);
                     Object.assign(nQ,newFilter);
-                    console.log("total Condition",nQ);
                     var total = await XVFcForms.count(nQ);
                 }
                 let forms = await XVFcForms.aggregate(q).exec();
-
-                console.log("STATE total",total);
-                console.log("STATE data",forms);
-
                 return  res.status(200).json({
                     timestamp:moment().unix(),
                     success:true,
@@ -466,15 +461,9 @@ module.exports.getAllUlbForms = async function(req,res){
                 if(!skip) {
                     let nQ = Object.assign({},query);
                     Object.assign(nQ,newFilter);
-
-                    console.log("total Condition",nQ);
                     var total = await XVFcForms.count(nQ);
                 }
                 let forms = await XVFcForms.aggregate(q).exec();
-
-                console.log("ULB total",total);
-                console.log("ULB data",forms);
-
                 return  res.status(200).json({
                     timestamp:moment().unix(),
                     success:true,
