@@ -41,7 +41,39 @@ module.exports.getFilteredUlb = async function(req,res) {
 
 }
 
+module.exports.getUlbById = function(req,res) {
+        
+    if(!req.params._id){
 
+        res.status(400).json({
+            timestamp: moment().unix(),
+            status:false,
+            message:"'_id' param can't be blank"
+        })
+    }    
+
+    let match = {$match:{}}
+    if(req.params._id){
+        match["$match"] = Object.assign({},{_id:ObjectId(req.params._id)})
+    }
+
+    let arr = [
+        match,
+        {
+            $lookup:{
+                from:"states",
+                localField:"state",
+                foreignField:"_id",
+                as:"state"
+            }
+        },
+        {$unwind:"$state"},
+        {$project:{"state":"$state"}}
+    ];
+    service.aggregate(arr,Ulb, function(response, value) {
+        return res.status(response ? 200 : 400).send(value);
+    });
+}
 
 
 module.exports.get = async function(req,res) {

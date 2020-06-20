@@ -17,6 +17,7 @@ router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 router.get('/states/:stateCode/ulbs', Ulb.getByState);
 // Get All Ulbs
 router.get('/ulbs', Ulb.getAllUlbs);
+router.get('/ulb/:_id', Ulb.getUlbById);
 
 // Get OverallUlb
 router.get("/overall-ulb",Ulb.getOverallUlb);
