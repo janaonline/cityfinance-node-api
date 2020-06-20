@@ -3,7 +3,7 @@ const BondIssuerJson = require('../../models/bondIssuer');
 const service = require('../../service');
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req, res) {
-    let query = { isActive: true, };
+    let query = { isActive: true};
     if(req.query.state){
         let state = req.query.state; 
         query = Object.assign(query,{"state":ObjectId(state)})    
@@ -113,11 +113,10 @@ module.exports.BondUlbs = function(req, res) {
 
 module.exports.issueSizeAmount = function(req, res) {
 
-    let match = {$match:{}}
+    let match = {$match:{isActive: true}}
     if(req.query.state){
-        match["$match"] = Object.assign({},{state:ObjectId(req.query.state)})
+        match["$match"] = Object.assign({isActive: true},{state:ObjectId(req.query.state)})
     }
-
     let arr = [
       match,
       {
