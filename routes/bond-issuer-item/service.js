@@ -111,6 +111,38 @@ module.exports.BondUlbs = function(req, res) {
     });
 };
 
+module.exports.issueSizeAmount = function(req, res) {
+
+    let match = {$match:{}}
+    if(req.query.state){
+        match["$match"] = Object.assign({},{state:ObjectId(req.query.state)})
+    }
+
+    let arr = [
+      match,
+      {
+        "$project":{  
+          "issueSizeAmount":{  
+          $convert:
+          {
+             input: "$issueSizeAmount",
+             to: "double",
+             onError: 0,  // Optional.
+             onNull: 0    // Optional.
+          }
+        }
+        }
+      },
+      { $group:
+        { _id : null, sum : { $sum: "$issueSizeAmount" } }
+      },
+      { $project: {"_id" :0,"totalAmount":"$sum"}}
+    ];
+    service.aggregate(arr, BondIssuerItem, function(response, value) {
+        return res.status(response ? 200 : 400).send(value);
+    });
+};
+
 function getYear(str) {
     if (str.includes('-')) return str.split('-').slice(-1)[0];
     return str;

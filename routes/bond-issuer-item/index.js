@@ -27,4 +27,11 @@ router.delete(
     verifyToken,
     BondIssuerItem.delete
 );
+
+router.get(
+    '/BondIssuerItem/amount',
+    verifyToken,
+    BondIssuerItem.issueSizeAmount
+);
+
 module.exports = router;
