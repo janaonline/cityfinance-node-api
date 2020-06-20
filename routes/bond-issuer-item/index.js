@@ -30,7 +30,6 @@ router.delete(
 
 router.get(
     '/BondIssuerItem/amount',
-    verifyToken,
     BondIssuerItem.issueSizeAmount
 );
 
