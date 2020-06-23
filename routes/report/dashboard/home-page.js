@@ -7,19 +7,29 @@ const Redis = require("../../../service/redis");
 module.exports =  (req,res)=>{
 
     let query = {};
-    if(req.query.state){
-        let state = req.query.state; 
-        query = {"state":ObjectId(state)}    
-    }
-     
     let totalULB = new Promise(async(rslv,rjct)=>{
 
-        try{
-            let count = await OverallUlb.count(query).exec();
-            rslv(count)
+        if(req.query.state){
+            let state = req.query.state; 
+            let query = {"state":ObjectId(state)}         
+            try{
+                let count = await Ulb.count(query).exec();
+                rslv(count)
+            }
+            catch(err){
+                rjct(err);
+            }
         }
-        catch(err){
-            rjct(err);
+        else{
+
+            try{
+                let count = await OverallUlb.count(query).exec();
+                rslv(count)
+            }
+            catch(err){
+                rjct(err);
+            }
+
         }
             
     })
@@ -70,7 +80,7 @@ module.exports =  (req,res)=>{
     let coveredUlbCount = new Promise(async(rslv,rjct)=>{
         try{
             if(req.query.state){
-                query = [ 
+                let query = [ 
                     {$group:{"_id":"$ulb"}},
                     {
                         "$lookup":{
@@ -87,8 +97,10 @@ module.exports =  (req,res)=>{
                 count.length>0 ? rslv(count[0].count):rslv(0);                
             }
             else{ 
-                let count = await Ulb.count({}).exec();
-                rslv(count)
+
+                let query = [{$group:{"_id":"$ulb"}},{$count:"count"}]
+                let count = await Ulb.count(query).exec();
+                rslv(count)   
             }
         } 
         catch(err){
