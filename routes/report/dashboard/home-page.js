@@ -97,10 +97,9 @@ module.exports =  (req,res)=>{
                 count.length>0 ? rslv(count[0].count):rslv(0);                
             }
             else{ 
-
                 let query = [{$group:{"_id":"$ulb"}},{$count:"count"}]
-                let count = await Ulb.count(query).exec();
-                rslv(count)   
+                let count = await UlbLedger.aggregate(query).exec();
+                count.length>0 ? rslv(count[0].count):rslv(0);                
             }
         } 
         catch(err){
