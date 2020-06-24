@@ -9,7 +9,14 @@ module.exports = async (obj)=>{
                         filter[key] = ObjectId(obj[key]);
                     }else if(typeof obj[key] == "boolean"){
                         filter[key] = obj[key];
-                    }else if(typeof obj[key] == "string"){
+                    }
+                    else if(typeof obj[key]=="string" && obj[key] == "true"){
+                        filter[key] = true;
+                    }
+                    else if(typeof obj[key]=="string" && obj[key] == "false"){
+                        filter[key] = false;
+                    }
+                    else if(typeof obj[key] == "string"){
                         filter[key] = {$regex: `^${obj[key]}`, $options: 'i'};
                     }else{
                         filter[key] = obj[key];
