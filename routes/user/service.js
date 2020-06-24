@@ -405,13 +405,14 @@ module.exports.delete = async (req, res) =>{
                     if(userData.role=="STATE"){
                         let stateForm = await XVFcForms.findOne({state:ObjectId(userData.state)}).exec();
                         if(stateForm){
-                            Response.BadRequest(res, req.body,`Action not allowed the User`);
+                            return Response.BadRequest(res, req.body,`Action not allowed because state has questionnaire data`);
                         }
                     }
 
                     let newEmail = `${userData.email}.deleted.${moment().unix()}`;
                     let u = await User.update(condition,{$set:{isDeleted:true,email:newEmail}});
                     Response.OK(res, u, `deleted successfully.`);
+                    
                 }catch (e) {
                     Response.DbError(res, e, `Something went wrong.`)
                 }

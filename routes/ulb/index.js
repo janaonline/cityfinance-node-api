@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const Ulb = require('./service')
 const verifyToken = require('../auth/service').verifyToken;
+
+router.get('/ulb/filtered', Ulb.getFilteredUlb);  // ulb have no questionnaire
+
 router.get('/ulb', Ulb.get);
 router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
 router.put('/ulb/:_id', verifyToken,Ulb.put);
@@ -14,6 +17,7 @@ router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 router.get('/states/:stateCode/ulbs', Ulb.getByState);
 // Get All Ulbs
 router.get('/ulbs', Ulb.getAllUlbs);
+router.get('/ulb/:_id', Ulb.getUlbById);
 
 // Get OverallUlb
 router.get("/overall-ulb",Ulb.getOverallUlb);

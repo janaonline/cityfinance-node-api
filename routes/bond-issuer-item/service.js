@@ -3,7 +3,7 @@ const BondIssuerJson = require('../../models/bondIssuer');
 const service = require('../../service');
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req, res) {
-    let query = { isActive: true, };
+    let query = { isActive: true};
     if(req.query.state){
         let state = req.query.state; 
         query = Object.assign(query,{"state":ObjectId(state)})    
@@ -105,6 +105,37 @@ module.exports.BondUlbs = function(req, res) {
                 stateName: "$state.name" 
             }
         }
+    ];
+    service.aggregate(arr, BondIssuerItem, function(response, value) {
+        return res.status(response ? 200 : 400).send(value);
+    });
+};
+
+module.exports.issueSizeAmount = function(req, res) {
+
+    let match = {$match:{isActive: true}}
+    if(req.query.state){
+        match["$match"] = Object.assign({isActive: true},{state:ObjectId(req.query.state)})
+    }
+    let arr = [
+      match,
+      {
+        "$project":{  
+          "issueSizeAmount":{  
+          $convert:
+          {
+             input: "$issueSizeAmount",
+             to: "double",
+             onError: 0,  // Optional.
+             onNull: 0    // Optional.
+          }
+        }
+        }
+      },
+      { $group:
+        { _id : null, sum : { $sum: "$issueSizeAmount" } }
+      },
+      { $project: {"_id" :0,"totalAmount":"$sum"}}
     ];
     service.aggregate(arr, BondIssuerItem, function(response, value) {
         return res.status(response ? 200 : 400).send(value);

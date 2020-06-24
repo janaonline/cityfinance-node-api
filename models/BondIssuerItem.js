@@ -20,6 +20,7 @@ const BondIssuerItemSchema = new Schema(
     platform: { type: String, default: '' },
     type: { type: String, default: '' },
     issueSize: { type: String, default: '' },
+    issueSizeAmount: { type: String, default: '' },
     bidsReceived: { type: String, default: '' },
     amountAccepted: { type: String, default: '' },
     greenShoeOption: { type: String, default: '' },

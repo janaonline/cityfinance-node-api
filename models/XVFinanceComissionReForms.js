@@ -133,7 +133,8 @@ var XVFcReFormsSchema = new Schema({
     ulb:{type: Schema.Types.ObjectId, ref: 'Ulb',required : true,default:null},
     createdBy:{type: Schema.Types.ObjectId, ref: 'User',required : true},
     modifiedAt : { type: Date, default : Date.now },
-    createdAt : { type: Date, default : Date.now }
+    createdAt : { type: Date, default : Date.now },
+    questionnaireType : { type : String, required : true,index:true, enum:["state","ulb"]}
 },
 
 {timestamp : {createdAt : "createdAt", modifiedAt : "modifiedAt"}}

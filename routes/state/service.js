@@ -22,6 +22,7 @@ module.exports.get = async function(req,res) {
             
         let userStateId = await User.distinct("state",{"isActive":true,"role":"STATE"}).exec(); 
         query1["state"] = {$in:userStateId};
+        query1["questionnaireType"] = "state"
         let stateId = await XVFcForms.find(query1,{_id:0,state:1}).exec();
         let stateArray = stateId.map((s)=>{  return ObjectId(s.state)})
         query["_id"] = {$in:userStateId,$nin:stateArray};
@@ -217,6 +218,8 @@ module.exports.form = function(req,res){
         if(actionAllowed.indexOf(user.role) > -1){
             req.body["state"] = req.body["state"] ? req.body["state"] : user.state;
             req.body["createdBy"] = user._id;
+            req.body["questionnaireType"] = "state";
+
             let query = {}
             query["state"] = ObjectId(req.body["state"]);
             service.put(query,req.body,XVFcForms,async function(response,value){
@@ -265,7 +268,7 @@ module.exports.form = function(req,res){
     }  
 }
 
-module.exports.ulbForm = function(req,res){
+module.exports.ulbForm = async function(req,res){
 
     const actionAllowed = ['ADMIN','MoHUA','PARTNER','ULB'];
     let user = req.decoded
@@ -323,12 +326,15 @@ module.exports.ulbForm = function(req,res){
 
     if(req.method=="POST"){
 
-        if(actionAllowed.indexOf(user.role) > -1){
-            req.body["state"] = user.state;
-            req.body["ulb"] = user.ulb;
+        if(user.role=="ULB"){
+
+            let ulb = req.body["ulb"] ? req.body["ulb"] : user.ulb;
+            let ulbObj = await Ulb.findOne({"_id":ObjectId(ulb)},{state:1});
+            req.body["state"] = ulbObj.state;
             req.body["createdBy"] = user._id;
+            req.body["questionnaireType"] = "ulb";
             let query = {}
-            query["ulb"] = ObjectId(req.body["ulb"]);
+            query["ulb"] = ObjectId(ulb);
             service.put(query,req.body,XVFcForms,async function(response,value){
                 return res.status(response ? 200 : 400).send(value);
             });                   
@@ -366,10 +372,11 @@ module.exports.getAllForms = async function(req,res){
 
     if(actionAllowed.indexOf(user.role) > -1){
         try {
-                let query = {};
+                let query = {"questionnaireType":"state"}
                 let newFilter = await service.mapFilter(filter);
                 let q = [
 
+                    {$match:{"questionnaireType":"state"}},
                     {
                         $lookup:{
                             from:"states",
@@ -385,6 +392,7 @@ module.exports.getAllForms = async function(req,res){
                 if(newFilter && Object.keys(newFilter).length){
                     q.push({$match:newFilter});
                 }
+
                 if(Object.keys(sort).length){
                     q.push({$sort:sort});
                 }
@@ -393,7 +401,7 @@ module.exports.getAllForms = async function(req,res){
                 if(!skip) {
                     let nQ = Object.assign({},query);
                     Object.assign(nQ,newFilter);
-                    total = await XVFcForms.count(nQ);
+                    var total = await XVFcForms.count(nQ);
                 }
                 let forms = await XVFcForms.aggregate(q).exec();
                 return  res.status(200).json({
@@ -424,9 +432,11 @@ module.exports.getAllUlbForms = async function(req,res){
 
     if(actionAllowed.indexOf(user.role) > -1){
         try {
-                let query = {};
+                let query = {"questionnaireType":"ulb"};
                 let newFilter = await service.mapFilter(filter);
                 let q = [
+
+                    {$match:{"questionnaireType":"ulb"}},
 
                     {
                         $lookup:{
@@ -451,7 +461,7 @@ module.exports.getAllUlbForms = async function(req,res){
                 if(!skip) {
                     let nQ = Object.assign({},query);
                     Object.assign(nQ,newFilter);
-                    total = await XVFcForms.count(nQ);
+                    var total = await XVFcForms.count(nQ);
                 }
                 let forms = await XVFcForms.aggregate(q).exec();
                 return  res.status(200).json({
