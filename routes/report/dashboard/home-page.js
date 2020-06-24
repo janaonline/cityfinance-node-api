@@ -7,13 +7,18 @@ const Redis = require("../../../service/redis");
 module.exports =  (req,res)=>{
 
     let query = {};
+
+    if(req.query.state){
+        query = {"state":ObjectId(req.query.state)}         
+    }
+
     let totalULB = new Promise(async(rslv,rjct)=>{
 
         if(req.query.state){
             let state = req.query.state; 
             let query = {"state":ObjectId(state)}         
             try{
-                let count = await Ulb.count(query).exec();
+                let count = await OverallUlb.count(query).exec();
                 rslv(count)
             }
             catch(err){
@@ -21,7 +26,6 @@ module.exports =  (req,res)=>{
             }
         }
         else{
-
             try{
                 let count = await OverallUlb.count(query).exec();
                 rslv(count)
@@ -57,7 +61,6 @@ module.exports =  (req,res)=>{
             ]
 
         }  
-
         try{
             let count = await UlbLedger.aggregate(query).exec();
             rslv(count)
