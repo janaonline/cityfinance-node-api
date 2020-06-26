@@ -11,10 +11,9 @@ const LineItem= require("../../models/LineItem");
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req,res) {
 
-
     let query = {};
     let query1 = {};
-    query["isDeleted"] = false;
+    query["isActive"] = true;
     if(req.params && req.params._code){
         query["code"] = req.params._code
     }
