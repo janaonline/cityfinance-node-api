@@ -11,7 +11,6 @@ const LineItem= require("../../models/LineItem");
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req,res) {
 
-
     let query = {};
     let query1 = {};
     query["isActive"] = true;
@@ -20,7 +19,7 @@ module.exports.get = async function(req,res) {
     }
     if(req.query.type=="filter"){
             
-        let userStateId = await User.distinct("state",{"isActive":true,"role":"STATE"}).exec(); 
+        let userStateId = await User.distinct("state",{"isDeleted":false,"role":"STATE"}).exec(); 
         query1["state"] = {$in:userStateId};
         query1["questionnaireType"] = "state"
         let stateId = await XVFcForms.find(query1,{_id:0,state:1}).exec();
