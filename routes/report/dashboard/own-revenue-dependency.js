@@ -32,29 +32,30 @@ module.exports = async (req, res, next) => {
                 let data = await UlbLedger.aggregate(query);
                 if(data.length){
                     obj['data'].push(modifyData(data[0]));
-                }else{
-                    obj.data.push({
-                        "ownRevenueUlb": [],
-                        "audited": 0,
-                        "unaudited": 0,
-                        "populationCategory": d.range,
-                        "numOfUlb": 0,
-                        "ulbs":  [],
-                        "auditNA": 0,
-                        "ownRevenue": 0,
-                        "revenueExpenditure": 0,
-                        "ownRevenuePercentage": 0,
-                        "totalUlb": d.totalUlb,
-                        "maxOwnRevenuePercentage": {
-                            "name": "0",
-                            "value": "0"
-                        },
-                        "minOwnRevenuePercentage": {
-                            "name": "0",
-                            "value": "0"
-                        }
-                    })
                 }
+                // else{
+                //     obj.data.push({
+                //         "ownRevenueUlb": [],
+                //         "audited": 0,
+                //         "unaudited": 0,
+                //         "populationCategory": d.range,
+                //         "numOfUlb": 0,
+                //         "ulbs":  [],
+                //         "auditNA": 0,
+                //         "ownRevenue": 0,
+                //         "revenueExpenditure": 0,
+                //         "ownRevenuePercentage": 0,
+                //         "totalUlb": d.totalUlb,
+                //         "maxOwnRevenuePercentage": {
+                //             "name": "0",
+                //             "value": "0"
+                //         },
+                //         "minOwnRevenuePercentage": {
+                //             "name": "0",
+                //             "value": "0"
+                //         }
+                //     })
+                // }
             }
             //res.json({query})
 
