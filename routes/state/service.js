@@ -24,7 +24,7 @@ module.exports.get = async function(req,res) {
         query1["questionnaireType"] = "state"
         let stateId = await XVFcForms.find(query1,{_id:0,state:1}).exec();
         let stateArray = stateId.map((s)=>{  return ObjectId(s.state)})
-        query["_id"] = {$in:userStateId,$nin:stateArray};
+        query["_id"] = {$nin:stateArray};
     }
     // Get any state
     // State is model name
