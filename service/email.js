@@ -1,12 +1,12 @@
 const nodemailer = require('nodemailer');
 module.exports = function(mailOptions, cb){
     const smtpConnectionString = process.env.EMAILSERVICE == 'gmail' ?
-        `smtps://${encodeURIComponent(process.env.EMAIL)}:${encodeURIComponent(process.env.PWD)}@smtp.gmail.com`: {
+        `smtps://${encodeURIComponent(process.env.EMAIL)}:${encodeURIComponent(process.env.PASS)}@smtp.gmail.com`: {
             host: 'smtp.office365.com',
             port: '587',
             auth: {
                 user: process.env.EMAIL,
-                pass: process.env.PWD
+                pass: process.env.PASS
             },
             secureConnection: false,
             tls: {
