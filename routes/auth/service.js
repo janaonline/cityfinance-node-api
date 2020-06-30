@@ -275,7 +275,7 @@ module.exports.forgotPassword = async (req, res)=>{
                 let passwordHistory = setPasswordHistory(user,passwordHash);    
 
                 try{
-                    let du = await User.update({_id:user._id},{$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires}});
+                    //let du = await User.update({_id:user._id},{$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires}});
                     let keys  = ["_id","email","role","name"];
                     let data = {};
                     for(k in user){
