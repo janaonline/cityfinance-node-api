@@ -345,7 +345,7 @@ module.exports.getAll = async (req, res)=>{
 module.exports.getById = async (req, res)=>{
     let user = req.decoded, _id = req.params._id;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
-    if(actionAllowed.indexOf(user.role) > -1){
+    if(actionAllowed.indexOf("ULB") > -1){
         if(_id && ObjectId.isValid(_id)){
             try{
                 let condition = {_id : ObjectId(_id) };
@@ -378,10 +378,12 @@ module.exports.getById = async (req, res)=>{
                         .lean()
                         .exec();
                 if(data){
+
+                    console.log("HIII",data.ulb);
                     let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
                     let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
                     let user = await User
-                        .findOne({role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
+                        .findOne({isActive:true,isDeleted:false,role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
                         .populate({
                             path:"ulb",
                             select:ulbkeys.join(" "),
