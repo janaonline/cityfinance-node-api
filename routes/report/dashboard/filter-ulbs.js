@@ -5,6 +5,8 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const OverallUlb = require('../../../models/OverallUlb');
 module.exports = async (req, res, next) => {
     try {
+
+        let yearWiseUlb = [];
         let years = [];
         if (req.query.years) {
             years = JSON.parse(req.query.years)
@@ -17,16 +19,17 @@ module.exports = async (req, res, next) => {
         if(req.query.ulb){
             req.query.ulb ? condition["_id"] = ObjectId(req.query.ulb) : null ;
         }else{
+
             for (let i = 0; i< years.length; i++) {
                 let year = years[i];
                 let query = { financialYear: year };
-                if (i > 0) {
-                    query["ulb"] = { $in: ulbs };
-                }
                 ulbs = await UlbLedger.distinct("ulb", query).exec();
+                yearWiseUlb.push(ulbs)
             }
-            condition = { _id: { $in: ulbs }}
-        }        
+            var merged = [].concat.apply([],yearWiseUlb);
+            condition = { _id: { $in: merged}}
+        }
+
         if(req.query.state && req.query.state.length > 12){
             condition["state"] = ObjectId(req.query.state)
         }
@@ -78,7 +81,7 @@ module.exports = async (req, res, next) => {
                 }
             },
         ];
-        //return res.json(rangeQuery)
+
         let ulbPopulationRanges = await Ulb.aggregate(rangeQuery).exec();
         let arr = [];
         let len = 0;
@@ -101,7 +104,7 @@ module.exports = async (req, res, next) => {
             obj["data"] = rangeArr;
             arr.push(obj);
         }
-        // res.json({arr,len});
+        //return res.json(arr);
         if(len){
             req.body["queryArr"] = arr;
             next();
