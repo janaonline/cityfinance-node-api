@@ -6,7 +6,7 @@ const OverallUlb = require('../../../models/OverallUlb');
 module.exports = async (req, res, next) => {
     try {
 
-        let yearWiseUlb = [];
+        //let yearWiseUlb = [];
         let years = [];
         if (req.query.years) {
             years = JSON.parse(req.query.years)
@@ -23,11 +23,14 @@ module.exports = async (req, res, next) => {
             for (let i = 0; i< years.length; i++) {
                 let year = years[i];
                 let query = { financialYear: year };
+                if (i > 0) {
+                    query["ulb"] = { $in: ulbs };
+                }
                 ulbs = await UlbLedger.distinct("ulb", query).exec();
-                yearWiseUlb.push(ulbs)
+                //yearWiseUlb.push(ulbs)
             }
-            var merged = [].concat.apply([],yearWiseUlb);
-            condition = { _id: { $in: merged}}
+            //var merged = [].concat.apply([],yearWiseUlb);
+            condition = { _id: { $in: ulbs}}
         }
 
         if(req.query.state && req.query.state.length > 12){
