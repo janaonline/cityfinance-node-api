@@ -17,8 +17,13 @@ module.exports.register = async (req, res)=>{
             data.status = "PENDING";
             if(data.commissionerEmail && data.ulb){
                 let user = await User.findOne({ulb:ObjectId(data.ulb), role:data.role, isDeleted:false}).lean().exec();
-                if(user){
-                    return Response.BadRequest(res, {data},`Already an user is registered with requested ulb.`)
+                if(user.status=="REJECTED"){
+                    let d = User.deleteOne({ulb:ObjectId(data.ulb), role:data.role, isDeleted:false}).exec();
+                }
+                else{
+                    if(user){
+                        return Response.BadRequest(res, {data},`Already an user is registered with requested ulb.`)
+                    }
                 }
             }else{
                 return  Response.BadRequest(res, {data},`Commissioner Email and Ulb is required field.`)
