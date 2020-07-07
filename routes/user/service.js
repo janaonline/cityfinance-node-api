@@ -438,9 +438,6 @@ module.exports.ulbSignupAction = async (req, res)=> {
             if(access[user.role].indexOf(userData.role)){
                 try {
                     let d = {modifiedAt:new Date(),status:data.status, rejectReason:data.rejectReason};
-                    if(data.status=="APPROVED"){
-                        d = Object.assign(d,{isActive:true})
-                    }
                     let u = await User.update(condition,{$set:d});
                     let link  =  await Service.emailVerificationLink(userData._id,req.currentUrl);
                     let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(userData._id, link);

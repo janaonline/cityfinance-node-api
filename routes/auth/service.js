@@ -114,8 +114,6 @@ module.exports.login = async (req, res)=>{
             return Response.BadRequest(res, err,'User not found');
         }else if(!user.isEmailVerified){
             return Response.BadRequest(res, err,'Email not verified yet.');
-        }else if(!user.isActive){
-            return Response.BadRequest(res, {},`Requested email:${req.body.email} is not activated.`);
         }else if(user.isDeleted){
             return Response.BadRequest(res, err,'User is deleted.');
         }else if(user.status == "PENDING"){
@@ -268,8 +266,6 @@ module.exports.forgotPassword = async (req, res)=>{
         if(user){
             if(user.isDeleted){
                 return Response.BadRequest(res, {},`Requested email:${req.body.email} is not registered.`);
-            }else if(!user.isActive){
-                return Response.BadRequest(res, {},`Requested email:${req.body.email} is not activated.`);
             }else {
                 let newPassword = Service.getRndInteger(10000,99999).toString();
                 let passwordHash = await Service.getHash(newPassword);
