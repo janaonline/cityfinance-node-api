@@ -114,7 +114,9 @@ module.exports.login = async (req, res)=>{
             return Response.BadRequest(res, err,'User not found');
         }else if(!user.isEmailVerified){
             return Response.BadRequest(res, err,'Email not verified yet.');
-        } else if(user.isDeleted){
+        }else if(!user.isActive){
+            return Response.BadRequest(res, {},`Requested email:${req.body.email} is not activated.`);
+        }else if(user.isDeleted){
             return Response.BadRequest(res, err,'User is deleted.');
         }else if(user.status == "PENDING"){
             return Response.BadRequest(res, {},'Waiting for admin action on request.');
