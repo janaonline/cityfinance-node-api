@@ -29,7 +29,7 @@ module.exports.create = async (req, res)=>{
         if(getPrevStatus){
             Object.assign(getPrevStatus,data);
             try{
-                let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus});
+                let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus,createdAt:new Date()});
                 if(du.n){
 
                     let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
