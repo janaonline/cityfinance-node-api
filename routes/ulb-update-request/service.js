@@ -383,7 +383,7 @@ module.exports.getById = async (req, res)=>{
                     let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
                     let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
                     let user = await User
-                        .findOne({isActive:true,isDeleted:false,role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
+                        .findOne({isDeleted:false,role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
                         .populate({
                             path:"ulb",
                             select:ulbkeys.join(" "),
