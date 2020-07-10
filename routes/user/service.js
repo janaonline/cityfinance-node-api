@@ -435,7 +435,7 @@ module.exports.ulbSignupAction = async (req, res)=> {
         let userData = await User.findOne(condition).populate("ulb","state").lean();
 
         if(userData){
-            if(access[user.role].indexOf(userData.role)){
+            if(access[user.role].indexOf(userData.role) > -1){
                 try {
                     let d = {modifiedAt:new Date(),status:data.status, rejectReason:data.rejectReason};
                     let u = await User.update(condition,{$set:d});
