@@ -75,6 +75,13 @@ module.exports.create = async (req, res)=>{
                     pObj[key] = data[key];
                 }
             }
+
+            let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
+            let mailOptions = {
+                    to: userData.email,
+                    subject: "",
+                    html:""
+            };
             if(pObj["commissionerEmail"]){
                 let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
                 if(emailCheck){
@@ -84,12 +91,7 @@ module.exports.create = async (req, res)=>{
                 }
                 pObj["email"] = pObj["commissionerEmail"];
                 pObj["isEmailVerified"] = false;
-                let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
-                let mailOptions = {
-                    to: userData.email,
-                    subject: "",
-                    html:""
-                };
+               
                 if(pObj.email != userData.email){
                     let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
                     let template = Service.emailTemplate.userEmailEdit(userData.name,link);
@@ -110,6 +112,12 @@ module.exports.create = async (req, res)=>{
                 if(Object.keys(pObj).length){
                     du = await User.update({ulb:ObjectId(data.ulb), role:"ULB"},{$set:pObj});
                 }
+
+                let template = Service.emailTemplate.userProfileEdit(userData.name)
+                mailOptions.subject =  template.subject;
+                mailOptions.html =  template.body;
+                SendEmail(mailOptions);
+
                 return Response.OK(res, {Ulb:dulb,user:du,data},`updated successfully.`)
             }catch (e) {
                 console.log("Exception",e);
