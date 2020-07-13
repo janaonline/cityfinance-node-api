@@ -294,7 +294,13 @@ module.exports.getAll = async (req, res)=>{
                         createdAt:1,
                         status:1
                     }
+                },
+                {
+                    "$addFields" : {
+                    "priority" :  {"$cond": { if: { $eq: [ "$status", "PENDING" ] }, then: 2, else: 1 }}
+                    }
                 }
+
             ]
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
@@ -312,6 +318,8 @@ module.exports.getAll = async (req, res)=>{
             }else {
                 q.push({$sort:{createdAt:-1 }})
             }
+            q.push({$sort:{priority:-1 }})
+
             if(csv){
                 let field = user.role == "ULB" ? {
                     createdAt:"Created At",

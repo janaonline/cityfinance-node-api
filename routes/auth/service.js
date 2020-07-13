@@ -197,12 +197,33 @@ module.exports.verifyToken = (req, res, next)=>{
     var token = req.body.token || req.query.token || req.params.token || req.headers['x-access-token'];
     if (token) {
         // verifies secret and checks exp
-        jwt.verify(token, Config.JWT.SECRET, function(err, decoded) {
+        jwt.verify(token, Config.JWT.SECRET, async function(err, decoded) {
             if (err) {
                 console.log("verify-token jwt.verify : ",err.message);
                 return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
             } else {
                 req.decoded = decoded;
+                if(req.decoded.sessionId)
+                {   
+                    userId = ObjectId(req.decoded._id);
+                    let query = {user:ObjectId(userId),visitSession:ObjectId(req.decoded.sessionId)}
+                    let login = await LoginHistory.findOne(query).sort({_id:-1}).exec();
+                    if(login){
+
+                        if(Date.now() >= login.inactiveSessionTime){
+                            return Response.UnAuthorized(res, {},`The client's session has expired and must log in again.`,440);
+                        }
+                        let inactiveTime = Date.now()+ Helper.INACTIVETIME.TIME; 
+                        let u = LoginHistory.update({"_id":ObjectId(login._id)},{$set:{inactiveSessionTime:inactiveTime}}).exec();                      
+                    }
+                    else{
+                        return Response.UnAuthorized(res, {},`LoginHistory Not found`,400);
+                    }
+                }
+                else{
+                //    return Response.UnAuthorized(res, {},`No sessionId provided`);
+                }  
+
                 next();
             }
         });
