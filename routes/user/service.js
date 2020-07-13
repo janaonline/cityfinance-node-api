@@ -130,7 +130,7 @@ module.exports.getAll = async (req, res)=> {
                     "$addFields" : {
                         "priority" :  {"$cond": { if: { $eq: [ "$status", "PENDING" ] }, then: 2, else: 1 }}
                         }
-                    }
+                    },
                     {
                         $project:{
                             "_id": 1,
