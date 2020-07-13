@@ -127,11 +127,17 @@ module.exports.getAll = async (req, res)=> {
                     {$unwind:{path:"$state",preserveNullAndEmptyArrays:true}},
                     {$unwind:{path:"$stateUpdate",preserveNullAndEmptyArrays:true}},
                     {
+                    "$addFields" : {
+                        "priority" :  {"$cond": { if: { $eq: [ "$status", "PENDING" ] }, then: 2, else: 1 }}
+                        }
+                    }
+                    {
                         $project:{
                             "_id": 1,
                             "role": 1,
                             "name": 1,
                             "email": 1,
+                            "priority":1,
                             "designation": 1,
                             "organization": 1,
                             "departmentName":1,
@@ -205,6 +211,7 @@ module.exports.getAll = async (req, res)=> {
                         if(Object.keys(sort).length){
                             q.push({$sort:sort});
                         }
+                        q.push({$sort:{priority:-1 }})
                         q.push({$skip:skip});
                         q.push({$limit:limit});
                         if(!skip) {
