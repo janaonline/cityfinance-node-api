@@ -244,9 +244,15 @@ module.exports.getAll = async (req, res)=>{
                 {$unwind: "$state"},
                 {$unwind: {path:"$actionTakenBy",preserveNullAndEmptyArrays:true}},
                 {
+                    "$addFields" : {
+                        "priority" :  {"$cond": { if: { $eq: [ "$status", "PENDING" ] }, then: 2, else: 1 }}
+                    }
+                },
+                {
                     $project: {
                         _id: 1,
                         audited: 1,
+                        priority:1,
                         auditStatus: {$cond:{if:"$audited",then:"Audited", else: "Unaudited"}},
                         completeness: 1,
                         correctness: 1,
@@ -280,8 +286,11 @@ module.exports.getAll = async (req, res)=>{
             }
             if (sort && Object.keys(sort).length) {
                 q.push({$sort: sort});
+                q.push({$sort:{priority:-1 }})
+
             }else {
                 q.push({$sort:{createdAt:-1 }})
+                q.push({$sort:{priority:-1 }})
             }
 
             if (csv) {
