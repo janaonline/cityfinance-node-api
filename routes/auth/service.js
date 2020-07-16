@@ -296,7 +296,6 @@ module.exports.verifyToken = (req, res, next) => {
                 );
             } else {
                 req.decoded = decoded;
-                console.log(`decoded`, decoded);
                 if (req.decoded.sessionId) {
                     userId = ObjectId(req.decoded._id);
                     let query = {
@@ -347,12 +346,31 @@ module.exports.verifyToken = (req, res, next) => {
 
 module.exports.resendAccountVerificationLink = async (req, res) => {
     try {
-        let keys = ['_id', 'email', 'role', 'name'];
+        let keys = [
+            '_id',
+            'email',
+            'role',
+            'name',
+            'isEmailVerified',
+            'isLocked'
+        ];
         let user = await User.findOne(
-            { email: req.body.email },
+            { email: req.body.email, isDeleted: false },
             keys.join(' ')
         ).exec();
         if (!user) return Response.BadRequest(res, req.body, `Email not Found`);
+        if (user.isEmailVerified)
+            return Response.BadRequest(
+                res,
+                req.body,
+                'Account is already verified.'
+            );
+        if (user.isLocked)
+            return Response.BadRequest(
+                res,
+                req.body,
+                'Activation link cannot be send since account is locked. Kindly wait until account is unlocked, then try again.'
+            );
         const validUserTypes = ['USER', 'ULB', 'STATE', 'PARTNER', 'MoHUA'];
         if (!validUserTypes.includes(user.role))
             return Response.BadRequest(
@@ -374,33 +392,14 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             subject: template.subject,
             html: template.body
         };
-        console.log(link);
 
         Service.sendEmail(mailOptions);
 
         return Response.OK(
             res,
-            user,
+            {},
             `Account verification link sent to ${user.email}.`
         );
-
-        // return res.send({ message: 'ok' });
-        // if(user){
-        //     let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
-        //     let mailOptions = {
-        //         to: user.email, //list of receivers
-        //         subject: "Email Verification", //Subject line
-        //         html: `
-        //             <b>Hi ${user.name},</b>
-        //             <p>Please verify you.</p>
-        //             <p>Please <a href="${link}">click here </a> to activate your account.
-        //         ` // html body
-        //     };
-        //     Service.sendEmail(mailOptions);
-        //     return Response.OK(res, user, `Email verification link sent to ${user.email}.`);
-        // }else{
-        //     return Response.BadRequest(res, req.body, `Email not found.`)
-        // }
     } catch (e) {
         return Response.BadRequest(res, req.body, `Exception occurred.`);
     }
