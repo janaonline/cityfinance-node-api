@@ -3,507 +3,692 @@ const State = require('../../models/State');
 const UlbType = require('../../models/UlbType');
 const Response = require('../../service/response');
 const ObjectId = require('mongoose').Types.ObjectId;
-module.exports.filter = async (req, res, next)=>{
-    if(req.query.financialYear){
+module.exports.filter = async (req, res, next) => {
+    if (req.query.financialYear) {
         next();
-    }else{
-        return Response.BadRequest(res,req.query, `Select year is required.`)
+    } else {
+        return Response.BadRequest(res, req.query, `Select year is required.`);
     }
-}
-module.exports.overall = async (req, res)=>{
-    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
+};
+module.exports.overall = async (req, res) => {
+    let stateId = req.decoded.state ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getOverallQuery(financialYear,stateId);
+    let query = getOverallQuery(financialYear, stateId);
     try {
         let data = await UlbFinancialData.aggregate(query).exec();
         return Response.OK(res, modifyData(data));
-    }catch (e) {
-        console.log("Exception",e);
-        return Response.DbError(res,e)
+    } catch (e) {
+        console.log('Exception', e);
+        return Response.DbError(res, e);
     }
-}
-module.exports.statewise = async (req, res)=>{
-    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
+};
+module.exports.statewise = async (req, res) => {
+    let stateId = req.decoded.state ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getStatewiseQuery(financialYear,stateId);
+    let query = getStatewiseQuery(financialYear, stateId);
     try {
         let data = await State.aggregate(query).exec();
         return Response.OK(res, modifyData(data));
-    }catch (e) {
-        console.log("Exception",e);
-        return Response.DbError(res,e)
+    } catch (e) {
+        console.log('Exception', e);
+        return Response.DbError(res, e);
     }
-}
-module.exports.ulbtypewise = async (req, res)=>{
-    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
+};
+module.exports.ulbtypewise = async (req, res) => {
+    let stateId = req.decoded.state ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getUlbtypewiseQuery(financialYear,stateId);
+    let query = getUlbtypewiseQuery(financialYear, stateId);
     try {
-        let overallData = await UlbFinancialData.aggregate(getOverallQuery(financialYear,stateId)).exec();
+        let overallData = await UlbFinancialData.aggregate(
+            getOverallQuery(financialYear, stateId)
+        ).exec();
         let data = await UlbType.aggregate(query).exec();
-        let overall = {total:0,data:formatData([])};
-        if(overallData.length){
-            overall = {total:overallData[0].total,data:formatData(overallData[0].data) };
+        let overall = { total: 0, data: formatData([]) };
+        if (overallData.length) {
+            overall = {
+                total: overallData[0].total,
+                data: formatData(overallData[0].data)
+            };
         }
         return Response.OK(res, {
-            overall:overall,
-            data:modifyData(data)});
-    }catch (e) {
-        console.log("Exception",e);
-        return Response.DbError(res,e)
+            overall: overall,
+            data: modifyData(data)
+        });
+    } catch (e) {
+        console.log('Exception', e);
+        return Response.DbError(res, e);
     }
-}
-module.exports.stateandulbtypewise = async (req, res)=>{
-    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
+};
+module.exports.stateandulbtypewise = async (req, res) => {
+    let stateId = req.decoded.state ? ObjectId(req.decoded.state) : null;
     let financialYear = req.query.financialYear;
-    let query = getStateAndUlbtypewsiseQuery(financialYear,stateId);
+    let query = getStateAndUlbtypewsiseQuery(financialYear, stateId);
     try {
-        let statewiseData = await State.aggregate(getStatewiseQuery(financialYear,stateId)).exec();
+        let statewiseData = await State.aggregate(
+            getStatewiseQuery(financialYear, stateId)
+        ).exec();
         let data = await State.aggregate(query).exec();
-        for(el of data){
-            let state = statewiseData.find(f=> f.name == el.name);
-            el["overall"] = state ? {total:state.total,data:formatData(state.data)} : {total:0,data:formatData([])};
-            el["data"] = modifyData(el.data)
+        for (el of data) {
+            let state = statewiseData.find((f) => f.name == el.name);
+            el['overall'] = state
+                ? { total: state.total, data: formatData(state.data) }
+                : { total: 0, data: formatData([]) };
+            el['data'] = modifyData(el.data);
         }
         return Response.OK(res, data);
-    }catch (e) {
-        console.log("Exception",e);
-        return Response.DbError(res,e)
+    } catch (e) {
+        console.log('Exception', e);
+        return Response.DbError(res, e);
     }
-}
-module.exports.chart = async (req, res)=>{
-    let stateId = req.decoded.state  ? ObjectId(req.decoded.state) : null;
+};
+module.exports.chart = async (req, res) => {
+    let stateId = req.decoded.state ? ObjectId(req.decoded.state) : null;
     try {
         let financialYear = req.query.financialYear;
         let q = [];
-        if(financialYear){
-            q.push({$match:{financialYear:financialYear,isActive:true}});
+        if (financialYear) {
+            q.push({
+                $match: { financialYear: financialYear, isActive: true }
+            });
+        } else {
+            // NOTE: Fix if no FY is coming, then show only those years which are upload from UI.
+            q.push({
+                $match: { isActive: true }
+            });
         }
-        let query =  q.concat([
+        let query = q.concat([
             {
-                $project:{
-                    _id:1,
-                    ulb:1,
-                    status:1
+                $project: {
+                    _id: 1,
+                    ulb: 1,
+                    status: 1
                 }
             },
             {
-                $lookup:{
-                    from:"ulbs",
-                    localField:"ulb",
-                    foreignField:"_id",
-                    as:"ulb"
+                $lookup: {
+                    from: 'ulbs',
+                    localField: 'ulb',
+                    foreignField: '_id',
+                    as: 'ulb'
                 }
             },
-            {$unwind:"$ulb"},
+            { $unwind: '$ulb' },
             {
-                $group:{
-                    _id:"$ulb.state",
-                    count:{$sum:1},
-                    pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
-                    rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
-                    approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
+                $group: {
+                    _id: '$ulb.state',
+                    count: { $sum: 1 },
+                    pending: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ['$status', 'PENDING'] },
+                                then: 1,
+                                else: 0
+                            }
+                        }
+                    },
+                    rejected: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ['$status', 'REJECTED'] },
+                                then: 1,
+                                else: 0
+                            }
+                        }
+                    },
+                    approved: {
+                        $sum: {
+                            $cond: {
+                                if: { $eq: ['$status', 'APPROVED'] },
+                                then: 1,
+                                else: 0
+                            }
+                        }
+                    }
                 }
             },
             {
-                $lookup:{
-                    from:"states",
-                    localField:"_id",
-                    foreignField:"_id",
-                    as:"state"
+                $lookup: {
+                    from: 'states',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'state'
                 }
             },
-            {$unwind:"$state"},
+            { $unwind: '$state' },
             {
-                $project:{
-                    _id:"$state._id",
-                    name:"$state.name",
-                    code:"$state.code",
-                    count:1,
-                    pending:1,
-                    rejected:1,
-                    approved:1
+                $project: {
+                    _id: '$state._id',
+                    name: '$state.name',
+                    code: '$state.code',
+                    count: 1,
+                    pending: 1,
+                    rejected: 1,
+                    approved: 1
                 }
             }
         ]);
-        if(stateId){
-            query.push({$match:{_id:stateId}});
+        if (stateId) {
+            query.push({ $match: { _id: stateId } });
         }
+
         let data = await UlbFinancialData.aggregate(query).exec();
         return Response.OK(res, data);
-    }catch (e) {
-        console.log("Exception",e);
-        return Response.DbError(res,e);
+    } catch (e) {
+        console.log('Exception', e);
+        return Response.DbError(res, e);
     }
-}
+};
 function modifyData(arr) {
-    for(let el of arr){
-        el["data"] = formatData(el.data);
-        el["total"] = getTotal(el["data"]);
+    for (let el of arr) {
+        el['data'] = formatData(el.data);
+        el['total'] = getTotal(el['data']);
     }
     return arr;
 }
 function getTotal(arr) {
     let count = 0;
-    for(el of arr){
+    for (el of arr) {
         count += el.count;
     }
     return count;
 }
 function formatData(data) {
-    if(data.length){
-        if(data.length ==1){
-            if(data[0].audited){
+    if (data.length) {
+        if (data.length == 1) {
+            if (data[0].audited) {
                 return [
                     data[0],
                     {
-                        "count" : 0,
-                        "uploaded":0,
-                        "pending" : 0,
-                        "rejected" : 0,
-                        "approved" : 0,
-                        "audited" : false
+                        count: 0,
+                        uploaded: 0,
+                        pending: 0,
+                        rejected: 0,
+                        approved: 0,
+                        audited: false
                     }
-                ]
-            }else{
+                ];
+            } else {
                 return [
                     {
-                        "count" : 0,
-                        "uploaded":0,
-                        "pending" : 0,
-                        "rejected" : 0,
-                        "approved" : 0,
-                        "audited" : true
+                        count: 0,
+                        uploaded: 0,
+                        pending: 0,
+                        rejected: 0,
+                        approved: 0,
+                        audited: true
                     },
                     data[0]
-                ]
+                ];
             }
-        }else{
-            if(data[0].audited){
+        } else {
+            if (data[0].audited) {
                 return data;
-            }else{
-                return [
-                    data[1],
-                    data[0]
-                ]
+            } else {
+                return [data[1], data[0]];
             }
         }
-    }else{
+    } else {
         return [
             {
-                "count" : 0,
-                "uploaded":0,
-                "pending" : 0,
-                "rejected" : 0,
-                "approved" : 0,
-                "audited" : true
+                count: 0,
+                uploaded: 0,
+                pending: 0,
+                rejected: 0,
+                approved: 0,
+                audited: true
             },
             {
-                "count" : 0,
-                "uploaded":0,
-                "pending" : 0,
-                "rejected" : 0,
-                "approved" : 0,
-                "audited" : false
+                count: 0,
+                uploaded: 0,
+                pending: 0,
+                rejected: 0,
+                approved: 0,
+                audited: false
             }
         ];
     }
 }
 function getOverallQuery(financialYear, state = null) {
-    let overallulbs = state ? {
-        $lookup:{
-            from:"overallulbs",
-            pipeline:[
-                {$match:{state:state }},
-                {$count:"count"}
-            ],
-            as :"overallulbs"
-        }
-    } : {
-        $lookup:{
-            from:"overallulbs",
-            pipeline:[{$count:"count"}],
-            as :"overallulbs"
-        }
-    };
+    let overallulbs = state
+        ? {
+              $lookup: {
+                  from: 'overallulbs',
+                  pipeline: [{ $match: { state: state } }, { $count: 'count' }],
+                  as: 'overallulbs'
+              }
+          }
+        : {
+              $lookup: {
+                  from: 'overallulbs',
+                  pipeline: [{ $count: 'count' }],
+                  as: 'overallulbs'
+              }
+          };
 
     return [
-        {$match:{financialYear:financialYear}},
+        { $match: { financialYear: financialYear } },
         overallulbs,
         {
-            $project:{
-                _id:1,
-                audited:1,
-                status:1,
-                overallulbs:{$arrayElemAt:["$overallulbs",0]}
+            $project: {
+                _id: 1,
+                audited: 1,
+                status: 1,
+                overallulbs: { $arrayElemAt: ['$overallulbs', 0] }
             }
         },
         {
-            $project:{
-                _id:1,
-                audited:1,
-                status:1,
-                total:"$overallulbs.count"
+            $project: {
+                _id: 1,
+                audited: 1,
+                status: 1,
+                total: '$overallulbs.count'
             }
         },
         {
-            $group:{
-                _id:"$audited",
-                total:{$first:"$total"},
-                count:{$sum:1},
-                pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
-                rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
-                approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
-            }
-        },
-        {
-            $project:{
-                _id:0,
-                total:1,
-                data:{
-                    audited:"$_id",
-                    count:"$count",
-                    uploaded:"$count",
-                    pending:"$pending",
-                    rejected:"$rejected",
-                    approved:"$approved"
+            $group: {
+                _id: '$audited',
+                total: { $first: '$total' },
+                count: { $sum: 1 },
+                pending: {
+                    $sum: {
+                        $cond: {
+                            if: { $eq: ['$status', 'PENDING'] },
+                            then: 1,
+                            else: 0
+                        }
+                    }
+                },
+                rejected: {
+                    $sum: {
+                        $cond: {
+                            if: { $eq: ['$status', 'REJECTED'] },
+                            then: 1,
+                            else: 0
+                        }
+                    }
+                },
+                approved: {
+                    $sum: {
+                        $cond: {
+                            if: { $eq: ['$status', 'APPROVED'] },
+                            then: 1,
+                            else: 0
+                        }
+                    }
                 }
             }
         },
         {
-            $group:{
-                _id:null,
-                total:{$first:"$total"},
-                data:{$push:"$data"}
+            $project: {
+                _id: 0,
+                total: 1,
+                data: {
+                    audited: '$_id',
+                    count: '$count',
+                    uploaded: '$count',
+                    pending: '$pending',
+                    rejected: '$rejected',
+                    approved: '$approved'
+                }
             }
         },
         {
-            $project:{
-                _id:0,
-                total:1,
-                data:1
+            $group: {
+                _id: null,
+                total: { $first: '$total' },
+                data: { $push: '$data' }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                total: 1,
+                data: 1
             }
         }
     ];
 }
 function getStatewiseQuery(financialYear, state = null) {
-    let queryArr = state ? [{$match:{_id : state}}] : [];
+    let queryArr = state ? [{ $match: { _id: state } }] : [];
     return queryArr.concat([
         {
-            $lookup:{
-                from:"overallulbs",
-                localField:"_id",
-                foreignField:"state",
-                as :"overallulbs"
+            $lookup: {
+                from: 'overallulbs',
+                localField: '_id',
+                foreignField: 'state',
+                as: 'overallulbs'
             }
         },
         {
-            $project:{
-                _id:1,
-                name:1,
-                code:1,
-                total:{$size:"$overallulbs"}
+            $project: {
+                _id: 1,
+                name: 1,
+                code: 1,
+                total: { $size: '$overallulbs' }
             }
         },
         {
-            $lookup:{
-                from:"ulbs",
-                let :{ state : "$_id" },
-                pipeline:[
-                    { $match: { $expr:{ $eq: [ "$state",  "$$state" ]}}},
+            $lookup: {
+                from: 'ulbs',
+                let: { state: '$_id' },
+                pipeline: [
+                    { $match: { $expr: { $eq: ['$state', '$$state'] } } },
                     {
-                        $lookup:{
-                            from:"ulbfinancialdatas",
-                            localField:"_id",
-                            foreignField:"ulb",
-                            as : "ulbfinancialdatas"
+                        $lookup: {
+                            from: 'ulbfinancialdatas',
+                            localField: '_id',
+                            foreignField: 'ulb',
+                            as: 'ulbfinancialdatas'
                         }
                     },
-                    {$unwind: "$ulbfinancialdatas"},
-                    {$match:{"ulbfinancialdatas.financialYear" : financialYear}},
+                    { $unwind: '$ulbfinancialdatas' },
                     {
-                        $project:{
-                            audited:"$ulbfinancialdatas.audited",
-                            status:"$ulbfinancialdatas.status"
-                        }
-                    },
-                    {
-                        $group:{
-                            _id:"$audited",
-                            count:{$sum:1},
-                            pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
-                            rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
-                            approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
+                        $match: {
+                            'ulbfinancialdatas.financialYear': financialYear
                         }
                     },
                     {
-                        $project:{
-                            _id:0,
-                            audited:"$_id",
-                            count:1,
-                            uploaded:"$count",
-                            pending:1,
-                            rejected:1,
-                            approved:1
+                        $project: {
+                            audited: '$ulbfinancialdatas.audited',
+                            status: '$ulbfinancialdatas.status'
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$audited',
+                            count: { $sum: 1 },
+                            pending: {
+                                $sum: {
+                                    $cond: {
+                                        if: { $eq: ['$status', 'PENDING'] },
+                                        then: 1,
+                                        else: 0
+                                    }
+                                }
+                            },
+                            rejected: {
+                                $sum: {
+                                    $cond: {
+                                        if: { $eq: ['$status', 'REJECTED'] },
+                                        then: 1,
+                                        else: 0
+                                    }
+                                }
+                            },
+                            approved: {
+                                $sum: {
+                                    $cond: {
+                                        if: { $eq: ['$status', 'APPROVED'] },
+                                        then: 1,
+                                        else: 0
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            audited: '$_id',
+                            count: 1,
+                            uploaded: '$count',
+                            pending: 1,
+                            rejected: 1,
+                            approved: 1
                         }
                     }
                 ],
-                as : "data"
+                as: 'data'
             }
         }
     ]);
 }
-function getUlbtypewiseQuery(financialYear, state=null) {
-    let stateCondition =  state ? {state:state} : {};
+function getUlbtypewiseQuery(financialYear, state = null) {
+    let stateCondition = state ? { state: state } : {};
     return [
         {
-            $lookup:{
-                from:"ulbs",
-                let:{ulbType:"$_id"},
-                pipeline:[
-                    {$match:{ $expr : { $eq:["$ulbType","$$ulbType"]}}},
-                    {$match:stateCondition},
+            $lookup: {
+                from: 'ulbs',
+                let: { ulbType: '$_id' },
+                pipeline: [
+                    { $match: { $expr: { $eq: ['$ulbType', '$$ulbType'] } } },
+                    { $match: stateCondition },
                     {
-                        $lookup:{
-                            from:"ulbfinancialdatas",
-                            localField:"_id",
-                            foreignField:"ulb",
-                            as : "ulbfinancialdatas"
+                        $lookup: {
+                            from: 'ulbfinancialdatas',
+                            localField: '_id',
+                            foreignField: 'ulb',
+                            as: 'ulbfinancialdatas'
                         }
                     },
-                    {$unwind: "$ulbfinancialdatas"},
-                    {$match:{"ulbfinancialdatas.financialYear" : financialYear}},
+                    { $unwind: '$ulbfinancialdatas' },
                     {
-                        $project:{
-                            audited:"$ulbfinancialdatas.audited",
-                            status:"$ulbfinancialdatas.status"
-                        }
-                    },
-                    {
-                        $group:{
-                            _id:"$audited",
-                            count:{$sum:1},
-                            pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
-                            rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
-                            approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
+                        $match: {
+                            'ulbfinancialdatas.financialYear': financialYear
                         }
                     },
                     {
-                        $project:{
-                            _id:0,
-                            audited:"$_id",
-                            count:1,
-                            uploaded:"$count",
-                            pending:1,
-                            rejected:1,
-                            approved:1
+                        $project: {
+                            audited: '$ulbfinancialdatas.audited',
+                            status: '$ulbfinancialdatas.status'
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$audited',
+                            count: { $sum: 1 },
+                            pending: {
+                                $sum: {
+                                    $cond: {
+                                        if: { $eq: ['$status', 'PENDING'] },
+                                        then: 1,
+                                        else: 0
+                                    }
+                                }
+                            },
+                            rejected: {
+                                $sum: {
+                                    $cond: {
+                                        if: { $eq: ['$status', 'REJECTED'] },
+                                        then: 1,
+                                        else: 0
+                                    }
+                                }
+                            },
+                            approved: {
+                                $sum: {
+                                    $cond: {
+                                        if: { $eq: ['$status', 'APPROVED'] },
+                                        then: 1,
+                                        else: 0
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            audited: '$_id',
+                            count: 1,
+                            uploaded: '$count',
+                            pending: 1,
+                            rejected: 1,
+                            approved: 1
                         }
                     }
                 ],
-                as : "data"
+                as: 'data'
             }
         },
         {
-            $project:{
-                name:1,
-                data:1
+            $project: {
+                name: 1,
+                data: 1
             }
         }
-
     ];
 }
-function getStateAndUlbtypewsiseQuery(financialYear, state=null) {
-    let queryArr = state ? [{$match:{_id:state}}] : [];
+function getStateAndUlbtypewsiseQuery(financialYear, state = null) {
+    let queryArr = state ? [{ $match: { _id: state } }] : [];
     return queryArr.concat([
         {
-            $project:{
-                _id:1,
-                name:1
+            $project: {
+                _id: 1,
+                name: 1
             }
         },
         {
-            $lookup:{
-                from:"ulbtypes",
-                let:{state:"$_id"},
-                pipeline:[
+            $lookup: {
+                from: 'ulbtypes',
+                let: { state: '$_id' },
+                pipeline: [
                     {
-                        $project:{
-                            _id:1,
-                            name:1
+                        $project: {
+                            _id: 1,
+                            name: 1
                         }
                     },
                     {
-                        $lookup:{
-                            from:"ulbs",
-                            let:{ulbType:"$_id",state:"$$state"},
-                            pipeline:[
-                                { $match: { $expr:{$and:[{ $eq: [ "$state",  "$$state" ]},{ $eq: [ "$ulbType",  "$$ulbType" ]}]}}},
+                        $lookup: {
+                            from: 'ulbs',
+                            let: { ulbType: '$_id', state: '$$state' },
+                            pipeline: [
                                 {
-                                    $project:{
-                                        _id:1
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ['$state', '$$state'] },
+                                                {
+                                                    $eq: [
+                                                        '$ulbType',
+                                                        '$$ulbType'
+                                                    ]
+                                                }
+                                            ]
+                                        }
                                     }
                                 },
                                 {
-                                    $lookup:{
-                                        from:"ulbfinancialdatas",
-                                        let:{ulb:"$_id"},
-                                        pipeline:[
-                                            {$match:{"financialYear" : financialYear}},
-                                            { $match: { $expr:{ $eq: [ "$ulb",  "$$ulb" ] }}}
+                                    $project: {
+                                        _id: 1
+                                    }
+                                },
+                                {
+                                    $lookup: {
+                                        from: 'ulbfinancialdatas',
+                                        let: { ulb: '$_id' },
+                                        pipeline: [
+                                            {
+                                                $match: {
+                                                    financialYear: financialYear
+                                                }
+                                            },
+                                            {
+                                                $match: {
+                                                    $expr: {
+                                                        $eq: ['$ulb', '$$ulb']
+                                                    }
+                                                }
+                                            }
                                         ],
-                                        as:"ulbfinancialdatas"
+                                        as: 'ulbfinancialdatas'
                                     }
                                 },
-                                {"$unwind":{path:"$ulbfinancialdatas"}},
+                                { $unwind: { path: '$ulbfinancialdatas' } },
                                 {
-                                    $project:{
-                                        _id:0,
-                                        name:"$ulbfinancialdatas.name",
-                                        audited:"$ulbfinancialdatas.audited",
-                                        status:"$ulbfinancialdatas.status"
-                                    }
-                                },
-                                {
-                                    $group:{
-                                        _id:"$audited",
-                                        count:{$sum:1},
-                                        pending:{$sum:{$cond:{if:{$eq:["$status","PENDING"]}, then:1, else:0}}},
-                                        rejected:{$sum:{$cond:{if:{$eq:["$status","REJECTED"]}, then:1, else:0}}},
-                                        approved:{$sum:{$cond:{if:{$eq:["$status","APPROVED"]}, then:1, else:0}}}
+                                    $project: {
+                                        _id: 0,
+                                        name: '$ulbfinancialdatas.name',
+                                        audited: '$ulbfinancialdatas.audited',
+                                        status: '$ulbfinancialdatas.status'
                                     }
                                 },
                                 {
-                                    $project:{
-                                        _id:0,
-                                        audited:"$_id",
-                                        count:1,
-                                        uploaded:"$count",
-                                        pending:1,
-                                        rejected:1,
-                                        approved:1
+                                    $group: {
+                                        _id: '$audited',
+                                        count: { $sum: 1 },
+                                        pending: {
+                                            $sum: {
+                                                $cond: {
+                                                    if: {
+                                                        $eq: [
+                                                            '$status',
+                                                            'PENDING'
+                                                        ]
+                                                    },
+                                                    then: 1,
+                                                    else: 0
+                                                }
+                                            }
+                                        },
+                                        rejected: {
+                                            $sum: {
+                                                $cond: {
+                                                    if: {
+                                                        $eq: [
+                                                            '$status',
+                                                            'REJECTED'
+                                                        ]
+                                                    },
+                                                    then: 1,
+                                                    else: 0
+                                                }
+                                            }
+                                        },
+                                        approved: {
+                                            $sum: {
+                                                $cond: {
+                                                    if: {
+                                                        $eq: [
+                                                            '$status',
+                                                            'APPROVED'
+                                                        ]
+                                                    },
+                                                    then: 1,
+                                                    else: 0
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    $project: {
+                                        _id: 0,
+                                        audited: '$_id',
+                                        count: 1,
+                                        uploaded: '$count',
+                                        pending: 1,
+                                        rejected: 1,
+                                        approved: 1
                                     }
                                 }
                             ],
-                            as:"data"
-                        }
-                    },
-                    {$unwind:{path:"$data", preserveNullAndEmptyArrays:true}},
-                    {
-                        $group:{
-                            _id : "$_id",
-                            name:{$first:"$name"},
-                            data:{$push:"$data"}
+                            as: 'data'
                         }
                     },
                     {
-                        $project:{
-                            _id:0,
-                            name:1,
-                            data:1
+                        $unwind: {
+                            path: '$data',
+                            preserveNullAndEmptyArrays: true
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$_id',
+                            name: { $first: '$name' },
+                            data: { $push: '$data' }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: 0,
+                            name: 1,
+                            data: 1
                         }
                     }
                 ],
-                as:"data"
+                as: 'data'
             }
         }
     ]);
