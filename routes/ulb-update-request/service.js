@@ -503,17 +503,23 @@ module.exports.action = async (req, res)=>{
                                 let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
                                 mailOptions.subject=  template.subject;
                                 mailOptions.html=  template.body;
+                                SendEmail(mailOptions);
                             }else{
-                                let template = Service.emailTemplate.userProfileEdit(userData.name)
-                                mailOptions.subject=  template.subject;
-                                mailOptions.html=  template.body;
+                                // let template = Service.emailTemplate.userProfileEdit(userData.name)
+                                // mailOptions.subject=  template.subject;
+                                // mailOptions.html=  template.body;
                             }
+                        }
+                        else{
+                            let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
+                            let du = await User.update({ulb:prevState.ulb, role:"ULB",isDeleted:false},{$set:pObj});
+                            let template = Service.emailTemplate.userProfileEdit(userData.name)
+                            mailOptions.subject =  template.subject;
+                            mailOptions.html =  template.body;
                             SendEmail(mailOptions);
                         }
-                        let dulb = await Ulb.update({_id:prevState.ulb},{$set:obj});
-                        let du = await User.update({ulb:prevState.ulb, role:"ULB",isDeleted:false},{$set:pObj});
                     }else{
-                        let template = Service.emailTemplate.userProfileRequestAction(userData.name,updateData.status);
+                        let template = Service.emailTemplate.userProfileRequestAction(userData.name,updateData.status,user.role);
                         mailOptions.subject=  template.subject;
                         mailOptions.html=  template.body;
                         SendEmail(mailOptions);

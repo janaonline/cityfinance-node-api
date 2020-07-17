@@ -67,13 +67,15 @@ const userProfileEdit = (name) => {
                 City Finance Team`
     };
 };
-const userProfileRequestAction = (name, status) => {
+const userProfileRequestAction = (name, status,actionTakenBy) => {
+    let str = status=="REJECTED" ? `Your account has been ${status}. by ${actionTakenBy}`: `
+Your profile update request has been successfully cancelled`;
     return {
         subject: `${status}: Profile Update Request for City Finance`,
         body: `Dear ${name},<br>
                         <br>
                         <p>
-                            Your account has been ${status}. <br>
+                            ${str} <br>
                             Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                         </p>
                         <br>
