@@ -151,7 +151,9 @@ const sendAccountReActivationEmail = (user, link) => {
     return {
         subject: `Account Activation Link for City Finance`,
         body: `Dear  ${user.name},<br>
-                    <p>Please follow this link to activate your account and set your password - <a href="${link}">Link</a>.</p> 
+                    <p>Please follow this link to activate your account ${
+                        user.role !== 'USER' ? 'and set your password' : ''
+                    }  - <a href="${link}">Link</a>.</p> 
                     <br>
                     <p> After setting your password, please visit <a href="http://www.cityfinance.in ">http://www.cityfinance.in </a> to login using your registered email id.</p>
                     
