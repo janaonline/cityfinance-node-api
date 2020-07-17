@@ -6,19 +6,20 @@ const Config = require('../config/app_config');
  *
  * @param {string} _id
  * @param {string} currentUrl
- * @param {string} token
+ * @param {boolean} forgotPassword
  */
-module.exports = (_id, currentUrl, token) => {
+module.exports = (_id, currentUrl,forgotPassword=false) => {
     return new Promise(async (resolve, reject) => {
         let select = ['_id', 'email', 'role', 'name'].join(' ');
         try {
             let link;
-            if (token) {
-                link = `${currentUrl}/api/v1/email_verification?token=${token}`;
-                return resolve(link);
-            }
+            // if (token) {
+            //     link = `${currentUrl}/api/v1/email_verification?token=${token}`;
+            //     return resolve(link);
+            // }
             let user = await User.findOne({ _id: _id }, select).lean();
             user['purpose'] = 'EMAILVERFICATION';
+            user['forgotPassword'] = forgotPassword;
             token = jwt.sign(user, Config.JWT.SECRET, {
                 expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
             });

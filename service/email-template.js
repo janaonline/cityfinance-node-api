@@ -704,7 +704,8 @@ const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl) => {
             let emails = [];
             let userInfo = await User.findOne({ _id: userOldInfo._id }).exec();
             if (userOldInfo.email && userOldInfo.email != userInfo.email) {
-                let link = await emailVericationLink(userInfo._id, currentUrl);
+                let up = await User.update({ _id: userOldInfo._id },{$set:{isEmailVerified:false}})
+                let link = await emailVericationLink(userInfo._id, currentUrl,true);
                 let template = userEmailEdit(userInfo.name, link);
                 let mailOptions = {
                     to: userInfo.email,

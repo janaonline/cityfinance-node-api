@@ -388,14 +388,11 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             name: user['name'],
             forgotPassword: user.role !== 'USER'
         };
-        const token = jwt.sign(data, Config.JWT.SECRET, {
-            expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-        });
-
+    
         let link = await Service.emailVerificationLink(
             user._id,
             req.currentUrl,
-            token
+            true
         );
         const template = Service.emailTemplate.sendAccountReActivationEmail(
             user,
@@ -422,7 +419,8 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
 
 module.exports.emailVerification = async (req, res) => {
     try {
-        let ud = { isEmailVerified: true };
+
+        let ud = {isEmailVerified:!req.decoded.forgotPassword}
         if (req.decoded.role == 'USER') {
             ud.isActive = true;
         }
