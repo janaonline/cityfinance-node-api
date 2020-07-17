@@ -297,7 +297,10 @@ module.exports.getAll = async (req, res) => {
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
                     }
-                    let users = await User.aggregate(q).exec();
+                    let users = await User.aggregate(q)
+                        .collation({ locale: 'en' })
+                        .exec();
+
                     return res.status(200).json({
                         timestamp: moment().unix(),
                         success: true,
