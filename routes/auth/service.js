@@ -363,7 +363,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             return Response.BadRequest(
                 res,
                 req.body,
-                'Account is already verified.'
+                'Account is already activated.'
             );
         if (user.isLocked)
             return Response.BadRequest(
@@ -378,10 +378,24 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
                 req.body,
                 `Account Reactivation feature is not available for role: ${user.role}.`
             );
+        /**
+         * @description In case of USER role, the password is already set during registeration process. But for others, the password need to be set after account is verified.
+         */
+        const data = {
+            _id: user['_id'],
+            email: user['email'],
+            role: user['role'],
+            name: user['name'],
+            forgotPassword: user.role !== 'USER'
+        };
+        const token = jwt.sign(data, Config.JWT.SECRET, {
+            expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
+        });
 
         let link = await Service.emailVerificationLink(
             user._id,
-            req.currentUrl
+            req.currentUrl,
+            token
         );
         const template = Service.emailTemplate.sendAccountReActivationEmail(
             user,
@@ -401,6 +415,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             `Account verification link sent to ${user.email}.`
         );
     } catch (e) {
+        console.error(e);
         return Response.BadRequest(res, req.body, `Exception occurred.`);
     }
 };
@@ -425,6 +440,8 @@ module.exports.emailVerification = async (req, res) => {
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
+
+        console.log(`decoded `, req.decoded);
 
         let pageRoute = req.decoded.forgotPassword
             ? 'password/request'
