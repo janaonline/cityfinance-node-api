@@ -189,7 +189,7 @@ module.exports.login = async (req, res) => {
                     return Response.BadRequest(
                         res,
                         {},
-                        `Your account is temporarily locked`
+                        `Your account is temporarily locked for 1 hour`
                     );
                 }
 
