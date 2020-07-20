@@ -641,12 +641,16 @@ module.exports.update = async (req, res) => {
                         ) {
                             prevState[key].completeness = 'NA';
                             prevState[key].correctness = 'NA';
+                            if (data[key].pdfUrl === '') {
+                                prevState[key].pdfUrl = '';
+                            }
+                            if (data[key].excelUrl === '') {
+                                prevState[key].excelUrl = '';
+                            }
                             if (
-                                data[key].pdfUrl === '' ||
+                                data[key].pdfUrl === '' &&
                                 data[key].excelUrl === ''
                             ) {
-                                prevState[key].pdfUrl = '';
-                                prevState[key].excelUrl = '';
                                 prevState[key].message = '';
                             }
                         } else {
