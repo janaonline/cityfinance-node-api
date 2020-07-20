@@ -176,7 +176,7 @@ module.exports.login = async (req, res) => {
             return Response.BadRequest(
                 res,
                 {},
-                `Your request has been rejected. Reason: ${user.message}`
+                `Your request has been rejected. Reason: ${user.rejectReason}`
             );
         }else if (!user.isEmailVerified) {
             return Response.BadRequest(res, err, 'Email not verified yet.');
