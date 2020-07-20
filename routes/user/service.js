@@ -289,7 +289,10 @@ module.exports.getAll = async (req, res) => {
                     if (Object.keys(sort).length) {
                         q.push({ $sort: sort });
                     }
-                    q.push({ $sort: { priority: -1 } });
+
+                    if(req.query.role=="ULB"){
+                        q.push({ $sort: { priority: -1 } });
+                    }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
                     if (!skip) {
@@ -297,6 +300,8 @@ module.exports.getAll = async (req, res) => {
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
                     }
+
+                    
                     let users = await User.aggregate(q)
                         .collation({ locale: 'en' })
                         .exec();
