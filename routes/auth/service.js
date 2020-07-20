@@ -424,7 +424,7 @@ module.exports.emailVerification = async (req, res) => {
         if (req.decoded.role == 'USER') {
             ud.isActive = true;
         }
-        let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state'];
+        let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified'];
         let query = { _id: ObjectId(req.decoded._id) };
         let user = await User.findOne(query, keys.join(' ')).exec();
         let du = await User.update(query, { $set: ud });
@@ -439,11 +439,14 @@ module.exports.emailVerification = async (req, res) => {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
 
-        console.log(`decoded `, req.decoded);
-
+        if(user.isEmailVerified==true){
+            req.decoded.forgotPassword=false;
+        }
         let pageRoute = req.decoded.forgotPassword
             ? 'password/request'
             : 'login';
+
+
 
         let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=Email verified.`;
         let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
