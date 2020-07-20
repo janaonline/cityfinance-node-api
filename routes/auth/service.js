@@ -164,8 +164,6 @@ module.exports.login = async (req, res) => {
             return Response.BadRequest(res, err, 'Db Error');
         } else if (!user) {
             return Response.BadRequest(res, err, 'User not found');
-        } else if (!user.isEmailVerified) {
-            return Response.BadRequest(res, err, 'Email not verified yet.');
         } else if (user.isDeleted) {
             return Response.BadRequest(res, err, 'User is deleted.');
         } else if (user.status == 'PENDING') {
@@ -180,6 +178,8 @@ module.exports.login = async (req, res) => {
                 {},
                 `Your request has been rejected. Reason: ${user.message}`
             );
+        }else if (!user.isEmailVerified) {
+            return Response.BadRequest(res, err, 'Email not verified yet.');
         } else {
             try {
                 if (user.isLocked) {
