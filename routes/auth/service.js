@@ -491,13 +491,10 @@ module.exports.forgotPassword = async (req, res) => {
                     }
                     data['purpose'] = 'EMAILVERFICATION';
                     data['forgotPassword'] = true;
-                    const token = jwt.sign(data, Config.JWT.SECRET, {
-                        expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-                    });
                     let link = await Service.emailVerificationLink(
                         user._id,
                         req.currentUrl,
-                        token
+                        true
                     );
                     let template = Service.emailTemplate.userForgotPassword(
                         user.name,
