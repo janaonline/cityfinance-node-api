@@ -442,10 +442,13 @@ module.exports.emailVerification = async (req, res) => {
         if(user.isEmailVerified==true){
             req.decoded.forgotPassword=false;
         }
+        if(user.isPasswordResetInProgress){
+            req.decoded.forgotPassword=false;   
+        }
+
         let pageRoute = req.decoded.forgotPassword
             ? 'password/request'
             : 'login';
-
 
 
         let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=Email verified.`;
@@ -477,6 +480,7 @@ module.exports.forgotPassword = async (req, res) => {
 
                 try {
                     //let du = await User.update({_id:user._id},{$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires}});
+                    let du = await User.update({_id:user._id},{$set:{isPasswordResetInProgress:false}})
                     let keys = ['_id', 'email', 'role', 'name'];
                     let data = {};
                     for (k in user) {
@@ -559,7 +563,8 @@ module.exports.resetPassword = async (req, res) => {
                         passwordHistory: passwordHistory,
                         password: passwordHash,
                         passwordExpires: passwordExpires,
-                        isEmailVerified: true
+                        isEmailVerified: true,
+                        isPasswordResetInProgress: true
                     }
                 };
                 let du = await User.update({ _id: ObjectId(user._id) }, update);
