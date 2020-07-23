@@ -420,11 +420,12 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
 module.exports.emailVerification = async (req, res) => {
     try {
 
+        let msg = "Email verified"   
         let ud = {isEmailVerified:!req.decoded.forgotPassword}
         if (req.decoded.role == 'USER') {
             ud.isActive = true;
         }
-        let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified'];
+        let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
         let query = { _id: ObjectId(req.decoded._id) };
         let user = await User.findOne(query, keys.join(' ')).exec();
         let du = await User.update(query, { $set: ud });
@@ -444,14 +445,14 @@ module.exports.emailVerification = async (req, res) => {
         }
         if(user.isPasswordResetInProgress){
             req.decoded.forgotPassword=false;   
+            msg = "Password is already reset"
         }
 
         let pageRoute = req.decoded.forgotPassword
             ? 'password/request'
             : 'login';
 
-
-        let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=Email verified.`;
+        let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=${msg}.`;
         let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
         return res.redirect(url);
     } catch (e) {
