@@ -219,9 +219,12 @@ module.exports.form = async function(req,res){
 
             let query = {}
             query["state"] = ObjectId(req.body["state"]);
-            let stData = await XVFcForms.findOne(query["state"]);
-            if(stData.isCompleted){
-                return Response.BadRequest(res,{},`Form is already submitted`);
+            let stData = await XVFcForms.findOne({state:query["state"]});
+
+            if(stData){
+                if(stData.isCompleted){
+                    return Response.BadRequest(res,{},`Form is already submitted`);
+                }
             }            
             service.put(query,req.body,XVFcForms,async function(response,value){
 
