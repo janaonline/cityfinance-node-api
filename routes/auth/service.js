@@ -443,7 +443,7 @@ module.exports.emailVerification = async (req, res) => {
         if(user.isEmailVerified==true){
             req.decoded.forgotPassword=false;
         }
-        if(user.isPasswordResetInProgress){
+        if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
             req.decoded.forgotPassword=false;   
             msg = "Password is already reset"
         }
