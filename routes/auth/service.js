@@ -469,7 +469,14 @@ module.exports.forgotPassword = async (req, res) => {
                     {},
                     `Requested email:${req.body.email} is not registered.`
                 );
-            } else {
+            }else if (!user.isEmailVerified) {
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Requested email:${req.body.email} is not verified.`
+                );
+            }
+            else {
                 let newPassword = Service.getRndInteger(
                     10000,
                     99999
