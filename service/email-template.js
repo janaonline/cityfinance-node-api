@@ -68,7 +68,7 @@ const userProfileEdit = (name) => {
     };
 };
 const userProfileRequestAction = (name, status,actionTakenBy) => {
-    let str = status=="REJECTED" ? `Your account has been ${status}. by ${actionTakenBy}`: `
+    let str = status=="REJECTED" ? `Your account has been ${status}. by ${actionTakenBy.toLowerCase()}`: `
 Your profile update request has been successfully cancelled`;
     return {
         subject: `${status}: Profile Update Request for City Finance`,
@@ -465,7 +465,8 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                         }
                     ],
                     ulbUser: { $arrayElemAt: ['$ulbUser', 0] },
-                    stateUser: { $arrayElemAt: ['$stateUser', 0] }
+                    //stateUser: { $arrayElemAt: ['$stateUser', 0] }
+                    stateUser:1  
                 }
             },
             {
@@ -482,17 +483,20 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                         accountantName: '$ulbUser.accountantName',
                         accountantEmail: '$ulbUser.accountantEmail'
                     },
-                    stateUser: {
-                        name: '$stateUser.name',
-                        email: '$stateUser.email',
-                        departmentEmail: '$stateUser.departmentEmail'
-                    }
+                    // stateUser: {
+                    //     name: '$stateUser.name',
+                    //     email: '$stateUser.email',
+                    //     departmentEmail: '$stateUser.departmentEmail'
+                    // }
+                    stateUser:1
                 }
             }
         ];
+
         try {
             let ufd = await UlbFinancialData.aggregate(query).exec();
             let data = ufd && ufd.length ? ufd[0] : null;
+
             let ulbEmails = [];
             data.ulbUser.commissionerEmail
                 ? ulbEmails.push(data.ulbUser.commissionerEmail)
@@ -501,20 +505,20 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                 ? ulbEmails.push(data.ulbUser.accountantEmail)
                 : '';
             let stateEmails = [];
-            data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
-            data.stateUser.departmentEmail
-                ? stateEmails.push(data.stateUser.departmentEmail)
-                : '';
+            //data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
+            //data.stateUser.departmentEmail ? stateEmails.push(data.stateUser.departmentEmail): '';
+
             let mailOptionUlb = {
                 to: ulbEmails.join(),
                 subject: '',
                 html: ''
             };
             let mailOptionState = {
-                to: stateEmails.join(),
+                to: '',
                 subject: '',
                 html: ''
             };
+
             if (data && (type == 'UPLOAD' || type == 'ACTION')) {
                 if (type == 'UPLOAD') {
                     let templateUlb = fdUploadUlb(
@@ -525,16 +529,26 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                     );
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
+                    Email(mailOptionUlb);
+                    for(let d of data.stateUser){
+                        //data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
+                        //data.stateUser.departmentEmail ? stateEmails.push(data.stateUser.departmentEmail): '';
+                        d.email ? stateEmails.push(d.email) : '';
+                        d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
 
-                    let templateState = fdUploadState(
-                        data.stateUser.name,
-                        data.ulbUser.name,
-                        data.referenceCode,
-                        data.financialYear,
-                        data.audited
-                    );
-                    mailOptionState.subject = templateState.subject;
-                    mailOptionState.html = templateState.body;
+                        let templateState = fdUploadState(
+                            d.name,
+                            data.ulbUser.name,
+                            data.referenceCode,
+                            data.financialYear,
+                            data.audited
+                        );
+
+                        mailOptionState.to = stateEmails.join();
+                        mailOptionState.subject = templateState.subject;
+                        mailOptionState.html = templateState.body;
+                        Email(mailOptionState);
+                    }
                 } else if (type == 'ACTION') {
                     if (data.status == 'APPROVED') {
                         let templateUlb = fdUploadApprovalUlb(
@@ -545,16 +559,25 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                         );
                         mailOptionUlb.subject = templateUlb.subject;
                         mailOptionUlb.html = templateUlb.body;
+                        Email(mailOptionUlb);
 
-                        let templateState = fdUploadApprovalState(
-                            data.stateUser.name,
-                            data.ulbUser.name,
-                            data.referenceCode,
-                            data.financialYear,
-                            data.audited
-                        );
-                        mailOptionState.subject = templateState.subject;
-                        mailOptionState.html = templateState.body;
+                        for(let d of data.stateUser){
+
+                            d.email ? stateEmails.push(d.email) : '';
+                            d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
+
+                            let templateState = fdUploadApprovalState(
+                                data.stateUser.name,
+                                data.ulbUser.name,
+                                data.referenceCode,
+                                data.financialYear,
+                                data.audited
+                            );
+                            mailOptionState.to = stateEmails.join();
+                            mailOptionState.subject = templateState.subject;
+                            mailOptionState.html = templateState.body;
+                            Email(mailOptionState);
+                        }
                     } else if (data.status == 'REJECTED') {
                         let reportsStr = ``;
                         for (let m of data.reports) {
@@ -572,20 +595,29 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                         );
                         mailOptionUlb.subject = templateUlb.subject;
                         mailOptionUlb.html = templateUlb.body;
-                        let templateState = fdUploadRejectionState(
-                            data.stateUser.name,
-                            data.ulbUser.name,
-                            data.referenceCode,
-                            data.financialYear,
-                            data.audited,
-                            reportsStr
-                        );
-                        mailOptionState.subject = templateState.subject;
-                        mailOptionState.html = templateState.body;
+                        Email(mailOptionUlb);
+
+                        for(let d of data.stateUser){
+                            d.email ? stateEmails.push(d.email) : '';
+                            d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
+                            let templateState = fdUploadRejectionState(
+                                data.stateUser.name,
+                                data.ulbUser.name,
+                                data.referenceCode,
+                                data.financialYear,
+                                data.audited,
+                                reportsStr
+                            );
+                            mailOptionState.to = stateEmails.join();
+                            mailOptionState.subject = templateState.subject;
+                            mailOptionState.html = templateState.body;
+                            Email(mailOptionState);
+                        }
+
                     }
                 }
-                Email(mailOptionUlb);
-                Email(mailOptionState);
+                //Email(mailOptionUlb);
+                //Email(mailOptionState);
                 resolve('send');
             } else {
                 reject(`Record not found.`);
