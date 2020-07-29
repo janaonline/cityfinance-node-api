@@ -266,7 +266,7 @@ function getOverallQuery(financialYear, state = null) {
           };
 
     return [
-        { $match: { financialYear: financialYear } },
+        { $match: { financialYear: financialYear,isActive:true} },
         overallulbs,
         {
             $project: {
@@ -349,7 +349,7 @@ function getOverallQuery(financialYear, state = null) {
     ];
 }
 function getStatewiseQuery(financialYear, state = null) {
-    let queryArr = state ? [{ $match: { _id: state } }] : [];
+    let queryArr = state ? [{$match:{ _id:state,isActive:true}}] : [{$match:{isActive:true}}];
     return queryArr.concat([
         {
             $lookup: {
@@ -444,7 +444,7 @@ function getStatewiseQuery(financialYear, state = null) {
     ]);
 }
 function getUlbtypewiseQuery(financialYear, state = null) {
-    let stateCondition = state ? { state: state } : {};
+    let stateCondition = state ? { state:state,isActive:true} : {isActive:true};
     return [
         {
             $lookup: {
@@ -530,7 +530,7 @@ function getUlbtypewiseQuery(financialYear, state = null) {
     ];
 }
 function getStateAndUlbtypewsiseQuery(financialYear, state = null) {
-    let queryArr = state ? [{ $match: { _id: state } }] : [];
+    let queryArr = state ? [{ $match: { _id: state,isActive:true } }] : [{$match:{isActive:true}}];
     return queryArr.concat([
         {
             $project: {
