@@ -321,8 +321,9 @@ module.exports.getAll = async (req, res)=>{
             q.push({$sort:{priority:-1 }})
 
             if(csv){
+
                 let field = user.role == "ULB" ? {
-                    createdAt:"Created At",
+                    createdAt:"Request Created On",
                     status:"Status"
                 } : {
                     stateName:"State",
@@ -331,7 +332,11 @@ module.exports.getAll = async (req, res)=>{
                     status:"Status"
                 };
                 let arr = await UlbUpdateRequest.aggregate(q).exec();
+
                 let xlsData = await Service.dataFormating(arr,field);
+
+                res.json(xlsData);return;
+
                 return res.xls('ulb-update-request.xlsx',xlsData);
             }else{
                 if(!skip) {
