@@ -649,6 +649,15 @@ module.exports.ulbSignupAction = async (req, res) => {
         if (userData) {
             if (access[user.role].indexOf(userData.role) > -1) {
                 try {
+
+                    if(userData.status==data.status){
+                        return Response.BadRequest(
+                            res,
+                            req.body,
+                            `Request is Already ${data.status}`
+                        );
+                    }
+
                     let d = {
                         modifiedAt: new Date(),
                         status: data.status,
