@@ -445,9 +445,9 @@ module.exports.emailVerification = async (req, res) => {
         // console.log('decoded',req.decoded);
         // return;
 
-        // // if(user.isEmailVerified==true){
-        // //     req.decoded.forgotPassword=false;
-        // // }
+        if(user.isEmailVerified==false){
+            req.decoded.forgotPassword=false;
+        }
         if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
             req.decoded.forgotPassword=false;   
             msg = "Password is already reset"
