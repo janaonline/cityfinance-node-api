@@ -428,6 +428,9 @@ module.exports.emailVerification = async (req, res) => {
         let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
         let query = { _id: ObjectId(req.decoded._id) };
         let user = await User.findOne(query, keys.join(' ')).exec();
+        if(user.role!="USER" ){
+            ud.isEmailVerified = user.isEmailVerified
+        }
         let du = await User.update(query, { $set: ud });
         let data = {};
         for (k in user) {
