@@ -307,12 +307,12 @@ module.exports.verifyToken = (req, res, next) => {
                         .exec();
                     if (login) {
                         if (Date.now() >= login.inactiveSessionTime) {
-                            // return Response.UnAuthorized(
-                            //     res,
-                            //     {},
-                            //     `The client's session has expired and must log in again.`,
-                            //     440
-                            // );
+                            return Response.UnAuthorized(
+                                res,
+                                {},
+                                `The client's session has expired and must log in again.`,
+                                440
+                            );
                         }
                         let inactiveTime =
                             Date.now() + Helper.INACTIVETIME.TIME;
