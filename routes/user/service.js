@@ -523,7 +523,7 @@ module.exports.create = async (req, res) => {
                 ? (newUser.email = newUser.commissionerEmail)
                 : '';
             newUser.createdBy = user._id;
-            newUser.isEmailVerified = true; //@todo need to remove on production
+            newUser.isEmailVerified = false;
             console.log(newUser);
             newUser.save(async (err, user) => {
                 if (err) {
