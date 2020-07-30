@@ -339,6 +339,12 @@ module.exports.ulbForm = async function(req,res){
             req.body["questionnaireType"] = "ulb";
             let query = {}
             query["ulb"] = ObjectId(ulb);
+            let ulbData = await XVFcForms.findOne({ulb:query["ulb"]});
+            if(ulbData){
+                if(ulbData.isCompleted){
+                    return Response.BadRequest(res,{},`Form is already submitted`);
+                }
+            }
             service.put(query,req.body,XVFcForms,async function(response,value){
                 return res.status(response ? 200 : 400).send(value);
             });                   
