@@ -449,7 +449,7 @@ module.exports.emailVerification = async (req, res) => {
         // return;
 
         if(user.isEmailVerified==false){
-            req.decoded.forgotPassword=false;
+            req.decoded.forgotPassword=true;
         }
         if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
             req.decoded.forgotPassword=false;   
