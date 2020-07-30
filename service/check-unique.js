@@ -88,7 +88,7 @@ const validate = (data, role,_id)=>{
                     {
                         key:"commissionerConatactNumber",
                         type:"mobile",
-                        message:"Commissioner conatact number already taken."
+                        message:"Commissioner contact number already taken."
                     },
                     {
                         key:"accountantConatactNumber",
