@@ -336,6 +336,7 @@ module.exports.getAll = async (req, res) => {
                 }
             ];
             let newFilter = await Service.mapFilter(filter);
+
             let total = undefined;
             if (user.role == 'STATE') {
                 newFilter['state'] = ObjectId(user.state);
@@ -347,9 +348,10 @@ module.exports.getAll = async (req, res) => {
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
+
+
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
-                q.push({ $sort: { priority: -1 } });
             } else {
                 q.push({ $sort: { createdAt: -1 } });
                 q.push({ $sort: { priority: -1 } });
