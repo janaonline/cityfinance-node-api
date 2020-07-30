@@ -442,12 +442,6 @@ module.exports.emailVerification = async (req, res) => {
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
-
-        // console.log('du',du);
-        // console.log('user',user);
-        // console.log('decoded',req.decoded);
-        // return;
-
         if(user.isEmailVerified==false){
             req.decoded.forgotPassword=true;
         }
