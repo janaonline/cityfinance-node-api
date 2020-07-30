@@ -307,12 +307,12 @@ module.exports.verifyToken = (req, res, next) => {
                         .exec();
                     if (login) {
                         if (Date.now() >= login.inactiveSessionTime) {
-                            return Response.UnAuthorized(
-                                res,
-                                {},
-                                `The client's session has expired and must log in again.`,
-                                440
-                            );
+                            // return Response.UnAuthorized(
+                            //     res,
+                            //     {},
+                            //     `The client's session has expired and must log in again.`,
+                            //     440
+                            // );
                         }
                         let inactiveTime =
                             Date.now() + Helper.INACTIVETIME.TIME;
@@ -421,7 +421,7 @@ module.exports.emailVerification = async (req, res) => {
     try {
 
         let msg = "Email verified"   
-        let ud = {isEmailVerified:!req.decoded.forgotPassword}
+        let ud = {isEmailVerified:true}
         if (req.decoded.role == 'USER') {
             ud.isActive = true;
         }
@@ -440,9 +440,14 @@ module.exports.emailVerification = async (req, res) => {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
 
-        if(user.isEmailVerified==true){
-            req.decoded.forgotPassword=false;
-        }
+        // console.log('du',du);
+        // console.log('user',user);
+        // console.log('decoded',req.decoded);
+        // return;
+
+        // // if(user.isEmailVerified==true){
+        // //     req.decoded.forgotPassword=false;
+        // // }
         if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
             req.decoded.forgotPassword=false;   
             msg = "Password is already reset"
