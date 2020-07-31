@@ -288,6 +288,21 @@ module.exports.verifyToken = (req, res, next) => {
         // verifies secret and checks exp
         jwt.verify(token, Config.JWT.SECRET, async function (err, decoded) {
             if (err) {
+
+                let decodedPayload = jwt.decode(token);
+
+                if(decodedPayload.forgotPassword || decodedPayload.purpose=="EMAILVERFICATION"){
+
+                    let msg = "Link is already expired"
+                    let pageRoute = decodedPayload.forgotPassword
+                    ? 'password/request'
+                    : 'account-reactivate';
+
+                    let queryStr = `token=${token}&email=${decodedPayload.email}&message=${msg}.`;
+                    let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
+                    return res.redirect(url)   
+                }
+
                 console.log('verify-token jwt.verify : ', err.message);
                 return Response.UnAuthorized(
                     res,
