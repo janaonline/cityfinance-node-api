@@ -248,6 +248,14 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+
+            let status = 'PENDING'
+            if(user.role=='ULB'){
+                status = 'REJECTED'
+            }
+
+            console.log(status);
+
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
                 {
@@ -298,7 +306,7 @@ module.exports.getAll = async (req, res) => {
                     $addFields: {
                         priority: {
                             $cond: {
-                                if: { $eq: ['$status', 'PENDING'] },
+                                if: { $eq: ['$status', `${status}`] },
                                 then: 2,
                                 else: 1
                             }
@@ -335,6 +343,7 @@ module.exports.getAll = async (req, res) => {
                     }
                 }
             ];
+
             let newFilter = await Service.mapFilter(filter);
 
             let total = undefined;
