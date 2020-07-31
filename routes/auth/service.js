@@ -299,7 +299,7 @@ module.exports.verifyToken = (req, res, next) => {
                     ? 'password/request'
                     : 'account-reactivate';
 
-                    let queryStr = `token=${token}&email=${decodedPayload.email}&message=${msg}.`;
+                    let queryStr = `email=${decodedPayload.email}&message=${msg}.`;
                     let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
                     return res.redirect(url)   
                 }
@@ -470,7 +470,7 @@ module.exports.emailVerification = async (req, res) => {
             ? 'password/request'
             : 'login';
 
-        let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=${msg}.`;
+        let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=${msg}`;
         let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
         return res.redirect(url);
     } catch (e) {
