@@ -285,16 +285,17 @@ module.exports.verifyToken = (req, res, next) => {
         req.headers['x-access-token'];
 
     if (token) {
+
+        let decodedPayload = jwt.decode(token);
         // verifies secret and checks exp
         jwt.verify(token, Config.JWT.SECRET, async function (err, decoded) {
             if (err) {
 
                 let decodedPayload = jwt.decode(token);
-
                 if(decodedPayload.forgotPassword || decodedPayload.purpose=="EMAILVERFICATION"){
 
                     let msg = "Link is already expired"
-                    let pageRoute = decodedPayload.forgotPassword
+                    let pageRoute = decodedPayload.url
                     ? 'password/request'
                     : 'account-reactivate';
 

@@ -20,6 +20,9 @@ module.exports = (_id, currentUrl,forgotPassword=false) => {
             let user = await User.findOne({ _id: _id }, select).lean();
             user['purpose'] = 'EMAILVERFICATION';
             user['forgotPassword'] = forgotPassword;
+            if(forgotPassword){
+             user['url']='password/request' 
+            }
             token = jwt.sign(user, Config.JWT.SECRET, {
                 expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
             });
