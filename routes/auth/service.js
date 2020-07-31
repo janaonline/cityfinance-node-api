@@ -436,7 +436,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
 module.exports.emailVerification = async (req, res) => {
     try {
 
-        let msg = "Email verified"   
+        let msg = req.decoded.forgotPassword ? "":"Email verified"   
         let ud = {isEmailVerified:true}
         if (req.decoded.role == 'USER') {
             ud.isActive = true;
