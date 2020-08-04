@@ -8,50 +8,100 @@ const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
-const request = require("request");
-module.exports.register = async (req, res)=>{
-    try{
+const request = require('request');
+module.exports.register = async (req, res) => {
+    try {
         let data = req.body;
         data.role = data.role ? data.role : Constants.USER.DEFAULT_ROLE;
-        if(data.role == "ULB"){
-            data.status = "PENDING";
-            if(data.commissionerEmail && data.ulb){
-                let user = await User.findOne({ulb:ObjectId(data.ulb), role:data.role, isDeleted:false}).lean().exec();
-                if(user){
-                    return Response.BadRequest(res, {data},`Already an user is registered with requested ulb.`)
+        if (data.role == 'ULB') {
+            data.status = 'PENDING';
+            if (data.commissionerEmail && data.ulb) {
+                let user = await User.findOne({
+                    ulb: ObjectId(data.ulb),
+                    role: data.role,
+                    isDeleted: false
+                })
+                    .lean()
+                    .exec();
+                if (user) {
+                    if (user.status == 'REJECTED') {
+                        let d = User.deleteOne({
+                            ulb: ObjectId(data.ulb),
+                            role: data.role,
+                            isDeleted: false
+                        }).exec();
+                    } else {
+                        return Response.BadRequest(
+                            res,
+                            { data },
+                            `Already an user is registered with requested ulb.`
+                        );
+                    }
                 }
-            }else{
-                return  Response.BadRequest(res, {data},`Commissioner Email and Ulb is required field.`)
+            } else {
+                return Response.BadRequest(
+                    res,
+                    { data },
+                    `Commissioner Email and Ulb is required field.`
+                );
             }
-            data["isActive"] = false;
-            data["email"] = data.commissionerEmail;
-            data["password"] = Service.getRndInteger(10000,99999).toString();
+            data['isActive'] = false;
+            data['email'] = data.commissionerEmail;
+            data['password'] = Service.getRndInteger(10000, 99999).toString();
         }
 
         let newUser = new User(data);
         let ud = await newUser.validate();
         newUser.password = await Service.getHash(newUser.password);
-        newUser.save(async (err, user)=>{
-            if(err){
-                console.log("Err",err)
-                return Response.BadRequest(res, err, err.code == 11000 ? 'Email already in use.':'Failed to register user');
+        newUser.save(async (err, user) => {
+            if (err) {
+                console.log('Err', err);
+                return Response.BadRequest(
+                    res,
+                    err,
+                    err.code == 11000
+                        ? 'Email already in use.'
+                        : 'Failed to register user'
+                );
                 //return res.json({success:false, msg: err.code == 11000 ? 'Duplicate entry.':'Failed to register user'});
-            }else{
-                let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
-                if(data.role == "ULB"){
-                    let template = Service.emailTemplate.ulbSignup(user.name,"ULB",null);
+            } else {
+                let forgotPassword = (user.role=='USER') ? false:true; 
+                let link = await Service.emailVerificationLink(
+                    user._id,
+                    req.currentUrl,
+                    forgotPassword
+                );
+                if (data.role == 'ULB') {
+                    let template = Service.emailTemplate.ulbSignup(
+                        user.name,
+                        'ULB',
+                        null
+                    );
                     let mailOptionsCommisioner = {
                         to: user.email,
                         subject: template.subject,
                         html: template.body
                     };
                     Service.sendEmail(mailOptionsCommisioner);
-                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();    
-                    
-                    if(state){
-                        for(s of state){
-                            let template = Service.emailTemplate.ulbSignup(user.name,"STATE",s.name);
+                    let state = await User.find({
+                        state: ObjectId(user.state),
+                        isActive: true,
+                        isDeleted : false,
+                        role: 'STATE'
+                    }).exec();
+                    let partner = await User.find({
+                        isActive: true,
+                        role: 'PARTNER',
+                        isDeleted : false
+                    }).exec();
+
+                    if (state) {
+                        for (s of state) {
+                            let template = Service.emailTemplate.ulbSignup(
+                                user.name,
+                                'STATE',
+                                s.name
+                            );
                             let mailOptions = {
                                 to: s.email,
                                 subject: template.subject,
@@ -61,9 +111,13 @@ module.exports.register = async (req, res)=>{
                         }
                     }
 
-                    if(partner){
-                        for(p of partner){
-                            let template = Service.emailTemplate.ulbSignup(user.name,"PARTNER",p.name);
+                    if (partner) {
+                        for (p of partner) {
+                            let template = Service.emailTemplate.ulbSignup(
+                                user.name,
+                                'PARTNER',
+                                p.name
+                            );
                             let mailOptions = {
                                 to: p.email,
                                 subject: template.subject,
@@ -80,9 +134,11 @@ module.exports.register = async (req, res)=>{
                         html: templateAcountant.body
                     };
                     Service.sendEmail(mailOptionsAccountant);*/
-
-                }else{
-                    let template = Service.emailTemplate.userSignup(user.name, link);
+                } else {
+                    let template = Service.emailTemplate.userSignup(
+                        user.name,
+                        link
+                    );
                     let mailOptions = {
                         to: user.email,
                         subject: template.subject,
@@ -90,78 +146,105 @@ module.exports.register = async (req, res)=>{
                     };
                     Service.sendEmail(mailOptions);
                 }
-                return  Response.OK(res, user, `User registered`);
+                return Response.OK(res, user, `User registered`);
             }
         });
-    }catch (e) {
-        console.log("Exception",e);
-        if(e.errors && Object.keys(e.errors).length){
+    } catch (e) {
+        console.log('Exception', e);
+        if (e.errors && Object.keys(e.errors).length) {
             let o = {};
-            for(k in e.errors){
-                o[k] = e.errors[k].message
+            for (k in e.errors) {
+                o[k] = e.errors[k].message;
             }
-            return Response.DbError(res, o,"Validation error")
-        }else {
-            return Response.DbError(res, e,"Validation error")
+            return Response.DbError(res, o, 'Validation error');
+        } else {
+            return Response.DbError(res, e, 'Validation error');
         }
     }
 };
-module.exports.login = async (req, res)=>{
-    User.findOne({email: req.sanitize(req.body.email)}, async (err, user)=>{
-        if(err){
-            return Response.BadRequest(res, err,'Db Error');
-        }else if(!user){
-            return Response.BadRequest(res, err,'User not found');
-        }else if(!user.isEmailVerified){
-            return Response.BadRequest(res, err,'Email not verified yet.');
-        } else if(user.isDeleted){
-            return Response.BadRequest(res, err,'User is deleted.');
-        }else if(user.status == "PENDING"){
-            return Response.BadRequest(res, {},'Waiting for admin action on request.');
-        }else if(user.status == "REJECTED"){
-            return Response.BadRequest(res, {},`Your request has been rejected. Reason: ${user.message}`);
-        }else {
-            try{
-
+module.exports.login = async (req, res) => {
+    User.findOne({ email: req.sanitize(req.body.email) }, async (err, user) => {
+        if (err) {
+            return Response.BadRequest(res, err, 'Db Error');
+        } else if (!user) {
+            return Response.BadRequest(res, err, 'User not found');
+        } else if (user.isDeleted) {
+            return Response.BadRequest(res, err, 'User is deleted.');
+        } else if (user.status == 'PENDING') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Waiting for admin action on request.'
+            );
+        } else if (user.status == 'REJECTED') {
+            return Response.BadRequest(
+                res,
+                {},
+                `Your request has been rejected. Reason: ${user.rejectReason}`
+            );
+        }else if (!user.isEmailVerified) {
+            return Response.BadRequest(res, err, 'Email not verified yet.');
+        } else {
+            try {
                 if (user.isLocked) {
                     // just increment login attempts if account is already locked
                     let update = Service.incLoginAttempts(user);
-                    await User.update({email:user.email},update).exec();  
-                    return Response.BadRequest(res, {}, `Your account is temporarily locked`);
+                    await User.update({ email: user.email }, update).exec();
+                    return Response.BadRequest(
+                        res,
+                        {},
+                        `Your account is temporarily locked for 1 hour`
+                    );
                 }
 
-                // check Password Expiry 
+                // check Password Expiry
                 if (user.passwordExpires && user.passwordExpires < Date.now()) {
                     //return Response.UnAuthorized(res, {},`Please reset your password.`);
                 }
 
                 let sessionId = req.headers.sessionid;
-                let isMatch = await Service.compareHash(req.body.password, user.password);
+                let isMatch = await Service.compareHash(
+                    req.body.password,
+                    user.password
+                );
                 if (isMatch) {
-                    let keys  = ["_id","email","role","name",'ulb','state','isActive'];
+                    let keys = [
+                        '_id',
+                        'email',
+                        'role',
+                        'name',
+                        'ulb',
+                        'state',
+                        'isActive'
+                    ];
                     let data = {};
-                    for(k in user){
-                        if(keys.indexOf(k)>-1){
+                    for (k in user) {
+                        if (keys.indexOf(k) > -1) {
                             data[k] = user[k];
                         }
                     }
 
-                    let inactiveTime = Date.now()+ Helper.INACTIVETIME.TIME; 
-                    let loginHistory = new LoginHistory({user:user._id, loggedInAt: new Date(),visitSession:ObjectId(sessionId),inactiveSessionTime:inactiveTime});
+                    let inactiveTime = Date.now() + Helper.INACTIVETIME.TIME;
+                    let loginHistory = new LoginHistory({
+                        user: user._id,
+                        loggedInAt: new Date(),
+                        visitSession: ObjectId(sessionId),
+                        inactiveSessionTime: inactiveTime
+                    });
                     let lh = await loginHistory.save();
                     data['purpose'] = 'WEB';
                     data['lh_id'] = lh._id;
                     data['sessionId'] = sessionId;
-                    data["passwordExpires"] = user.passwordExpires;
-                    data["passwordHistory"] = user.passwordHistory;
+                    data['passwordExpires'] = user.passwordExpires;
+                    data['passwordHistory'] = user.passwordHistory;
                     const token = jwt.sign(data, Config.JWT.SECRET, {
                         expiresIn: Config.JWT.TOKEN_EXPIRY
                     });
 
                     var updates = {
-                        $set: { loginAttempts: 0}
+                        $set: { loginAttempts: 0 }
                     };
-                    await User.update({email:user.email},updates).exec()// set     
+                    await User.update({ email: user.email }, updates).exec(); // set
                     return res.status(200).json({
                         success: true,
                         token: token,
@@ -169,82 +252,209 @@ module.exports.login = async (req, res)=>{
                             name: user.name,
                             email: user.email,
                             isActive: user.isActive,
-                            role:user.role,
-                            state:user.state,
-                            ulb:user.ulb
+                            role: user.role,
+                            state: user.state,
+                            ulb: user.ulb
                         }
                     });
                 } else {
                     let update = Service.incLoginAttempts(user);
                     console.log(update);
-                    await User.update({"email":user.email},update).exec();
-                    let attempt = await User.findOne({"email":user.email}).exec();   
-                    return Response.BadRequest(res, {"loginAttempts":attempt.loginAttempts}, `Invalid username or password`);
+                    await User.update({ email: user.email }, update).exec();
+                    let attempt = await User.findOne({
+                        email: user.email
+                    }).exec();
+                    return Response.BadRequest(
+                        res,
+                        { loginAttempts: attempt.loginAttempts },
+                        `Invalid username or password`
+                    );
                 }
-            }catch (e) {
-                console.log("Error",e.message, e);
-                return Response.BadRequest(res, {}, `Erorr while comparing password.`);
+            } catch (e) {
+                console.log('Error', e.message, e);
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Erorr while comparing password.`
+                );
             }
         }
-    })
+    });
 };
-module.exports.verifyToken = (req, res, next)=>{
-    var token = req.body.token || req.query.token || req.params.token || req.headers['x-access-token'];
+module.exports.verifyToken = (req, res, next) => {
+    let token =
+        req.body.token ||
+        req.query.token ||
+        req.params.token ||
+        req.headers['x-access-token'];
+
     if (token) {
+
+        let decodedPayload = jwt.decode(token);
         // verifies secret and checks exp
-        jwt.verify(token, Config.JWT.SECRET, function(err, decoded) {
+        jwt.verify(token, Config.JWT.SECRET, async function (err, decoded) {
             if (err) {
-                console.log("verify-token jwt.verify : ",err.message);
-                return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
+
+                let decodedPayload = jwt.decode(token);
+                if(decodedPayload.forgotPassword || decodedPayload.purpose=="EMAILVERFICATION"){
+
+                    let msg = "Link is already expired"
+                    let pageRoute = decodedPayload.url
+                    ? 'password/request'
+                    : 'account-reactivate';
+
+                    let queryStr = `email=${decodedPayload.email}&message=${msg}.`;
+                    let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
+                    return res.redirect(url)   
+                }
+
+                console.log('verify-token jwt.verify : ', err.message);
+                return Response.UnAuthorized(
+                    res,
+                    {},
+                    `Failed to authenticate token.`
+                );
             } else {
                 req.decoded = decoded;
+                if (req.decoded.sessionId) {
+                    userId = ObjectId(req.decoded._id);
+                    let query = {
+                        user: ObjectId(userId),
+                        visitSession: ObjectId(req.decoded.sessionId)
+                    };
+                    let login = await LoginHistory.findOne(query)
+                        .sort({ _id: -1 })
+                        .exec();
+                    if (login) {
+                        if (Date.now() >= login.inactiveSessionTime) {
+                            return Response.UnAuthorized(
+                                res,
+                                {},
+                                `The client's session has expired and must log in again.`,
+                                440
+                            );
+                        }
+                        let inactiveTime =
+                            Date.now() + Helper.INACTIVETIME.TIME;
+                        let u = LoginHistory.update(
+                            { _id: ObjectId(login._id) },
+                            { $set: { inactiveSessionTime: inactiveTime } }
+                        ).exec();
+                    } else {
+                        return Response.UnAuthorized(
+                            res,
+                            {},
+                            `LoginHistory Not found`,
+                            400
+                        );
+                    }
+                } else {
+                    //    return Response.UnAuthorized(res, {},`No sessionId provided`);
+                }
+
                 next();
             }
         });
     } else {
         // if there is no token
         // return an error
-        return res.status(403).send({ success: false,message: 'No token provided.'});
+        return res
+            .status(403)
+            .send({ success: false, message: 'No token provided.' });
     }
 };
-module.exports.resendVerificationLink = async (req, res)=>{
-    try{
-        let keys  = ["_id","email","role","name"];
-        let user = await User.findOne({email:req.body.email}, keys.join(" ")).exec();
-        if(user){
-            let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
-            let mailOptions = {
-                to: user.email, //list of receivers
-                subject: "Email Verification", //Subject line
-                html: `
-                    <b>Hi ${user.name},</b>
-                    <p>Please verify link.</p>
-                    <a href="${link}">click to activate</a>
-                ` // html body
-            };
-            Service.sendEmail(mailOptions);
-            return Response.OK(res, user, `Email verification link sent to ${user.email}.`);
-        }else{
-            return Response.BadRequest(res, req.body, `Email not found.`)
-        }
-    }catch (e) {
-        return Response.BadRequest(res, req.body, `Exception occurred.`)
+
+module.exports.resendAccountVerificationLink = async (req, res) => {
+    try {
+        let keys = [
+            '_id',
+            'email',
+            'role',
+            'name',
+            'isEmailVerified',
+            'isLocked'
+        ];
+        let user = await User.findOne(
+            { email: req.body.email, isDeleted: false },
+            keys.join(' ')
+        ).exec();
+        if (!user) return Response.BadRequest(res, req.body, `Email not Found`);
+        if (user.isEmailVerified)
+            return Response.BadRequest(
+                res,
+                req.body,
+                'Account is already activated.'
+            );
+        if (user.isLocked)
+            return Response.BadRequest(
+                res,
+                req.body,
+                'Activation link cannot be send since account is locked. Kindly wait until account is unlocked, then try again.'
+            );
+        const validUserTypes = ['USER', 'ULB', 'STATE', 'PARTNER', 'MoHUA'];
+        if (!validUserTypes.includes(user.role))
+            return Response.BadRequest(
+                res,
+                req.body,
+                `Account Reactivation feature is not available for role: ${user.role}.`
+            );
+        /**
+         * @description In case of USER role, the password is already set during registeration process. But for others, the password need to be set after account is verified.
+         */
+        const data = {
+            _id: user['_id'],
+            email: user['email'],
+            role: user['role'],
+            name: user['name'],
+            forgotPassword: user.role !== 'USER'
+        };
+    
+        let link = await Service.emailVerificationLink(
+            user._id,
+            req.currentUrl,
+            true
+        );
+        const template = Service.emailTemplate.sendAccountReActivationEmail(
+            user,
+            link
+        );
+        let mailOptions = {
+            to: user.email,
+            subject: template.subject,
+            html: template.body
+        };
+
+        Service.sendEmail(mailOptions);
+
+        return Response.OK(
+            res,
+            {},
+            `Account verification link sent to ${user.email}.`
+        );
+    } catch (e) {
+        console.error(e);
+        return Response.BadRequest(res, req.body, `Exception occurred.`);
     }
 };
-module.exports.emailVerification = async (req, res)=>{
-    try{
-        let ud = {isEmailVerified:true};
-        if(req.decoded.role == "USER"){
+
+module.exports.emailVerification = async (req, res) => {
+    try {
+
+        let msg = req.decoded.forgotPassword ? "":"Email verified"   
+        let ud = {isEmailVerified:true}
+        if (req.decoded.role == 'USER') {
             ud.isActive = true;
         }
-        let keys  = ["_id","email","role","name",'ulb','state'];
-        let query = {_id:ObjectId(req.decoded._id)};
-        console.log(query);
-        let user = await User.findOne(query,keys.join(" ")).exec();
-        let du = await User.update(query,{$set:ud});
+        let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
+        let query = { _id: ObjectId(req.decoded._id) };
+        let user = await User.findOne(query, keys.join(' ')).exec();
+        if(user.role!="USER" ){
+            ud.isEmailVerified = user.isEmailVerified
+        }
+        let du = await User.update(query, { $set: ud });
         let data = {};
-        for(k in user){
-            if(keys.indexOf(k)>-1){
+        for (k in user) {
+            if (keys.indexOf(k) > -1) {
                 data[k] = user[k];
             }
         }
@@ -252,158 +462,223 @@ module.exports.emailVerification = async (req, res)=>{
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
-        let pageRoute = req.decoded.role == "USER" && !req.decoded.forgotPassword ? "login" : "password/request";
-        let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=Email verified.`
+        if(user.isEmailVerified==false){
+            req.decoded.forgotPassword = user.role=="USER" ? false : true;
+        }
+        if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
+            req.decoded.forgotPassword=false;   
+            msg = "Password is already reset"
+        }
+        let pageRoute = req.decoded.forgotPassword
+            ? 'password/request'
+            : 'login';
+
+        let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=${msg}`;
         let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
         return res.redirect(url);
-    }catch (e) {
+    } catch (e) {
         return res.send(`<h1>Error Occurred:</h1><p>${e.message}</p>`);
     }
 };
-module.exports.forgotPassword = async (req, res)=>{
-    try{
-        let user = await User.findOne({email: req.body.email}).exec();
-        if(user){
-            if(user.isDeleted){
-                return Response.BadRequest(res, {},`Requested email:${req.body.email} is not registered.`);
-            }else if(!user.isActive){
-                return Response.BadRequest(res, {},`Requested email:${req.body.email} is not activated.`);
-            }else {
-                let newPassword = Service.getRndInteger(10000,99999).toString();
+module.exports.forgotPassword = async (req, res) => {
+    try {
+        let user = await User.findOne({ email: req.body.email }).exec();
+        if (user) {
+            if (user.isDeleted) {
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Requested email:${req.body.email} is not registered.`
+                );
+            }else if (!user.isEmailVerified) {
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Requested email:${req.body.email} is not verified.`
+                );
+            }
+            else {
+                let newPassword = Service.getRndInteger(
+                    10000,
+                    99999
+                ).toString();
                 let passwordHash = await Service.getHash(newPassword);
-                let passwordExpires = Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
-                let passwordHistory = setPasswordHistory(user,passwordHash);    
+                let passwordExpires =
+                    Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
+                let passwordHistory = setPasswordHistory(user, passwordHash);
 
-                try{
+                try {
                     //let du = await User.update({_id:user._id},{$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires}});
-                    let keys  = ["_id","email","role","name"];
+                    let du = await User.update({_id:user._id},{$set:{isPasswordResetInProgress:false}})
+                    let keys = ['_id', 'email', 'role', 'name'];
                     let data = {};
-                    for(k in user){
-                        if(keys.indexOf(k)>-1){
+                    for (k in user) {
+                        if (keys.indexOf(k) > -1) {
                             data[k] = user[k];
                         }
                     }
                     data['purpose'] = 'EMAILVERFICATION';
-                    data["forgotPassword"] = true;
-                    const token = jwt.sign(data, Config.JWT.SECRET, {
-                        expiresIn: Config.JWT.EMAIL_VERFICATION_EXPIRY
-                    });
-                    let link  =  await Service.emailVerificationLink(user._id,req.currentUrl);
-                    let template = Service.emailTemplate.userForgotPassword(user.name,link);
+                    data['forgotPassword'] = true;
+                    let link = await Service.emailVerificationLink(
+                        user._id,
+                        req.currentUrl,
+                        true
+                    );
+                    let template = Service.emailTemplate.userForgotPassword(
+                        user.name,
+                        link
+                    );
                     let mailOptions = {
                         to: user.email,
                         subject: template.subject,
-                        html:template.body
+                        html: template.body
                     };
                     Service.sendEmail(mailOptions);
-                    return Response.OK(res, {},`Link sent to email ${user.email}`);
-                }catch (e) {
-                    return Response.BadRequest(res, {},`Exception: ${e.message}.`);
+                    return Response.OK(
+                        res,
+                        {},
+                        `Link sent to email ${user.email}`
+                    );
+                } catch (e) {
+                    return Response.BadRequest(
+                        res,
+                        {},
+                        `Exception: ${e.message}.`
+                    );
                 }
             }
-        }else{
-            return Response.BadRequest(res, {},`Requested email:${req.body.email} is not registered.`);
+        } else {
+            return Response.BadRequest(
+                res,
+                {},
+                `Requested email:${req.body.email} is not registered.`
+            );
         }
-    }catch (e) {
-        return Response.BadRequest(res, {},`Exception:${e.message}`);
+    } catch (e) {
+        return Response.BadRequest(res, {}, `Exception:${e.message}`);
     }
 };
-module.exports.resetPassword = async (req, res)=>{
-    try{
-        if(req.body.password){
-
-            if(req.body.password.length < 8){
-                return  Response.BadRequest(res,"",`password contain at least 8 characters`)
+module.exports.resetPassword = async (req, res) => {
+    try {
+        if (req.body.password) {
+            if (req.body.password.length < 8) {
+                return Response.BadRequest(
+                    res,
+                    '',
+                    `password contain at least 8 characters`
+                );
             }
-            if(!checkPassword(req.body.password)){
-               return  Response.BadRequest(res,"",`Password should be alphanumeric with at least one Uppercase/Lowercase and special character`)
+            if (!checkPassword(req.body.password)) {
+                return Response.BadRequest(
+                    res,
+                    '',
+                    `Password should be alphanumeric with at least one Uppercase/Lowercase and special character`
+                );
             }
 
-            let user = await User.findOne({_id:ObjectId(req.decoded._id)}).exec();
-            if(user){
+            let user = await User.findOne({
+                _id: ObjectId(req.decoded._id)
+            }).exec();
+            if (user) {
                 let passwordHash = await Service.getHash(req.body.password);
-                let passwordExpires = Date.now() + Helper.PASSWORDEXPIRETIME.TIME;; // 1 hour
-                let passwordHistory = setPasswordHistory(user,passwordHash);    
-                let update = {$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires,isEmailVerified:true}};
-                let du = await User.update({_id:ObjectId(user._id)},update);
-                return Response.OK(res, {},'Password reset');
+                let passwordExpires =
+                    Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
+                let passwordHistory = setPasswordHistory(user, passwordHash);
+                let update = {
+                    $set: {
+                        passwordHistory: passwordHistory,
+                        password: passwordHash,
+                        passwordExpires: passwordExpires,
+                        isEmailVerified: true,
+                        isPasswordResetInProgress: true
+                    }
+                };
+                let du = await User.update({ _id: ObjectId(user._id) }, update);
+                return Response.OK(res, {}, 'Password reset');
+            } else {
+                return Response.BadRequest(res, {}, `user not found.`);
             }
-            else{
-                return Response.BadRequest(res, {},`user not found.`);
-            }
-
-        }else{
-            return Response.BadRequest(res, {},`Password is required field.`);
+        } else {
+            return Response.BadRequest(res, {}, `Password is required field.`);
         }
-    }catch (e) {
-
-        return Response.BadRequest(res, {},`Exception:${e.message}`);
+    } catch (e) {
+        return Response.BadRequest(res, {}, `Exception:${e.message}`);
     }
 };
 
-module.exports.captcha = (req,res)=>{
+module.exports.captcha = (req, res) => {
     const secretKey = Config.CAPTCHA.SECRETKEY;
     let token = req.body.recaptcha;
-    if(token === null || token === undefined){
-        res.status(201).send({success: false, message: "Token is empty or invalid"})
-        return console.log("token empty");
+    if (token === null || token === undefined) {
+        res.status(201).send({
+            success: false,
+            message: 'Token is empty or invalid'
+        });
+        return console.log('token empty');
     }
-    const url =  "https://www.google.com/recaptcha/api/siteverify?secret="+secretKey+"&response="+token+"&remoteip="+req.connection.remoteAddress
-    request(url, function(err, response, body){
+    const url =
+        'https://www.google.com/recaptcha/api/siteverify?secret=' +
+        secretKey +
+        '&response=' +
+        token +
+        '&remoteip=' +
+        req.connection.remoteAddress;
+    request(url, function (err, response, body) {
         body = JSON.parse(body);
         //check if the validation failed
-        if(body.success !== undefined && !body.success){
-            res.send({success: false, 'message': "recaptcha failed"});
-            return console.log("failed")
+        if (body.success !== undefined && !body.success) {
+            res.send({ success: false, message: 'recaptcha failed' });
+            return console.log('failed');
         }
         //if passed response success message to client
-        res.send({"success": true, 'message': "recaptcha passed"});
+        res.send({ success: true, message: 'recaptcha passed' });
     });
-}
+};
 
-module.exports.totalVisit = (req,res)=>{
-
-    VisitSession.count((err, count)=>{
-        if(err){
+module.exports.totalVisit = (req, res) => {
+    VisitSession.count((err, count) => {
+        if (err) {
             return Response.DbError(res, err);
-        }else{
-            return Response.OK(res,count);
+        } else {
+            return Response.OK(res, count);
         }
     });
+};
 
-}
-
-module.exports.startSession = (req, res)=>{
+module.exports.startSession = (req, res) => {
     let visitSession = new VisitSession();
-    visitSession.save((err, data)=>{
-        if(err){
+    visitSession.save((err, data) => {
+        if (err) {
             return Response.DbError(res, err);
-        }else{
-            return Response.OK(res,{_id:data._id});
+        } else {
+            return Response.OK(res, { _id: data._id });
         }
     });
-}
-module.exports.endSession = async(req, res)=>{
-    try{
-        let visitSession = await VisitSession.update({_id:ObjectId(req.params._id)},{$set:{isActive:false}});
+};
+module.exports.endSession = async (req, res) => {
+    try {
+        let visitSession = await VisitSession.update(
+            { _id: ObjectId(req.params._id) },
+            { $set: { isActive: false } }
+        );
         return Response.OK(res, visitSession);
-    }catch (e) {
+    } catch (e) {
         return Response.DbError(res, e);
     }
-}
+};
 
-function checkPassword(str)
-{   
+function checkPassword(str) {
     var re = /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
     return re.test(str);
 }
 
-function setPasswordHistory(user,passwordHash)
-{
-    if(Array.isArray(user.passwordHistory) && user.passwordHistory.length < 3  ){
+function setPasswordHistory(user, passwordHash) {
+    if (
+        Array.isArray(user.passwordHistory) &&
+        user.passwordHistory.length < 3
+    ) {
         user.passwordHistory.push(passwordHash);
-    }
-    else{
+    } else {
         user.passwordHistory.shift();
         user.passwordHistory.push(passwordHash);
     }
