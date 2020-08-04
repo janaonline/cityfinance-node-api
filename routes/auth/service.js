@@ -461,13 +461,12 @@ module.exports.emailVerification = async (req, res) => {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
         if(user.isEmailVerified==false){
-            req.decoded.forgotPassword=true;
+            req.decoded.forgotPassword = user.role=="USER" ? false : true;
         }
         if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
             req.decoded.forgotPassword=false;   
             msg = "Password is already reset"
         }
-
         let pageRoute = req.decoded.forgotPassword
             ? 'password/request'
             : 'login';
