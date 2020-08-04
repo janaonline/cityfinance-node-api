@@ -65,9 +65,11 @@ module.exports.register = async (req, res) => {
                 );
                 //return res.json({success:false, msg: err.code == 11000 ? 'Duplicate entry.':'Failed to register user'});
             } else {
+                let forgotPassword = (user.role=='USER') ? false:true; 
                 let link = await Service.emailVerificationLink(
                     user._id,
-                    req.currentUrl
+                    req.currentUrl,
+                    forgotPassword
                 );
                 if (data.role == 'ULB') {
                     let template = Service.emailTemplate.ulbSignup(

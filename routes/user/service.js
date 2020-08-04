@@ -536,8 +536,6 @@ module.exports.create = async (req, res) => {
                             : 'Failed to register user.'
                     );
                 } else {
-
-                    let forgotPassword = (user.role=='USER') ? false:true; 
                     let link = await Service.emailVerificationLink(
                         user._id,
                         req.currentUrl,
