@@ -86,11 +86,13 @@ module.exports.register = async (req, res) => {
                     let state = await User.find({
                         state: ObjectId(user.state),
                         isActive: true,
+                        isDeleted : false,
                         role: 'STATE'
                     }).exec();
                     let partner = await User.find({
                         isActive: true,
-                        role: 'PARTNER'
+                        role: 'PARTNER',
+                        isDeleted : false
                     }).exec();
 
                     if (state) {
