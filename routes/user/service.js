@@ -538,7 +538,8 @@ module.exports.create = async (req, res) => {
                 } else {
                     let link = await Service.emailVerificationLink(
                         user._id,
-                        req.currentUrl
+                        req.currentUrl,
+                        true
                     );
                     let template = Service.emailTemplate.userCreation(
                         user.name,
