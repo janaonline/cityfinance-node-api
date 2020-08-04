@@ -536,10 +536,12 @@ module.exports.create = async (req, res) => {
                             : 'Failed to register user.'
                     );
                 } else {
+
+                    let forgotPassword = !(user.role=='USER'); 
                     let link = await Service.emailVerificationLink(
                         user._id,
                         req.currentUrl,
-                        true
+                        forgotPassword
                     );
                     let template = Service.emailTemplate.userCreation(
                         user.name,
