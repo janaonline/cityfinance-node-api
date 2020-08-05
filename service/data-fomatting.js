@@ -3,9 +3,16 @@ module.exports = (data = [], fields = {})=>{
         let arr = [];
         if(Object.keys(fields).length){
             for(let el of data){
+
                 let obj = {};
                 for(let key in fields){
-                    obj[fields[key]] = el[key];
+                    if(key=='createdAt'){
+                       let d = el[key].toDateString().split(' ');
+                       obj[fields[key]] = d[1]+" "+d[2]+","+d[3]
+                    }
+                    else{
+                        obj[fields[key]] = el[key];
+                    }
                 }
                 arr.push(obj);
             }
@@ -13,3 +20,5 @@ module.exports = (data = [], fields = {})=>{
         resolve(arr);
     });
 }
+
+

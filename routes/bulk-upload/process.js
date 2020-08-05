@@ -402,7 +402,7 @@ module.exports = function (req, res) {
         }
         if(balanceSheet.liability!=balanceSheet.assets){
             // If balance sheet doesn't matches
-            message = "Balance sheet has liablity: "+balanceSheet.liability+" while assets :"+balanceSheet.assets;
+            message = "Balance sheet has liability: "+balanceSheet.liability+" while assets :"+balanceSheet.assets;
         }
         return message;
     }

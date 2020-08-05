@@ -152,7 +152,7 @@ module.exports.getStateListWithCoveredUlb = async (req, res)=>{
     }
 }
 
-module.exports.form = function(req,res){
+module.exports.form = async function(req,res){
 
     let user = req.decoded
     actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
@@ -219,6 +219,13 @@ module.exports.form = function(req,res){
 
             let query = {}
             query["state"] = ObjectId(req.body["state"]);
+            let stData = await XVFcForms.findOne({state:query["state"]});
+
+            if(stData){
+                if(stData.isCompleted){
+                    return Response.BadRequest(res,{},`Form is already submitted`);
+                }
+            }            
             service.put(query,req.body,XVFcForms,async function(response,value){
 
                 if(response){
@@ -332,6 +339,12 @@ module.exports.ulbForm = async function(req,res){
             req.body["questionnaireType"] = "ulb";
             let query = {}
             query["ulb"] = ObjectId(ulb);
+            let ulbData = await XVFcForms.findOne({ulb:query["ulb"]});
+            if(ulbData){
+                if(ulbData.isCompleted){
+                    return Response.BadRequest(res,{},`Form is already submitted`);
+                }
+            }
             service.put(query,req.body,XVFcForms,async function(response,value){
                 return res.status(response ? 200 : 400).send(value);
             });                   
