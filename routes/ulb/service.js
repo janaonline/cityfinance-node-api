@@ -4,10 +4,78 @@ const UlbType = require("../../models/UlbType");
 const UlbLedger= require("../../models/UlbLedger");
 const LineItem= require("../../models/LineItem");
 const OverallUlb= require("../../models/OverallUlb");
+const XVFcForms =require("../../models/XVFinanceComissionReForms");
 const service = require("../../service");
 const Response = require("../../service").response;
 const moment = require("moment");
 const ObjectId = require("mongoose").Types.ObjectId;
+
+module.exports.getFilteredUlb = async function(req,res) {
+    let query = {};
+    let query1 = {};
+    query["isActive"] = true;
+
+    try {
+        
+        if(req.query.state){     
+
+            query["state"] = ObjectId(req.query.state);           
+            let ulbIds = await Ulb.distinct("_id",query).exec(); 
+            query1["ulb"] = {$in:ulbIds};
+            query1["questionnaireType"] = "ulb"
+            let ulbId = await XVFcForms.find(query1,{_id:0,ulb:1}).exec();
+            let ulbArray = ulbId.map((s)=>{  return ObjectId(s.ulb)})
+            query["_id"] = {$in:ulbIds,$nin:ulbArray};
+        }       
+
+        try {
+            service.find(query,Ulb,function(response,value){
+            return res.status(response ? 200 : 400).send(value);
+            });
+        }catch (e) {
+            Response.DbError(res,e,`Something went wrong.` )
+        }
+    }catch (e) {
+        return  Response.InternalError(res,e.message, `Something went wrong`);
+    }
+
+}
+
+module.exports.getUlbById = function(req,res) {
+        
+    if(!req.params._id){
+
+        res.status(400).json({
+            timestamp: moment().unix(),
+            status:false,
+            message:"'_id' param can't be blank"
+        })
+    }    
+
+    let match = {$match:{}}
+    if(req.params._id){
+        match["$match"] = Object.assign({},{_id:ObjectId(req.params._id)})
+    }
+
+    let arr = [
+        match,
+        {
+            $lookup:{
+                from:"states",
+                localField:"state",
+                foreignField:"_id",
+                as:"state"
+            }
+        },
+        {$unwind:"$state"},
+        {$project:{"state":"$state"}}
+    ];
+    service.aggregate(arr,Ulb, function(response, value) {
+        return res.status(response ? 200 : 400).send(value);
+    });
+}
+
+
 module.exports.get = async function(req,res) {
     let query = {};
     query["isActive"] = true;
