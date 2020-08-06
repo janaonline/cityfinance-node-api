@@ -546,13 +546,11 @@ module.exports.action = async (req, res)=>{
     }
 }
 
-function emailNotificationToStateANDPartner(user,state,partner){
+async function emailNotificationToStateANDPartner(user,state,partner){
 
     if(state){
         for(s of state){
-
-            console.log('state',s.email);
-
+            await sleep(1000)
             let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
             let mailOptions = {
                 to: s.email,
@@ -564,8 +562,7 @@ function emailNotificationToStateANDPartner(user,state,partner){
     }
     if(partner){
         for(p of partner){
-
-            console.log('partner',p.email);
+            await sleep(1000)
             let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
             let mailOptions = {
                 to: p.email,
@@ -576,4 +573,8 @@ function emailNotificationToStateANDPartner(user,state,partner){
         }
     }
     return;
+}
+
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
 }
