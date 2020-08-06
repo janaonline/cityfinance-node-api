@@ -68,7 +68,7 @@ const userProfileEdit = (name) => {
     };
 };
 const userProfileRequestAction = (name, status,actionTakenBy) => {
-    let str = status=="REJECTED" ? `Your account has been ${status.toLowerCase()} by ${actionTakenBy.toLowerCase()}`: `
+    let str = status=="REJECTED" ? `Your profile update request has been ${status.toLowerCase()} by ${actionTakenBy.toLowerCase()}`: `
 Your profile update request has been successfully cancelled`;
     return {
         subject: `${status}: Profile Update Request for City Finance`,
