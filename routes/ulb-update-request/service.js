@@ -505,7 +505,7 @@ module.exports.action = async (req, res)=>{
                             pObj["isEmailVerified"] = false;
                             if(pObj.email != userData.email){
                                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
-                                let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
+                                let template = Service.emailTemplate.userProfileEdit(userData.name,link)
                                 mailOptions.subject=  template.subject;
                                 mailOptions.html=  template.body;
                                 SendEmail(mailOptions);
