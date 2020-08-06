@@ -567,7 +567,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                             d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
 
                             let templateState = fdUploadApprovalState(
-                                data.stateUser.name,
+                                d.name,
                                 data.ulbUser.name,
                                 data.referenceCode,
                                 data.financialYear,
