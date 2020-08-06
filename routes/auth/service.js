@@ -9,6 +9,7 @@ const Service = require('../../service');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
 const request = require('request');
+
 module.exports.register = async (req, res) => {
     try {
         let data = req.body;
@@ -97,6 +98,7 @@ module.exports.register = async (req, res) => {
 
                     if (state) {
                         for (s of state) {
+                            await sleep(1000);
                             let template = Service.emailTemplate.ulbSignup(
                                 user.name,
                                 'STATE',
@@ -113,6 +115,7 @@ module.exports.register = async (req, res) => {
 
                     if (partner) {
                         for (p of partner) {
+                            await sleep(1000);
                             let template = Service.emailTemplate.ulbSignup(
                                 user.name,
                                 'PARTNER',
@@ -683,4 +686,9 @@ function setPasswordHistory(user, passwordHash) {
         user.passwordHistory.push(passwordHash);
     }
     return user.passwordHistory;
+}
+
+
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
 }
