@@ -551,6 +551,9 @@ function emailNotificationToStateANDPartner(user,state,partner){
 
     if(state){
         for(s of state){
+
+            console.log('state',s.email);
+
             let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
             let mailOptions = {
                 to: s.email,
@@ -562,6 +565,8 @@ function emailNotificationToStateANDPartner(user,state,partner){
     }
     if(partner){
         for(p of partner){
+
+            console.log('partner',p.email);
             let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
             let mailOptions = {
                 to: p.email,
