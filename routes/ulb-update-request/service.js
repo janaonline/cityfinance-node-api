@@ -20,7 +20,6 @@ module.exports.create = async (req, res)=>{
     if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;
-
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbUpdateRequest(data);
         ulbUpdateRequest.ulb = user.ulb;
@@ -32,8 +31,8 @@ module.exports.create = async (req, res)=>{
                 let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus,createdAt:new Date()});
                 if(du.n){
 
-                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();
+                    let state = await User.find({"state":ObjectId(user.state),isActive:true,isDeleted:false,"role" : "STATE"}).exec();
+                    let partner = await User.find({isActive:true,isDeleted:false,"role" : "PARTNER"}).exec();
                     emailNotificationToStateANDPartner(user,state,partner);
 
                     return  Response.OK(res,du,'Request for change has been sent to admin to approval');
@@ -48,8 +47,8 @@ module.exports.create = async (req, res)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)
                 }else {
-                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec(); 
+                    let state = await User.find({"state":ObjectId(user.state),isDeleted:false,isActive:true,"role" : "STATE"}).exec();
+                    let partner = await User.find({isActive:true,isDeleted:false,"role":"PARTNER"}).exec(); 
                     emailNotificationToStateANDPartner(user,state,partner);
 
                     return Response.OK(res,dt, 'Request for change has been sent to admin to approval');
