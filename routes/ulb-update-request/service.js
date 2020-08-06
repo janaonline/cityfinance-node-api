@@ -504,7 +504,7 @@ module.exports.action = async (req, res)=>{
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
                             if(pObj.email != userData.email){
-                                let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
+                                let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
                                 let template = Service.emailTemplate.userEmailEdit(userData.name,link)
                                 mailOptions.subject=  template.subject;
                                 mailOptions.html=  template.body;
