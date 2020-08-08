@@ -651,11 +651,11 @@ module.exports.ulbSignupAction = async (req, res) => {
             if (access[user.role].indexOf(userData.role) > -1) {
                 try {
 
-                    if(userData.status==data.status){
+                    if(userData.status!='PENDING' ){
                         return Response.BadRequest(
                             res,
                             req.body,
-                            `Request is Already ${data.status}`
+                            `Action is already taken (${userData.status})`
                         );
                     }
 
