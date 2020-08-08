@@ -446,6 +446,9 @@ module.exports.emailVerification = async (req, res) => {
         let msg = req.decoded.forgotPassword ? "":"Email verified"   
         let ud = {isEmailVerified:true}
         if (req.decoded.role == 'USER') {
+            if(req.decoded.forgotPassword){
+                ud["isEmailVerified"] = false
+            }
             ud.isActive = true;
         }
         let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
@@ -465,9 +468,9 @@ module.exports.emailVerification = async (req, res) => {
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
-        if(user.isEmailVerified==false){
-            req.decoded.forgotPassword = user.role=="USER" ? false : true;
-        }
+        // if(user.isEmailVerified==false){
+        //     req.decoded.forgotPassword = user.role=="USER" ? false : true;
+        // }
         if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
             req.decoded.forgotPassword=false;   
             msg = "Password is already reset"
