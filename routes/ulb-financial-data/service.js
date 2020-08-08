@@ -685,21 +685,21 @@ module.exports.update = async (req, res) => {
                 prevState.actionTakenBy = user._id;
 
                 if(user.role=="ULB"){
-                    if(data.balanceSheet.pdfUrl!="" || data.balanceSheet.pdfUrl!=null  || data.balanceSheet.excelUrl!="" || data.balanceSheet.excelUrl!=null){
+                    if( !data.balanceSheet || data.balanceSheet.pdfUrl!="" || data.balanceSheet.pdfUrl!=null  || data.balanceSheet.excelUrl!="" || data.balanceSheet.excelUrl!=null){
                             return Response.BadRequest(
                                 res,
                                 {},
                                 `balanceSheet must be provided`
                             );
                     }
-                    if(data.incomeAndExpenditure.pdfUrl!="" || data.incomeAndExpenditure.pdfUrl!=null || data.incomeAndExpenditure.excelUrl!="" || data.incomeAndExpenditure.excelUrl!=null){
+                    if( !data.incomeAndExpenditure ||data.incomeAndExpenditure.pdfUrl!="" || data.incomeAndExpenditure.pdfUrl!=null || data.incomeAndExpenditure.excelUrl!="" || data.incomeAndExpenditure.excelUrl!=null){
                         return Response.BadRequest(
                             res,
                             {},
                              `incomeAndExpenditure must be provided`
                         );
                     }
-                    if(data.trialBalance.pdfUrl!="" || data.trialBalance.pdfUrl!=null || data.trialBalance.excelUrl!="" || data.trialBalance.excelUrl!=null){
+                    if( !data.trialBalance ||  data.trialBalance.pdfUrl!="" || data.trialBalance.pdfUrl!=null || data.trialBalance.excelUrl!="" || data.trialBalance.excelUrl!=null){
                         return Response.BadRequest(
                             res,
                             {},
@@ -708,7 +708,7 @@ module.exports.update = async (req, res) => {
                     }
                     if(data.audited==true){
 
-                        if(data.auditReport.pdfUrl!="" || data.auditReport.pdfUrl!=null){
+                        if(!data.auditReport || data.auditReport.pdfUrl!="" || data.auditReport.pdfUrl!=null){
                             return Response.BadRequest(
                                 res,
                                 {},
@@ -823,21 +823,21 @@ module.exports.completeness = async (req, res) => {
                 prevState.actionTakenBy = user._id;
 
                 if(user.role=="ULB"){
-                    if(data.balanceSheet.pdfUrl!="" || data.balanceSheet.pdfUrl!=null  || data.balanceSheet.excelUrl!="" || data.balanceSheet.excelUrl!=null){
+                    if( !data.balanceSheet || data.balanceSheet.pdfUrl!="" || data.balanceSheet.pdfUrl!=null  || data.balanceSheet.excelUrl!="" || data.balanceSheet.excelUrl!=null){
                             return Response.BadRequest(
                                 res,
                                 {},
                                 `balanceSheet must be provided`
                             );
                     }
-                    if(data.incomeAndExpenditure.pdfUrl!="" || data.incomeAndExpenditure.pdfUrl!=null || data.incomeAndExpenditure.excelUrl!="" || data.incomeAndExpenditure.excelUrl!=null){
+                    if( !data.incomeAndExpenditure || data.incomeAndExpenditure.pdfUrl!="" || data.incomeAndExpenditure.pdfUrl!=null || data.incomeAndExpenditure.excelUrl!="" || data.incomeAndExpenditure.excelUrl!=null){
                         return Response.BadRequest(
                             res,
                             {},
                              `incomeAndExpenditure must be provided`
                         );
                     }
-                    if(data.trialBalance.pdfUrl!="" || data.trialBalance.pdfUrl!=null || data.trialBalance.excelUrl!="" || data.trialBalance.excelUrl!=null){
+                    if( !data.trialBalance || data.trialBalance.pdfUrl!="" || data.trialBalance.pdfUrl!=null || data.trialBalance.excelUrl!="" || data.trialBalance.excelUrl!=null){
                         return Response.BadRequest(
                             res,
                             {},
@@ -846,7 +846,7 @@ module.exports.completeness = async (req, res) => {
                     }
                     if(data.audited==true){
 
-                        if(data.auditReport.pdfUrl!="" || data.auditReport.pdfUrl!=null){
+                        if( !data.auditReport || data.auditReport.pdfUrl!="" || data.auditReport.pdfUrl!=null){
                             return Response.BadRequest(
                                 res,
                                 {},
