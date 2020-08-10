@@ -664,10 +664,12 @@ module.exports.ulbSignupAction = async (req, res) => {
                         status: data.status,
                         rejectReason: data.rejectReason
                     };
+                    let forgotPassword =  userData.role=="ULB" ? true :false;  
                     let u = await User.update(condition, { $set: d });
                     let link = await Service.emailVerificationLink(
                         userData._id,
-                        req.currentUrl
+                        req.currentUrl,
+                        forgotPassword
                     );
                     let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(
                         userData._id,
