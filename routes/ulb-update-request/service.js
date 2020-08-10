@@ -493,6 +493,7 @@ module.exports.action = async (req, res)=>{
                                 pObj[key] = prevState[key];
                             }
                         }
+
                         if(pObj["commissionerEmail"]){
                             let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
                             if(emailCheck){
@@ -503,6 +504,8 @@ module.exports.action = async (req, res)=>{
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
                             if(pObj.email != userData.email){
+
+                                let du = await User.update({ulb:prevState.ulb, role:"ULB",isDeleted:false},{$set:pObj});
                                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
                                 let template = Service.emailTemplate.userEmailEdit(userData.name,link)
                                 mailOptions.to  = pObj["email"];
