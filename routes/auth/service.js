@@ -54,6 +54,15 @@ module.exports.register = async (req, res) => {
         let newUser = new User(data);
         let ud = await newUser.validate();
         newUser.password = await Service.getHash(newUser.password);
+        let inValid = await Service.checkUnique.validate(
+            data,
+            data.role,
+            ''
+        );
+        if (inValid && inValid.length) {
+            return Response.BadRequest(res, {}, `${inValid.join('\n')}`);
+        }
+
         newUser.save(async (err, user) => {
             if (err) {
                 console.log('Err', err);
