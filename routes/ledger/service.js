@@ -259,7 +259,7 @@ module.exports.getAllLedgersCsv = function(req,res){
     // Flush the headers before we start pushing the CSV content
     res.flushHeaders();
 
-    UlbLedger.aggregate([
+    const cursor = UlbLedger.aggregate([
         {   $lookup:{
                 from:"ulbs",
                 as:"ulbs",
@@ -309,24 +309,17 @@ module.exports.getAllLedgersCsv = function(req,res){
                 population:1
             }
         }
-    ]).exec((err,data)=>{
-        if(err){
-            res.json({
-                success: false,
-                msg: 'Invalid Payload',
-                data: err.toString()
-            });
-        }else{
-            for(let el of data){
-                let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
-                el.code = el.line_item ? el.line_item.code : "";
-                el.head_of_account =  el.line_item ? el.line_item.headOfAccount : "";
-                el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ')  : "";
-                res.write(el.ulb.name+","+el.ulb.code+","+el.ulb.amrut+","+el.head_of_account+","+el.code+","+line_item+","+el.financialYear+","+el.amount+"\r\n");
-            }
+    ]).cursor({batchSize:50}).exec()
+        cursor.on("data",function(el){
+            let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
+            el.code = el.line_item ? el.line_item.code : "";
+            el.head_of_account =  el.line_item ? el.line_item.headOfAccount : "";
+            el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ')  : "";
+            res.write(el.ulb.name+","+el.ulb.code+","+el.ulb.amrut+","+el.head_of_account+","+el.code+","+line_item+","+el.financialYear+","+el.amount+"\r\n");
+        }) 
+        cursor.on("end",function(el){
             res.end()
-        }
-    });
+        })
 }
 //@LedgerLog
 module.exports.getAllLogs = function (req, res) {
