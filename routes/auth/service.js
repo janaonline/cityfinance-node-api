@@ -279,7 +279,7 @@ module.exports.login = async (req, res) => {
                     return Response.BadRequest(
                         res,
                         { loginAttempts: attempt.loginAttempts },
-                        `Invalid username or password`
+                        `Invalid email or password`
                     );
                 }
             } catch (e) {
