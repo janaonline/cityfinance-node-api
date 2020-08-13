@@ -92,7 +92,7 @@ module.exports.create = async (req, res)=>{
                 pObj["isEmailVerified"] = false;
                
                 if(pObj.email != userData.email){
-                    let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
+                    let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
                     let template = Service.emailTemplate.userEmailEdit(userData.name,link);
                     mailOptions.to = pObj.email;
                     mailOptions.subject=  template.subject;
