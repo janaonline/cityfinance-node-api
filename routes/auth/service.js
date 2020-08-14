@@ -602,21 +602,23 @@ module.exports.resetPassword = async (req, res) => {
 
             if (user) {
                 let passwordHash = await Service.getHash(req.body.password);
-
                 if(user.passwordHistory.length >0){
-                    let found = user.passwordHistory.includes(passwordHash)
-                    if(found){
-                        return Response.BadRequest(
-                            res,
-                            '',
-                            `You cannot set last 3 used password`
+                    for(password of user.passwordHistory ){
+                        let isMatch = await Service.compareHash(
+                            req.body.password,
+                            password
                         );
-                    }
-
+                        if(isMatch){
+                            return Response.BadRequest(
+                                res,
+                                '',
+                                `You cannot set last 3 used password`
+                            );
+                        }
+                    }                    
                 }
 
-                let passwordExpires =
-                    Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
+                let passwordExpires = Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
                 let passwordHistory = setPasswordHistory(user, passwordHash);
                 let update = {
                     $set: {
