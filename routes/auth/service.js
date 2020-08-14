@@ -211,7 +211,12 @@ module.exports.login = async (req, res) => {
 
                 // check Password Expiry
                 if (user.passwordExpires && user.passwordExpires < Date.now()) {
-                    //return Response.UnAuthorized(res, {},`Please reset your password.`);
+                    return Response.UnAuthorized(
+                        res,
+                        {},
+                        `Please reset your password.`,
+                        440
+                    );
                 }
 
                 let sessionId = req.headers.sessionid;
