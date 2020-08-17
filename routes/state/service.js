@@ -20,7 +20,6 @@ module.exports.get = async function(req,res) {
     if(req.query.type=="filter"){
             
         query1["questionnaireType"] = "state"
-        query1["isCompleted"] = true
         let stateId = await XVFcForms.find(query1,{_id:0,state:1}).exec();
         let stateArray = stateId.map((s)=>{  return ObjectId(s.state)})
         query["_id"] = {$nin:stateArray};
