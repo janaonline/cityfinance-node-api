@@ -685,26 +685,35 @@ module.exports.update = async (req, res) => {
                 prevState.actionTakenBy = user._id;
 
                 if(user.role=="ULB"){
-                    if( !data.balanceSheet || data.balanceSheet.pdfUrl!="" || data.balanceSheet.pdfUrl!=null  || data.balanceSheet.excelUrl!="" || data.balanceSheet.excelUrl!=null){
+                    if(data.balanceSheet ){
+                        if(data.balanceSheet.pdfUrl!="" || data.balanceSheet.pdfUrl!=null  || data.balanceSheet.excelUrl!="" || data.balanceSheet.excelUrl!=null){
+
                             return Response.BadRequest(
                                 res,
                                 {},
                                 `balanceSheet must be provided`
                             );
+                        }   
                     }
-                    if( !data.incomeAndExpenditure ||data.incomeAndExpenditure.pdfUrl!="" || data.incomeAndExpenditure.pdfUrl!=null || data.incomeAndExpenditure.excelUrl!="" || data.incomeAndExpenditure.excelUrl!=null){
-                        return Response.BadRequest(
-                            res,
-                            {},
-                             `incomeAndExpenditure must be provided`
-                        );
+                    if(data.incomeAndExpenditure){
+                    
+                        if(data.incomeAndExpenditure.pdfUrl!="" || data.incomeAndExpenditure.pdfUrl!=null || data.incomeAndExpenditure.excelUrl!="" || data.incomeAndExpenditure.excelUrl!=null){
+                            return Response.BadRequest(
+                                res,
+                                {},
+                                 `incomeAndExpenditure must be provided`
+                            );
+                        }
                     }
-                    if( !data.trialBalance ||  data.trialBalance.pdfUrl!="" || data.trialBalance.pdfUrl!=null || data.trialBalance.excelUrl!="" || data.trialBalance.excelUrl!=null){
-                        return Response.BadRequest(
-                            res,
-                            {},
-                            `trialBalance must be provided`
-                        );
+                    if(data.trialBalance){
+                        if(data.trialBalance.pdfUrl!="" || data.trialBalance.pdfUrl!=null || data.trialBalance.excelUrl!="" || data.trialBalance.excelUrl!=null){
+
+                            return Response.BadRequest(
+                                res,
+                                {},
+                                `trialBalance must be provided`
+                            );
+                        }
                     }
                     if(data.audited==true){
 
