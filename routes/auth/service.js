@@ -517,6 +517,13 @@ module.exports.forgotPassword = async (req, res) => {
                     `Requested email:${req.body.email} is not verified.`
                 );
             }
+            else if (user.isLocked) {
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Your account is temporarily locked for 1 hour`
+                );
+            }
             else {
                 let newPassword = Service.getRndInteger(
                     10000,
