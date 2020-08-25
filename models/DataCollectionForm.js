@@ -2,7 +2,7 @@ require('./dbConnect');
 
 var DataCollectionFormSchema = new Schema({
 
-    body_type : { type : String, required : true,index:true, enum:["parastatal","ulb"]}
+    bodyType : { type : String, required : true,index:true, enum:["parastatal","ulb"]},
     ulb:{type: Schema.Types.ObjectId, ref: 'Ulb',default:null},
     ulbType : { type: Schema.Types.ObjectId, ref: 'UlbType' ,default:null},
     parastatalName:{type: String,default:null},
@@ -12,30 +12,30 @@ var DataCollectionFormSchema = new Schema({
     documents:{
         financial_year_2015_16:{
             type:{
-                pdf :[name:{ type : String,required : true},url:{type : String,required : true}],
-                excel :[name:{ type : String,required : true},url:{type : String,required : true}]        
+                pdf :[{name:{ type : String,required : true},url:{type : String,required : true}}],
+                excel :[{name:{ type : String,required : true},url:{type : String,required : true}}]        
             },
             default:null
         },
         
        financial_year_2016_17:{
             type:{
-                pdf :[name:{ type : String,required : true},url:{type : String,required : true}],
-                excel :[name:{ type : String,required : true},url:{type : String,required : true}]        
+                pdf :[{name:{ type : String,required : true},url:{type : String,required : true}}],
+                excel :[{name:{ type : String,required : true},url:{type : String,required : true}}]        
             },
             default:null
         },
        financial_year_2017_18:{
             type:{
-                pdf :[name:{ type : String,required : true},url:{type : String,required : true}],
-                excel :[name:{ type : String,required : true},url:{type : String,required : true}]        
+                pdf :[{name:{ type : String,required : true},url:{type : String,required : true}}],
+                excel :[{name:{ type : String,required : true},url:{type : String,required : true}}]        
             },
             default:null
         },
         financial_year_2018_19:{
             type:{
-                pdf :[name:{ type : String,required : true},url:{type : String,required : true}],
-                excel :[name:{ type : String,required : true},url:{type : String,required : true}]        
+                pdf :[{name:{ type : String,required : true},url:{type : String,required : true}}],
+                excel :[{name:{ type : String,required : true},url:{type : String,required : true}}]        
             },
             default:null
         },   
@@ -48,9 +48,9 @@ var DataCollectionFormSchema = new Schema({
 {timestamp : {createdAt : "createdAt", modifiedAt : "modifiedAt"}}
 );
 
-module.exports = mongoose.model('XVFinanceComissionReForms', XVFcReFormsSchema);
+module.exports = mongoose.model('DataCollectionForm', DataCollectionFormSchema);
 
-XVFcReFormsSchema.pre('save', function(next) {
+DataCollectionFormSchema.pre('save', function(next) {
     this.modifiedAt = new Date(); 
     next();
 })
