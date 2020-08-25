@@ -14,43 +14,49 @@ module.exports.post = function (req, res) {
 }
 
 module.exports.get = function (req, res) {
-
-    let query = [ 
-                {
-                    $lookup: {
-                        from: "states",
-                        localField: "state",
-                        foreignField: "_id",
-                        as: "state"
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "ulbs",
-                        localField: "ulb",
-                        foreignField: "_id",
-                        as: "ulbs"
-                    }
-                },
-                {$unwind:{path:"$ulbs",preserveNullAndEmptyArrays:true}},
-                {$unwind:"$state"},
-                {$project:{
-                    "ulbName":"$ulbs.name",
-                    "ulb":"$ulb",
-                    "stateName":"$state.name",
-                    "state":"$state._id",
-                    "parastatalName":1,
-                    "person":1,
-                    "designation":1,
-                    "email":1,
-                    "bodyType":1,
-                    "documents":1
-                    }
+    actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
+    let user = req.decoded
+    if(actionAllowed.indexOf(user.role) > -1){
+        let query = [ 
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "state",
+                    foreignField: "_id",
+                    as: "state"
                 }
-            ]
+            },
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulbs"
+                }
+            },
+            {$unwind:{path:"$ulbs",preserveNullAndEmptyArrays:true}},
+            {$unwind:"$state"},
+            {$project:{
+                "ulbName":"$ulbs.name",
+                "ulb":"$ulb",
+                "stateName":"$state.name",
+                "state":"$state._id",
+                "parastatalName":1,
+                "person":1,
+                "designation":1,
+                "email":1,
+                "bodyType":1,
+                "documents":1
+                }
+            }
+        ]
+        service.aggregate(query,dCForm,function(response,value){
+            return res.status(response ? 200 : 400).send(value);
+        });
+    }
 
-    service.aggregate(query,dCForm,function(response,value){
-        return res.status(response ? 200 : 400).send(value);
-    });
+    else{
+        Response.BadRequest(res,{},`Action not allowed for the role:${user.role}`);
+    }
 
 }
