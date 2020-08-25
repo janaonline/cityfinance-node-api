@@ -96,7 +96,7 @@ const aggregate = function(condition = {}, schema, callback) {
       let obj = {
         timestamp: moment().unix(),
         success: true,
-        message: 'Successfully updated',
+        message: 'Successfully fetched',
         data: data
       };
       return callback(true, obj);

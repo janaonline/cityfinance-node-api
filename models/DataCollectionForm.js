@@ -4,7 +4,6 @@ var DataCollectionFormSchema = new Schema({
 
     bodyType : { type : String, required : true,index:true, enum:["parastatal","ulb"]},
     ulb:{type: Schema.Types.ObjectId, ref: 'Ulb',default:null},
-    ulbType : { type: Schema.Types.ObjectId, ref: 'UlbType' ,default:null},
     parastatalName:{type: String,default:null},
     person :{type: String,default:null} ,
     designation : {type: String,default:null},
