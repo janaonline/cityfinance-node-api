@@ -22,6 +22,7 @@ const UlbSchema = new Schema({
     amrut : { type : String ,  default : ""},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() },
-    isActive : { type  : Boolean, default : 1 }
+    isActive : { type  : Boolean, default : 1 },
+    history:{type:Array, default:[]}
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 module.exports = mongoose.model('Ulb', UlbSchema);

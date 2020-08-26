@@ -400,7 +400,7 @@ module.exports.getById = async (req, res)=>{
                         .exec();
                 if(data){
 
-                    console.log("HIII",data.ulb);
+                    console.log("ulb",data.ulb);
                     let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
                     let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
                     let user = await User
