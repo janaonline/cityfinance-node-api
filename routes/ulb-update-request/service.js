@@ -533,7 +533,31 @@ module.exports.action = async (req, res)=>{
                         mailOptions.html=  template.body;
                         SendEmail(mailOptions);
                     }
-                    let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:prevState}});
+
+                    let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
+                    let ulbkeys = ["_id","regionalName" ,"name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
+                    let oldState = await User
+                        .findOne({isDeleted:false,role:"ULB",ulb:prevState.ulb},ulbuserkeys.join(" "))
+                        .populate({
+                            path:"ulb",
+                            select:ulbkeys.join(" "),
+                            populate:[
+                                {
+                                    path:"ulbType",
+                                    select:"_id name"
+                                },
+                                {
+                                    path:"state",
+                                    select: "_id name code"
+                                }
+                            ]
+                        })
+                        .lean()
+                        .exec();
+
+                    let oldStateObj = ObjectId.assign({},oldState,{"actionTakenBy":prevState.actionTakenBy},{"status":prevState.status})    
+
+                    let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:oldStateObj}});
                     if(uur.n){
                         return Response.OK(res,uur, 'Action updated.')
                     }else{
