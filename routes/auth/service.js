@@ -316,10 +316,14 @@ module.exports.verifyToken = (req, res, next) => {
                 if(decodedPayload.forgotPassword || decodedPayload.purpose=="EMAILVERFICATION"){
 
                     let msg = "Link is already expired"
-                    let pageRoute = decodedPayload.url && decodedPayload.forgotPassword
+                    let pageRoute = decodedPayload.url
                     ? 'password/request'
                     : 'account-reactivate';
 
+                    let user = await User.findOne({ _id:decodedPayload._id}, select).lean();
+                    if(!user.isEmailVerified){
+                        pageRoute = 'account-reactivate';
+                    }
                     let queryStr = `email=${decodedPayload.email}&message=${msg}.`;
                     let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
                     return res.redirect(url)   
