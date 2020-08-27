@@ -13,8 +13,13 @@ module.exports.post = function (req, res) {
 
 }
 
-module.exports.get = function (req, res) {
+module.exports.get = async function (req, res) {
     actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE'];
+    filter = req.query.filter && !req.query.filter != 'null' ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {})
+    sort = req.query.sort  && !req.query.sort != 'null' ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {})
+    skip   = req.query.skip ? parseInt(req.query.skip) : 0
+    limit  = req.query.limit ? parseInt(req.query.limit) : 10
+    let matchfilter =  await service.mapFilter(filter);
     let user = req.decoded
     if(actionAllowed.indexOf(user.role) > -1){
         let query = [ 
@@ -50,9 +55,18 @@ module.exports.get = function (req, res) {
                 }
             }
         ]
-        service.aggregate(query,dCForm,function(response,value){
-            return res.status(response ? 200 : 400).send(value);
-        });
+
+        if(filter && filter.length){
+           query.unshift({$match:matchfilter}) 
+        }
+        if(Object.keys(sort).length){
+            query.push({$sort:sort});
+        }
+        let total = await dCForm.aggregate(query);
+        query.push({$skip:skip})
+        query.push({$limit:limit})
+        let arr =  await dCForm.aggregate(query).exec();
+        return res.json({"timestamp":moment,success:true,message:"Successfully fetched",total:total.length,data:arr})
     }
 
     else{
