@@ -399,29 +399,28 @@ module.exports.getById = async (req, res)=>{
                         .lean()
                         .exec();
                 if(data){
-
-                    console.log("ulb",data.ulb);
-                    let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
-                    let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
-                    let user = await User
-                        .findOne({isDeleted:false,role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
-                        .populate({
-                            path:"ulb",
-                            select:ulbkeys.join(" "),
-                            populate:[
-                                {
-                                    path:"ulbType",
-                                    select:"_id name"
-                                },
-                                {
-                                    path:"state",
-                                    select: "_id name code"
-                                }
-                            ]
-                        })
-                        .lean()
-                        .exec();
-                    data["old"] = user;
+                    // console.log("ulb",data.ulb);
+                    // let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
+                    // let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
+                    // let user = await User
+                    //     .findOne({isDeleted:false,role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
+                    //     .populate({
+                    //         path:"ulb",
+                    //         select:ulbkeys.join(" "),
+                    //         populate:[
+                    //             {
+                    //                 path:"ulbType",
+                    //                 select:"_id name"
+                    //             },
+                    //             {
+                    //                 path:"state",
+                    //                 select: "_id name code"
+                    //             }
+                    //         ]
+                    //     })
+                    //     .lean()
+                    //     .exec();
+                    data["old"] = data.history[0];
                     return Response.OK(res,data, 'Request fetched.')
                 }else{
                     return Response.BadRequest(res,{},`Not a valid request Id.`)
