@@ -404,28 +404,7 @@ module.exports.getById = async (req, res)=>{
                         data["old"] = data.history[0];
                     }
                     else{
-
-                    let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
-                    let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
-                    let user = await User
-                        .findOne({isDeleted:false,role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
-                        .populate({
-                            path:"ulb",
-                            select:ulbkeys.join(" "),
-                            populate:[
-                                {
-                                    path:"ulbType",
-                                    select:"_id name"
-                                },
-                                {
-                                    path:"state",
-                                    select: "_id name code"
-                                }
-                            ]
-                        })
-                        .lean()
-                        .exec();
-                        data["old"] = user;
+                        data["old"] = await UlbQuery(data.ulb);
                     }
                     return Response.OK(res,data, 'Request fetched.')
                 }else{
@@ -452,29 +431,7 @@ module.exports.action = async (req, res)=>{
                 path:"state",
                 select:"_id name code"
             }) : null;
-
-            let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
-            let ulbkeys = ["_id","regionalName" ,"name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
-            let oldState = await User
-                .findOne({isDeleted:false,role:"ULB",ulb:prevState.ulb},ulbuserkeys.join(" "))
-                .populate({
-                    path:"ulb",
-                    select:ulbkeys.join(" "),
-                    populate:[
-                        {
-                            path:"ulbType",
-                            select:"_id name"
-                        },
-                        {
-                            path:"state",
-                            select: "_id name code"
-                        }
-                    ]
-                })
-                .lean()
-                .exec();
-
-
+            let oldState = await UlbQuery(prevState.ulb); // Fetch all prevState value of a ULB
             if(user.role == "STATE"){
                 if(!(ulb && ulb.state && ulb.state._id.toString() == user.state)){
                     let message = !ulb ? 'Ulb not found.' : 'State is not matching.'
@@ -611,4 +568,29 @@ async function emailNotificationToStateANDPartner(user,state,partner){
 
 async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
+}
+
+async function UlbQuery(ulb) {
+    
+    let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
+    let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
+    let user = await User
+        .findOne({isDeleted:false,role:"ULB",ulb:ulb},ulbuserkeys.join(" "))
+        .populate({
+            path:"ulb",
+            select:ulbkeys.join(" "),
+            populate:[
+                {
+                    path:"ulbType",
+                    select:"_id name"
+                },
+                {
+                    path:"state",
+                    select: "_id name code"
+                }
+            ]
+        })
+        .lean()
+        .exec();
+    return user;    
 }
