@@ -316,7 +316,7 @@ module.exports.verifyToken = (req, res, next) => {
                 if(decodedPayload.forgotPassword || decodedPayload.purpose=="EMAILVERFICATION"){
 
                     let msg = "Link is already expired"
-                    let pageRoute = decodedPayload.url
+                    let pageRoute = decodedPayload.url && decodedPayload.forgotPassword
                     ? 'password/request'
                     : 'account-reactivate';
 
