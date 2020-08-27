@@ -555,7 +555,7 @@ module.exports.action = async (req, res)=>{
                         .lean()
                         .exec();
 
-                    let oldStateObj = ObjectId.assign({},oldState,{"actionTakenBy":prevState.actionTakenBy},{"status":prevState.status})    
+                    let oldStateObj = Object.assign({},oldState,{"actionTakenBy":prevState.actionTakenBy},{"status":prevState.status})    
 
                     let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:oldStateObj}});
                     if(uur.n){
