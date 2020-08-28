@@ -163,7 +163,7 @@ module.exports.form = async function(req,res){
             if(req.query.state){
                 query["state"] = ObjectId(req.query.state);
                 let cond = [
-                    {$match:{state:query["state"]}}, 
+                    {$match:{state:query["state"],questionnaireType:'state'}}, 
                     {
                         $lookup: {
                             from: "states",
