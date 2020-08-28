@@ -18,6 +18,7 @@ module.exports = (_id, currentUrl,forgotPassword=false) => {
             //     return resolve(link);
             // }
             let user = await User.findOne({ _id: _id }, select).lean();
+            let du = await User.update({_id:_id},{$set:{isPasswordResetInProgress:false}})
             user['purpose'] = 'EMAILVERFICATION';
             user['forgotPassword'] = forgotPassword;
             if(forgotPassword){

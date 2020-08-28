@@ -20,7 +20,6 @@ module.exports.create = async (req, res)=>{
     if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;
-
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbUpdateRequest(data);
         ulbUpdateRequest.ulb = user.ulb;
@@ -32,8 +31,8 @@ module.exports.create = async (req, res)=>{
                 let du = await UlbUpdateRequest.update({_id:getPrevStatus._id},{$set:getPrevStatus,createdAt:new Date()});
                 if(du.n){
 
-                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec();
+                    let state = await User.find({"state":ObjectId(user.state),isActive:true,isDeleted:false,"role" : "STATE"}).exec();
+                    let partner = await User.find({isActive:true,isDeleted:false,"role" : "PARTNER"}).exec();
                     emailNotificationToStateANDPartner(user,state,partner);
 
                     return  Response.OK(res,du,'Request for change has been sent to admin to approval');
@@ -48,8 +47,8 @@ module.exports.create = async (req, res)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)
                 }else {
-                    let state = await User.find({"state":ObjectId(user.state),isActive:true,"role" : "STATE"}).exec();
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec(); 
+                    let state = await User.find({"state":ObjectId(user.state),isDeleted:false,isActive:true,"role" : "STATE"}).exec();
+                    let partner = await User.find({isActive:true,isDeleted:false,"role":"PARTNER"}).exec(); 
                     emailNotificationToStateANDPartner(user,state,partner);
 
                     return Response.OK(res,dt, 'Request for change has been sent to admin to approval');
@@ -93,8 +92,9 @@ module.exports.create = async (req, res)=>{
                 pObj["isEmailVerified"] = false;
                
                 if(pObj.email != userData.email){
-                    let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
+                    let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
                     let template = Service.emailTemplate.userEmailEdit(userData.name,link);
+                    mailOptions.to = pObj.email;
                     mailOptions.subject=  template.subject;
                     mailOptions.html=  template.body;
                 }else{
@@ -400,28 +400,12 @@ module.exports.getById = async (req, res)=>{
                         .exec();
                 if(data){
 
-                    console.log("HIII",data.ulb);
-                    let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
-                    let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
-                    let user = await User
-                        .findOne({isDeleted:false,role:"ULB",ulb:data.ulb},ulbuserkeys.join(" "))
-                        .populate({
-                            path:"ulb",
-                            select:ulbkeys.join(" "),
-                            populate:[
-                                {
-                                    path:"ulbType",
-                                    select:"_id name"
-                                },
-                                {
-                                    path:"state",
-                                    select: "_id name code"
-                                }
-                            ]
-                        })
-                        .lean()
-                        .exec();
-                    data["old"] = user;
+                    if(data.history.length){
+                        data["old"] = data.history[0];
+                    }
+                    else{
+                        data["old"] = await UlbQuery(data.ulb);
+                    }
                     return Response.OK(res,data, 'Request fetched.')
                 }else{
                     return Response.BadRequest(res,{},`Not a valid request Id.`)
@@ -447,6 +431,7 @@ module.exports.action = async (req, res)=>{
                 path:"state",
                 select:"_id name code"
             }) : null;
+            let oldState = await UlbQuery(prevState.ulb); // Fetch all prevState value of a ULB
             if(user.role == "STATE"){
                 if(!(ulb && ulb.state && ulb.state._id.toString() == user.state)){
                     let message = !ulb ? 'Ulb not found.' : 'State is not matching.'
@@ -494,6 +479,7 @@ module.exports.action = async (req, res)=>{
                                 pObj[key] = prevState[key];
                             }
                         }
+
                         if(pObj["commissionerEmail"]){
                             let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
                             if(emailCheck){
@@ -504,8 +490,11 @@ module.exports.action = async (req, res)=>{
                             pObj["email"] = pObj["commissionerEmail"];
                             pObj["isEmailVerified"] = false;
                             if(pObj.email != userData.email){
-                                let link = await Service.emailVerificationLink(userData._id,req.currentUrl);
-                                let template = Service.emailTemplate.ulbSignupApproval(userData.name,link)
+
+                                let du = await User.update({ulb:prevState.ulb, role:"ULB",isDeleted:false},{$set:pObj});
+                                let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
+                                let template = Service.emailTemplate.userEmailEdit(userData.name,link)
+                                mailOptions.to  = pObj["email"];
                                 mailOptions.subject=  template.subject;
                                 mailOptions.html=  template.body;
                                 SendEmail(mailOptions);
@@ -529,7 +518,8 @@ module.exports.action = async (req, res)=>{
                         mailOptions.html=  template.body;
                         SendEmail(mailOptions);
                     }
-                    let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:prevState}});
+                    let oldStateObj = Object.assign({},oldState,{"actionTakenBy":prevState.actionTakenBy},{"status":prevState.status}) 
+                    let uur = await UlbUpdateRequest.update({_id:_id},{$set:updateData,$push:{history:oldStateObj}});
                     if(uur.n){
                         return Response.OK(res,uur, 'Action updated.')
                     }else{
@@ -547,10 +537,11 @@ module.exports.action = async (req, res)=>{
     }
 }
 
-function emailNotificationToStateANDPartner(user,state,partner){
+async function emailNotificationToStateANDPartner(user,state,partner){
 
     if(state){
         for(s of state){
+            await sleep(1000)
             let template = Service.emailTemplate.ulbProfileEdit(user.name,s.name);
             let mailOptions = {
                 to: s.email,
@@ -562,6 +553,7 @@ function emailNotificationToStateANDPartner(user,state,partner){
     }
     if(partner){
         for(p of partner){
+            await sleep(1000)
             let template = Service.emailTemplate.ulbProfileEdit(user.name,p.name);
             let mailOptions = {
                 to: p.email,
@@ -572,4 +564,33 @@ function emailNotificationToStateANDPartner(user,state,partner){
         }
     }
     return;
+}
+
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
+}
+
+async function UlbQuery(ulb) {
+    
+    let ulbuserkeys = ["commissionerName","commissionerEmail","commissionerConatactNumber","accountantName","accountantEmail","accountantConatactNumber"]
+    let ulbkeys = ["_id", "name", "ulbType", "natureOfUlb", "name","code","state","wards","area","population","location","amrut"];
+    let user = await User
+        .findOne({isDeleted:false,role:"ULB",ulb:ulb},ulbuserkeys.join(" "))
+        .populate({
+            path:"ulb",
+            select:ulbkeys.join(" "),
+            populate:[
+                {
+                    path:"ulbType",
+                    select:"_id name"
+                },
+                {
+                    path:"state",
+                    select: "_id name code"
+                }
+            ]
+        })
+        .lean()
+        .exec();
+    return user;    
 }

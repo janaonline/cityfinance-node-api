@@ -64,4 +64,8 @@ router.use('/ledger', Ledger);
 const User = require('./user');
 router.use('/user', User);
 
+// @form
+const Form = require('./form');
+router.use(Form);
+
 module.exports = router;

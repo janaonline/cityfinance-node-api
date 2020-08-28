@@ -43,6 +43,5 @@ const UserSchema = mongoose.Schema({
 	passwordExpires: {type: Number},
 	passwordHistory: {type: Array,default:[]}
 
-
 });
 module.exports = mongoose.model('User', UserSchema);;

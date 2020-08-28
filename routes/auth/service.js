@@ -9,6 +9,7 @@ const Service = require('../../service');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
 const request = require('request');
+
 module.exports.register = async (req, res) => {
     try {
         let data = req.body;
@@ -53,6 +54,15 @@ module.exports.register = async (req, res) => {
         let newUser = new User(data);
         let ud = await newUser.validate();
         newUser.password = await Service.getHash(newUser.password);
+        let inValid = await Service.checkUnique.validate(
+            data,
+            data.role,
+            ''
+        );
+        if (inValid && inValid.length) {
+            return Response.BadRequest(res, {}, `${inValid.join('\n')}`);
+        }
+
         newUser.save(async (err, user) => {
             if (err) {
                 console.log('Err', err);
@@ -97,6 +107,7 @@ module.exports.register = async (req, res) => {
 
                     if (state) {
                         for (s of state) {
+                            await sleep(1000);
                             let template = Service.emailTemplate.ulbSignup(
                                 user.name,
                                 'STATE',
@@ -113,6 +124,7 @@ module.exports.register = async (req, res) => {
 
                     if (partner) {
                         for (p of partner) {
+                            await sleep(1000);
                             let template = Service.emailTemplate.ulbSignup(
                                 user.name,
                                 'PARTNER',
@@ -199,7 +211,12 @@ module.exports.login = async (req, res) => {
 
                 // check Password Expiry
                 if (user.passwordExpires && user.passwordExpires < Date.now()) {
-                    //return Response.UnAuthorized(res, {},`Please reset your password.`);
+                    return Response.UnAuthorized(
+                        res,
+                        {},
+                        `Please reset your password.`,
+                        440
+                    );
                 }
 
                 let sessionId = req.headers.sessionid;
@@ -267,7 +284,7 @@ module.exports.login = async (req, res) => {
                     return Response.BadRequest(
                         res,
                         { loginAttempts: attempt.loginAttempts },
-                        `Invalid username or password`
+                        `Invalid email or password`
                     );
                 }
             } catch (e) {
@@ -302,7 +319,10 @@ module.exports.verifyToken = (req, res, next) => {
                     let pageRoute = decodedPayload.url
                     ? 'password/request'
                     : 'account-reactivate';
-
+                    let user = await User.findOne({ _id:decodedPayload._id});
+                    if(!user.isEmailVerified){
+                        pageRoute = 'account-reactivate';
+                    }
                     let queryStr = `email=${decodedPayload.email}&message=${msg}.`;
                     let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
                     return res.redirect(url)   
@@ -443,6 +463,9 @@ module.exports.emailVerification = async (req, res) => {
         let msg = req.decoded.forgotPassword ? "":"Email verified"   
         let ud = {isEmailVerified:true}
         if (req.decoded.role == 'USER') {
+            if(req.decoded.forgotPassword){
+                ud["isEmailVerified"] = false
+            }
             ud.isActive = true;
         }
         let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
@@ -462,9 +485,9 @@ module.exports.emailVerification = async (req, res) => {
         const token = jwt.sign(data, Config.JWT.SECRET, {
             expiresIn: Config.JWT.TOKEN_EXPIRY
         });
-        if(user.isEmailVerified==false){
-            req.decoded.forgotPassword = user.role=="USER" ? false : true;
-        }
+        // if(user.isEmailVerified==false){
+        //     req.decoded.forgotPassword = user.role=="USER" ? false : true;
+        // }
         if(user.isPasswordResetInProgress && req.decoded.forgotPassword){
             req.decoded.forgotPassword=false;   
             msg = "Password is already reset"
@@ -495,6 +518,13 @@ module.exports.forgotPassword = async (req, res) => {
                     res,
                     {},
                     `Requested email:${req.body.email} is not verified.`
+                );
+            }
+            else if (user.isLocked) {
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Your account is temporarily locked for 1 hour`
                 );
             }
             else {
@@ -579,10 +609,26 @@ module.exports.resetPassword = async (req, res) => {
             let user = await User.findOne({
                 _id: ObjectId(req.decoded._id)
             }).exec();
+
             if (user) {
                 let passwordHash = await Service.getHash(req.body.password);
-                let passwordExpires =
-                    Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
+                if(user.passwordHistory.length >0){
+                    for(password of user.passwordHistory ){
+                        let isMatch = await Service.compareHash(
+                            req.body.password,
+                            password
+                        );
+                        if(isMatch){
+                            return Response.BadRequest(
+                                res,
+                                '',
+                                `You cannot set last 3 used password`
+                            );
+                        }
+                    }                    
+                }
+
+                let passwordExpires = Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
                 let passwordHistory = setPasswordHistory(user, passwordHash);
                 let update = {
                     $set: {
@@ -683,4 +729,9 @@ function setPasswordHistory(user, passwordHash) {
         user.passwordHistory.push(passwordHash);
     }
     return user.passwordHistory;
+}
+
+
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
 }
