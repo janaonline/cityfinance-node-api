@@ -41,9 +41,19 @@ module.exports.get = async function (req, res) {
             },
             {$unwind:{path:"$ulbs",preserveNullAndEmptyArrays:true}},
             {$unwind:"$state"},
+            {
+                $lookup: {
+                    from: "ulbtypes",
+                    localField: "ulbs.ulbType",
+                    foreignField: "_id",
+                    as: "ulbType"
+                }
+            }, 
+            {$unwind:{path:"$ulbType",preserveNullAndEmptyArrays:true}},
             {$project:{
                 "ulbName":"$ulbs.name",
                 "ulb":"$ulb",
+                "ulbType": "$ulbType.name",
                 "stateName":"$state.name",
                 "state":"$state._id",
                 "parastatalName":1,
