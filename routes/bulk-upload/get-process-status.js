@@ -22,22 +22,22 @@ module.exports = function (req, res) {
             });
         }else {
 
-            if(data.completed){
+            // if(data.completed){
 
-                let user = req.decoded;
-                if(user["role"]=="ULB"){
-                    let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec()
-                    for(p of partner){
-                        let template = Service.emailTemplate.ulbBulkUpload(user.name,p.name);
-                        let mailOptions = {
-                            to: p.email,
-                            subject: template.subject,
-                            html: template.body
-                        };
-                        Service.sendEmail(mailOptions);
-                    }
-                }    
-            }
+            //     let user = req.decoded;
+            //     if(user["role"]=="ULB"){
+            //         let partner = await User.find({isActive:true,"role" : "PARTNER"}).exec()
+            //         for(p of partner){
+            //             let template = Service.emailTemplate.ulbBulkUpload(user.name,p.name);
+            //             let mailOptions = {
+            //                 to: p.email,
+            //                 subject: template.subject,
+            //                 html: template.body
+            //             };
+            //             Service.sendEmail(mailOptions);
+            //         }
+            //     }    
+            // }
 
             return res.status(200).json({
                 timestamp : moment().unix(),

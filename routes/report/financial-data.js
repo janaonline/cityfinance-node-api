@@ -1,6 +1,8 @@
 const UlbFinancialData = require('../../models/UlbFinancialData');
 const State = require('../../models/State');
 const UlbType = require('../../models/UlbType');
+const Ulb = require('../../models/Ulb');
+
 const Response = require('../../service/response');
 const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.filter = async (req, res, next) => {
@@ -16,7 +18,7 @@ module.exports.overall = async (req, res) => {
     let query = getOverallQuery(financialYear, stateId);
     try {
         let data = await UlbFinancialData.aggregate(query).exec();
-        return Response.OK(res, modifyData(data));
+        return Response.OK(res, await OverAllModifyData(data));
     } catch (e) {
         console.log('Exception', e);
         return Response.DbError(res, e);
@@ -28,7 +30,7 @@ module.exports.statewise = async (req, res) => {
     let query = getStatewiseQuery(financialYear, stateId);
     try {
         let data = await State.aggregate(query).exec();
-        return Response.OK(res, modifyData(data));
+        return Response.OK(res, await StateModifyData(data));
     } catch (e) {
         console.log('Exception', e);
         return Response.DbError(res, e);
@@ -52,7 +54,7 @@ module.exports.ulbtypewise = async (req, res) => {
         }
         return Response.OK(res, {
             overall: overall,
-            data: modifyData(data)
+            data: await modifyData(data)
         });
     } catch (e) {
         console.log('Exception', e);
@@ -73,7 +75,7 @@ module.exports.stateandulbtypewise = async (req, res) => {
             el['overall'] = state
                 ? { total: state.total, data: formatData(state.data) }
                 : { total: 0, data: formatData([]) };
-            el['data'] = modifyData(el.data);
+            el['data'] = await StateAndUlbmodifyData(el.data,el);
         }
         return Response.OK(res, data);
     } catch (e) {
@@ -178,13 +180,44 @@ module.exports.chart = async (req, res) => {
         return Response.DbError(res, e);
     }
 };
-function modifyData(arr) {
+
+async function StateModifyData(arr) {
+
     for (let el of arr) {
+        let c  = await Ulb.count({state:ObjectId(el._id)});
         el['data'] = formatData(el.data);
-        el['total'] = getTotal(el['data']);
+        el['total'] =  c;//getTotal(el['data']);
     }
     return arr;
 }
+async function modifyData(arr) {
+
+    for (let el of arr) {
+        let c  = await Ulb.count({ulbType:ObjectId(el._id)});
+        el['data'] = formatData(el.data);
+        el['total'] =  c;//getTotal(el['data']);
+    }
+    return arr;
+}
+
+async function OverAllModifyData(arr){
+    for (let el of arr) {
+        el['data'] = formatData(el.data);
+        el['total'] =  el.total;//getTotal(el['data']);
+    }
+    return arr;    
+}
+
+async function StateAndUlbmodifyData(arr,state) {
+
+    for (let el of arr) {
+        let c  = await Ulb.count({ulbType:ObjectId(el._id),state:ObjectId(state._id)});
+        el['data'] = formatData(el.data);
+        el['total'] =  c;//getTotal(el['data']);
+    }
+    return arr;
+}
+
 function getTotal(arr) {
     let count = 0;
     for (el of arr) {
@@ -252,14 +285,14 @@ function getOverallQuery(financialYear, state = null) {
     let overallulbs = state
         ? {
               $lookup: {
-                  from: 'overallulbs',
+                  from: 'ulbs',
                   pipeline: [{ $match: { state: state } }, { $count: 'count' }],
                   as: 'overallulbs'
               }
           }
         : {
               $lookup: {
-                  from: 'overallulbs',
+                  from: 'ulbs',
                   pipeline: [{ $count: 'count' }],
                   as: 'overallulbs'
               }
@@ -353,7 +386,7 @@ function getStatewiseQuery(financialYear, state = null) {
     return queryArr.concat([
         {
             $lookup: {
-                from: 'overallulbs',
+                from: 'ulbs',
                 localField: '_id',
                 foreignField: 'state',
                 as: 'overallulbs'
@@ -598,7 +631,7 @@ function getStateAndUlbtypewsiseQuery(financialYear, state = null) {
                                 { $unwind: { path: '$ulbfinancialdatas' } },
                                 {
                                     $project: {
-                                        _id: 0,
+                                        _id: 1,
                                         name: '$ulbfinancialdatas.name',
                                         audited: '$ulbfinancialdatas.audited',
                                         status: '$ulbfinancialdatas.status'
@@ -654,7 +687,7 @@ function getStateAndUlbtypewsiseQuery(financialYear, state = null) {
                                 },
                                 {
                                     $project: {
-                                        _id: 0,
+                                        _id: 1,
                                         audited: '$_id',
                                         count: 1,
                                         uploaded: '$count',
@@ -682,7 +715,7 @@ function getStateAndUlbtypewsiseQuery(financialYear, state = null) {
                     },
                     {
                         $project: {
-                            _id: 0,
+                            _id: 1,
                             name: 1,
                             data: 1
                         }

@@ -68,7 +68,7 @@ const userProfileEdit = (name) => {
     };
 };
 const userProfileRequestAction = (name, status,actionTakenBy) => {
-    let str = status=="REJECTED" ? `Your account has been ${status}. by ${actionTakenBy.toLowerCase()}`: `
+    let str = status=="REJECTED" ? `Your profile update request has been ${status.toLowerCase()} by ${actionTakenBy.toLowerCase()}`: `
 Your profile update request has been successfully cancelled`;
     return {
         subject: `${status}: Profile Update Request for City Finance`,
@@ -238,6 +238,33 @@ const fdUploadUlb = (name, refCode, fy, audited) => {
                     City Finance Team`
     };
 };
+
+const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
+    return {
+        subject: `Data Upload Request ${ulb}`,
+        body: `Dear ${partner},<br xmlns="http://www.w3.org/1999/html">
+                        <p>
+                            The data for the ${ulb} has been successfully submitted with the following details.
+                        </p>
+                        <br>
+                        <p>
+                            
+                            Reference Number - ${refCode} <br>
+                            Year - ${fy} <br>
+                            Audit Status - ${
+                                audited ? 'Audited' : 'Unaudited'
+                            }<br>
+                        </p>
+                        <br>
+                        <p>
+                            Kindly review the same.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`
+    };
+};
+
 const fdUploadState = (name, ulbName, refCode, fy, audited) => {
     return {
         subject: `Data Upload Form Successfully Submitted - ${ulbName}`,
@@ -519,6 +546,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                 html: ''
             };
 
+
             if (data && (type == 'UPLOAD' || type == 'ACTION')) {
                 if (type == 'UPLOAD') {
                     let templateUlb = fdUploadUlb(
@@ -530,6 +558,33 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                     Email(mailOptionUlb);
+
+                    let partner = await User.find({
+                        isActive: true,
+                        role: 'PARTNER',
+                        isDeleted : false
+                    }).exec();
+
+                    if (partner.length >0) {
+                        for (p of partner) {
+                            await sleep(1000);     
+                            let template = fdUploadPartner(
+                                p.name,
+                                data.ulbUser.name,
+                                data.referenceCode,
+                                data.financialYear,
+                                data.audited
+                            );    
+
+                            let mailOptions = {
+                                to: p.email,
+                                subject: template.subject,
+                                html: template.body
+                            };
+                            Email(mailOptions);
+                        }
+                    }
+
                     for(let d of data.stateUser){
                         //data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
                         //data.stateUser.departmentEmail ? stateEmails.push(data.stateUser.departmentEmail): '';
@@ -567,7 +622,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                             d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
 
                             let templateState = fdUploadApprovalState(
-                                data.stateUser.name,
+                                d.name,
                                 data.ulbUser.name,
                                 data.referenceCode,
                                 data.financialYear,
@@ -601,7 +656,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                             d.email ? stateEmails.push(d.email) : '';
                             d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
                             let templateState = fdUploadRejectionState(
-                                data.stateUser.name,
+                                d.name,
                                 data.ulbUser.name,
                                 data.referenceCode,
                                 data.financialYear,
@@ -772,6 +827,10 @@ const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl) => {
         }
     });
 };
+
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
+}
 module.exports = {
     sendFinancialDataStatusEmail: sendFinancialDataStatusEmail,
     sendUlbSignupStatusEmmail: sendUlbSignupStatusEmmail,

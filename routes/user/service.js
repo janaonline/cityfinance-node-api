@@ -651,11 +651,11 @@ module.exports.ulbSignupAction = async (req, res) => {
             if (access[user.role].indexOf(userData.role) > -1) {
                 try {
 
-                    if(userData.status==data.status){
+                    if(userData.status!='PENDING' ){
                         return Response.BadRequest(
                             res,
                             req.body,
-                            `Request is Already ${data.status}`
+                            `Action is already taken (${userData.status})`
                         );
                     }
 
@@ -664,10 +664,12 @@ module.exports.ulbSignupAction = async (req, res) => {
                         status: data.status,
                         rejectReason: data.rejectReason
                     };
+                    let forgotPassword =  userData.role=="ULB" ? true :false;  
                     let u = await User.update(condition, { $set: d });
                     let link = await Service.emailVerificationLink(
                         userData._id,
-                        req.currentUrl
+                        req.currentUrl,
+                        forgotPassword
                     );
                     let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(
                         userData._id,

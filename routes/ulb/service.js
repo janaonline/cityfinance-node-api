@@ -97,7 +97,7 @@ module.exports.get = async function(req,res) {
             }
         }
         try {
-            let ulbs = await Ulb.find(query,keys.join(" ")).exec();
+            let ulbs = await Ulb.find(query,keys.join(" ")).populate([{path:"ulbType",select:"name"}]).exec();
             Response.OK(res,ulbs,`ulb list.` )
         }catch (e) {
             Response.DbError(res,e,`Something went wrong.` )
