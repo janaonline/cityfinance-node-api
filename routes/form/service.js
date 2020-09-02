@@ -67,13 +67,11 @@ module.exports.get = async function (req, res) {
         ]
 
         if(matchfilter && Object.keys(matchfilter).length){
-           query.unshift({$match:matchfilter}) 
+           query.push({$match:matchfilter}) 
         }
         if(Object.keys(sort).length){
             query.push({$sort:sort});
         }
-
-        //res.json(query);return;
         let total = await dCForm.aggregate(query);
         query.push({$skip:skip})
         query.push({$limit:limit})
