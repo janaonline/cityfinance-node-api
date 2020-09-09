@@ -61,7 +61,7 @@ module.exports = async function(req,res,next){
                         }
 
                         eachRow.state = ObjectId(state._id)
-                        eachRow.ulbtype = ObjectId(ulbType._id)
+                        eachRow.ulbType = ObjectId(ulbType._id)
                         eachRow.name = eachRow.ulbname
                         eachRow["natureOfUlb"] = eachRow["natureofulb"] ? eachRow["natureofulb"] :""
                         eachRow["name"] = eachRow["ulbname"]
