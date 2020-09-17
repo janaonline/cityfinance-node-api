@@ -1,7 +1,7 @@
 module.exports = {
     
     INACTIVETIME:{TIME:15*60*1000},// 1 min
-    PASSWORDEXPIRETIME : {TIME:3600000}, // 1 hour
+    PASSWORDEXPIRETIME : {TIME:90*24*60*60*1000}, // 1 hour
     USER: {
         ROLES: ['ADMIN','MoHUA','PARTNER','STATE','ULB','USER'],
         DEFAULT_ROLE: 'USER',
