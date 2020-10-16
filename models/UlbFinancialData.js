@@ -29,7 +29,7 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:overallStatusType()
+        status:statusType()
     },
     houseHoldCoveredPipedSupply:
     {
@@ -41,7 +41,7 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:overallStatusType()
+        status:statusType()
     },
     waterSuppliedPerDay:
     {
@@ -53,7 +53,7 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:overallStatusType()  
+        status:statusType()  
     },
     reduction:
     {
@@ -65,7 +65,7 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:overallStatusType(),
+        status:statusType(),
  
     },
     houseHoldCoveredWithSewerage:
@@ -78,7 +78,7 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:overallStatusType()    
+        status:statusType()    
     },
 
     documents:{
@@ -101,7 +101,7 @@ const solidWasteManagementSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:overallStatusType()
+                    status:statusType()
                 }
             ],
             default:[],
@@ -111,7 +111,7 @@ const solidWasteManagementSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:overallStatusType()        
+                    status:statusType()        
                 }
             ],
             default:[],
@@ -129,7 +129,7 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:overallStatusType()
+                    status:statusType()
                 }
             ],
             default:[],
@@ -139,7 +139,7 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true} ,
-                    status:overallStatusType()
+                    status:statusType()
                 }
             ],
             default:[],
@@ -149,7 +149,7 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:overallStatusType()
+                    status:statusType()
                 }
             ],
             default:[],
@@ -159,7 +159,7 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:overallStatusType()    
+                    status:statusType()    
                 }
             ],
             default:[],
