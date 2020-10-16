@@ -51,6 +51,8 @@ module.exports.create = async (req, res) => {
         }
         console.log('checkData', checkData);
         data.actionTakenBy = ObjectId(user._id);
+
+        //res.json(data);return;
         console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new UlbFinancialData(data);
         ulbUpdateRequest.save(async (err, dt) => {
@@ -65,10 +67,10 @@ module.exports.create = async (req, res) => {
                     return Response.DbError(res, err, 'Failed to create entry');
                 }
             } else {
-                let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
-                    dt._id,
-                    'UPLOAD'
-                );
+                // let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
+                //     dt._id,
+                //     'UPLOAD'
+                // );
                 return Response.OK(res, dt, 'Request accepted.');
             }
         });
