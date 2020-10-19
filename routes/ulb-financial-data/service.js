@@ -55,6 +55,25 @@ module.exports.create = async (req, res) => {
         //res.json(data);return;
         console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new UlbFinancialData(data);
+
+        let query = {}
+        query["ulb"] = ObjectId(req.body["ulb"]);
+        Service.put(query,req.body,UlbFinancialData,async function(response,value){
+
+            if(response){
+                // let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
+                //     dt._id,
+                //     'UPLOAD'
+                // );
+                return res.status(response ? 200 : 400).send(value);
+            }
+            else{
+
+                return Response.DbError(res, err, 'Failed to create entry');
+            }
+        });
+
+        /*** before 
         ulbUpdateRequest.save(async (err, dt) => {
             if (err) {
                 if (err.code == 11000) {
@@ -74,6 +93,7 @@ module.exports.create = async (req, res) => {
                 return Response.OK(res, dt, 'Request accepted.');
             }
         });
+        */
     } else {
         return Response.BadRequest(
             res,
@@ -252,9 +272,9 @@ module.exports.getAll = async (req, res) => {
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
 
             let status = 'PENDING'
-            if(user.role=='ULB'){
-                status = 'REJECTED'
-            }
+            // if(user.role=='ULB'){
+            //     status = 'REJECTED'
+            // }
 
             console.log(status);
 
@@ -388,7 +408,7 @@ module.exports.getAll = async (req, res) => {
                     }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
-                    // return res.json(q)
+                    //return res.json(q)
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
