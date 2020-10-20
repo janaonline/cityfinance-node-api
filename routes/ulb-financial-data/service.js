@@ -56,10 +56,11 @@ module.exports.create = async (req, res) => {
         console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new UlbFinancialData(data);
 
+        /** Now**/
         let query = {}
-        query["ulb"] = ObjectId(req.body["ulb"]);
+        req.body["overallReport"] = null;
+        query["ulb"] = ObjectId(data.ulb);
         Service.put(query,req.body,UlbFinancialData,async function(response,value){
-
             if(response){
                 // let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                 //     dt._id,
@@ -68,7 +69,6 @@ module.exports.create = async (req, res) => {
                 return res.status(response ? 200 : 400).send(value);
             }
             else{
-
                 return Response.DbError(res, err, 'Failed to create entry');
             }
         });
