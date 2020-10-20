@@ -10,7 +10,7 @@ const stateRole = function () {
 const UserSchema = mongoose.Schema({
 	name: { type: String,required : true },
 	mobile: { type: String, default:null },
-	email:	{ type: String, required: true, index:{unique:true}},
+	email:	{ type: String, required: true},
 	password: { type: String, required: true },
 	loginAttempts: { type: Number, required: true, default: 0 },
 	lockUntil: { type: Number },

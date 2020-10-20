@@ -104,7 +104,7 @@ module.exports.register = async (req, res) => {
                         role: 'PARTNER',
                         isDeleted : false
                     }).exec();
-
+                    /*
                     if (state) {
                         for (s of state) {
                             await sleep(1000);
@@ -175,7 +175,11 @@ module.exports.register = async (req, res) => {
     }
 };
 module.exports.login = async (req, res) => {
-    User.findOne({ email: req.sanitize(req.body.email) }, async (err, user) => {
+    User.findOne({$or:[
+        {email: req.sanitize(req.body.email)},
+        {censusCode: req.sanitize(req.body.email)},
+        {sbCode: req.sanitize(req.body.email)},
+        ]}, async (err, user) => {
         if (err) {
             return Response.BadRequest(res, err, 'Db Error');
         } else if (!user) {
