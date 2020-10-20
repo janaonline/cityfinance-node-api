@@ -17,6 +17,8 @@ const UserSchema = mongoose.Schema({
 	isLocked : {type: Boolean,default:false},
 	role: { type: String, enum: CONSTANTS.USER.ROLES, required: true },
 	username: { type: String, required: false }, // depricated
+	sbCode:{type:String,default:null}, //Swatch Bharat Code
+    censusCode:{type:String,default:null},
 	designation:{ type:String, default:""},
 	organization:{ type:String, default:""},
 	state : { type: Schema.Types.ObjectId, ref: 'State', required:stateRole},
