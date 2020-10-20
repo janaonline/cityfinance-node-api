@@ -21,7 +21,6 @@ const ContentSchema = new Schema({
 const waterManagementSchema = new Schema({
     serviceLevel:
     {
-        benchmark:{type:String,required:true},
         baseline:{2021:{type:String,required:true}},
         target:{
             2122:{type:Number,required:true},
@@ -33,7 +32,6 @@ const waterManagementSchema = new Schema({
     },
     houseHoldCoveredPipedSupply:
     {
-        benchmark:{type:String,required:true},
         baseline:{2021:{type:String,required:true}},
         target:{
             2122:{type:Number,required:true},
@@ -45,7 +43,6 @@ const waterManagementSchema = new Schema({
     },
     waterSuppliedPerDay:
     {
-        benchmark:{type:String,required:true},
         baseline:{2021:{type:String,required:true}},
         target:{
             2122:{type:Number,required:true},
@@ -57,7 +54,6 @@ const waterManagementSchema = new Schema({
     },
     reduction:
     {
-        benchmark:{type:String,required:true},
         baseline:{2021:{type:String,required:true}},
         target:{
             2122:{type:Number,required:true},
@@ -70,7 +66,6 @@ const waterManagementSchema = new Schema({
     },
     houseHoldCoveredWithSewerage:
     {
-        benchmark:{type:String,required:true},
         baseline:{2021:{type:String,required:true}},
         target:{
             2122:{type:Number,required:true},
@@ -85,9 +80,11 @@ const waterManagementSchema = new Schema({
         wasteWaterPlan:{
             type:[
                 {
-                    url : { type: String, required: true}    
+                    url : { type: String, required: true},
+                    name : { type: String, required: true}    
                 }
             ],
+            status:statusType(),
             default:[],
             required:true
         }
@@ -101,9 +98,10 @@ const solidWasteManagementSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:statusType()
+                    name : { type: String, required: true}
                 }
             ],
+            status:statusType(),
             default:[],
             required:true
         },
@@ -111,12 +109,12 @@ const solidWasteManagementSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:statusType()        
+                    name : { type: String, required: true}
                 }
             ],
+            status:statusType(),
             default:[],
-            required:true,
-
+            required:true
         }
     }
 
@@ -129,19 +127,21 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:statusType()
+                    name : { type: String, required: true}
                 }
             ],
+            status:statusType(),
             default:[],
             required:true
         },
         waterBalancePlan:{
             type:[
                 {
-                    url : { type: String, required: true} ,
-                    status:statusType()
+                    url : { type: String, required: true},
+                    name : { type: String, required: true}
                 }
             ],
+            status:statusType(),
             default:[],
             required:true
         },
@@ -149,9 +149,10 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:statusType()
+                    name : { type: String, required: true}
                 }
             ],
+            status:statusType(),
             default:[],
             required:true
         },
@@ -159,9 +160,10 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    status:statusType()    
+                    name : { type: String, required: true}
                 }
             ],
+            status:statusType(),    
             default:[],
             required:true
         }
