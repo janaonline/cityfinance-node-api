@@ -200,7 +200,7 @@ const ulbSignupApproval = (name, link, edit = false) => {
 
 const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
 
-    let code = sbCode ? sbCode : censusCode
+    let code = sbCode ? sbCode : censusCode;
     return {
         subject: `Signup Successfully`,
         body: `Dear ${name},<br>
@@ -793,7 +793,7 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                     html: ''
                 };
                 if (data.status == 'APPROVED') {
-                    let templateUlb = ulbSignupApproval(data.sbCode,censusCode,data.name, link, edit);
+                    let templateUlb = ulbSignupApproval(data.sbCode,data.censusCode,data.name, link, edit);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 } else if (data.status == 'REJECTED') {
