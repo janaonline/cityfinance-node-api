@@ -176,6 +176,8 @@ const ulbSignupAccountant = (name) => {
                     City Finance Team`
     };
 };
+
+/*
 const ulbSignupApproval = (name, link, edit = false) => {
     return {
         subject: `Signup Request Successfully Approved`,
@@ -184,6 +186,29 @@ const ulbSignupApproval = (name, link, edit = false) => {
                             Your signup request has been successfully ${
                                 edit ? 'updated' : 'approved'
                             }. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                        </p>
+                        <br>
+                        <p>
+                            After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`
+    };
+};
+*/
+
+const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
+
+    let code = sbCode ? sbCode : censusCode
+    return {
+        subject: `Signup Successfully`,
+        body: `Dear ${name},<br>
+                        <p>
+                            Welcome to City Finance Portal! <br>
+                            Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                            Your Username is ${code}
+
                         </p>
                         <br>
                         <p>
@@ -742,6 +767,8 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                     $project: {
                         _id: 1,
                         name: 1,
+                        sbCode:1,
+                        censusCode:1,
                         email: 1,
                         status: 1,
                         rejectReason: 1,
@@ -766,7 +793,7 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                     html: ''
                 };
                 if (data.status == 'APPROVED') {
-                    let templateUlb = ulbSignupApproval(data.name, link, edit);
+                    let templateUlb = ulbSignupApproval(data.sbCode,censusCode,data.name, link, edit);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 } else if (data.status == 'REJECTED') {
