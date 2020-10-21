@@ -241,6 +241,24 @@ const ulbSignupRejection = (name, reason) => {
                     City Finance Team`
     };
 };
+const fdUploadUlb = (name) => {
+    return {
+        subject: `XV FC Form Successfully Submitted`,
+        body: `Dear ${name},<br xmlns="http://www.w3.org/1999/html">
+                        <p>
+                            Your XV FC form has been successfully submitted.<br>
+                        </p>
+                        <br>
+                        <p>
+                            You will receive a confirmation on approval from State and MoHUA.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`
+    };
+};
+
+/*
 const fdUploadUlb = (name, refCode, fy, audited) => {
     return {
         subject: `Data Upload Form Successfully Submitted`,
@@ -266,6 +284,7 @@ const fdUploadUlb = (name, refCode, fy, audited) => {
                     City Finance Team`
     };
 };
+*/
 
 const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
     return {
@@ -295,6 +314,21 @@ const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
 
 const fdUploadState = (name, ulbName, refCode, fy, audited) => {
     return {
+        subject: `XV FC Form Successfully Submitted - ${ulbName}`,
+        body: `Dear ${name} Team,<br>
+                        <p>
+                            The XV FC form data for the ${ulbName} has been successfully submitted.
+                            Kindly review the same.                        
+                        </p>
+                        <br>                
+                    <br>Regards,<br>
+                    City Finance Team`
+    };
+};
+
+/*
+const fdUploadState = (name, ulbName, refCode, fy, audited) => {
+    return {
         subject: `Data Upload Form Successfully Submitted - ${ulbName}`,
         body: `Dear ${name},<br>
                         <p>
@@ -317,6 +351,7 @@ const fdUploadState = (name, ulbName, refCode, fy, audited) => {
                     City Finance Team`
     };
 };
+*/
 const fdUploadApprovalUlb = (name, refCode, fy, audited) => {
     return {
         subject: `Data Upload Form Successfully Approved`,
@@ -586,7 +621,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                     Email(mailOptionUlb);
-
+                    /*    
                     let partner = await User.find({
                         isActive: true,
                         role: 'PARTNER',
@@ -612,6 +647,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                             Email(mailOptions);
                         }
                     }
+                    */
 
                     for(let d of data.stateUser){
                         //data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
@@ -801,14 +837,15 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                     let templateUlb = ulbSignupApproval(data.sbCode,data.censusCode,data.name, link, edit);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
-                } else if (data.status == 'REJECTED') {
+                } 
+                /*else if (data.status == 'REJECTED') {
                     let templateUlb = ulbSignupRejection(
                         data.name,
                         data.rejectReason
                     );
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
-                }
+                }*/
                 Email(mailOptionUlb);
                 resolve('email sent.');
             } else {
