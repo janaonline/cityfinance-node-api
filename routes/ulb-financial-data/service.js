@@ -51,7 +51,6 @@ module.exports.create = async (req, res) => {
         }
         console.log('checkData', checkData);
         data.actionTakenBy = ObjectId(user._id);
-
         //res.json(data);return;
         console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new UlbFinancialData(data);
