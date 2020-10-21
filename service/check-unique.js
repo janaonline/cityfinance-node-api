@@ -70,7 +70,7 @@ const validate = (data, role,_id)=>{
                     }
                 ],
                 ULB:[
-                    {
+                    /*{
                         key:"commissionerEmail",
                         type:"email",
                         message:"Commissioner email already taken."
@@ -94,8 +94,9 @@ const validate = (data, role,_id)=>{
                         key:"accountantConatactNumber",
                         type:"mobile",
                         message:"Accountant contact number already taken."
-                    }
+                    }*/
                 ],
+                
                 STATE:[
                     {
                         key:"mobile",

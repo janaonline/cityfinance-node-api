@@ -1,3 +1,5 @@
+const { stringify } = require('urlencode');
+
 require('./dbConnect');
 const UlbSchema = new Schema({
     name: { type: String, required: true },
@@ -19,6 +21,8 @@ const UlbSchema = new Schema({
             lng:"0.0"
         }
     },
+    sbCode:{type:String,default:null}, /*Swatch Bharat Code*/
+    censusCode:{type:String,default:null},
     amrut : { type : String ,  default : ""},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() },
