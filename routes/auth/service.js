@@ -15,7 +15,7 @@ module.exports.register = async (req, res) => {
         let data = req.body;
         data.role = data.role ? data.role : Constants.USER.DEFAULT_ROLE;
         if (data.role == 'ULB') {
-            data.status = 'PENDING';
+            data.status = 'APPROVED';
             if (data.commissionerEmail && data.ulb) {
                 let user = await User.findOne({
                     ulb: ObjectId(data.ulb),
@@ -82,6 +82,21 @@ module.exports.register = async (req, res) => {
                     forgotPassword
                 );
                 if (data.role == 'ULB') {
+                    let d = {
+                        modifiedAt: new Date(),
+                    };
+                    let u = await User.update({ _id: ObjectId(user._id)},{ $set: d });
+                    let link = await Service.emailVerificationLink(
+                        user._id,
+                        req.currentUrl,
+                        forgotPassword
+                    );
+                    
+                    let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(
+                        u._id,
+                        link
+                    );
+                    /*
                     let template = Service.emailTemplate.ulbSignup(
                         user.name,
                         'ULB',
@@ -93,6 +108,7 @@ module.exports.register = async (req, res) => {
                         html: template.body
                     };
                     Service.sendEmail(mailOptionsCommisioner);
+
                     let state = await User.find({
                         state: ObjectId(user.state),
                         isActive: true,
@@ -104,7 +120,7 @@ module.exports.register = async (req, res) => {
                         role: 'PARTNER',
                         isDeleted : false
                     }).exec();
-                    /*
+                    
                     if (state) {
                         for (s of state) {
                             await sleep(1000);
@@ -175,15 +191,13 @@ module.exports.register = async (req, res) => {
     }
 };
 module.exports.login = async (req, res) => {
-
+    /**Conditional Query For CensusCode/SWATCH BHARAT Code **/
     let query = [
         {censusCode: req.sanitize(req.body.email)},
         {sbCode: req.sanitize(req.body.email)}
     ]
     if(req.body.email.includes("@")){
-        query = [{
-            email: req.sanitize(req.body.email)
-        }]    
+        query = [{email: req.sanitize(req.body.email)}]    
     }
     User.findOne({$or:query}, async (err, user) => {
         if (err) {
