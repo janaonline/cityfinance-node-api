@@ -93,7 +93,7 @@ module.exports.register = async (req, res) => {
                     );
                     
                     let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(
-                        u._id,
+                        user._id,
                         link
                     );
                     /*
