@@ -164,6 +164,7 @@ module.exports.register = async (req, res) => {
                     Service.sendEmail(mailOptionsAccountant);*/
                 } else {
                     let template = Service.emailTemplate.userSignup(
+                        user.email,
                         user.name,
                         link
                     );

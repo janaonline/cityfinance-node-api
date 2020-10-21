@@ -3,7 +3,7 @@ const UlbFinancialData = require('../models/UlbFinancialData');
 const Email = require('./email');
 const emailVericationLink = require('./email-verification-link');
 const ObjectId = require('mongoose').Types.ObjectId;
-const userSignup = (name, link) => {
+const userSignup = (userName,name, link) => {
     return {
         subject: `Registration Successful for City Finance`,
         body: `Dear ${name},<br>
@@ -11,6 +11,7 @@ const userSignup = (name, link) => {
                     <br>
                     <p>
                         Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.
+                        Your Username is ${userName}
                     </p>
                     <br>
                     <p>    
