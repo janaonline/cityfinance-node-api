@@ -206,7 +206,7 @@ const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
         body: `Dear ${name},<br>
                         <p>
                             Welcome to City Finance Portal! <br>
-                            Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                            Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
                             Your Username is ${code}
 
                         </p>
@@ -754,6 +754,8 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                         _id: 1,
                         name: 1,
                         email: 1,
+                        sbCode:1,
+                        censusCode:1,
                         status: 1,
                         rejectReason: 1,
                         commissionerName: 1,
