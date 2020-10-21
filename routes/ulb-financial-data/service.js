@@ -359,6 +359,7 @@ module.exports.getAll = async (req, res) => {
                         millionPlusCities:1,
                         completeness: 1,
                         correctness: 1,
+                        isCompleted:1,
                         status: 1,
                         financialYear: 1,
                         ulbType: '$ulbType.name',

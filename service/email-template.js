@@ -21,14 +21,16 @@ const userSignup = (name, link) => {
                     City Finance Team`
     };
 };
-const userCreation = (name, link) => {
+const userCreation = (userName,name, link) => {
     return {
         subject: `Registration Successful for City Finance`,
         body: `Dear ${name},<br>
                     <p>Welcome to City Finance Portal!</p> 
                     <br>
                     <p>
-                        Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                        Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
+                        Your Username is ${userName}
+
                     </p>
                     <br>
                     <p>
