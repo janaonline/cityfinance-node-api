@@ -589,8 +589,6 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
         try {
             let ufd = await UlbFinancialData.aggregate(query).exec();
             let data = ufd && ufd.length ? ufd[0] : null;
-
-            console.log(data);return;
             let ulbEmails = [];
             data.ulbUser.commissionerEmail
                 ? ulbEmails.push(data.ulbUser.commissionerEmail)
