@@ -175,11 +175,17 @@ module.exports.register = async (req, res) => {
     }
 };
 module.exports.login = async (req, res) => {
-    User.findOne({$or:[
-        {email: req.sanitize(req.body.email)},
+
+    let query = [
         {censusCode: req.sanitize(req.body.email)},
-        {sbCode: req.sanitize(req.body.email)},
-        ]}, async (err, user) => {
+        {sbCode: req.sanitize(req.body.email)}
+    ]
+    if(req.body.email.includes("@")){
+        query = [{
+            email: req.sanitize(req.body.email)
+        }]    
+    }
+    User.findOne({$or:query}, async (err, user) => {
         if (err) {
             return Response.BadRequest(res, err, 'Db Error');
         } else if (!user) {

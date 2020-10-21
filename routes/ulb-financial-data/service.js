@@ -60,6 +60,12 @@ module.exports.create = async (req, res) => {
         let query = {}
         req.body["overallReport"] = null;
         query["ulb"] = ObjectId(data.ulb);
+        let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
+        if(ulbData){
+            if(ulbData.isCompleted){
+                return Response.BadRequest(res,{},`Form is already submitted`);
+            }
+        }
         Service.put(query,req.body,UlbFinancialData,async function(response,value){
             if(response){
                 // let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
