@@ -68,10 +68,13 @@ module.exports.create = async (req, res) => {
         }
         Service.put(query,req.body,UlbFinancialData,async function(response,value){
             if(response){
-                // let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
-                //     dt._id,
-                //     'UPLOAD'
-                // );
+                let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
+                if(ulbData.isCompleted){
+                    let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
+                        ulbData._id,
+                        'UPLOAD'
+                    );
+                }
                 return res.status(response ? 200 : 400).send(value);
             }
             else{
