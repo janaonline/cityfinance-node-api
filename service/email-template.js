@@ -495,6 +495,8 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                     as: 'ulbUser'
                 }
             },
+            { $unwind: '$ulbUser' },
+            {$match:{"ulbUser.isDeleted":false,"ulbUser.role":"ULB"}},
             {
                 $lookup: {
                     from: 'users',
@@ -554,7 +556,8 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                             message: '$auditReport.message'
                         }
                     ],
-                    ulbUser: { $arrayElemAt: ['$ulbUser', 0] },
+                    //ulbUser: { $arrayElemAt: ['$ulbUser', 0] },
+                    ulbUser:1,
                     //stateUser: { $arrayElemAt: ['$stateUser', 0] }
                     stateUser:1  
                 }
@@ -587,6 +590,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
             let ufd = await UlbFinancialData.aggregate(query).exec();
             let data = ufd && ufd.length ? ufd[0] : null;
 
+            console.log(data);return;
             let ulbEmails = [];
             data.ulbUser.commissionerEmail
                 ? ulbEmails.push(data.ulbUser.commissionerEmail)

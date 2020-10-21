@@ -68,7 +68,7 @@ module.exports.create = async (req, res) => {
         Service.put(query,req.body,UlbFinancialData,async function(response,value){
             if(response){
                 let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
-                if(ulbData.isCompleted){
+                if(!ulbData.isCompleted){
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                         ulbData._id,
                         'UPLOAD'
