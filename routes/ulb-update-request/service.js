@@ -17,7 +17,7 @@ module.exports.create = async (req, res)=>{
     if(inValid && inValid.length){
         return Response.BadRequest(res, {},`${inValid.join("\n")}`);
     }
-    if(user.role == "ULB"){
+    /*if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;
         data.actionTakenBy = user._id;
@@ -55,7 +55,9 @@ module.exports.create = async (req, res)=>{
                 }
             })
         }
-    } else if(actionAllowed.indexOf(user.role) > -1){
+    }*/ 
+
+    if(actionAllowed.indexOf(user.role) > -1){
         if(data.ulb){
             let keys = [
                 "name","regionalName","code","state","ulbType","natureOfUlb","wards",
@@ -112,12 +114,10 @@ module.exports.create = async (req, res)=>{
                 if(Object.keys(pObj).length){
                     du = await User.update({ulb:ObjectId(data.ulb), role:"ULB"},{$set:pObj});
                 }
-
                 let template = Service.emailTemplate.userProfileEdit(userData.name)
                 mailOptions.subject =  template.subject;
                 mailOptions.html =  template.body;
                 SendEmail(mailOptions);
-
                 return Response.OK(res, {Ulb:dulb,user:du,data},`updated successfully.`)
             }catch (e) {
                 console.log("Exception",e);
