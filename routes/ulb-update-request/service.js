@@ -123,9 +123,11 @@ module.exports.create = async (req, res)=>{
                 console.log("Exception",e);
                 return Response.DbError(res,e);
             }
-        }else {
+        }
+        /*else {
             return Response.BadRequest(res, data, `'ulb' is required field.`)
         }
+        */
     }else{
         return Response.BadRequest(res,{},'This action is only allowed by ULB');
     }
