@@ -411,6 +411,13 @@ module.exports.verifyToken = (req, res, next) => {
 
 module.exports.resendAccountVerificationLink = async (req, res) => {
     try {
+        let query = [
+            {censusCode: req.sanitize(req.body.email)},
+            {sbCode: req.sanitize(req.body.email)}
+        ]
+        if(req.body.email.includes("@")){
+            query = [{email: req.sanitize(req.body.email),isDeleted: false}]    
+        }
         let keys = [
             '_id',
             'email',
@@ -420,7 +427,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             'isLocked'
         ];
         let user = await User.findOne(
-            { email: req.body.email, isDeleted: false },
+            {$or:query},
             keys.join(' ')
         ).exec();
         if (!user) return Response.BadRequest(res, req.body, `Email not Found`);
@@ -529,8 +536,17 @@ module.exports.emailVerification = async (req, res) => {
     }
 };
 module.exports.forgotPassword = async (req, res) => {
+
+    let query = [
+        {censusCode: req.sanitize(req.body.email)},
+        {sbCode: req.sanitize(req.body.email)}
+    ]
+    if(req.body.email.includes("@")){
+        query = [{email: req.sanitize(req.body.email)}]    
+    }
+
     try {
-        let user = await User.findOne({ email: req.body.email }).exec();
+        let user = await User.findOne({$or:query}).exec();
         if (user) {
             if (user.isDeleted) {
                 return Response.BadRequest(
