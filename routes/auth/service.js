@@ -193,11 +193,13 @@ module.exports.register = async (req, res) => {
 };
 module.exports.login = async (req, res) => {
     /**Conditional Query For CensusCode/SWATCH BHARAT Code **/
+    let msg = `Invalid Swatch Bharat Code/Census Code`
     let query = [
         {censusCode: req.sanitize(req.body.email)},
         {sbCode: req.sanitize(req.body.email)}
     ]
     if(req.body.email.includes("@")){
+        msg= `Invalid email or password`
         query = [{email: req.sanitize(req.body.email)}]    
     }
     User.findOne({$or:query}, async (err, user) => {
@@ -309,7 +311,7 @@ module.exports.login = async (req, res) => {
                     return Response.BadRequest(
                         res,
                         { loginAttempts: attempt.loginAttempts },
-                        `Invalid email or password`
+                        msg
                     );
                 }
             } catch (e) {
@@ -537,11 +539,15 @@ module.exports.emailVerification = async (req, res) => {
 };
 module.exports.forgotPassword = async (req, res) => {
 
+    let msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not registered.`
+    let verify_msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not verified.`
     let query = [
         {censusCode: req.sanitize(req.body.email)},
         {sbCode: req.sanitize(req.body.email)}
     ]
     if(req.body.email.includes("@")){
+        msg = `Requested email:${req.body.email} is not registered.`
+        verify_msg = `Requested email:${req.body.email} is not verified.`
         query = [{email: req.sanitize(req.body.email)}]    
     }
 
@@ -552,13 +558,13 @@ module.exports.forgotPassword = async (req, res) => {
                 return Response.BadRequest(
                     res,
                     {},
-                    `Requested email:${req.body.email} is not registered.`
+                    msg
                 );
             }else if (!user.isEmailVerified) {
                 return Response.BadRequest(
                     res,
                     {},
-                    `Requested email:${req.body.email} is not verified.`
+                    verify_msg
                 );
             }
             else if (user.isLocked) {
