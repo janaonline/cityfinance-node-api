@@ -295,7 +295,6 @@ const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
                         </p>
                         <br>
                         <p>
-                            
                             Reference Number - ${refCode} <br>
                             Year - ${fy} <br>
                             Audit Status - ${
@@ -315,7 +314,7 @@ const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
 const fdUploadState = (name, ulbName, refCode, fy, audited) => {
     return {
         subject: `XV FC Form Successfully Submitted - ${ulbName}`,
-        body: `Dear ${name} Team,<br>
+        body: `Dear ${name},<br>
                         <p>
                             The XV FC form data for the ${ulbName} has been successfully submitted.
                             Kindly review the same.                        
