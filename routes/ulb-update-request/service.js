@@ -17,7 +17,7 @@ module.exports.create = async (req, res)=>{
     if(inValid && inValid.length){
         return Response.BadRequest(res, {},`${inValid.join("\n")}`);
     }
-    if(user.role == "ULB"){
+    /*if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;
         data.actionTakenBy = user._id;
@@ -55,8 +55,10 @@ module.exports.create = async (req, res)=>{
                 }
             })
         }
-    } else if(actionAllowed.indexOf(user.role) > -1){
-        if(data.ulb){
+    }*/ 
+
+    if(actionAllowed.indexOf(user.role) > -1){
+        if(user.ulb){
             let keys = [
                 "name","regionalName","code","state","ulbType","natureOfUlb","wards",
                 "area","population","location","amrut"
@@ -75,19 +77,19 @@ module.exports.create = async (req, res)=>{
                 }
             }
 
-            let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
+            let userData = await User.findOne({ulb:ObjectId(user.ulb), role:"ULB"},"_id email role name").lean();
             let mailOptions = {
                     to: userData.email,
                     subject: "",
                     html:""
             };
             if(pObj["commissionerEmail"]){
-                let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
-                if(emailCheck){
-                    if(emailCheck.ulb.toString() != data.ulb.toString()){
-                        return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
-                    }
-                }
+                // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
+                // if(emailCheck){
+                //     if(emailCheck.ulb.toString() != user.ulb.toString()){
+                //         return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
+                //     }
+                // }
                 pObj["email"] = pObj["commissionerEmail"];
                 pObj["isEmailVerified"] = false;
                
@@ -107,25 +109,25 @@ module.exports.create = async (req, res)=>{
             try{
                 let dulb,du;
                 if(Object.keys(obj).length){
-                    dulb = await Ulb.update({_id:ObjectId(data.ulb)},{$set:obj});
+                    dulb = await Ulb.update({_id:ObjectId(user.ulb)},{$set:obj});
                 }
                 if(Object.keys(pObj).length){
-                    du = await User.update({ulb:ObjectId(data.ulb), role:"ULB"},{$set:pObj});
+                    du = await User.update({ulb:ObjectId(user.ulb), role:"ULB"},{$set:pObj});
                 }
-
                 let template = Service.emailTemplate.userProfileEdit(userData.name)
                 mailOptions.subject =  template.subject;
                 mailOptions.html =  template.body;
                 SendEmail(mailOptions);
-
                 return Response.OK(res, {Ulb:dulb,user:du,data},`updated successfully.`)
             }catch (e) {
                 console.log("Exception",e);
                 return Response.DbError(res,e);
             }
-        }else {
+        }
+        else {
             return Response.BadRequest(res, data, `'ulb' is required field.`)
         }
+        
     }else{
         return Response.BadRequest(res,{},'This action is only allowed by ULB');
     }

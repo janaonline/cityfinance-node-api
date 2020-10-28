@@ -8,7 +8,7 @@ module.exports = {
 	JWT: {
 		SECRET: process.env.SECRET,
 		TOKEN_EXPIRY: '10h',
-		EMAIL_VERFICATION_EXPIRY:'10m'
+		EMAIL_VERFICATION_EXPIRY:'48h'
 	},
 	REDIS:{
 		"production":process.env.REDIS_PROD,

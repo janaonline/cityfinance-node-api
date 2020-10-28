@@ -15,7 +15,7 @@ module.exports.register = async (req, res) => {
         let data = req.body;
         data.role = data.role ? data.role : Constants.USER.DEFAULT_ROLE;
         if (data.role == 'ULB') {
-            data.status = 'PENDING';
+            data.status = 'APPROVED';
             if (data.commissionerEmail && data.ulb) {
                 let user = await User.findOne({
                     ulb: ObjectId(data.ulb),
@@ -82,6 +82,21 @@ module.exports.register = async (req, res) => {
                     forgotPassword
                 );
                 if (data.role == 'ULB') {
+                    let d = {
+                        modifiedAt: new Date(),
+                    };
+                    let u = await User.update({ _id: ObjectId(user._id)},{ $set: d });
+                    let link = await Service.emailVerificationLink(
+                        user._id,
+                        req.currentUrl,
+                        forgotPassword
+                    );
+                    
+                    let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(
+                        user._id,
+                        link
+                    );
+                    /*
                     let template = Service.emailTemplate.ulbSignup(
                         user.name,
                         'ULB',
@@ -93,6 +108,7 @@ module.exports.register = async (req, res) => {
                         html: template.body
                     };
                     Service.sendEmail(mailOptionsCommisioner);
+
                     let state = await User.find({
                         state: ObjectId(user.state),
                         isActive: true,
@@ -104,7 +120,7 @@ module.exports.register = async (req, res) => {
                         role: 'PARTNER',
                         isDeleted : false
                     }).exec();
-
+                    
                     if (state) {
                         for (s of state) {
                             await sleep(1000);
@@ -148,6 +164,7 @@ module.exports.register = async (req, res) => {
                     Service.sendEmail(mailOptionsAccountant);*/
                 } else {
                     let template = Service.emailTemplate.userSignup(
+                        user.email,
                         user.name,
                         link
                     );
@@ -175,7 +192,19 @@ module.exports.register = async (req, res) => {
     }
 };
 module.exports.login = async (req, res) => {
-    User.findOne({ email: req.sanitize(req.body.email) }, async (err, user) => {
+    /**Conditional Query For CensusCode/SWATCH BHARAT Code **/
+    let msg = `Invalid Swatch Bharat Code/Census Code or password`
+    let ulbflagForEmail = false;
+    let query = [
+        {censusCode: req.sanitize(req.body.email)},
+        {sbCode: req.sanitize(req.body.email)}
+    ]
+    if(req.body.email.includes("@")){
+        ulbflagForEmail = true;
+        msg= `Invalid email or password`
+        query = [{email: req.sanitize(req.body.email)}]    
+    }
+    User.findOne({$or:query}, async (err, user) => {
         if (err) {
             return Response.BadRequest(res, err, 'Db Error');
         } else if (!user) {
@@ -196,7 +225,10 @@ module.exports.login = async (req, res) => {
             );
         }else if (!user.isEmailVerified) {
             return Response.BadRequest(res, err, 'Email not verified yet.');
-        } else {
+        }else if (user.role=="ULB" && ulbflagForEmail ) {
+            return Response.BadRequest(res, err, 'Please use Swatch Bharat Code/Census Code for login');
+        }
+         else {
             try {
                 if (user.isLocked) {
                     // just increment login attempts if account is already locked
@@ -284,7 +316,7 @@ module.exports.login = async (req, res) => {
                     return Response.BadRequest(
                         res,
                         { loginAttempts: attempt.loginAttempts },
-                        `Invalid email or password`
+                        msg
                     );
                 }
             } catch (e) {
@@ -386,6 +418,13 @@ module.exports.verifyToken = (req, res, next) => {
 
 module.exports.resendAccountVerificationLink = async (req, res) => {
     try {
+        let query = [
+            {censusCode: req.sanitize(req.body.email)},
+            {sbCode: req.sanitize(req.body.email)}
+        ]
+        if(req.body.email.includes("@")){
+            query = [{email: req.sanitize(req.body.email),isDeleted: false}]    
+        }
         let keys = [
             '_id',
             'email',
@@ -395,7 +434,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             'isLocked'
         ];
         let user = await User.findOne(
-            { email: req.body.email, isDeleted: false },
+            {$or:query},
             keys.join(' ')
         ).exec();
         if (!user) return Response.BadRequest(res, req.body, `Email not Found`);
@@ -504,20 +543,33 @@ module.exports.emailVerification = async (req, res) => {
     }
 };
 module.exports.forgotPassword = async (req, res) => {
+
+    let msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not registered.`
+    let verify_msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not verified.`
+    let query = [
+        {censusCode: req.sanitize(req.body.email)},
+        {sbCode: req.sanitize(req.body.email)}
+    ]
+    if(req.body.email.includes("@")){
+        msg = `Requested email:${req.body.email} is not registered.`
+        verify_msg = `Requested email:${req.body.email} is not verified.`
+        query = [{email: req.sanitize(req.body.email)}]    
+    }
+
     try {
-        let user = await User.findOne({ email: req.body.email }).exec();
+        let user = await User.findOne({$or:query}).exec();
         if (user) {
             if (user.isDeleted) {
                 return Response.BadRequest(
                     res,
                     {},
-                    `Requested email:${req.body.email} is not registered.`
+                    msg
                 );
             }else if (!user.isEmailVerified) {
                 return Response.BadRequest(
                     res,
                     {},
-                    `Requested email:${req.body.email} is not verified.`
+                    verify_msg
                 );
             }
             else if (user.isLocked) {

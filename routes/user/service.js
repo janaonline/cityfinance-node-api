@@ -542,6 +542,7 @@ module.exports.create = async (req, res) => {
                         true
                     );
                     let template = Service.emailTemplate.userCreation(
+                        user.email,
                         user.name,
                         link
                     );

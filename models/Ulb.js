@@ -1,3 +1,5 @@
+const { stringify } = require('urlencode');
+
 require('./dbConnect');
 const UlbSchema = new Schema({
     name: { type: String, required: true },
@@ -19,9 +21,12 @@ const UlbSchema = new Schema({
             lng:"0.0"
         }
     },
-    amrut : { type : String ,  default : ""},
-    modifiedAt : { type: Date, default : Date.now() },
-    createdAt : { type: Date, default : Date.now() },
+    sbCode:{type:String,default:null}, /*Swatch Bharat Code*/
+    censusCode:{type:String,default:null},
+    isMillionPlus : {type:String,enum:[ "YES","No"],default:"No"},
+    amrut : { type : String,default : ""},
+    modifiedAt : { type: Date,default : Date.now() },
+    createdAt : { type: Date,default : Date.now() },
     isActive : { type  : Boolean, default : 1 }
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 module.exports = mongoose.model('Ulb', UlbSchema);

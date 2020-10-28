@@ -3,7 +3,7 @@ const UlbFinancialData = require('../models/UlbFinancialData');
 const Email = require('./email');
 const emailVericationLink = require('./email-verification-link');
 const ObjectId = require('mongoose').Types.ObjectId;
-const userSignup = (name, link) => {
+const userSignup = (userName,name, link) => {
     return {
         subject: `Registration Successful for City Finance`,
         body: `Dear ${name},<br>
@@ -11,6 +11,7 @@ const userSignup = (name, link) => {
                     <br>
                     <p>
                         Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.
+                        Your Username is ${userName}
                     </p>
                     <br>
                     <p>    
@@ -21,14 +22,16 @@ const userSignup = (name, link) => {
                     City Finance Team`
     };
 };
-const userCreation = (name, link) => {
+const userCreation = (userName,name, link) => {
     return {
         subject: `Registration Successful for City Finance`,
         body: `Dear ${name},<br>
                     <p>Welcome to City Finance Portal!</p> 
                     <br>
                     <p>
-                        Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                        Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
+                        Your Username is ${userName}
+
                     </p>
                     <br>
                     <p>
@@ -176,6 +179,8 @@ const ulbSignupAccountant = (name) => {
                     City Finance Team`
     };
 };
+
+/*
 const ulbSignupApproval = (name, link, edit = false) => {
     return {
         subject: `Signup Request Successfully Approved`,
@@ -184,6 +189,29 @@ const ulbSignupApproval = (name, link, edit = false) => {
                             Your signup request has been successfully ${
                                 edit ? 'updated' : 'approved'
                             }. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.
+                        </p>
+                        <br>
+                        <p>
+                            After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`
+    };
+};
+*/
+
+const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
+
+    let code = sbCode ? sbCode : censusCode;
+    return {
+        subject: `Signup Successfully`,
+        body: `Dear ${name},<br>
+                        <p>
+                            Welcome to City Finance Portal! <br>
+                            Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
+                            Your Username is ${code}
+
                         </p>
                         <br>
                         <p>
@@ -213,6 +241,23 @@ const ulbSignupRejection = (name, reason) => {
                     City Finance Team`
     };
 };
+const fdUploadUlb = (name) => {
+    return {
+        subject: `XV FC Form Successfully Submitted`,
+        body: `Dear ${name},<br xmlns="http://www.w3.org/1999/html">
+                        <p>
+                            Your XV FC form has been successfully submitted.<br>
+                        </p>
+                        <p>
+                            You will receive a confirmation on approval from State and MoHUA.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`
+    };
+};
+
+/*
 const fdUploadUlb = (name, refCode, fy, audited) => {
     return {
         subject: `Data Upload Form Successfully Submitted`,
@@ -238,6 +283,7 @@ const fdUploadUlb = (name, refCode, fy, audited) => {
                     City Finance Team`
     };
 };
+*/
 
 const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
     return {
@@ -248,7 +294,6 @@ const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
                         </p>
                         <br>
                         <p>
-                            
                             Reference Number - ${refCode} <br>
                             Year - ${fy} <br>
                             Audit Status - ${
@@ -265,6 +310,21 @@ const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
     };
 };
 
+const fdUploadState = (name, ulbName, refCode, fy, audited) => {
+    return {
+        subject: `XV FC Form Successfully Submitted - ${ulbName}`,
+        body: `Dear ${name},<br>
+                        <p>
+                            The XV FC form data for the ${ulbName} has been successfully submitted.
+                            Kindly review the same.                        
+                        </p>
+                        <br>                
+                    <br>Regards,<br>
+                    City Finance Team`
+    };
+};
+
+/*
 const fdUploadState = (name, ulbName, refCode, fy, audited) => {
     return {
         subject: `Data Upload Form Successfully Submitted - ${ulbName}`,
@@ -289,6 +349,7 @@ const fdUploadState = (name, ulbName, refCode, fy, audited) => {
                     City Finance Team`
     };
 };
+*/
 const fdUploadApprovalUlb = (name, refCode, fy, audited) => {
     return {
         subject: `Data Upload Form Successfully Approved`,
@@ -432,6 +493,8 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                     as: 'ulbUser'
                 }
             },
+            { $unwind: '$ulbUser' },
+            {$match:{"ulbUser.isDeleted":false,"ulbUser.role":"ULB"}},
             {
                 $lookup: {
                     from: 'users',
@@ -491,7 +554,8 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                             message: '$auditReport.message'
                         }
                     ],
-                    ulbUser: { $arrayElemAt: ['$ulbUser', 0] },
+                    //ulbUser: { $arrayElemAt: ['$ulbUser', 0] },
+                    ulbUser:1,
                     //stateUser: { $arrayElemAt: ['$stateUser', 0] }
                     stateUser:1  
                 }
@@ -523,7 +587,6 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
         try {
             let ufd = await UlbFinancialData.aggregate(query).exec();
             let data = ufd && ufd.length ? ufd[0] : null;
-
             let ulbEmails = [];
             data.ulbUser.commissionerEmail
                 ? ulbEmails.push(data.ulbUser.commissionerEmail)
@@ -558,7 +621,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                     Email(mailOptionUlb);
-
+                    /*    
                     let partner = await User.find({
                         isActive: true,
                         role: 'PARTNER',
@@ -584,6 +647,7 @@ const sendFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
                             Email(mailOptions);
                         }
                     }
+                    */
 
                     for(let d of data.stateUser){
                         //data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
@@ -729,6 +793,8 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                         _id: 1,
                         name: 1,
                         email: 1,
+                        sbCode:1,
+                        censusCode:1,
                         status: 1,
                         rejectReason: 1,
                         commissionerName: 1,
@@ -742,6 +808,8 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                     $project: {
                         _id: 1,
                         name: 1,
+                        sbCode:1,
+                        censusCode:1,
                         email: 1,
                         status: 1,
                         rejectReason: 1,
@@ -766,17 +834,18 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                     html: ''
                 };
                 if (data.status == 'APPROVED') {
-                    let templateUlb = ulbSignupApproval(data.name, link, edit);
+                    let templateUlb = ulbSignupApproval(data.sbCode,data.censusCode,data.name, link, edit);
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
-                } else if (data.status == 'REJECTED') {
+                } 
+                /*else if (data.status == 'REJECTED') {
                     let templateUlb = ulbSignupRejection(
                         data.name,
                         data.rejectReason
                     );
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
-                }
+                }*/
                 Email(mailOptionUlb);
                 resolve('email sent.');
             } else {
