@@ -615,7 +615,12 @@ module.exports.getDetails = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
     if (actionAllowed.indexOf(user.role) > -1) {
         let query = { _id: ObjectId(req.params._id) };
-        let data = await UlbFinancialData.findOne(query, '-history').exec();
+        let data = await UlbFinancialData.findOne(query, '-history').populate([
+            {
+                path: 'actionTakenBy',
+                select: '_id name email role'
+            }
+        ]).exec();
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
