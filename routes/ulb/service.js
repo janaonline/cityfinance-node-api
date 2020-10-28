@@ -68,7 +68,7 @@ module.exports.getUlbById = function(req,res) {
             }
         },
         {$unwind:"$state"},
-        {$project:{"state":"$state"}}
+        {$project:{"state":"$state","isMillionPlus":1}}
     ];
     service.aggregate(arr,Ulb, function(response, value) {
         return res.status(response ? 200 : 400).send(value);
