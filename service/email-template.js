@@ -248,7 +248,6 @@ const fdUploadUlb = (name) => {
                         <p>
                             Your XV FC form has been successfully submitted.<br>
                         </p>
-                        <br>
                         <p>
                             You will receive a confirmation on approval from State and MoHUA.
                         </p>
