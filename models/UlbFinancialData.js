@@ -28,7 +28,8 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:statusType()
+        status:statusType(),
+        rejectRegion:{type:String,default:""}
     },
     houseHoldCoveredPipedSupply:
     {
@@ -39,7 +40,8 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:statusType()
+        status:statusType(),
+        rejectRegion:{type:String,default:""}
     },
     waterSuppliedPerDay:
     {
@@ -50,7 +52,8 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:statusType()  
+        status:statusType(),
+        rejectRegion:{type:String,default:""}  
     },
     reduction:
     {
@@ -62,7 +65,7 @@ const waterManagementSchema = new Schema({
             2425:{type:Number,required:true} 
         },
         status:statusType(),
- 
+        rejectRegion:{type:String,default:""}  
     },
     houseHoldCoveredWithSewerage:
     {
@@ -73,7 +76,8 @@ const waterManagementSchema = new Schema({
             2324:{type:Number,required:true},  
             2425:{type:Number,required:true} 
         },
-        status:statusType()    
+        status:statusType()  ,
+        rejectRegion:{type:String,default:""}    
     },
 
     documents:{
@@ -81,10 +85,11 @@ const waterManagementSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    name : { type: String, required: true}    
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectRegion:{type:String,default:""}    
                 }
             ],
-            status:statusType(),
             default:[],
             required:true
         }
@@ -98,10 +103,11 @@ const solidWasteManagementSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    name : { type: String, required: true}
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectRegion:{type:String,default:""}
                 }
             ],
-            status:statusType(),
             default:[],
             required:true
         },
@@ -109,10 +115,11 @@ const solidWasteManagementSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    name : { type: String, required: true}
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectRegion:{type:String,default:""}
                 }
             ],
-            status:statusType(),
             default:[],
             required:true
         }
@@ -127,10 +134,11 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    name : { type: String, required: true}
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectRegion:{type:String,default:""}
                 }
             ],
-            status:statusType(),
             default:[],
             required:true
         },
@@ -138,10 +146,11 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    name : { type: String, required: true}
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectRegion:{type:String,default:""}
                 }
             ],
-            status:statusType(),
             default:[],
             required:true
         },
@@ -149,10 +158,11 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    name : { type: String, required: true}
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectRegion:{type:String,default:""}
                 }
             ],
-            status:statusType(),
             default:[],
             required:true
         },
@@ -160,10 +170,11 @@ const millionPlusCitiesSchema = new Schema({
             type:[
                 {
                     url : { type: String, required: true},
-                    name : { type: String, required: true}
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectRegion:{type:String,default:""}
                 }
             ],
-            status:statusType(),    
             default:[],
             required:true
         }
