@@ -213,7 +213,6 @@ const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
                             Your Username is ${code}
 
                         </p>
-                        <br>
                         <p>
                             After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                         </p>
