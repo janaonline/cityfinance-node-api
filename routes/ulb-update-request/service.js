@@ -84,12 +84,12 @@ module.exports.create = async (req, res)=>{
                     html:""
             };
             if(pObj["commissionerEmail"]){
-                let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
-                if(emailCheck){
-                    if(emailCheck.ulb.toString() != user.ulb.toString()){
-                        return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
-                    }
-                }
+                // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
+                // if(emailCheck){
+                //     if(emailCheck.ulb.toString() != user.ulb.toString()){
+                //         return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
+                //     }
+                // }
                 pObj["email"] = pObj["commissionerEmail"];
                 pObj["isEmailVerified"] = false;
                
