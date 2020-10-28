@@ -193,12 +193,14 @@ module.exports.register = async (req, res) => {
 };
 module.exports.login = async (req, res) => {
     /**Conditional Query For CensusCode/SWATCH BHARAT Code **/
-    let msg = `Invalid Swatch Bharat Code/Census Code`
+    let msg = `Invalid Swatch Bharat Code/Census Code or password`
+    let ulbflagForEmail = false;
     let query = [
         {censusCode: req.sanitize(req.body.email)},
         {sbCode: req.sanitize(req.body.email)}
     ]
     if(req.body.email.includes("@")){
+        ulbflagForEmail = true;
         msg= `Invalid email or password`
         query = [{email: req.sanitize(req.body.email)}]    
     }
@@ -223,7 +225,10 @@ module.exports.login = async (req, res) => {
             );
         }else if (!user.isEmailVerified) {
             return Response.BadRequest(res, err, 'Email not verified yet.');
-        } else {
+        }else if (user.role=="ULB" && ulbflagForEmail ) {
+            return Response.BadRequest(res, err, 'Please use Swatch Bharat Code/Census Code for login');
+        }
+         else {
             try {
                 if (user.isLocked) {
                     // just increment login attempts if account is already locked
