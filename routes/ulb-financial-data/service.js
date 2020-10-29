@@ -805,10 +805,8 @@ module.exports.action = async(req,res)=>{
     let user = req.decoded
     data = req.body,
     _id = ObjectId(req.params._id)
-
-    let flag = checkStatus(data);
-    console.log(flag);
-    return;
+    let flag = checkStatus(data); // check rejected status
+    data["status"] = flag ? 'REJECTED':'APPROVED'
     let actionAllowed = ['MoHUA','STATE'];
     if (actionAllowed.indexOf(user.role) > -1) {
         if (user.role == 'STATE') {
@@ -824,7 +822,7 @@ module.exports.action = async(req,res)=>{
             { _id: _id },
             '-history'
         ).lean();
-
+        
         let history = Object.assign({}, prevState);
         if (!prevState) {
             return Response.BadRequest(
@@ -875,8 +873,13 @@ function checkStatus(data){
         "garbageFreeCities",
         "waterSupplyCoverage",
     ]
+    let millionPlusCitiesKeys = [
+        "cityPlan",
+        "waterBalancePlan",
+        "serviceLevelPlan",
+        "solidWastePlan"
+    ]
     for(key in data){
-        //console.log(key);
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
                 for(let objKey of waterManagementKeys){
@@ -891,14 +894,22 @@ function checkStatus(data){
                 }
             }
             if(key=='solidWasteManagement'){
-
-                for(let d of data[key]["documents"]["garbageFreeCities"]){
-                    rejected=true;
+                for(let objKey of solidWasteManagementKeys){
+                    for(let d of data[key]["documents"][objKey]){
+                        if(d.status=='REJECTED'){
+                            rejected=true;
+                        }
+                    }
                 }
-                for(let d of data[key]["documents"]["waterSupplyCoverage"]){
-                    rejected=true;
+            }
+            if(key=='millionPlusCities'){
+                for(let objKey of millionPlusCitiesKeys){
+                    for(let d of data[key]["documents"][objKey]){
+                        if(d.status=='REJECTED'){
+                            rejected=true;
+                        }
+                    }
                 }
-
             }
         }else{
             if(data["status"]=='REJECTED'){
