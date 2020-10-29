@@ -349,13 +349,13 @@ module.exports.getAll = async (req, res) => {
                         _id: 1,
                         audited: 1,
                         priority: 1,
-                        auditStatus: {
-                            $cond: {
-                                if: '$audited',
-                                then: 'Audited',
-                                else: 'Unaudited'
-                            }
-                        },
+                        // auditStatus: {
+                        //     $cond: {
+                        //         if: '$audited',
+                        //         then: 'Audited',
+                        //         else: 'Unaudited'
+                        //     }
+                        // },
                         waterManagement:1,
                         solidWasteManagement:1,
                         millionPlusCities:1,
@@ -363,7 +363,7 @@ module.exports.getAll = async (req, res) => {
                         correctness: 1,
                         isCompleted:1,
                         status: 1,
-                        financialYear: 1,
+                        //financialYear: 1,
                         ulbType: '$ulbType.name',
                         ulb: '$ulb._id',
                         ulbName: '$ulb.name',
@@ -406,8 +406,8 @@ module.exports.getAll = async (req, res) => {
                 let xlsData = await Service.dataFormating(arr, {
                     ulbName: 'ULB name',
                     ulbCode: 'ULB Code',
-                    financialYear: 'Financial Year',
-                    auditStatus: 'Audit Status',
+                    //financialYear: 'Financial Year',
+                    //auditStatus: 'Audit Status',
                     status: 'Status'
                 });
                 return res.xls('financial-data.xlsx', xlsData);
@@ -615,7 +615,12 @@ module.exports.getDetails = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
     if (actionAllowed.indexOf(user.role) > -1) {
         let query = { _id: ObjectId(req.params._id) };
-        let data = await UlbFinancialData.findOne(query, '-history').exec();
+        let data = await UlbFinancialData.findOne(query, '-history').populate([
+            {
+                path: 'actionTakenBy',
+                select: '_id name email role'
+            }
+        ]).exec();
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
@@ -795,6 +800,20 @@ module.exports.update = async (req, res) => {
         );
     }
 };
+
+module.exports.action = async(req,res)=>{
+
+    let user = req.decoded,
+    data = req.body,
+    _id = ObjectId(req.params._id)
+    let actionAllowed = ['MoHUA','STATE'];
+    if (actionAllowed.indexOf(user.role) > -1) {
+
+
+
+    }
+}
+
 module.exports.completeness = async (req, res) => {
     let user = req.decoded,
         data = req.body,

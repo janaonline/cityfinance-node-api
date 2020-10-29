@@ -532,7 +532,7 @@ module.exports.create = async (req, res) => {
                         res,
                         {},
                         err.code == 11000
-                            ? 'Email     ID already exists.'
+                            ? 'Email ID already exists.'
                             : 'Failed to register user.'
                     );
                 } else {

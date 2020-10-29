@@ -213,7 +213,6 @@ const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
                             Your Username is ${code}
 
                         </p>
-                        <br>
                         <p>
                             After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
                         </p>
@@ -793,8 +792,8 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                         _id: 1,
                         name: 1,
                         email: 1,
-                        sbCode:1,
-                        censusCode:1,
+                        sbCode:"$ulb.sbCode",
+                        censusCode:"$ulb.censusCode",
                         status: 1,
                         rejectReason: 1,
                         commissionerName: 1,
