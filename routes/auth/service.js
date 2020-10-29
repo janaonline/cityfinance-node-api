@@ -9,6 +9,7 @@ const Service = require('../../service');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
 const request = require('request');
+const Ulb = require('../../models/Ulb');
 
 module.exports.register = async (req, res) => {
     try {
@@ -82,8 +83,12 @@ module.exports.register = async (req, res) => {
                     forgotPassword
                 );
                 if (data.role == 'ULB') {
+
+                    let ulbObj = await Ulb.findOne({_id:ObjectId(user.ulb)}).exec();
                     let d = {
                         modifiedAt: new Date(),
+                        sbCode:ulbObj.sbCode,
+                        censusCode:ulbObj.censusCode
                     };
                     let u = await User.update({ _id: ObjectId(user._id)},{ $set: d });
                     let link = await Service.emailVerificationLink(

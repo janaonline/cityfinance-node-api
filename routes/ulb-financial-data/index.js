@@ -17,6 +17,6 @@ router.put("/correctness/:_id", verifyToken, ufdService.correctness);
 router.put("/completeness/:_id",verifyToken, ufdService.completeness);
 router.get("/approved-records",verifyToken, ufdService.getApprovedFinancialData);
 router.get("/source-files/:_id",verifyToken, ufdService.sourceFiles);
-router.post("/action/",verifyToken,ufdService.action);
+router.post("/action/:_id",verifyToken,ufdService.action);
 
 module.exports = router;

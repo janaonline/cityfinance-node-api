@@ -802,16 +802,112 @@ module.exports.update = async (req, res) => {
 };
 
 module.exports.action = async(req,res)=>{
-
-    let user = req.decoded,
+    let user = req.decoded
     data = req.body,
     _id = ObjectId(req.params._id)
+
+    let flag = checkStatus(data);
+    console.log(flag);
+    return;
     let actionAllowed = ['MoHUA','STATE'];
     if (actionAllowed.indexOf(user.role) > -1) {
+        if (user.role == 'STATE') {
+            let ulb = await Ulb.findOne({ _id: ObjectId(data.ulb) }).exec();
+            if (!(ulb && ulb.state && ulb.state.toString() == user.state)) {
+                let message = !ulb
+                    ? 'Ulb not found.'
+                    : 'State is not matching.';
+                return Response.BadRequest(res, {}, message);
+            }
+        }
+        let prevState = await UlbFinancialData.findOne(
+            { _id: _id },
+            '-history'
+        ).lean();
 
+        let history = Object.assign({}, prevState);
+        if (!prevState) {
+            return Response.BadRequest(
+                res,
+                {},
+                'Requested record not found.'
+            );
+        }
+        let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
+        if(prevState.status == 'APPROVED' && prevState.role=='MoHUA' ) {
+            return Response.BadRequest(res, {}, 'Already approved.');
+        }
 
+        data["actionTakenBy"] = user._id;
+        let du = await UlbFinancialData.update(
+            { _id: prevState._id },
+            { $set:data,$push: { history: history } }
+        );
+        let ulbFinancialDataobj = await UlbFinancialData.findOne({
+            _id: prevState._id
+        }).exec();
 
+        return Response.OK(
+            res,
+            ulbFinancialDataobj,
+            ``
+        );
+    
+    }else {
+        return Response.BadRequest(
+            res,
+            {},
+            `This action is only allowed by ${actionAllowed.join()}`
+        );
     }
+}
+
+function checkStatus(data){
+    let rejected=false
+    let waterManagementKeys = [
+        "serviceLevel",
+        "houseHoldCoveredPipedSupply",
+        "waterSuppliedPerDay",
+        "reduction",
+        "houseHoldCoveredWithSewerage"
+    ]
+    let solidWasteManagementKeys = [
+        "garbageFreeCities",
+        "waterSupplyCoverage",
+    ]
+    for(key in data){
+        //console.log(key);
+        if(typeof data[key] === 'object'  && data[key] !== null ){
+            if(key=='waterManagement'){
+                for(let objKey of waterManagementKeys){
+                    if(data[key][objKey]["status"]=='REJECTED'){
+                        rejected=true;
+                    }
+                }   
+                for(let d of data[key]["documents"]["wasteWaterPlan"]){
+                    if(d.status=='REJECTED'){
+                        rejected=true;
+                    }
+                }
+            }
+            if(key=='solidWasteManagement'){
+
+                for(let d of data[key]["documents"]["garbageFreeCities"]){
+                    rejected=true;
+                }
+                for(let d of data[key]["documents"]["waterSupplyCoverage"]){
+                    rejected=true;
+                }
+
+            }
+        }else{
+            if(data["status"]=='REJECTED'){
+                rejected = true
+            }
+        }
+    }
+
+    return rejected;
 }
 
 module.exports.completeness = async (req, res) => {
