@@ -90,7 +90,7 @@ const waterManagementSchema = new Schema({
                     rejectRegion:{type:String,default:""}    
                 }
             ],
-            default:[],
+            default:null,
             required:true
         }
     }
@@ -108,7 +108,7 @@ const solidWasteManagementSchema = new Schema({
                     rejectRegion:{type:String,default:""}
                 }
             ],
-            default:[],
+            default:null,
             required:true
         },
         waterSupplyCoverage:{
@@ -120,7 +120,7 @@ const solidWasteManagementSchema = new Schema({
                     rejectRegion:{type:String,default:""}
                 }
             ],
-            default:[],
+            default:null,
             required:true
         }
     }
@@ -139,7 +139,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectRegion:{type:String,default:""}
                 }
             ],
-            default:[],
+            default:null,
             required:true
         },
         waterBalancePlan:{
@@ -151,7 +151,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectRegion:{type:String,default:""}
                 }
             ],
-            default:[],
+            default:null,
             required:true
         },
         serviceLevelPlan:{
@@ -163,7 +163,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectRegion:{type:String,default:""}
                 }
             ],
-            default:[],
+            default:null,
             required:true
         },
         solidWastePlan:{
@@ -175,7 +175,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectRegion:{type:String,default:""}
                 }
             ],
-            default:[],
+            default:null,
             required:true
         }
     }
