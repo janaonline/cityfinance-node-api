@@ -2,6 +2,7 @@ const Ulb = require('../../models/Ulb');
 const UlbFinancialData = require('../../models/UlbFinancialData');
 const LoginHistory = require('../../models/LoginHistory');
 const User = require('../../models/User');
+const State = require('../../models/State');
 const Response = require('../../service').response;
 const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -802,64 +803,144 @@ module.exports.update = async (req, res) => {
 };
 
 module.exports.action = async(req,res)=>{
-    let user = req.decoded
-    data = req.body,
-    _id = ObjectId(req.params._id)
-    let flag = checkStatus(data); // check rejected status
-    data["status"] = flag ? 'REJECTED':'APPROVED'
-    let actionAllowed = ['MoHUA','STATE'];
-    if (actionAllowed.indexOf(user.role) > -1) {
-        if (user.role == 'STATE') {
-            let ulb = await Ulb.findOne({ _id: ObjectId(data.ulb) }).exec();
-            if (!(ulb && ulb.state && ulb.state.toString() == user.state)) {
-                let message = !ulb
-                    ? 'Ulb not found.'
-                    : 'State is not matching.';
-                return Response.BadRequest(res, {}, message);
+    try {
+        let user = req.decoded
+        data = req.body,
+        _id = ObjectId(req.params._id)
+        let flag = checkStatus(data); // check rejected status
+        data["status"] = flag ? 'REJECTED':'APPROVED'
+        let actionAllowed = ['MoHUA','STATE'];
+        if (actionAllowed.indexOf(user.role) > -1) {
+            if (user.role == 'STATE') {
+                let ulb = await Ulb.findOne({ _id: ObjectId(data.ulb) }).exec();
+                if (!(ulb && ulb.state && ulb.state.toString() == user.state)) {
+                    let message = !ulb
+                        ? 'Ulb not found.'
+                        : 'State is not matching.';
+                    return Response.BadRequest(res, {}, message);
+                }
             }
-        }
-        let prevState = await UlbFinancialData.findOne(
-            { _id: _id },
-            '-history'
-        ).lean();
+            let prevState = await UlbFinancialData.findOne(
+                { _id: _id },
+                '-history'
+            ).lean();
+            let history = Object.assign({}, prevState);
+            if (!prevState) {
+                return Response.BadRequest(
+                    res,
+                    {},
+                    'Requested record not found.'
+                );
+            }
+            let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
+            if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
+                return Response.BadRequest(res, {}, 'Already approved By MoHUA.');
+            }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
+                return Response.BadRequest(res, {}, 'Already Rejected By MoHUA.');
+            }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
+                return Response.BadRequest(res, {}, 'Already approved By STATE.');
+            }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
+                return Response.BadRequest(res, {}, 'Already Rejected By State.');
+            }
+            data["actionTakenBy"] = user._id;
+            let du = await UlbFinancialData.update(
+                { _id: prevState._id },
+                { $set:data,$push: { history: history } }
+            );
+            let ulbFinancialDataobj = await UlbFinancialData.findOne({
+                _id: prevState._id
+            }).exec();
+            let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
+            .populate([
+                {
+                    path: 'state',
+                    model: State,
+                    select: '_id name'
+                }
+            ])
+            .exec()
+            if (
+                data["status"] == 'APPROVED' &&
+                user.role == 'MoHUA'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** ULB TRIGGER */
+                let ulbEmails = []
+                let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
+                    ulbUser.name,
+                );
+                ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
+                mailOptions.to =  ulbEmails.join(),
+                mailOptions.subject = UlbTemplate.subject,
+                mailOptions.html = UlbTemplate.body
+                Service.sendEmail(mailOptions);
+                /** STATE TRIGGER */
+                let stateEmails = []
+                let stateUser = await User.find({state:ObjectId(ulbUser.state._id),isDeleted:false,role:"STATE"}).exec()
+                for(let d of stateUser){
+                    sleep(1000)
+                    d.email ? stateEmails.push(d.email) : '';
+                    d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
+                    let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
+                        ulbUser.name,
+                        d.name
+                    );
+                    mailOptions.to = stateEmails.join();
+                    mailOptions.subject = stateTemplate.subject;
+                    mailOptions.html = stateTemplate.body;
+                    Service.sendEmail(mailOptions);
+                }
+            }
+            if (
+                data["status"] == 'APPROVED' &&
+                user.role == 'STATE'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** STATE TRIGGER */
+                let MohuaUser = await User.find({isDeleted:false,role:"MoHUA"}).exec();
+                for(let d of MohuaUser){
+                    let MohuaTemplate = await Service.emailTemplate.xvUploadApprovalState(
+                        d.name,
+                        ulbUser.name,
+                        ulbUser.state.name
+                    );
+                    mailOptions.to =  d.email,
+                    mailOptions.subject = MohuaTemplate.subject,
+                    mailOptions.html = MohuaTemplate.body
+                    Service.sendEmail(mailOptions);
+                }
+            }
+            return Response.OK(
+                res,
+                ulbFinancialDataobj,
+                ``
+            );
         
-        let history = Object.assign({}, prevState);
-        if (!prevState) {
+        }else {
             return Response.BadRequest(
                 res,
                 {},
-                'Requested record not found.'
+                `This action is only allowed by ${actionAllowed.join()}`
             );
         }
-        let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
-        if(prevState.status == 'APPROVED' && prevState.role=='MoHUA' ) {
-            return Response.BadRequest(res, {}, 'Already approved.');
-        }
-
-        data["actionTakenBy"] = user._id;
-        let du = await UlbFinancialData.update(
-            { _id: prevState._id },
-            { $set:data,$push: { history: history } }
-        );
-        let ulbFinancialDataobj = await UlbFinancialData.findOne({
-            _id: prevState._id
-        }).exec();
-
-        return Response.OK(
-            res,
-            ulbFinancialDataobj,
-            ``
-        );
-    
-    }else {
-        return Response.BadRequest(
-            res,
-            {},
-            `This action is only allowed by ${actionAllowed.join()}`
-        );
+    }
+    catch (e) {
+        console.log('Exception', e);
     }
 }
 
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
+}
 function checkStatus(data){
     let rejected=false
     let waterManagementKeys = [

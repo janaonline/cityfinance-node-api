@@ -389,6 +389,46 @@ const fdUploadApprovalState = (name, ulbName, refCode, fy, audited) => {
                     City Finance Team`
     };
 };
+
+const xvUploadApprovalMoHUA = (name) => {
+    return {
+        subject: `XV FC Form Successfully Approved by MoHUA`,
+        body: `Dear ${name},<br>
+                <p>
+                    Your XV FC form has been approved by MoHUA.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
+
+const xvUploadApprovalByMoHUAtoState = (ulbName,stateName) => {
+    return {
+        subject: `XV FC Form Successfully Approved by MoHUA- ${ulbName}`,
+        body: `Dear ${stateName},<br>
+                <p>
+                    The XV FC form for the ${ulbName} has been approved by MoHUA.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
+
+const xvUploadApprovalState = (mohuaName,ulbName,stateName) => {
+    return {
+        subject: `XV FC Form Successfully Submitted- ${ulbName}`,
+        body: `Dear ${mohuaName},<br>
+                <p>
+                    The XV FC form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.
+                    Kindly review the same.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
 const fdUploadRejectionUlb = (name, refCode, fy, audited, reports) => {
     return {
         subject: `Data Upload Form Rejected`,
@@ -903,6 +943,9 @@ module.exports = {
     sendFinancialDataStatusEmail: sendFinancialDataStatusEmail,
     sendUlbSignupStatusEmmail: sendUlbSignupStatusEmmail,
     sendProfileUpdateStatusEmail: sendProfileUpdateStatusEmail,
+    xvUploadApprovalMoHUA:xvUploadApprovalMoHUA,
+    xvUploadApprovalByMoHUAtoState :xvUploadApprovalByMoHUAtoState,
+    xvUploadApprovalState:xvUploadApprovalState, 
     userSignup: userSignup,
     userCreation: userCreation,
     userForgotPassword: userForgotPassword,
