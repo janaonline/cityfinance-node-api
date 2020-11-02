@@ -430,15 +430,31 @@ const xvUploadApprovalState = (mohuaName,ulbName,stateName) => {
     };
 };
 
-const xvUploadRejectUlb = (ulbName,rejectReason) => {
+const xvUploadRejectUlb = (ulbName,rejectReason,role) => {
+
     return {
-        subject: `XV FC Form Rejected by MoHUA}`,
+        subject: `XV FC Form Rejected by ${role}`,
         body: `Dear ${ulbName},<br>
                 <p>
-                    Your XV FC form has been rejected by MoHUA with the following details.
+                    Your XV FC form has been rejected by ${role} with the following details.<br>
                     Rejected Data:
                     ${rejectReason}
+                </p>
+                <p>Please login to City Finance Portal to submit the corrected form.</p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
 
+const xvUploadRejectState = (ulbName,stateName,rejectReason) => {
+    return {
+        subject: `XV FC Form Rejected by MoHUA-${ulbName}`,
+        body: `Dear ${stateName},<br>
+                <p>
+                    The XV FC form for the ${ulbName} has been rejected by MoHUA with the following details.<br>
+                    Rejected Data:
+                    ${rejectReason}
                 </p>
                 <p>Please login to City Finance Portal to submit the corrected form.</p>
                 <br>
@@ -965,6 +981,7 @@ module.exports = {
     xvUploadApprovalByMoHUAtoState :xvUploadApprovalByMoHUAtoState,
     xvUploadApprovalState:xvUploadApprovalState,
     xvUploadRejectUlb:xvUploadRejectUlb, 
+    xvUploadRejectState:xvUploadRejectState,
     userSignup: userSignup,
     userCreation: userCreation,
     userForgotPassword: userForgotPassword,

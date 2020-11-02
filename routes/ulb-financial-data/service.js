@@ -861,18 +861,18 @@ module.exports.action = async(req,res)=>{
                 { _id: ObjectId(prevState._id) },
                 { $set:data,$push: { history: history } }
             );
-            // let ulbFinancialDataobj = await UlbFinancialData.findOne({
-            //     _id: ObjectId(prevState._id)
-            // }).exec();
-            // let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
-            // .populate([
-            //     {
-            //         path: 'state',
-            //         model: State,
-            //         select: '_id name'
-            //     }
-            // ])
-            // .exec()
+            let ulbFinancialDataobj = await UlbFinancialData.findOne({
+                _id: ObjectId(prevState._id)
+            }).exec();
+            let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
+            .populate([
+                {
+                    path: 'state',
+                    model: State,
+                    select: '_id name'
+                }
+            ])
+            .exec()
 
             if (
                 data["status"] == 'APPROVED' &&
@@ -937,6 +937,48 @@ module.exports.action = async(req,res)=>{
             }
             if (
                 data["status"] == 'REJECTED' &&
+                user.role == 'MoHUA'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** ULB TRIGGER */
+                let ulbEmails = []
+                let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
+                    ulbUser.name,
+                    flag.reason,
+                    "MoHUA"
+                );
+                ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
+                mailOptions.to =  ulbEmails.join(),
+                mailOptions.subject = UlbTemplate.subject,
+                mailOptions.html = UlbTemplate.body
+                Service.sendEmail(UlbTemplate);
+                
+                /** STATE TRIGGER */
+                let stateEmails = []
+                let stateUser = await User.find({state:ObjectId(ulbUser.state._id),isDeleted:false,role:"STATE"}).exec()
+                for(let d of stateUser){
+                    sleep(700)
+                    d.email ? stateEmails.push(d.email) : '';
+                    d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
+                    let stateTemplate = await Service.emailTemplate.xvUploadRejectState(
+                        ulbUser.name,
+                        d.name,
+                        flag.reason
+                    );
+                    mailOptions.to = stateEmails.join();
+                    mailOptions.subject = stateTemplate.subject;
+                    mailOptions.html = stateTemplate.body;
+                    Service.sendEmail(mailOptions);
+                }
+            }
+
+            if (
+                data["status"] == 'REJECTED' &&
                 user.role == 'STATE'
             ) {
                 let mailOptions = {
@@ -948,22 +990,21 @@ module.exports.action = async(req,res)=>{
                 let ulbEmails = []
                 let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
                     ulbUser.name,
-                    rejectReason
+                    flag.reason,
+                    "STATE"
                 );
                 ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
                 ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
                 mailOptions.to =  ulbEmails.join(),
                 mailOptions.subject = UlbTemplate.subject,
                 mailOptions.html = UlbTemplate.body
-                res.json(mailOptions);return;
-                Service.sendEmail(mailOptions);
+                Service.sendEmail(UlbTemplate);
             }
             return Response.OK(
                 res,
                 ulbFinancialDataobj,
                 ``
             );
-        
         }else {
             return Response.BadRequest(
                 res,
@@ -1076,10 +1117,13 @@ function checkStatus(data){
         let finalString = rejectReason.map((obj) => {
             let service = Object.keys(obj)[0];
             let reason = obj[service];
-            return `<p> ${service + reason} </p>`
-            
+            return `<p> ${service + ` :`+ reason} </p>`
         });
-        return {status:rejected,reason:finalString};
+        let x='';
+        for(i of finalString ){
+            x += i+"<br>"
+        }
+        return {status:rejected,reason:x};
     }
     return {status:rejected,reason:''};
 }
