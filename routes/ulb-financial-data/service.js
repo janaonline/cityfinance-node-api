@@ -860,20 +860,18 @@ module.exports.action = async(req,res)=>{
                 { _id: ObjectId(prevState._id) },
                 { $set:data,$push: { history: history } }
             );
-            let ulbFinancialDataobj = await UlbFinancialData.findOne({
-                _id: ObjectId(prevState._id)
-            }).exec();
-            let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
-            .populate([
-                {
-                    path: 'state',
-                    model: State,
-                    select: '_id name'
-                }
-            ])
-            .exec()
-
-            res.json(ulbUser);return;
+            // let ulbFinancialDataobj = await UlbFinancialData.findOne({
+            //     _id: ObjectId(prevState._id)
+            // }).exec();
+            // let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
+            // .populate([
+            //     {
+            //         path: 'state',
+            //         model: State,
+            //         select: '_id name'
+            //     }
+            // ])
+            // .exec()
 
             if (
                 data["status"] == 'APPROVED' &&
@@ -938,7 +936,7 @@ module.exports.action = async(req,res)=>{
             }
             if (
                 data["status"] == 'REJECTED' &&
-                user.role == 'STATE'
+                user.role == 'MoHUA'
             ) {
                 let mailOptions = {
                     to: '',
@@ -951,17 +949,13 @@ module.exports.action = async(req,res)=>{
                     ulbUser.name,
                     rejectReason
                 );
-
-
-
                 ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
                 ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
                 mailOptions.to =  ulbEmails.join(),
                 mailOptions.subject = UlbTemplate.subject,
                 mailOptions.html = UlbTemplate.body
-
                 res.json(mailOptions);return;
-                //Service.sendEmail(mailOptions);
+                Service.sendEmail(mailOptions);
             }
             return Response.OK(
                 res,
