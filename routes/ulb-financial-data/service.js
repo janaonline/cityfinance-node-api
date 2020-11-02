@@ -263,6 +263,16 @@ module.exports.get = async (req, res) => {
 };
 module.exports.getAll = async (req, res) => {
     try {
+
+        let statusFilter = {
+            "1":{"isCompleted":false,actionTakenByUserRole:"ULB"},
+            "2":{"status":"PENDING",actionTakenByUserRole:"ULB"},
+            "3":{"status":"APPROVED",actionTakenByUserRole:"STATE"},
+            "4":{"status":"REJECTED",actionTakenByUserRole:"STATE"},
+            "5":{"status":"REJECTED",actionTakenByUserRole:"MoHUA"},
+            "6":{"status":"APPROVED",actionTakenByUserRole:"MoHUA"},
+        }
+
         let user = req.decoded,
             filter =
                 req.query.filter && !req.query.filter != 'null'
@@ -364,6 +374,7 @@ module.exports.getAll = async (req, res) => {
                         correctness: 1,
                         isCompleted:1,
                         status: 1,
+                        role: "$actionTakenBy.role",
                         //financialYear: 1,
                         ulbType: '$ulbType.name',
                         ulb: '$ulb._id',
@@ -390,10 +401,12 @@ module.exports.getAll = async (req, res) => {
                 newFilter['ulb'] = ObjectId(user.ulb);
             }
             newFilter['isActive'] = true;
+            if(newFilter['status']){
+                Object.assign(newFilter,statusFilter[newFilter['status']])
+            }
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
-
 
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
@@ -883,7 +896,7 @@ module.exports.action = async(req,res)=>{
                 let stateEmails = []
                 let stateUser = await User.find({state:ObjectId(ulbUser.state._id),isDeleted:false,role:"STATE"}).exec()
                 for(let d of stateUser){
-                    sleep(1000)
+                    sleep(700)
                     d.email ? stateEmails.push(d.email) : '';
                     d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
                     let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
@@ -908,6 +921,7 @@ module.exports.action = async(req,res)=>{
                 /** STATE TRIGGER */
                 let MohuaUser = await User.find({isDeleted:false,role:"MoHUA"}).exec();
                 for(let d of MohuaUser){
+                    sleep(700)
                     let MohuaTemplate = await Service.emailTemplate.xvUploadApprovalState(
                         d.name,
                         ulbUser.name,
