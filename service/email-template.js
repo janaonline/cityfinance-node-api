@@ -210,7 +210,7 @@ const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
                         <p>
                             Welcome to City Finance Portal! <br>
                             Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
-                            Your Username is ${sbCode} / ${censusCode}
+                            Your Username is ${sbCode} or ${censusCode}
 
                         </p>
                         <p>
