@@ -856,6 +856,7 @@ module.exports.action = async(req,res)=>{
                 return Response.BadRequest(res, {}, 'Already Rejected By State.');
             }
             data["actionTakenBy"] = user._id;
+            data["ulb"] = prevState.ulb;
             let du = await UlbFinancialData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set:data,$push: { history: history } }
@@ -936,7 +937,7 @@ module.exports.action = async(req,res)=>{
             }
             if (
                 data["status"] == 'REJECTED' &&
-                user.role == 'MoHUA'
+                user.role == 'STATE'
             ) {
                 let mailOptions = {
                     to: '',
