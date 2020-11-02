@@ -13,10 +13,10 @@ module.exports.create = async (req, res)=>{
     let data = req.body;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
 
-    let inValid = await Service.checkUnique.validate(data, "ULB");
-    if(inValid && inValid.length){
-        return Response.BadRequest(res, {},`${inValid.join("\n")}`);
-    }
+    // let inValid = await Service.checkUnique.validate(data, "ULB");
+    // if(inValid && inValid.length){
+    //     return Response.BadRequest(res, {},`${inValid.join("\n")}`);
+    // }
     if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;

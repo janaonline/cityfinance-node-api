@@ -401,9 +401,9 @@ module.exports.getAll = async (req, res) => {
                 newFilter['ulb'] = ObjectId(user.ulb);
             }
             newFilter['isActive'] = true;
-            if(newFilter['status']){
-                Object.assign(newFilter,statusFilter[newFilter['status']])
-            }
+            // if(newFilter['status']){
+            //     Object.assign(newFilter,statusFilter[newFilter['status']])
+            // }
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
@@ -821,7 +821,10 @@ module.exports.action = async(req,res)=>{
         data = req.body,
         _id = ObjectId(req.params._id)
         let flag = checkStatus(data); // check rejected status
-        data["status"] = flag ? 'REJECTED':'APPROVED'
+        data["status"] = flag.status ? 'REJECTED':'APPROVED'
+
+        res.json(flag);return;
+
         let actionAllowed = ['MoHUA','STATE'];
         if (actionAllowed.indexOf(user.role) > -1) {
             if (user.role == 'STATE') {
@@ -933,6 +936,28 @@ module.exports.action = async(req,res)=>{
                     Service.sendEmail(mailOptions);
                 }
             }
+            if (
+                data["status"] == 'REJECTED' &&
+                user.role == 'MoHUA'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** ULB TRIGGER */
+                let ulbEmails = []
+                let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
+                    ulbUser.name,
+                    rejectReason
+                );
+                ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
+                mailOptions.to =  ulbEmails.join(),
+                mailOptions.subject = UlbTemplate.subject,
+                mailOptions.html = UlbTemplate.body
+                Service.sendEmail(mailOptions);
+            }
             return Response.OK(
                 res,
                 ulbFinancialDataobj,
@@ -957,6 +982,8 @@ async function sleep(millis) {
 }
 function checkStatus(data){
     let rejected=false
+    let rejectReason = []
+    let rejectDataSet= []
     let waterManagementKeys = [
         "serviceLevel",
         "houseHoldCoveredPipedSupply",
@@ -974,17 +1001,40 @@ function checkStatus(data){
         "serviceLevelPlan",
         "solidWastePlan"
     ]
+    let mappingKeys = {
+        "serviceLevel":"serviceLevel",
+        "houseHoldCoveredPipedSupply":"Household Covered Piped Water Supply",
+        "waterSuppliedPerDay":"Water Supplied in litre per day(lpcd)",
+        "reduction":"Reduction in non-water revenue",
+        "houseHoldCoveredWithSewerage":"Household Covered with sewerage/septage services",
+        "garbageFreeCities":"Garbage free star rating of the cities",
+        "waterSupplyCoverage":"Coverage of water supply for public/community toilets",
+        "cityPlan":"City Plan DPR",
+        "waterBalancePlan":"City Plan DPR",
+        "serviceLevelPlan":"Service Level Improvement Plan",
+        "solidWastePlan":"Solid Waste Management Plan"
+    }
     for(key in data){
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
                 for(let objKey of waterManagementKeys){
                     if(data[key][objKey]["status"]=='REJECTED'){
                         rejected=true;
+                        let tab = "Water Supply & Waste-Water Management:"+mappingKeys[objKey]
+                        let reason = {
+                            [tab]:data[key][objKey]["rejectRegion"]
+                        }
+                        rejectReason.push({reason})
                     }
                 }   
                 for(let d of data[key]["documents"]["wasteWaterPlan"]){
                     if(d.status=='REJECTED'){
                         rejected=true;
+                        let tab = "Water Supply & Waste-Water Management:Upload Documents"
+                        let reason = {
+                            tab:d.rejectRegion
+                        }
+                        rejectReason.push(reason)
                     }
                 }
             }
@@ -993,6 +1043,11 @@ function checkStatus(data){
                     for(let d of data[key]["documents"][objKey]){
                         if(d.status=='REJECTED'){
                             rejected=true;
+                            let tab = "Solid Waste Management:"+mappingKeys[objKey]
+                            let reason = {
+                                [tab]:d.rejectRegion
+                            }
+                            rejectReason.push(reason)
                         }
                     }
                 }
@@ -1002,18 +1057,30 @@ function checkStatus(data){
                     for(let d of data[key]["documents"][objKey]){
                         if(d.status=='REJECTED'){
                             rejected=true;
+                            let tab = "Million Plus Cities Only:"+mappingKeys[objKey]
+                            let reason = {
+                                [tab]:d.rejectRegion
+                            }
+                            rejectReason.push(reason)
                         }
                     }
                 }
             }
         }else{
             if(data["status"]=='REJECTED'){
-                rejected = true
+                rejected = true;
             }
         }
     }
 
-    return rejected;
+    if(rejectReason.length>0){
+        for(reason of rejectReason){
+            console.log(reason);
+            rejectDataSet.push(reason)
+        }
+    }
+
+    return {status:rejected,reason:rejectDataSet};
 }
 
 module.exports.completeness = async (req, res) => {

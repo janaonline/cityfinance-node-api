@@ -429,6 +429,24 @@ const xvUploadApprovalState = (mohuaName,ulbName,stateName) => {
                 City Finance Team`
     };
 };
+
+const xvUploadRejectUlb = (ulbName,rejectReason) => {
+    return {
+        subject: `XV FC Form Rejected by MoHUA}`,
+        body: `Dear ${ulbName},<br>
+                <p>
+                    Your XV FC form has been rejected by MoHUA with the following details.
+                    Rejected Data:
+                    
+
+                </p>
+                <p>Please login to City Finance Portal to submit the corrected form.</p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
+
 const fdUploadRejectionUlb = (name, refCode, fy, audited, reports) => {
     return {
         subject: `Data Upload Form Rejected`,
@@ -945,7 +963,8 @@ module.exports = {
     sendProfileUpdateStatusEmail: sendProfileUpdateStatusEmail,
     xvUploadApprovalMoHUA:xvUploadApprovalMoHUA,
     xvUploadApprovalByMoHUAtoState :xvUploadApprovalByMoHUAtoState,
-    xvUploadApprovalState:xvUploadApprovalState, 
+    xvUploadApprovalState:xvUploadApprovalState,
+    xvUploadRejectUlb:xvUploadRejectUlb, 
     userSignup: userSignup,
     userCreation: userCreation,
     userForgotPassword: userForgotPassword,
