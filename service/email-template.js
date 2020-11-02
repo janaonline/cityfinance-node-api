@@ -10,7 +10,7 @@ const userSignup = (userName,name, link) => {
                     <p>Welcome to City Finance Portal!</p> 
                     <br>
                     <p>
-                        Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.
+                        Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.<br>
                         Your Username is ${userName}
                     </p>
                     <br>
