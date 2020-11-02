@@ -10,7 +10,7 @@ const userSignup = (userName,name, link) => {
                     <p>Welcome to City Finance Portal!</p> 
                     <br>
                     <p>
-                        Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.
+                        Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.<br>
                         Your Username is ${userName}
                     </p>
                     <br>
@@ -210,7 +210,7 @@ const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
                         <p>
                             Welcome to City Finance Portal! <br>
                             Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
-                            Your Username is ${code}
+                            Your Username is ${sbCode} or ${censusCode}
 
                         </p>
                         <p>
@@ -389,6 +389,64 @@ const fdUploadApprovalState = (name, ulbName, refCode, fy, audited) => {
                     City Finance Team`
     };
 };
+
+const xvUploadApprovalMoHUA = (name) => {
+    return {
+        subject: `XV FC Form Successfully Approved by MoHUA`,
+        body: `Dear ${name},<br>
+                <p>
+                    Your XV FC form has been approved by MoHUA.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
+
+const xvUploadApprovalByMoHUAtoState = (ulbName,stateName) => {
+    return {
+        subject: `XV FC Form Successfully Approved by MoHUA- ${ulbName}`,
+        body: `Dear ${stateName},<br>
+                <p>
+                    The XV FC form for the ${ulbName} has been approved by MoHUA.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
+
+const xvUploadApprovalState = (mohuaName,ulbName,stateName) => {
+    return {
+        subject: `XV FC Form Successfully Submitted- ${ulbName}`,
+        body: `Dear ${mohuaName},<br>
+                <p>
+                    The XV FC form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.
+                    Kindly review the same.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
+
+const xvUploadRejectUlb = (ulbName,rejectReason) => {
+    return {
+        subject: `XV FC Form Rejected by MoHUA}`,
+        body: `Dear ${ulbName},<br>
+                <p>
+                    Your XV FC form has been rejected by MoHUA with the following details.
+                    Rejected Data:
+                    ${rejectReason}
+
+                </p>
+                <p>Please login to City Finance Portal to submit the corrected form.</p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`
+    };
+};
+
 const fdUploadRejectionUlb = (name, refCode, fy, audited, reports) => {
     return {
         subject: `Data Upload Form Rejected`,
@@ -903,6 +961,10 @@ module.exports = {
     sendFinancialDataStatusEmail: sendFinancialDataStatusEmail,
     sendUlbSignupStatusEmmail: sendUlbSignupStatusEmmail,
     sendProfileUpdateStatusEmail: sendProfileUpdateStatusEmail,
+    xvUploadApprovalMoHUA:xvUploadApprovalMoHUA,
+    xvUploadApprovalByMoHUAtoState :xvUploadApprovalByMoHUAtoState,
+    xvUploadApprovalState:xvUploadApprovalState,
+    xvUploadRejectUlb:xvUploadRejectUlb, 
     userSignup: userSignup,
     userCreation: userCreation,
     userForgotPassword: userForgotPassword,

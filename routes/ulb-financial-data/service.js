@@ -2,6 +2,7 @@ const Ulb = require('../../models/Ulb');
 const UlbFinancialData = require('../../models/UlbFinancialData');
 const LoginHistory = require('../../models/LoginHistory');
 const User = require('../../models/User');
+const State = require('../../models/State');
 const Response = require('../../service').response;
 const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -262,6 +263,16 @@ module.exports.get = async (req, res) => {
 };
 module.exports.getAll = async (req, res) => {
     try {
+
+        let statusFilter = {
+            "1":{"isCompleted":false,actionTakenByUserRole:"ULB"},
+            "2":{"status":"PENDING",actionTakenByUserRole:"ULB"},
+            "3":{"status":"APPROVED",actionTakenByUserRole:"STATE"},
+            "4":{"status":"REJECTED",actionTakenByUserRole:"STATE"},
+            "5":{"status":"REJECTED",actionTakenByUserRole:"MoHUA"},
+            "6":{"status":"APPROVED",actionTakenByUserRole:"MoHUA"},
+        }
+
         let user = req.decoded,
             filter =
                 req.query.filter && !req.query.filter != 'null'
@@ -363,6 +374,7 @@ module.exports.getAll = async (req, res) => {
                         correctness: 1,
                         isCompleted:1,
                         status: 1,
+                        role: "$actionTakenBy.role",
                         //financialYear: 1,
                         ulbType: '$ulbType.name',
                         ulb: '$ulb._id',
@@ -389,10 +401,12 @@ module.exports.getAll = async (req, res) => {
                 newFilter['ulb'] = ObjectId(user.ulb);
             }
             newFilter['isActive'] = true;
+            // if(newFilter['status']){
+            //     Object.assign(newFilter,statusFilter[newFilter['status']])
+            // }
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
-
 
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
@@ -802,66 +816,174 @@ module.exports.update = async (req, res) => {
 };
 
 module.exports.action = async(req,res)=>{
-    let user = req.decoded
-    data = req.body,
-    _id = ObjectId(req.params._id)
-    let flag = checkStatus(data); // check rejected status
-    data["status"] = flag ? 'REJECTED':'APPROVED'
-    let actionAllowed = ['MoHUA','STATE'];
-    if (actionAllowed.indexOf(user.role) > -1) {
-        if (user.role == 'STATE') {
-            let ulb = await Ulb.findOne({ _id: ObjectId(data.ulb) }).exec();
-            if (!(ulb && ulb.state && ulb.state.toString() == user.state)) {
-                let message = !ulb
-                    ? 'Ulb not found.'
-                    : 'State is not matching.';
-                return Response.BadRequest(res, {}, message);
+    try {
+        let user = req.decoded
+        data = req.body,
+        _id = ObjectId(req.params._id)
+        let flag = checkStatus(data); // check rejected status
+        data["status"] = flag.status ? 'REJECTED':'APPROVED'
+        let actionAllowed = ['MoHUA','STATE'];
+        if (actionAllowed.indexOf(user.role) > -1) {
+            if (user.role == 'STATE') {
+                let ulb = await Ulb.findOne({ _id: ObjectId(data.ulb) }).exec();
+                if (!(ulb && ulb.state && ulb.state.toString() == user.state)) {
+                    let message = !ulb
+                        ? 'Ulb not found.'
+                        : 'State is not matching.';
+                    return Response.BadRequest(res, {}, message);
+                }
             }
-        }
-        let prevState = await UlbFinancialData.findOne(
-            { _id: _id },
-            '-history'
-        ).lean();
+            let prevState = await UlbFinancialData.findOne(
+                { _id: _id },
+                '-history'
+            ).lean();
+            let history = Object.assign({}, prevState);
+            if (!prevState) {
+                return Response.BadRequest(
+                    res,
+                    {},
+                    'Requested record not found.'
+                );
+            }
+            let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
+            if(prevState.status == 'APPROVE' && prevUser.role=='MoHUA' ) {
+                return Response.BadRequest(res, {}, 'Already approved By MoHUA.');
+            }if(prevState.status == 'REJECTE' && prevUser.role=='MoHUA') {
+                return Response.BadRequest(res, {}, 'Already Rejected By MoHUA.');
+            }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
+                return Response.BadRequest(res, {}, 'Already approved By STATE.');
+            }if(prevState.status == 'REJECTE' && user.role=='STATE' && prevUser.role=='STATE') {
+                return Response.BadRequest(res, {}, 'Already Rejected By State.');
+            }
+            data["actionTakenBy"] = user._id;
+            data["ulb"] = prevState.ulb;
+            let du = await UlbFinancialData.update(
+                { _id: ObjectId(prevState._id) },
+                { $set:data,$push: { history: history } }
+            );
+            // let ulbFinancialDataobj = await UlbFinancialData.findOne({
+            //     _id: ObjectId(prevState._id)
+            // }).exec();
+            // let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
+            // .populate([
+            //     {
+            //         path: 'state',
+            //         model: State,
+            //         select: '_id name'
+            //     }
+            // ])
+            // .exec()
+
+            if (
+                data["status"] == 'APPROVED' &&
+                user.role == 'MoHUA'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** ULB TRIGGER */
+                let ulbEmails = []
+                let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
+                    ulbUser.name,
+                );
+                ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
+                mailOptions.to =  ulbEmails.join(),
+                mailOptions.subject = UlbTemplate.subject,
+                mailOptions.html = UlbTemplate.body
+                Service.sendEmail(mailOptions);
+                /** STATE TRIGGER */
+                let stateEmails = []
+                let stateUser = await User.find({state:ObjectId(ulbUser.state._id),isDeleted:false,role:"STATE"}).exec()
+                for(let d of stateUser){
+                    sleep(700)
+                    d.email ? stateEmails.push(d.email) : '';
+                    d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
+                    let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
+                        ulbUser.name,
+                        d.name
+                    );
+                    mailOptions.to = stateEmails.join();
+                    mailOptions.subject = stateTemplate.subject;
+                    mailOptions.html = stateTemplate.body;
+                    Service.sendEmail(mailOptions);
+                }
+            }
+            if (
+                data["status"] == 'APPROVED' &&
+                user.role == 'STATE'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** STATE TRIGGER */
+                let MohuaUser = await User.find({isDeleted:false,role:"MoHUA"}).exec();
+                for(let d of MohuaUser){
+                    sleep(700)
+                    let MohuaTemplate = await Service.emailTemplate.xvUploadApprovalState(
+                        d.name,
+                        ulbUser.name,
+                        ulbUser.state.name
+                    );
+                    mailOptions.to =  d.email,
+                    mailOptions.subject = MohuaTemplate.subject,
+                    mailOptions.html = MohuaTemplate.body
+                    Service.sendEmail(mailOptions);
+                }
+            }
+            if (
+                data["status"] == 'REJECTED' &&
+                user.role == 'STATE'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** ULB TRIGGER */
+                let ulbEmails = []
+                let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
+                    ulbUser.name,
+                    rejectReason
+                );
+                ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
+                mailOptions.to =  ulbEmails.join(),
+                mailOptions.subject = UlbTemplate.subject,
+                mailOptions.html = UlbTemplate.body
+                res.json(mailOptions);return;
+                Service.sendEmail(mailOptions);
+            }
+            return Response.OK(
+                res,
+                ulbFinancialDataobj,
+                ``
+            );
         
-        let history = Object.assign({}, prevState);
-        if (!prevState) {
+        }else {
             return Response.BadRequest(
                 res,
                 {},
-                'Requested record not found.'
+                `This action is only allowed by ${actionAllowed.join()}`
             );
         }
-        let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
-        if(prevState.status == 'APPROVED' && prevState.role=='MoHUA' ) {
-            return Response.BadRequest(res, {}, 'Already approved.');
-        }
-
-        data["actionTakenBy"] = user._id;
-        let du = await UlbFinancialData.update(
-            { _id: prevState._id },
-            { $set:data,$push: { history: history } }
-        );
-        let ulbFinancialDataobj = await UlbFinancialData.findOne({
-            _id: prevState._id
-        }).exec();
-
-        return Response.OK(
-            res,
-            ulbFinancialDataobj,
-            ``
-        );
-    
-    }else {
-        return Response.BadRequest(
-            res,
-            {},
-            `This action is only allowed by ${actionAllowed.join()}`
-        );
+    }
+    catch (e) {
+        console.log('Exception', e);
     }
 }
 
+async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
+}
 function checkStatus(data){
     let rejected=false
+    let rejectReason = []
+    let rejectDataSet= []
     let waterManagementKeys = [
         "serviceLevel",
         "houseHoldCoveredPipedSupply",
@@ -879,17 +1001,40 @@ function checkStatus(data){
         "serviceLevelPlan",
         "solidWastePlan"
     ]
+    let mappingKeys = {
+        "serviceLevel":"serviceLevel",
+        "houseHoldCoveredPipedSupply":"Household Covered Piped Water Supply",
+        "waterSuppliedPerDay":"Water Supplied in litre per day(lpcd)",
+        "reduction":"Reduction in non-water revenue",
+        "houseHoldCoveredWithSewerage":"Household Covered with sewerage/septage services",
+        "garbageFreeCities":"Garbage free star rating of the cities",
+        "waterSupplyCoverage":"Coverage of water supply for public/community toilets",
+        "cityPlan":"City Plan DPR",
+        "waterBalancePlan":"City Plan DPR",
+        "serviceLevelPlan":"Service Level Improvement Plan",
+        "solidWastePlan":"Solid Waste Management Plan"
+    }
     for(key in data){
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
                 for(let objKey of waterManagementKeys){
                     if(data[key][objKey]["status"]=='REJECTED'){
                         rejected=true;
+                        let tab = "Water Supply & Waste-Water Management:"+mappingKeys[objKey]
+                        let reason = {
+                            [tab]:data[key][objKey]["rejectRegion"]
+                        }
+                        rejectReason.push({reason})
                     }
                 }   
                 for(let d of data[key]["documents"]["wasteWaterPlan"]){
                     if(d.status=='REJECTED'){
                         rejected=true;
+                        let tab = "Water Supply & Waste-Water Management:Upload Documents"
+                        let reason = {
+                            tab:d.rejectRegion
+                        }
+                        rejectReason.push(reason)
                     }
                 }
             }
@@ -898,6 +1043,11 @@ function checkStatus(data){
                     for(let d of data[key]["documents"][objKey]){
                         if(d.status=='REJECTED'){
                             rejected=true;
+                            let tab = "Solid Waste Management:"+mappingKeys[objKey]
+                            let reason = {
+                                [tab]:d.rejectRegion
+                            }
+                            rejectReason.push(reason)
                         }
                     }
                 }
@@ -907,18 +1057,31 @@ function checkStatus(data){
                     for(let d of data[key]["documents"][objKey]){
                         if(d.status=='REJECTED'){
                             rejected=true;
+                            let tab = "Million Plus Cities Only:"+mappingKeys[objKey]
+                            let reason = {
+                                [tab]:d.rejectRegion
+                            }
+                            rejectReason.push(reason)
                         }
                     }
                 }
             }
         }else{
             if(data["status"]=='REJECTED'){
-                rejected = true
+                rejected = true;
             }
         }
     }
-
-    return rejected;
+    if(rejectReason.length>0){
+        let finalString = rejectReason.map((obj) => {
+            let service = Object.keys(obj)[0];
+            let reason = obj[service];
+            return `<p> ${service + reason} </p>`
+            
+        });
+        return {status:rejected,reason:finalString};
+    }
+    return {status:rejected,reason:''};
 }
 
 module.exports.completeness = async (req, res) => {

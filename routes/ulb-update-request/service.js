@@ -13,18 +13,19 @@ module.exports.create = async (req, res)=>{
     let data = req.body;
     let actionAllowed = ['ADMIN','MoHUA','PARTNER','STATE', 'ULB'];
 
-    let inValid = await Service.checkUnique.validate(data, "ULB");
-    if(inValid && inValid.length){
-        return Response.BadRequest(res, {},`${inValid.join("\n")}`);
-    }
-    /*if(user.role == "ULB"){
+    // let inValid = await Service.checkUnique.validate(data, "ULB");
+    // if(inValid && inValid.length){
+    //     return Response.BadRequest(res, {},`${inValid.join("\n")}`);
+    // }
+    if(user.role == "ULB"){
         delete data.ulb;
         data.ulb = user.ulb;
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbUpdateRequest(data);
         ulbUpdateRequest.ulb = user.ulb;
+        ulbUpdateRequest["status"]='APPROVED';
         ulbUpdateRequest.actionTakenBy = user._id;
-        let getPrevStatus = await UlbUpdateRequest.findOne({ulb:ulbUpdateRequest.ulb, status:"PENDING"}).lean().exec();
+        /**let getPrevStatus = await UlbUpdateRequest.findOne({ulb:ulbUpdateRequest.ulb, status:"PENDING"}).lean().exec();
         if(getPrevStatus){
             Object.assign(getPrevStatus,data);
             try{
@@ -42,8 +43,10 @@ module.exports.create = async (req, res)=>{
             }catch (e) {
                 return Response.DbError(res,e, e.message);
             }
-        }else{
-            ulbUpdateRequest.save(async(err, dt)=>{
+        }else{ */
+
+            let s = await ulbUpdateRequest.save()
+            /**ulbUpdateRequest.save(async(err, dt)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)
                 }else {
@@ -52,10 +55,10 @@ module.exports.create = async (req, res)=>{
                     emailNotificationToStateANDPartner(user,state,partner);
 
                     return Response.OK(res,dt, 'Request for change has been sent to admin to approval');
-                }
-            })
-        }
-    }*/ 
+                } 
+            })*/
+        /*}*/
+    } 
 
     if(actionAllowed.indexOf(user.role) > -1){
         if(user.ulb){

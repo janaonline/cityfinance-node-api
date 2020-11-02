@@ -209,7 +209,7 @@ module.exports.login = async (req, res) => {
         msg= `Invalid email or password`
         query = [{email: req.sanitize(req.body.email)}]    
     }
-    User.findOne({$or:query}, async (err, user) => {
+    User.findOne({$or:query,"isDeleted":false}, async (err, user) => {
         if (err) {
             return Response.BadRequest(res, err, 'Db Error');
         } else if (!user) {
