@@ -822,9 +822,6 @@ module.exports.action = async(req,res)=>{
         _id = ObjectId(req.params._id)
         let flag = checkStatus(data); // check rejected status
         data["status"] = flag.status ? 'REJECTED':'APPROVED'
-
-        res.json(flag);return;
-
         let actionAllowed = ['MoHUA','STATE'];
         if (actionAllowed.indexOf(user.role) > -1) {
             if (user.role == 'STATE') {
@@ -849,22 +846,22 @@ module.exports.action = async(req,res)=>{
                 );
             }
             let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
-            if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
+            if(prevState.status == 'APPROVE' && prevUser.role=='MoHUA' ) {
                 return Response.BadRequest(res, {}, 'Already approved By MoHUA.');
-            }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
+            }if(prevState.status == 'REJECTE' && prevUser.role=='MoHUA') {
                 return Response.BadRequest(res, {}, 'Already Rejected By MoHUA.');
             }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
                 return Response.BadRequest(res, {}, 'Already approved By STATE.');
-            }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
+            }if(prevState.status == 'REJECTE' && user.role=='STATE' && prevUser.role=='STATE') {
                 return Response.BadRequest(res, {}, 'Already Rejected By State.');
             }
             data["actionTakenBy"] = user._id;
             let du = await UlbFinancialData.update(
-                { _id: prevState._id },
+                { _id: ObjectId(prevState._id) },
                 { $set:data,$push: { history: history } }
             );
             let ulbFinancialDataobj = await UlbFinancialData.findOne({
-                _id: prevState._id
+                _id: ObjectId(prevState._id)
             }).exec();
             let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
             .populate([
@@ -875,6 +872,9 @@ module.exports.action = async(req,res)=>{
                 }
             ])
             .exec()
+
+            res.json(ulbUser);return;
+
             if (
                 data["status"] == 'APPROVED' &&
                 user.role == 'MoHUA'
@@ -938,7 +938,7 @@ module.exports.action = async(req,res)=>{
             }
             if (
                 data["status"] == 'REJECTED' &&
-                user.role == 'MoHUA'
+                user.role == 'STATE'
             ) {
                 let mailOptions = {
                     to: '',
@@ -951,12 +951,17 @@ module.exports.action = async(req,res)=>{
                     ulbUser.name,
                     rejectReason
                 );
+
+
+
                 ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
                 ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
                 mailOptions.to =  ulbEmails.join(),
                 mailOptions.subject = UlbTemplate.subject,
                 mailOptions.html = UlbTemplate.body
-                Service.sendEmail(mailOptions);
+
+                res.json(mailOptions);return;
+                //Service.sendEmail(mailOptions);
             }
             return Response.OK(
                 res,
@@ -1072,15 +1077,16 @@ function checkStatus(data){
             }
         }
     }
-
     if(rejectReason.length>0){
-        for(reason of rejectReason){
-            console.log(reason);
-            rejectDataSet.push(reason)
-        }
+        let finalString = rejectReason.map((obj) => {
+            let service = Object.keys(obj)[0];
+            let reason = obj[service];
+            return `<p> ${service + reason} </p>`
+            
+        });
+        return {status:rejected,reason:finalString};
     }
-
-    return {status:rejected,reason:rejectDataSet};
+    return {status:rejected,reason:''};
 }
 
 module.exports.completeness = async (req, res) => {

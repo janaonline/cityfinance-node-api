@@ -437,7 +437,7 @@ const xvUploadRejectUlb = (ulbName,rejectReason) => {
                 <p>
                     Your XV FC form has been rejected by MoHUA with the following details.
                     Rejected Data:
-                    
+                    ${rejectReason}
 
                 </p>
                 <p>Please login to City Finance Portal to submit the corrected form.</p>
