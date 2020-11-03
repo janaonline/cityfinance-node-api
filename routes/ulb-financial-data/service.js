@@ -7,6 +7,37 @@ const Response = require('../../service').response;
 const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
 const moment = require('moment');
+const waterManagementKeys = [
+    "serviceLevel",
+    "houseHoldCoveredPipedSupply",
+    "waterSuppliedPerDay",
+    "reduction",
+    "houseHoldCoveredWithSewerage"
+]
+const solidWasteManagementKeys = [
+    "garbageFreeCities",
+    "waterSupplyCoverage",
+]
+const millionPlusCitiesKeys = [
+    "cityPlan",
+    "waterBalancePlan",
+    "serviceLevelPlan",
+    "solidWastePlan"
+]
+const mappingKeys = {
+    "serviceLevel":"serviceLevel",
+    "houseHoldCoveredPipedSupply":"Household Covered Piped Water Supply",
+    "waterSuppliedPerDay":"Water Supplied in litre per day(lpcd)",
+    "reduction":"Reduction in non-water revenue",
+    "houseHoldCoveredWithSewerage":"Household Covered with sewerage/septage services",
+    "garbageFreeCities":"Garbage free star rating of the cities",
+    "waterSupplyCoverage":"Coverage of water supply for public/community toilets",
+    "cityPlan":"City Plan DPR",
+    "waterBalancePlan":"City Plan DPR",
+    "serviceLevelPlan":"Service Level Improvement Plan",
+    "solidWastePlan":"Solid Waste Management Plan"
+}
+
 module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
@@ -934,6 +965,12 @@ module.exports.action = async(req,res)=>{
                     mailOptions.html = MohuaTemplate.body
                     Service.sendEmail(mailOptions);
                 }
+
+                let newData = resetDataStatus(data);
+                let du = await UlbFinancialData.update(
+                    { _id: ObjectId(prevState._id) },
+                    { $set:newData}
+                );
             }
             if (
                 data["status"] == 'REJECTED' &&
@@ -1021,40 +1058,48 @@ module.exports.action = async(req,res)=>{
 async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
+
+function resetDataStatus(data){
+    for(key in data){
+        if(typeof data[key] === 'object'  && data[key] !== null ){
+            if(key=='waterManagement'){
+                for(let objKey of waterManagementKeys){
+                    data[key][objKey]["status"]= 'N.A';
+                    data[key][objKey]["rejectRegion"]= '';
+                }   
+                for(let d of data[key]["documents"]["wasteWaterPlan"]){
+                    d.status='N.A';
+                    d.rejectRegion = '';
+                }
+            }
+            if(key=='solidWasteManagement'){
+                for(let objKey of solidWasteManagementKeys){
+                    for(let d of data[key]["documents"][objKey]){
+                        d.status='N.A';
+                        d.rejectRegion = '';
+                    }
+                }
+            }
+            if(key=='millionPlusCities'){
+                for(let objKey of millionPlusCitiesKeys){
+                    for(let d of data[key]["documents"][objKey]){
+                        d.status='N.A';
+                        d.rejectRegion = '';
+
+                    }
+                }
+            }
+        }else{
+            data["status"]='APPROVED'
+        }
+    }
+    return data;
+}
 function checkStatus(data){
     let rejected=false
     let rejectReason = []
     let rejectDataSet= []
-    let waterManagementKeys = [
-        "serviceLevel",
-        "houseHoldCoveredPipedSupply",
-        "waterSuppliedPerDay",
-        "reduction",
-        "houseHoldCoveredWithSewerage"
-    ]
-    let solidWasteManagementKeys = [
-        "garbageFreeCities",
-        "waterSupplyCoverage",
-    ]
-    let millionPlusCitiesKeys = [
-        "cityPlan",
-        "waterBalancePlan",
-        "serviceLevelPlan",
-        "solidWastePlan"
-    ]
-    let mappingKeys = {
-        "serviceLevel":"serviceLevel",
-        "houseHoldCoveredPipedSupply":"Household Covered Piped Water Supply",
-        "waterSuppliedPerDay":"Water Supplied in litre per day(lpcd)",
-        "reduction":"Reduction in non-water revenue",
-        "houseHoldCoveredWithSewerage":"Household Covered with sewerage/septage services",
-        "garbageFreeCities":"Garbage free star rating of the cities",
-        "waterSupplyCoverage":"Coverage of water supply for public/community toilets",
-        "cityPlan":"City Plan DPR",
-        "waterBalancePlan":"City Plan DPR",
-        "serviceLevelPlan":"Service Level Improvement Plan",
-        "solidWastePlan":"Solid Waste Management Plan"
-    }
+   
     for(key in data){
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
