@@ -45,7 +45,12 @@ module.exports.create = async (req, res)=>{
             }
         }else{ */
 
+            let updateData = {status:'APPROVED', modifiedAt:new Date()};
             let s = await ulbUpdateRequest.save()
+            let prevState = await UlbUpdateRequest.findOne({_id:ObjectId(s._id)},"-history");
+            let oldState = await UlbQuery(prevState.ulb); // Fetch all prevState value of a ULB
+            let oldStateObj = Object.assign({},oldState,{"actionTakenBy":prevState.actionTakenBy},{"status":prevState.status}) 
+            let uur = await UlbUpdateRequest.update({_id:ObjectId(prevState._id)},{$set:updateData,$push:{history:oldStateObj}});            
             /**ulbUpdateRequest.save(async(err, dt)=>{
                 if(err){
                     return Response.DbError(res,err, err.message)

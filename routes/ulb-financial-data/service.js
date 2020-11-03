@@ -846,14 +846,14 @@ module.exports.action = async(req,res)=>{
                 );
             }
             let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
-            if(prevState.status == 'APPROVE' && prevUser.role=='MoHUA' ) {
-                return Response.BadRequest(res, {}, 'Already approved By MoHUA.');
-            }if(prevState.status == 'REJECTE' && prevUser.role=='MoHUA') {
-                return Response.BadRequest(res, {}, 'Already Rejected By MoHUA.');
+            if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
+                return Response.BadRequest(res, {}, 'Already approved By MoHUA user.');
+            }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
+                return Response.BadRequest(res, {}, 'Already Rejected By MoHUA user.');
             }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
-                return Response.BadRequest(res, {}, 'Already approved By STATE.');
-            }if(prevState.status == 'REJECTE' && user.role=='STATE' && prevUser.role=='STATE') {
-                return Response.BadRequest(res, {}, 'Already Rejected By State.');
+                return Response.BadRequest(res, {}, 'Already approved By STATE user.');
+            }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
+                return Response.BadRequest(res, {}, 'Already Rejected By State user.');
             }
             data["actionTakenBy"] = user._id;
             data["ulb"] = prevState.ulb;
