@@ -42,10 +42,10 @@ module.exports = async function(req,res,next){
                     let state = await State.findOne({ code : eachRow.statecode,isActive : true},{ code:1 }).exec();
 
                     // check whether ulb type exists or not
-                    let ulbType = await UlbType.findOne({ code : eachRow.ulbType,isActive : true},{ name:1 }).exec();
+                    let ulbType = await UlbType.findOne({ name : eachRow.ulbtype,isActive : true},{ name:1 }).exec();
 
                     state ? eachRow.statecode == state.code : message+="State "+eachRow.statecode+" don't exists";
-                    ulbType ? eachRow.ulbType == ulbType.name : message+="Ulb "+eachRow.ulbcode+" don't exists";
+                    ulbType ? eachRow.ulbtype == ulbType.name : message+="Ulb "+eachRow.ulbcode+" don't exists";
                     console.log(message)
                     if(message!=""){
                         // if any state or ulb type not exists, then return message
@@ -61,19 +61,20 @@ module.exports = async function(req,res,next){
                         }
 
                         eachRow.state = ObjectId(state._id)
-                        eachRow.ulbtype = ObjectId(ulbType._id)
+                        eachRow.ulbType = ObjectId(ulbType._id)
                         eachRow.name = eachRow.ulbname
                         eachRow["natureOfUlb"] = eachRow["natureofulb"] ? eachRow["natureofulb"] :""
                         eachRow["name"] = eachRow["ulbname"]
                         eachRow["code"] = eachRow.ulbcode
 
+                        console.log(eachRow);
                         service.put({ code : eachRow.ulbcode },eachRow,Ulb,function(response,value){
                             if(!response){
                                 errors.push("Not able to create ulb => ",eachRow.code+""+response);
                             }
                             counter++;
                             console.log(value.message);
-                        });
+                        }); 
 
                     }
                 }
