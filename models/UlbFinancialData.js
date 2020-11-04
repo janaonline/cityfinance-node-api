@@ -23,10 +23,10 @@ const waterManagementSchema = new Schema({
     {
         baseline:{2021:{type:String,required:true}},
         target:{
-            2122:{type:Number,required:true},
-            2223:{type:Number,required:true}, 
-            2324:{type:Number,required:true},  
-            2425:{type:Number,required:true} 
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
         },
         status:statusType(),
         rejectRegion:{type:String,default:""}
@@ -35,10 +35,10 @@ const waterManagementSchema = new Schema({
     {
         baseline:{2021:{type:String,required:true}},
         target:{
-            2122:{type:Number,required:true},
-            2223:{type:Number,required:true}, 
-            2324:{type:Number,required:true},  
-            2425:{type:Number,required:true} 
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
         },
         status:statusType(),
         rejectRegion:{type:String,default:""}
@@ -47,10 +47,10 @@ const waterManagementSchema = new Schema({
     {
         baseline:{2021:{type:String,required:true}},
         target:{
-            2122:{type:Number,required:true},
-            2223:{type:Number,required:true}, 
-            2324:{type:Number,required:true},  
-            2425:{type:Number,required:true} 
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
         },
         status:statusType(),
         rejectRegion:{type:String,default:""}  
@@ -59,10 +59,10 @@ const waterManagementSchema = new Schema({
     {
         baseline:{2021:{type:String,required:true}},
         target:{
-            2122:{type:Number,required:true},
-            2223:{type:Number,required:true}, 
-            2324:{type:Number,required:true},  
-            2425:{type:Number,required:true} 
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
         },
         status:statusType(),
         rejectRegion:{type:String,default:""}  
@@ -71,10 +71,10 @@ const waterManagementSchema = new Schema({
     {
         baseline:{2021:{type:String,required:true}},
         target:{
-            2122:{type:Number,required:true},
-            2223:{type:Number,required:true}, 
-            2324:{type:Number,required:true},  
-            2425:{type:Number,required:true} 
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
         },
         status:statusType()  ,
         rejectRegion:{type:String,default:""}    
