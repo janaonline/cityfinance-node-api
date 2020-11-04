@@ -45,8 +45,8 @@ module.exports = async function(req,res,next){
                     let ulbType = await UlbType.findOne({ name : eachRow.ulbtype,isActive : true},{ name:1 }).exec();
 
                     state ? eachRow.statecode == state.code : message+="State "+eachRow.statecode+" don't exists";
-                    ulbType ? eachRow.ulbType == ulbType.name : message+="Ulb "+eachRow.ulbcode+" don't exists";
-                    //console.log(message)
+                    ulbType ? eachRow.ulbtype == ulbType.name : message+="Ulb "+eachRow.ulbcode+" don't exists";
+                    console.log(message)
                     if(message!=""){
                         // if any state or ulb type not exists, then return message
                         errors.push(message);
