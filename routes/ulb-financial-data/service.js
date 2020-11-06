@@ -69,6 +69,7 @@ module.exports.create = async (req, res) => {
             audited ? 'Audited' : 'Unaudited'
         }`;
         data.ulb = user.ulb;
+        data.modifiedAt = new Date();
         let checkData = await UlbFinancialData.count({
             ulb: data.ulb,
             financialYear: data.financialYear,
@@ -660,17 +661,56 @@ module.exports.getDetails = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
     if (actionAllowed.indexOf(user.role) > -1) {
         let query = { _id: ObjectId(req.params._id) };
-        let data = await UlbFinancialData.findOne(query, '-history').populate([
-            {
-                path: 'actionTakenBy',
-                select: '_id name email role'
+        let data = await UlbFinancialData.aggregate([
+        {
+            $match :query
+        },
+        {
+            $lookup: {
+                from: 'ulbs',
+                localField: 'ulb',
+                foreignField: '_id',
+                as: 'ulb'
             }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'actionTakenBy',
+                foreignField: '_id',
+                as: 'actionTakenBy'
+            }
+        },
+        { $unwind: '$ulb' },
+        {
+            $unwind: {
+                path: '$actionTakenBy',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $project: {
+                _id: 1,               
+                waterManagement:1,
+                solidWasteManagement:1,
+                millionPlusCities:1,
+                isCompleted:1,
+                status: 1,
+                ulbName: '$ulb.name',
+                ulbCode: '$ulb.code',
+                actionTakenByUserName: '$actionTakenBy.name',
+                actionTakenByUserRole: '$actionTakenBy.role',
+                isActive: '$isActive',
+                createdAt: '$createdAt'
+            }
+        }
+
         ]).exec();
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
             message: 'Ulb update request list',
-            data: data
+            data: data[0]
         });
     } else {
         return Response.BadRequest(res, {}, 'Action not allowed.');
