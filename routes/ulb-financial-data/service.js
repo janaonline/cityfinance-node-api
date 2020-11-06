@@ -7,6 +7,37 @@ const Response = require('../../service').response;
 const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
 const moment = require('moment');
+const waterManagementKeys = [
+    "serviceLevel",
+    "houseHoldCoveredPipedSupply",
+    "waterSuppliedPerDay",
+    "reduction",
+    "houseHoldCoveredWithSewerage"
+]
+const solidWasteManagementKeys = [
+    "garbageFreeCities",
+    "waterSupplyCoverage",
+]
+const millionPlusCitiesKeys = [
+    "cityPlan",
+    "waterBalancePlan",
+    "serviceLevelPlan",
+    "solidWastePlan"
+]
+const mappingKeys = {
+    "serviceLevel":"serviceLevel",
+    "houseHoldCoveredPipedSupply":"Household Covered Piped Water Supply",
+    "waterSuppliedPerDay":"Water Supplied in litre per day(lpcd)",
+    "reduction":"Reduction in non-water revenue",
+    "houseHoldCoveredWithSewerage":"Household Covered with sewerage/septage services",
+    "garbageFreeCities":"Garbage free star rating of the cities",
+    "waterSupplyCoverage":"Coverage of water supply for public/community toilets",
+    "cityPlan":"City Plan DPR",
+    "waterBalancePlan":"City Plan DPR",
+    "serviceLevelPlan":"Service Level Improvement Plan",
+    "solidWastePlan":"Solid Waste Management Plan"
+}
+
 module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
@@ -38,6 +69,7 @@ module.exports.create = async (req, res) => {
             audited ? 'Audited' : 'Unaudited'
         }`;
         data.ulb = user.ulb;
+        data.modifiedAt = new Date();
         let checkData = await UlbFinancialData.count({
             ulb: data.ulb,
             financialYear: data.financialYear,
@@ -380,6 +412,8 @@ module.exports.getAll = async (req, res) => {
                         ulb: '$ulb._id',
                         ulbName: '$ulb.name',
                         ulbCode: '$ulb.code',
+                        sbCode:'$ulb.sbCode',
+                        censusCode:'$ulb.censusCode',
                         state: '$state._id',
                         stateName: '$state.name',
                         stateCode: '$state.code',
@@ -403,7 +437,8 @@ module.exports.getAll = async (req, res) => {
             newFilter['isActive'] = true;
             // if(newFilter['status']){
             //     Object.assign(newFilter,statusFilter[newFilter['status']])
-            // }
+            //     delete newFilter['status'];
+            // }   
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
@@ -414,7 +449,7 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: { createdAt: -1 } });
                 q.push({ $sort: { priority: -1 } });
             }
-
+            //res.json(q);return;
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 let xlsData = await Service.dataFormating(arr, {
@@ -629,17 +664,57 @@ module.exports.getDetails = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
     if (actionAllowed.indexOf(user.role) > -1) {
         let query = { _id: ObjectId(req.params._id) };
-        let data = await UlbFinancialData.findOne(query, '-history').populate([
-            {
-                path: 'actionTakenBy',
-                select: '_id name email role'
+        let data = await UlbFinancialData.aggregate([
+        {
+            $match :query
+        },
+        {
+            $lookup: {
+                from: 'ulbs',
+                localField: 'ulb',
+                foreignField: '_id',
+                as: 'ulb'
             }
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'actionTakenBy',
+                foreignField: '_id',
+                as: 'actionTakenBy'
+            }
+        },
+        { $unwind: '$ulb' },
+        {
+            $unwind: {
+                path: '$actionTakenBy',
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $project: {
+                _id: 1,               
+                waterManagement:1,
+                solidWasteManagement:1,
+                millionPlusCities:1,
+                isCompleted:1,
+                status: 1,
+                ulb: '$ulb._id',
+                ulbName: '$ulb.name',
+                ulbCode: '$ulb.code',
+                actionTakenByUserName: '$actionTakenBy.name',
+                actionTakenByUserRole: '$actionTakenBy.role',
+                isActive: '$isActive',
+                createdAt: '$createdAt'
+            }
+        }
+
         ]).exec();
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
             message: 'Ulb update request list',
-            data: data
+            data: data[0]
         });
     } else {
         return Response.BadRequest(res, {}, 'Action not allowed.');
@@ -846,14 +921,14 @@ module.exports.action = async(req,res)=>{
                 );
             }
             let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
-            if(prevState.status == 'APPROVE' && prevUser.role=='MoHUA' ) {
-                return Response.BadRequest(res, {}, 'Already approved By MoHUA.');
-            }if(prevState.status == 'REJECTE' && prevUser.role=='MoHUA') {
-                return Response.BadRequest(res, {}, 'Already Rejected By MoHUA.');
+            if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
+                return Response.BadRequest(res, {}, 'Already approved By MoHUA user.');
+            }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
+                return Response.BadRequest(res, {}, 'Already Rejected By MoHUA user.');
             }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
-                return Response.BadRequest(res, {}, 'Already approved By STATE.');
-            }if(prevState.status == 'REJECTE' && user.role=='STATE' && prevUser.role=='STATE') {
-                return Response.BadRequest(res, {}, 'Already Rejected By State.');
+                return Response.BadRequest(res, {}, 'Already approved By STATE user.');
+            }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
+                return Response.BadRequest(res, {}, 'Already Rejected By State user.');
             }
             data["actionTakenBy"] = user._id;
             data["ulb"] = prevState.ulb;
@@ -861,18 +936,18 @@ module.exports.action = async(req,res)=>{
                 { _id: ObjectId(prevState._id) },
                 { $set:data,$push: { history: history } }
             );
-            // let ulbFinancialDataobj = await UlbFinancialData.findOne({
-            //     _id: ObjectId(prevState._id)
-            // }).exec();
-            // let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
-            // .populate([
-            //     {
-            //         path: 'state',
-            //         model: State,
-            //         select: '_id name'
-            //     }
-            // ])
-            // .exec()
+            let ulbFinancialDataobj = await UlbFinancialData.findOne({
+                _id: ObjectId(prevState._id)
+            }).exec();
+            let ulbUser = await User.findOne({ulb:ObjectId(ulbFinancialDataobj.ulb),isDeleted:false,role:"ULB"})
+            .populate([
+                {
+                    path: 'state',
+                    model: State,
+                    select: '_id name'
+                }
+            ])
+            .exec()
 
             if (
                 data["status"] == 'APPROVED' &&
@@ -934,7 +1009,55 @@ module.exports.action = async(req,res)=>{
                     mailOptions.html = MohuaTemplate.body
                     Service.sendEmail(mailOptions);
                 }
+
+                let newData = resetDataStatus(data);
+                let du = await UlbFinancialData.update(
+                    { _id: ObjectId(prevState._id) },
+                    { $set:newData}
+                );
             }
+            if (
+                data["status"] == 'REJECTED' &&
+                user.role == 'MoHUA'
+            ) {
+                let mailOptions = {
+                    to: '',
+                    subject: '',
+                    html: ''
+                };
+                /** ULB TRIGGER */
+                let ulbEmails = []
+                let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
+                    ulbUser.name,
+                    flag.reason,
+                    "MoHUA"
+                );
+                ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
+                mailOptions.to =  ulbEmails.join(),
+                mailOptions.subject = UlbTemplate.subject,
+                mailOptions.html = UlbTemplate.body
+                Service.sendEmail(UlbTemplate);
+                
+                /** STATE TRIGGER */
+                let stateEmails = []
+                let stateUser = await User.find({state:ObjectId(ulbUser.state._id),isDeleted:false,role:"STATE"}).exec()
+                for(let d of stateUser){
+                    sleep(700)
+                    d.email ? stateEmails.push(d.email) : '';
+                    d.departmentEmail ? stateEmails.push(d.departmentEmail): '';
+                    let stateTemplate = await Service.emailTemplate.xvUploadRejectState(
+                        ulbUser.name,
+                        d.name,
+                        flag.reason
+                    );
+                    mailOptions.to = stateEmails.join();
+                    mailOptions.subject = stateTemplate.subject;
+                    mailOptions.html = stateTemplate.body;
+                    Service.sendEmail(mailOptions);
+                }
+            }
+
             if (
                 data["status"] == 'REJECTED' &&
                 user.role == 'STATE'
@@ -948,22 +1071,21 @@ module.exports.action = async(req,res)=>{
                 let ulbEmails = []
                 let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
                     ulbUser.name,
-                    rejectReason
+                    flag.reason,
+                    "STATE"
                 );
                 ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
                 ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail): '';
                 mailOptions.to =  ulbEmails.join(),
                 mailOptions.subject = UlbTemplate.subject,
                 mailOptions.html = UlbTemplate.body
-                res.json(mailOptions);return;
-                Service.sendEmail(mailOptions);
+                Service.sendEmail(UlbTemplate);
             }
             return Response.OK(
                 res,
                 ulbFinancialDataobj,
                 ``
             );
-        
         }else {
             return Response.BadRequest(
                 res,
@@ -980,40 +1102,48 @@ module.exports.action = async(req,res)=>{
 async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
+
+function resetDataStatus(data){
+    for(key in data){
+        if(typeof data[key] === 'object'  && data[key] !== null ){
+            if(key=='waterManagement'){
+                for(let objKey of waterManagementKeys){
+                    data[key][objKey]["status"]= 'N.A';
+                    data[key][objKey]["rejectRegion"]= '';
+                }   
+                for(let d of data[key]["documents"]["wasteWaterPlan"]){
+                    d.status='N.A';
+                    d.rejectRegion = '';
+                }
+            }
+            if(key=='solidWasteManagement'){
+                for(let objKey of solidWasteManagementKeys){
+                    for(let d of data[key]["documents"][objKey]){
+                        d.status='N.A';
+                        d.rejectRegion = '';
+                    }
+                }
+            }
+            if(key=='millionPlusCities'){
+                for(let objKey of millionPlusCitiesKeys){
+                    for(let d of data[key]["documents"][objKey]){
+                        d.status='N.A';
+                        d.rejectRegion = '';
+
+                    }
+                }
+            }
+        }else{
+            data["status"]='APPROVED'
+        }
+    }
+    return data;
+}
 function checkStatus(data){
     let rejected=false
     let rejectReason = []
     let rejectDataSet= []
-    let waterManagementKeys = [
-        "serviceLevel",
-        "houseHoldCoveredPipedSupply",
-        "waterSuppliedPerDay",
-        "reduction",
-        "houseHoldCoveredWithSewerage"
-    ]
-    let solidWasteManagementKeys = [
-        "garbageFreeCities",
-        "waterSupplyCoverage",
-    ]
-    let millionPlusCitiesKeys = [
-        "cityPlan",
-        "waterBalancePlan",
-        "serviceLevelPlan",
-        "solidWastePlan"
-    ]
-    let mappingKeys = {
-        "serviceLevel":"serviceLevel",
-        "houseHoldCoveredPipedSupply":"Household Covered Piped Water Supply",
-        "waterSuppliedPerDay":"Water Supplied in litre per day(lpcd)",
-        "reduction":"Reduction in non-water revenue",
-        "houseHoldCoveredWithSewerage":"Household Covered with sewerage/septage services",
-        "garbageFreeCities":"Garbage free star rating of the cities",
-        "waterSupplyCoverage":"Coverage of water supply for public/community toilets",
-        "cityPlan":"City Plan DPR",
-        "waterBalancePlan":"City Plan DPR",
-        "serviceLevelPlan":"Service Level Improvement Plan",
-        "solidWastePlan":"Solid Waste Management Plan"
-    }
+   
     for(key in data){
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
@@ -1076,10 +1206,13 @@ function checkStatus(data){
         let finalString = rejectReason.map((obj) => {
             let service = Object.keys(obj)[0];
             let reason = obj[service];
-            return `<p> ${service + reason} </p>`
-            
+            return `<p> ${service + ` :`+ reason} </p>`
         });
-        return {status:rejected,reason:finalString};
+        let x='';
+        for(i of finalString ){
+            x += i+"<br>"
+        }
+        return {status:rejected,reason:x};
     }
     return {status:rejected,reason:''};
 }
