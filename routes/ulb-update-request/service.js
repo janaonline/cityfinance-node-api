@@ -126,7 +126,7 @@ module.exports.create = async (req, res)=>{
                 mailOptions.subject =  template.subject;
                 mailOptions.html =  template.body;
                 SendEmail(mailOptions);
-                return Response.OK(res, {Ulb:dulb,user:du,data},`updated successfully.`)
+                return Response.OK(res, {Ulb:dulb,user:du,data},`Profile Updated Successfully.`)
             }catch (e) {
                 console.log("Exception",e);
                 return Response.DbError(res,e);
