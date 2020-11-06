@@ -449,12 +449,13 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: { createdAt: -1 } });
                 q.push({ $sort: { priority: -1 } });
             }
-            //res.json(q);return;
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 let xlsData = await Service.dataFormating(arr, {
                     ulbName: 'ULB name',
                     ulbCode: 'ULB Code',
+                    sbCode: 'Swatch Bharat Code',
+                    censusCode: 'Census Code',
                     //financialYear: 'Financial Year',
                     //auditStatus: 'Audit Status',
                     status: 'Status'
