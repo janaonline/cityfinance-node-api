@@ -22,7 +22,7 @@ module.exports.create = async (req, res)=>{
         //data.ulb = user.ulb;
         data.actionTakenBy = user._id;
         let ulbUpdateRequest = new UlbUpdateRequest(data);
-        ulbUpdateRequest.ulb = user.ulb;
+        ulbUpdateRequest.ulb = data.ulb;
         ulbUpdateRequest["status"]='APPROVED';
         ulbUpdateRequest.actionTakenBy = user._id;
         /**let getPrevStatus = await UlbUpdateRequest.findOne({ulb:ulbUpdateRequest.ulb, status:"PENDING"}).lean().exec();
@@ -66,74 +66,69 @@ module.exports.create = async (req, res)=>{
     } 
 
     if(actionAllowed.indexOf(user.role) > -1){
-        if(user.ulb){
-            let keys = [
-                "name","regionalName","code","state","ulbType","natureOfUlb","wards",
-                "area","population","location","amrut"
-            ];
-            let obj = {};
-            for(key of keys){
-                if(data[key]){
-                    obj[key] = data[key];
-                }
-            }
-            let profileKeys = ["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"];
-            let pObj = {};
-            for(key of profileKeys){
-                if(data[key]){
-                    pObj[key] = data[key];
-                }
-            }
-
-            let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
-            let mailOptions = {
-                    to: userData.email,
-                    subject: "",
-                    html:""
-            };
-            if(pObj["commissionerEmail"]){
-                // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
-                // if(emailCheck){
-                //     if(emailCheck.ulb.toString() != user.ulb.toString()){
-                //         return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
-                //     }
-                // }
-                pObj["email"] = pObj["commissionerEmail"];
-                pObj["isEmailVerified"] = false;
-               
-                if(pObj.email != userData.email){
-                    let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
-                    let template = Service.emailTemplate.userEmailEdit(userData.name,link);
-                    mailOptions.to = pObj.email;
-                    mailOptions.subject=  template.subject;
-                    mailOptions.html=  template.body;
-                }else{
-                    let template = Service.emailTemplate.userProfileEdit(userData.name)
-                    mailOptions.subject=  template.subject;
-                    mailOptions.html=  template.body;
-                }
-                SendEmail(mailOptions);
-            }
-            try{
-                let dulb,du;
-                if(Object.keys(obj).length){
-                    dulb = await Ulb.update({_id:ObjectId(data.ulb)},{$set:obj});
-                }
-                if(Object.keys(pObj).length){
-                    du = await User.update({ulb:ObjectId(data.ulb), role:"ULB"},{$set:pObj});
-                }
-                let template = Service.emailTemplate.userProfileEdit(userData.name)
-                mailOptions.subject =  template.subject;
-                mailOptions.html =  template.body;
-                SendEmail(mailOptions);
-                return Response.OK(res, {Ulb:dulb,user:du,data},`Profile Updated Successfully.`)
-            }catch (e) {
-                console.log("Exception",e);
-                return Response.DbError(res,e);
+        let keys = [
+            "name","regionalName","code","state","ulbType","natureOfUlb","wards",
+            "area","population","location","amrut"
+        ];
+        let obj = {};
+        for(key of keys){
+            if(data[key]){
+                obj[key] = data[key];
             }
         }
-        else {
-            return Response.BadRequest(res, data, `'ulb' is required field.`)
+        let profileKeys = ["name", "accountantConatactNumber", "accountantEmail", "accountantName", "commissionerConatactNumber", "commissionerEmail", "commissionerName"];
+        let pObj = {};
+        for(key of profileKeys){
+            if(data[key]){
+                pObj[key] = data[key];
+            }
+        }
+
+        let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
+        let mailOptions = {
+                to: userData.email,
+                subject: "",
+                html:""
+        };
+        if(pObj["commissionerEmail"]){
+            // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
+            // if(emailCheck){
+            //     if(emailCheck.ulb.toString() != user.ulb.toString()){
+            //         return Response.BadRequest(res,{}, `Email:${emailCheck.email} already used by a ${emailCheck.role} user.`)
+            //     }
+            // }
+            pObj["email"] = pObj["commissionerEmail"];
+            pObj["isEmailVerified"] = false;
+            
+            if(pObj.email != userData.email){
+                let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
+                let template = Service.emailTemplate.userEmailEdit(userData.name,link);
+                mailOptions.to = pObj.email;
+                mailOptions.subject=  template.subject;
+                mailOptions.html=  template.body;
+            }else{
+                let template = Service.emailTemplate.userProfileEdit(userData.name)
+                mailOptions.subject=  template.subject;
+                mailOptions.html=  template.body;
+            }
+            SendEmail(mailOptions);
+        }
+        try{
+            let dulb,du;
+            if(Object.keys(obj).length){
+                dulb = await Ulb.update({_id:ObjectId(data.ulb)},{$set:obj});
+            }
+            if(Object.keys(pObj).length){
+                du = await User.update({ulb:ObjectId(data.ulb), role:"ULB"},{$set:pObj});
+            }
+            let template = Service.emailTemplate.userProfileEdit(userData.name)
+            mailOptions.subject =  template.subject;
+            mailOptions.html =  template.body;
+            SendEmail(mailOptions);
+            return Response.OK(res, {Ulb:dulb,user:du,data},`Profile Updated Successfully.`)
+        }catch (e) {
+            console.log("Exception",e);
+            return Response.DbError(res,e);
         }
         
     }else{
@@ -342,11 +337,7 @@ module.exports.getAll = async (req, res)=>{
                     status:"Status"
                 };
                 let arr = await UlbUpdateRequest.aggregate(q).exec();
-
                 let xlsData = await Service.dataFormating(arr,field);
-
-                res.json(xlsData);return;
-
                 return res.xls('ulb-update-request.xlsx',xlsData);
             }else{
                 if(!skip) {
