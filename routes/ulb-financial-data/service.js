@@ -605,7 +605,7 @@ module.exports.getHistories = async (req, res) => {
                 {
                     $project: {
                         _id: 1,
-                        isCompleted:1,
+                        isCompleted:'$history.isCompleted',
                         audited: '$history.audited',
                         completeness: '$history.completeness',
                         correctness: '$history.correctness',
