@@ -938,9 +938,6 @@ module.exports.action = async(req,res)=>{
             }
             data["actionTakenBy"] = user._id;
             data["ulb"] = prevState.ulb;
-
-            res.json(2);return;
-
             let du = await UlbFinancialData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set:data,$push: { history: history } }
