@@ -67,6 +67,16 @@ const validate = (data, role,_id)=>{
                         key:"email",
                         type:"email",
                         message:"Email already taken."
+                    },
+                    {
+                        key:"commissionerConatactNumber",
+                        type:"mobile",
+                        message:"Commissioner contact number already taken."
+                    },
+                    {
+                        key:"commissionerEmail",
+                        type:"email",
+                        message:"Commissioner email already taken."
                     }
                 ],
                 ULB:[
