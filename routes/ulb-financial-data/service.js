@@ -297,7 +297,7 @@ module.exports.getAll = async (req, res) => {
     try {
 
         let statusFilter = {
-            "1":{"isCompleted":false,actionTakenByUserRole:"ULB"},
+            "1":{"status":"PENDING","isCompleted":false,actionTakenByUserRole:"ULB"},
             "2":{"status":"PENDING",actionTakenByUserRole:"ULB"},
             "3":{"status":"APPROVED",actionTakenByUserRole:"STATE"},
             "4":{"status":"REJECTED",actionTakenByUserRole:"STATE"},
@@ -420,7 +420,8 @@ module.exports.getAll = async (req, res) => {
                         actionTakenByUserName: '$actionTakenBy.name',
                         actionTakenByUserRole: '$actionTakenBy.role',
                         isActive: '$isActive',
-                        createdAt: '$createdAt'
+                        createdAt: '$createdAt',
+                        modifiedAt:'$modifiedAt'
                     }
                 }
             ];
@@ -435,10 +436,10 @@ module.exports.getAll = async (req, res) => {
                 newFilter['ulb'] = ObjectId(user.ulb);
             }
             newFilter['isActive'] = true;
-            // if(newFilter['status']){
-            //     Object.assign(newFilter,statusFilter[newFilter['status']])
-            //     delete newFilter['status'];
-            // }   
+            if(newFilter['status']){
+                Object.assign(newFilter,statusFilter[newFilter['status']])
+                //delete newFilter['status'];
+            }   
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
@@ -447,7 +448,7 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 q.push({ $sort: { modifiedAt: -1 } });
-                q.push({ $sort: { priority: -1 } });
+                //q.push({ $sort: { priority: -1 } });
             }
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
