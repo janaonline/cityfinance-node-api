@@ -1115,13 +1115,13 @@ function resetDataStatus(data){
             if(key=='waterManagement'){
                 for(let objKey of waterManagementKeys){
                     if(data[key][objKey]){
-                        data[key][objKey]["status"]= 'N.A';
-                        data[key][objKey]["rejectRegion"]= '';
+                        data[key][objKey]["status"]= 'NA';
+                        data[key][objKey]["rejectReason"]= '';
                     }
                 }   
                 for(let d of data[key]["documents"]["wasteWaterPlan"]){
                     d.status='NA';
-                    d.rejectRegion = '';
+                    d.rejectReason = '';
                 }
             }
             if(key=='solidWasteManagement'){
@@ -1129,7 +1129,7 @@ function resetDataStatus(data){
                     if(data[key]["documents"][objKey]){
                         for(let d of data[key]["documents"][objKey]){
                             d.status='NA';
-                            d.rejectRegion = '';
+                            d.rejectReason = '';
                         }
                     }
                 }
@@ -1139,7 +1139,7 @@ function resetDataStatus(data){
                     if(data[key]["documents"][objKey]){
                         for(let d of data[key]["documents"][objKey]){
                             d.status='NA';
-                            d.rejectRegion = '';
+                            d.rejectReason = '';
                         }
                     }
                 }
@@ -1163,7 +1163,7 @@ function checkStatus(data){
                         rejected=true;
                         let tab = "Water Supply & Waste-Water Management:"+mappingKeys[objKey]
                         let reason = {
-                            [tab]:data[key][objKey]["rejectRegion"]
+                            [tab]:data[key][objKey]["rejectReason"]
                         }
                         rejectReason.push({reason})
                     }
@@ -1173,7 +1173,7 @@ function checkStatus(data){
                         rejected=true;
                         let tab = "Water Supply & Waste-Water Management:Upload Documents"
                         let reason = {
-                            tab:d.rejectRegion
+                            tab:d.rejectReason
                         }
                         rejectReason.push(reason)
                     }
@@ -1187,7 +1187,7 @@ function checkStatus(data){
                                 rejected=true;
                                 let tab = "Solid Waste Management:"+mappingKeys[objKey]
                                 let reason = {
-                                    [tab]:d.rejectRegion
+                                    [tab]:d.rejectReason
                                 }
                                 rejectReason.push(reason)
                             }
@@ -1202,7 +1202,7 @@ function checkStatus(data){
                             rejected=true;
                             let tab = "Million Plus Cities Only:"+mappingKeys[objKey]
                             let reason = {
-                                [tab]:d.rejectRegion
+                                [tab]:d.rejectReason
                             }
                             rejectReason.push(reason)
                         }
