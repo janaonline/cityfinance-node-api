@@ -1114,8 +1114,10 @@ function resetDataStatus(data){
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
                 for(let objKey of waterManagementKeys){
-                    data[key][objKey]["status"]= 'N.A';
-                    data[key][objKey]["rejectRegion"]= '';
+                    if(data[key][objKey]){
+                        data[key][objKey]["status"]= 'N.A';
+                        data[key][objKey]["rejectRegion"]= '';
+                    }
                 }   
                 for(let d of data[key]["documents"]["wasteWaterPlan"]){
                     d.status='N.A';
@@ -1124,18 +1126,21 @@ function resetDataStatus(data){
             }
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
-                    for(let d of data[key][objKey]){
-                        d.status='N.A';
-                        d.rejectRegion = '';
+                    if(data[key][objKey]){
+                        for(let d of data[key][objKey]){
+                            d.status='N.A';
+                            d.rejectRegion = '';
+                        }
                     }
                 }
             }
             if(key=='millionPlusCities'){
                 for(let objKey of millionPlusCitiesKeys){
-                    for(let d of data[key]["documents"][objKey]){
-                        d.status='N.A';
-                        d.rejectRegion = '';
-
+                    if(data[key]["documents"][objKey]){
+                        for(let d of data[key]["documents"][objKey]){
+                            d.status='N.A';
+                            d.rejectRegion = '';
+                        }
                     }
                 }
             }
