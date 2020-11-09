@@ -1181,7 +1181,6 @@ function checkStatus(data){
             }
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
-
                     if(data[key]["documents"][objKey]){
                         for(let d of data[key]["documents"][objKey]){
                             if(d.status=='REJECTED'){
