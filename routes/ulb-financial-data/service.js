@@ -7,6 +7,7 @@ const Response = require('../../service').response;
 const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
 const moment = require('moment');
+const { JsonWebTokenError } = require('jsonwebtoken');
 const waterManagementKeys = [
     "serviceLevel",
     "houseHoldCoveredPipedSupply",
@@ -322,7 +323,6 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
-
             let status = 'PENDING'
             // if(user.role=='ULB'){
             //     status = 'REJECTED'
@@ -425,9 +425,8 @@ module.exports.getAll = async (req, res) => {
                     }
                 }
             ];
-
+            
             let newFilter = await Service.mapFilter(filter);
-
             let total = undefined;
             if (user.role == 'STATE') {
                 newFilter['state'] = ObjectId(user.state);
@@ -439,6 +438,7 @@ module.exports.getAll = async (req, res) => {
             if(newFilter['status']){
                 Object.assign(newFilter,statusFilter[newFilter['status']])
                 //delete newFilter['status'];
+                
             }   
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
