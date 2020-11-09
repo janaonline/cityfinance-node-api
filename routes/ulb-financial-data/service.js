@@ -1120,15 +1120,15 @@ function resetDataStatus(data){
                     }
                 }   
                 for(let d of data[key]["documents"]["wasteWaterPlan"]){
-                    d.status='N.A';
+                    d.status='NA';
                     d.rejectRegion = '';
                 }
             }
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
-                    if(data[key][objKey]){
-                        for(let d of data[key][objKey]){
-                            d.status='N.A';
+                    if(data[key]["documents"][objKey]){
+                        for(let d of data[key]["documents"][objKey]){
+                            d.status='NA';
                             d.rejectRegion = '';
                         }
                     }
@@ -1138,7 +1138,7 @@ function resetDataStatus(data){
                 for(let objKey of millionPlusCitiesKeys){
                     if(data[key]["documents"][objKey]){
                         for(let d of data[key]["documents"][objKey]){
-                            d.status='N.A';
+                            d.status='NA';
                             d.rejectRegion = '';
                         }
                     }
@@ -1182,8 +1182,8 @@ function checkStatus(data){
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
 
-                    if(data[key][objKey]){
-                        for(let d of data[key][objKey]){
+                    if(data[key]["documents"][objKey]){
+                        for(let d of data[key]["documents"][objKey]){
                             if(d.status=='REJECTED'){
                                 rejected=true;
                                 let tab = "Solid Waste Management:"+mappingKeys[objKey]
