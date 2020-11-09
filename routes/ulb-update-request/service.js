@@ -84,7 +84,7 @@ module.exports.create = async (req, res)=>{
             }
         }
 
-        let userData = await User.findOne({ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
+        let userData = await User.findOne({isDeleted:false,ulb:ObjectId(data.ulb), role:"ULB"},"_id email role name").lean();
         let mailOptions = {
                 to: userData.email,
                 subject: "",
