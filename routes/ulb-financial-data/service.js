@@ -938,6 +938,9 @@ module.exports.action = async(req,res)=>{
             }
             data["actionTakenBy"] = user._id;
             data["ulb"] = prevState.ulb;
+
+            res.json(2);return;
+
             let du = await UlbFinancialData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set:data,$push: { history: history } }
@@ -1124,7 +1127,7 @@ function resetDataStatus(data){
             }
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
-                    for(let d of data[key]["documents"][objKey]){
+                    for(let d of data[key][objKey]){
                         d.status='N.A';
                         d.rejectRegion = '';
                     }
@@ -1154,7 +1157,7 @@ function checkStatus(data){
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
                 for(let objKey of waterManagementKeys){
-                    if(data[key][objKey]["status"]=='REJECTED'){
+                    if(data[key][objKey] && data[key][objKey]["status"]=='REJECTED'){
                         rejected=true;
                         let tab = "Water Supply & Waste-Water Management:"+mappingKeys[objKey]
                         let reason = {
@@ -1176,14 +1179,17 @@ function checkStatus(data){
             }
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
-                    for(let d of data[key]["documents"][objKey]){
-                        if(d.status=='REJECTED'){
-                            rejected=true;
-                            let tab = "Solid Waste Management:"+mappingKeys[objKey]
-                            let reason = {
-                                [tab]:d.rejectRegion
+
+                    if(data[key][objKey]){
+                        for(let d of data[key][objKey]){
+                            if(d.status=='REJECTED'){
+                                rejected=true;
+                                let tab = "Solid Waste Management:"+mappingKeys[objKey]
+                                let reason = {
+                                    [tab]:d.rejectRegion
+                                }
+                                rejectReason.push(reason)
                             }
-                            rejectReason.push(reason)
                         }
                     }
                 }
