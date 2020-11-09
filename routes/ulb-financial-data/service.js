@@ -328,7 +328,7 @@ module.exports.getAll = async (req, res) => {
             //     status = 'REJECTED'
             // }
 
-            console.log(status);
+            console.log(filter);
 
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
@@ -450,6 +450,8 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: { modifiedAt: -1 } });
                 //q.push({ $sort: { priority: -1 } });
             }
+
+            //res.json(q);return;
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 let xlsData = await Service.dataFormating(arr, {
@@ -521,6 +523,7 @@ module.exports.getHistories = async (req, res) => {
                                     {
                                         _id: '$_id',
                                         referenceCode: '$referenceCode',
+                                        isCompleted:'$isCompleted',
                                         audited: '$audited',
                                         overallReport: '$overallReport',
                                         completeness: '$completeness',
@@ -602,6 +605,7 @@ module.exports.getHistories = async (req, res) => {
                 {
                     $project: {
                         _id: 1,
+                        isCompleted:1,
                         audited: '$history.audited',
                         completeness: '$history.completeness',
                         correctness: '$history.correctness',
