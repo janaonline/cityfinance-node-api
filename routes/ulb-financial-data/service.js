@@ -446,7 +446,7 @@ module.exports.getAll = async (req, res) => {
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
             } else {
-                q.push({ $sort: { createdAt: -1 } });
+                q.push({ $sort: { modifiedAt: -1 } });
                 q.push({ $sort: { priority: -1 } });
             }
             if (csv) {
