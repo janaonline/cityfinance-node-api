@@ -44,7 +44,7 @@ module.exports.register = async (req, res) => {
                 return Response.BadRequest(
                     res,
                     { data },
-                    `Commissioner Email and Ulb is required field.`
+                    `Municipal Commissioner/Executive Officer Email ID and Ulb is required field.`
                 );
             }
             data['isActive'] = false;
