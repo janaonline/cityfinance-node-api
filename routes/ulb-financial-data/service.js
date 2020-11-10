@@ -1036,7 +1036,7 @@ module.exports.action = async(req,res)=>{
                     let ulbEmails = []
                     let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
                         ulbUser.name,
-                        flag.reason,
+                        value.reason,
                         "MoHUA"
                     );
                     ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
@@ -1056,7 +1056,7 @@ module.exports.action = async(req,res)=>{
                         let stateTemplate = await Service.emailTemplate.xvUploadRejectState(
                             ulbUser.name,
                             d.name,
-                            flag.reason
+                            value.reason
                         );
                         mailOptions.to = stateEmails.join();
                         mailOptions.subject = stateTemplate.subject;
@@ -1078,7 +1078,7 @@ module.exports.action = async(req,res)=>{
                     let ulbEmails = []
                     let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
                         ulbUser.name,
-                        flag.reason,
+                        value.reason,
                         "STATE"
                     );
                     ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
@@ -1197,7 +1197,7 @@ function checkStatus(data){
                         if(data[key]["documents"][objKey]){
                             for(let d of data[key]["documents"][objKey]){
                                 if(d.status=='REJECTED'){
-                                    if(!d.rejectReason){
+                                    if(!d.rejectReason || d.rejectReason==''){
                                         reject('reject reason is missing')
                                     }
                                     rejected=true;
@@ -1215,7 +1215,7 @@ function checkStatus(data){
                     for(let objKey of millionPlusCitiesKeys){
                         for(let d of data[key]["documents"][objKey]){
                             if(d.status=='REJECTED'){
-                                if(!d.rejectReason){
+                                if(!d.rejectReason || d.rejectReason==''){
                                     reject('reject reason is missing')
                                 }
                                 rejected=true;
