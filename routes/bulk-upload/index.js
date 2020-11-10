@@ -50,5 +50,6 @@ router.post('/bulk/ulb-upload',multerUpload.single('file'),BulkUpload.ulbUlpload
 router.post('/bulk/overall-ulb-upload',multerUpload.single('files'),BulkUpload.overallUlbUlpload);
 router.post("/bulk/ulb-location-update", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate);
 router.post("/bulk/state-ulb-count-update", multerUpload.single('csv'), BulkUpload.csvToJSON,BulkUpload.stateUlbCountUpdate);
+router.post("/bulk/ulb-name-update", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate.nameUpdate);
 
 module.exports = router;
