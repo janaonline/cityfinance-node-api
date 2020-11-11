@@ -1091,7 +1091,7 @@ module.exports.action = async(req,res)=>{
                     mailOptions.to =  ulbEmails.join(),
                     mailOptions.subject = UlbTemplate.subject,
                     mailOptions.html = UlbTemplate.body
-                    Service.sendEmail(UlbTemplate);
+                    Service.sendEmail(mailOptions);
                 }
                 return Response.OK(
                     res,
