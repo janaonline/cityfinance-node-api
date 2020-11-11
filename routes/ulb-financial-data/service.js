@@ -1190,7 +1190,7 @@ function checkStatus(data){
                                 reject('reject reason is missing')
                             }
                             let reason = {
-                                tab:d.rejectReason
+                                [tab]:d.rejectReason
                             }
                             rejectReason.push(reason)
                         }
