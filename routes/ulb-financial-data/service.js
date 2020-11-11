@@ -43,21 +43,21 @@ module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
     if (user.role == 'ULB') {
-        for (k in data) {
-            if (
-                data[k] &&
-                typeof data[k] == 'object' &&
-                Object.keys(data[k]).length
-            ) {
-                if (!(data[k].pdfUrl || data[k].excelUrl)) {
-                    data[k].completeness = 'NA';
-                    data[k].correctness = 'NA';
-                } else {
-                    data[k].completeness = 'PENDING';
-                    data[k].correctness = 'PENDING';
-                }
-            }
-        }
+        // for (k in data) {
+        //     if (
+        //         data[k] &&
+        //         typeof data[k] == 'object' &&
+        //         Object.keys(data[k]).length
+        //     ) {
+        //         if (!(data[k].pdfUrl || data[k].excelUrl)) {
+        //             data[k].completeness = 'NA';
+        //             data[k].correctness = 'NA';
+        //         } else {
+        //             data[k].completeness = 'PENDING';
+        //             data[k].correctness = 'PENDING';
+        //         }
+        //     }
+        // }
         let ulb = await Ulb.findOne({ _id: user.ulb }, '_id name code').lean();
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
@@ -95,6 +95,10 @@ module.exports.create = async (req, res) => {
         req.body["status"] = 'PENDING';
         query["ulb"] = ObjectId(data.ulb);
         let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
+        // if(ulbData){
+
+        //     req.body["history"] = 
+        // }
         if(ulbData && ulbData.status=='PENDING'){
             if(ulbData.isCompleted){
                 return Response.BadRequest(res,{},`Form is already submitted`);
@@ -907,16 +911,16 @@ module.exports.action = async(req,res)=>{
             '-history'
         ).lean();
         let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
-        if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
-            return Response.BadRequest(res, {}, 'Already approved By MoHUA user.');
-        }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
-            return Response.BadRequest(res, {}, 'Already Rejected By MoHUA user.');
-        }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
-            return Response.BadRequest(res, {}, 'Already approved By STATE user.');
-        }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
-            return Response.BadRequest(res, {}, 'Already Rejected By State user.');
-        }
-        let flag = checkStatus(data); // check rejected status
+        // if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
+        //     return Response.BadRequest(res, {}, 'Already approved By MoHUA user.');
+        // }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
+        //     return Response.BadRequest(res, {}, 'Already Rejected By MoHUA user.');
+        // }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
+        //     return Response.BadRequest(res, {}, 'Already approved By STATE user.');
+        // }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
+        //     return Response.BadRequest(res, {}, 'Already Rejected By State user.');
+        // }
+        let flag =  checkStatus(data); // check rejected status
         flag.then(async value=>{
             data["status"] = value.status ? 'REJECTED':'APPROVED'
             let actionAllowed = ['MoHUA','STATE'];
@@ -1158,7 +1162,6 @@ function resetDataStatus(data){
     return data;
 }
 function checkStatus(data){
-
     return new Promise((resolve,reject)=>{
         let rejected = false
         let rejectReason = []
@@ -1247,7 +1250,7 @@ function checkStatus(data){
             }
             resolve({status:rejected,reason:x})
         }
-        resolve({status:rejected,reason:x})
+        resolve({status:rejected,reason:''})
     })
 }
 
