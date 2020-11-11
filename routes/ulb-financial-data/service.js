@@ -911,15 +911,15 @@ module.exports.action = async(req,res)=>{
             '-history'
         ).lean();
         let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
-        // if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
-        //     return Response.BadRequest(res, {}, 'Already approved By MoHUA user.');
-        // }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
-        //     return Response.BadRequest(res, {}, 'Already Rejected By MoHUA user.');
-        // }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
-        //     return Response.BadRequest(res, {}, 'Already approved By STATE user.');
-        // }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
-        //     return Response.BadRequest(res, {}, 'Already Rejected By State user.');
-        // }
+        if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
+            return Response.BadRequest(res, {}, 'Already approved By MoHUA user.');
+        }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
+            return Response.BadRequest(res, {}, 'Already Rejected By MoHUA user.');
+        }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
+            return Response.BadRequest(res, {}, 'Already approved By STATE user.');
+        }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
+            return Response.BadRequest(res, {}, 'Already Rejected By State user.');
+        }
         let flag =  checkStatus(data); // check rejected status
         flag.then(async value=>{
             data["status"] = value.status ? 'REJECTED':'APPROVED'
