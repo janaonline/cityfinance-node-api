@@ -719,13 +719,39 @@ module.exports.getDetails = async (req, res) => {
                 createdAt: '$createdAt'
             }
         }
-
         ]).exec();
+        
+        let HistoryData = await UlbFinancialData.aggregate([
+            {
+                $match :query
+            },
+            { $unwind: {
+                path:'$history',
+                preserveNullAndEmptyArrays: true
+                } 
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'history.actionTakenBy',
+                    foreignField: '_id',
+                    as: 'user'
+                }
+            },
+            {$match:{"user.role":'MoHUA','history.status':'REJECTED'}},
+        ]).exec();    
+
+        let history = {"histroy":""}
+        if(HistoryData.length >0){
+            history['histroy'] = HistoryData[0].history
+        }
+        let finalData =Object.assign(data[0],history)
+
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
             message: 'Ulb update request list',
-            data: data[0]
+            data: finalData
         });
     } else {
         return Response.BadRequest(res, {}, 'Action not allowed.');
