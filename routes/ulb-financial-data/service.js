@@ -743,7 +743,7 @@ module.exports.getDetails = async (req, res) => {
 
         let history = {"histroy":""}
         if(HistoryData.length >0){
-            history['histroy'] = HistoryData[0].history
+            history['histroy'] = resetDataStatus(HistoryData[0].history,false)
         }
         let finalData =Object.assign(data[0],history)
 
@@ -1146,27 +1146,57 @@ async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
 
-function resetDataStatus(data){
+/** 
+ * @param{data}  - type Object
+ * @param{check} - type Boolean  
+*/
+function resetDataStatus(data,check=false){
     for(key in data){
         if(typeof data[key] === 'object'  && data[key] !== null ){
             if(key=='waterManagement'){
                 for(let objKey of waterManagementKeys){
                     if(data[key][objKey]){
-                        data[key][objKey]["status"]= 'NA';
-                        data[key][objKey]["rejectReason"]= '';
+
+                        if(check){
+                            if(data[key][objKey]["status"]=='REJECTED'){
+                                data[key][objKey]["status"]= 'NA';
+                                data[key][objKey]["rejectReason"]= '';
+                            }
+                        }
+                        else{
+                            data[key][objKey]["status"]= 'NA';
+                            data[key][objKey]["rejectReason"]= '';
+                        }
                     }
                 }   
                 for(let d of data[key]["documents"]["wasteWaterPlan"]){
-                    d.status='NA';
-                    d.rejectReason = '';
+                   
+                    if(check){
+                        if(d.status=='REJECTED'){
+                            d.status='NA';
+                            d.rejectReason = '';
+                        }
+                    }
+                    else{
+                        d.status='NA';
+                        d.rejectReason = '';
+                    }
                 }
             }
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
                     if(data[key]["documents"][objKey]){
                         for(let d of data[key]["documents"][objKey]){
-                            d.status='NA';
-                            d.rejectReason = '';
+                            if(check){
+                                if(d.status=='REJECTED'){
+                                    d.status='NA';
+                                    d.rejectReason = '';
+                                }
+                            }
+                            else{
+                                d.status='NA';
+                                d.rejectReason = '';
+                            }
                         }
                     }
                 }
@@ -1175,8 +1205,16 @@ function resetDataStatus(data){
                 for(let objKey of millionPlusCitiesKeys){
                     if(data[key]["documents"][objKey]){
                         for(let d of data[key]["documents"][objKey]){
-                            d.status='NA';
-                            d.rejectReason = '';
+                            if(check){
+                                if(d.status=='REJECTED'){
+                                    d.status='NA';
+                                    d.rejectReason = '';
+                                }
+                            }
+                            else{
+                                d.status='NA';
+                                d.rejectReason = '';
+                            }
                         }
                     }
                 }
