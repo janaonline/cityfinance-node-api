@@ -1175,17 +1175,17 @@ function checkStatus(data){
                                 reject('reject reason is missing')
                             }
                             rejected=true;
-                            let tab = "Water Supply & Waste-Water Management:"+mappingKeys[objKey]
+                            let tab = "waterManagement:"+mappingKeys[objKey]
                             let reason = {
                                 [tab]:data[key][objKey]["rejectReason"]
                             }
-                            rejectReason.push({reason})
+                            rejectReason.push(reason)
                         }
                     }   
                     for(let d of data[key]["documents"]["wasteWaterPlan"]){
                         if(d.status=='REJECTED'){
                             rejected=true;
-                            let tab = "Water Supply & Waste-Water Management:Upload Documents"
+                            let tab = "waterManagement:Upload Documents"
                             if(!d.rejectReason){
                                 reject('reject reason is missing')
                             }
@@ -1229,7 +1229,7 @@ function checkStatus(data){
                                 }
                                 rejectReason.push(reason)
                             }
-                        }
+                        }                        
                     }
                 }
             }else{
@@ -1248,7 +1248,7 @@ function checkStatus(data){
             for(i of finalString ){
                 x += i+"<br>"
             }
-            resolve({status:rejected,reason:x})
+            resolve({status:rejected,"reason":x})
         }
         resolve({status:rejected,reason:''})
     })
