@@ -95,10 +95,9 @@ module.exports.create = async (req, res) => {
         req.body["status"] = 'PENDING';
         query["ulb"] = ObjectId(data.ulb);
         let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
-        // if(ulbData){
-
-        //     req.body["history"] = 
-        // }
+        if(ulbData){
+            req.body["history"] = ulbData.history.push(ulbData)
+        }
         if(ulbData && ulbData.status=='PENDING'){
             if(ulbData.isCompleted){
                 return Response.BadRequest(res,{},`Form is already submitted`);
