@@ -90,8 +90,7 @@ const waterManagementSchema = new Schema({
                     rejectReason:{type:String,default:""}    
                 }
             ],
-            default:null,
-            required:true
+            default:null
         }
     }
 });
@@ -108,8 +107,7 @@ const solidWasteManagementSchema = new Schema({
                     rejectReason:{type:String,default:""}
                 }
             ],
-            default:null,
-            required:true
+            default:null
         },
         waterSupplyCoverage:{
             type:[
@@ -120,8 +118,7 @@ const solidWasteManagementSchema = new Schema({
                     rejectReason:{type:String,default:""}
                 }
             ],
-            default:null,
-            required:true
+            default:null
         }
     }
 
@@ -139,8 +136,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectReason:{type:String,default:""}
                 }
             ],
-            default:null,
-            required:true
+            default:null
         },
         waterBalancePlan:{
             type:[
@@ -151,8 +147,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectReason:{type:String,default:""}
                 }
             ],
-            default:null,
-            required:true
+            default:null
         },
         serviceLevelPlan:{
             type:[
@@ -163,8 +158,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectReason:{type:String,default:""}
                 }
             ],
-            default:null,
-            required:true
+            default:null
         },
         solidWastePlan:{
             type:[
@@ -175,8 +169,7 @@ const millionPlusCitiesSchema = new Schema({
                     rejectReason:{type:String,default:""}
                 }
             ],
-            default:null,
-            required:true
+            default:null
         }
     }
 
