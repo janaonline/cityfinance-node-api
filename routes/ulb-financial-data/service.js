@@ -305,7 +305,7 @@ module.exports.getAll = async (req, res) => {
 
         let statusFilter = {
             "1":{"status":"PENDING","isCompleted":false,actionTakenByUserRole:"ULB"},
-            "2":{"status":"PENDING",actionTakenByUserRole:"ULB"},
+            "2":{"status":"PENDING","isCompleted":true,actionTakenByUserRole:"ULB"},
             "3":{"status":"APPROVED",actionTakenByUserRole:"STATE"},
             "4":{"status":"REJECTED",actionTakenByUserRole:"STATE"},
             "5":{"status":"REJECTED",actionTakenByUserRole:"MoHUA"},
@@ -457,7 +457,7 @@ module.exports.getAll = async (req, res) => {
                 //q.push({ $sort: { priority: -1 } });
             }
 
-            //res.json(q);return;
+            res.json(q);return;
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 let xlsData = await Service.dataFormating(arr, {
@@ -750,7 +750,6 @@ module.exports.getDetails = async (req, res) => {
             history['histroy'] = resetDataStatus(HistoryData[HistoryData.length-1],false)
         }
         let finalData =Object.assign(data[0],history)
-
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
