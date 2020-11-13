@@ -741,7 +741,7 @@ module.exports.getDetails = async (req, res) => {
             },
             {$match:{"user.role":'MoHUA','history.status':'REJECTED'}},
             {$project:{
-                history:'$history'
+                history:'$history.history'
             }
             }
         ]).exec();    
