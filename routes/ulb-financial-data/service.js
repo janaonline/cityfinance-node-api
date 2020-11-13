@@ -744,7 +744,7 @@ module.exports.getDetails = async (req, res) => {
 
         let history = {"histroy":""}
         if(HistoryData.length >0){
-            history['histroy'] = resetDataStatus(HistoryData[0].history,false)
+            history['histroy'] = resetDataStatus(HistoryData[HistoryData.length-1].history,false)
         }
         let finalData =Object.assign(data[0],history)
 
