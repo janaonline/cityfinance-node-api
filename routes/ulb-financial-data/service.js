@@ -456,8 +456,6 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: { modifiedAt: -1 } });
                 //q.push({ $sort: { priority: -1 } });
             }
-
-            res.json(q);return;
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 let xlsData = await Service.dataFormating(arr, {
