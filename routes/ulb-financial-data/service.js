@@ -96,7 +96,8 @@ module.exports.create = async (req, res) => {
         query["ulb"] = ObjectId(data.ulb);
         let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
         if(ulbData){
-            req.body["history"] = ulbData.history.push(ulbData)
+            req.body["history"] = ulbData.history;
+            req.body["history"].push(ulbData);
         }
         if(ulbData && ulbData.status=='PENDING'){
             if(ulbData.isCompleted){
