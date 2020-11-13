@@ -95,15 +95,15 @@ module.exports.create = async (req, res) => {
         req.body["status"] = 'PENDING';
         query["ulb"] = ObjectId(data.ulb);
         let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
-        if(ulbData){
-            req.body["history"] = [...ulbData.history];
-            ulbData.history=[]
-            req.body["history"].push(ulbData);
-        }
         if(ulbData && ulbData.status=='PENDING'){
             if(ulbData.isCompleted){
                 return Response.BadRequest(res,{},`Form is already submitted`);
             }
+        }
+        if(ulbData && ulbData.isCompleted==true){
+            req.body["history"] = [...ulbData.history];
+            ulbData.history=[]
+            req.body["history"].push(ulbData);
         }
         Service.put(query,req.body,UlbFinancialData,async function(response,value){
             if(response){
