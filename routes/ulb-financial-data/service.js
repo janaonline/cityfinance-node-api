@@ -1239,7 +1239,7 @@ function checkStatus(data){
                                 reject('reject reason is missing')
                             }
                             rejected=true;
-                            let tab = "waterManagement:"+mappingKeys[objKey]
+                            let tab = "Water Supply & Waste-Water Management:"+mappingKeys[objKey]
                             let reason = {
                                 [tab]:data[key][objKey]["rejectReason"]
                             }
@@ -1249,7 +1249,7 @@ function checkStatus(data){
                     for(let d of data[key]["documents"]["wasteWaterPlan"]){
                         if(d.status=='REJECTED'){
                             rejected=true;
-                            let tab = "waterManagement:Upload Documents"
+                            let tab = "Water Supply & Waste-Water Management:Upload Documents"
                             if(!d.rejectReason){
                                 reject('reject reason is missing')
                             }
@@ -1308,11 +1308,11 @@ function checkStatus(data){
                 let reason = obj[service];
                 return `<p> ${service + ` :`+ reason} </p>`
             });
-            let x='';
-            for(i of finalString ){
-                x += i+"<br>"
-            }
-            resolve({status:rejected,"reason":x})
+            // let x='';
+            // for(i of finalString ){
+            //     x += i+"<br>"
+            // }
+            resolve({status:rejected,"reason":finalString})
         }
         resolve({status:rejected,reason:''})
     })
