@@ -421,7 +421,7 @@ const xvUploadApprovalState = (mohuaName,ulbName,stateName) => {
         subject: `XV FC Form Successfully Submitted- ${ulbName}`,
         body: `Dear ${mohuaName},<br>
                 <p>
-                    The XV FC form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.
+                    The XV FC form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.<br>
                     Kindly review the same.
                 </p>
                 <br>
