@@ -1303,17 +1303,18 @@ function checkStatus(data){
                 }
             }
         }
+        /** Concat reject reason string */
         if(rejectReason.length>0){
             let finalString = rejectReason.map((obj) => {
                 let service = Object.keys(obj)[0];
-                let reason = obj[service];
+                let reason = '<strong>'+obj[service]+'</strong>';
                 return `<p> ${service + ` :`+ reason} </p>`
             });
-            // let x='';
-            // for(i of finalString ){
-            //     x += i+"<br>"
-            // }
-            resolve({status:rejected,"reason":finalString})
+            let x='';
+            for(i of finalString ){
+                x += i
+            }
+            resolve({status:rejected,"reason":x})
         }
         resolve({status:rejected,reason:''})
     })

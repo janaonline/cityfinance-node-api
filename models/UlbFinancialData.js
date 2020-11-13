@@ -5,7 +5,7 @@ const audited = function () {
     return this.audited;
 }
 const statusType = ()=>{
-    return {type:String, enum: ["PENDING","APPROVED","REJECTED","NA"], default:"NA"};
+    return {type:String, enum: ["PENDING","APPROVED","REJECTED","NA"], default:""};
 }
 const overallStatusType = ()=>{
     return {type:String, enum: ["PENDING","APPROVED","REJECTED"], default:"PENDING"};
