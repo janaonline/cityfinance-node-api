@@ -93,7 +93,7 @@ module.exports.create = async (req, res) => {
         let query = {}
         req.body["overallReport"] = null;
         req.body["status"] = 'PENDING';
-        query["ulb"] = ObjectId('5dd24729437ba31f7eb42eb5');
+        query["ulb"] = ObjectId(data.ulb);
         let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
         if(ulbData){
             req.body["history"] = [...ulbData.history];
