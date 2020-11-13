@@ -740,11 +740,14 @@ module.exports.getDetails = async (req, res) => {
                 }
             },
             {$match:{"user.role":'MoHUA','history.status':'REJECTED'}},
+            {$project:{
+                history:'$history'
+            }
+            }
         ]).exec();    
-
         let history = {"histroy":""}
         if(HistoryData.length >0){
-            history['histroy'] = resetDataStatus(HistoryData[HistoryData.length-1].history,false)
+            history['histroy'] = resetDataStatus(HistoryData[HistoryData.length-1],false)
         }
         let finalData =Object.assign(data[0],history)
 
@@ -1160,12 +1163,12 @@ function resetDataStatus(data,check=false){
 
                         if(check){
                             if(data[key][objKey]["status"]=='REJECTED'){
-                                data[key][objKey]["status"]= 'NA';
+                                data[key][objKey]["status"]= '';
                                 data[key][objKey]["rejectReason"]= '';
                             }
                         }
                         else{
-                            data[key][objKey]["status"]= 'NA';
+                            data[key][objKey]["status"]= '';
                             data[key][objKey]["rejectReason"]= '';
                         }
                     }
@@ -1190,12 +1193,12 @@ function resetDataStatus(data,check=false){
                         for(let d of data[key]["documents"][objKey]){
                             if(check){
                                 if(d.status=='REJECTED'){
-                                    d.status='NA';
+                                    d.status='';
                                     d.rejectReason = '';
                                 }
                             }
                             else{
-                                d.status='NA';
+                                d.status='';
                                 d.rejectReason = '';
                             }
                         }
@@ -1208,12 +1211,12 @@ function resetDataStatus(data,check=false){
                         for(let d of data[key]["documents"][objKey]){
                             if(check){
                                 if(d.status=='REJECTED'){
-                                    d.status='NA';
+                                    d.status='';
                                     d.rejectReason = '';
                                 }
                             }
                             else{
-                                d.status='NA';
+                                d.status='';
                                 d.rejectReason = '';
                             }
                         }
