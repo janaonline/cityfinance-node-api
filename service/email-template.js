@@ -441,7 +441,6 @@ const xvUploadRejectUlb = (ulbName,rejectReason,role) => {
                     ${rejectReason}
                 </p>
                 <p>Please login to City Finance Portal to submit the corrected form.</p>
-                <br>
                 <br>Regards,<br>
                 City Finance Team`
     };
