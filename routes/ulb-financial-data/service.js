@@ -482,8 +482,6 @@ module.exports.getAll = async (req, res) => {
                     //auditStatus: 'Audit Status',
                     status: 'Status'
                 });
-
-                res.json(arr);return;
                 return res.xls('financial-data.xlsx', xlsData);
             } else {
                 try {
