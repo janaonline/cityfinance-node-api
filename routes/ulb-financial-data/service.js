@@ -429,7 +429,7 @@ module.exports.getAll = async (req, res) => {
                         createdAt: '$createdAt',
                         modifiedAt:'$modifiedAt'
                     }
-                }
+                }    
             ];
             
             let newFilter = await Service.mapFilter(filter);
@@ -458,6 +458,21 @@ module.exports.getAll = async (req, res) => {
             }
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
+                for(d of arr){
+                    if(d.status=="PENDING" && d.isCompleted==false && d.actionTakenByUserRole=="ULB"){
+                        d.status = "Saved as Draft"
+                    }if(d.status=="PENDING" && d.isCompleted==true && d.actionTakenByUserRole=="ULB"){
+                        d.status = "Under Review by STATE"
+                    }if(d.status=="APPROVED" && d.actionTakenByUserRole=="STATE"){    
+                        d.status= "Approved by STATE"
+                    }if(d.status=="REJECTED" && d.actionTakenByUserRole=="STATE"){
+                        d.status = "Rejected by STATE"
+                    }if(d.status=="REJECTED" && d.actionTakenByUserRole=="MoHUA"){
+                        d.status = "Rejected by MoHUA"
+                    }if(d.status=="APPROVED" && d.actionTakenByUserRole=="MoHUA"){        
+                        d.status = "Completely Approved"
+                    }
+                }
                 let xlsData = await Service.dataFormating(arr, {
                     ulbName: 'ULB name',
                     ulbCode: 'ULB Code',
@@ -467,6 +482,8 @@ module.exports.getAll = async (req, res) => {
                     //auditStatus: 'Audit Status',
                     status: 'Status'
                 });
+
+                res.json(arr);return;
                 return res.xls('financial-data.xlsx', xlsData);
             } else {
                 try {
@@ -719,35 +736,22 @@ module.exports.getDetails = async (req, res) => {
             }
         }
         ]).exec();
-        
-        let HistoryData = await UlbFinancialData.aggregate([
-            {
-                $match :query
-            },
-            { $unwind: {
-                path:'$history',
-                preserveNullAndEmptyArrays: true
-                } 
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'history.actionTakenBy',
-                    foreignField: '_id',
-                    as: 'user'
-                }
-            },
-            {$match:{"user.role":'MoHUA','history.status':'REJECTED'}},
-            {$project:{
-                data:'$history'
-            }
-            }
-        ]).exec();    
         let history = {"histroy":""}
-        if(HistoryData.length >0){
-            history['histroy'] = resetDataStatus(HistoryData[HistoryData.length-1],false)
+        if(user.role=='MoHUA'){
+            let historyData = await commonQuery(query)    
+            if(historyData.length >0){
+                history['histroy'] = resetDataStatus(historyData[historyData.length-1],false)
+                let rejectReasonKeys = await getRejectedStatusKey(history['histroy'].data)
+                let newData = await getRejectedStatusKey(data[0],rejectReasonKeys)
+                return res.status(200).json({
+                    timestamp: moment().unix(),
+                    success: true,
+                    message: 'Ulb update request list',
+                    data: newData
+                });
+            }
         }
-        let finalData =Object.assign(data[0],history)
+        let finalData = data[0]
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
@@ -927,7 +931,6 @@ module.exports.update = async (req, res) => {
         );
     }
 };
-
 module.exports.action = async(req,res)=>{
     try {
         let user = req.decoded
@@ -1049,11 +1052,19 @@ module.exports.action = async(req,res)=>{
                         Service.sendEmail(mailOptions);
                     }
 
-                    let newData = resetDataStatus(data);
-                    let du = await UlbFinancialData.update(
-                        { _id: ObjectId(prevState._id) },
-                        { $set:newData}
-                    );
+                    let historyData = await commonQuery({ _id: _id })   
+                    if(historyData.length >0){
+                        let du = await UlbFinancialData.update(
+                            { _id: ObjectId(prevState._id) },
+                            { $set:data}
+                        );
+                    }else{
+                        let newData = resetDataStatus(data);
+                        let du = await UlbFinancialData.update(
+                            { _id: ObjectId(prevState._id) },
+                            { $set:newData}
+                        );
+                    }
                 }
                 if (
                     data["status"] == 'REJECTED' &&
@@ -1142,11 +1153,36 @@ module.exports.action = async(req,res)=>{
         console.log('Exception', e);
     }
 }
-
+async function commonQuery(query){
+    let historyData = await UlbFinancialData.aggregate([
+        {
+            $match :query
+        },
+        { $unwind: {
+            path:'$history',
+            preserveNullAndEmptyArrays: true
+            } 
+        },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'history.actionTakenBy',
+                foreignField: '_id',
+                as: 'user'
+            }
+        },
+        {$match:{"user.role":'MoHUA','history.status':'REJECTED'}},
+        {$project:
+            {
+                data:'$history'
+            }
+        }
+    ]).exec();  
+    return historyData;
+}
 async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
 }
-
 /** 
  * @param{data}  - type Object
  * @param{check} - type Boolean  
@@ -1226,6 +1262,78 @@ function resetDataStatus(data,check=false){
     }
     return data;
 }
+
+async function getRejectedStatusKey(data,keyArray=[]){
+        let rejectReason = []
+        let keyFLag = keyArray && keyArray.length >0 ? true:false; 
+        for(key in data){
+            if(typeof data[key] === 'object'  && data[key] !== null ){
+                if(key=='waterManagement'){
+                    for(let objKey of waterManagementKeys){
+                        if(data[key][objKey] && data[key][objKey]["status"]=='REJECTED'){
+                            if(keyFLag && keyArray.includes(objKey)){
+                                data[key][objKey]["status"] = ''
+                                data[key][objKey]["rejectReson"] = ''
+                            }
+                            else{
+                                rejectReason.push(objKey)
+                            }
+                        }
+                    }   
+                    for(let d of data[key]["documents"]["wasteWaterPlan"]){
+                        if(d.status=='REJECTED'){
+                            if(keyFLag && keyArray.includes('wasteWaterPlan')){
+                                d.status = ''
+                                d.rejectReson = ''
+                            }
+                            else{
+                                rejectReason.push('wasteWaterPlan')
+                            }
+                        }
+                    }
+                }
+                if(key=='solidWasteManagement'){
+                    for(let objKey of solidWasteManagementKeys){
+                        if(data[key]["documents"][objKey]){
+                            for(let d of data[key]["documents"][objKey]){
+                                if(d.status=='REJECTED'){
+                                    if(keyFLag && keyArray.includes(objKey)){
+                                        d.status = ''
+                                        d.rejectReson = ''
+                                    }
+                                    else{
+                                        rejectReason.push(objKey)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if(key=='millionPlusCities'){
+                    for(let objKey of millionPlusCitiesKeys){
+                        for(let d of data[key]["documents"][objKey]){
+                            if(d.status=='REJECTED'){
+                                if(keyFLag && keyArray.includes(objKey)){
+                                    d.status = ''
+                                    d.rejectReson = ''
+                                }
+                                else{
+                                    rejectReason.push(objKey)
+                                }
+                            }
+                        }                        
+                    }
+                }
+            }else{
+                if(data["status"]=='REJECTED'){
+                    rejected = true;
+                }
+            }
+        }
+        /** Concat reject reason string */
+        return keyFLag ? data : rejectReason
+}
+
 function checkStatus(data){
     return new Promise((resolve,reject)=>{
         let rejected = false
