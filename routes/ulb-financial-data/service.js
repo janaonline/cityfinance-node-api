@@ -478,6 +478,7 @@ module.exports.getAll = async (req, res) => {
                     ulbCode: 'ULB Code',
                     sbCode: 'Swatch Bharat Code',
                     censusCode: 'Census Code',
+                    state : 'State name',
                     //financialYear: 'Financial Year',
                     //auditStatus: 'Audit Status',
                     status: 'Status'
