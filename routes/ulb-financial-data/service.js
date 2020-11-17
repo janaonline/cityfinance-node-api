@@ -669,7 +669,7 @@ module.exports.getHistories = async (req, res) => {
                     total = d.length ? d[0].count : 0;
                 }
                 let arr = await UlbFinancialData.aggregate(q).exec();
-                arr.push(arr.shift()); //
+                arr.reverse()
                 return res.status(200).json({
                     timestamp: moment().unix(),
                     success: true,
