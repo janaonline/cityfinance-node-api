@@ -69,26 +69,15 @@ module.exports.get = async function (req, res) {
                 "email":1,
                 "bodyType":1,
                 "documents":1,
-                "CountmyFieldArray" : {
-                    "$size": { "$ifNull": [ "$documents.financial_year_2015_16.pdf", [] ] } 
-                },
-                "financial_year_2015_16_pdf": { 
-                    "$cond": {
-                        "if":{ "$size":[ "$documents.financial_year_2015_16.pdf", [] ]}, 
-                        "then": '',
-                        "else":{"$arrayElemAt": ['$documents.financial_year_2015_16.pdf.url',0]}
-                    }
-                },
-
-               // "financial_year_2015_16_pdf": { "$arrayElemAt": ['$documents.financial_year_2015_16.pdf.url',0]},
-                // "financial_year_2016_17_pdf": { "$arrayElemAt": ['$documents.financial_year_2016_17.pdf.url',0]},
-                // "financial_year_2017_18_pdf": { "$arrayElemAt": ['$documents.financial_year_2017_18.pdf.url',0]},
-                // "financial_year_2018_19_pdf": { "$arrayElemAt": ['$documents.financial_year_2018_19.pdf.url',0]},
-                // "financial_year_2015_16_excel": { "$arrayElemAt": ['$documents.financial_year_2015_16.excel.url',0]},
-                // "financial_year_2016_17_excel": { "$arrayElemAt": ['$documents.financial_year_2016_17.excel.url',0]},
-                // "financial_year_2017_18_excel": { "$arrayElemAt": ['$documents.financial_year_2017_18.excel.url',0]},
-                // "financial_year_2018_19_excel": { "$arrayElemAt": ['$documents.financial_year_2018_19.excel.url',0]},
-                }
+            //    "financial_year_2015_16_pdf": { "$arrayElemAt": ['$documents.financial_year_2015_16.pdf.url',0]},
+            //     "financial_year_2016_17_pdf": { "$arrayElemAt": ['$documents.financial_year_2016_17.pdf.url',0]},
+            //     "financial_year_2017_18_pdf": { "$arrayElemAt": ['$documents.financial_year_2017_18.pdf.url',0]},
+            //     "financial_year_2018_19_pdf": { "$arrayElemAt": ['$documents.financial_year_2018_19.pdf.url',0]},
+            //     "financial_year_2015_16_excel": { "$arrayElemAt": ['$documents.financial_year_2015_16.excel.url',0]},
+            //     "financial_year_2016_17_excel": { "$arrayElemAt": ['$documents.financial_year_2016_17.excel.url',0]},
+            //     "financial_year_2017_18_excel": { "$arrayElemAt": ['$documents.financial_year_2017_18.excel.url',0]},
+            //     "financial_year_2018_19_excel": { "$arrayElemAt": ['$documents.financial_year_2018_19.excel.url',0]},
+                 }
             }
         ]
 
@@ -101,15 +90,84 @@ module.exports.get = async function (req, res) {
 
         if (csv) {
             let total = await dCForm.aggregate(query);
+            for(t of total){
+                t["financial_year_2015_16_pdf"] = ''
+                t["financial_year_2016_17_pdf"] = ''
+                t["financial_year_2017_18_pdf"] = ''
+                t["financial_year_2018_19_pdf"] = ''
+
+                t["financial_year_2015_16_excel"] = ''
+                t["financial_year_2016_17_excel"] = ''
+                t["financial_year_2017_18_excel"] = ''
+                t["financial_year_2018_19_excel"] = ''
+
+                if(t.documents.financial_year_2015_16){
+                    t["financial_year_2015_16_pdf"] = ''
+                    if(t.documents.financial_year_2015_16.pdf.length >0){
+                        t["financial_year_2015_16_pdf"] = t.documents.financial_year_2015_16.pdf[0].url
+                    }
+                }
+                if(t.documents.financial_year_2016_17){
+                    t["financial_year_2016_17_pdf"] = ''
+                    if(t.documents.financial_year_2016_17.pdf.length >0){
+                        t["financial_year_2016_17_pdf"] = t.documents.financial_year_2016_17.pdf[0].url
+                    }
+                }
+                if(t.documents.financial_year_2017_18!=null){
+                    t["financial_year_2017_18_pdf"] = ''
+                    if(t.documents.financial_year_2017_18.pdf.length >0){
+                        t["financial_year_2017_18_pdf"] = t.documents.financial_year_2017_18.pdf[0].url
+                    }
+                }
+                if(t.documents.financial_year_2018_19){
+                    t["financial_year_2018_19_pdf"] = ''
+                    if(t.documents.financial_year_2018_19.pdf.length >0){
+                        t["financial_year_2018_19_pdf"] = t.documents.financial_year_2018_19.pdf[0].url
+                    }
+                }
+
+                if(t.documents.financial_year_2015_16){
+                    t["financial_year_2015_16_excel"] = ''
+                    if(t.documents.financial_year_2015_16.excel.length >0){
+                        t["financial_year_2015_16_excel"] = t.documents.financial_year_2015_16.excel[0].url
+                    }
+                }
+                if(t.documents.financial_year_2016_17){
+                    t["financial_year_2016_17_excel"] = ''
+                    if(t.documents.financial_year_2016_17.excel.length >0){
+                        t["financial_year_2016_17_excel"] = t.documents.financial_year_2016_17.excel[0].url
+                    }
+                }
+                if(t.documents.financial_year_2017_18){
+                    t["financial_year_2017_18_excel"] = ''
+                    if(t.documents.financial_year_2017_18.excel.length >0){
+                        t["financial_year_2017_18_excel"] = t.documents.financial_year_2017_18.excel[0].url
+                    }
+                }
+                if(t.documents.financial_year_2018_19){
+                    t["financial_year_2018_19_excel"] = ''
+                    if(t.documents.financial_year_2018_19.excel.length >0){
+                        t["financial_year_2018_19_excel"] = t.documents.financial_year_2018_19.excel[0].url
+                    }
+                }
+
+            }
             let xlsData = await service.dataFormating(total, {
                 stateName : 'State name',
                 bodyType: 'Body type',
                 ulbName: 'ULB name',
                 ulbName: 'ULB name',
                 parastatalName: 'Parastatal Agency',
-                "financial_year_2015_16":documents.financial_year_2015_16
-
+                financial_year_2015_16_pdf: "financial_year_2015_16_pdf",
+                financial_year_2016_17_pdf: "financial_year_2016_17_pdf",
+                financial_year_2017_18_pdf: "financial_year_2017_18_pdf",
+                financial_year_2018_19_pdf: "financial_year_2018_19_pdf",
+                financial_year_2015_16_excel: "financial_year_2015_16_excel",
+                financial_year_2016_17_excel: "financial_year_2016_17_excel",
+                financial_year_2017_18_excel: "financial_year_2017_18_excel",
+                financial_year_2018_19_excel: "financial_year_2018_19_excel"
             });
+
             res.json(xlsData);return;
             return res.xls('financial-data.xlsx', xlsData);
         } 
