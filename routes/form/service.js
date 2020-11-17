@@ -68,16 +68,8 @@ module.exports.get = async function (req, res) {
                 "designation":1,
                 "email":1,
                 "bodyType":1,
-                "documents":1,
-            //    "financial_year_2015_16_pdf": { "$arrayElemAt": ['$documents.financial_year_2015_16.pdf.url',0]},
-            //     "financial_year_2016_17_pdf": { "$arrayElemAt": ['$documents.financial_year_2016_17.pdf.url',0]},
-            //     "financial_year_2017_18_pdf": { "$arrayElemAt": ['$documents.financial_year_2017_18.pdf.url',0]},
-            //     "financial_year_2018_19_pdf": { "$arrayElemAt": ['$documents.financial_year_2018_19.pdf.url',0]},
-            //     "financial_year_2015_16_excel": { "$arrayElemAt": ['$documents.financial_year_2015_16.excel.url',0]},
-            //     "financial_year_2016_17_excel": { "$arrayElemAt": ['$documents.financial_year_2016_17.excel.url',0]},
-            //     "financial_year_2017_18_excel": { "$arrayElemAt": ['$documents.financial_year_2017_18.excel.url',0]},
-            //     "financial_year_2018_19_excel": { "$arrayElemAt": ['$documents.financial_year_2018_19.excel.url',0]},
-                 }
+                "documents":1
+                }
             }
         ]
 
@@ -150,7 +142,6 @@ module.exports.get = async function (req, res) {
                         t["financial_year_2018_19_excel"] = t.documents.financial_year_2018_19.excel[0].url
                     }
                 }
-
             }
             let xlsData = await service.dataFormating(total, {
                 stateName : 'State name',

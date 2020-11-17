@@ -101,7 +101,7 @@ module.exports.create = async (req, res) => {
                 return Response.BadRequest(res,{},`Form is already submitted`);
             }
         }
-        req.body["history"] = [req.body]
+        //req.body["history"] = [req.body]
         if(ulbData && ulbData.isCompleted==true){
             req.body["history"] = [...ulbData.history];
             ulbData.history=[]
