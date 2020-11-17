@@ -474,11 +474,11 @@ module.exports.getAll = async (req, res) => {
                     }
                 }
                 let xlsData = await Service.dataFormating(arr, {
+                    stateName : 'State name',
                     ulbName: 'ULB name',
                     ulbCode: 'ULB Code',
                     sbCode: 'Swatch Bharat Code',
                     censusCode: 'Census Code',
-                    state : 'State name',
                     //financialYear: 'Financial Year',
                     //auditStatus: 'Audit Status',
                     status: 'Status'
