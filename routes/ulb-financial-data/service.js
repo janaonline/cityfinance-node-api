@@ -93,6 +93,7 @@ module.exports.create = async (req, res) => {
         let query = {}
         req.body["overallReport"] = null;
         req.body["status"] = 'PENDING';
+        req.body["modifiedAt"] = new Date();
         query["ulb"] = ObjectId(data.ulb);
         let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
         if(ulbData && ulbData.status=='PENDING'){
@@ -974,6 +975,7 @@ module.exports.action = async(req,res)=>{
                 }
                 data["actionTakenBy"] = user._id;
                 data["ulb"] = prevState.ulb;
+                data["modifiedAt"] = new Date();
                 let du = await UlbFinancialData.update(
                     { _id: ObjectId(prevState._id) },
                     { $set:data,$push: { history: history } }
