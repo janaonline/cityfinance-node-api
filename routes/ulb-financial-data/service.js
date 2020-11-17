@@ -952,7 +952,7 @@ module.exports.action = async(req,res)=>{
         }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
             return Response.BadRequest(res, {}, 'Already Rejected By State user.');
         }
-        let flag =  checkStatus(data); // check rejected status
+        let flag =  overAllStatus(data); 
         flag.then(async value=>{
             data["status"] = value.status ? 'REJECTED':'APPROVED'
             let actionAllowed = ['MoHUA','STATE'];
@@ -1338,7 +1338,11 @@ async function getRejectedStatusKey(data,keyArray=[]){
         return keyFLag ? data : rejectReason
 }
 
-function checkStatus(data){
+/**
+ * 
+ * @param {object} data 
+ */
+function overAllStatus(data){
     return new Promise((resolve,reject)=>{
         let rejected = false
         let rejectReason = []
