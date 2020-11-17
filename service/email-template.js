@@ -437,7 +437,7 @@ const xvUploadRejectUlb = (ulbName,rejectReason,role) => {
         body: `Dear ${ulbName},<br>
                 <p>
                     Your 15<sup>th</sup> FC Grant form has been rejected by ${role} with the following details.<br>
-                    Rejected Data:
+                    <strong>Rejected Data:</strong>
                     ${rejectReason}
                 </p>
                 <p>Please login to City Finance Portal to submit the corrected form.</p>
