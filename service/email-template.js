@@ -242,10 +242,10 @@ const ulbSignupRejection = (name, reason) => {
 };
 const fdUploadUlb = (name) => {
     return {
-        subject: `15h FC Grant Form Successfully Submitted`,
+        subject: `15<spu>th</sup> FC Grant Form Successfully Submitted`,
         body: `Dear ${name},<br xmlns="http://www.w3.org/1999/html">
                         <p>
-                            Your 15h FC Grant form has been successfully submitted.<br>
+                            Your 15<spu>th</sup> FC Grant form has been successfully submitted.<br>
                         </p>
                         <p>
                             You will receive a confirmation on approval from State and MoHUA.
@@ -311,10 +311,10 @@ const fdUploadPartner = (partner,ulb,refCode, fy, audited) => {
 
 const fdUploadState = (name, ulbName, refCode, fy, audited) => {
     return {
-        subject: `15h FC Grant Form Successfully Submitted - ${ulbName}`,
+        subject: `15<spu>th</sup> FC Grant Form Successfully Submitted - ${ulbName}`,
         body: `Dear ${name},<br>
                         <p>
-                            The 15h FC Grant form data for the ${ulbName} has been successfully submitted.
+                            The 15<spu>th</sup> FC Grant form data for the ${ulbName} has been successfully submitted.
                             Kindly review the same.                        
                         </p>
                         <br>                
@@ -392,10 +392,10 @@ const fdUploadApprovalState = (name, ulbName, refCode, fy, audited) => {
 
 const xvUploadApprovalMoHUA = (name) => {
     return {
-        subject: `15h FC Grant Form Successfully Approved by MoHUA`,
+        subject: `15<spu>th</sup> FC Grant Form Successfully Approved by MoHUA`,
         body: `Dear ${name},<br>
                 <p>
-                    Your 15h FC Grant form has been approved by MoHUA.
+                    Your 15<spu>th</sup> FC Grant form has been approved by MoHUA.
                 </p>
                 <br>
                 <br>Regards,<br>
@@ -405,10 +405,10 @@ const xvUploadApprovalMoHUA = (name) => {
 
 const xvUploadApprovalByMoHUAtoState = (ulbName,stateName) => {
     return {
-        subject: `15h FC Grant Form Successfully Approved by MoHUA- ${ulbName}`,
+        subject: `15<spu>th</sup> FC Grant Form Successfully Approved by MoHUA- ${ulbName}`,
         body: `Dear ${stateName},<br>
                 <p>
-                    The 15h FC Grant form for the ${ulbName} has been approved by MoHUA.
+                    The 15<spu>th</sup> FC Grant form for the ${ulbName} has been approved by MoHUA.
                 </p>
                 <br>
                 <br>Regards,<br>
@@ -418,10 +418,10 @@ const xvUploadApprovalByMoHUAtoState = (ulbName,stateName) => {
 
 const xvUploadApprovalState = (mohuaName,ulbName,stateName) => {
     return {
-        subject: `15h FC Grant Form Successfully Submitted- ${ulbName}`,
+        subject: `15<spu>th</sup> FC Grant Form Successfully Submitted- ${ulbName}`,
         body: `Dear ${mohuaName},<br>
                 <p>
-                    The 15h FC Grant form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.<br>
+                    The 15<spu>th</sup> FC Grant form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.<br>
                     Kindly review the same.
                 </p>
                 <br>
@@ -433,10 +433,10 @@ const xvUploadApprovalState = (mohuaName,ulbName,stateName) => {
 const xvUploadRejectUlb = (ulbName,rejectReason,role) => {
 
     return {
-        subject: `15h FC Grant Form Rejected by ${role}`,
+        subject: `15<spu>th</sup> FC Grant Form Rejected by ${role}`,
         body: `Dear ${ulbName},<br>
                 <p>
-                    Your 15h FC Grant form has been rejected by ${role} with the following details.<br>
+                    Your 15<spu>th</sup> FC Grant form has been rejected by ${role} with the following details.<br>
                     Rejected Data:
                     ${rejectReason}
                 </p>
@@ -448,11 +448,11 @@ const xvUploadRejectUlb = (ulbName,rejectReason,role) => {
 
 const xvUploadRejectState = (ulbName,stateName,rejectReason) => {
     return {
-        subject: `15h FC Grant Form Rejected by MoHUA-${ulbName}`,
+        subject: `15<spu>th</sup> FC Grant Form Rejected by MoHUA-${ulbName}`,
         body: `Dear ${stateName},<br>
                 <p>
-                    The 15h FC Grant form for the ${ulbName} has been rejected by MoHUA with the following details.<br>
-                    Rejected Data:
+                    The 15<spu>th</sup> FC Grant form for the ${ulbName} has been rejected by MoHUA with the following details.<br>
+                    <strong>Rejected Data:</strong>
                     ${rejectReason}
                 </p>
                 <p>Please login to City Finance Portal to submit the corrected form.</p>

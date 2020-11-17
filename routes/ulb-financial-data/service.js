@@ -1419,7 +1419,8 @@ function checkStatus(data){
         if(rejectReason.length>0){
             let finalString = rejectReason.map((obj) => {
                 let service = Object.keys(obj)[0];
-                let reason = '<strong>'+obj[service]+'</strong>';
+                let reason = obj[service];
+                service = `<strong>`+service+`</strong>` 
                 return `<p> ${service + ` :`+ reason} </p>`
             });
             let x='';
