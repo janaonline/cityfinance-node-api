@@ -462,15 +462,15 @@ module.exports.getAll = async (req, res) => {
                     if(d.status=="PENDING" && d.isCompleted==false && d.actionTakenByUserRole=="ULB"){
                         d.status = "Saved as Draft"
                     }if(d.status=="PENDING" && d.isCompleted==true && d.actionTakenByUserRole=="ULB"){
-                        d.status = "Under Review by STATE"
+                        d.status = "Under Review by State"
                     }if(d.status=="APPROVED" && d.actionTakenByUserRole=="STATE"){    
-                        d.status= "Approved by STATE"
+                        d.status= "Under Review by MoHUA"
                     }if(d.status=="REJECTED" && d.actionTakenByUserRole=="STATE"){
                         d.status = "Rejected by STATE"
                     }if(d.status=="REJECTED" && d.actionTakenByUserRole=="MoHUA"){
                         d.status = "Rejected by MoHUA"
                     }if(d.status=="APPROVED" && d.actionTakenByUserRole=="MoHUA"){        
-                        d.status = "Completely Approved"
+                        d.status = "Approval Completed"
                     }
                 }
                 let xlsData = await Service.dataFormating(arr, {
