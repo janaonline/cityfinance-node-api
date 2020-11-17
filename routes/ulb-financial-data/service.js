@@ -39,6 +39,7 @@ const mappingKeys = {
     "solidWastePlan":"Solid Waste Management Plan"
 }
 
+
 module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
@@ -70,7 +71,11 @@ module.exports.create = async (req, res) => {
             audited ? 'Audited' : 'Unaudited'
         }`;
         data.ulb = user.ulb;
-        data.modifiedAt = new Date();
+
+        var dt = new Date();
+        dt.setHours(dt.getHours() + 5);
+        dt.setMinutes(dt.getMinutes() + 30);
+        data.modifiedAt = dt
         let checkData = await UlbFinancialData.count({
             ulb: data.ulb,
             financialYear: data.financialYear,
@@ -93,7 +98,6 @@ module.exports.create = async (req, res) => {
         let query = {}
         req.body["overallReport"] = null;
         req.body["status"] = 'PENDING';
-        req.body["modifiedAt"] = new Date();
         query["ulb"] = ObjectId(data.ulb);
         let ulbData = await UlbFinancialData.findOne({ulb:query["ulb"]});
         if(ulbData && ulbData.status=='PENDING'){
@@ -974,9 +978,13 @@ module.exports.action = async(req,res)=>{
                         'Requested record not found.'
                     );
                 }
+
+                var dt = new Date();
+                dt.setHours(dt.getHours() + 5);
+                dt.setMinutes(dt.getMinutes() + 30);
                 data["actionTakenBy"] = user._id;
                 data["ulb"] = prevState.ulb;
-                data["modifiedAt"] = new Date();
+                data["modifiedAt"] = dt
                 let du = await UlbFinancialData.update(
                     { _id: ObjectId(prevState._id) },
                     { $set:data,$push: { history: history } }
