@@ -545,21 +545,21 @@ module.exports.getHistories = async (req, res) => {
                                         isCompleted:'$isCompleted',
                                         audited: '$audited',
                                         overallReport: '$overallReport',
-                                        completeness: '$completeness',
-                                        correctness: '$correctness',
+                                        //completeness: '$completeness',
+                                        //correctness: '$correctness',
                                         status: '$status',
                                         modifiedAt: '$modifiedAt',
                                         createdAt: '$createdAt',
                                         isActive: '$isActive',
-                                        balanceSheet: '$balanceSheet',
-                                        schedulesToBalanceSheet:
-                                            '$schedulesToBalanceSheet',
-                                        incomeAndExpenditure:
-                                            '$incomeAndExpenditure',
-                                        schedulesToIncomeAndExpenditure:
-                                            '$schedulesToIncomeAndExpenditure',
-                                        trialBalance: '$trialBalance',
-                                        financialYear: '$financialYear',
+                                        //balanceSheet: '$balanceSheet',
+                                        //schedulesToBalanceSheet:
+                                        //    '$schedulesToBalanceSheet',
+                                        //incomeAndExpenditure:
+                                        //    '$incomeAndExpenditure',
+                                        //schedulesToIncomeAndExpenditure:
+                                        //    '$schedulesToIncomeAndExpenditure',
+                                        //trialBalance: '$trialBalance',
+                                        //financialYear: '$financialYear',
                                         ulb: '$ulb',
                                         actionTakenBy: '$actionTakenBy'
                                     }
@@ -626,10 +626,10 @@ module.exports.getHistories = async (req, res) => {
                         _id: 1,
                         isCompleted:'$history.isCompleted',
                         audited: '$history.audited',
-                        completeness: '$history.completeness',
-                        correctness: '$history.correctness',
+                        //completeness: '$history.completeness',
+                        //correctness: '$history.correctness',
                         status: '$history.status',
-                        financialYear: '$history.financialYear',
+                        //financialYear: '$history.financialYear',
                         ulbType: '$ulbType.name',
                         ulb: '$ulb._id',
                         ulbName: '$ulb.name',
@@ -669,6 +669,7 @@ module.exports.getHistories = async (req, res) => {
                     total = d.length ? d[0].count : 0;
                 }
                 let arr = await UlbFinancialData.aggregate(q).exec();
+                arr.push(arr.shift()); //
                 return res.status(200).json({
                     timestamp: moment().unix(),
                     success: true,
