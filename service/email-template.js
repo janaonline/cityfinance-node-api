@@ -11,7 +11,7 @@ const userSignup = (userName,name, link) => {
                     <br>
                     <p>
                         Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.<br>
-                        Your Username is ${userName}
+                        Your Username is <strong>${userName}</strong>
                     </p>
                     <br>
                     <p>    
@@ -30,7 +30,7 @@ const userCreation = (userName,name, link) => {
                     <br>
                     <p>
                         Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
-                        Your Username is ${userName}
+                        Your Username is <strong>${userName}</strong>
 
                     </p>
                     <br>
@@ -210,7 +210,7 @@ const ulbSignupApproval = (sbCode,censusCode,name, link, edit = false) => {
                         <p>
                             Welcome to City Finance Portal! <br>
                             Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
-                            Your Username is ${sbCode} or ${censusCode}
+                            Your Username is <strong>${sbCode}</strong> or <strong>${censusCode}</strong>
 
                         </p>
                         <p>
