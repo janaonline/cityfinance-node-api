@@ -1264,14 +1264,15 @@ function resetDataStatus(data,check=false){
 async function getRejectedStatusKey(data,keyArray=[]){
         let rejectReason = []
         let keyFLag = keyArray && keyArray.length >0 ? true:false; 
+        let status = keyFLag ? 'APPROVED' : 'REJECTED'
         for(key in data){
             if(typeof data[key] === 'object'  && data[key] !== null ){
                 if(key=='waterManagement'){
                     for(let objKey of waterManagementKeys){
-                        if(data[key][objKey] && data[key][objKey]["status"]=='REJECTED'){
+                        if(data[key][objKey] && data[key][objKey]["status"]==status){
                             if(keyFLag && keyArray.includes(objKey)){
                                 data[key][objKey]["status"] = ''
-                                data[key][objKey]["rejectReson"] = ''
+                                data[key][objKey]["rejectReason"] = ''
                             }
                             else{
                                 rejectReason.push(objKey)
@@ -1279,10 +1280,10 @@ async function getRejectedStatusKey(data,keyArray=[]){
                         }
                     }   
                     for(let d of data[key]["documents"]["wasteWaterPlan"]){
-                        if(d.status=='REJECTED'){
+                        if(d.status==status){
                             if(keyFLag && keyArray.includes('wasteWaterPlan')){
                                 d.status = ''
-                                d.rejectReson = ''
+                                d.rejectReason = ''
                             }
                             else{
                                 rejectReason.push('wasteWaterPlan')
@@ -1294,10 +1295,10 @@ async function getRejectedStatusKey(data,keyArray=[]){
                     for(let objKey of solidWasteManagementKeys){
                         if(data[key]["documents"][objKey]){
                             for(let d of data[key]["documents"][objKey]){
-                                if(d.status=='REJECTED'){
+                                if(d.status==status){
                                     if(keyFLag && keyArray.includes(objKey)){
                                         d.status = ''
-                                        d.rejectReson = ''
+                                        d.rejectReason = ''
                                     }
                                     else{
                                         rejectReason.push(objKey)
@@ -1310,10 +1311,10 @@ async function getRejectedStatusKey(data,keyArray=[]){
                 if(key=='millionPlusCities'){
                     for(let objKey of millionPlusCitiesKeys){
                         for(let d of data[key]["documents"][objKey]){
-                            if(d.status=='REJECTED'){
+                            if(d.status==status){
                                 if(keyFLag && keyArray.includes(objKey)){
                                     d.status = ''
-                                    d.rejectReson = ''
+                                    d.rejectReason = ''
                                 }
                                 else{
                                     rejectReason.push(objKey)
