@@ -278,8 +278,7 @@ module.exports.getAll = async (req, res) => {
                             ulbName: 'ULB Name',
                             ulbCode: 'ULB Code',
                             sbCode: 'Swatch Bharat Code',
-                            censusCode: 'Census Code',
-                            status: 'Status'
+                            censusCode: 'Census Code'
                         };
                     }
                     if (['USER'].indexOf(role) > -1) {
