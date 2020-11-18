@@ -946,13 +946,13 @@ module.exports.action = async(req,res)=>{
         ).lean();
         let prevUser = await User.findOne({_id:ObjectId(prevState.actionTakenBy)}).exec();
         if(prevState.status == 'APPROVED' && prevUser.role=='MoHUA' ) {
-            return Response.BadRequest(res, {}, 'Already approved By MoHUA user.');
+            return Response.BadRequest(res, {}, 'Already approved By MoHUA User.');
         }if(prevState.status == 'REJECTED' && prevUser.role=='MoHUA') {
-            return Response.BadRequest(res, {}, 'Already Rejected By MoHUA user.');
+            return Response.BadRequest(res, {}, 'Already Rejected By MoHUA User.');
         }if(prevState.status == 'APPROVED' && user.role=='STATE' && prevUser.role=='STATE' ) {
-            return Response.BadRequest(res, {}, 'Already approved By STATE user.');
+            return Response.BadRequest(res, {}, 'Already approved By STATE User.');
         }if(prevState.status == 'REJECTED' && user.role=='STATE' && prevUser.role=='STATE') {
-            return Response.BadRequest(res, {}, 'Already Rejected By State user.');
+            return Response.BadRequest(res, {}, 'Already Rejected By State User.');
         }
         let flag =  overAllStatus(data); 
         flag.then(async value=>{
