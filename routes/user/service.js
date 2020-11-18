@@ -219,6 +219,8 @@ module.exports.getAll = async (req, res) => {
                             ulb: '$ulb._id',
                             ulbName: '$ulb.name',
                             ulbCode: '$ulb.code',
+                            sbCode: '$ulb.sbCode',
+                            censusCode: '$ulb.censusCode',
                             ulbType: '$ulbType.name',
                             status: {
                                 $cond: [
@@ -275,6 +277,8 @@ module.exports.getAll = async (req, res) => {
                             stateName: 'State',
                             ulbName: 'ULB Name',
                             ulbCode: 'ULB Code',
+                            sbCode: 'Swatch Bharat Code',
+                            censusCode: 'Census Code',
                             status: 'Status'
                         };
                     }

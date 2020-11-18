@@ -91,10 +91,8 @@ module.exports.create = async (req, res) => {
         }
         console.log('checkData', checkData);
         data.actionTakenBy = ObjectId(user._id);
-        //res.json(data);return;
         console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new UlbFinancialData(data);
-
         /**Now**/
         let query = {}
         req.body["overallReport"] = null;
@@ -106,7 +104,6 @@ module.exports.create = async (req, res) => {
                 return Response.BadRequest(res,{},`Form is already submitted`);
             }
         }
-        //req.body["history"] = [req.body]
         if(ulbData && ulbData.isCompleted==true){
             req.body["history"] = [...ulbData.history];
             ulbData.history=[]
