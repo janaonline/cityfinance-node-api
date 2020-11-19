@@ -158,8 +158,6 @@ module.exports.get = async function (req, res) {
                 financial_year_2017_18_excel: "financial_year_2017_18_excel",
                 financial_year_2018_19_excel: "financial_year_2018_19_excel"
             });
-
-            res.json(xlsData);return;
             return res.xls('financial-data.xlsx', xlsData);
         } 
 
