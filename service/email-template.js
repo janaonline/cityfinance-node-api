@@ -314,7 +314,7 @@ const fdUploadState = (name, ulbName, refCode, fy, audited) => {
         subject: `15th FC Grant Form Successfully Submitted - ${ulbName}`,
         body: `Dear ${name},<br>
                         <p>
-                            The 15<sup>th</sup> FC Grant form data for the ${ulbName} has been successfully submitted.
+                            The 15<sup>th</sup> FC Grant form data for the ${ulbName} has been successfully submitted.<br>
                             Kindly review the same.                        
                         </p>
                         <br>                
