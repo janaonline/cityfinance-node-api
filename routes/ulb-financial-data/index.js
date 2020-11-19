@@ -20,4 +20,5 @@ router.get("/approved-records",verifyToken, ufdService.getApprovedFinancialData)
 router.get("/source-files/:_id",verifyToken, ufdService.sourceFiles);
 router.post("/action/:_id",verifyToken,ufdService.action);
 router.get("/fc-grant/dashboard/",verifyToken,ufdDashboardService);
+router.get("/fc-grant/dashboard-chart",ufdDashboardService.chartDataStatus);
 module.exports = router;

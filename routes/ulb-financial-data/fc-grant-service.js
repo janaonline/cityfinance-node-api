@@ -241,3 +241,174 @@ module.exports = (req,res)=>{
         return query;
     }
 }
+
+module.exports.chartDataStatus = async(req,res)=>{
+    let labels = [
+        'Not Started', 
+        'Saved as Draft', 
+        'Under Review By State',
+        'Under Review By MoHUA', 
+        'Rejected By State', 
+        'Rejected By MoHUA',
+        'Approval Completed'
+    ]
+
+    let notStarted = new Promise(async(rslv,rjct)=>{
+        try{                
+            let query = dataUploadStatusQuery(1);
+            let totalData = await Ulb.count({isActive:true}).exec();
+            let startedData = await UlbFinancialData.count({isActive:true}).exec();
+            let remainData = totalData-startedData
+            rslv({c:remainData})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+    let draft = new Promise(async(rslv,rjct)=>{
+        try{                
+            let query = dataUploadStatusQuery(1);
+            let data = await UlbFinancialData.aggregate(query).exec();
+            rslv(data ? data[0] :{c:0})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
+    let UnderReviewState = new Promise(async(rslv,rjct)=>{
+        try{                
+            let query = dataUploadStatusQuery(2);
+            //res.json(query);return;
+            let data = await UlbFinancialData.aggregate(query).exec();
+            rslv(data.length> 0 ? data[0] :{c:0})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
+    let UnderReviewMoHUA = new Promise(async(rslv,rjct)=>{
+        try{                
+            let query = dataUploadStatusQuery(3);
+            let data = await UlbFinancialData.aggregate(query).exec();
+            rslv(data.length> 0 ? data[0] :{c:0})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
+    let rejectByState = new Promise(async(rslv,rjct)=>{
+        try{                
+            let query = dataUploadStatusQuery(4);
+            let data = await UlbFinancialData.aggregate(query).exec();
+            rslv(data.length> 0 ? data[0] :{c:0})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
+    let rejectByMoHUA = new Promise(async(rslv,rjct)=>{
+        try{                
+            let query = dataUploadStatusQuery(5);
+            let data = await UlbFinancialData.aggregate(query).exec();
+            rslv(data.length> 0 ? data[0] :{c:0})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
+    let approvalCompleted = new Promise(async(rslv,rjct)=>{
+        try{                
+            let query = dataUploadStatusQuery(6);
+            let data = await UlbFinancialData.aggregate(query).exec();
+            rslv(data.length> 0 ? data[0] :{c:0})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
+    Promise.all([notStarted,draft,UnderReviewState,UnderReviewMoHUA,rejectByState,rejectByMoHUA,approvalCompleted]).then((values)=>{
+        dataArr = []
+        for(v of values){
+            dataArr.push(v.c);
+        }
+        let data = {
+            "x-axis":"Number of ULBS",
+            "y-axis":"15th FC Form Submit Status",
+            graphType:'groupBar',
+            labels:labels,
+            datasets : [{"data":dataArr}]
+        };
+        return res.status(200).json({success : true, message : "Data fetched", data : data});
+        },(rejectError)=>{
+        console.log(rejectError);
+        return  res.status(400).json({ timestamp : moment().unix(), success : false, message : "Rejected Error", err : rejectError });
+        }).catch((caughtError)=>{
+        console.log("final caughtError",caughtError);
+        return  res.status(400).json({ timestamp : moment().unix(), success : false, message : "Caught Error", err : caughtError });
+    })
+
+    function dataUploadStatusQuery(s){
+
+        let statusFilter = {
+            "1":{"status":"PENDING","isCompleted":false,actionTakenByUserRole:"ULB"},
+            "2":{"status":"PENDING","isCompleted":true,actionTakenByUserRole:"ULB"},
+            "3":{"status":"APPROVED",actionTakenByUserRole:"STATE"},
+            "4":{"status":"REJECTED",actionTakenByUserRole:"STATE"},
+            "5":{"status":"REJECTED",actionTakenByUserRole:"MoHUA"},
+            "6":{"status":"APPROVED",actionTakenByUserRole:"MoHUA"},
+        }
+        let match  =  {$match:statusFilter[s]}
+        return [
+            {
+                $lookup: {
+                    from: 'ulbs',
+                    localField: 'ulb',
+                    foreignField: '_id',
+                    as: 'ulb'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'actionTakenBy',
+                    foreignField: '_id',
+                    as: 'actionTakenBy'
+                }
+            },
+            { $unwind: '$ulb' },
+            {
+                $unwind: {
+                    path: '$actionTakenBy',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    _id: 1,               
+                    waterManagement:1,
+                    solidWasteManagement:1,
+                    millionPlusCities:1,
+                    isCompleted:1,
+                    status: 1,
+                    ulb: '$ulb._id',
+                    ulbName: '$ulb.name',
+                    ulbCode: '$ulb.code',
+                    actionTakenByUserName: '$actionTakenBy.name',
+                    actionTakenByUserRole: '$actionTakenBy.role',
+                    isActive: '$isActive',
+                    createdAt: '$createdAt'
+                }
+            },
+            match,
+            {"$count":"c"}
+        ]
+
+    }
+
+}
