@@ -191,12 +191,9 @@ module.exports = (req,res)=>{
         };
         return res.status(200).json({success : true, message : "Data fetched", data : data});
         },(rejectError)=>{
-
         console.log(rejectError);
         return  res.status(400).json({ timestamp : moment().unix(), success : false, message : "Rejected Error", err : rejectError });
-
         }).catch((caughtError)=>{
-
         console.log("final caughtError",caughtError);
         return  res.status(400).json({ timestamp : moment().unix(), success : false, message : "Caught Error", err : caughtError });
     })
