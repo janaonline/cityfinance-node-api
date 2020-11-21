@@ -466,7 +466,8 @@ module.exports.ulbList = async(req,res)=>{
                 sbCode:1,
                 isMillionPlus:1,
                 email:"$user.email",
-                mobile:"$user.commissionerConatactNumber"
+                mobile:"$user.commissionerConatactNumber",
+                registration:''
             }
         }
     ] 
@@ -476,7 +477,14 @@ module.exports.ulbList = async(req,res)=>{
     }
 
     if(csv){
-
+        if(arr.length>0){
+            for(a of arr){
+                a["registration"] ='No' 
+                if(a.role=='ULB'){
+                    a["registration"] ='Yes' 
+                }
+            }
+        }
         let field =  {
             stateName:"State ",
             ulbName:"ULB Name",
@@ -485,7 +493,8 @@ module.exports.ulbList = async(req,res)=>{
             sbCode:'Swatch Bharat Code',
             isMillionPlus:'Population Type',
             email:"Email ID",
-            mobile:"Mobile Number"
+            mobile:"Mobile Number",
+            registration:"Registration"
 
         };
         let arr = await Ulb.aggregate(q).exec();
@@ -501,6 +510,16 @@ module.exports.ulbList = async(req,res)=>{
     q.push({$skip:skip});
     q.push({$limit:limit});
     let arr = await Ulb.aggregate(q).exec();
+
+    if(arr.length>0){
+        for(a of arr){
+            a["registration"] ='No' 
+            if(a.role=='ULB'){
+                a["registration"] ='Yes' 
+            }
+        }
+    }
+
     return  res.status(200).json({
         timestamp:moment().unix(),
         success:true,
