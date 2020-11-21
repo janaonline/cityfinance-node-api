@@ -21,4 +21,6 @@ router.get("/source-files/:_id",verifyToken, ufdService.sourceFiles);
 router.post("/action/:_id",verifyToken,ufdService.action);
 router.get("/fc-grant/dashboard-card/",verifyToken,ufdDashboardService);
 router.get("/fc-grant/dashboard-chart",verifyToken,ufdDashboardService.chartDataStatus);
+router.get("/fc-grant/ulbList",verifyToken,ufdDashboardService.ulbList);
+
 module.exports = router;

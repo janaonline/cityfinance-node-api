@@ -1,4 +1,5 @@
 const Ulb = require('../../models/Ulb');
+const moment = require("moment");
 const UlbFinancialData = require('../../models/UlbFinancialData');
 const LoginHistory = require('../../models/LoginHistory');
 const User = require('../../models/User');
@@ -410,5 +411,102 @@ module.exports.chartDataStatus = async(req,res)=>{
         ]
 
     }
+
+}
+
+
+module.exports.ulbList = async(req,res)=>{
+
+    filter = req.query.filter && !req.query.filter != 'null' ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+    sort = req.query.sort  && !req.query.sort != 'null' ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+    skip = req.query.skip ? parseInt(req.query.skip) : 0
+    limit = req.query.limit ? parseInt(req.query.limit) : 10
+    csv = req.query.csv
+
+    let q = [
+        {
+            $lookup: {
+                from: 'users',
+                localField: '_id',
+                foreignField: 'ulb',
+                as: 'user'
+            }
+        },
+        {
+            $lookup: {
+                from: 'states',
+                localField: 'state',
+                foreignField: '_id',
+                as: 'state'
+            }
+        },
+        {
+            $lookup: {
+                from: 'ulbtypes',
+                localField: 'ulbType',
+                foreignField: '_id',
+                as: 'ulbType'
+            }
+        },
+        {"$unwind":"$ulbType"},
+        {"$unwind":
+            {
+            "path":"$user",
+            preserveNullAndEmptyArrays: true
+            }
+        },
+        {"$unwind":"$state"},  
+        {$project:
+            {
+                stateName : "$state.name",
+                ulbName : "$name",
+                ulbType : "$ulbType.name",
+                censusCode:1,
+                role:"$user.role",
+                sbCode:1,
+                isMillionPlus:1,
+                email:"$user.email",
+                mobile:"$user.commissionerConatactNumber"
+            }
+        }
+    ] 
+    let newFilter = await Service.mapFilter(filter);
+    if(newFilter && Object.keys(newFilter).length){
+        q.push({$match:newFilter});
+    }
+
+    if(csv){
+
+        let field =  {
+            stateName:"State ",
+            ulbName:"ULB Name",
+            ulbType:"ULB Type",
+            censusCode:"Census Code",
+            sbCode:'Swatch Bharat Code',
+            isMillionPlus:'Population Type',
+            email:"Email ID",
+            mobile:"Mobile Number"
+
+        };
+        let arr = await Ulb.aggregate(q).exec();
+        let xlsData = await Service.dataFormating(arr,field);
+        return res.xls('ulb-update-request.xlsx',xlsData);
+    }
+
+    if(!skip) {
+        let qrr = [...q,{$count:"count"}];
+        let d = await Ulb.aggregate(qrr);
+        total = d.length ? d[0].count : 0;
+    }
+    q.push({$skip:skip});
+    q.push({$limit:limit});
+    let arr = await Ulb.aggregate(q).exec();
+    return  res.status(200).json({
+        timestamp:moment().unix(),
+        success:true,
+        message:"list",
+        data:arr,
+        total:total
+    });
 
 }
