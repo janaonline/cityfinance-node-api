@@ -340,7 +340,7 @@ module.exports.chartDataStatus = async(req,res)=>{
         let data = {
             "x-axis":"Number of ULBS",
             "y-axis":"15th FC Form Submit Status",
-            graphType:'groupBar',
+            type:'bar',
             labels:labels,
             datasets : [{"data":dataArr}]
         };
