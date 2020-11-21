@@ -6,6 +6,7 @@ const User = require('../../models/User');
 const State = require('../../models/State');
 const Response = require('../../service').response;
 const Service = require('../../service');
+const { filter } = require('compression');
 const ObjectId = require('mongoose').Types.ObjectId;
 const ulbTye = {
     "Town Panchayat": 0,
@@ -422,7 +423,6 @@ module.exports.ulbList = async(req,res)=>{
     skip = req.query.skip ? parseInt(req.query.skip) : 0
     limit = req.query.limit ? parseInt(req.query.limit) : 10
     csv = req.query.csv
-
     let q = [
         {
             $lookup: {
@@ -467,7 +467,13 @@ module.exports.ulbList = async(req,res)=>{
                 isMillionPlus:1,
                 email:"$user.email",
                 mobile:"$user.commissionerConatactNumber",
-                registration:''
+                "registration": {
+                    $cond: {
+                        if: { "$ne": ['$user', undefined] },
+                        then: 'Yes',
+                        else:"No"
+                    }
+                }
             }
         }
     ] 
@@ -477,14 +483,6 @@ module.exports.ulbList = async(req,res)=>{
     }
 
     if(csv){
-        if(arr.length>0){
-            for(a of arr){
-                a["registration"] ='No' 
-                if(a.role=='ULB'){
-                    a["registration"] ='Yes' 
-                }
-            }
-        }
         let field =  {
             stateName:"State ",
             ulbName:"ULB Name",
@@ -510,15 +508,6 @@ module.exports.ulbList = async(req,res)=>{
     q.push({$skip:skip});
     q.push({$limit:limit});
     let arr = await Ulb.aggregate(q).exec();
-
-    if(arr.length>0){
-        for(a of arr){
-            a["registration"] ='No' 
-            if(a.role=='ULB'){
-                a["registration"] ='Yes' 
-            }
-        }
-    }
 
     return  res.status(200).json({
         timestamp:moment().unix(),
