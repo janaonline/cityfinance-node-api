@@ -417,7 +417,6 @@ module.exports.chartDataStatus = async(req,res)=>{
 
 
 module.exports.ulbList = async(req,res)=>{
-
     let filter = req.query.filter && req.query.filter != 'null' ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
     sort = req.query.sort  && req.query.sort != 'null' ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
     skip = req.query.skip ? parseInt(req.query.skip) : 0
@@ -475,18 +474,20 @@ module.exports.ulbList = async(req,res)=>{
                 mobile:"$user.commissionerConatactNumber",
                 "registration": {
                     $cond: {
-                        if: { "$ne": ['$user', undefined] },
+                        if: { "$eq": ['$user.role','ULB'] },
                         then: 'Yes',
-                        else:"No"
+                        else:'No'
                     }
                 }
             }
         }
     ] 
+
     let newFilter = await Service.mapFilter(filter);
     if(newFilter && Object.keys(newFilter).length){
         q.push({$match:newFilter});
     }
+
 
     if(csv){
         let field =  {
