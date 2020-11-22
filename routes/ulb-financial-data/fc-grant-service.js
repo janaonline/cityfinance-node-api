@@ -487,7 +487,9 @@ module.exports.ulbList = async(req,res)=>{
     if(newFilter && Object.keys(newFilter).length){
         q.push({$match:newFilter});
     }
-
+    if(Object.keys(sort).length){
+        q.push({$sort:sort});
+    }
 
     if(csv){
         let field =  {
