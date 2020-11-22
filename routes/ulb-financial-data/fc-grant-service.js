@@ -490,7 +490,6 @@ module.exports.ulbList = async(req,res)=>{
     if(Object.keys(sort).length){
         q.push({$sort:sort});
     }
-
     if(csv){
         let field =  {
             stateName:"State ",
