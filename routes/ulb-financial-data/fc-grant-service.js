@@ -464,7 +464,13 @@ module.exports.ulbList = async(req,res)=>{
                 censusCode:1,
                 role:"$user.role",
                 sbCode:1,
-                isMillionPlus:1,
+                isMillionPlus:{
+                    $cond: {
+                        if: { "$eq": ['$isMillionPlus','Yes'] },
+                        then: 'Milion Plus',
+                        else:"Non Million"
+                    }
+                },
                 email:"$user.email",
                 mobile:"$user.commissionerConatactNumber",
                 "registration": {
@@ -492,7 +498,7 @@ module.exports.ulbList = async(req,res)=>{
             isMillionPlus:'Population Type',
             email:"Email ID",
             mobile:"Mobile Number",
-            registration:"Registration"
+            registration:"Registered"
 
         };
         let arr = await Ulb.aggregate(q).exec();
