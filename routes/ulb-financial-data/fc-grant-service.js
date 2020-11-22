@@ -418,8 +418,8 @@ module.exports.chartDataStatus = async(req,res)=>{
 
 module.exports.ulbList = async(req,res)=>{
 
-    filter = req.query.filter && !req.query.filter != 'null' ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
-    sort = req.query.sort  && !req.query.sort != 'null' ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+    let filter = req.query.filter && req.query.filter != 'null' ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+    sort = req.query.sort  && req.query.sort != 'null' ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
     skip = req.query.skip ? parseInt(req.query.skip) : 0
     limit = req.query.limit ? parseInt(req.query.limit) : 10
     csv = req.query.csv
