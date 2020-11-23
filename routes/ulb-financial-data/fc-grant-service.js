@@ -491,7 +491,7 @@ module.exports.ulbList = async(req,res)=>{
                         else:"Non Million"
                     }
                 },
-                email:"$user.email",
+                email:"$user.accountantEmail",
                 mobile:"$user.commissionerConatactNumber",
                 "registration": {
                     $cond: {
