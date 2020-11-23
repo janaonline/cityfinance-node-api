@@ -255,6 +255,16 @@ module.exports.chartDataStatus = async(req,res)=>{
         'Rejected By MoHUA',
         'Approval Completed'
     ]
+    let backgroundColor = [
+        '#99e699',
+        '#85e085',
+        '#5cd65c',
+        '#47d147',
+        '#33cc33',
+        '#2eb82e',
+        '#29a329',
+        '#248f24'
+    ]
 
     let nonRegisteredUlb = new Promise(async(rslv,rjct)=>{
         try{                
@@ -355,8 +365,7 @@ module.exports.chartDataStatus = async(req,res)=>{
             "y-axis":"15th FC Form Submit Status",
             type:'bar',
             labels:labels,
-            backgroundColor:['#99e699','#85e085','#5cd65c','#47d147','#33cc33','#2eb82e','#29a329','#248f24'],
-            datasets : [{"data":dataArr}]
+            datasets : [{"data":dataArr,'backgroundColor':backgroundColor}]
         };
         return res.status(200).json({success : true, message : "Data fetched", data : data});
         },(rejectError)=>{
