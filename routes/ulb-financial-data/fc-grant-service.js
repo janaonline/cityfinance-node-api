@@ -246,7 +246,7 @@ module.exports = (req,res)=>{
 
 module.exports.chartDataStatus = async(req,res)=>{
     let labels = [
-        'Non Registered',
+        'Not Registered',
         'Not Started', 
         'Saved as Draft', 
         'Under Review By State',
@@ -293,7 +293,6 @@ module.exports.chartDataStatus = async(req,res)=>{
     let UnderReviewState = new Promise(async(rslv,rjct)=>{
         try{                
             let query = dataUploadStatusQuery(2);
-            //res.json(query);return;
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -356,6 +355,7 @@ module.exports.chartDataStatus = async(req,res)=>{
             "y-axis":"15th FC Form Submit Status",
             type:'bar',
             labels:labels,
+            backgroundColor:['#99e699','#85e085','#5cd65c','#47d147','#33cc33','#2eb82e','#29a329','#248f24'],
             datasets : [{"data":dataArr}]
         };
         return res.status(200).json({success : true, message : "Data fetched", data : data});
