@@ -256,14 +256,14 @@ module.exports.chartDataStatus = async(req,res)=>{
         'Approval Completed'
     ]
     let backgroundColor = [
-        '#99e699',
-        '#85e085',
-        '#5cd65c',
-        '#47d147',
-        '#33cc33',
-        '#2eb82e',
-        '#29a329',
-        '#248f24'
+        '#90c0c0',
+        '#41b6b6',
+        '#1ea1a1',
+        '#058989',
+        '#4a7c7c',
+        '#377676',
+        '#1f7070',
+        '#0c5555'
     ]
 
     let nonRegisteredUlb = new Promise(async(rslv,rjct)=>{
