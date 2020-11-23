@@ -520,7 +520,6 @@ module.exports.ulbList = async(req,res)=>{
             sbCode:'Swatch Bharat Code',
             isMillionPlus:'Population Type',
             email:"Email ID",
-            mobile:"Mobile Number",
             registration:"Registered"
 
         };
