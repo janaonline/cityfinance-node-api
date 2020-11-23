@@ -91,16 +91,16 @@ module.exports.register = async (req, res) => {
                         censusCode:ulbObj.censusCode
                     };
                     let u = await User.update({ _id: ObjectId(user._id)},{ $set: d });
-                    let link = await Service.emailVerificationLink(
-                        user._id,
-                        req.currentUrl,
-                        forgotPassword
-                    );
+                    // let link = await Service.emailVerificationLink(
+                    //     user._id,
+                    //     req.currentUrl,
+                    //     forgotPassword
+                    // );
                     
-                    let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(
-                        user._id,
-                        link
-                    );
+                    // let email = await Service.emailTemplate.sendUlbSignupStatusEmmail(
+                    //     user._id,
+                    //     link
+                    // );
                     /*
                     let template = Service.emailTemplate.ulbSignup(
                         user.name,
@@ -298,6 +298,9 @@ module.exports.login = async (req, res) => {
                     var updates = {
                         $set: { loginAttempts: 0 }
                     };
+                    if(!ulbflagForEmail){
+                        user.email = user.accountantEmail 
+                    }
                     await User.update({ email: user.email }, updates).exec(); // set
                     return res.status(200).json({
                         success: true,
@@ -314,6 +317,9 @@ module.exports.login = async (req, res) => {
                 } else {
                     let update = Service.incLoginAttempts(user);
                     console.log(update);
+                    if(!ulbflagForEmail){
+                        user.email = user.accountantEmail 
+                    }
                     await User.update({ email: user.email }, update).exec();
                     let attempt = await User.findOne({
                         email: user.email
@@ -423,11 +429,13 @@ module.exports.verifyToken = (req, res, next) => {
 
 module.exports.resendAccountVerificationLink = async (req, res) => {
     try {
+        let ulbflagForEmail = false;
         let query = [
             {censusCode: req.sanitize(req.body.email)},
             {sbCode: req.sanitize(req.body.email)}
         ]
         if(req.body.email.includes("@")){
+            ulbflagForEmail = true;
             query = [{email: req.sanitize(req.body.email),isDeleted: false}]    
         }
         let keys = [
@@ -436,7 +444,8 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             'role',
             'name',
             'isEmailVerified',
-            'isLocked'
+            'isLocked',
+            'accountantEmail'
         ];
         let user = await User.findOne(
             {$or:query},
@@ -465,6 +474,9 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
         /**
          * @description In case of USER role, the password is already set during registeration process. But for others, the password need to be set after account is verified.
          */
+        if(!ulbflagForEmail){
+            user.email = user.accountantEmail 
+        } 
         const data = {
             _id: user['_id'],
             email: user['email'],
@@ -487,9 +499,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
             subject: template.subject,
             html: template.body
         };
-
         Service.sendEmail(mailOptions);
-
         return Response.OK(
             res,
             {},
@@ -512,11 +522,14 @@ module.exports.emailVerification = async (req, res) => {
             }
             ud.isActive = true;
         }
-        let keys = ['_id', 'email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
+        let keys = ['_id','accountantEmail','email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
         let query = { _id: ObjectId(req.decoded._id) };
         let user = await User.findOne(query, keys.join(' ')).exec();
         if(user.role!="USER" ){
             ud.isEmailVerified = user.isEmailVerified
+        }
+        if(user.role=='ULB'){
+            user.email = user.accountantEmail
         }
         let du = await User.update(query, { $set: ud });
         let data = {};
@@ -551,11 +564,13 @@ module.exports.forgotPassword = async (req, res) => {
 
     let msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not registered.`
     let verify_msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not verified.`
+    let ulbflagForEmail = false;
     let query = [
         {censusCode: req.sanitize(req.body.email)},
         {sbCode: req.sanitize(req.body.email)}
     ]
     if(req.body.email.includes("@")){
+        ulbflagForEmail = true;
         msg = `Requested email:${req.body.email} is not registered.`
         verify_msg = `Requested email:${req.body.email} is not verified.`
         query = [{email: req.sanitize(req.body.email)}]    
@@ -593,7 +608,9 @@ module.exports.forgotPassword = async (req, res) => {
                 let passwordExpires =
                     Date.now() + Helper.PASSWORDEXPIRETIME.TIME; // 1 hour
                 let passwordHistory = setPasswordHistory(user, passwordHash);
-
+                if(!ulbflagForEmail){
+                    user.email = user.accountantEmail 
+                } 
                 try {
                     //let du = await User.update({_id:user._id},{$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires}});
                     let du = await User.update({_id:user._id},{$set:{isPasswordResetInProgress:false}})
