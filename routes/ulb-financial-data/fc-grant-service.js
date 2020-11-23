@@ -246,6 +246,7 @@ module.exports = (req,res)=>{
 
 module.exports.chartDataStatus = async(req,res)=>{
     let labels = [
+        'Non Registered',
         'Not Started', 
         'Saved as Draft', 
         'Under Review By State',
@@ -255,12 +256,23 @@ module.exports.chartDataStatus = async(req,res)=>{
         'Approval Completed'
     ]
 
+    let nonRegisteredUlb = new Promise(async(rslv,rjct)=>{
+        try{                
+            let registerd = await User.count({isDeleted:false,role:"ULB"}).exec();
+            let totalData = await Ulb.count({isActive:true}).exec();
+            let remainData = totalData-registerd
+            rslv({c:remainData})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
     let notStarted = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(1);
-            let totalData = await Ulb.count({isActive:true}).exec();
+            let registerd = await User.count({isDeleted:false,role:"ULB"}).exec();
             let startedData = await UlbFinancialData.count({isActive:true}).exec();
-            let remainData = totalData-startedData
+            let remainData = registerd-startedData
             rslv({c:remainData})
         }
         catch(err){
@@ -334,7 +346,7 @@ module.exports.chartDataStatus = async(req,res)=>{
         }
     })
 
-    Promise.all([notStarted,draft,UnderReviewState,UnderReviewMoHUA,rejectByState,rejectByMoHUA,approvalCompleted]).then((values)=>{
+    Promise.all([nonRegisteredUlb,notStarted,draft,UnderReviewState,UnderReviewMoHUA,rejectByState,rejectByMoHUA,approvalCompleted]).then((values)=>{
         dataArr = []
         for(v of values){
             dataArr.push(v.c);
