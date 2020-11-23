@@ -14,9 +14,14 @@ const ulbTye = {
     "Municipal Corporation":0
 }
 module.exports = (req,res)=>{
-   
+    let user = req.decoded;
     let cond = {$match:{"isActive" : true}}
     let cond1 = {$match:{"isDeleted" : false,role:"ULB"}}
+    if(user.role=='STATE'){
+        Object.assign(cond["$match"],{state:ObjectId(user.state)})
+        Object.assign(cond1["$match"],{state:ObjectId(user.state)})
+    }
+
     let cond2 = {
         $lookup: {
             from: 'ulbs',
@@ -265,11 +270,18 @@ module.exports.chartDataStatus = async(req,res)=>{
         '#1f7070',
         '#0c5555'
     ]
-
+    let user = req.decoded;
+    let state = user.role=='STATE'? ObjectId(user.state):null 
     let nonRegisteredUlb = new Promise(async(rslv,rjct)=>{
-        try{                
-            let registerd = await User.count({isDeleted:false,role:"ULB"}).exec();
-            let totalData = await Ulb.count({isActive:true}).exec();
+        try{           
+            let q = {isDeleted:false,role:"ULB"}
+            let q1 = {isActive:true}
+            if(state){
+                Object.assign(q,{state:state})
+                Object.assign(q1,{state:state})
+            }             
+            let registerd = await User.count(q).exec();
+            let totalData = await Ulb.count(q1).exec();
             let remainData = totalData-registerd
             rslv({c:remainData})
         }
@@ -279,10 +291,27 @@ module.exports.chartDataStatus = async(req,res)=>{
     })
 
     let notStarted = new Promise(async(rslv,rjct)=>{
-        try{                
-            let registerd = await User.count({isDeleted:false,role:"ULB"}).exec();
-            let startedData = await UlbFinancialData.count({isActive:true}).exec();
-            let remainData = registerd-startedData
+        try{                      
+            let q = {isDeleted:false,role:"ULB"} 
+            let q1 = [  {$match:{isActive:true}},
+                {
+                    $lookup: {
+                        from: 'ulbs',
+                        localField: 'ulb',
+                        foreignField: '_id',
+                        as: 'ulb'
+                    }
+                },
+                { $unwind: '$ulb' }
+            ]
+            if(state){
+                Object.assign(q,{state:state})
+                q1.push({$match:{'ulb.state':state}})
+            }
+            q1.push({"$count":"c"})  
+            let registerd = await User.count(q).exec();
+            let startedData = await UlbFinancialData.aggregate(q1).exec();
+            let remainData = registerd-(startedData.length> 0 ?startedData[0]["c"]:0)
             rslv({c:remainData})
         }
         catch(err){
@@ -291,7 +320,7 @@ module.exports.chartDataStatus = async(req,res)=>{
     })
     let draft = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(1);
+            let query = dataUploadStatusQuery(1,state);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data ? data[0] :{c:0})
         }
@@ -302,7 +331,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let UnderReviewState = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(2);
+            let query = dataUploadStatusQuery(2,state);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -313,7 +342,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let UnderReviewMoHUA = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(3);
+            let query = dataUploadStatusQuery(3,state);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -324,7 +353,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let rejectByState = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(4);
+            let query = dataUploadStatusQuery(4,state);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -335,7 +364,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let rejectByMoHUA = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(5);
+            let query = dataUploadStatusQuery(5,state);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -346,7 +375,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let approvalCompleted = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(6);
+            let query = dataUploadStatusQuery(6,state);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -376,8 +405,7 @@ module.exports.chartDataStatus = async(req,res)=>{
         return  res.status(400).json({ timestamp : moment().unix(), success : false, message : "Caught Error", err : caughtError });
     })
 
-    function dataUploadStatusQuery(s){
-
+    function dataUploadStatusQuery(s,state=null){
         let statusFilter = {
             "1":{"status":"PENDING","isCompleted":false,actionTakenByUserRole:"ULB"},
             "2":{"status":"PENDING","isCompleted":true,actionTakenByUserRole:"ULB"},
@@ -387,6 +415,9 @@ module.exports.chartDataStatus = async(req,res)=>{
             "6":{"status":"APPROVED",actionTakenByUserRole:"MoHUA"},
         }
         let match  =  {$match:statusFilter[s]}
+        if(state){
+            Object.assign(match["$match"],{state:state})
+        }
         return [
             {
                 $lookup: {
@@ -425,7 +456,8 @@ module.exports.chartDataStatus = async(req,res)=>{
                     actionTakenByUserName: '$actionTakenBy.name',
                     actionTakenByUserRole: '$actionTakenBy.role',
                     isActive: '$isActive',
-                    createdAt: '$createdAt'
+                    createdAt: '$createdAt',
+                    state:"$ulb.state"
                 }
             },
             match,
