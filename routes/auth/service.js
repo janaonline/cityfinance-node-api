@@ -62,9 +62,9 @@ module.exports.register = async (req, res) => {
         );
         if (inValid && inValid.length) {
             return Response.BadRequest(res, {}, `${inValid.join('\n')}`);
-        }
-
+        }        
         newUser.save(async (err, user) => {
+
             if (err) {
                 console.log('Err', err);
                 return Response.BadRequest(
@@ -183,8 +183,8 @@ module.exports.register = async (req, res) => {
                 return Response.OK(res, user, `User registered`);
             }
         });
-    } catch (e) {
-        console.log('Exception', e);
+    } catch (e) {   
+        console.log('Exception========>', e);
         if (e.errors && Object.keys(e.errors).length) {
             let o = {};
             for (k in e.errors) {
