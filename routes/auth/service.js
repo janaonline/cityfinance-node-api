@@ -17,7 +17,7 @@ module.exports.register = async (req, res) => {
         data.role = data.role ? data.role : Constants.USER.DEFAULT_ROLE;
         if (data.role == 'ULB') {
             data.status = 'APPROVED';
-            if (data.commissionerEmail && data.ulb) {
+            if (data.accountantConatactNumber && data.accountantName && data.accountantEmail && data.ulb) {
                 let user = await User.findOne({
                     ulb: ObjectId(data.ulb),
                     role: data.role,
@@ -44,11 +44,11 @@ module.exports.register = async (req, res) => {
                 return Response.BadRequest(
                     res,
                     { data },
-                    `Municipal Commissioner/Executive Officer Email ID and Ulb is required field.`
+                    `XV FC Nodal Officer Name/XV FC Nodal Officer Email ID/XV FC Nodal Officer Contact no and Ulb is required field.`
                 );
             }
             data['isActive'] = false;
-            data['email'] = data.commissionerEmail;
+            data['email'] = data.accountantEmail;
             data['password'] = Service.getRndInteger(10000, 99999).toString();
         }
 
