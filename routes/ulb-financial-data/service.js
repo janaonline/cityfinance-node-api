@@ -480,6 +480,7 @@ module.exports.getAll = async (req, res) => {
                 let field = {
                     stateName : 'State name',
                     ulbName: 'ULB name',
+                    ulbType:'ULB Type',
                     ulbCode: 'ULB Code',
                     sbCode: 'Swatch Bharat Code',
                     censusCode: 'Census Code',
