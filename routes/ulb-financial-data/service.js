@@ -477,7 +477,7 @@ module.exports.getAll = async (req, res) => {
                         d.status = "Approval Completed"
                     }
                 }
-                let xlsData = await Service.dataFormating(arr, {
+                let field = {
                     stateName : 'State name',
                     ulbName: 'ULB name',
                     ulbCode: 'ULB Code',
@@ -486,7 +486,9 @@ module.exports.getAll = async (req, res) => {
                     //financialYear: 'Financial Year',
                     //auditStatus: 'Audit Status',
                     status: 'Status'
-                });
+                }
+                if(user.role=='STATE'){ delete field.stateName }
+                let xlsData = await Service.dataFormating(arr,field);
                 return res.xls('financial-data.xlsx', xlsData);
             } else {
                 try {
