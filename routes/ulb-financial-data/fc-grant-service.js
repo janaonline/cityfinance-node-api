@@ -470,6 +470,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
 
 module.exports.ulbList = async(req,res)=>{
+    let user = req.decoded;
     let filter = req.query.filter && req.query.filter != 'null' ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
     sort = req.query.sort  && req.query.sort != 'null' ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
     skip = req.query.skip ? parseInt(req.query.skip) : 0
@@ -544,8 +545,9 @@ module.exports.ulbList = async(req,res)=>{
         q.push({$sort:sort});
     }
     if(csv){
+
         let field =  {
-            stateName:"State ",
+            stateName:"State",
             ulbName:"ULB Name",
             ulbType:"ULB Type",
             censusCode:"Census Code",
@@ -555,6 +557,7 @@ module.exports.ulbList = async(req,res)=>{
             registration:"Registered"
 
         };
+        if(user.role=='STATE'){ delete field.stateName }
         let arr = await Ulb.aggregate(q).exec();
         let xlsData = await Service.dataFormating(arr,field);
         return res.xls('ulb-update-request.xlsx',xlsData);
