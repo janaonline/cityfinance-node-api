@@ -262,7 +262,7 @@ module.exports.chartDataStatus = async(req,res)=>{
     ]
     let backgroundColor = [
         '#90c0c0',
-        '#41b6b6',
+        '#55bfbf',
         '#1ea1a1',
         '#058989',
         '#4a7c7c',
