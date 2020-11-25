@@ -536,7 +536,9 @@ module.exports.ulbList = async(req,res)=>{
             }
         }
     ] 
-
+    if(user.role=='STATE'){
+        q.push({$match:{state:ObjectId(user.state)}})
+    }
     let newFilter = await Service.mapFilter(filter);
     if(newFilter && Object.keys(newFilter).length){
         q.push({$match:newFilter});
@@ -545,14 +547,13 @@ module.exports.ulbList = async(req,res)=>{
         q.push({$sort:sort});
     }
     if(csv){
-
         let field =  {
             stateName:"State",
             ulbName:"ULB Name",
             ulbType:"ULB Type",
             censusCode:"Census Code",
-            sbCode:'Swatch Bharat Code',
-            isMillionPlus:'Population Type',
+            sbCode:'ULB Code',
+            isMillionPlus:'Type',
             email:"Email ID",
             registration:"Registered"
 
