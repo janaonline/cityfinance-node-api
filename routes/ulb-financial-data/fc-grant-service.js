@@ -512,6 +512,7 @@ module.exports.ulbList = async(req,res)=>{
         {$project:
             {
                 stateName : "$state.name",
+                state:"$state._id",
                 ulbName : "$name",
                 ulbType : "$ulbType.name",
                 censusCode:1,
