@@ -322,7 +322,7 @@ module.exports.chartDataStatus = async(req,res)=>{
         try{                
             let query = dataUploadStatusQuery(1,state);
             let data = await UlbFinancialData.aggregate(query).exec();
-            rslv(data ? data[0] :{c:0})
+            rslv(data && data.length>0 ? data[0] :{c:0})
         }
         catch(err){
             rjct(err)
