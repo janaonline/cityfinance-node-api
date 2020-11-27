@@ -426,7 +426,7 @@ module.exports.getAllULBSCSV = function(req,res){
     // Set approrpiate download headers
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("ULB Name, ULB Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude \r\n");
+    res.write("ULB Name, ULB Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus \r\n");
     // Flush the headers before we start pushing the CSV content
     res.flushHeaders();
 
