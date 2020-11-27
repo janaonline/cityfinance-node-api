@@ -254,10 +254,10 @@ module.exports.chartDataStatus = async(req,res)=>{
         'Not Registered',
         'Not Started', 
         'Saved as Draft', 
-        'Under Review By State',
-        'Under Review By MoHUA', 
         'Rejected By State', 
+        'Under Review By State',
         'Rejected By MoHUA',
+        'Under Review By MoHUA', 
         'Approval Completed'
     ]
     let backgroundColor = [
@@ -384,7 +384,7 @@ module.exports.chartDataStatus = async(req,res)=>{
         }
     })
 
-    Promise.all([nonRegisteredUlb,notStarted,draft,UnderReviewState,UnderReviewMoHUA,rejectByState,rejectByMoHUA,approvalCompleted]).then((values)=>{
+    Promise.all([nonRegisteredUlb,notStarted,draft,rejectByState,UnderReviewState,rejectByMoHUA,UnderReviewMoHUA,approvalCompleted]).then((values)=>{
         dataArr = []
         for(v of values){
             dataArr.push(v.c);
