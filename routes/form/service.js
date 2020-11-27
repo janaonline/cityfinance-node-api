@@ -56,12 +56,18 @@ module.exports.get = async function (req, res) {
                 "ulbName": {
                     $cond: {
                         if: { $eq: ['$ulb', null] },
-                        then: '',
+                        then: '$parastatalName',
                         else:"$ulbs.name"
                     }
                 },          
                 "ulb":"$ulb",
-                "ulbType": "$ulbType.name",
+                "ulbType": {
+                    $cond: {
+                        if: { $ne: ['$parastatalName', null] },
+                        then: 'NA',
+                        else:"$ulbType.name"
+                    }
+                },
                 "stateName":"$state.name",
                 "state":"$state._id",
                 "parastatalName":1,
@@ -147,7 +153,7 @@ module.exports.get = async function (req, res) {
             let xlsData = await service.dataFormating(total, {
                 stateName : 'State Name',
                 bodyType: 'Body Type',
-                ulbName: 'ULB Name',
+                ulbName: 'ULB/ Parastatal Agency Name',
                 ulbType: 'ULB Type',
                 person:'Person Name',
                 designation:'Designation',
@@ -162,6 +168,8 @@ module.exports.get = async function (req, res) {
                 financial_year_2017_18_excel: "Financial Year 2017-18 - Excel",
                 financial_year_2018_19_excel: "Financial Year 2018-19 - Excel"
             });
+
+            res.json(xlsData);return;
             return res.xls('financial-data.xlsx', xlsData);
         } 
 
