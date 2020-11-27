@@ -153,14 +153,14 @@ module.exports.get = async function (req, res) {
                 designation:'Designation',
                 email:'Email ID',
                 parastatalName: 'Parastatal Agency',
-                financial_year_2015_16_pdf: "financial_year_2015_16_pdf",
-                financial_year_2016_17_pdf: "financial_year_2016_17_pdf",
-                financial_year_2017_18_pdf: "financial_year_2017_18_pdf",
-                financial_year_2018_19_pdf: "financial_year_2018_19_pdf",
-                financial_year_2015_16_excel: "financial_year_2015_16_excel",
-                financial_year_2016_17_excel: "financial_year_2016_17_excel",
-                financial_year_2017_18_excel: "financial_year_2017_18_excel",
-                financial_year_2018_19_excel: "financial_year_2018_19_excel"
+                financial_year_2015_16_pdf: "Financial Year 2015-16 - PDF",
+                financial_year_2016_17_pdf: "Financial Year 2016-17 - PDF",
+                financial_year_2017_18_pdf: "Financial Year 2017-18 - PDF",
+                financial_year_2018_19_pdf: "Financial Year 2018-19 - PDF",
+                financial_year_2015_16_excel: "Financial Year 2015-16 - Excel",
+                financial_year_2016_17_excel: "Financial Year 2016-17 - Excel",
+                financial_year_2017_18_excel: "Financial Year 2017-18 - Excel",
+                financial_year_2018_19_excel: "Financial Year 2018-19 - Excel"
             });
             return res.xls('financial-data.xlsx', xlsData);
         } 
