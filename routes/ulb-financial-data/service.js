@@ -337,8 +337,29 @@ module.exports.getAll = async (req, res) => {
             // if(user.role=='ULB'){
             //     status = 'REJECTED'
             // }
-
-            console.log(filter);
+            let cond = {"priority":1}
+            if(user.role=='STATE'){
+                cond["priority"] = {$cond: [{
+                    $and : [ 
+                        { $eq: [ "$actionTakenBy.role", 'ULB'] },
+                        { $eq: [ "isCompleted",true] }
+                    ] 
+                    },
+                    1,
+                    0 
+                ]}
+            }
+            if(user.role=='MoHUA'){
+                cond["priority"] = {$cond: [{
+                    $and : [ 
+                        { $eq: [ "$actionTakenBy.role", 'STATE'] },
+                        { $eq: [ "status","APPROVED"] }
+                    ] 
+                    },
+                    1,
+                    0 
+                ]}
+            }
 
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
@@ -387,15 +408,7 @@ module.exports.getAll = async (req, res) => {
                     }
                 },
                 {
-                    $addFields: {
-                        priority: {
-                            $cond: {
-                                if: { $eq: ['$status', `${status}`] },
-                                then: 2,
-                                else: 1
-                            }
-                        }
-                    }
+                    $addFields:cond
                 },
                 {
                     $project: {
@@ -435,7 +448,7 @@ module.exports.getAll = async (req, res) => {
                     }
                 }    
             ];
-            
+ 
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
             if (user.role == 'STATE') {
@@ -458,8 +471,9 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 q.push({ $sort: { modifiedAt: -1 } });
-                //q.push({ $sort: { priority: -1 } });
+                q.push({ $sort: { priority: 1 } });
             }
+
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 for(d of arr){
@@ -500,7 +514,6 @@ module.exports.getAll = async (req, res) => {
                     }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
-                    //return res.json(q)
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
