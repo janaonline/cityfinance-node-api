@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const moment = require("moment");
 const ObjectId = require('mongoose').Types.ObjectId
 const service = require("../../service");
+const email = require('../../service/email');
 
 module.exports.post = function (req, res) {
 
@@ -144,10 +145,13 @@ module.exports.get = async function (req, res) {
                 }
             }
             let xlsData = await service.dataFormating(total, {
-                stateName : 'State name',
-                bodyType: 'Body type',
-                ulbName: 'ULB name',
-                ulbName: 'ULB name',
+                stateName : 'State Name',
+                bodyType: 'Body Type',
+                ulbName: 'ULB Name',
+                ulbType: 'ULB Type',
+                person:'Person Name',
+                designation:'Designation',
+                email:'Email ID',
                 parastatalName: 'Parastatal Agency',
                 financial_year_2015_16_pdf: "financial_year_2015_16_pdf",
                 financial_year_2016_17_pdf: "financial_year_2016_17_pdf",

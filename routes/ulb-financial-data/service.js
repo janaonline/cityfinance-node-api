@@ -338,28 +338,28 @@ module.exports.getAll = async (req, res) => {
             //     status = 'REJECTED'
             // }
             let cond = {"priority":1}
-            if(user.role=='STATE'){
-                cond["priority"] = {$cond: [{
-                    $and : [ 
-                        { $eq: [ "$actionTakenBy.role", 'ULB'] },
-                        { $eq: [ "isCompleted",true] }
-                    ] 
-                    },
-                    1,
-                    0 
-                ]}
-            }
-            if(user.role=='MoHUA'){
-                cond["priority"] = {$cond: [{
-                    $and : [ 
-                        { $eq: [ "$actionTakenBy.role", 'STATE'] },
-                        { $eq: [ "status","APPROVED"] }
-                    ] 
-                    },
-                    1,
-                    0 
-                ]}
-            }
+            // if(user.role=='STATE'){
+            //     cond["priority"] = {$cond: [{
+            //         $and : [ 
+            //             { $eq: [ "$actionTakenBy.role", 'ULB'] },
+            //             { $eq: [ "isCompleted",true] }
+            //         ] 
+            //         },
+            //         1,
+            //         0 
+            //     ]}
+            // }
+            // if(user.role=='MoHUA'){
+            //     cond["priority"] = {$cond: [{
+            //         $and : [ 
+            //             { $eq: [ "$actionTakenBy.role", 'STATE'] },
+            //             { $eq: [ "status","APPROVED"] }
+            //         ] 
+            //         },
+            //         1,
+            //         0 
+            //     ]}
+            // }
 
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
@@ -471,7 +471,7 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 q.push({ $sort: { modifiedAt: -1 } });
-                q.push({ $sort: { priority: 1 } });
+                //q.push({ $sort: { priority: 1 } });
             }
 
             if (csv) {
