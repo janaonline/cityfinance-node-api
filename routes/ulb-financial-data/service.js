@@ -334,9 +334,6 @@ module.exports.getAll = async (req, res) => {
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
             let status = 'PENDING'
-
-            res.json(filter);
-
             // if(user.role=='ULB'){
             //     status = 'REJECTED'
             // }
