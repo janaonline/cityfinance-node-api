@@ -103,53 +103,50 @@ module.exports.get = async function (req, res) {
                 if(t.documents.financial_year_2015_16){
                     t["financial_year_2015_16_pdf"] = ''
                     if(t.documents.financial_year_2015_16.pdf.length >0){
-                        t["financial_year_2015_16_pdf"] = `=HYPERLINK('${t.documents.financial_year_2015_16.pdf[0].url}')`
-                        t["financial_year_2015_16_pdf"].replace(/'/g, '"')
-                        obj = JSON.parse(str);
-                        t["financial_year_2015_16_pdf"] = str;
+                        t["financial_year_2015_16_pdf"] = t.documents.financial_year_2015_16.pdf[0].url
                     }
                 }
                 if(t.documents.financial_year_2016_17){
                     t["financial_year_2016_17_pdf"] = ''
                     if(t.documents.financial_year_2016_17.pdf.length >0){
-                        t["financial_year_2016_17_pdf"] = `=HYPERLINK('${t.documents.financial_year_2016_17.pdf[0].url}')`
+                        t["financial_year_2016_17_pdf"] = t.documents.financial_year_2016_17.pdf[0].url
                     }
                 }
                 if(t.documents.financial_year_2017_18!=null){
                     t["financial_year_2017_18_pdf"] = ''
                     if(t.documents.financial_year_2017_18.pdf.length >0){
-                        t["financial_year_2017_18_pdf"] = `=HYPERLINK('${t.documents.financial_year_2017_18.pdf[0].url}')`
+                        t["financial_year_2017_18_pdf"] = t.documents.financial_year_2017_18.pdf[0].url
                     }
                 }
                 if(t.documents.financial_year_2018_19){
                     t["financial_year_2018_19_pdf"] = ''
                     if(t.documents.financial_year_2018_19.pdf.length >0){
-                        t["financial_year_2018_19_pdf"] = `=HYPERLINK('${t.documents.financial_year_2018_19.pdf[0].url}')`
+                        t["financial_year_2018_19_pdf"] = t.documents.financial_year_2018_19.pdf[0].url
                     }
                 }
 
                 if(t.documents.financial_year_2015_16){
                     t["financial_year_2015_16_excel"] = ''
                     if(t.documents.financial_year_2015_16.excel.length >0){
-                        t["financial_year_2015_16_excel"] = `=HYPERLINK('${t.documents.financial_year_2015_16.excel[0].url}')`
+                        t["financial_year_2015_16_excel"] = t.documents.financial_year_2015_16.excel[0].url
                     }
                 }
                 if(t.documents.financial_year_2016_17){
                     t["financial_year_2016_17_excel"] = ''
                     if(t.documents.financial_year_2016_17.excel.length >0){
-                        t["financial_year_2016_17_excel"] = `=HYPERLINK('${t.documents.financial_year_2016_17.excel[0].url}')`
+                        t["financial_year_2016_17_excel"] = t.documents.financial_year_2016_17.excel[0].url
                     }
                 }
                 if(t.documents.financial_year_2017_18){
                     t["financial_year_2017_18_excel"] = ''
                     if(t.documents.financial_year_2017_18.excel.length >0){
-                        t["financial_year_2017_18_excel"] = `=HYPERLINK('${t.documents.financial_year_2017_18.excel[0].url}')`
+                        t["financial_year_2017_18_excel"] = t.documents.financial_year_2017_18.excel[0].url
                     }
                 }
                 if(t.documents.financial_year_2018_19){
                     t["financial_year_2018_19_excel"] = ''
                     if(t.documents.financial_year_2018_19.excel.length >0){
-                        t["financial_year_2018_19_excel"] = `=HYPERLINK('${t.documents.financial_year_2018_19.excel[0].url}')`
+                        t["financial_year_2018_19_excel"] = t.documents.financial_year_2018_19.excel[0].url
                     }
                 }
             }
@@ -161,7 +158,6 @@ module.exports.get = async function (req, res) {
                 person:'Person Name',
                 designation:'Designation',
                 email:'Email ID',
-                parastatalName: 'Parastatal Agency',
                 financial_year_2015_16_pdf: "Financial Year 2015-16 - PDF",
                 financial_year_2016_17_pdf: "Financial Year 2016-17 - PDF",
                 financial_year_2017_18_pdf: "Financial Year 2017-18 - PDF",
@@ -171,8 +167,6 @@ module.exports.get = async function (req, res) {
                 financial_year_2017_18_excel: "Financial Year 2017-18 - Excel",
                 financial_year_2018_19_excel: "Financial Year 2018-19 - Excel"
             });
-
-            res.json(xlsData);return;
             return res.xls('financial-data.xlsx', xlsData);
         } 
 

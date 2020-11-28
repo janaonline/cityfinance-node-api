@@ -431,7 +431,6 @@ module.exports.getAll = async (req, res) => {
                         completeness: 1,
                         correctness: 1,
                         status: 1,
-                        role: "$actionTakenBy.role",
                         //financialYear: 1,
                         ulbType: '$ulbType.name',
                         ulb: '$ulb._id',
