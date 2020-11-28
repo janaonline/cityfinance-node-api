@@ -337,8 +337,10 @@ module.exports.getAll = async (req, res) => {
             // if(user.role=='ULB'){
             //     status = 'REJECTED'
             // }
-            let cond = {"priority":1}
+            let priority = false;
+            let cond = {"priority":0}
             if(user.role=='STATE'){
+                priority = true
                 cond["priority"] = {$cond: [{
                     $and : [ 
                         { $eq: [ "$actionTakenBy.role", 'ULB'] },
@@ -350,6 +352,7 @@ module.exports.getAll = async (req, res) => {
                 ]}
             }
             if(user.role=='MoHUA'){
+                priority = true
                 cond["priority"] = {$cond: [{
                     $and : [ 
                         { $eq: [ "$actionTakenBy.role", 'STATE'] },
@@ -471,7 +474,9 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 q.push({ $sort: { modifiedAt: -1 } });
-                q.push({ $sort: { priority: -1 } });
+                if(priority){
+                    q.push({ $sort: { priority: -1 } });
+                }
             }
 
             if (csv) {
