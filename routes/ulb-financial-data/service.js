@@ -1226,19 +1226,19 @@ function resetDataStatus(data,check=false){
                         }
                     }
                 }   
-                for(let d of data[key]["documents"]["wasteWaterPlan"]){
+                // for(let d of data[key]["documents"]["wasteWaterPlan"]){
                    
-                    if(check){
-                        if(d.status=='REJECTED'){
-                            d.status='NA';
-                            d.rejectReason = '';
-                        }
-                    }
-                    else{
-                        d.status='NA';
-                        d.rejectReason = '';
-                    }
-                }
+                //     if(check){
+                //         if(d.status=='REJECTED'){
+                //             d.status='NA';
+                //             d.rejectReason = '';
+                //         }
+                //     }
+                //     else{
+                //         d.status='NA';
+                //         d.rejectReason = '';
+                //     }
+                // }
             }
             if(key=='solidWasteManagement'){
                 for(let objKey of solidWasteManagementKeys){
@@ -1301,17 +1301,17 @@ async function getRejectedStatusKey(data,keyArray=[]){
                             }
                         }
                     }   
-                    for(let d of data[key]["documents"]["wasteWaterPlan"]){
-                        if(d.status==status){
-                            if(keyFLag && keyArray.includes('wasteWaterPlan')){
-                                d.status = ''
-                                d.rejectReason = ''
-                            }
-                            else{
-                                rejectReason.push('wasteWaterPlan')
-                            }
-                        }
-                    }
+                    // for(let d of data[key]["documents"]["wasteWaterPlan"]){
+                    //     if(d.status==status){
+                    //         if(keyFLag && keyArray.includes('wasteWaterPlan')){
+                    //             d.status = ''
+                    //             d.rejectReason = ''
+                    //         }
+                    //         else{
+                    //             rejectReason.push('wasteWaterPlan')
+                    //         }
+                    //     }
+                    // }
                 }
                 if(key=='solidWasteManagement'){
                     for(let objKey of solidWasteManagementKeys){
@@ -1380,19 +1380,19 @@ function overAllStatus(data){
                             rejectReason.push(reason)
                         }
                     }   
-                    for(let d of data[key]["documents"]["wasteWaterPlan"]){
-                        if(d.status=='REJECTED'){
-                            rejected=true;
-                            let tab = "Water Supply & Waste-Water Management:Upload Documents"
-                            if(!d.rejectReason){
-                                reject('reject reason is missing')
-                            }
-                            let reason = {
-                                [tab]:d.rejectReason
-                            }
-                            rejectReason.push(reason)
-                        }
-                    }
+                    // for(let d of data[key]["documents"]["wasteWaterPlan"]){
+                    //     if(d.status=='REJECTED'){
+                    //         rejected=true;
+                    //         let tab = "Water Supply & Waste-Water Management:Upload Documents"
+                    //         if(!d.rejectReason){
+                    //             reject('reject reason is missing')
+                    //         }
+                    //         let reason = {
+                    //             [tab]:d.rejectReason
+                    //         }
+                    //         rejectReason.push(reason)
+                    //     }
+                    // }
                 }
                 if(key=='solidWasteManagement'){
                     for(let objKey of solidWasteManagementKeys){

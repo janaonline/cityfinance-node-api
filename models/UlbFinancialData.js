@@ -80,19 +80,19 @@ const waterManagementSchema = new Schema({
         rejectReason:{type:String,default:""}    
     },
 
-    documents:{
-        wasteWaterPlan:{
-            type:[
-                {
-                    url : { type: String, required: true},
-                    name : { type: String, required: true},
-                    status:statusType(),
-                    rejectReason:{type:String,default:""}    
-                }
-            ],
-            default:null
-        }
-    }
+    // documents:{
+    //     wasteWaterPlan:{
+    //         type:[
+    //             {
+    //                 url : { type: String, required: true},
+    //                 name : { type: String, required: true},
+    //                 status:statusType(),
+    //                 rejectReason:{type:String,default:""}    
+    //             }
+    //         ],
+    //         default:null
+    //     }
+    // }
 });
 
 const solidWasteManagementSchema = new Schema({
