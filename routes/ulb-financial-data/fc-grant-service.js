@@ -261,14 +261,14 @@ module.exports.chartDataStatus = async(req,res)=>{
         'Approval Completed'
     ]
     let backgroundColor = [
-        '#90c0c0',
-        '#55bfbf',
-        '#1ea1a1',
-        '#058989',
-        '#4a7c7c',
-        '#377676',
-        '#1f7070',
-        '#0c5555'
+        '#c9c9c9',
+        '#6b8585',
+        '#87c9c9',
+        '#428181',
+        '#2a8181',
+        '#136060',
+        '#0c4848',
+        '#074141'
     ]
     let user = req.decoded;
     let state = user.role=='STATE'? ObjectId(user.state):null 

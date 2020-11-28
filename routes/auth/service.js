@@ -788,13 +788,24 @@ module.exports.endSession = async (req, res) => {
 };
 
 module.exports.changePassword = async(req,res)=>{
-    let user = req.decoded
-    let link = await Service.emailVerificationLink(
-        user._id,
-        req.currentUrl,
-        true
-    );
-    return res.redirect(link)   
+    let msg = "" ;
+    let keys = ['_id','accountantEmail','email', 'role', 'name', 'ulb', 'state','isEmailVerified','isPasswordResetInProgress'];
+    let query = { _id: ObjectId(req.decoded._id) };
+    let user = await User.findOne(query, keys.join(' ')).exec();
+    let data = {};
+    for (k in user) {
+        if (keys.indexOf(k) > -1) {
+            data[k] = user[k];
+        }
+    }
+    data['purpose'] = 'WEB';
+    const token = jwt.sign(data, Config.JWT.SECRET, {
+        expiresIn: Config.JWT.TOKEN_EXPIRY
+    });
+    let pageRoute ='password/request'
+    let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=${msg}`;
+    let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
+    return res.redirect(url);
 }
 
 function checkPassword(str) {
