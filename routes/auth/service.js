@@ -802,9 +802,6 @@ module.exports.changePassword = async(req,res)=>{
     const token = jwt.sign(data, Config.JWT.SECRET, {
         expiresIn: Config.JWT.TOKEN_EXPIRY
     });
-    let pageRoute ='password/request'
-    let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=${msg}`;
-    let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
     return res.json({"token":token});
 }
 
