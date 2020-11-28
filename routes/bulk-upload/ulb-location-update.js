@@ -89,6 +89,7 @@ module.exports.signup = async (req, res)=>{
                     eachRow["censusCode"] = ulb.censusCode
                     eachRow["role"] = 'ULB'
                     eachRow["status"] = 'APPROVED'
+                    eachRow["isEmailVerified"] = true
                     eachRow["password"] = await service.getHash(eachRow.password);
                     //res.json(eachRow);return;
                     service.put({ ulb : eachRow["ulb"],role:'ULB'},eachRow,User,function(response,value){
