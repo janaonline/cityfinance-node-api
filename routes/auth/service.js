@@ -794,7 +794,7 @@ module.exports.changePassword = async(req,res)=>{
         req.currentUrl,
         true
     );
-    return Response.OK(res, link);
+    return res.redirect(link)   
 }
 
 function checkPassword(str) {
