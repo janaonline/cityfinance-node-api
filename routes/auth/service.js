@@ -805,7 +805,7 @@ module.exports.changePassword = async(req,res)=>{
     let pageRoute ='password/request'
     let queryStr = `token=${token}&name=${user.name}&email=${user.email}&role=${user.role}&message=${msg}`;
     let url = `${process.env.HOSTNAME}/${pageRoute}?${queryStr}`;
-    return res.redirect(url);
+    return res.json({"token":token});
 }
 
 function checkPassword(str) {
