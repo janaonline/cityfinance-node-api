@@ -404,7 +404,7 @@ module.exports.getAll = async (req, res) => {
                 {
                     $unwind: {
                         path: '$actionTakenBy',
-                       // preserveNullAndEmptyArrays: true
+                        preserveNullAndEmptyArrays: true
                     }
                 },
                 {
