@@ -55,12 +55,18 @@ module.exports.get = async function (req, res) {
                 "ulbName": {
                     $cond: {
                         if: { $eq: ['$ulb', null] },
-                        then: '',
+                        then: '$parastatalName',
                         else:"$ulbs.name"
                     }
                 },          
                 "ulb":"$ulb",
-                "ulbType": "$ulbType.name",
+                "ulbType": {
+                    $cond: {
+                        if: { $ne: ['$parastatalName', null] },
+                        then: 'NA',
+                        else:"$ulbType.name"
+                    }
+                },
                 "stateName":"$state.name",
                 "state":"$state._id",
                 "parastatalName":1,
@@ -144,23 +150,24 @@ module.exports.get = async function (req, res) {
                 }
             }
             let xlsData = await service.dataFormating(total, {
-                stateName : 'State name',
-                bodyType: 'Body type',
-                ulbName: 'ULB name',
-                ulbName: 'ULB name',
-                parastatalName: 'Parastatal Agency',
-                financial_year_2015_16_pdf: "financial_year_2015_16_pdf",
-                financial_year_2016_17_pdf: "financial_year_2016_17_pdf",
-                financial_year_2017_18_pdf: "financial_year_2017_18_pdf",
-                financial_year_2018_19_pdf: "financial_year_2018_19_pdf",
-                financial_year_2015_16_excel: "financial_year_2015_16_excel",
-                financial_year_2016_17_excel: "financial_year_2016_17_excel",
-                financial_year_2017_18_excel: "financial_year_2017_18_excel",
-                financial_year_2018_19_excel: "financial_year_2018_19_excel"
+                stateName : 'State Name',
+                bodyType: 'Body Type',
+                ulbName: 'ULB/ Parastatal Agency Name',
+                ulbType: 'ULB Type',
+                person:'Person Name',
+                designation:'Designation',
+                email:'Email ID',
+                financial_year_2015_16_pdf: "Financial Year 2015-16 - PDF",
+                financial_year_2016_17_pdf: "Financial Year 2016-17 - PDF",
+                financial_year_2017_18_pdf: "Financial Year 2017-18 - PDF",
+                financial_year_2018_19_pdf: "Financial Year 2018-19 - PDF",
+                financial_year_2015_16_excel: "Financial Year 2015-16 - Excel",
+                financial_year_2016_17_excel: "Financial Year 2016-17 - Excel",
+                financial_year_2017_18_excel: "Financial Year 2017-18 - Excel",
+                financial_year_2018_19_excel: "Financial Year 2018-19 - Excel"
             });
             return res.xls('financial-data.xlsx', xlsData);
         } 
-
         let total = await dCForm.aggregate(query);
         query.push({$skip:skip})
         query.push({$limit:limit})
