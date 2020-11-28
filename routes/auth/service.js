@@ -787,6 +787,16 @@ module.exports.endSession = async (req, res) => {
     }
 };
 
+module.exports.changePassword = async(req,res)=>{
+    let user = req.decoded
+    let link = await Service.emailVerificationLink(
+        user._id,
+        req.currentUrl,
+        true
+    );
+    return Response.OK(res, link);
+}
+
 function checkPassword(str) {
     var re = /^(?=.*\d)(?=.*[!@#$%^&*])(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
     return re.test(str);
