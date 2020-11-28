@@ -404,7 +404,7 @@ module.exports.getAll = async (req, res) => {
                 {
                     $unwind: {
                         path: '$actionTakenBy',
-                        preserveNullAndEmptyArrays: true
+                       // preserveNullAndEmptyArrays: true
                     }
                 },
                 {
@@ -427,7 +427,6 @@ module.exports.getAll = async (req, res) => {
                         millionPlusCities:1,
                         completeness: 1,
                         correctness: 1,
-                        isCompleted:1,
                         status: 1,
                         role: "$actionTakenBy.role",
                         //financialYear: 1,
@@ -442,11 +441,12 @@ module.exports.getAll = async (req, res) => {
                         stateCode: '$state.code',
                         actionTakenByUserName: '$actionTakenBy.name',
                         actionTakenByUserRole: '$actionTakenBy.role',
+                        isCompleted:1,
                         isActive: '$isActive',
                         createdAt: '$createdAt',
                         modifiedAt:'$modifiedAt'
                     }
-                }    
+                }
             ];
  
             let newFilter = await Service.mapFilter(filter);
