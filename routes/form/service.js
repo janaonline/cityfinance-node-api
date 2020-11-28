@@ -103,13 +103,13 @@ module.exports.get = async function (req, res) {
                 if(t.documents.financial_year_2015_16){
                     t["financial_year_2015_16_pdf"] = ''
                     if(t.documents.financial_year_2015_16.pdf.length >0){
-                        t["financial_year_2015_16_pdf"] = `=HYPERLINK("${t.documents.financial_year_2015_16.pdf[0].url}")`
+                        t["financial_year_2015_16_pdf"] = `=HYPERLINK("${t.documents.financial_year_2015_16.pdf[0].url}",'A')`
                     }
                 }
                 if(t.documents.financial_year_2016_17){
                     t["financial_year_2016_17_pdf"] = ''
                     if(t.documents.financial_year_2016_17.pdf.length >0){
-                        t["financial_year_2016_17_pdf"] = `=HYPERLINK("${t.documents.financial_year_2016_17.pdf[0].url}")`
+                        t["financial_year_2016_17_pdf"] = `=HYPERLINK("${t.documents.financial_year_2016_17.pdf[0].url}",'B')`
                     }
                 }
                 if(t.documents.financial_year_2017_18!=null){
@@ -167,6 +167,7 @@ module.exports.get = async function (req, res) {
                 financial_year_2017_18_excel: "Financial Year 2017-18 - Excel",
                 financial_year_2018_19_excel: "Financial Year 2018-19 - Excel"
             });
+            //res.json(xlsData);return;
             return res.xls('financial-data.xlsx', xlsData);
         } 
         let total = await dCForm.aggregate(query);
