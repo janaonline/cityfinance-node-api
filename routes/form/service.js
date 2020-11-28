@@ -19,6 +19,7 @@ module.exports.get = async function (req, res) {
     sort = req.query.sort  && !req.query.sort != 'null' ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {})
     skip   = req.query.skip ? parseInt(req.query.skip) : 0
     limit  = req.query.limit ? parseInt(req.query.limit) : 10
+    let csv = req.query.csv
     let matchfilter =  await service.mapFilter(filter);
     let user = req.decoded
     if(actionAllowed.indexOf(user.role) > -1){
@@ -51,9 +52,21 @@ module.exports.get = async function (req, res) {
             }, 
             {$unwind:{path:"$ulbType",preserveNullAndEmptyArrays:true}},
             {$project:{
-                "ulbName":"$ulbs.name",
+                "ulbName": {
+                    $cond: {
+                        if: { $eq: ['$ulb', null] },
+                        then: '$parastatalName',
+                        else:"$ulbs.name"
+                    }
+                },          
                 "ulb":"$ulb",
-                "ulbType": "$ulbType.name",
+                "ulbType": {
+                    $cond: {
+                        if: { $ne: ['$parastatalName', null] },
+                        then: 'NA',
+                        else:"$ulbType.name"
+                    }
+                },
                 "stateName":"$state.name",
                 "state":"$state._id",
                 "parastatalName":1,
@@ -67,13 +80,94 @@ module.exports.get = async function (req, res) {
         ]
 
         if(matchfilter && Object.keys(matchfilter).length){
-           query.unshift({$match:matchfilter}) 
+           query.push({$match:matchfilter}) 
         }
         if(Object.keys(sort).length){
             query.push({$sort:sort});
         }
 
-        //res.json(query);return;
+        if (csv) {
+            let total = await dCForm.aggregate(query);
+            for(t of total){
+                t["financial_year_2015_16_pdf"] = ''
+                t["financial_year_2016_17_pdf"] = ''
+                t["financial_year_2017_18_pdf"] = ''
+                t["financial_year_2018_19_pdf"] = ''
+
+                t["financial_year_2015_16_excel"] = ''
+                t["financial_year_2016_17_excel"] = ''
+                t["financial_year_2017_18_excel"] = ''
+                t["financial_year_2018_19_excel"] = ''
+
+                if(t.documents.financial_year_2015_16){
+                    t["financial_year_2015_16_pdf"] = ''
+                    if(t.documents.financial_year_2015_16.pdf.length >0){
+                        t["financial_year_2015_16_pdf"] = t.documents.financial_year_2015_16.pdf[0].url
+                    }
+                }
+                if(t.documents.financial_year_2016_17){
+                    t["financial_year_2016_17_pdf"] = ''
+                    if(t.documents.financial_year_2016_17.pdf.length >0){
+                        t["financial_year_2016_17_pdf"] = t.documents.financial_year_2016_17.pdf[0].url
+                    }
+                }
+                if(t.documents.financial_year_2017_18!=null){
+                    t["financial_year_2017_18_pdf"] = ''
+                    if(t.documents.financial_year_2017_18.pdf.length >0){
+                        t["financial_year_2017_18_pdf"] = t.documents.financial_year_2017_18.pdf[0].url
+                    }
+                }
+                if(t.documents.financial_year_2018_19){
+                    t["financial_year_2018_19_pdf"] = ''
+                    if(t.documents.financial_year_2018_19.pdf.length >0){
+                        t["financial_year_2018_19_pdf"] = t.documents.financial_year_2018_19.pdf[0].url
+                    }
+                }
+
+                if(t.documents.financial_year_2015_16){
+                    t["financial_year_2015_16_excel"] = ''
+                    if(t.documents.financial_year_2015_16.excel.length >0){
+                        t["financial_year_2015_16_excel"] = t.documents.financial_year_2015_16.excel[0].url
+                    }
+                }
+                if(t.documents.financial_year_2016_17){
+                    t["financial_year_2016_17_excel"] = ''
+                    if(t.documents.financial_year_2016_17.excel.length >0){
+                        t["financial_year_2016_17_excel"] = t.documents.financial_year_2016_17.excel[0].url
+                    }
+                }
+                if(t.documents.financial_year_2017_18){
+                    t["financial_year_2017_18_excel"] = ''
+                    if(t.documents.financial_year_2017_18.excel.length >0){
+                        t["financial_year_2017_18_excel"] = t.documents.financial_year_2017_18.excel[0].url
+                    }
+                }
+                if(t.documents.financial_year_2018_19){
+                    t["financial_year_2018_19_excel"] = ''
+                    if(t.documents.financial_year_2018_19.excel.length >0){
+                        t["financial_year_2018_19_excel"] = t.documents.financial_year_2018_19.excel[0].url
+                    }
+                }
+            }
+            let xlsData = await service.dataFormating(total, {
+                stateName : 'State Name',
+                bodyType: 'Body Type',
+                ulbName: 'ULB/ Parastatal Agency Name',
+                ulbType: 'ULB Type',
+                person:'Person Name',
+                designation:'Designation',
+                email:'Email ID',
+                financial_year_2015_16_pdf: "Financial Year 2015-16 - PDF",
+                financial_year_2016_17_pdf: "Financial Year 2016-17 - PDF",
+                financial_year_2017_18_pdf: "Financial Year 2017-18 - PDF",
+                financial_year_2018_19_pdf: "Financial Year 2018-19 - PDF",
+                financial_year_2015_16_excel: "Financial Year 2015-16 - Excel",
+                financial_year_2016_17_excel: "Financial Year 2016-17 - Excel",
+                financial_year_2017_18_excel: "Financial Year 2017-18 - Excel",
+                financial_year_2018_19_excel: "Financial Year 2018-19 - Excel"
+            });
+            return res.xls('financial-data.xlsx', xlsData);
+        } 
         let total = await dCForm.aggregate(query);
         query.push({$skip:skip})
         query.push({$limit:limit})
