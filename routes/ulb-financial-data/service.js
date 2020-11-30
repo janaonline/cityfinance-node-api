@@ -468,11 +468,12 @@ module.exports.getAll = async (req, res) => {
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
-
+            q.push({ $skip: skip });
+            q.push({ $limit: limit });
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
             } else {
-                //q.push({ $sort: { modifiedAt: -1 } });
+                q.push({ $sort: { modifiedAt: -1 } });
                 if(priority){
                     q.push({ $sort: { priority: -1 } });
                 }
@@ -515,8 +516,6 @@ module.exports.getAll = async (req, res) => {
 
                         total = d.length ? d[0].count : 0;
                     }
-                    q.push({ $skip: skip });
-                    q.push({ $limit: limit });
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
