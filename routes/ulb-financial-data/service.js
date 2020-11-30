@@ -347,8 +347,8 @@ module.exports.getAll = async (req, res) => {
                         { $eq: [ "$isCompleted",true] }
                     ] 
                     },
-                    0,
-                    1 
+                    1,
+                    0 
                 ]}
             }
             if(user.role=='MoHUA'){
@@ -359,8 +359,8 @@ module.exports.getAll = async (req, res) => {
                         { $eq: [ "$status","APPROVED"] }
                     ] 
                     },
-                    0,
-                    1 
+                    1,
+                    0 
                 ]}
             }
 
@@ -369,6 +369,7 @@ module.exports.getAll = async (req, res) => {
                 {
                     $match: { overallReport: null,isActive:true}
                 },
+                { $sort: { createdAt: -1 } },
                 {
                     $lookup: {
                         from: 'ulbs',
@@ -404,12 +405,7 @@ module.exports.getAll = async (req, res) => {
                 { $unwind: '$ulb' },
                 { $unwind: '$ulbType' },
                 { $unwind: '$state' },
-                {
-                    $unwind: {
-                        path: '$actionTakenBy',
-                        preserveNullAndEmptyArrays: true
-                    }
-                },
+                { $unwind: '$actionTakenBy'},
                 {
                     $project: {
                         _id: 1,
@@ -471,10 +467,11 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } 
             else {
-               // q.push({ $sort: { createdAt: -1 } });
-            }
-            if(priority){
-                q.push({ $sort: { priority: 1 } });
+                let sort  = { $sort:{createdAt: -1 }}
+                if(priority){
+                    Object.assign(sort["$sort"],{ priority: -1 })
+                }
+                q.push(sort);
             }
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
