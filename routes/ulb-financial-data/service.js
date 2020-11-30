@@ -759,6 +759,15 @@ module.exports.getDetails = async (req, res) => {
             }
         }
         ]).exec();
+
+        let rejectedData = await UlbFinancialData.aggregate([
+            {
+                $match :query
+            },
+            { $unwind: '$history'},
+            {$match:{"history.status":"REJECTED"}}
+        ]).exec()
+        let rejectedAt = rejectedData.length >0 ? rejectedData[rejectedData.length-1].modifiedAt:null
         let history = {"histroy":""}
         if(user.role=='MoHUA'){
             let historyData = await commonQuery(query)    
@@ -774,7 +783,7 @@ module.exports.getDetails = async (req, res) => {
                 });
             }
         }
-        let finalData = data[0]
+        let finalData = Object.assign(data[0],{"rejectedAt":rejectedAt})
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
