@@ -513,9 +513,11 @@ module.exports.getAll = async (req, res) => {
                     if (sort && Object.keys(sort).length) {
                         q.push({ $sort: sort });
                     } else {
-                        q.push({ $sort: { modifiedAt: -1 } });
                         if(priority){
                             q.push({ $sort: { priority: -1 } });
+                        }
+                        else{
+                            q.push({ $sort: { modifiedAt: -1 } });
                         }
                     }
                     let arr = await UlbFinancialData.aggregate(q).exec();
