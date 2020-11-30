@@ -471,11 +471,15 @@ module.exports.getAll = async (req, res) => {
 
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
-            } else {
-                if(priority){
-                    q.push({ $sort: { priority: -1 } });
-                }
-            }
+            } 
+            // else {
+            //     if(priority){
+            //         q.push({ $sort: { priority: -1 } });
+            //     }
+            //     else{
+            //         q.push({ $sort: { createdAt: -1 } });
+            //     }
+            // }
 
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
@@ -514,8 +518,17 @@ module.exports.getAll = async (req, res) => {
                         let d = await UlbFinancialData.aggregate(qrr);
                         total = d.length ? d[0].count : 0;
                     }
-                    q.push({ $skip: skip });
-                    q.push({ $limit: limit });
+                    if(!csv){
+                        q.push({ $skip: skip });
+                        q.push({ $limit: limit });
+                    }
+                    if(priority){
+                        q.push({ $sort: { priority: -1 } });
+                    }
+                    else{
+                        q.push({ $sort: { createdAt: -1 } });
+                    }
+
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
