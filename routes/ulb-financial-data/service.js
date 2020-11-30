@@ -467,9 +467,11 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } 
             else {
-                let sort  = { $sort:{createdAt: -1 }}
                 if(priority){
-                    Object.assign(sort["$sort"],{ priority: -1 })
+                    sort  = { $sort:{priority: -1 }}
+                }
+                else{
+                    sort  = { $sort:{createdAt: -1 }}
                 }
                 q.push(sort);
             }
