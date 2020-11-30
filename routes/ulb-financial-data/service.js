@@ -468,18 +468,7 @@ module.exports.getAll = async (req, res) => {
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
-            if(!csv){
-                q.push({ $skip: skip });
-                q.push({ $limit: limit });
-            }
-            if (sort && Object.keys(sort).length) {
-                q.push({ $sort: sort });
-            } else {
-                q.push({ $sort: { modifiedAt: -1 } });
-                if(priority){
-                    q.push({ $sort: { priority: -1 } });
-                }
-            }
+           
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 for(d of arr){
@@ -515,8 +504,19 @@ module.exports.getAll = async (req, res) => {
                     if (!skip) {
                         let qrr = [...q, { $count: 'count' }];
                         let d = await UlbFinancialData.aggregate(qrr);
-
                         total = d.length ? d[0].count : 0;
+                    }
+                    if(!csv){
+                        q.push({ $skip: skip });
+                        q.push({ $limit: limit });
+                    }
+                    if (sort && Object.keys(sort).length) {
+                        q.push({ $sort: sort });
+                    } else {
+                        q.push({ $sort: { modifiedAt: -1 } });
+                        if(priority){
+                            q.push({ $sort: { priority: -1 } });
+                        }
                     }
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
