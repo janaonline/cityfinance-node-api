@@ -413,6 +413,7 @@ module.exports.getAll = async (req, res) => {
                 {
                     $addFields:cond
                 },
+                { $sort: { modifiedAt: -1 } },
                 {
                     $project: {
                         _id: 1,
@@ -472,7 +473,6 @@ module.exports.getAll = async (req, res) => {
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
             } else {
-                q.push({ $sort: { modifiedAt: -1 } });
                 if(priority){
                     q.push({ $sort: { priority: -1 } });
                 }
