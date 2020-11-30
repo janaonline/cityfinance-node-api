@@ -343,31 +343,31 @@ module.exports.getAll = async (req, res) => {
                 priority = true
                 cond["priority"] = {$cond: [{
                     $and : [ 
-                        { $eq: [ "$actionTakenBy.role", 'ULB'] },
+                        { $eq: [ "$actionTakenByUserName", 'ULB'] },
                         { $eq: [ "$isCompleted",true] }
                     ] 
                     },
-                    1,
-                    0 
+                    0,
+                    1 
                 ]}
             }
             if(user.role=='MoHUA'){
                 priority = true
                 cond["priority"] = {$cond: [{
                     $and : [ 
-                        { $eq: [ "$actionTakenBy.role", 'STATE'] },
+                        { $eq: [ "$actionTakenByUserRole", 'STATE'] },
                         { $eq: [ "$status","APPROVED"] }
                     ] 
                     },
-                    1,
-                    0 
+                    0,
+                    1 
                 ]}
             }
 
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
                 {
-                    $match: { overallReport: null }
+                    $match: { overallReport: null,isActive:true}
                 },
                 {
                     $lookup: {
@@ -411,13 +411,10 @@ module.exports.getAll = async (req, res) => {
                     }
                 },
                 {
-                    $addFields:cond
-                },
-                {
                     $project: {
                         _id: 1,
                         audited: 1,
-                        priority: 1,
+                        //priority: 1,
                         // auditStatus: {
                         //     $cond: {
                         //         if: '$audited',
@@ -448,6 +445,9 @@ module.exports.getAll = async (req, res) => {
                         createdAt: '$createdAt',
                         modifiedAt:'$modifiedAt'
                     }
+                },
+                {
+                    $addFields:cond
                 }
             ];
  
@@ -459,7 +459,6 @@ module.exports.getAll = async (req, res) => {
             if (user.role == 'ULB') {
                 newFilter['ulb'] = ObjectId(user.ulb);
             }
-            newFilter['isActive'] = true;
             if(newFilter['status']){
                 Object.assign(newFilter,statusFilter[newFilter['status']])
                 //delete newFilter['status'];
@@ -468,19 +467,15 @@ module.exports.getAll = async (req, res) => {
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
-
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
             } 
-            // else {
-            //     if(priority){
-            //         q.push({ $sort: { priority: -1 } });
-            //     }
-            //     else{
-            //         q.push({ $sort: { createdAt: -1 } });
-            //     }
-            // }
-
+            else {
+               // q.push({ $sort: { createdAt: -1 } });
+            }
+            if(priority){
+                q.push({ $sort: { priority: 1 } });
+            }
             if (csv) {
                 let arr = await UlbFinancialData.aggregate(q).exec();
                 for(d of arr){
@@ -518,15 +513,8 @@ module.exports.getAll = async (req, res) => {
                         let d = await UlbFinancialData.aggregate(qrr);
                         total = d.length ? d[0].count : 0;
                     }
-                    if(!csv){
-                        q.push({ $skip: skip });
-                        q.push({ $limit: limit });
-                    }
-                    q.push({ $sort: { createdAt: -1 } });
-                    if(priority){
-                        q.push({ $sort: { priority: -1 } });
-                    }
-
+                    q.push({ $skip: skip });
+                    q.push({ $limit: limit });
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
