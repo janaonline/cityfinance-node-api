@@ -767,6 +767,30 @@ module.exports.getDetails = async (req, res) => {
             { $unwind: '$history'},
             {$match:{"history.status":"REJECTED"}}
         ]).exec()
+
+        let firstSubmited = await UlbFinancialData.aggregate([
+            {
+                $match :query
+            },
+            { $unwind: '$history'},
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'history.actionTakenBy',
+                    foreignField: '_id',
+                    as: 'actionTakenBy'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$actionTakenBy',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {$match:{"actionTakenBy.role":"ULB",'history.isCompleted':true}}
+        ]).exec()
+
+        let firstSubmitedAt = firstSubmited.length >0 ? firstSubmited[firstSubmited.length-1].createdAt:null
         let rejectedAt = rejectedData.length >0 ? rejectedData[rejectedData.length-1].modifiedAt:null
         let history = {"histroy":""}
         if(user.role=='MoHUA'){
@@ -783,7 +807,7 @@ module.exports.getDetails = async (req, res) => {
                 });
             }
         }
-        let finalData = Object.assign(data[0],{"rejectedAt":rejectedAt})
+        let finalData = Object.assign(data[0],{"rejectedAt":rejectedAt,"firstSubmitedAt":firstSubmitedAt})
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
