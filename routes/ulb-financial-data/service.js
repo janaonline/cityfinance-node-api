@@ -413,7 +413,6 @@ module.exports.getAll = async (req, res) => {
                 {
                     $addFields:cond
                 },
-                { $sort: { modifiedAt: -1 } },
                 {
                     $project: {
                         _id: 1,
