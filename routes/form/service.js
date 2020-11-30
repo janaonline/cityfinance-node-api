@@ -103,50 +103,50 @@ module.exports.get = async function (req, res) {
                 if(t.documents.financial_year_2015_16){
                     t["financial_year_2015_16_pdf"] = ''
                     if(t.documents.financial_year_2015_16.pdf.length >0){
-                        t["financial_year_2015_16_pdf"] = `HYPERLINK(${t.documents.financial_year_2015_16.pdf[0].url},${t.documents.financial_year_2015_16.pdf[0].url})`
+                        t["financial_year_2015_16_pdf"] = `HYPERLINK("${t.documents.financial_year_2015_16.pdf[0].url}","${t.documents.financial_year_2015_16.pdf[0].url}")`
                     }
                 }
                 if(t.documents.financial_year_2016_17){
                     t["financial_year_2016_17_pdf"] = ''
                     if(t.documents.financial_year_2016_17.pdf.length >0){
-                        t["financial_year_2016_17_pdf"] = `HYPERLINK(${t.documents.financial_year_2016_17.pdf[0].url})`
+                        t["financial_year_2016_17_pdf"] = `HYPERLINK("${t.documents.financial_year_2016_17.pdf[0].url}")`
                     }
                 }
                 if(t.documents.financial_year_2017_18!=null){
                     t["financial_year_2017_18_pdf"] = ''
                     if(t.documents.financial_year_2017_18.pdf.length >0){
-                        t["financial_year_2017_18_pdf"] = `HYPERLINK(${t.documents.financial_year_2017_18.pdf[0].url})`
+                        t["financial_year_2017_18_pdf"] = `HYPERLINK("${t.documents.financial_year_2017_18.pdf[0].url}")`
                     }
                 }
                 if(t.documents.financial_year_2018_19){
                     t["financial_year_2018_19_pdf"] = ''
                     if(t.documents.financial_year_2018_19.pdf.length >0){
-                        t["financial_year_2018_19_pdf"] = `HYPERLINK(${t.documents.financial_year_2018_19.pdf[0].url})`
+                        t["financial_year_2018_19_pdf"] = `HYPERLINK("${t.documents.financial_year_2018_19.pdf[0].url}")`
                     }
                 }
 
                 if(t.documents.financial_year_2015_16){
                     t["financial_year_2015_16_excel"] = ''
                     if(t.documents.financial_year_2015_16.excel.length >0){
-                        t["financial_year_2015_16_excel"] = `HYPERLINK(${t.documents.financial_year_2015_16.excel[0].url})`
+                        t["financial_year_2015_16_excel"] = `HYPERLINK("${t.documents.financial_year_2015_16.excel[0].url}")`
                     }
                 }
                 if(t.documents.financial_year_2016_17){
                     t["financial_year_2016_17_excel"] = ''
                     if(t.documents.financial_year_2016_17.excel.length >0){
-                        t["financial_year_2016_17_excel"] = `HYPERLINK(${t.documents.financial_year_2016_17.excel[0].url})`
+                        t["financial_year_2016_17_excel"] = `HYPERLINK("${t.documents.financial_year_2016_17.excel[0].url}")`
                     }
                 }
                 if(t.documents.financial_year_2017_18){
                     t["financial_year_2017_18_excel"] = ''
                     if(t.documents.financial_year_2017_18.excel.length >0){
-                        t["financial_year_2017_18_excel"] = `HYPERLINK(${t.documents.financial_year_2017_18.excel[0].url})`
+                        t["financial_year_2017_18_excel"] = `HYPERLINK("${t.documents.financial_year_2017_18.excel[0].url}")`
                     }
                 }
                 if(t.documents.financial_year_2018_19){
                     t["financial_year_2018_19_excel"] = ''
                     if(t.documents.financial_year_2018_19.excel.length >0){
-                        t["financial_year_2018_19_excel"] = `HYPERLINK(${t.documents.financial_year_2018_19.excel[0].url})`
+                        t["financial_year_2018_19_excel"] = `HYPERLINK("${t.documents.financial_year_2018_19.excel[0].url}")`
                     }
                 }
             }
