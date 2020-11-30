@@ -468,8 +468,10 @@ module.exports.getAll = async (req, res) => {
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
-            q.push({ $skip: skip });
-            q.push({ $limit: limit });
+            if(!csv){
+                q.push({ $skip: skip });
+                q.push({ $limit: limit });
+            }
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
             } else {
