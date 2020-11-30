@@ -252,7 +252,7 @@ module.exports = (req,res)=>{
 module.exports.chartDataStatus = async(req,res)=>{
     let labels = [
         'Not Registered',
-        'Not Started', 
+        'Registered But Not Started', 
         'Saved as Draft', 
         'Rejected By State', 
         'Under Review By State',
