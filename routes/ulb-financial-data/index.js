@@ -22,5 +22,7 @@ router.post("/action/:_id",verifyToken,ufdService.action);
 router.get("/fc-grant/dashboard-card/",verifyToken,ufdDashboardService);
 router.get("/fc-grant/dashboard-chart",verifyToken,ufdDashboardService.chartDataStatus);
 router.get("/fc-grant/ulbList",verifyToken,ufdDashboardService.ulbList);
+router.post("/fc-grant/stateForm",verifyToken,ufdService.XVFCStateForm);
+router.get("/fc-grant/stateForm",verifyToken,ufdService.getXVFCStateForm);
 
 module.exports = router;

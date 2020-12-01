@@ -335,7 +335,7 @@ module.exports.login = async (req, res) => {
                 return Response.BadRequest(
                     res,
                     {},
-                    `Erorr while comparing password.`
+                    `Error while comparing password.`
                 );
             }
         }

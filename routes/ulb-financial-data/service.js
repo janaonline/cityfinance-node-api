@@ -3,6 +3,7 @@ const UlbFinancialData = require('../../models/UlbFinancialData');
 const LoginHistory = require('../../models/LoginHistory');
 const User = require('../../models/User');
 const State = require('../../models/State');
+const XVStateForm = require('../../models/XVStateForm');
 const Response = require('../../service').response;
 const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -1969,3 +1970,51 @@ function getSourceFiles(obj) {
 
     return o;
 }
+
+module.exports.XVFCStateForm = async (req, res) => {
+    let user = req.decoded;
+    let data = req.body;
+    if (user.role == 'STATE') {
+        data.modifiedAt = time()
+        let query = {}
+        query["state"] = ObjectId(data.state);
+        Service.put(query,req.body,XVStateForm,async function(response,value){
+            if(response){
+                return res.status(response ? 200 : 400).send(value);
+            }
+            else{
+                return Response.DbError(res, err, 'Failed to create entry');
+            }
+        });
+    
+    } else {
+        return Response.BadRequest(
+            res,
+            {},
+            'This action is only allowed by STATE'
+        );
+    }
+};
+
+module.exports.getXVFCStateForm = async (req, res) => {
+    let user = req.decoded;
+    if (user.role == 'MoHUA' || user.role == 'PARTNER') {
+        let query = {}
+        query["isActive"] = true
+        XVStateForm.find(query,async function(response,value){
+            if(response){
+                return res.status(response ? 200 : 400).send(value);
+            }
+            else{
+                return Response.DbError(res, err, 'Failed to create entry');
+            }
+        });
+    
+    } else {
+        return Response.BadRequest(
+            res,
+            {},
+            'This action is only allowed by MoHUA and PARTNER'
+        );
+    }
+};
