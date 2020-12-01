@@ -24,5 +24,6 @@ router.get("/fc-grant/dashboard-chart",verifyToken,ufdDashboardService.chartData
 router.get("/fc-grant/ulbList",verifyToken,ufdDashboardService.ulbList);
 router.post("/fc-grant/stateForm",verifyToken,ufdService.XVFCStateForm);
 router.get("/fc-grant/stateForm",verifyToken,ufdService.getXVFCStateForm);
+router.get("/fc-grant/stateForm/:_id",verifyToken,ufdService.getXVFCStateFormById);
 
 module.exports = router;

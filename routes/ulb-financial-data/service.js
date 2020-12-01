@@ -1977,8 +1977,9 @@ module.exports.XVFCStateForm = async (req, res) => {
     if (user.role == 'STATE') {
         data.modifiedAt = time()
         let query = {}
-        query["state"] = ObjectId(data.state);
-        Service.put(query,req.body,XVStateForm,async function(response,value){
+        data["state"] = ObjectId(user.state)
+        query["state"] = data["state"]
+        Service.put(query,data,XVStateForm,async function(response,value){
             if(response){
                 return res.status(response ? 200 : 400).send(value);
             }
@@ -1998,23 +1999,34 @@ module.exports.XVFCStateForm = async (req, res) => {
 
 module.exports.getXVFCStateForm = async (req, res) => {
     let user = req.decoded;
-    if (user.role == 'MoHUA' || user.role == 'PARTNER') {
+    actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER'];
+    if (actionAllowed.indexOf(user.role) > -1) {
         let query = {}
         query["isActive"] = true
-        XVStateForm.find(query,async function(response,value){
-            if(response){
-                return res.status(response ? 200 : 400).send(value);
-            }
-            else{
-                return Response.DbError(res, err, 'Failed to create entry');
-            }
-        });
-    
+        let data = await XVStateForm.find(query).populate([{"path":"state",select:"name"}]).exec();
+        return Response.OK(res, data, 'Request fetched.');
+
     } else {
         return Response.BadRequest(
             res,
             {},
-            'This action is only allowed by MoHUA and PARTNER'
+            'This action is only allowed'
+        );
+    }
+};
+
+module.exports.getXVFCStateFormById = async (req, res) => {
+    let user = req.decoded;
+    if (user.role=='STATE') {
+        let query = {}
+        query["_id"] = ObjectId(req.params._id)
+        let data = await XVStateForm.findOne(query).populate([{"path":"state",select:"name"}]).exec();
+        return Response.OK(res, data, 'Request fetched.');
+    } else {
+        return Response.BadRequest(
+            res,
+            {},
+            'This action is only allowed for STATE User'
         );
     }
 };
