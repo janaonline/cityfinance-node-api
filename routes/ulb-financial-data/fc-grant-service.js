@@ -501,14 +501,24 @@ module.exports.ulbList = async(req,res)=>{
                 as: 'ulbType'
             }
         },
-        {"$unwind":"$ulbType"},
+        {"$unwind":
+            {
+            "path":"$ulbType",
+            preserveNullAndEmptyArrays: true
+            }
+        },
         {"$unwind":
             {
             "path":"$user",
             preserveNullAndEmptyArrays: true
             }
         },
-        {"$unwind":"$state"},  
+        {"$unwind":
+            {
+            "path":"$state",
+            preserveNullAndEmptyArrays: true
+            }
+        },  
         {$project:
             {
                 stateName : "$state.name",
