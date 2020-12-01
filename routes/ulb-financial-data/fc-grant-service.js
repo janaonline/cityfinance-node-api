@@ -275,28 +275,18 @@ module.exports.chartDataStatus = async(req,res)=>{
     let millionPlus = req.query.millionPlus;
     let nonMillion = req.query.nonMillion;
     let state = user.role=='STATE'? ObjectId(user.state):null 
+
+    let toggleCond = null
+    if(millionPlus){
+        toggleCond = {isMillionPlus:'Yes'}
+    }else if(nonMillion){
+        toggleCond = {isMillionPlus:'No'}
+    }
+
     let nonRegisteredUlb = new Promise(async(rslv,rjct)=>{
         try{           
-            let q = {isDeleted:false,role:"ULB"}
-            let q1 = {isActive:true}
-            if(state){
-                Object.assign(q,{state:state})
-                Object.assign(q1,{state:state})
-            }             
-            let registerd = await User.count(q).exec();
-            let totalData = await Ulb.count(q1).exec();
-            let remainData = totalData-registerd
-            rslv({c:remainData})
-        }
-        catch(err){
-            rjct(err)
-        }
-    })
-
-    let notStarted = new Promise(async(rslv,rjct)=>{
-        try{                      
-            let q = {isDeleted:false,role:"ULB"} 
-            let q1 = [  {$match:{isActive:true}},
+            let q = [
+                {$match:{isDeleted:false,role:"ULB"}},
                 {
                     $lookup: {
                         from: 'ulbs',
@@ -305,16 +295,85 @@ module.exports.chartDataStatus = async(req,res)=>{
                         as: 'ulb'
                     }
                 },
-                { $unwind: '$ulb' }
+                { $unwind: '$ulb' },
+                {
+                    $project:{
+                        isMillionPlus:"$ulb.isMillionPlus",
+                        state:1
+                    }
+                }
+            ]
+            let q1 = {isActive:true}
+            if(state){
+                q.push({$match:{state:state}})
+                Object.assign(q1,{state:state})
+            }  
+            if(toggleCond){
+                q.push({$match:toggleCond})
+                Object.assign(q1,toggleCond)
+            }   
+            q.push({"$count":"c"})   
+            //res.json(q);return;     
+            let registerd = await User.aggregate(q).exec();
+            let totalData = await Ulb.count(q1).exec();
+            let remainData = totalData-(registerd.length> 0 ?registerd[0]["c"]:0)
+            rslv({c:remainData})
+        }
+        catch(err){
+            rjct(err)
+        }
+    })
+
+    let notStarted = new Promise(async(rslv,rjct)=>{
+        try{               
+            let q = [
+                {$match:{isDeleted:false,role:"ULB"}},
+                {
+                    $lookup: {
+                        from: 'ulbs',
+                        localField: 'ulb',
+                        foreignField: '_id',
+                        as: 'ulb'
+                    }
+                },
+                { $unwind: '$ulb' },
+                {
+                    $project:{
+                        isMillionPlus:"$ulb.isMillionPlus",
+                        state:1
+                    }
+                }
+            ] 
+            let q1 = [  
+                {$match:{isActive:true}},
+                {
+                    $lookup: {
+                        from: 'ulbs',
+                        localField: 'ulb',
+                        foreignField: '_id',
+                        as: 'ulb'
+                    }
+                },
+                { $unwind: '$ulb' },
+                {
+                    $project:{
+                        isMillionPlus:"$ulb.isMillionPlus"
+                    }
+                }
             ]
             if(state){
-                Object.assign(q,{state:state})
+                q.push({$match:{state:state}})
                 q1.push({$match:{'ulb.state':state}})
             }
+            if(toggleCond){
+                q.push({$match:toggleCond})
+                q1.push({$match:toggleCond})
+            }
+            q.push({"$count":'c'})
             q1.push({"$count":"c"})  
-            let registerd = await User.count(q).exec();
+            let registerd = await User.aggregate(q).exec();
             let startedData = await UlbFinancialData.aggregate(q1).exec();
-            let remainData = registerd-(startedData.length> 0 ?startedData[0]["c"]:0)
+            let remainData = (registerd.length> 0 ?registerd[0]["c"]:0) -(startedData.length> 0 ?startedData[0]["c"]:0)
             rslv({c:remainData})
         }
         catch(err){
@@ -323,7 +382,7 @@ module.exports.chartDataStatus = async(req,res)=>{
     })
     let draft = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(1,state);
+            let query = dataUploadStatusQuery(1,state,toggleCond);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data && data.length>0 ? data[0] :{c:0})
         }
@@ -334,7 +393,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let UnderReviewState = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(2,state);
+            let query = dataUploadStatusQuery(2,state,toggleCond);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -345,7 +404,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let UnderReviewMoHUA = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(3,state);
+            let query = dataUploadStatusQuery(3,state,toggleCond);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -356,7 +415,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let rejectByState = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(4,state);
+            let query = dataUploadStatusQuery(4,state,toggleCond);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -367,7 +426,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let rejectByMoHUA = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(5,state);
+            let query = dataUploadStatusQuery(5,state,toggleCond);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -378,7 +437,7 @@ module.exports.chartDataStatus = async(req,res)=>{
 
     let approvalCompleted = new Promise(async(rslv,rjct)=>{
         try{                
-            let query = dataUploadStatusQuery(6,state);
+            let query = dataUploadStatusQuery(6,state,toggleCond);
             let data = await UlbFinancialData.aggregate(query).exec();
             rslv(data.length> 0 ? data[0] :{c:0})
         }
@@ -387,29 +446,17 @@ module.exports.chartDataStatus = async(req,res)=>{
         }
     })
 
-    let dataArr = [nonRegisteredUlb,notStarted,draft,rejectByState,UnderReviewState,rejectByMoHUA,UnderReviewMoHUA,approvalCompleted]
+    let dataArr = [
+        nonRegisteredUlb,
+        notStarted,
+        draft,
+        rejectByState,
+        UnderReviewState,
+        rejectByMoHUA,
+        UnderReviewMoHUA,
+        approvalCompleted
+    ]
 
-    let totalUlbCount = 0
-    let millionPlusCount = 0
-    let nonMillionCount = 0
-    if(totalUlb){
-        totalUlbCount = await Ulb.count({isActive:true}).exec();
-        dataArr.unshift({c:totalUlbCount})
-        labels.unshift('Total Ulb')
-        backgroundColor.unshift('#4dff88')
-    }
-    if(millionPlus){
-        millionPlusCount = await Ulb.count({isActive:true,isMillionPlus:'Yes'}).exec()
-        dataArr.unshift({c:millionPlusCount})
-        labels.unshift('Million Plus')
-        backgroundColor.unshift('#33ff77')
-    }
-    if(nonMillion){
-        nonMillionCount = await Ulb.count({isActive:true,isMillionPlus:'No'}).exec()
-        dataArr.unshift({c:nonMillionCount})
-        labels.unshift('Non-Million Plus')
-        backgroundColor.unshift('#1aff66')
-    }
     Promise.all(dataArr).then((values)=>{
         dataArr = []
         for(v of values){
@@ -431,7 +478,7 @@ module.exports.chartDataStatus = async(req,res)=>{
         return  res.status(400).json({ timestamp : moment().unix(), success : false, message : "Caught Error", err : caughtError });
     })
 
-    function dataUploadStatusQuery(s,state=null){
+    function dataUploadStatusQuery(s,state=null,toogleCond=null){
         let statusFilter = {
             "1":{"status":"PENDING","isCompleted":false,actionTakenByUserRole:"ULB"},
             "2":{"status":"PENDING","isCompleted":true,actionTakenByUserRole:"ULB"},
@@ -443,6 +490,9 @@ module.exports.chartDataStatus = async(req,res)=>{
         let match  =  {$match:statusFilter[s]}
         if(state){
             Object.assign(match["$match"],{state:state})
+        }
+        if(toogleCond){
+            Object.assign(match["$match"],toogleCond)
         }
         return [
             {
@@ -478,6 +528,7 @@ module.exports.chartDataStatus = async(req,res)=>{
                     status: 1,
                     ulb: '$ulb._id',
                     ulbName: '$ulb.name',
+                    isMillionPlus: '$ulb.isMillionPlus',
                     ulbCode: '$ulb.code',
                     actionTakenByUserName: '$actionTakenBy.name',
                     actionTakenByUserRole: '$actionTakenBy.role',
