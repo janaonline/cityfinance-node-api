@@ -271,6 +271,9 @@ module.exports.chartDataStatus = async(req,res)=>{
         '#074141'
     ]
     let user = req.decoded;
+    let totalUlb = req.query.totalUlb;
+    let millionPlus = req.query.millionPlus;
+    let nonMillion = req.query.nonMillion;
     let state = user.role=='STATE'? ObjectId(user.state):null 
     let nonRegisteredUlb = new Promise(async(rslv,rjct)=>{
         try{           
@@ -384,7 +387,30 @@ module.exports.chartDataStatus = async(req,res)=>{
         }
     })
 
-    Promise.all([nonRegisteredUlb,notStarted,draft,rejectByState,UnderReviewState,rejectByMoHUA,UnderReviewMoHUA,approvalCompleted]).then((values)=>{
+    let dataArr = [nonRegisteredUlb,notStarted,draft,rejectByState,UnderReviewState,rejectByMoHUA,UnderReviewMoHUA,approvalCompleted]
+
+    let totalUlbCount = 0
+    let millionPlusCount = 0
+    let nonMillionCount = 0
+    if(totalUlb){
+        totalUlbCount = await Ulb.count({isActive:true}).exec();
+        dataArr.unshift({c:totalUlbCount})
+        labels.unshift('Total Ulb')
+        backgroundColor.unshift('#4dff88')
+    }
+    if(millionPlus){
+        millionPlusCount = await Ulb.count({isActive:true,isMillionPlus:'Yes'}).exec()
+        dataArr.unshift({c:millionPlusCount})
+        labels.unshift('Million Plus')
+        backgroundColor.unshift('#33ff77')
+    }
+    if(nonMillion){
+        nonMillionCount = await Ulb.count({isActive:true,isMillionPlus:'No'}).exec()
+        dataArr.unshift({c:nonMillionCount})
+        labels.unshift('Non-Million Plus')
+        backgroundColor.unshift('#1aff66')
+    }
+    Promise.all(dataArr).then((values)=>{
         dataArr = []
         for(v of values){
             dataArr.push(v.c);
