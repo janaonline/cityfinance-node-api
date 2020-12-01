@@ -369,7 +369,6 @@ module.exports.getAll = async (req, res) => {
                 {
                     $match: { overallReport: null,isActive:true}
                 },
-                { $sort: { createdAt: -1 } },
                 {
                     $lookup: {
                         from: 'ulbs',
@@ -468,7 +467,7 @@ module.exports.getAll = async (req, res) => {
             } 
             else {
                 if(priority){
-                    sort  = { $sort:{priority: -1 }}
+                    sort  = { $sort:{priority: -1,createdAt: -1 }}
                 }
                 else{
                     sort  = { $sort:{createdAt: -1 }}
@@ -514,6 +513,7 @@ module.exports.getAll = async (req, res) => {
                     }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
+                    //res.json(q);return;
                     let arr = await UlbFinancialData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
