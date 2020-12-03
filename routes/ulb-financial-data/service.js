@@ -2017,10 +2017,10 @@ module.exports.getXVFCStateForm = async (req, res) => {
 
 module.exports.getXVFCStateFormById = async (req, res) => {
     let user = req.decoded;
-    actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER'];
+    actionAllowed = ['STATE','ADMIN', 'MoHUA', 'PARTNER'];
     if (actionAllowed.indexOf(user.role) > -1) {
         let query = {}
-        query["state"] = ObjectId(req.params.state)
+        query["state"] = req.params.state ? ObjectId(req.params.state):ObjectId(user.state)
         let data = await XVStateForm.findOne(query).populate([{"path":"state",select:"name"}]).exec();
         return Response.OK(res, data, 'Request fetched.');
     } else {
