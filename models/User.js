@@ -43,7 +43,8 @@ const UserSchema = mongoose.Schema({
 	isPasswordResetInProgress:{ type: Boolean, default: false }, // It is used to redirection to login page after reset
 	isDeleted: { type: Boolean, default: false },
 	passwordExpires: {type: Number},
-	passwordHistory: {type: Array,default:[]}
+	passwordHistory: {type: Array,default:[]},
+	isRegistered : {type:Boolean,default:false}
 
 });
 module.exports = mongoose.model('User', UserSchema);;
