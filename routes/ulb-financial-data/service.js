@@ -1999,10 +1999,13 @@ module.exports.XVFCStateForm = async (req, res) => {
 
 module.exports.getXVFCStateForm = async (req, res) => {
     let user = req.decoded;
+    query["isActive"] = true
+    if(user.role=='STATE'){
+        query["state"] = ObjectId(user.state);
+    }
     actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER','STATE'];
     if (actionAllowed.indexOf(user.role) > -1) {
         let query = {}
-        query["isActive"] = true
         let data = await XVStateForm.find(query).populate([{"path":"state",select:"name"}]).exec();
         return Response.OK(res, data, 'Request fetched.');
 
