@@ -1999,7 +1999,7 @@ module.exports.XVFCStateForm = async (req, res) => {
 
 module.exports.getXVFCStateForm = async (req, res) => {
     let user = req.decoded;
-    actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER'];
+    actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER','STATE'];
     if (actionAllowed.indexOf(user.role) > -1) {
         let query = {}
         query["isActive"] = true
