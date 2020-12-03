@@ -100,6 +100,7 @@ module.exports.create = async (req, res)=>{
             // }
             pObj["email"] = pObj["commissionerEmail"];
             pObj["isEmailVerified"] = false;
+            pObj["isRegistered"] = true;
             
             if(pObj.email != userData.email){
                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
