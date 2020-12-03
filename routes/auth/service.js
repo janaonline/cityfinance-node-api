@@ -269,7 +269,8 @@ module.exports.login = async (req, res) => {
                         'name',
                         'ulb',
                         'state',
-                        'isActive'
+                        'isActive',
+                        'isRegistered'
                     ];
                     let data = {};
                     for (k in user) {
