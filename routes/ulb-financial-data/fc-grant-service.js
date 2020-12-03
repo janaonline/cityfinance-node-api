@@ -67,28 +67,95 @@ module.exports = (req,res)=>{
 
     let registeredUlb = new Promise(async(rslv,rjct)=>{
         try{
-            let query = [
-                cond1,
-                cond2,
-                cond3,
+            let arrayOfIds = await UlbFinancialData.aggregate([
+                {$match:{isActive:true}},  
                 {
                     $lookup: {
-                        from: 'ulbtypes',
-                        localField: 'ulb.ulbType',
+                        from: 'users',
+                        localField: 'actionTakenBy',
                         foreignField: '_id',
-                        as: 'ulbtype'
+                        as: 'actionTakenBy'
+                    }
+                },
+                {$unwind:"$actionTakenBy"},
+                {
+                    $match:{"actionTakenBy.role":'ULB',"isCompleted":false}
+                },
+                {$project:{_id:1}}
+
+            ]).exec()
+
+            arrayOfIds = arrayOfIds.map(function (o) {
+                return ObjectId(o._id)
+            });
+            let match = {$match:{isActive:true}}
+            if(arrayOfIds.length>0){
+                Object.assign(match["$match"],{_id:{$nin:arrayOfIds}})
+            }
+            let query = [ 
+                match, 
+                {
+                    "$unwind": "$history"
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "history.actionTakenBy",
+                        "foreignField": "_id",
+                        "as": "actionTakenByHistory"
+                    }
+                },
+                {"$unwind":"$actionTakenByHistory"},
+                {
+                    "$match": {
+                        "actionTakenByHistory.role": "ULB",
+                        "history.isCompleted": true
                     }
                 },
                 {
-                    $unwind: {
-                        path: '$ulbtype',
-                        preserveNullAndEmptyArrays: true
+                    "$lookup": {
+                        "from": "ulbs",
+                        "localField": "actionTakenByHistory.ulb",
+                        "foreignField": "_id",
+                        "as": "ulb"
                     }
                 },
+                {"$unwind":"$ulb"},
+            
+                {
+                    "$lookup": {
+                        "from": "ulbtypes",
+                        "localField": "ulb.ulbType",
+                        "foreignField": "_id",
+                        "as": "ulbtype"
+                    }
+                },
+                {"$unwind":"$ulbtype"},
                 group,   
-                project    
+                project
             ]
-            let data = await User.aggregate(query).exec();
+            // let query = [
+            //     cond1,
+            //     cond2,
+            //     cond3,
+            //     {
+            //         $lookup: {
+            //             from: 'ulbtypes',
+            //             localField: 'ulb.ulbType',
+            //             foreignField: '_id',
+            //             as: 'ulbtype'
+            //         }
+            //     },
+            //     {
+            //         $unwind: {
+            //             path: '$ulbtype',
+            //             preserveNullAndEmptyArrays: true
+            //         }
+            //     },
+            //     group,   
+            //     project    
+            // ]
+            let data = await UlbFinancialData.aggregate(query).exec();
             let object = data.reduce((obj,item)=> Object.assign(obj, { [item.name]: item.count }),{})
             rslv(ulbType(object))
         }
