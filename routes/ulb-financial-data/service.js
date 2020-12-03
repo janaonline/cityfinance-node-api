@@ -1999,6 +1999,8 @@ module.exports.XVFCStateForm = async (req, res) => {
 
 module.exports.getXVFCStateForm = async (req, res) => {
     let user = req.decoded;
+    let skip = req.query.skip ? parseInt(req.query.skip) : 0
+    let limit = req.query.limit ? parseInt(req.query.limit) : 10
     let query = {}
     query["isActive"] = true
     if(user.role=='STATE'){
@@ -2006,8 +2008,16 @@ module.exports.getXVFCStateForm = async (req, res) => {
     }
     actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER','STATE'];
     if (actionAllowed.indexOf(user.role) > -1) {
-        let data = await XVStateForm.find(query).populate([{"path":"state",select:"name"}]).exec();
-        return Response.OK(res, data, 'Request fetched.');
+
+        let total = await XVStateForm.count(query).exec();
+        let data = await XVStateForm.find(query).populate([{"path":"state",select:"name"}]).skip(skip).limit(limit).exec();
+        return res.status(200).json({
+            timestamp: moment().unix(),
+            success: true,
+            message: 'list',
+            data: data,
+            total: total
+        });
 
     } else {
         return Response.BadRequest(
