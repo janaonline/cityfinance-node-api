@@ -77,7 +77,12 @@ module.exports = (req,res)=>{
                         as: 'actionTakenBy'
                     }
                 },
-                {$unwind:"$actionTakenBy"},
+                {
+                    "$unwind":{
+                        path: '$actionTakenBy',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
                 {
                     $match:{"actionTakenBy.role":'ULB',"isCompleted":false}
                 },
@@ -105,7 +110,12 @@ module.exports = (req,res)=>{
                         "as": "actionTakenByHistory"
                     }
                 },
-                {"$unwind":"$actionTakenByHistory"},
+                {
+                    "$unwind":{
+                        path: '$actionTakenByHistory',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
                 {
                     "$match": {
                         "actionTakenByHistory.role": "ULB",
@@ -120,7 +130,12 @@ module.exports = (req,res)=>{
                         "as": "ulb"
                     }
                 },
-                {"$unwind":"$ulb"},
+                {
+                    "$unwind":{
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
             
                 {
                     "$lookup": {
@@ -130,7 +145,12 @@ module.exports = (req,res)=>{
                         "as": "ulbtype"
                     }
                 },
-                {"$unwind":"$ulbtype"},
+                {
+                    "$unwind":{
+                        path: '$ulbtype',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
                 group,   
                 project
             ]
