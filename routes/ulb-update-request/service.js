@@ -99,9 +99,7 @@ module.exports.create = async (req, res)=>{
             //     }
             // }
             pObj["email"] = pObj["commissionerEmail"];
-            pObj["isEmailVerified"] = false;
-            pObj["isRegistered"] = true;
-            
+            pObj["isEmailVerified"] = false;            
             if(pObj.email != userData.email){
                 let link = await Service.emailVerificationLink(userData._id,req.currentUrl,true);
                 let template = Service.emailTemplate.userEmailEdit(userData.name,link);
@@ -117,6 +115,7 @@ module.exports.create = async (req, res)=>{
         }
         try{
             let dulb,du;
+            pObj["isRegistered"] = true;
             if(Object.keys(obj).length){
                 dulb = await Ulb.update({_id:ObjectId(ulb)},{$set:obj});
             }
