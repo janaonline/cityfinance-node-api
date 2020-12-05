@@ -808,7 +808,7 @@ module.exports.getDetails = async (req, res) => {
             {$match:{"actionTakenBy.role":"ULB",'history.isCompleted':true}}
         ]).exec()
 
-        let firstSubmitedAt = firstSubmited.length >0 ? firstSubmited[firstSubmited.length-1].createdAt:(firstSubmitedFromHistory.length >0 ? firstSubmitedFromHistory[firstSubmitedFromHistory.length-1].createdAt)
+        let firstSubmitedAt = firstSubmited.length >0 ? firstSubmited[firstSubmited.length-1].createdAt:(firstSubmitedFromHistory.length >0 ? firstSubmitedFromHistory[firstSubmitedFromHistory.length-1].createdAt:null)
         let rejectedAt = rejectedData.length >0 ? rejectedData[rejectedData.length-1].modifiedAt:null
         let history = {"histroy":""}
         if(user.role=='MoHUA'){
