@@ -805,7 +805,7 @@ module.exports.getDetails = async (req, res) => {
                     preserveNullAndEmptyArrays: true
                 }
             },
-            {$match:{"actionTakenBy.role":"ULB",'history.isCompleted':true}}
+            {$match:{"actionTakenBy.role":"ULB",'isCompleted':true}}
         ]).exec()
 
         let firstSubmitedAt = firstSubmited.length >0 ? firstSubmited[firstSubmited.length-1].createdAt:(firstSubmitedFromHistory.length >0 ? firstSubmitedFromHistory[firstSubmitedFromHistory.length-1].createdAt:null)
