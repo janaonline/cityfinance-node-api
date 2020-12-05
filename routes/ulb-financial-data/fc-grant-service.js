@@ -186,8 +186,40 @@ module.exports = (req,res)=>{
 
     let registeredMillionPlus = new Promise(async(rslv,rjct)=>{
         try{
+
+            let arrayOfIds = await UlbFinancialData.aggregate([
+                {$match:{isActive:true}},  
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'actionTakenBy',
+                        foreignField: '_id',
+                        as: 'actionTakenBy'
+                    }
+                },
+                {
+                    "$unwind":{
+                        path: '$actionTakenBy',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $match:{"actionTakenBy.role":'ULB',"isCompleted":false}
+                },
+                {$project:{_id:1}}
+
+            ]).exec()
+
+            arrayOfIds = arrayOfIds.map(function (o) {
+                return ObjectId(o._id)
+            });
+            let match = {$match:{isActive:true}}
+            if(arrayOfIds.length>0){
+                Object.assign(match["$match"],{_id:{$nin:arrayOfIds}})
+            }
+
             let query = [
-                cond1,
+                match,
                 cond2,
                 cond3,
                 {$match:{"ulb.isMillionPlus":"Yes"}},   
@@ -231,8 +263,40 @@ module.exports = (req,res)=>{
 
     let registeredNonMillionPlus = new Promise(async(rslv,rjct)=>{
         try{
+
+            let arrayOfIds = await UlbFinancialData.aggregate([
+                {$match:{isActive:true}},  
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'actionTakenBy',
+                        foreignField: '_id',
+                        as: 'actionTakenBy'
+                    }
+                },
+                {
+                    "$unwind":{
+                        path: '$actionTakenBy',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    $match:{"actionTakenBy.role":'ULB',"isCompleted":false}
+                },
+                {$project:{_id:1}}
+
+            ]).exec()
+
+            arrayOfIds = arrayOfIds.map(function (o) {
+                return ObjectId(o._id)
+            });
+            let match = {$match:{isActive:true}}
+            if(arrayOfIds.length>0){
+                Object.assign(match["$match"],{_id:{$nin:arrayOfIds}})
+            }
+
             let query = [
-                cond1,
+                match,
                 cond2,
                 cond3,
                 {$match:{"ulb.isMillionPlus":"No"}},   
