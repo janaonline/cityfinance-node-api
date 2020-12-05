@@ -254,7 +254,7 @@ module.exports = (req,res)=>{
                 group,   
                 project
             ]
-            let data = await User.aggregate(query).exec();
+            let data = await UlbFinancialData.aggregate(query).exec();
             let object = data.reduce((obj,item)=> Object.assign(obj, { [item.name]: item.count }),{})
             rslv(ulbType(object))
         }
@@ -289,6 +289,12 @@ module.exports = (req,res)=>{
                     }
                 }, 
                 {
+                    "$unwind":{
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true
+                    }
+                }, 
+                {
                     $lookup: {
                         from: 'users',
                         localField: 'actionTakenBy',
@@ -302,12 +308,6 @@ module.exports = (req,res)=>{
                         preserveNullAndEmptyArrays: true
                     }
                 },
-                {
-                    "$unwind":{
-                        path: '$ulb',
-                        preserveNullAndEmptyArrays: true
-                    }
-                }, 
                 {
                     $match:{"actionTakenBy.role":'ULB',"isCompleted":false,'ulb.isMillionPlus':'No'}
                 },
@@ -345,7 +345,7 @@ module.exports = (req,res)=>{
                 group,   
                 project
             ]
-            let data = await User.aggregate(query).exec();
+            let data = await UlbFinancialData.aggregate(query).exec();
             let object = data.reduce((obj,item)=> Object.assign(obj, { [item.name]: item.count }),{})
             rslv(ulbType(object))
         }
