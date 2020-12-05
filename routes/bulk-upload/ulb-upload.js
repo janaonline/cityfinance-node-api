@@ -66,7 +66,9 @@ module.exports = async function(req,res,next){
                         eachRow["natureOfUlb"] = eachRow["natureofulb"] ? eachRow["natureofulb"] :""
                         eachRow["name"] = eachRow["ulbname"]
                         eachRow["code"] = eachRow.ulbcode
-
+                        eachRow["isMillionPlus"] = eachRow.millionpluscities ? eachRow.millionpluscities : 'No'
+                        eachRow["censusCode"] = eachRow.censuscode ? eachRow.censuscode : null
+                        eachRow["sbCode"] = eachRow.sbcode ? eachRow.sbcode :null
                         console.log(eachRow);
                         service.put({ code : eachRow.ulbcode },eachRow,Ulb,function(response,value){
                             if(!response){
