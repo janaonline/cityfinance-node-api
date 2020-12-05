@@ -198,13 +198,27 @@ module.exports = (req,res)=>{
                     }
                 },
                 {
+                    $lookup: {
+                        from: 'ulbs',
+                        localField: 'ulb',
+                        foreignField: '_id',
+                        as: 'ulb'
+                    }
+                },
+                {
+                    "$unwind":{
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
                     "$unwind":{
                         path: '$actionTakenBy',
                         preserveNullAndEmptyArrays: true
                     }
                 },
                 {
-                    $match:{"actionTakenBy.role":'ULB',"isCompleted":false}
+                    $match:{"actionTakenBy.role":'ULB',"isCompleted":false,'ulb.isMillionPlus':'Yes'}
                 },
                 {$project:{_id:1}}
 
@@ -265,7 +279,15 @@ module.exports = (req,res)=>{
         try{
 
             let arrayOfIds = await UlbFinancialData.aggregate([
-                {$match:{isActive:true}},  
+                {$match:{isActive:true}},
+                {
+                    $lookup: {
+                        from: 'ulbs',
+                        localField: 'ulb',
+                        foreignField: '_id',
+                        as: 'ulb'
+                    }
+                }, 
                 {
                     $lookup: {
                         from: 'users',
@@ -281,7 +303,13 @@ module.exports = (req,res)=>{
                     }
                 },
                 {
-                    $match:{"actionTakenBy.role":'ULB',"isCompleted":false}
+                    "$unwind":{
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true
+                    }
+                }, 
+                {
+                    $match:{"actionTakenBy.role":'ULB',"isCompleted":false,'ulb.isMillionPlus':'No'}
                 },
                 {$project:{_id:1}}
 
