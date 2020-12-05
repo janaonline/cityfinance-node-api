@@ -219,6 +219,8 @@ module.exports.getAll = async (req, res) => {
                             ulb: '$ulb._id',
                             ulbName: '$ulb.name',
                             ulbCode: '$ulb.code',
+                            sbCode: '$ulb.sbCode',
+                            censusCode: '$ulb.censusCode',
                             ulbType: '$ulbType.name',
                             status: {
                                 $cond: [
@@ -275,7 +277,8 @@ module.exports.getAll = async (req, res) => {
                             stateName: 'State',
                             ulbName: 'ULB Name',
                             ulbCode: 'ULB Code',
-                            status: 'Status'
+                            sbCode: 'Swatch Bharat Code',
+                            censusCode: 'Census Code'
                         };
                     }
                     if (['USER'].indexOf(role) > -1) {
@@ -532,7 +535,7 @@ module.exports.create = async (req, res) => {
                         res,
                         {},
                         err.code == 11000
-                            ? 'Email     ID already exists.'
+                            ? 'Email ID already exists.'
                             : 'Failed to register user.'
                     );
                 } else {
@@ -542,6 +545,7 @@ module.exports.create = async (req, res) => {
                         true
                     );
                     let template = Service.emailTemplate.userCreation(
+                        user.email,
                         user.name,
                         link
                     );

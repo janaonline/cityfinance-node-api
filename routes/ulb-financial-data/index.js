@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require('../auth/service').verifyToken;
 const ufdService = require('./service');
+const ufdDashboardService = require('./fc-grant-service');
 router.get("/", verifyToken,ufdService.get);
 router.post("/list", verifyToken,ufdService.get);
 
@@ -17,4 +18,12 @@ router.put("/correctness/:_id", verifyToken, ufdService.correctness);
 router.put("/completeness/:_id",verifyToken, ufdService.completeness);
 router.get("/approved-records",verifyToken, ufdService.getApprovedFinancialData);
 router.get("/source-files/:_id",verifyToken, ufdService.sourceFiles);
+router.post("/action/:_id",verifyToken,ufdService.action);
+router.get("/fc-grant/dashboard-card/",verifyToken,ufdDashboardService);
+router.get("/fc-grant/dashboard-chart",verifyToken,ufdDashboardService.chartDataStatus);
+router.get("/fc-grant/ulbList",verifyToken,ufdDashboardService.ulbList);
+router.post("/fc-grant/stateForm",verifyToken,ufdService.XVFCStateForm);
+router.get("/fc-grant/stateForm",verifyToken,ufdService.getXVFCStateForm);
+router.get("/fc-grant/stateForm/:state",verifyToken,ufdService.getXVFCStateFormById);
+
 module.exports = router;

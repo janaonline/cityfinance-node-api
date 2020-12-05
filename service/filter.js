@@ -3,6 +3,7 @@ module.exports = async (obj)=>{
     return new Promise((resolve, reject)=>{
         let filter = {};
         try {
+
             for(key in obj){
                 if(obj[key] != 'null' && (obj[key] || typeof obj[key] == "boolean")){
                     if(obj[key].length == 24 && ObjectId.isValid(obj[key])){
@@ -16,9 +17,13 @@ module.exports = async (obj)=>{
                     else if(typeof obj[key]=="string" && obj[key] == "false"){
                         filter[key] = false;
                     }
+                    else if(key == "status"){
+                        filter[key] = obj[key];
+                    }
                     else if(typeof obj[key] == "string"){
                         filter[key] = {$regex: `^${obj[key]}`, $options: 'i'};
-                    }else{
+                    }
+                    else{
                         filter[key] = obj[key];
                     }
                 }

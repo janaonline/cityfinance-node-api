@@ -1,5 +1,8 @@
 const moment = require("moment");
 const Ulb = require('../../models/Ulb');
+const User =require("../../models/User");
+const service = require("../../service");
+const ObjectId = require('mongoose').Types.ObjectId;
 const requiredKeys = ["ULBCODE","LAT","LNG"];
 module.exports = async (req, res)=>{
     try {
@@ -27,6 +30,86 @@ module.exports = async (req, res)=>{
             failArr.push({message:"No row found."});
         }
         return res.status(200).json({success:true, data:failArr});
+    }catch (e) {
+        console.log("Exception:",e);
+        return res.status(500).json({message:e.message, success:false})
+    }
+};
+
+module.exports.nameUpdate = async (req, res)=>{
+    try {
+        const jsonArray = req.body.jsonArray;
+
+        for(let eachRow of jsonArray){
+
+            //console.log(eachRow.code,eachRow.name)
+            service.put({ code : eachRow.code },eachRow,Ulb,function(response,value){
+                if(!response){
+                    errors.push("Not able to create ulb => ",eachRow.code+""+response);
+                }
+                console.log(value.message);
+            });
+
+        }
+        return res.status(200).json({
+            message : "Successfully uploaded file",
+            success:true
+        })
+       
+    }catch (e) {
+        console.log("Exception:",e);
+        return res.status(500).json({message:e.message, success:false})
+    }
+};
+
+module.exports.signup = async (req, res)=>{
+    try {
+        const jsonArray = req.body.jsonArray;
+        let errors = []
+        for(let eachRow of jsonArray){
+            //console.log(eachRow.code,eachRow.name)
+            let message = "";
+            let ulb = await Ulb.findOne({code : eachRow.ulbCode,isActive : true}).exec();
+            let user = await User.findOne({ulb : ObjectId(ulb._id),role:'ULB'}).exec();
+            if(user){
+                message = "Ulb user already exists for:"+eachRow.ulbCode;
+                errors.push(message);
+            }
+            else{
+                ulb ? eachRow.ulbCode == ulb.code : message+="Ulb "+eachRow.ulbcode+" don't exists";
+                if(message!=""){
+                    // if any state or ulb type not exists, then return message
+                    errors.push(message);
+                }else{
+                
+                    eachRow["state"] = ObjectId(ulb.state)
+                    eachRow["ulb"] = ObjectId(ulb._id)
+                    eachRow["name"] = ulb.name
+                    eachRow["sbCode"] = ulb.sbCode
+                    eachRow["censusCode"] = ulb.censusCode
+                    eachRow["role"] = 'ULB'
+                    eachRow["status"] = 'APPROVED'
+                    eachRow["isEmailVerified"] = true
+                    eachRow["isRegistered"] = false
+                    eachRow["password"] = await service.getHash(eachRow.password);
+                    //res.json(eachRow);return;
+                    service.put({ ulb : eachRow["ulb"],role:'ULB'},eachRow,User,function(response,value){
+                        if(!response){
+                            errors.push("Not able to create ulb => ",eachRow.code+""+response);
+                        }
+                        console.log(value.message);
+                    });
+
+                }
+
+            }
+
+        }
+        return res.status(200).json({
+            message : errors,
+            success:true
+        })
+       
     }catch (e) {
         console.log("Exception:",e);
         return res.status(500).json({message:e.message, success:false})

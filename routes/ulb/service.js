@@ -68,7 +68,15 @@ module.exports.getUlbById = function(req,res) {
             }
         },
         {$unwind:"$state"},
-        {$project:{"state":"$state"}}
+        {$project:{
+            "state":"$state",
+            "isMillionPlus": {
+            "$cond":{
+                "if":{"$eq":["$isMillionPlus","Yes"]},
+                "then":true,
+                "else":false
+            }}}
+        }
     ];
     service.aggregate(arr,Ulb, function(response, value) {
         return res.status(response ? 200 : 400).send(value);
@@ -418,7 +426,7 @@ module.exports.getAllULBSCSV = function(req,res){
     // Set approrpiate download headers
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("ULB Name, ULB Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude \r\n");
+    res.write("ULB Name, ULB Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus \r\n");
     // Flush the headers before we start pushing the CSV content
     res.flushHeaders();
 
@@ -450,7 +458,9 @@ module.exports.getAllULBSCSV = function(req,res){
                 name:1,
                 code:1,
                 wards : 1,
-                location:1
+                location:1,
+                isMillionPlus:1
+
             }
         },
         {$project:{
@@ -466,7 +476,8 @@ module.exports.getAllULBSCSV = function(req,res){
                 name:1,
                 code:1,
                 wards : 1,
-                location:1
+                location:1,
+                isMillionPlus:1
             }
         }
     ]).exec((err,data)=>{
@@ -481,7 +492,7 @@ module.exports.getAllULBSCSV = function(req,res){
                 el.natureOfUlb = el.natureOfUlb ? el.natureOfUlb : "";
                 el.name = el.name ? el.name.toString().replace(/[,]/g, ' | ')  : "";
                 el.location = el.location ? el.location : {"lat" : "NA", "lng" : "NA"}
-                res.write(el.name+","+el.code+","+el.ulbtypes.name+","+el.state.name+","+el.state.code+","+el.natureOfUlb+","+el.area+","+el.wards+","+el.population+","+el.amrut+","+el.location.lat+","+el.location.lng+","+"\r\n");
+                res.write(el.name+","+el.code+","+el.ulbtypes.name+","+el.state.name+","+el.state.code+","+el.natureOfUlb+","+el.area+","+el.wards+","+el.population+","+el.amrut+","+el.location.lat+","+el.location.lng+","+el.isMillionPlus+"\r\n");
             }
             res.end()
         }

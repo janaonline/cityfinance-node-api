@@ -1,9 +1,11 @@
+const { Schema } = require('mongoose');
+
 require('./dbConnect');
 const audited = function () {
     return this.audited;
 }
 const statusType = ()=>{
-    return {type:String, enum: ["PENDING","APPROVED","REJECTED","NA"], default:"NA"};
+    return {type:String, enum: ["PENDING","APPROVED","REJECTED","NA"], default:""};
 }
 const overallStatusType = ()=>{
     return {type:String, enum: ["PENDING","APPROVED","REJECTED"], default:"PENDING"};
@@ -15,26 +17,195 @@ const ContentSchema = new Schema({
     correctness:statusType(),
     message:{type:String, default:""}
 });
+
+const waterManagementSchema = new Schema({
+    serviceLevel:
+    {
+        baseline:{2021:{type:String,required:true}},
+        target:{
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
+        },
+        status:statusType(),
+        rejectReason:{type:String,default:""}
+    },
+    houseHoldCoveredPipedSupply:
+    {
+        baseline:{2021:{type:String,required:true}},
+        target:{
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
+        },
+        status:statusType(),
+        rejectReason:{type:String,default:""}
+    },
+    waterSuppliedPerDay:
+    {
+        baseline:{2021:{type:String,required:true}},
+        target:{
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
+        },
+        status:statusType(),
+        rejectReason:{type:String,default:""}  
+    },
+    reduction:
+    {
+        baseline:{2021:{type:String,required:true}},
+        target:{
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
+        },
+        status:statusType(),
+        rejectReason:{type:String,default:""}  
+    },
+    houseHoldCoveredWithSewerage:
+    {
+        baseline:{2021:{type:String,required:true}},
+        target:{
+            2122:{type:String,required:true},
+            2223:{type:String,required:true}, 
+            2324:{type:String,required:true},  
+            2425:{type:String,required:true} 
+        },
+        status:statusType()  ,
+        rejectReason:{type:String,default:""}    
+    },
+
+    // documents:{
+    //     wasteWaterPlan:{
+    //         type:[
+    //             {
+    //                 url : { type: String, required: true},
+    //                 name : { type: String, required: true},
+    //                 status:statusType(),
+    //                 rejectReason:{type:String,default:""}    
+    //             }
+    //         ],
+    //         default:null
+    //     }
+    // }
+});
+
+const solidWasteManagementSchema = new Schema({
+
+    documents:{
+        garbageFreeCities:{
+            type:[
+                {
+                    url : { type: String, required: true},
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectReason:{type:String,default:""}
+                }
+            ],
+            default:null
+        },
+        waterSupplyCoverage:{
+            type:[
+                {
+                    url : { type: String, required: true},
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectReason:{type:String,default:""}
+                }
+            ],
+            default:null
+        }
+    }
+
+})
+
+const millionPlusCitiesSchema = new Schema({
+
+    documents:{
+        cityPlan:{
+            type:[
+                {
+                    url : { type: String, required: true},
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectReason:{type:String,default:""}
+                }
+            ],
+            default:null
+        },
+        waterBalancePlan:{
+            type:[
+                {
+                    url : { type: String, required: true},
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectReason:{type:String,default:""}
+                }
+            ],
+            default:null
+        },
+        serviceLevelPlan:{
+            type:[
+                {
+                    url : { type: String, required: true},
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectReason:{type:String,default:""}
+                }
+            ],
+            default:null
+        },
+        solidWastePlan:{
+            type:[
+                {
+                    url : { type: String, required: true},
+                    name : { type: String, required: true},
+                    status:statusType(),
+                    rejectReason:{type:String,default:""}
+                }
+            ],
+            default:null
+        }
+    }
+
+})
+
 const UlbFinancialDataSchema = new Schema({
-    referenceCode:{type:String, default:""},
+    //referenceCode:{type:String, default:""},
     ulb:{ type: Schema.Types.ObjectId, ref: 'Ulb' ,required : true},
-    financialYear:{ type: String,required : true},
-    audited:{type:Boolean, default:false},
-    balanceSheet: { type:ContentSchema, required:true},
-    schedulesToBalanceSheet: { type:ContentSchema, required:true},
-    incomeAndExpenditure: { type:ContentSchema, required:true},
-    schedulesToIncomeAndExpenditure: { type:ContentSchema, required:true},
-    trialBalance: { type:ContentSchema, required:true},
-    auditReport: { type:ContentSchema, required:audited},
+    // financialYear:{ type: String,required : true},
+    // audited:{type:Boolean, default:false},
+    // balanceSheet: { type:ContentSchema, required:true},
+    // schedulesToBalanceSheet: { type:ContentSchema, required:true},
+    // incomeAndExpenditure: { type:ContentSchema, required:true},
+    // schedulesToIncomeAndExpenditure: { type:ContentSchema, required:true},
+    // trialBalance: { type:ContentSchema, required:true},
+    // auditReport: { type:ContentSchema, required:audited},
     overallReport: { type:ContentSchema, default:null},
-    completeness:overallStatusType(),
-    correctness:overallStatusType(),
+    // completeness:overallStatusType(),
+    // correctness:overallStatusType(),
     status:overallStatusType(),
     actionTakenBy:{ type: Schema.Types.ObjectId, ref: 'User' ,required : true},
     history:{type:Array, default:[]},
-    modifiedAt : { type: Date, default : Date.now() },
-    createdAt : { type: Date, default : Date.now() },
-    isActive : { type  : Boolean, default : 1 }
+    modifiedAt : { type: Date, default : Date.now},
+    createdAt : { type: Date, default : Date.now},
+    isActive : { type  : Boolean, default : 1 },
+    waterManagement:{type:waterManagementSchema,default:null},
+    solidWasteManagement:{type:solidWasteManagementSchema,default:null},
+    millionPlusCities:{type:millionPlusCitiesSchema,default:null},
+    isCompleted:{type:Boolean,default:0}
+
+    
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 UlbFinancialDataSchema.index({ulb:1, financialYear:1,audited:1},{unique:true});
 module.exports = mongoose.model('UlbFinancialData', UlbFinancialDataSchema);
+
+UlbFinancialDataSchema.pre('save', function(next) {
+    this.modifiedAt = new Date(); 
+    next();
+})
