@@ -431,6 +431,7 @@ module.exports.getAll = async (req, res) => {
                         ulbCode: '$ulb.code',
                         sbCode:'$ulb.sbCode',
                         censusCode:'$ulb.censusCode',
+                        isMillionPlus:'$ulb.isMillionPlus',
                         state: '$state._id',
                         stateName: '$state.name',
                         stateCode: '$state.code',
