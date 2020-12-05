@@ -232,28 +232,66 @@ module.exports = (req,res)=>{
                 Object.assign(match["$match"],{_id:{$nin:arrayOfIds}})
             }
 
-            let query = [
-                match,
-                cond2,
-                cond3,
-                {$match:{"ulb.isMillionPlus":"Yes"}},   
+            let query = [ 
+                match, 
                 {
-                    $lookup: {
-                        from: 'ulbtypes',
-                        localField: 'ulb.ulbType',
-                        foreignField: '_id',
-                        as: 'ulbtype'
+                    "$unwind": "$history"
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "history.actionTakenBy",
+                        "foreignField": "_id",
+                        "as": "actionTakenByHistory"
                     }
                 },
                 {
-                    $unwind: {
+                    "$unwind":{
+                        path: '$actionTakenByHistory',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+               
+                {
+                    "$lookup": {
+                        "from": "ulbs",
+                        "localField": "actionTakenByHistory.ulb",
+                        "foreignField": "_id",
+                        "as": "ulb"
+                    }
+                },
+                {
+                    "$unwind":{
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+            
+                {
+                    "$lookup": {
+                        "from": "ulbtypes",
+                        "localField": "ulb.ulbType",
+                        "foreignField": "_id",
+                        "as": "ulbtype"
+                    }
+                },
+                {
+                    "$unwind":{
                         path: '$ulbtype',
                         preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    "$match": {
+                        "actionTakenByHistory.role": "ULB",
+                        "history.isCompleted": true,
+                        "ulb.isMillionPlus":"Yes"
                     }
                 },
                 group,   
                 project
             ]
+           
             let data = await UlbFinancialData.aggregate(query).exec();
             let object = data.reduce((obj,item)=> Object.assign(obj, { [item.name]: item.count }),{})
             rslv(ulbType(object))
@@ -323,28 +361,66 @@ module.exports = (req,res)=>{
                 Object.assign(match["$match"],{_id:{$nin:arrayOfIds}})
             }
 
-            let query = [
-                match,
-                cond2,
-                cond3,
-                {$match:{"ulb.isMillionPlus":"No"}},   
+            let query = [ 
+                match, 
                 {
-                    $lookup: {
-                        from: 'ulbtypes',
-                        localField: 'ulb.ulbType',
-                        foreignField: '_id',
-                        as: 'ulbtype'
+                    "$unwind": "$history"
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "history.actionTakenBy",
+                        "foreignField": "_id",
+                        "as": "actionTakenByHistory"
                     }
                 },
                 {
-                    $unwind: {
+                    "$unwind":{
+                        path: '$actionTakenByHistory',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+               
+                {
+                    "$lookup": {
+                        "from": "ulbs",
+                        "localField": "actionTakenByHistory.ulb",
+                        "foreignField": "_id",
+                        "as": "ulb"
+                    }
+                },
+                {
+                    "$unwind":{
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+            
+                {
+                    "$lookup": {
+                        "from": "ulbtypes",
+                        "localField": "ulb.ulbType",
+                        "foreignField": "_id",
+                        "as": "ulbtype"
+                    }
+                },
+                {
+                    "$unwind":{
                         path: '$ulbtype',
                         preserveNullAndEmptyArrays: true
+                    }
+                },
+                {
+                    "$match": {
+                        "actionTakenByHistory.role": "ULB",
+                        "history.isCompleted": true,
+                        "ulb.isMillionPlus":"No"
                     }
                 },
                 group,   
                 project
             ]
+           
             let data = await UlbFinancialData.aggregate(query).exec();
             let object = data.reduce((obj,item)=> Object.assign(obj, { [item.name]: item.count }),{})
             rslv(ulbType(object))
