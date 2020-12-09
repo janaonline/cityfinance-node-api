@@ -158,14 +158,6 @@ module.exports = (req, res) => {
                 { $match: { isActive: true } },
                 {
                     $lookup: {
-                        from: 'users',
-                        localField: 'actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenBy',
-                    },
-                },
-                {
-                    $lookup: {
                         from: 'ulbs',
                         localField: 'ulb',
                         foreignField: '_id',
@@ -179,6 +171,15 @@ module.exports = (req, res) => {
                     },
                 },
                 {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'actionTakenBy',
+                        foreignField: '_id',
+                        as: 'actionTakenBy',
+                    },
+                },
+
+                {
                     $unwind: {
                         path: '$actionTakenBy',
                         preserveNullAndEmptyArrays: true,
@@ -188,7 +189,6 @@ module.exports = (req, res) => {
                     $match: {
                         $or: [
                             {
-                                'actionTakenBy.role': 'ULB',
                                 isCompleted: true,
                                 'ulb.isMillionPlus': 'Yes',
                             },
@@ -202,13 +202,12 @@ module.exports = (req, res) => {
                 { $project: { _id: 1 } },
             ]).exec();
 
+            console.log(`arrayOfIds`, arrayOfIds);
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
             let match = { $match: { isActive: true } };
-            if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $nin: arrayOfIds } });
-            }
+            Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
 
             let query = [
                 match,
@@ -244,6 +243,7 @@ module.exports = (req, res) => {
                 group,
                 project,
             ];
+            console.log('%o', query);
 
             let data = await UlbFinancialData.aggregate(query).exec();
             let object = data.reduce(
@@ -306,7 +306,6 @@ module.exports = (req, res) => {
                     $match: {
                         $or: [
                             {
-                                'actionTakenBy.role': 'ULB',
                                 isCompleted: true,
                                 'ulb.isMillionPlus': 'No',
                             },
@@ -326,7 +325,7 @@ module.exports = (req, res) => {
 
             let match = { $match: { isActive: true } };
             if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $nin: arrayOfIds } });
+                Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
             }
 
             let query = [
