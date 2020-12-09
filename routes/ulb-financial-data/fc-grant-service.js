@@ -98,7 +98,6 @@ module.exports = (req, res) => {
                 { $project: { _id: 1 } },
             ]).exec();
 
-            console.log(`arrayOfIds \n`, arrayOfIds);
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
@@ -187,9 +186,17 @@ module.exports = (req, res) => {
                 },
                 {
                     $match: {
-                        'actionTakenBy.role': 'ULB',
-                        isCompleted: false,
-                        'ulb.isMillionPlus': 'Yes',
+                        $or: [
+                            {
+                                'actionTakenBy.role': 'ULB',
+                                isCompleted: true,
+                                'ulb.isMillionPlus': 'Yes',
+                            },
+                            {
+                                history: { $gte: { $size: 1 } },
+                                'ulb.isMillionPlus': 'Yes',
+                            },
+                        ],
                     },
                 },
                 { $project: { _id: 1 } },
@@ -206,27 +213,9 @@ module.exports = (req, res) => {
             let query = [
                 match,
                 {
-                    $unwind: '$history',
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'history.actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenByHistory',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$actionTakenByHistory',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-
-                {
                     $lookup: {
                         from: 'ulbs',
-                        localField: 'actionTakenByHistory.ulb',
+                        localField: 'ulb',
                         foreignField: '_id',
                         as: 'ulb',
                     },
@@ -250,13 +239,6 @@ module.exports = (req, res) => {
                     $unwind: {
                         path: '$ulbtype',
                         preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $match: {
-                        'actionTakenByHistory.role': 'ULB',
-                        'history.isCompleted': true,
-                        'ulb.isMillionPlus': 'Yes',
                     },
                 },
                 group,
@@ -322,9 +304,17 @@ module.exports = (req, res) => {
                 },
                 {
                     $match: {
-                        'actionTakenBy.role': 'ULB',
-                        isCompleted: false,
-                        'ulb.isMillionPlus': 'No',
+                        $or: [
+                            {
+                                'actionTakenBy.role': 'ULB',
+                                isCompleted: true,
+                                'ulb.isMillionPlus': 'No',
+                            },
+                            {
+                                history: { $gte: { $size: 1 } },
+                                'ulb.isMillionPlus': 'No',
+                            },
+                        ],
                     },
                 },
                 { $project: { _id: 1 } },
@@ -333,6 +323,7 @@ module.exports = (req, res) => {
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
+
             let match = { $match: { isActive: true } };
             if (arrayOfIds.length > 0) {
                 Object.assign(match['$match'], { _id: { $nin: arrayOfIds } });
@@ -341,27 +332,9 @@ module.exports = (req, res) => {
             let query = [
                 match,
                 {
-                    $unwind: '$history',
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'history.actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenByHistory',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$actionTakenByHistory',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-
-                {
                     $lookup: {
                         from: 'ulbs',
-                        localField: 'actionTakenByHistory.ulb',
+                        localField: 'ulb',
                         foreignField: '_id',
                         as: 'ulb',
                     },
@@ -385,13 +358,6 @@ module.exports = (req, res) => {
                     $unwind: {
                         path: '$ulbtype',
                         preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $match: {
-                        'actionTakenByHistory.role': 'ULB',
-                        'history.isCompleted': true,
-                        'ulb.isMillionPlus': 'No',
                     },
                 },
                 group,
