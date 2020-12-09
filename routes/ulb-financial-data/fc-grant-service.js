@@ -68,7 +68,7 @@ module.exports = (req, res) => {
             rjct(err);
         }
     });
-    const matchCondition = {
+    const matchConditionForRU = {
         $match: {
             $or: [
                 {
@@ -82,7 +82,7 @@ module.exports = (req, res) => {
         },
     };
     if (user['role'] === 'STATE') {
-        matchCondition.$match.$or = matchCondition.$match.$or.map(
+        matchConditionForRU.$match.$or = matchConditionForRU.$match.$or.map(
             (condition) => ({ ...condition, 'ulb.state': ObjectId(user.state) })
         );
     }
@@ -120,7 +120,7 @@ module.exports = (req, res) => {
                 },
 
                 {
-                    ...matchCondition,
+                    ...matchConditionForRU,
                 },
                 { $project: { _id: 1 } },
             ]).exec();
@@ -128,10 +128,9 @@ module.exports = (req, res) => {
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
+
             let match = { $match: { isActive: true } };
-            if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
-            }
+            Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
             let query = [
                 match,
                 {
@@ -179,6 +178,28 @@ module.exports = (req, res) => {
         }
     });
 
+    const matchConditionForRMP = {
+        $match: {
+            $or: [
+                {
+                    isCompleted: true,
+                    'ulb.isMillionPlus': 'Yes',
+                },
+                {
+                    history: { $gte: { $size: 1 } },
+                    'ulb.isMillionPlus': 'Yes',
+                },
+            ],
+        },
+    };
+    if (user['role'] === 'STATE') {
+        matchConditionForRMP.$match.$or = matchConditionForRMP.$match.$or.map(
+            (condition) => ({
+                ...condition,
+                'ulb.state': ObjectId(user.state),
+            })
+        );
+    }
     let registeredMillionPlus = new Promise(async (rslv, rjct) => {
         try {
             let arrayOfIds = await UlbFinancialData.aggregate([
@@ -213,18 +234,7 @@ module.exports = (req, res) => {
                     },
                 },
                 {
-                    $match: {
-                        $or: [
-                            {
-                                isCompleted: true,
-                                'ulb.isMillionPlus': 'Yes',
-                            },
-                            {
-                                history: { $gte: { $size: 1 } },
-                                'ulb.isMillionPlus': 'Yes',
-                            },
-                        ],
-                    },
+                    ...matchConditionForRMP,
                 },
                 { $project: { _id: 1 } },
             ]).exec();
@@ -295,6 +305,29 @@ module.exports = (req, res) => {
         }
     });
 
+    const matchConditionForRNMP = {
+        $match: {
+            $or: [
+                {
+                    isCompleted: true,
+                    'ulb.isMillionPlus': 'No',
+                },
+                {
+                    history: { $gte: { $size: 1 } },
+                    'ulb.isMillionPlus': 'No',
+                },
+            ],
+        },
+    };
+    if (user['role'] === 'STATE') {
+        matchConditionForRNMP.$match.$or = matchConditionForRNMP.$match.$or.map(
+            (condition) => ({
+                ...condition,
+                'ulb.state': ObjectId(user.state),
+            })
+        );
+    }
+
     let registeredNonMillionPlus = new Promise(async (rslv, rjct) => {
         try {
             let arrayOfIds = await UlbFinancialData.aggregate([
@@ -328,18 +361,7 @@ module.exports = (req, res) => {
                     },
                 },
                 {
-                    $match: {
-                        $or: [
-                            {
-                                isCompleted: true,
-                                'ulb.isMillionPlus': 'No',
-                            },
-                            {
-                                history: { $gte: { $size: 1 } },
-                                'ulb.isMillionPlus': 'No',
-                            },
-                        ],
-                    },
+                    ...matchConditionForRNMP,
                 },
                 { $project: { _id: 1 } },
             ]).exec();
@@ -349,9 +371,9 @@ module.exports = (req, res) => {
             });
 
             let match = { $match: { isActive: true } };
-            if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
-            }
+            Object.assign(match['$match'], {
+                _id: { $in: arrayOfIds },
+            });
 
             let query = [
                 match,
