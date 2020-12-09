@@ -68,7 +68,24 @@ module.exports = (req, res) => {
             rjct(err);
         }
     });
-
+    const matchCondition = {
+        $match: {
+            $or: [
+                {
+                    'actionTakenBy.role': 'ULB',
+                    isCompleted: true,
+                },
+                {
+                    history: { $gte: { $size: 1 } },
+                },
+            ],
+        },
+    };
+    if (user['role'] === 'STATE') {
+        matchCondition.$match.$or = matchCondition.$match.$or.map(
+            (condition) => ({ ...condition, 'ulb.state': ObjectId(user.state) })
+        );
+    }
     let registeredUlb = new Promise(async (rslv, rjct) => {
         try {
             let arrayOfIds = await UlbFinancialData.aggregate([
@@ -88,12 +105,22 @@ module.exports = (req, res) => {
                     },
                 },
                 {
-                    $match: {
-                        $or: [
-                            { 'actionTakenBy.role': 'ULB', isCompleted: true },
-                            { history: { $gte: { $size: 1 } } },
-                        ],
+                    $lookup: {
+                        from: 'ulbs',
+                        localField: 'ulb',
+                        foreignField: '_id',
+                        as: 'ulb',
                     },
+                },
+                {
+                    $unwind: {
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+
+                {
+                    ...matchCondition,
                 },
                 { $project: { _id: 1 } },
             ]).exec();
@@ -202,7 +229,6 @@ module.exports = (req, res) => {
                 { $project: { _id: 1 } },
             ]).exec();
 
-            console.log(`arrayOfIds`, arrayOfIds);
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
@@ -243,7 +269,6 @@ module.exports = (req, res) => {
                 group,
                 project,
             ];
-            console.log('%o', query);
 
             let data = await UlbFinancialData.aggregate(query).exec();
             let object = data.reduce(
