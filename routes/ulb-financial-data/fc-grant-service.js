@@ -88,47 +88,30 @@ module.exports = (req, res) => {
                     },
                 },
                 {
-                    $match: { 'actionTakenBy.role': 'ULB', isCompleted: false },
+                    $match: {
+                        $or: [
+                            { 'actionTakenBy.role': 'ULB', isCompleted: true },
+                            { history: { $gte: { $size: 1 } } },
+                        ],
+                    },
                 },
                 { $project: { _id: 1 } },
             ]).exec();
 
+            console.log(`arrayOfIds \n`, arrayOfIds);
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
             let match = { $match: { isActive: true } };
             if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $nin: arrayOfIds } });
+                Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
             }
             let query = [
                 match,
                 {
-                    $unwind: '$history',
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'history.actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenByHistory',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$actionTakenByHistory',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $match: {
-                        'actionTakenByHistory.role': 'ULB',
-                        'history.isCompleted': true,
-                    },
-                },
-                {
                     $lookup: {
                         from: 'ulbs',
-                        localField: 'actionTakenByHistory.ulb',
+                        localField: 'ulb',
                         foreignField: '_id',
                         as: 'ulb',
                     },
@@ -157,28 +140,9 @@ module.exports = (req, res) => {
                 group,
                 project,
             ];
-            // let query = [
-            //     cond1,
-            //     cond2,
-            //     cond3,
-            //     {
-            //         $lookup: {
-            //             from: 'ulbtypes',
-            //             localField: 'ulb.ulbType',
-            //             foreignField: '_id',
-            //             as: 'ulbtype'
-            //         }
-            //     },
-            //     {
-            //         $unwind: {
-            //             path: '$ulbtype',
-            //             preserveNullAndEmptyArrays: true
-            //         }
-            //     },
-            //     group,
-            //     project
-            // ]
+
             let data = await UlbFinancialData.aggregate(query).exec();
+
             let object = data.reduce(
                 (obj, item) => Object.assign(obj, { [item.name]: item.count }),
                 {}
@@ -477,36 +441,30 @@ module.exports = (req, res) => {
                     registeredNonMillionPlus: values[4],
                     totalNonMillionPlus: values[5],
                 };
-                return res
-                    .status(200)
-                    .json({
-                        success: true,
-                        message: 'Data fetched',
-                        data: data,
-                    });
+                return res.status(200).json({
+                    success: true,
+                    message: 'Data fetched',
+                    data: data,
+                });
             },
             (rejectError) => {
                 console.log(rejectError);
-                return res
-                    .status(400)
-                    .json({
-                        timestamp: moment().unix(),
-                        success: false,
-                        message: 'Rejected Error',
-                        err: rejectError,
-                    });
+                return res.status(400).json({
+                    timestamp: moment().unix(),
+                    success: false,
+                    message: 'Rejected Error',
+                    err: rejectError,
+                });
             }
         )
         .catch((caughtError) => {
             console.log('final caughtError', caughtError);
-            return res
-                .status(400)
-                .json({
-                    timestamp: moment().unix(),
-                    success: false,
-                    message: 'Caught Error',
-                    err: caughtError,
-                });
+            return res.status(400).json({
+                timestamp: moment().unix(),
+                success: false,
+                message: 'Caught Error',
+                err: caughtError,
+            });
         });
 
     function ulbType(object) {
@@ -784,36 +742,30 @@ module.exports.chartDataStatus = async (req, res) => {
                         { data: dataArr, backgroundColor: backgroundColor },
                     ],
                 };
-                return res
-                    .status(200)
-                    .json({
-                        success: true,
-                        message: 'Data fetched',
-                        data: data,
-                    });
+                return res.status(200).json({
+                    success: true,
+                    message: 'Data fetched',
+                    data: data,
+                });
             },
             (rejectError) => {
                 console.log(rejectError);
-                return res
-                    .status(400)
-                    .json({
-                        timestamp: moment().unix(),
-                        success: false,
-                        message: 'Rejected Error',
-                        err: rejectError,
-                    });
+                return res.status(400).json({
+                    timestamp: moment().unix(),
+                    success: false,
+                    message: 'Rejected Error',
+                    err: rejectError,
+                });
             }
         )
         .catch((caughtError) => {
             console.log('final caughtError', caughtError);
-            return res
-                .status(400)
-                .json({
-                    timestamp: moment().unix(),
-                    success: false,
-                    message: 'Caught Error',
-                    err: caughtError,
-                });
+            return res.status(400).json({
+                timestamp: moment().unix(),
+                success: false,
+                message: 'Caught Error',
+                err: caughtError,
+            });
         });
 
     function dataUploadStatusQuery(s, state = null, toogleCond = null) {
