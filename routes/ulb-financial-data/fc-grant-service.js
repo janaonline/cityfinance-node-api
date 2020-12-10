@@ -66,7 +66,24 @@ module.exports = (req, res) => {
             rjct(err);
         }
     });
-
+    const matchConditionForRU = {
+        $match: {
+            $or: [
+                {
+                    'actionTakenBy.role': 'ULB',
+                    isCompleted: true,
+                },
+                {
+                    history: { $gte: { $size: 1 } },
+                },
+            ],
+        },
+    };
+    if (user['role'] === 'STATE') {
+        matchConditionForRU.$match.$or = matchConditionForRU.$match.$or.map(
+            (condition) => ({ ...condition, 'ulb.state': ObjectId(user.state) })
+        );
+    }
     let registeredUlb = new Promise(async (rslv, rjct) => {
         try {
             let arrayOfIds = await UlbFinancialData.aggregate([
@@ -86,7 +103,22 @@ module.exports = (req, res) => {
                     },
                 },
                 {
-                    $match: { 'actionTakenBy.role': 'ULB', isCompleted: false },
+                    $lookup: {
+                        from: 'ulbs',
+                        localField: 'ulb',
+                        foreignField: '_id',
+                        as: 'ulb',
+                    },
+                },
+                {
+                    $unwind: {
+                        path: '$ulb',
+                        preserveNullAndEmptyArrays: true,
+                    },
+                },
+
+                {
+                    ...matchConditionForRU,
                 },
                 { $project: { _id: 1 } },
             ]).exec();
@@ -94,39 +126,15 @@ module.exports = (req, res) => {
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
+
             let match = { $match: { isActive: true } };
-            if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $nin: arrayOfIds } });
-            }
+            Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
             let query = [
                 match,
                 {
-                    $unwind: '$history',
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'history.actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenByHistory',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$actionTakenByHistory',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $match: {
-                        'actionTakenByHistory.role': 'ULB',
-                        'history.isCompleted': true,
-                    },
-                },
-                {
                     $lookup: {
                         from: 'ulbs',
-                        localField: 'actionTakenByHistory.ulb',
+                        localField: 'ulb',
                         foreignField: '_id',
                         as: 'ulb',
                     },
@@ -155,28 +163,9 @@ module.exports = (req, res) => {
                 group,
                 project,
             ];
-            // let query = [
-            //     cond1,
-            //     cond2,
-            //     cond3,
-            //     {
-            //         $lookup: {
-            //             from: 'ulbtypes',
-            //             localField: 'ulb.ulbType',
-            //             foreignField: '_id',
-            //             as: 'ulbtype'
-            //         }
-            //     },
-            //     {
-            //         $unwind: {
-            //             path: '$ulbtype',
-            //             preserveNullAndEmptyArrays: true
-            //         }
-            //     },
-            //     group,
-            //     project
-            // ]
+
             let data = await UlbFinancialData.aggregate(query).exec();
+
             let object = data.reduce(
                 (obj, item) => Object.assign(obj, { [item.name]: item.count }),
                 {}
@@ -187,18 +176,32 @@ module.exports = (req, res) => {
         }
     });
 
+    const matchConditionForRMP = {
+        $match: {
+            $or: [
+                {
+                    isCompleted: true,
+                    'ulb.isMillionPlus': 'Yes',
+                },
+                {
+                    history: { $gte: { $size: 1 } },
+                    'ulb.isMillionPlus': 'Yes',
+                },
+            ],
+        },
+    };
+    if (user['role'] === 'STATE') {
+        matchConditionForRMP.$match.$or = matchConditionForRMP.$match.$or.map(
+            (condition) => ({
+                ...condition,
+                'ulb.state': ObjectId(user.state),
+            })
+        );
+    }
     let registeredMillionPlus = new Promise(async (rslv, rjct) => {
         try {
             let arrayOfIds = await UlbFinancialData.aggregate([
                 { $match: { isActive: true } },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenBy',
-                    },
-                },
                 {
                     $lookup: {
                         from: 'ulbs',
@@ -214,17 +217,22 @@ module.exports = (req, res) => {
                     },
                 },
                 {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'actionTakenBy',
+                        foreignField: '_id',
+                        as: 'actionTakenBy',
+                    },
+                },
+
+                {
                     $unwind: {
                         path: '$actionTakenBy',
                         preserveNullAndEmptyArrays: true,
                     },
                 },
                 {
-                    $match: {
-                        'actionTakenBy.role': 'ULB',
-                        isCompleted: false,
-                        'ulb.isMillionPlus': 'Yes',
-                    },
+                    ...matchConditionForRMP,
                 },
                 { $project: { _id: 1 } },
             ]).exec();
@@ -233,34 +241,14 @@ module.exports = (req, res) => {
                 return ObjectId(o._id);
             });
             let match = { $match: { isActive: true } };
-            if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $nin: arrayOfIds } });
-            }
+            Object.assign(match['$match'], { _id: { $in: arrayOfIds } });
 
             let query = [
                 match,
                 {
-                    $unwind: '$history',
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'history.actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenByHistory',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$actionTakenByHistory',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-
-                {
                     $lookup: {
                         from: 'ulbs',
-                        localField: 'actionTakenByHistory.ulb',
+                        localField: 'ulb',
                         foreignField: '_id',
                         as: 'ulb',
                     },
@@ -284,13 +272,6 @@ module.exports = (req, res) => {
                     $unwind: {
                         path: '$ulbtype',
                         preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $match: {
-                        'actionTakenByHistory.role': 'ULB',
-                        'history.isCompleted': true,
-                        'ulb.isMillionPlus': 'Yes',
                     },
                 },
                 group,
@@ -321,6 +302,29 @@ module.exports = (req, res) => {
             rjct(err);
         }
     });
+
+    const matchConditionForRNMP = {
+        $match: {
+            $or: [
+                {
+                    isCompleted: true,
+                    'ulb.isMillionPlus': 'No',
+                },
+                {
+                    history: { $gte: { $size: 1 } },
+                    'ulb.isMillionPlus': 'No',
+                },
+            ],
+        },
+    };
+    if (user['role'] === 'STATE') {
+        matchConditionForRNMP.$match.$or = matchConditionForRNMP.$match.$or.map(
+            (condition) => ({
+                ...condition,
+                'ulb.state': ObjectId(user.state),
+            })
+        );
+    }
 
     let registeredNonMillionPlus = new Promise(async (rslv, rjct) => {
         try {
@@ -355,11 +359,7 @@ module.exports = (req, res) => {
                     },
                 },
                 {
-                    $match: {
-                        'actionTakenBy.role': 'ULB',
-                        isCompleted: false,
-                        'ulb.isMillionPlus': 'No',
-                    },
+                    ...matchConditionForRNMP,
                 },
                 { $project: { _id: 1 } },
             ]).exec();
@@ -367,35 +367,18 @@ module.exports = (req, res) => {
             arrayOfIds = arrayOfIds.map(function (o) {
                 return ObjectId(o._id);
             });
+
             let match = { $match: { isActive: true } };
-            if (arrayOfIds.length > 0) {
-                Object.assign(match['$match'], { _id: { $nin: arrayOfIds } });
-            }
+            Object.assign(match['$match'], {
+                _id: { $in: arrayOfIds },
+            });
 
             let query = [
                 match,
                 {
-                    $unwind: '$history',
-                },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'history.actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenByHistory',
-                    },
-                },
-                {
-                    $unwind: {
-                        path: '$actionTakenByHistory',
-                        preserveNullAndEmptyArrays: true,
-                    },
-                },
-
-                {
                     $lookup: {
                         from: 'ulbs',
-                        localField: 'actionTakenByHistory.ulb',
+                        localField: 'ulb',
                         foreignField: '_id',
                         as: 'ulb',
                     },
@@ -419,13 +402,6 @@ module.exports = (req, res) => {
                     $unwind: {
                         path: '$ulbtype',
                         preserveNullAndEmptyArrays: true,
-                    },
-                },
-                {
-                    $match: {
-                        'actionTakenByHistory.role': 'ULB',
-                        'history.isCompleted': true,
-                        'ulb.isMillionPlus': 'No',
                     },
                 },
                 group,
