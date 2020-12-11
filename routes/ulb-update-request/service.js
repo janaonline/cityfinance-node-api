@@ -173,7 +173,7 @@ module.exports.create = async (req, res) => {
             let template = Service.emailTemplate.userProfileEdit(userData.name);
             mailOptions.subject = template.subject;
             mailOptions.html = template.body;
-            SendEmail(mailOptions);
+            if (!pObj['accountantEmail']) SendEmail(mailOptions);
             return Response.OK(
                 res,
                 { Ulb: dulb, user: du, data },
