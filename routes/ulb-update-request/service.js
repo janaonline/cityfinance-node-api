@@ -135,7 +135,7 @@ module.exports.create = async (req, res) => {
              * For ULB, accountat email id is primary and mandatory.
              */
             pObj['email'] = pObj['accountantEmail'];
-            pObj['isEmailVerified'] = true;
+            pObj['isEmailVerified'] = false;
             if (pObj.email != userData.email) {
                 let link = await Service.emailVerificationLink(
                     userData._id,
