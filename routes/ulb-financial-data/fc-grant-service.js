@@ -16,9 +16,7 @@ const ulbTye = {
 module.exports = (req, res) => {
     let user = req.decoded;
     let cond = { $match: { isActive: true } };
-    let cond1 = {
-        $match: { isDeleted: false, role: 'ULB', isRegistered: true },
-    };
+    let cond1 = { $match: { isDeleted: false, role: 'ULB' } };
     if (user.role == 'STATE') {
         Object.assign(cond['$match'], { state: ObjectId(user.state) });
         Object.assign(cond1['$match'], { state: ObjectId(user.state) });
@@ -560,13 +558,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let nonRegisteredUlb = new Promise(async (rslv, rjct) => {
         try {
             let q = [
-                {
-                    $match: {
-                        isDeleted: false,
-                        role: 'ULB',
-                        isRegistered: true,
-                    },
-                },
+                { $match: { isDeleted: false, role: 'ULB' } },
                 {
                     $lookup: {
                         from: 'ulbs',
@@ -607,13 +599,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let notStarted = new Promise(async (rslv, rjct) => {
         try {
             let q = [
-                {
-                    $match: {
-                        isDeleted: false,
-                        role: 'ULB',
-                        isRegistered: true,
-                    },
-                },
+                { $match: { isDeleted: false, role: 'ULB' } },
                 {
                     $lookup: {
                         from: 'ulbs',
