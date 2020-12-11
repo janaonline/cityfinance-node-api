@@ -123,7 +123,7 @@ module.exports.create = async (req, res) => {
             subject: '',
             html: '',
         };
-        if (pObj['commissionerEmail']) {
+        if (pObj['accountantEmail']) {
             // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
             // if(emailCheck){
             //     if(emailCheck.ulb.toString() != user.ulb.toString()){
