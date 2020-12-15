@@ -174,7 +174,7 @@ const millionPlusCitiesSchema = new Schema({
     },
 });
 
-const XVFcGrantFormSchema = new Schema(
+const XVFcGrantULBFormSchema = new Schema(
     {
         //referenceCode:{type:String, default:""},
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true },
@@ -209,13 +209,13 @@ const XVFcGrantFormSchema = new Schema(
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
-XVFcGrantFormSchema.index(
+XVFcGrantULBFormSchema.index(
     { ulb: 1, financialYear: 1, audited: 1 },
     { unique: true }
 );
-module.exports = mongoose.model('XVFcGrantForm', XVFcGrantFormSchema);
+module.exports = mongoose.model('XVFcGrantULBForm', XVFcGrantULBFormSchema);
 
-XVFcGrantFormSchema.pre('save', function (next) {
+XVFcGrantULBFormSchema.pre('save', function (next) {
     this.modifiedAt = new Date();
     next();
 });
