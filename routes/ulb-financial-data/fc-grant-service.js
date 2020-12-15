@@ -1,6 +1,6 @@
 const Ulb = require('../../models/Ulb');
 const moment = require('moment');
-const UlbFinancialData = require('../../models/UlbFinancialData');
+const XVFCGrantULBData = require('../../models/XVFcGrantForm');
 const LoginHistory = require('../../models/LoginHistory');
 const User = require('../../models/User');
 const State = require('../../models/State');
@@ -86,7 +86,7 @@ module.exports = (req, res) => {
     }
     let registeredUlb = new Promise(async (rslv, rjct) => {
         try {
-            let arrayOfIds = await UlbFinancialData.aggregate([
+            let arrayOfIds = await XVFCGrantULBData.aggregate([
                 { $match: { isActive: true } },
                 {
                     $lookup: {
@@ -164,7 +164,7 @@ module.exports = (req, res) => {
                 project,
             ];
 
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
 
             let object = data.reduce(
                 (obj, item) => Object.assign(obj, { [item.name]: item.count }),
@@ -200,7 +200,7 @@ module.exports = (req, res) => {
     }
     let registeredMillionPlus = new Promise(async (rslv, rjct) => {
         try {
-            let arrayOfIds = await UlbFinancialData.aggregate([
+            let arrayOfIds = await XVFCGrantULBData.aggregate([
                 { $match: { isActive: true } },
                 {
                     $lookup: {
@@ -278,7 +278,7 @@ module.exports = (req, res) => {
                 project,
             ];
 
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             let object = data.reduce(
                 (obj, item) => Object.assign(obj, { [item.name]: item.count }),
                 {}
@@ -328,7 +328,7 @@ module.exports = (req, res) => {
 
     let registeredNonMillionPlus = new Promise(async (rslv, rjct) => {
         try {
-            let arrayOfIds = await UlbFinancialData.aggregate([
+            let arrayOfIds = await XVFCGrantULBData.aggregate([
                 { $match: { isActive: true } },
                 {
                     $lookup: {
@@ -408,7 +408,7 @@ module.exports = (req, res) => {
                 project,
             ];
 
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             let object = data.reduce(
                 (obj, item) => Object.assign(obj, { [item.name]: item.count }),
                 {}
@@ -644,7 +644,7 @@ module.exports.chartDataStatus = async (req, res) => {
             q.push({ $count: 'c' });
             q1.push({ $count: 'c' });
             let registerd = await User.aggregate(q).exec();
-            let startedData = await UlbFinancialData.aggregate(q1).exec();
+            let startedData = await XVFCGrantULBData.aggregate(q1).exec();
             let remainData =
                 (registerd.length > 0 ? registerd[0]['c'] : 0) -
                 (startedData.length > 0 ? startedData[0]['c'] : 0);
@@ -656,7 +656,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let draft = new Promise(async (rslv, rjct) => {
         try {
             let query = dataUploadStatusQuery(1, state, toggleCond);
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             rslv(data && data.length > 0 ? data[0] : { c: 0 });
         } catch (err) {
             rjct(err);
@@ -666,7 +666,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let UnderReviewState = new Promise(async (rslv, rjct) => {
         try {
             let query = dataUploadStatusQuery(2, state, toggleCond);
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             rslv(data.length > 0 ? data[0] : { c: 0 });
         } catch (err) {
             rjct(err);
@@ -676,7 +676,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let UnderReviewMoHUA = new Promise(async (rslv, rjct) => {
         try {
             let query = dataUploadStatusQuery(3, state, toggleCond);
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             rslv(data.length > 0 ? data[0] : { c: 0 });
         } catch (err) {
             rjct(err);
@@ -686,7 +686,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let rejectByState = new Promise(async (rslv, rjct) => {
         try {
             let query = dataUploadStatusQuery(4, state, toggleCond);
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             rslv(data.length > 0 ? data[0] : { c: 0 });
         } catch (err) {
             rjct(err);
@@ -696,7 +696,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let rejectByMoHUA = new Promise(async (rslv, rjct) => {
         try {
             let query = dataUploadStatusQuery(5, state, toggleCond);
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             rslv(data.length > 0 ? data[0] : { c: 0 });
         } catch (err) {
             rjct(err);
@@ -706,7 +706,7 @@ module.exports.chartDataStatus = async (req, res) => {
     let approvalCompleted = new Promise(async (rslv, rjct) => {
         try {
             let query = dataUploadStatusQuery(6, state, toggleCond);
-            let data = await UlbFinancialData.aggregate(query).exec();
+            let data = await XVFCGrantULBData.aggregate(query).exec();
             rslv(data.length > 0 ? data[0] : { c: 0 });
         } catch (err) {
             rjct(err);
