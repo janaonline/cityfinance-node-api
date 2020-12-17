@@ -109,7 +109,7 @@ module.exports.create = async (req, res) => {
         ];
         let pObj = {};
         for (key of profileKeys) {
-            if (data[key]) {
+            if (data[key] !== undefined && data[key] !== null) {
                 pObj[key] = data[key];
             }
         }
@@ -165,6 +165,7 @@ module.exports.create = async (req, res) => {
                 dulb = await Ulb.update({ _id: ObjectId(ulb) }, { $set: obj });
             }
             if (Object.keys(pObj).length) {
+                console.log(`pObj\n`, pObj);
                 du = await User.update(
                     { ulb: ObjectId(ulb), role: 'ULB' },
                     { $set: pObj }
