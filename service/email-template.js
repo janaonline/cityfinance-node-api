@@ -12,7 +12,7 @@ const userSignup = (userName, name, link) => {
                     <p>Welcome to City Finance Portal!</p> 
                     <br>
                     <p>
-                        Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">link</a>.<br>
+                        Your account has been successfully created. Please follow this link to activate your account- <a href="${link}" target="_blank">${link}</a>.<br>
                         Your Username is <strong>${userName}</strong>
                     </p>
                     <br>
@@ -31,7 +31,7 @@ const userCreation = (userName, name, link) => {
                     <p>Welcome to City Finance Portal!</p> 
                     <br>
                     <p>
-                        Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
+                        Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">${link}</a>.<br>
                         Your Username is <strong>${userName}</strong>
 
                     </p>
@@ -97,7 +97,7 @@ const userEmailEdit = (name, link) => {
         body: `Dear ${name},<br>
                 <br>
                 <p>    
-                    Your email id has been successfully updated. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>. <br>
+                    Your email id has been successfully updated. Please follow this link to set your password - <a href="${link}" target="_blank">${link}</a>. <br>
                     After setting up your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
                 </p>
                 <br>
@@ -213,7 +213,7 @@ const ulbSignupApproval = (sbCode, censusCode, name, link, edit = false) => {
         body: `Dear ${name},<br>
                         <p>
                             Welcome to City Finance Portal! <br>
-                            Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">link</a>.<br>
+                            Your account has been successfully created. Please follow this link to set your password - <a href="${link}" target="_blank">${link}</a>.<br>
                             Your Username is <strong>${sbCode}</strong> or <strong>${censusCode}</strong>
 
                         </p>
