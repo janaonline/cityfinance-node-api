@@ -630,12 +630,13 @@ module.exports.chartDataStatus = async (req, res) => {
                 {
                     $project: {
                         isMillionPlus: '$ulb.isMillionPlus',
+                        state:'$ulb.state',
                     },
                 },
             ];
             if (state) {
                 q.push({ $match: { state: state } });
-                q1.push({ $match: { 'ulb.state': state } });
+                q1.push({ $match: { state: state } });
             }
             if (toggleCond) {
                 q.push({ $match: toggleCond });
