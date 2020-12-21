@@ -77,8 +77,7 @@ module.exports.create = async (req, res) => {
             audited ? 'Audited' : 'Unaudited'
         }`;
         data.ulb = user.ulb;
-
-        data.createdAt = time();
+        req.body['createdAt'] = time();
         data.modifiedAt = time();
         let checkData = await XVFCGrantULBData.count({
             ulb: data.ulb,
