@@ -879,6 +879,10 @@ module.exports.getDetails = async (req, res) => {
                 ? rejectedData[rejectedData.length - 1].modifiedAt
                 : null;
         let history = { histroy: '' };
+        let finalData = Object.assign(data[0], {
+            rejectedAt: rejectedAt,
+            firstSubmitedAt: firstSubmitedAt,
+        });
         if (user.role == 'MoHUA') {
             let historyData = await commonQuery(query);
             if (historyData.length > 0) {
@@ -901,10 +905,7 @@ module.exports.getDetails = async (req, res) => {
                 });
             }
         }
-        let finalData = Object.assign(data[0], {
-            rejectedAt: rejectedAt,
-            firstSubmitedAt: firstSubmitedAt,
-        });
+       
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
