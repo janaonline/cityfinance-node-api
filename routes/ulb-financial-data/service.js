@@ -811,14 +811,25 @@ module.exports.getDetails = async (req, res) => {
                 },
             },
         ]).exec();
-
-        let rejectedData = await XVFCGrantULBData.aggregate([
+        // Match from history
+        let rejectedDataFromHistory = await XVFCGrantULBData.aggregate([
             {
                 $match: query,
             },
             { $unwind: '$history' },
             { $match: { 'history.status': 'REJECTED' } },
         ]).exec();
+
+        // match from data
+
+        if(rejectedDataFromHistory.length == 0){
+            var rejectedData = await XVFCGrantULBData.aggregate([
+                {
+                    $match: query,
+                },
+                { $match: { 'status': 'REJECTED' } },
+            ]).exec();
+        }
 
         let firstSubmitedFromHistory = await XVFCGrantULBData.aggregate([
             {
@@ -876,9 +887,10 @@ module.exports.getDetails = async (req, res) => {
                       .createdAt
                 : null;
         let rejectedAt =
-            rejectedData.length > 0
-                ? rejectedData[rejectedData.length - 1].modifiedAt
-                : null;
+            rejectedDataFromHistory.length > 0
+                ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1].modifiedAt
+                : (rejectedData.length > 0
+                    ? rejectedData[rejectedData.length - 1].modifiedAt:null)
         let history = { histroy: '' };
         let finalData = Object.assign(data[0], {
             rejectedAt: rejectedAt,
