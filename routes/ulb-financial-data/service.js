@@ -1369,7 +1369,7 @@ module.exports.action = async (req, res) => {
     }
 };
 async function commonQuery(query) {
-    let historyData = await UlbFinancialData.aggregate([
+    let historyData = await XVFCGrantULBData.aggregate([
         {
             $match: query,
         },
@@ -1385,6 +1385,12 @@ async function commonQuery(query) {
                 localField: 'history.actionTakenBy',
                 foreignField: '_id',
                 as: 'user',
+            },
+        },
+        {
+            $unwind: {
+                path: '$user',
+                preserveNullAndEmptyArrays: true,
             },
         },
         { $match: { 'user.role': 'MoHUA', 'history.status': 'REJECTED' } },
