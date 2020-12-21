@@ -897,6 +897,11 @@ module.exports.getDetails = async (req, res) => {
                     data[0],
                     rejectReasonKeys
                 );
+                newData = Object.assign(data[0], {
+                    rejectedAt: rejectedAt,
+                    firstSubmitedAt: firstSubmitedAt,
+                }); 
+
                 return res.status(200).json({
                     timestamp: moment().unix(),
                     success: true,
