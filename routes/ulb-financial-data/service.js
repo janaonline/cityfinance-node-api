@@ -453,6 +453,13 @@ module.exports.getAll = async (req, res) => {
                         sbCode: '$ulb.sbCode',
                         censusCode: '$ulb.censusCode',
                         isMillionPlus: '$ulb.isMillionPlus',
+                        populationType: {
+                            $cond: {
+                                if: { $eq: ['$ulb.isMillionPlus', 'Yes'] },
+                                then: 'Million Plus',
+                                else: 'Non Million'
+                            }
+                        },
                         state: '$state._id',
                         stateName: '$state.name',
                         stateCode: '$state.code',
@@ -540,8 +547,9 @@ module.exports.getAll = async (req, res) => {
                     stateName: 'State name',
                     ulbName: 'ULB name',
                     ulbType: 'ULB Type',
-                    sbCode: 'ULB Code',
+                    populationType:'Population Type',
                     censusCode: 'Census Code',
+                    sbCode: 'ULB Code',
                     //financialYear: 'Financial Year',
                     //auditStatus: 'Audit Status',
                     status: 'Status',
