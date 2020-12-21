@@ -2217,6 +2217,11 @@ module.exports.getXVFCStateForm = async (req, res) => {
     let limit = req.query.limit ? parseInt(req.query.limit) : 10;
     let query = {};
     query['isActive'] = true;
+    query['$or']=[
+        {grantTransferCertificate:{$ne:null}},
+        {serviceLevelBenchmarks:{$ne:null}},
+        {utilizationReport:{$ne:null}}
+    ]
     if (user.role == 'STATE') {
         query['state'] = ObjectId(user.state);
     }
