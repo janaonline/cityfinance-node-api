@@ -945,7 +945,7 @@ module.exports.ulbList = async (req, res) => {
             ulbType: 'ULB Type',
             censusCode: 'Census Code',
             sbCode: 'ULB Code',
-            isMillionPlus: 'Type',
+            isMillionPlus: 'Population Type',
             email: 'Email ID',
             registration: 'Registered',
         };
