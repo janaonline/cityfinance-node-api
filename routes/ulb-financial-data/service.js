@@ -1616,6 +1616,7 @@ function overAllStatus(data) {
                     //     }
                     // }
                 }
+
                 if (key == 'solidWasteManagement') {
                     for (let objKey of solidWasteManagementKeys) {
                         if (data[key]['documents'][objKey]) {
@@ -1666,17 +1667,32 @@ function overAllStatus(data) {
             }
         }
         /** Concat reject reason string */
+
         if (rejectReason.length > 0) {
             let finalString = rejectReason.map((obj) => {
                 let service = Object.keys(obj)[0];
                 let reason = obj[service];
-                service = `<strong>` + service + `</strong>`;
-                return `<p> ${service + ` :` + reason} </p>`;
+                let s = service.split(':'); 
+                let arr = [...s,reason]
+                return arr;
+               // service = `<strong>` + service + `</strong>`;
+                //return `<p> ${service + ` :` + reason} </p>`;
             });
-            let x = '';
+            let x = `<table border='1'>
+            <tr>
+                <th>Tab Name</th>
+                <th>Field Name</th>
+                <th>Reason for Rejection</th>
+            </tr>
+            `;
             for (i of finalString) {
-                x += i;
+                x += `<tr>`
+                for(t of i){
+                    x += `<td>${t}</td>`;
+                }
+                x += `</tr>`
             }
+            x += `</table>`
             resolve({ status: rejected, reason: x });
         }
         resolve({ status: rejected, reason: '' });
