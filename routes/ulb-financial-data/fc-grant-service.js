@@ -534,13 +534,13 @@ module.exports.chartDataStatus = async (req, res) => {
     ];
     let backgroundColor = [
         '#c9c9c9',
-        '#87c9c9',
-        '#6b8585',
-        '#428181',
-        '#2a8181',
-        '#136060',
-        '#0c4848',
-        '#074141',
+        '#d9d9d9',
+        '#e6fefe',
+        '#52fafa',
+        '#07dfdf',
+        '#059b9a',
+        '#036363',
+        '#023131',
     ];
     let user = req.decoded;
     let totalUlb = req.query.totalUlb;
@@ -958,6 +958,7 @@ module.exports.ulbList = async (req, res) => {
     }
 
     if (!skip) {
+        q.shift();
         let qrr = [...q, { $count: 'count' }];
         let d = await Ulb.aggregate(qrr);
         total = d.length ? d[0].count : 0;
