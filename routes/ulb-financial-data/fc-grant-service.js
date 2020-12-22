@@ -958,7 +958,6 @@ module.exports.ulbList = async (req, res) => {
     }
 
     if (!skip) {
-        q.shift();
         let qrr = [...q, { $count: 'count' }];
         let d = await Ulb.aggregate(qrr);
         total = d.length ? d[0].count : 0;
