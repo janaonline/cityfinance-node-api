@@ -883,31 +883,12 @@ module.exports.ulbList = async (req, res) => {
             },
         },
         {
-            $unwind: {
-                path: '$ulbType',
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-        {
-            $unwind: {
-                path: '$user',
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-        {
-            $unwind: {
-                path: '$state',
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-        {
             $project: {
-                stateName: '$state.name',
-                state: '$state._id',
+                state: { $arrayElemAt: ['$state', 0] },
+                user: { $arrayElemAt: ['$user', 0] },
+                ulbType: { $arrayElemAt: ['$ulbType', 0] },
                 ulbName: '$name',
-                ulbType: '$ulbType.name',
                 censusCode: 1,
-                role: '$user.role',
                 sbCode: 1,
                 isMillionPlus: {
                     $cond: {
@@ -916,8 +897,6 @@ module.exports.ulbList = async (req, res) => {
                         else: 'Non Million',
                     },
                 },
-                email: '$user.accountantEmail',
-                mobile: '$user.commissionerConatactNumber',
                 registration: {
                     $cond: {
                         if: {
@@ -929,7 +908,23 @@ module.exports.ulbList = async (req, res) => {
                         then: 'Yes',
                         else: 'No',
                     },
-                },
+                }
+
+            }
+        },
+        {
+            $project: {
+                stateName: '$state.name',
+                state: '$state._id',
+                ulbName: 1,
+                ulbType: '$ulbType.name',
+                censusCode: 1,
+                role: '$user.role',
+                sbCode: 1,
+                isMillionPlus: 1,
+                email: '$user.accountantEmail',
+                mobile: '$user.commissionerConatactNumber',
+                registration: 1
             },
         },
     ];
