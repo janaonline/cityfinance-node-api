@@ -125,6 +125,30 @@ module.exports.create = async (req, res) => {
             subject: '',
             html: '',
         };
+        if(obj['censusCode']){
+            let ulb = await Ulb.findOne({censusCode:obj['censusCode']})
+            if(ulb){
+                return Response.BadRequest(
+                    res,
+                    {},
+                    'census Code already exist for other Ulb'
+                );
+            }
+            let upObj = {censusCode:obj['censusCode']}
+            let updateUser = await User.update({ ulb:ObjectId(ulb),role:'ULB',isDeleted:false},{ $set:upObj});
+        }
+        if(obj['sbCode']){
+            let ulb = await Ulb.findOne({sbCode:obj['sbCode']})
+            if(ulb){
+                return Response.BadRequest(
+                    res,
+                    {},
+                    'Ulb Code already exist for other Ulb'
+                );
+            }
+            let upObj = {sbCode:obj['sbCode']}
+            let updateUser = await User.update({ ulb:ObjectId(ulb),role:'ULB',isDeleted:false},{ $set:upObj});
+        }
         if (pObj['accountantEmail']) {
             // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
             // if(emailCheck){
