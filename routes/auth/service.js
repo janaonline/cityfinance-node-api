@@ -234,7 +234,8 @@ module.exports.login = async (req, res) => {
             );
         } else if (!user.isEmailVerified) {
             return Response.BadRequest(res, err, 'Email not verified yet.');
-        } else if ((user.role != 'USER' && user.role != 'STATE' && user.role != 'PARTNER' && user.role != 'MoHUA') && ulbflagForEmail) {
+        } 
+        else if (user.role == 'ULB' && ulbflagForEmail) {
             if(user.role == 'ULB' && ulbflagForEmail){
                 return Response.BadRequest(
                     res,
