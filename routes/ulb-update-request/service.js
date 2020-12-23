@@ -126,28 +126,24 @@ module.exports.create = async (req, res) => {
             html: '',
         };
         if(obj['censusCode']){
-            let ulb = await Ulb.findOne({censusCode:obj['censusCode']})
+            let ulb = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},censusCode:obj['censusCode']})
             if(ulb){
                 return Response.BadRequest(
                     res,
                     {},
-                    'census Code already exist for other Ulb'
+                    'Census Code already exist for other Ulb'
                 );
             }
-            let upObj = {censusCode:obj['censusCode']}
-            let updateUser = await User.update({ ulb:ObjectId(ulb),role:'ULB',isDeleted:false},{ $set:upObj});
         }
         if(obj['sbCode']){
-            let ulb = await Ulb.findOne({sbCode:obj['sbCode']})
+            let ulb = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},sbCode:obj['sbCode']})
             if(ulb){
                 return Response.BadRequest(
                     res,
                     {},
-                    'Ulb Code already exist for other Ulb'
+                    'ULB Code already exist for other Ulb'
                 );
             }
-            let upObj = {sbCode:obj['sbCode']}
-            let updateUser = await User.update({ ulb:ObjectId(ulb),role:'ULB',isDeleted:false},{ $set:upObj});
         }
         if (pObj['accountantEmail']) {
             // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
