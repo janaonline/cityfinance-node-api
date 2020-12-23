@@ -201,8 +201,8 @@ module.exports.register = async (req, res) => {
     }
 };
 module.exports.login = async (req, res) => {
-    /**Conditional Query For CensusCode/SWATCH BHARAT Code **/
-    let msg = `Invalid Swatch Bharat Code/Census Code or password`;
+    /**Conditional Query For CensusCode/ULB Code **/
+    let msg = `Invalid ULB Code/Census Code or password`;
     let ulbflagForEmail = false;
     let query = [
         { censusCode: req.sanitize(req.body.email) },
@@ -238,7 +238,7 @@ module.exports.login = async (req, res) => {
             return Response.BadRequest(
                 res,
                 err,
-                'Please use Swatch Bharat Code/Census Code for login'
+                'Please use ULB Code/Census Code for login'
             );
         } else {
             try {
@@ -573,8 +573,8 @@ module.exports.emailVerification = async (req, res) => {
     }
 };
 module.exports.forgotPassword = async (req, res) => {
-    let msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not registered.`;
-    let verify_msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not verified.`;
+    let msg = `Requested ULB Code/Census Code:${req.body.email} is not registered.`;
+    let verify_msg = `Requested ULB Code/Census Code:${req.body.email} is not verified.`;
     let ulbflagForEmail = false;
     let query = [
         { censusCode: req.sanitize(req.body.email) },
