@@ -880,10 +880,10 @@ module.exports.getDetails = async (req, res) => {
         ]).exec();
 
         let firstSubmitedAt =
-            firstSubmited.length > 0
-                ? firstSubmited[firstSubmited.length - 1].createdAt
-                : firstSubmitedFromHistory.length > 0
-                ? firstSubmitedFromHistory[firstSubmitedFromHistory.length - 1]
+        firstSubmitedFromHistory.length > 0
+                ? firstSubmitedFromHistory[firstSubmitedFromHistory.length - 1].createdAt
+                : firstSubmited.length > 0
+                ? firstSubmited[firstSubmited.length - 1]
                       .createdAt
                 : null;
         let rejectedAt =
