@@ -401,7 +401,7 @@ const fdUploadApprovalState = (name, ulbName, refCode, fy, audited) => {
 
 const xvUploadApprovalMoHUA = (name) => {
     return {
-        subject: `15th FC Grant Form Successfully Approved by MoHUA`,
+        subject: `XV FC Form Successfully Approved by MoHUA`,
         body: `Dear ${name},<br>
                 <p>
                     Your 15<sup>th</sup> FC Grant form has been approved by MoHUA.
@@ -427,7 +427,7 @@ const xvUploadApprovalByMoHUAtoState = (ulbName, stateName) => {
 
 const xvUploadApprovalState = (mohuaName, ulbName, stateName) => {
     return {
-        subject: `15th FC Grant Form Successfully Submitted- ${ulbName}`,
+        subject: `XV FC Form Successfully Approved by State- ${ulbName}`,
         body: `Dear ${mohuaName},<br>
                 <p>
                     The 15<sup>th</sup> FC Grant form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.<br>
