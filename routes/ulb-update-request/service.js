@@ -100,6 +100,8 @@ module.exports.create = async (req, res) => {
         }
         let profileKeys = [
             'name',
+            'censusCode',
+            'sbCode',
             'accountantConatactNumber',
             'accountantEmail',
             'accountantName',
