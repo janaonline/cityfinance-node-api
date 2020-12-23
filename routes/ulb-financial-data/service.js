@@ -26,16 +26,16 @@ const millionPlusCitiesKeys = [
 ];
 const mappingKeys = {
     serviceLevel: 'serviceLevel',
-    houseHoldCoveredPipedSupply: 'Household Covered Piped Water Supply',
+    houseHoldCoveredPipedSupply: '% of households covered with piped water supply',
     waterSuppliedPerDay: 'Water Supplied in litre per day(lpcd)',
     reduction: 'Reduction in non-water revenue',
     houseHoldCoveredWithSewerage:
-        'Household Covered with sewerage/septage services',
-    garbageFreeCities: 'Garbage free star rating of the cities',
+        '% of household covered with sewerage/septage services',
+    garbageFreeCities: 'Plan for garbage free star rating of the cities',
     waterSupplyCoverage:
-        'Coverage of water supply for public/community toilets',
+        'Plan for coverage of water supply for public/community toilets',
     cityPlan: 'City Plan DPR',
-    waterBalancePlan: 'City Plan DPR',
+    waterBalancePlan: 'Water Balance Plan',
     serviceLevelPlan: 'Service Level Improvement Plan',
     solidWastePlan: 'Solid Waste Management Plan',
 };
@@ -1594,7 +1594,7 @@ function overAllStatus(data) {
                             }
                             rejected = true;
                             let tab =
-                                'Water Supply & Waste-Water Management:' +
+                                'Service Level Indicators:' +
                                 mappingKeys[objKey];
                             let reason = {
                                 [tab]: data[key][objKey]['rejectReason'],
@@ -1630,7 +1630,7 @@ function overAllStatus(data) {
                                     }
                                     rejected = true;
                                     let tab =
-                                        'Solid Waste Management:' +
+                                        'Upload Plans:' +
                                         mappingKeys[objKey];
                                     let reason = {
                                         [tab]: d.rejectReason,
@@ -1650,7 +1650,7 @@ function overAllStatus(data) {
                                 }
                                 rejected = true;
                                 let tab =
-                                    'Million Plus Cities Only:' +
+                                    'Upload Plans(Million+ City):' +
                                     mappingKeys[objKey];
                                 let reason = {
                                     [tab]: d.rejectReason,
