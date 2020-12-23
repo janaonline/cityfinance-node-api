@@ -141,7 +141,7 @@ function incLoginAttempts(user) {
   const LOCK_TIME = 60*60 * 1000       
   // if we have a previous lock that has expired, restart at 1
   if (user.lockUntil && user.lockUntil < Date.now()) {
-    return updates = {$set: { loginAttempts: 1,isLocked:false }}
+    return updates = {$set: { loginAttempts: 1,isLocked:false,lockUntil:0}}
   }
   // otherwise we're incrementing
   var updates = { $inc: { loginAttempts: 1 } };

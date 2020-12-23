@@ -329,10 +329,9 @@ module.exports.login = async (req, res) => {
                     let update = Service.incLoginAttempts(user);
                     if (!ulbflagForEmail) {
                         user.email = user.accountantEmail;
-                        await User.update({ _id: user._id }, update).exec();
+                        let up = await User.update({ _id: user._id }, update).exec();
                     }
                     let attempt = user;
-
                     return Response.BadRequest(
                         res,
                         { loginAttempts: attempt.loginAttempts },
