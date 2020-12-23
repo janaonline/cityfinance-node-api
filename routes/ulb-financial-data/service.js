@@ -822,14 +822,14 @@ module.exports.getDetails = async (req, res) => {
 
         // match from data
 
-        if(rejectedDataFromHistory.length == 0){
+        //if(rejectedDataFromHistory.length == 0){
             var rejectedData = await XVFCGrantULBData.aggregate([
                 {
                     $match: query,
                 },
                 { $match: { 'status': 'REJECTED' } },
             ]).exec();
-        }
+        //}
 
         let firstSubmitedFromHistory = await XVFCGrantULBData.aggregate([
             {
