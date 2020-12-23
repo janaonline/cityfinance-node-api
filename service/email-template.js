@@ -44,14 +44,16 @@ const userCreation = (userName, name, link) => {
                     City Finance Team`,
     };
 };
-const userForgotPassword = (name, link) => {
+const userForgotPassword = (name, link,ulbflagForEmail=true) => {
+
+    let text = ulbflagForEmail ?'registered email id':'Ulb Code/Census Code'
     return {
         subject: `City Finance Account Password Reset`,
         body: `Dear ${name},<br>
                         <p>Please use the following link to reset your password - <a href="${link}" target="_blank">${link}</a></p> 
                         <br>
                         <p>
-                            After resetting your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
+                            After resetting your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your ${text}.
                         </p>
                         <br>
                         <br>Regards,<br>
@@ -157,7 +159,10 @@ const ulbBulkUpload = (name, partner) => {
     };
 };
 
-const sendAccountReActivationEmail = (user, link) => {
+const sendAccountReActivationEmail = (user, link,ulbflagForEmail=true) => {
+
+    let text = ulbflagForEmail ?'registered email id':'Ulb Code/Census Code'
+
     return {
         subject: `Account Activation Link for City Finance`,
         body: `Dear  ${user.name},<br>
@@ -165,7 +170,7 @@ const sendAccountReActivationEmail = (user, link) => {
                         user.role !== 'USER' ? 'and set your password' : ''
                     }  - <a href="${link}">${link}</a>.</p> 
                     <br>
-                    <p> After setting your password, please visit <a href="https://www.cityfinance.in ">https://www.cityfinance.in </a> to login using your registered email id.</p>
+                    <p> After setting your password, please visit <a href="https://www.cityfinance.in ">https://www.cityfinance.in </a> to login using your ${text}.</p>
                     
                     <br>Regards,<br>
                     City Finance Team`,

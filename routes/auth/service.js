@@ -498,7 +498,8 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
         );
         const template = Service.emailTemplate.sendAccountReActivationEmail(
             user,
-            link
+            link,
+            !ulbflagForEmail
         );
         let mailOptions = {
             to: user.email,
@@ -637,7 +638,8 @@ module.exports.forgotPassword = async (req, res) => {
                     );
                     let template = Service.emailTemplate.userForgotPassword(
                         user.name,
-                        link
+                        link,
+                        ulbflagForEmail
                     );
                     let mailOptions = {
                         to: user.email,
