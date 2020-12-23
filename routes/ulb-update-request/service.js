@@ -83,6 +83,8 @@ module.exports.create = async (req, res) => {
             'name',
             'regionalName',
             'code',
+            'censusCode',
+            'sbCode',
             'state',
             'ulbType',
             'natureOfUlb',
@@ -100,8 +102,6 @@ module.exports.create = async (req, res) => {
         }
         let profileKeys = [
             'name',
-            'censusCode',
-            'sbCode',
             'accountantConatactNumber',
             'accountantEmail',
             'accountantName',
