@@ -881,16 +881,16 @@ module.exports.getDetails = async (req, res) => {
 
         let firstSubmitedAt =
         firstSubmitedFromHistory.length > 0
-                ? firstSubmitedFromHistory[firstSubmitedFromHistory.length - 1].createdAt
+                ? firstSubmitedFromHistory[0].history.createdAt
                 : firstSubmited.length > 0
                 ? firstSubmited[firstSubmited.length - 1]
                       .createdAt
                 : null;
         let rejectedAt =
-            rejectedDataFromHistory.length > 0
-                ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1].modifiedAt
-                : (rejectedData.length > 0
-                    ? rejectedData[rejectedData.length - 1].modifiedAt:null)
+            rejectedData.length > 0
+                ? rejectedData[rejectedData.length - 1].modifiedAt
+                : rejectedDataFromHistory.length > 0
+                ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1].history.modifiedAt:null
         let history = { histroy: '' };
         let finalData = Object.assign(data[0], {
             rejectedAt: rejectedAt,
