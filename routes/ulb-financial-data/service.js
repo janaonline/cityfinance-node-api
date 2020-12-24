@@ -1387,6 +1387,134 @@ module.exports.action = async (req, res) => {
         console.log('Exception', e);
     }
 };
+
+module.exports.multipleApprove = async(req,res)=>{
+
+    let user = req.decoded;
+    if(user.role == 'MoHUA'){
+        (_id = ObjectId(req.params._id));
+        let prevState = await XVFCGrantULBData.findOne(
+            { _id: _id },
+            '-history'
+        ).lean();
+
+        let ulbUser = await User.findOne({
+            ulb: ObjectId(prevState.ulb),
+            isDeleted: false,
+            role: 'ULB',
+        })
+        .populate([
+            {
+                path: 'state',
+                model: State,
+                select: '_id name',
+            },
+        ])
+        .exec();
+        let history = Object.assign({}, prevState);
+        let data = setApproveStatus(prevState);
+        if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
+            let du = await XVFCGrantULBData.update(
+                { _id: ObjectId(prevState._id) },
+                { $set: data, $push: { history: history } }
+            );
+            let mailOptions = {
+                to: '',
+                subject: '',
+                html: '',
+            };
+            /** ULB TRIGGER */
+            let ulbEmails = [];
+            let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
+                ulbUser.name
+            );
+            ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+            ulbUser.accountantEmail
+                ? ulbEmails.push(ulbUser.accountantEmail)
+                : '';
+            (mailOptions.to = ulbEmails.join()),
+                (mailOptions.subject = UlbTemplate.subject),
+                (mailOptions.html = UlbTemplate.body);
+            Service.sendEmail(mailOptions);
+            /** STATE TRIGGER */
+            let stateEmails = [];
+            let stateUser = await User.find({
+                state: ObjectId(ulbUser.state._id),
+                isDeleted: false,
+                role: 'STATE',
+            }).exec();
+            for (let d of stateUser) {
+                sleep(700);
+                d.email ? stateEmails.push(d.email) : '';
+                d.departmentEmail
+                    ? stateEmails.push(d.departmentEmail)
+                    : '';
+                let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
+                    ulbUser.name,
+                    d.name
+                );
+                mailOptions.to = stateEmails.join();
+                mailOptions.subject = stateTemplate.subject;
+                mailOptions.html = stateTemplate.body;
+                Service.sendEmail(mailOptions);
+            }
+            return Response.OK(res,{}, ``);
+        }
+        else{
+            return Response.BadRequest(
+                res,
+                {},
+                'Something went wrong!'
+            );
+        }
+    }
+    else{
+        return Response.BadRequest(
+            res,
+            {},
+            'This action is only allowed by MoHUA'
+        );
+    }
+}
+
+function setApproveStatus(data) {
+    for (key in data) {
+        if (typeof data[key] === 'object' && data[key] !== null) {
+            if (key == 'waterManagement') {
+                for (let objKey of waterManagementKeys) {
+                    if (data[key][objKey]) {
+                        data[key][objKey]['status'] = 'APPROVED';
+                        data[key][objKey]['rejectReason'] = '';
+                    }
+                }
+            }
+            if (key == 'solidWasteManagement') {
+                for (let objKey of solidWasteManagementKeys) {
+                    if (data[key]['documents'][objKey]) {
+                        for (let d of data[key]['documents'][objKey]) {
+                            d.status = 'APPROVED';
+                            d.rejectReason = '';
+                        }
+                    }
+                }
+            }
+            if (key == 'millionPlusCities') {
+                for (let objKey of millionPlusCitiesKeys) {
+                    if (data[key]['documents'][objKey]) {
+                        for (let d of data[key]['documents'][objKey]) {
+                            d.status = 'APPROVED';
+                            d.rejectReason = '';
+                        }
+                    }
+                }
+            }
+        } else {
+            data['status'] = 'APPROVED';
+        }
+    }
+    return data;
+}
+
 async function commonQuery(query) {
     let historyData = await XVFCGrantULBData.aggregate([
         {
