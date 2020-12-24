@@ -67,7 +67,7 @@ const userProfileEdit = (name) => {
                     <br>
                     <p>
                         Your account has been successfully updated. <br>
-                        Please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
+                        Please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your Ulb Code/Census Code.
                     </p>
                     <br>
                 <br>Regards,<br>
