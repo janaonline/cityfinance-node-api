@@ -947,7 +947,7 @@ module.exports.ulbList = async (req, res) => {
             sbCode: 'ULB Code',
             isMillionPlus: 'Population Type',
             email: 'Email ID',
-            registration: 'Registered',
+            registration: 'Profile Updated',
         };
         if (user.role == 'STATE') {
             delete field.stateName;
