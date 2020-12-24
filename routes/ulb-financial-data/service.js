@@ -1512,6 +1512,7 @@ function setApproveStatus(data) {
             data['status'] = 'APPROVED';
         }
     }
+    data['status'] = 'APPROVED';
     return data;
 }
 
@@ -2409,3 +2410,53 @@ module.exports.getXVFCStateFormById = async (req, res) => {
         );
     }
 };
+
+module.exports.state = async(req,res)=>{
+
+    let q = [
+        {$match:{isActive:true}},
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'actionTakenBy',
+                foreignField: '_id',
+                as: 'actionTakenBy',
+            }
+        },
+        {
+            $lookup: {
+                from: 'ulbs',
+                localField: 'ulb',
+                foreignField: '_id',
+                as: 'ulb',
+            }
+        },
+        { $unwind: '$ulb' },       
+        {
+            $lookup: {
+                from: 'states',
+                localField: 'ulb.state',
+                foreignField: '_id',
+                as: 'state'
+            }
+        },
+        {$unwind:'$state'},
+        {$unwind: '$actionTakenBy' },
+        {$match:{ status: 'APPROVED', "actionTakenBy.role": 'STATE' }},
+        {$group:{_id:{ "name":"$state.name","_id":"$state._id"}}
+        },    
+        {$project:{
+            "name":"$_id.name",
+            "_id":"$_id._id"    
+            }
+        }
+    ]
+    let arr = await XVFCGrantULBData.aggregate(q).exec();
+    return res.status(200).json({
+        timestamp: moment().unix(),
+        success: true,
+        message: 'list',
+        data: arr
+    });
+
+}

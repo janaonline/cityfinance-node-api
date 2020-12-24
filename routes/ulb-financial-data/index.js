@@ -26,5 +26,6 @@ router.post("/fc-grant/stateForm",verifyToken,ufdService.XVFCStateForm);
 router.get("/fc-grant/stateForm",verifyToken,ufdService.getXVFCStateForm);
 router.get("/fc-grant/stateForm/:state",verifyToken,ufdService.getXVFCStateFormById);
 router.post("/multiple-approve-action/:_id",verifyToken,ufdService.multipleApprove);
+router.get("/state",verifyToken,ufdService.state);
 
 module.exports = router;
