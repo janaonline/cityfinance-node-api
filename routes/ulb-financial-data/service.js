@@ -1413,6 +1413,8 @@ module.exports.multipleApprove = async(req,res)=>{
         .exec();
         let history = Object.assign({}, prevState);
         let data = setApproveStatus(prevState);
+        data['actionTakenBy'] = user._id;
+        data['status'] = 'APPROVED';
         if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
