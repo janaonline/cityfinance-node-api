@@ -896,19 +896,8 @@ module.exports.ulbList = async (req, res) => {
                         then: 'Milion Plus',
                         else: 'Non Million',
                     },
-                },
-                registration: {
-                    $cond: {
-                        if: {
-                            $and: [
-                                { $eq: ['$user.role', 'ULB'] },
-                                { $eq: ['$user.isRegistered', true] },
-                            ],
-                        },
-                        then: 'Yes',
-                        else: 'No',
-                    },
                 }
+              
 
             }
         },
@@ -924,7 +913,18 @@ module.exports.ulbList = async (req, res) => {
                 isMillionPlus: 1,
                 email: '$user.accountantEmail',
                 mobile: '$user.commissionerConatactNumber',
-                registration: 1
+                registration: {
+                    $cond: {
+                        if: {
+                            $and: [
+                                { $eq: ['$user.role', 'ULB'] },
+                                { $eq: ['$user.isRegistered', true] },
+                            ],
+                        },
+                        then: 'Yes',
+                        else: 'No',
+                    },
+                }
             },
         },
     ];
