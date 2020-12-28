@@ -202,6 +202,7 @@ module.exports.register = async (req, res) => {
 };
 module.exports.login = async (req, res) => {
     /**Conditional Query For CensusCode/ULB Code **/
+    let cond = {}
     let msg = `Invalid ULB Code/Census Code or password`;
     let ulbflagForEmail = false;
     let query = [
@@ -213,7 +214,11 @@ module.exports.login = async (req, res) => {
         msg = `Invalid email or password`;
         query = [{ email: req.sanitize(req.body.email) }];
     }
-    User.findOne({ $or: query, isDeleted: false }, async (err, user) => {
+    cond = {$or: query, isDeleted: false}
+    if(ulbflagForEmail){
+       cond = { $or: query, isDeleted: false,role:{$ne:'ULB'} }
+    }
+    User.findOne(cond, async (err, user) => {
         if (err) {
             return Response.BadRequest(res, err, 'Db Error');
         } else if (!user) {

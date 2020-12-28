@@ -528,6 +528,15 @@ module.exports.create = async (req, res) => {
             newUser.createdBy = user._id;
             newUser.isEmailVerified = false;
             console.log(newUser);
+            let u = await User.findOne({email:data['email'],role:{$in:['MoHUA','USER','PARTNER','STATE']}}).exec()
+            if(u){
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Email ID already exists.`
+                );
+            }
+
             newUser.save(async (err, user) => {
                 if (err) {
                     console.log('Err', err);
