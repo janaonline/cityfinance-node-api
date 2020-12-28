@@ -100,7 +100,7 @@ const userEmailEdit = (name, link) => {
                 <br>
                 <p>    
                     Your email id has been successfully updated. Please follow this link to set your password - <a href="${link}" target="_blank">${link}</a>. <br>
-                    After setting up your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
+                    After setting up your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your Ulb Code/Census Code.
                 </p>
                 <br>
             <br>Regards,<br>
