@@ -897,31 +897,35 @@ module.exports.getDetails = async (req, res) => {
             firstSubmitedAt: firstSubmitedAt,
         });
         if (user.role == 'MoHUA') {
-            let historyData = await commonQuery(query);
-            if (historyData.length > 0) {
-                history['histroy'] = resetDataStatus(
-                    historyData[historyData.length - 1],
-                    false
-                );
-                let rejectReasonKeys = await getRejectedStatusKey(
-                    history['histroy'].data
-                );
-                let newData = await getRejectedStatusKey(
-                    data[0],
-                    rejectReasonKeys
-                );
-                newData = Object.assign(data[0], {
-                    rejectedAt: rejectedAt,
-                    firstSubmitedAt: firstSubmitedAt,
-                }); 
 
-                return res.status(200).json({
-                    timestamp: moment().unix(),
-                    success: true,
-                    message: 'Ulb update request list',
-                    data: newData,
-                });
+            if(data[0]["role"]=='STATE' && data[0]["status"]=='APPROVED'){
+                let historyData = await commonQuery(query);
+                if (historyData.length > 0) {
+                    history['histroy'] = resetDataStatus(
+                        historyData[historyData.length - 1],
+                        false
+                    );
+                    let rejectReasonKeys = await getRejectedStatusKey(
+                        history['histroy'].data
+                    );
+                    let newData = await getRejectedStatusKey(
+                        data[0],
+                        rejectReasonKeys
+                    );
+                    newData = Object.assign(data[0], {
+                        rejectedAt: rejectedAt,
+                        firstSubmitedAt: firstSubmitedAt,
+                    }); 
+    
+                    return res.status(200).json({
+                        timestamp: moment().unix(),
+                        success: true,
+                        message: 'Ulb update request list',
+                        data: newData,
+                    });
+                }
             }
+
         }
        
         return res.status(200).json({
