@@ -96,7 +96,7 @@ module.exports.create = async (req, res) => {
         ];
         let obj = {};
         for (key of keys) {
-            if (data[key]) {
+            if (data[key] || data[key]=='') {
                 obj[key] = data[key];
             }
         }
@@ -117,7 +117,6 @@ module.exports.create = async (req, res) => {
                 pObj[key] = data[key];
             }
         }
-
         let userData = await User.findOne(
             { isDeleted: false, ulb: ObjectId(ulb), role: 'ULB' },
             '_id email role name'
