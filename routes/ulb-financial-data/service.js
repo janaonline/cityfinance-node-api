@@ -897,8 +897,7 @@ module.exports.getDetails = async (req, res) => {
             firstSubmitedAt: firstSubmitedAt,
         });
         if (user.role == 'MoHUA') {
-
-            if(data[0]["role"]=='STATE' && data[0]["status"]=='APPROVED'){
+            if(data[0]["actionTakenByUserRole"]=='STATE' && data[0]["status"]=='APPROVED'){
                 let historyData = await commonQuery(query);
                 if (historyData.length > 0) {
                     history['histroy'] = resetDataStatus(
@@ -922,6 +921,14 @@ module.exports.getDetails = async (req, res) => {
                         success: true,
                         message: 'Ulb update request list',
                         data: newData,
+                    });
+                }
+                else{
+                    return res.status(200).json({
+                        timestamp: moment().unix(),
+                        success: true,
+                        message: 'Ulb update request list',
+                        data:resetDataStatus(data[0])
                     });
                 }
             }
