@@ -503,7 +503,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
         const template = Service.emailTemplate.sendAccountReActivationEmail(
             user,
             link,
-            !ulbflagForEmail
+            ulbflagForEmail
         );
         let mailOptions = {
             to: user.email,
