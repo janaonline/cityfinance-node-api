@@ -964,7 +964,8 @@ module.exports.ulbList = async (req, res) => {
     }
     q.push({ $skip: skip });
     q.push({ $limit: limit });
-    let arr = await Ulb.aggregate(q).exec();
+    let arr = await Ulb.aggregate(q).collation({ locale: 'en' })
+    .exec();
 
     return res.status(200).json({
         timestamp: moment().unix(),
