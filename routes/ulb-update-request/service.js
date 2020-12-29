@@ -151,7 +151,7 @@ module.exports.create = async (req, res) => {
                         return Response.BadRequest(
                             res,
                             {},
-                            'Census Code already exist for other UlbS'
+                            'Census Code already exist for other Ulb'
                         );
                     }
                 }
@@ -161,17 +161,21 @@ module.exports.create = async (req, res) => {
                         return Response.BadRequest(
                             res,
                             {},
-                            'Census Code already exist for other UlbS'
+                            'Census Code already exist for other Ulb'
                         );
                     }
                 }
-
+                
                 if(ulbRecord.sbCode && ulbRecord._id.toString()==ulb){
-                    if(ulbRecord.sbCode==obj['censusCode']){
+
+                    if(ulbRecord.sbCode==obj['censusCode'] && obj['sbCode']==''){
+
+                    }
+                    else if(ulbRecord.sbCode==obj['censusCode']){
                         return Response.BadRequest(
                             res,
                             {},
-                            'Census Code already exist for other UlbS'
+                            'Census Code already exist for other UlbS==>'
                         );
                     }
                 }
@@ -233,7 +237,10 @@ module.exports.create = async (req, res) => {
                 }
 
                 if(ulbRecord.censusCode && ulbRecord._id.toString()==ulb){
-                    if(ulbRecord.censusCode==obj['sbCode']){
+                    if(ulbRecord.censusCode==obj['sbCode'] && obj['censusCode']==''){
+                       
+                    }
+                    else if(ulbRecord.censusCode==obj['sbCode']){
                         return Response.BadRequest(
                             res,
                             {},
