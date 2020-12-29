@@ -145,8 +145,8 @@ module.exports.create = async (req, res) => {
         }
 
         if(obj['censusCode']){
-            let ulbRecord = await Ulb.findOne({censusCode:obj['censusCode']})
-            let censusRecord = await Ulb.findOne({sbCode:obj['censusCode']})
+            let ulbRecord = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},censusCode:obj['censusCode']})
+            let censusRecord = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},sbCode:obj['censusCode']})
             if(ulbRecord || censusRecord){
                 return Response.BadRequest(
                     res,
@@ -156,8 +156,8 @@ module.exports.create = async (req, res) => {
             }
         }
         if(obj['sbCode']){
-            let ulbRecord = await Ulb.findOne({sbCode:obj['sbCode']})
-            let censusRecord = await Ulb.findOne({censusCode:obj['sbCode']})
+            let ulbRecord = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},sbCode:obj['sbCode']})
+            let censusRecord = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},censusCode:obj['sbCode']})
             if(ulbRecord || censusRecord){
                 return Response.BadRequest(
                     res,
