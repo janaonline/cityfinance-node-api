@@ -126,13 +126,6 @@ module.exports.create = async (req, res) => {
             subject: '',
             html: '',
         };
-        if(obj['censusCode']== obj['sbCode']){
-            return Response.BadRequest(
-                res,
-                {},
-                `Census Code and Ulb code cant be same`
-            );
-        }
         if(obj['censusCode']){
             let ulbRecord = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},censusCode:obj['censusCode']})
             let censusRecord = await Ulb.findOne({_id:{$nin:[ObjectId(ulb)]},sbCode:obj['censusCode']})
