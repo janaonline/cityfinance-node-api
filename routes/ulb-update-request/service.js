@@ -148,10 +148,11 @@ module.exports.create = async (req, res) => {
             if(ulbRecord){
                 if(ulbRecord.censusCode){
                     if(ulbRecord.censusCode==obj['censusCode']){
-                    } 
+                    }
                 }
-                if(ulbRecord.sbCode){
-                    if(ulbRecord.sbCode==obj['censusCode']){
+                else{
+                    let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['censusCode']},{sbCode:obj['censusCode']}]})
+                    if(ulbRecord){
                         return Response.BadRequest(
                             res,
                             {},
@@ -170,48 +171,21 @@ module.exports.create = async (req, res) => {
         }
         if(obj['sbCode']){
             let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['sbCode']},{sbCode:obj['sbCode']}]})
-       
-            // if(ulbRecord){
-            //     if(ulbRecord._id.toString()!=ulb){
-            //         return Response.BadRequest(
-            //             res,
-            //             {},
-            //             'ULb Code already exist for other UlbS'
-            //         );
-            //     }
-            // }
-
-            // if(censusRecord){
-            //     if(censusRecord._id.toString()!=ulb || censusRecord.censusCode==obj['sbCode']){
-            //         return Response.BadRequest(
-            //             res,
-            //             {},
-            //             'ULB Code already exist for other Ulb'
-            //         );
-            //     }
-            // }    
-
             if(ulbRecord){
                 if(ulbRecord.sbCode){
                     if(ulbRecord.sbCode==obj['sbCode']){
                     } 
                 }
-                if(ulbRecord.censusCode){
-                    if(ulbRecord.censusCode==obj['sbCode']){
+                else{
+                    let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['sbCode']},{sbCode:obj['sbCode']}]})
+                    if(ulbRecord){
                         return Response.BadRequest(
                             res,
                             {},
                             'ULB Code already exist for other Ulb'
                         );
                     }
-                }
-                // if(ulbRecord._id.toString()!=ulb || ulbRecord.sbCode==obj['censusCode']){
-                //     return Response.BadRequest(
-                //         res,
-                //         {},
-                //         'Census Code already exist for other UlbS'
-                //     );
-                // }
+                }    
             }
         }
         if (pObj['accountantEmail']) {
