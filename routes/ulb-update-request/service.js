@@ -146,13 +146,8 @@ module.exports.create = async (req, res) => {
         if(obj['censusCode']){
             let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['censusCode']},{sbCode:obj['censusCode']}]})
             if(ulbRecord){
-                if(ulbRecord.censusCode){
+                if(ulbRecord.censusCode && ulbRecord._id.toString()!=ulb){
                     if(ulbRecord.censusCode==obj['censusCode']){
-                    }
-                }
-                else{
-                    let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['censusCode']},{sbCode:obj['censusCode']}]})
-                    if(ulbRecord){
                         return Response.BadRequest(
                             res,
                             {},
@@ -160,6 +155,32 @@ module.exports.create = async (req, res) => {
                         );
                     }
                 }
+
+                if(ulbRecord.sbCode && ulbRecord._id.toString()==ulb){
+                    if(ulbRecord.sbCode==obj['censusCode']){
+                        return Response.BadRequest(
+                            res,
+                            {},
+                            'Census Code already exist for other UlbS'
+                        );
+                    }
+                }
+
+                if(ulbRecord.censusCode && ulbRecord._id.toString()==ulb){
+                    if(ulbRecord.censusCode==obj['censusCode']){
+                       
+                    }
+                }
+                // else{
+                //     let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['censusCode']},{sbCode:obj['censusCode']}]})
+                //     if(ulbRecord){
+                //         return Response.BadRequest(
+                //             res,
+                //             {},
+                //             'Census Code already exist for other UlbS'
+                //         );
+                //     }
+                // }
                 // if(ulbRecord._id.toString()!=ulb || ulbRecord.sbCode==obj['censusCode']){
                 //     return Response.BadRequest(
                 //         res,
@@ -172,20 +193,40 @@ module.exports.create = async (req, res) => {
         if(obj['sbCode']){
             let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['sbCode']},{sbCode:obj['sbCode']}]})
             if(ulbRecord){
-                if(ulbRecord.sbCode){
+                if(ulbRecord.sbCode && ulbRecord._id.toString()!=ulb){
                     if(ulbRecord.sbCode==obj['sbCode']){
+                        return Response.BadRequest(
+                            res,
+                            {},
+                            'ULB Code already exist for other Ulb'
+                        );
                     } 
                 }
-                else{
-                    let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['sbCode']},{sbCode:obj['sbCode']}]})
-                    if(ulbRecord){
+
+                if(ulbRecord.censusCode && ulbRecord._id.toString()==ulb){
+                    if(ulbRecord.censusCode==obj['sbCode']){
                         return Response.BadRequest(
                             res,
                             {},
                             'ULB Code already exist for other Ulb'
                         );
                     }
-                }    
+                }
+
+                if(ulbRecord.sbCode && ulbRecord._id.toString()==ulb){
+                    if(ulbRecord.sbCode==obj['sbCode']){
+                    } 
+                }
+                // else{
+                //     let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['sbCode']},{sbCode:obj['sbCode']}]})
+                //     if(ulbRecord){
+                //         return Response.BadRequest(
+                //             res,
+                //             {},
+                //             'ULB Code already exist for other Ulb'
+                //         );
+                //     }
+                // }    
             }
         }
         if (pObj['accountantEmail']) {
