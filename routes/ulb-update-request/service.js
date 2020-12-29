@@ -125,10 +125,16 @@ module.exports.create = async (req, res) => {
             to: userData.email,
             subject: '',
             html: '',
-        };      
-        if(obj['censusCode'] && obj['sbCode']){
+        };
+        
+        if(obj['censusCode']){
             obj['censusCode'] = obj['censusCode'].trim()
+        }
+        if(obj['sbCode']){
             obj['sbCode'] = obj['sbCode'].trim()
+        }
+
+        if(obj['censusCode'] && obj['sbCode']){
             if(obj['censusCode']== obj['sbCode']){
                 return Response.BadRequest(
                     res,
