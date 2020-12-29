@@ -924,11 +924,16 @@ module.exports.getDetails = async (req, res) => {
                     });
                 }
                 else{
+                    let newData = resetDataStatus(data[0]);
+                    let finalData = Object.assign(newData, {
+                        rejectedAt: rejectedAt,
+                        firstSubmitedAt: firstSubmitedAt,
+                    });
                     return res.status(200).json({
                         timestamp: moment().unix(),
                         success: true,
                         message: 'Ulb update request list',
-                        data:resetDataStatus(data[0])
+                        data:finalData
                     });
                 }
             }

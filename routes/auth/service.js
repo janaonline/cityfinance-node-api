@@ -238,7 +238,9 @@ module.exports.login = async (req, res) => {
                 `Your request has been rejected. Reason: ${user.rejectReason}`
             );
         } else if (!user.isEmailVerified) {
-            return Response.BadRequest(res, err, 'Email not verified yet.');
+
+            let url = `${process.env.HOSTNAME}/account-reactivate`;
+            return Response.BadRequest(res, err, `Email not verified yet. Please <a href='${url}'>click here</a> to send the activation link on your registered email`);
         } 
         else if ((user.role!= 'ADMIN' && user.role != 'USER' && user.role != 'STATE' && user.role != 'PARTNER' && user.role != 'MoHUA') && ulbflagForEmail) {
             if(user.role == 'ULB' && ulbflagForEmail){
