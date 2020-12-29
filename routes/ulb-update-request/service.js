@@ -144,30 +144,75 @@ module.exports.create = async (req, res) => {
         }
 
         if(obj['censusCode']){
-            let ulbRecord = await Ulb.findOne({censusCode:obj['censusCode']})
-            let censusRecord = await Ulb.findOne({sbCode:obj['censusCode']})
-            if((ulbRecord.censusCode!=obj['censusCode'] && ulbRecord.ulb!=ulb) ||(censusRecord.censusCode!=obj['censusCode'] && censusRecord.ulb!=ulb)){
-                if(ulbRecord || censusRecord){
-                    return Response.BadRequest(
-                        res,
-                        {},
-                        'Census Code already exist for other Ulb'
-                    );
+            let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['censusCode']},{sbCode:obj['censusCode']}]})
+            if(ulbRecord){
+                if(ulbRecord.censusCode){
+                    if(ulbRecord.censusCode==obj['censusCode']){
+                    } 
                 }
+                if(ulbRecord.sbCode){
+                    if(ulbRecord.sbCode==obj['censusCode']){
+                        return Response.BadRequest(
+                            res,
+                            {},
+                            'Census Code already exist for other UlbS'
+                        );
+                    }
+                }
+                // if(ulbRecord._id.toString()!=ulb || ulbRecord.sbCode==obj['censusCode']){
+                //     return Response.BadRequest(
+                //         res,
+                //         {},
+                //         'Census Code already exist for other UlbS'
+                //     );
+                // }
             }           
         }
         if(obj['sbCode']){
-            let ulbRecord = await Ulb.findOne({sbCode:obj['sbCode']})
-            let censusRecord = await Ulb.findOne({censusCode:obj['sbCode']})
-            if((ulbRecord.censusCode!=obj['sbCode'] && ulbRecord.ulb!=ulb) ||(censusRecord.censusCode!=obj['sbCode'] && censusRecord.ulb!=ulb)){
-                if(ulbRecord || censusRecord){
-                    return Response.BadRequest(
-                        res,
-                        {},
-                        'ULB Code already exist for other Ulb'
-                    );
+            let ulbRecord = await Ulb.findOne({$or:[{censusCode:obj['sbCode']},{sbCode:obj['sbCode']}]})
+       
+            // if(ulbRecord){
+            //     if(ulbRecord._id.toString()!=ulb){
+            //         return Response.BadRequest(
+            //             res,
+            //             {},
+            //             'ULb Code already exist for other UlbS'
+            //         );
+            //     }
+            // }
+
+            // if(censusRecord){
+            //     if(censusRecord._id.toString()!=ulb || censusRecord.censusCode==obj['sbCode']){
+            //         return Response.BadRequest(
+            //             res,
+            //             {},
+            //             'ULB Code already exist for other Ulb'
+            //         );
+            //     }
+            // }    
+
+            if(ulbRecord){
+                if(ulbRecord.sbCode){
+                    if(ulbRecord.sbCode==obj['sbCode']){
+                    } 
                 }
-            }    
+                if(ulbRecord.censusCode){
+                    if(ulbRecord.censusCode==obj['sbCode']){
+                        return Response.BadRequest(
+                            res,
+                            {},
+                            'ULB Code already exist for other Ulb'
+                        );
+                    }
+                }
+                // if(ulbRecord._id.toString()!=ulb || ulbRecord.sbCode==obj['censusCode']){
+                //     return Response.BadRequest(
+                //         res,
+                //         {},
+                //         'Census Code already exist for other UlbS'
+                //     );
+                // }
+            }
         }
         if (pObj['accountantEmail']) {
             // let emailCheck = await User.findOne({email:pObj.commissionerEmail},"email commissionerEmail ulb role").lean().exec();
