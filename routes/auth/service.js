@@ -188,11 +188,7 @@ module.exports.register = async (req, res) => {
             }
         });
     } catch (e) {
-<<<<<<< HEAD
-        console.error('Exception========>', e);
-=======
         console.log('Exception========>', e);
->>>>>>> e830cca394d7792e2b9a8fb133c919bc6f313a57
         if (e.errors && Object.keys(e.errors).length) {
             let o = {};
             for (k in e.errors) {
@@ -328,14 +324,6 @@ module.exports.login = async (req, res) => {
                     });
                 } else {
                     let update = Service.incLoginAttempts(user);
-<<<<<<< HEAD
-                    if (!ulbflagForEmail) {
-                        user.email = user.accountantEmail;
-                        await User.update({ _id: user._id }, update).exec();
-                    }
-                    let attempt = user;
-
-=======
                     console.log(update);
                     if (!ulbflagForEmail) {
                         user.email = user.accountantEmail;
@@ -345,7 +333,6 @@ module.exports.login = async (req, res) => {
                         ).exec();
                     }
                     let attempt = user;
->>>>>>> e830cca394d7792e2b9a8fb133c919bc6f313a57
                     return Response.BadRequest(
                         res,
                         { loginAttempts: attempt.loginAttempts },
