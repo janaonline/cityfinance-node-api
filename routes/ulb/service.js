@@ -41,7 +41,7 @@ module.exports.getFilteredUlb = async function (req, res) {
 };
 
 module.exports.getUlbById = function (req, res) {
-    if (!req.params._id) {
+    if (!req.params._id || req.params._id=='undefined') {
         res.status(400).json({
             timestamp: moment().unix(),
             status: false,
