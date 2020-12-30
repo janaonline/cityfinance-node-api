@@ -175,7 +175,7 @@ module.exports.create = async (req, res) => {
                         return Response.BadRequest(
                             res,
                             {},
-                            'Census Code already exist for other UlbS==>'
+                            'Census Code already exist for other Ulb'
                         );
                     }
                 }
@@ -184,7 +184,7 @@ module.exports.create = async (req, res) => {
                         return Response.BadRequest(
                             res,
                             {},
-                            'Census Code already exist for other UlbS'
+                            'Census Code already exist for other Ulb'
                         );
                     }
                 }
