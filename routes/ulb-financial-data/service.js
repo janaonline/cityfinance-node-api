@@ -1431,6 +1431,7 @@ module.exports.multipleApprove = async(req,res)=>{
         let data = setApproveStatus(prevState);
         data['actionTakenBy'] = user._id;
         data['status'] = 'APPROVED';
+        data['modifiedAt'] = time();
         if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
