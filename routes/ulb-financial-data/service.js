@@ -1414,6 +1414,10 @@ module.exports.multipleApprove = async(req,res)=>{
             '-history'
         ).lean();
 
+        let prevUser = await User.findOne({
+            _id: ObjectId(prevState.actionTakenBy),
+        }).exec();
+        
         let ulbUser = await User.findOne({
             ulb: ObjectId(prevState.ulb),
             isDeleted: false,
@@ -1432,6 +1436,15 @@ module.exports.multipleApprove = async(req,res)=>{
         data['actionTakenBy'] = user._id;
         data['status'] = 'APPROVED';
         data['modifiedAt'] = time();
+
+        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already approved By MoHUA User.'
+            );
+        }
+
         if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
