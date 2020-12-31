@@ -17,7 +17,7 @@ const userSignup = (userName, name, link) => {
                     </p>
                     <br>
                     <p>    
-                        After activation, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                        After activation, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
                     </p>
                     <br>
                     <br>Regards,<br>
@@ -37,21 +37,23 @@ const userCreation = (userName, name, link) => {
                     </p>
                     <br>
                     <p>
-                        After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                        After setting up your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
                     </p>
                     <br>
                     <br>Regards,<br>
                     City Finance Team`,
     };
 };
-const userForgotPassword = (name, link) => {
+const userForgotPassword = (name, link,ulbflagForEmail=true) => {
+
+    let text = ulbflagForEmail ?'registered email id':'Ulb Code/Census Code'
     return {
         subject: `City Finance Account Password Reset`,
         body: `Dear ${name},<br>
                         <p>Please use the following link to reset your password - <a href="${link}" target="_blank">${link}</a></p> 
                         <br>
                         <p>
-                            After resetting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                            After resetting your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your ${text}.
                         </p>
                         <br>
                         <br>Regards,<br>
@@ -65,7 +67,7 @@ const userProfileEdit = (name) => {
                     <br>
                     <p>
                         Your account has been successfully updated. <br>
-                        Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                        Please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your Ulb Code/Census Code.
                     </p>
                     <br>
                 <br>Regards,<br>
@@ -84,7 +86,7 @@ Your profile update request has been successfully cancelled`;
                         <br>
                         <p>
                             ${str} <br>
-                            Please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                            Please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
                         </p>
                         <br>
                     <br>Regards,<br>
@@ -98,7 +100,7 @@ const userEmailEdit = (name, link) => {
                 <br>
                 <p>    
                     Your email id has been successfully updated. Please follow this link to set your password - <a href="${link}" target="_blank">${link}</a>. <br>
-                    After setting up your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                    After setting up your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your Ulb Code/Census Code.
                 </p>
                 <br>
             <br>Regards,<br>
@@ -157,7 +159,10 @@ const ulbBulkUpload = (name, partner) => {
     };
 };
 
-const sendAccountReActivationEmail = (user, link) => {
+const sendAccountReActivationEmail = (user, link,ulbflagForEmail=true) => {
+
+    let text = ulbflagForEmail ?'registered email id':'Ulb Code/Census Code'
+
     return {
         subject: `Account Activation Link for City Finance`,
         body: `Dear  ${user.name},<br>
@@ -165,7 +170,7 @@ const sendAccountReActivationEmail = (user, link) => {
                         user.role !== 'USER' ? 'and set your password' : ''
                     }  - <a href="${link}">${link}</a>.</p> 
                     <br>
-                    <p> After setting your password, please visit <a href="http://www.cityfinance.in ">http://www.cityfinance.in </a> to login using your registered email id.</p>
+                    <p> After setting your password, please visit <a href="https://www.cityfinance.in ">https://www.cityfinance.in </a> to login using your ${text}.</p>
                     
                     <br>Regards,<br>
                     City Finance Team`,
@@ -197,7 +202,7 @@ const ulbSignupApproval = (name, link, edit = false) => {
                         </p>
                         <br>
                         <p>
-                            After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                            After setting your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
                         </p>
                         <br>
                     <br>Regards,<br>
@@ -218,7 +223,7 @@ const ulbSignupApproval = (sbCode, censusCode, name, link, edit = false) => {
 
                         </p>
                         <p>
-                            After setting your password, please visit <a href="http://www.cityfinance.in" target="_blank">http://www.cityfinance.in</a> to login using your registered email id.
+                            After setting your password, please visit <a href="https://www.cityfinance.in" target="_blank">https://www.cityfinance.in</a> to login using your registered email id.
                         </p>
                         <br>
                     <br>Regards,<br>
@@ -422,7 +427,7 @@ const xvUploadApprovalByMoHUAtoState = (ulbName, stateName) => {
 
 const xvUploadApprovalState = (mohuaName, ulbName, stateName) => {
     return {
-        subject: `15th FC Grant Form Successfully Submitted- ${ulbName}`,
+        subject: `15th FC Grant Form Successfully Approved by State- ${ulbName}`,
         body: `Dear ${mohuaName},<br>
                 <p>
                     The 15<sup>th</sup> FC Grant form data for the ${ulbName} of ${stateName} has been successfully submitted and approved by State.<br>
@@ -526,7 +531,7 @@ const stateFormSubmission = (name, stateName, type) => {
             body: `Dear ${name},<br>
                     <p>
                         Your Property Tax and User Charges Form has been successfully submitted. You can view your response <br>
-                        by logging in to http://www.cityfinance.in.
+                        by logging in to https://www.cityfinance.in.
                     </p>
                     <br>
                 <br>Regards,<br>
@@ -538,7 +543,7 @@ const stateFormSubmission = (name, stateName, type) => {
             body: `Dear ${name},<br>
                     <p>
                         The Property Tax and User Charges Form for ${stateName} has been successfully submitted. You can view <br>
-                        your response by logging in to http://www.cityfinance.in.
+                        your response by logging in to https://www.cityfinance.in.
                     </p>
                     <br>
                 <br>Regards,<br>

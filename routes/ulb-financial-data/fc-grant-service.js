@@ -534,13 +534,13 @@ module.exports.chartDataStatus = async (req, res) => {
     ];
     let backgroundColor = [
         '#c9c9c9',
-        '#87c9c9',
-        '#6b8585',
-        '#428181',
-        '#2a8181',
-        '#136060',
-        '#0c4848',
-        '#074141',
+        '#d9d9d9',
+        '#e6fefe',
+        '#52fafa',
+        '#07dfdf',
+        '#059b9a',
+        '#036363',
+        '#023131',
     ];
     let user = req.decoded;
     let totalUlb = req.query.totalUlb;
@@ -630,12 +630,13 @@ module.exports.chartDataStatus = async (req, res) => {
                 {
                     $project: {
                         isMillionPlus: '$ulb.isMillionPlus',
+                        state:'$ulb.state',
                     },
                 },
             ];
             if (state) {
                 q.push({ $match: { state: state } });
-                q1.push({ $match: { 'ulb.state': state } });
+                q1.push({ $match: { state: state } });
             }
             if (toggleCond) {
                 q.push({ $match: toggleCond });
@@ -882,31 +883,12 @@ module.exports.ulbList = async (req, res) => {
             },
         },
         {
-            $unwind: {
-                path: '$ulbType',
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-        {
-            $unwind: {
-                path: '$user',
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-        {
-            $unwind: {
-                path: '$state',
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-        {
             $project: {
-                stateName: '$state.name',
-                state: '$state._id',
+                state: { $arrayElemAt: ['$state', 0] },
+                user: { $arrayElemAt: ['$user', 0] },
+                ulbType: { $arrayElemAt: ['$ulbType', 0] },
                 ulbName: '$name',
-                ulbType: '$ulbType.name',
                 censusCode: 1,
-                role: '$user.role',
                 sbCode: 1,
                 isMillionPlus: {
                     $cond: {
@@ -914,7 +896,21 @@ module.exports.ulbList = async (req, res) => {
                         then: 'Milion Plus',
                         else: 'Non Million',
                     },
-                },
+                }
+              
+
+            }
+        },
+        {
+            $project: {
+                stateName: '$state.name',
+                state: '$state._id',
+                ulbName: 1,
+                ulbType: '$ulbType.name',
+                censusCode: 1,
+                role: '$user.role',
+                sbCode: 1,
+                isMillionPlus: 1,
                 email: '$user.accountantEmail',
                 mobile: '$user.commissionerConatactNumber',
                 registration: {
@@ -928,7 +924,7 @@ module.exports.ulbList = async (req, res) => {
                         then: 'Yes',
                         else: 'No',
                     },
-                },
+                }
             },
         },
     ];
@@ -949,9 +945,9 @@ module.exports.ulbList = async (req, res) => {
             ulbType: 'ULB Type',
             censusCode: 'Census Code',
             sbCode: 'ULB Code',
-            isMillionPlus: 'Type',
+            isMillionPlus: 'Population Type',
             email: 'Email ID',
-            registration: 'Registered',
+            registration: 'Profile Updated',
         };
         if (user.role == 'STATE') {
             delete field.stateName;
@@ -968,7 +964,8 @@ module.exports.ulbList = async (req, res) => {
     }
     q.push({ $skip: skip });
     q.push({ $limit: limit });
-    let arr = await Ulb.aggregate(q).exec();
+    let arr = await Ulb.aggregate(q).collation({ locale: 'en' })
+    .exec();
 
     return res.status(200).json({
         timestamp: moment().unix(),

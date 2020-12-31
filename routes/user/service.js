@@ -292,10 +292,9 @@ module.exports.getAll = async (req, res) => {
                     if (Object.keys(sort).length) {
                         q.push({ $sort: sort });
                     }
-
-                    if(req.query.role=="ULB"){
-                        q.push({ $sort: { priority: -1 } });
-                    }
+                    // if(req.query.role=="ULB"){
+                    //     q.push({ $sort: { priority: -1 } });
+                    // }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
                     if (!skip) {
@@ -303,8 +302,6 @@ module.exports.getAll = async (req, res) => {
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
                     }
-
-                    
                     let users = await User.aggregate(q)
                         .collation({ locale: 'en' })
                         .exec();
@@ -528,6 +525,15 @@ module.exports.create = async (req, res) => {
             newUser.createdBy = user._id;
             newUser.isEmailVerified = false;
             console.log(newUser);
+            let u = await User.findOne({email:data['email'],role:{$in:['MoHUA','USER','PARTNER','STATE']}}).exec()
+            if(u){
+                return Response.BadRequest(
+                    res,
+                    {},
+                    `Email ID already exists.`
+                );
+            }
+
             newUser.save(async (err, user) => {
                 if (err) {
                     console.log('Err', err);

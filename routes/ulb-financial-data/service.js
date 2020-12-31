@@ -26,16 +26,16 @@ const millionPlusCitiesKeys = [
 ];
 const mappingKeys = {
     serviceLevel: 'serviceLevel',
-    houseHoldCoveredPipedSupply: 'Household Covered Piped Water Supply',
+    houseHoldCoveredPipedSupply: '% of households covered with piped water supply',
     waterSuppliedPerDay: 'Water Supplied in litre per day(lpcd)',
     reduction: 'Reduction in non-water revenue',
     houseHoldCoveredWithSewerage:
-        'Household Covered with sewerage/septage services',
-    garbageFreeCities: 'Garbage free star rating of the cities',
+        '% of household covered with sewerage/septage services',
+    garbageFreeCities: 'Plan for garbage free star rating of the cities',
     waterSupplyCoverage:
-        'Coverage of water supply for public/community toilets',
+        'Plan for coverage of water supply for public/community toilets',
     cityPlan: 'City Plan DPR',
-    waterBalancePlan: 'City Plan DPR',
+    waterBalancePlan: 'Water Balance Plan',
     serviceLevelPlan: 'Service Level Improvement Plan',
     solidWastePlan: 'Solid Waste Management Plan',
 };
@@ -77,6 +77,7 @@ module.exports.create = async (req, res) => {
             audited ? 'Audited' : 'Unaudited'
         }`;
         data.ulb = user.ulb;
+        req.body['createdAt'] = time();
         data.modifiedAt = time();
         let checkData = await XVFCGrantULBData.count({
             ulb: data.ulb,
@@ -431,7 +432,7 @@ module.exports.getAll = async (req, res) => {
                     $project: {
                         _id: 1,
                         audited: 1,
-                        //priority: 1,
+                        priority: 1,
                         // auditStatus: {
                         //     $cond: {
                         //         if: '$audited',
@@ -453,6 +454,13 @@ module.exports.getAll = async (req, res) => {
                         sbCode: '$ulb.sbCode',
                         censusCode: '$ulb.censusCode',
                         isMillionPlus: '$ulb.isMillionPlus',
+                        populationType: {
+                            $cond: {
+                                if: { $eq: ['$ulb.isMillionPlus', 'Yes'] },
+                                then: 'Million Plus',
+                                else: 'Non Million'
+                            }
+                        },
                         state: '$state._id',
                         stateName: '$state.name',
                         stateCode: '$state.code',
@@ -540,8 +548,9 @@ module.exports.getAll = async (req, res) => {
                     stateName: 'State name',
                     ulbName: 'ULB name',
                     ulbType: 'ULB Type',
-                    sbCode: 'ULB Code',
+                    populationType:'Population Type',
                     censusCode: 'Census Code',
+                    sbCode: 'ULB Code',
                     //financialYear: 'Financial Year',
                     //auditStatus: 'Audit Status',
                     status: 'Status',
@@ -802,14 +811,25 @@ module.exports.getDetails = async (req, res) => {
                 },
             },
         ]).exec();
-
-        let rejectedData = await XVFCGrantULBData.aggregate([
+        // Match from history
+        let rejectedDataFromHistory = await XVFCGrantULBData.aggregate([
             {
                 $match: query,
             },
             { $unwind: '$history' },
             { $match: { 'history.status': 'REJECTED' } },
         ]).exec();
+
+        // match from data
+
+        //if(rejectedDataFromHistory.length == 0){
+            var rejectedData = await XVFCGrantULBData.aggregate([
+                {
+                    $match: query,
+                },
+                { $match: { 'status': 'REJECTED' } },
+            ]).exec();
+        //}
 
         let firstSubmitedFromHistory = await XVFCGrantULBData.aggregate([
             {
@@ -860,43 +880,66 @@ module.exports.getDetails = async (req, res) => {
         ]).exec();
 
         let firstSubmitedAt =
-            firstSubmited.length > 0
-                ? firstSubmited[firstSubmited.length - 1].createdAt
-                : firstSubmitedFromHistory.length > 0
-                ? firstSubmitedFromHistory[firstSubmitedFromHistory.length - 1]
+        firstSubmitedFromHistory.length > 0
+                ? firstSubmitedFromHistory[0].history.createdAt
+                : firstSubmited.length > 0
+                ? firstSubmited[firstSubmited.length - 1]
                       .createdAt
                 : null;
         let rejectedAt =
             rejectedData.length > 0
                 ? rejectedData[rejectedData.length - 1].modifiedAt
-                : null;
+                : rejectedDataFromHistory.length > 0
+                ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1].history.modifiedAt:null
         let history = { histroy: '' };
-        if (user.role == 'MoHUA') {
-            let historyData = await commonQuery(query);
-            if (historyData.length > 0) {
-                history['histroy'] = resetDataStatus(
-                    historyData[historyData.length - 1],
-                    false
-                );
-                let rejectReasonKeys = await getRejectedStatusKey(
-                    history['histroy'].data
-                );
-                let newData = await getRejectedStatusKey(
-                    data[0],
-                    rejectReasonKeys
-                );
-                return res.status(200).json({
-                    timestamp: moment().unix(),
-                    success: true,
-                    message: 'Ulb update request list',
-                    data: newData,
-                });
-            }
-        }
         let finalData = Object.assign(data[0], {
             rejectedAt: rejectedAt,
             firstSubmitedAt: firstSubmitedAt,
         });
+        if (user.role == 'MoHUA') {
+            if(data[0]["actionTakenByUserRole"]=='STATE' && data[0]["status"]=='APPROVED'){
+                let historyData = await commonQuery(query);
+                if (historyData.length > 0) {
+                    history['histroy'] = resetDataStatus(
+                        historyData[historyData.length - 1],
+                        false
+                    );
+                    let rejectReasonKeys = await getRejectedStatusKey(
+                        history['histroy'].data
+                    );
+                    let newData = await getRejectedStatusKey(
+                        data[0],
+                        rejectReasonKeys
+                    );
+                    newData = Object.assign(data[0], {
+                        rejectedAt: rejectedAt,
+                        firstSubmitedAt: firstSubmitedAt,
+                    }); 
+    
+                    return res.status(200).json({
+                        timestamp: moment().unix(),
+                        success: true,
+                        message: 'Ulb update request list',
+                        data: newData,
+                    });
+                }
+                else{
+                    let newData = resetDataStatus(data[0]);
+                    let finalData = Object.assign(newData, {
+                        rejectedAt: rejectedAt,
+                        firstSubmitedAt: firstSubmitedAt,
+                    });
+                    return res.status(200).json({
+                        timestamp: moment().unix(),
+                        success: true,
+                        message: 'Ulb update request list',
+                        data:finalData
+                    });
+                }
+            }
+
+        }
+       
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
@@ -1360,8 +1403,153 @@ module.exports.action = async (req, res) => {
         console.log('Exception', e);
     }
 };
+
+module.exports.multipleApprove = async(req,res)=>{
+
+    let user = req.decoded;
+    if(user.role == 'MoHUA'){
+        (_id = ObjectId(req.params._id));
+        let prevState = await XVFCGrantULBData.findOne(
+            { _id: _id },
+            '-history'
+        ).lean();
+
+        let prevUser = await User.findOne({
+            _id: ObjectId(prevState.actionTakenBy),
+        }).exec();
+        
+        let ulbUser = await User.findOne({
+            ulb: ObjectId(prevState.ulb),
+            isDeleted: false,
+            role: 'ULB',
+        })
+        .populate([
+            {
+                path: 'state',
+                model: State,
+                select: '_id name',
+            },
+        ])
+        .exec();
+        let history = Object.assign({}, prevState);
+        let data = setApproveStatus(prevState);
+        data['actionTakenBy'] = user._id;
+        data['status'] = 'APPROVED';
+        data['modifiedAt'] = time();
+
+        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already approved By MoHUA User.'
+            );
+        }
+
+        if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
+            let du = await XVFCGrantULBData.update(
+                { _id: ObjectId(prevState._id) },
+                { $set: data, $push: { history: history } }
+            );
+            let mailOptions = {
+                to: '',
+                subject: '',
+                html: '',
+            };
+            /** ULB TRIGGER */
+            let ulbEmails = [];
+            let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
+                ulbUser.name
+            );
+            ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+            ulbUser.accountantEmail
+                ? ulbEmails.push(ulbUser.accountantEmail)
+                : '';
+            (mailOptions.to = ulbEmails.join()),
+                (mailOptions.subject = UlbTemplate.subject),
+                (mailOptions.html = UlbTemplate.body);
+            Service.sendEmail(mailOptions);
+            /** STATE TRIGGER */
+            let stateEmails = [];
+            let stateUser = await User.find({
+                state: ObjectId(ulbUser.state._id),
+                isDeleted: false,
+                role: 'STATE',
+            }).exec();
+            for (let d of stateUser) {
+                sleep(700);
+                d.email ? stateEmails.push(d.email) : '';
+                d.departmentEmail
+                    ? stateEmails.push(d.departmentEmail)
+                    : '';
+                let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
+                    ulbUser.name,
+                    d.name
+                );
+                mailOptions.to = stateEmails.join();
+                mailOptions.subject = stateTemplate.subject;
+                mailOptions.html = stateTemplate.body;
+                Service.sendEmail(mailOptions);
+            }
+            return Response.OK(res,{}, ``);
+        }
+        else{
+            return Response.BadRequest(
+                res,
+                {},
+                'Something went wrong!'
+            );
+        }
+    }
+    else{
+        return Response.BadRequest(
+            res,
+            {},
+            'This action is only allowed by MoHUA'
+        );
+    }
+}
+
+function setApproveStatus(data) {
+    for (key in data) {
+        if (typeof data[key] === 'object' && data[key] !== null) {
+            if (key == 'waterManagement') {
+                for (let objKey of waterManagementKeys) {
+                    if (data[key][objKey]) {
+                        data[key][objKey]['status'] = 'APPROVED';
+                        data[key][objKey]['rejectReason'] = '';
+                    }
+                }
+            }
+            if (key == 'solidWasteManagement') {
+                for (let objKey of solidWasteManagementKeys) {
+                    if (data[key]['documents'][objKey]) {
+                        for (let d of data[key]['documents'][objKey]) {
+                            d.status = 'APPROVED';
+                            d.rejectReason = '';
+                        }
+                    }
+                }
+            }
+            if (key == 'millionPlusCities') {
+                for (let objKey of millionPlusCitiesKeys) {
+                    if (data[key]['documents'][objKey]) {
+                        for (let d of data[key]['documents'][objKey]) {
+                            d.status = 'APPROVED';
+                            d.rejectReason = '';
+                        }
+                    }
+                }
+            }
+        } else {
+            data['status'] = 'APPROVED';
+        }
+    }
+    data['status'] = 'APPROVED';
+    return data;
+}
+
 async function commonQuery(query) {
-    let historyData = await UlbFinancialData.aggregate([
+    let historyData = await XVFCGrantULBData.aggregate([
         {
             $match: query,
         },
@@ -1377,6 +1565,12 @@ async function commonQuery(query) {
                 localField: 'history.actionTakenBy',
                 foreignField: '_id',
                 as: 'user',
+            },
+        },
+        {
+            $unwind: {
+                path: '$user',
+                preserveNullAndEmptyArrays: true,
             },
         },
         { $match: { 'user.role': 'MoHUA', 'history.status': 'REJECTED' } },
@@ -1561,7 +1755,7 @@ function overAllStatus(data) {
                             }
                             rejected = true;
                             let tab =
-                                'Water Supply & Waste-Water Management:' +
+                                'Service Level Indicators:' +
                                 mappingKeys[objKey];
                             let reason = {
                                 [tab]: data[key][objKey]['rejectReason'],
@@ -1583,6 +1777,7 @@ function overAllStatus(data) {
                     //     }
                     // }
                 }
+
                 if (key == 'solidWasteManagement') {
                     for (let objKey of solidWasteManagementKeys) {
                         if (data[key]['documents'][objKey]) {
@@ -1596,7 +1791,7 @@ function overAllStatus(data) {
                                     }
                                     rejected = true;
                                     let tab =
-                                        'Solid Waste Management:' +
+                                        'Upload Plans:' +
                                         mappingKeys[objKey];
                                     let reason = {
                                         [tab]: d.rejectReason,
@@ -1616,7 +1811,7 @@ function overAllStatus(data) {
                                 }
                                 rejected = true;
                                 let tab =
-                                    'Million Plus Cities Only:' +
+                                    'Upload Plans(Million+ City):' +
                                     mappingKeys[objKey];
                                 let reason = {
                                     [tab]: d.rejectReason,
@@ -1633,17 +1828,32 @@ function overAllStatus(data) {
             }
         }
         /** Concat reject reason string */
+
         if (rejectReason.length > 0) {
             let finalString = rejectReason.map((obj) => {
                 let service = Object.keys(obj)[0];
                 let reason = obj[service];
-                service = `<strong>` + service + `</strong>`;
-                return `<p> ${service + ` :` + reason} </p>`;
+                let s = service.split(':'); 
+                let arr = [...s,reason]
+                return arr;
+               // service = `<strong>` + service + `</strong>`;
+                //return `<p> ${service + ` :` + reason} </p>`;
             });
-            let x = '';
+            let x = `<table border='1'>
+            <tr>
+                <th>Tab Name</th>
+                <th>Field Name</th>
+                <th>Reason for Rejection</th>
+            </tr>
+            `;
             for (i of finalString) {
-                x += i;
+                x += `<tr>`
+                for(t of i){
+                    x += `<td>${t}</td>`;
+                }
+                x += `</tr>`
             }
+            x += `</table>`
             resolve({ status: rejected, reason: x });
         }
         resolve({ status: rejected, reason: '' });
@@ -2184,6 +2394,11 @@ module.exports.getXVFCStateForm = async (req, res) => {
     let limit = req.query.limit ? parseInt(req.query.limit) : 10;
     let query = {};
     query['isActive'] = true;
+    query['$or']=[
+        {grantTransferCertificate:{$ne:null}},
+        {serviceLevelBenchmarks:{$ne:null}},
+        {utilizationReport:{$ne:null}}
+    ]
     if (user.role == 'STATE') {
         query['state'] = ObjectId(user.state);
     }
@@ -2227,3 +2442,53 @@ module.exports.getXVFCStateFormById = async (req, res) => {
         );
     }
 };
+
+module.exports.state = async(req,res)=>{
+
+    let q = [
+        {$match:{isActive:true}},
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'actionTakenBy',
+                foreignField: '_id',
+                as: 'actionTakenBy',
+            }
+        },
+        {
+            $lookup: {
+                from: 'ulbs',
+                localField: 'ulb',
+                foreignField: '_id',
+                as: 'ulb',
+            }
+        },
+        { $unwind: '$ulb' },       
+        {
+            $lookup: {
+                from: 'states',
+                localField: 'ulb.state',
+                foreignField: '_id',
+                as: 'state'
+            }
+        },
+        {$unwind:'$state'},
+        {$unwind: '$actionTakenBy' },
+        {$match:{ status: 'APPROVED', "actionTakenBy.role": 'STATE' }},
+        {$group:{_id:{ "name":"$state.name","_id":"$state._id"}}
+        },    
+        {$project:{
+            "name":"$_id.name",
+            "_id":"$_id._id"    
+            }
+        }
+    ]
+    let arr = await XVFCGrantULBData.aggregate(q).exec();
+    return res.status(200).json({
+        timestamp: moment().unix(),
+        success: true,
+        message: 'list',
+        data: arr
+    });
+
+}

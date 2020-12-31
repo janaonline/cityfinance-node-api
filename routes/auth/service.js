@@ -66,7 +66,7 @@ module.exports.register = async (req, res) => {
         }
         newUser.save(async (err, user) => {
             if (err) {
-                console.log('Err', err);
+                console.error('Err', err);
                 return Response.BadRequest(
                     res,
                     err,
@@ -201,8 +201,9 @@ module.exports.register = async (req, res) => {
     }
 };
 module.exports.login = async (req, res) => {
-    /**Conditional Query For CensusCode/SWATCH BHARAT Code **/
-    let msg = `Invalid Swatch Bharat Code/Census Code or password`;
+    /**Conditional Query For CensusCode/ULB Code **/
+    let cond = {}
+    let msg = `Invalid ULB Code/Census Code or password`;
     let ulbflagForEmail = false;
     let query = [
         { censusCode: req.sanitize(req.body.email) },
@@ -213,7 +214,11 @@ module.exports.login = async (req, res) => {
         msg = `Invalid email or password`;
         query = [{ email: req.sanitize(req.body.email) }];
     }
-    User.findOne({ $or: query, isDeleted: false }, async (err, user) => {
+    cond = {$or: query, isDeleted: false}
+    if(ulbflagForEmail){
+       cond = { $or: query, isDeleted: false,role:{$ne:'ULB'} }
+    }
+    User.findOne(cond, async (err, user) => {
         if (err) {
             return Response.BadRequest(res, err, 'Db Error');
         } else if (!user) {
@@ -233,13 +238,18 @@ module.exports.login = async (req, res) => {
                 `Your request has been rejected. Reason: ${user.rejectReason}`
             );
         } else if (!user.isEmailVerified) {
-            return Response.BadRequest(res, err, 'Email not verified yet.');
-        } else if (user.role == 'ULB' && ulbflagForEmail) {
-            return Response.BadRequest(
-                res,
-                err,
-                'Please use Swatch Bharat Code/Census Code for login'
-            );
+
+            let url = `${process.env.HOSTNAME}/account-reactivate`;
+            return Response.BadRequest(res, err, `Email not verified yet. Please <a href='${url}'>click here</a> to send the activation link on your registered email`);
+        } 
+        else if ((user.role!= 'ADMIN' && user.role != 'USER' && user.role != 'STATE' && user.role != 'PARTNER' && user.role != 'MoHUA') && ulbflagForEmail) {
+            if(user.role == 'ULB' && ulbflagForEmail){
+                return Response.BadRequest(
+                    res,
+                    err,
+                    'Please use ULB Code/Census Code for login'
+                );
+            }
         } else {
             try {
                 if (user.isLocked) {
@@ -340,7 +350,7 @@ module.exports.login = async (req, res) => {
                     );
                 }
             } catch (e) {
-                console.log('Error', e.message, e);
+                console.error('Error', e.message, e);
                 return Response.BadRequest(
                     res,
                     {},
@@ -380,7 +390,7 @@ module.exports.verifyToken = (req, res, next) => {
                     return res.redirect(url);
                 }
 
-                console.log('verify-token jwt.verify : ', err.message);
+                console.error('verify-token jwt.verify : ', err.message);
                 return Response.UnAuthorized(
                     res,
                     {},
@@ -498,7 +508,8 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
         );
         const template = Service.emailTemplate.sendAccountReActivationEmail(
             user,
-            link
+            link,
+            ulbflagForEmail
         );
         let mailOptions = {
             to: user.email,
@@ -576,8 +587,8 @@ module.exports.emailVerification = async (req, res) => {
     }
 };
 module.exports.forgotPassword = async (req, res) => {
-    let msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not registered.`;
-    let verify_msg = `Requested Swatch Bharat Code/Census Code:${req.body.email} is not verified.`;
+    let msg = `Requested ULB Code/Census Code:${req.body.email} is not registered.`;
+    let verify_msg = `Requested ULB Code/Census Code:${req.body.email} is not verified.`;
     let ulbflagForEmail = false;
     let query = [
         { censusCode: req.sanitize(req.body.email) },
@@ -637,7 +648,8 @@ module.exports.forgotPassword = async (req, res) => {
                     );
                     let template = Service.emailTemplate.userForgotPassword(
                         user.name,
-                        link
+                        link,
+                        ulbflagForEmail
                     );
                     let mailOptions = {
                         to: user.email,
@@ -742,7 +754,7 @@ module.exports.captcha = (req, res) => {
             success: false,
             message: 'Token is empty or invalid',
         });
-        return console.log('token empty');
+        return console.error('token empty');
     }
     const url =
         'https://www.google.com/recaptcha/api/siteverify?secret=' +
@@ -756,7 +768,7 @@ module.exports.captcha = (req, res) => {
         //check if the validation failed
         if (body.success !== undefined && !body.success) {
             res.send({ success: false, message: 'recaptcha failed' });
-            return console.log('failed');
+            return console.error('failed');
         }
         //if passed response success message to client
         res.send({ success: true, message: 'recaptcha passed' });
