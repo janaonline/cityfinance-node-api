@@ -8,20 +8,24 @@ function isValid(date, h1, m1, h2, m2) {
 let mail1 = isValid(new Date(),08,01,12,00);
 let mail2 = isValid(new Date(),12,01,16,00);
 let mail3 = isValid(new Date(),04,01,08,00);
-let MAIL = null
+let mail = null
+let password = null 
 if(mail1){
-    MAIL= process.env.EMAIL1 // cityfinance1@dhwaniris.com
+    mail= process.env.EMAIL1 // cityfinance1@dhwaniris.com
+    password = process.env.PASS1
 }else if(mail2){
-    MAIL= process.env.EMAIL2 //cityfinance2@dhwaniris.com
+    mail= process.env.EMAIL2 //cityfinance2@dhwaniris.com
+    password = process.env.PASS2
 }
 else if(mail3){   
-    MAIL= process.env.EMAIL // reachus
+    mail= process.env.EMAIL // reachus
+    password = process.env.PASS
 }
 
-console.log('MAIL',MAIL)
+console.log('MAIL',mail,password)
 module.exports = function(mailOptions, cb){
     const smtpConnectionString = process.env.EMAILSERVICE == 'gmail' ?
-        `smtps://${encodeURIComponent(MAIL)}:${encodeURIComponent(process.env.PASS)}@smtp.gmail.com`: {
+        `smtps://${encodeURIComponent(mail)}:${encodeURIComponent(password)}@smtp.gmail.com`: {
             host: 'smtp.office365.com',
             port: '587',
             auth: {
