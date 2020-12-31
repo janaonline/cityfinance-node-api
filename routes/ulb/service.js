@@ -41,7 +41,7 @@ module.exports.getFilteredUlb = async function (req, res) {
 };
 
 module.exports.getUlbById = function (req, res) {
-    if (!req.params._id || req.params._id=='undefined') {
+    if (!req.params._id || req.params._id == 'undefined') {
         res.status(400).json({
             timestamp: moment().unix(),
             status: false,
@@ -281,13 +281,11 @@ module.exports.getByState = async function (req, res) {
                 .status(200)
                 .send({ success: true, data: data[0], msg: 'ULBS Found' });
         } else {
-            return res
-                .status(200)
-                .send({
-                    success: true,
-                    data: {},
-                    msg: 'No ULBS for this state Found',
-                });
+            return res.status(200).send({
+                success: true,
+                data: {},
+                msg: 'No ULBS for this state Found',
+            });
         }
     } catch (e) {
         console.log('Error', e.message);
@@ -612,14 +610,11 @@ module.exports.getUlbs = async (req, res) => {
             population: 1,
             area: 1,
         }).exec();
-        return res
-            .status(200)
-            .json({
-                message:
-                    'Ulb list with population and coordinates and population.',
-                success: true,
-                data: ulbs,
-            });
+        return res.status(200).json({
+            message: 'Ulb list with population and coordinates and population.',
+            success: true,
+            data: ulbs,
+        });
     } catch (e) {
         console.log('Exception', e);
         return res
@@ -732,14 +727,11 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
                 },
             },
         ]);
-        return res
-            .status(200)
-            .json({
-                message:
-                    'Ulb list with population and coordinates and population.',
-                success: true,
-                data: ulbs,
-            });
+        return res.status(200).json({
+            message: 'Ulb list with population and coordinates and population.',
+            success: true,
+            data: ulbs,
+        });
     } catch (e) {
         console.log('Exception', e);
         return res
