@@ -26,7 +26,7 @@ const UserSchema = mongoose.Schema({
 	departmentContactNumber:{type:String, required:stateRole(), default:""},
 	departmentEmail:{type:String, required:stateRole(), default:""},
 	address:{type:String, required:stateRole(), default:""},
-	ulb : { type: Schema.Types.ObjectId, ref: 'Ulb', required:ulbRole },
+	ulb : { type: Schema.Types.ObjectId, ref: 'Ulb', required:ulbRole,index:true},
 	commissionerName:{type:String,default:""},
 	commissionerEmail:{type:String,default:""},
 	commissionerConatactNumber:{type:String, default:""},
