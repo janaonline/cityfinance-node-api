@@ -432,7 +432,7 @@ module.exports.getAll = async (req, res) => {
                     $project: {
                         _id: 1,
                         audited: 1,
-                        //priority: 1,
+                        priority: 1,
                         // auditStatus: {
                         //     $cond: {
                         //         if: '$audited',
