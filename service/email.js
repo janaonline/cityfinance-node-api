@@ -29,8 +29,8 @@ module.exports = function(mailOptions, cb){
             host: 'smtp.office365.com',
             port: '587',
             auth: {
-                user: process.env.EMAIL,
-                pass: process.env.PASS
+                user: mail,
+                pass: password
             },
             secureConnection: false,
             tls: {
