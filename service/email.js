@@ -1,7 +1,27 @@
 const nodemailer = require('nodemailer');
+
+function isValid(date, h1, m1, h2, m2) {
+    var h = date.getHours();
+    var m = date.getMinutes();
+    return (h1 < h || h1 == h && m1 <= m) && (h < h2 || h == h2 && m <= m2);
+}  
+let mail1 = isValid(new Date(),08,01,12,00);
+let mail2 = isValid(new Date(),12,01,16,00);
+let mail3 = isValid(new Date(),04,01,08,00);
+let MAIL = null
+if(mail1){
+    MAIL= process.env.EMAIL1 // cityfinance1@dhwaniris.com
+}else if(mail2){
+    MAIL= process.env.EMAIL2 //cityfinance2@dhwaniris.com
+}
+else if(mail3){   
+    MAIL= process.env.EMAIL // reachus
+}
+
+console.log('MAIL',MAIL)
 module.exports = function(mailOptions, cb){
     const smtpConnectionString = process.env.EMAILSERVICE == 'gmail' ?
-        `smtps://${encodeURIComponent(process.env.EMAIL)}:${encodeURIComponent(process.env.PASS)}@smtp.gmail.com`: {
+        `smtps://${encodeURIComponent(MAIL)}:${encodeURIComponent(process.env.PASS)}@smtp.gmail.com`: {
             host: 'smtp.office365.com',
             port: '587',
             auth: {
