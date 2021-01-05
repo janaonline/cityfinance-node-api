@@ -188,7 +188,7 @@ module.exports.register = async (req, res) => {
             }
         });
     } catch (e) {
-        console.log('Exception========>', e);
+        console.error('Exception========>', e);
         if (e.errors && Object.keys(e.errors).length) {
             let o = {};
             for (k in e.errors) {
@@ -255,12 +255,15 @@ module.exports.login = async (req, res) => {
                 if (user.isLocked) {
                     // just increment login attempts if account is already locked
                     let update = Service.incLoginAttempts(user);
-                    await User.update({ email: user.email }, update).exec();
-                    return Response.BadRequest(
-                        res,
-                        {},
-                        `Your account is temporarily locked for 1 hour`
-                    );
+                    await User.update({ulb:ObjectId(user.ulb),role:'ULB'}, update).exec();
+                    let up = await User.findOne({ulb:ObjectId(user.ulb),role:'ULB'}).exec();
+                    if(up.isLocked){
+                        return Response.BadRequest(
+                            res,
+                            {},
+                            `Your account is temporarily locked for 1 hour`
+                        );
+                    }
                 }
 
                 // check Password Expiry
@@ -319,7 +322,7 @@ module.exports.login = async (req, res) => {
                     if (!ulbflagForEmail) {
                         user.email = user.accountantEmail;
                     }
-                    await User.update({ email: user.email }, updates).exec(); // set
+                    await User.update({ulb:ObjectId(user.ulb),role:'ULB'}, updates).exec(); // set
                     return res.status(200).json({
                         success: true,
                         token: token,
@@ -334,13 +337,9 @@ module.exports.login = async (req, res) => {
                     });
                 } else {
                     let update = Service.incLoginAttempts(user);
-                    console.log(update);
                     if (!ulbflagForEmail) {
                         user.email = user.accountantEmail;
-                        let up = await User.update(
-                            { _id: user._id },
-                            update
-                        ).exec();
+                        let up = await User.update({ _id: user._id }, update).exec();
                     }
                     let attempt = user;
                     return Response.BadRequest(
@@ -608,7 +607,10 @@ module.exports.forgotPassword = async (req, res) => {
                 return Response.BadRequest(res, {}, msg);
             } else if (!user.isEmailVerified) {
                 return Response.BadRequest(res, {}, verify_msg);
-            } else if (user.isLocked) {
+            } 
+            else if (!user.isRegistered && user.role=='ULB') {
+                return Response.BadRequest(res, {},'Profile is not completed');
+            }else if (user.isLocked) {
                 return Response.BadRequest(
                     res,
                     {},
