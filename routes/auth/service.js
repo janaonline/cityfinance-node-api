@@ -255,7 +255,7 @@ module.exports.login = async (req, res) => {
                 if (user.isLocked) {
                     // just increment login attempts if account is already locked
                     let update = Service.incLoginAttempts(user);
-                    await User.update({ email: user.email }, update).exec();
+                    await User.update({ulb:ObjectId(user.ulb),role:'ULB'}, update).exec();
                     return Response.BadRequest(
                         res,
                         {},
