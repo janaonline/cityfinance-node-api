@@ -607,7 +607,10 @@ module.exports.forgotPassword = async (req, res) => {
                 return Response.BadRequest(res, {}, msg);
             } else if (!user.isEmailVerified) {
                 return Response.BadRequest(res, {}, verify_msg);
-            } else if (user.isLocked) {
+            } 
+            else if (!user.isRegistered && user.role=='ULB') {
+                return Response.BadRequest(res, {},'Profile is not completed');
+            }else if (user.isLocked) {
                 return Response.BadRequest(
                     res,
                     {},
