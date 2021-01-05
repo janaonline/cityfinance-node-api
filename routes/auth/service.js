@@ -256,11 +256,14 @@ module.exports.login = async (req, res) => {
                     // just increment login attempts if account is already locked
                     let update = Service.incLoginAttempts(user);
                     await User.update({ulb:ObjectId(user.ulb),role:'ULB'}, update).exec();
-                    return Response.BadRequest(
-                        res,
-                        {},
-                        `Your account is temporarily locked for 1 hour`
-                    );
+                    let up = await User.findOne({ulb:ObjectId(user.ulb),role:'ULB'}).exec();
+                    if(up.isLocked){
+                        return Response.BadRequest(
+                            res,
+                            {},
+                            `Your account is temporarily locked for 1 hour`
+                        );
+                    }
                 }
 
                 // check Password Expiry
@@ -319,7 +322,7 @@ module.exports.login = async (req, res) => {
                     if (!ulbflagForEmail) {
                         user.email = user.accountantEmail;
                     }
-                    await User.update({ email: user.email }, updates).exec(); // set
+                    await User.update({ulb:ObjectId(user.ulb),role:'ULB'}, updates).exec(); // set
                     return res.status(200).json({
                         success: true,
                         token: token,
