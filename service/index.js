@@ -138,7 +138,7 @@ function compareHash(str1, str2) {
 function incLoginAttempts(user) {
 
   const MAX_LOGIN_ATTEMPTS = 5;
-  const LOCK_TIME = 60*60 * 1000       
+  const LOCK_TIME = 5*60 * 1000       
   // if we have a previous lock that has expired, restart at 1
   if (user.lockUntil && user.lockUntil < Date.now()) {
     return updates = {$set: { loginAttempts: 1,isLocked:false,lockUntil:0}}
