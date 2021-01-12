@@ -2392,6 +2392,7 @@ module.exports.getXVFCStateForm = async (req, res) => {
     let user = req.decoded;
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
     let limit = req.query.limit ? parseInt(req.query.limit) : 10;
+    let csv = req.query.csv
     let query = {};
     query['isActive'] = true;
     query['$or']=[
@@ -2404,6 +2405,63 @@ module.exports.getXVFCStateForm = async (req, res) => {
     }
     let actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
     if (actionAllowed.indexOf(user.role) > -1) {
+        if (csv) {
+            let field = {
+                state: 'State Name',
+                grantTransferCertificate: 'Grant transfer certificate signed by Principal secretary/ secretary(UD)',
+                serviceLevelBenchmarks: 'tilization report signed by Principal secretary/ secretary (UD)',
+                utilizationReport: 'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs'
+            };
+            let q = [
+                {
+                    $match:query
+                },
+                {  $lookup: {
+                    from: 'states',
+                    localField: 'state',
+                    foreignField: '_id',
+                    as: 'state',
+                    }
+                },
+                {$unwind:'$state'},
+                {$project:{
+                       'state': '$state.name',
+                       grantTransferCertificate:{$arrayElemAt:['$grantTransferCertificate',0]},
+                       serviceLevelBenchmarks:{$arrayElemAt:['$serviceLevelBenchmarks',0]},
+                       utilizationReport:{$arrayElemAt:['$utilizationReport',0]}
+                    }
+                },
+                {$project:{
+                    state:1,
+                        grantTransferCertificate: {
+                            $cond: {
+                                if: { $eq: ['$grantTransferCertificate',null] },
+                                then: 'N/A',
+                                else: '$grantTransferCertificate.name'
+                            }
+                        },
+                        serviceLevelBenchmarks: {
+                            $cond: {
+                                if: { $eq: ['$serviceLevelBenchmarks',null] },
+                                then: 'N/A',
+                                else: '$serviceLevelBenchmarks.name'
+                            }
+                        },
+                        utilizationReport: {
+                            $cond: {
+                                if: { $eq: ['$utilizationReport',null] },
+                                then: 'N/A',
+                                else: '$utilizationReport.name'
+                            }
+                        }
+                    } 
+                }
+            ]
+            let arr = await XVStateForm.aggregate(q).exec();
+            let xlsData = await Service.dataFormating(arr, field);
+            return res.xls('state-form.xlsx', xlsData);
+        }
+
         let total = await XVStateForm.count(query).exec();
         let data = await XVStateForm.find(query)
             .populate([{ path: 'state', select: 'name' }])
