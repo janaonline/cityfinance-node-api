@@ -534,13 +534,13 @@ module.exports.chartDataStatus = async (req, res) => {
     ];
     let backgroundColor = [
         '#c9c9c9',
-        '#d9d9d9',
-        '#e6fefe',
-        '#52fafa',
-        '#07dfdf',
-        '#059b9a',
-        '#036363',
-        '#023131',
+        '#E5E5E5',
+        '#D0EDF9',
+        '#8BD2F0',
+        '#07DFDF',
+        '#059B9A',
+        '#216278',
+        '#024A4A',
     ];
     let user = req.decoded;
     let totalUlb = req.query.totalUlb;
