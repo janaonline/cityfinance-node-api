@@ -519,7 +519,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
         return Response.OK(
             res,
             {},
-            `Account verification link sent to ${user.email}.`
+            `Account verification link sent to ${user.email}`
         );
     } catch (e) {
         console.error(e);
