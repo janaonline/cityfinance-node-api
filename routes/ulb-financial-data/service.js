@@ -2436,21 +2436,21 @@ module.exports.getXVFCStateForm = async (req, res) => {
                             $cond: {
                                 if: { $eq: ['$grantTransferCertificate',null] },
                                 then: 'N/A',
-                                else: '$grantTransferCertificate.name'
+                                else: '$grantTransferCertificate.url'
                             }
                         },
                         serviceLevelBenchmarks: {
                             $cond: {
                                 if: { $eq: ['$serviceLevelBenchmarks',null] },
                                 then: 'N/A',
-                                else: '$serviceLevelBenchmarks.name'
+                                else: '$serviceLevelBenchmarks.url'
                             }
                         },
                         utilizationReport: {
                             $cond: {
                                 if: { $eq: ['$utilizationReport',null] },
                                 then: 'N/A',
-                                else: '$utilizationReport.name'
+                                else: '$utilizationReport.url'
                             }
                         }
                     } 
