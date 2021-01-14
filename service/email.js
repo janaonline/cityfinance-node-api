@@ -3,16 +3,13 @@ const { email } = require('./check-unique');
 function isValid(date, h1, m1, h2, m2) {
     var h = date.getHours();
     var m = date.getMinutes();
-
-    console.log(h,m);
-
     return (h1 <= h || h1 == h && m1 <= m) && (h <= h2 || h == h2 && m <= m2);
 }  
 
 module.exports = function(mailOptions, cb){
 
-    let mail1 = isValid(new Date(),08,01,12,00);
-    let mail2 = isValid(new Date(),12,01,16,00);
+    let mail1 = isValid(new Date(),08,01,11,59);
+    let mail2 = isValid(new Date(),12,00,15,59);
     let mail3 = isValid(new Date(),04,00,08,00);
 
     let mail = null
