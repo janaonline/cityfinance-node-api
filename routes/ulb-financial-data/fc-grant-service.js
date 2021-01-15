@@ -954,7 +954,8 @@ module.exports.ulbList = async (req, res) => {
         }
         let arr = await Ulb.aggregate(q).exec();
         let xlsData = await Service.dataFormating(arr, field);
-        return res.xls('ulb-update-request.xlsx', xlsData);
+        let filename = 'ULB List ' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+        return res.xls(filename, xlsData);
     }
 
     if (!skip) {

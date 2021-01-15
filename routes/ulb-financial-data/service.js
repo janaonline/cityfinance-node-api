@@ -559,7 +559,8 @@ module.exports.getAll = async (req, res) => {
                     delete field.stateName;
                 }
                 let xlsData = await Service.dataFormating(arr, field);
-                return res.xls('financial-data.xlsx', xlsData);
+                let filename = '15th-FC-Form' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+                return res.xls(filename, xlsData);
             } else {
                 try {
                     if (!skip) {
@@ -2460,7 +2461,8 @@ module.exports.getXVFCStateForm = async (req, res) => {
             ]
             let arr = await XVStateForm.aggregate(q).exec();
             let xlsData = await Service.dataFormating(arr, field);
-            return res.xls('state-form.xlsx', xlsData);
+            let filename = 'state-form' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+            return res.xls(filename, xlsData);
         }
 
         let total = await XVStateForm.count(query).exec();
