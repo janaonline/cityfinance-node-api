@@ -362,7 +362,7 @@ module.exports.getAll = async (req, res) => {
                 $cond: [
                     {
                         $and: [
-                            { $eq: ['$actionTakenByUserName', 'ULB'] },
+                            { $eq: ['$actionTakenByUserRole', 'ULB'] },
                             { $eq: ['$isCompleted', true] },
                         ],
                     },
@@ -496,7 +496,7 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 if (priority) {
-                    sort = { $sort: { priority: -1} };
+                    sort = { $sort: { priority: -1,modifiedAt:-1} };
                 } else {
                     sort = { $sort: { createdAt: -1 } };
                 }
@@ -567,6 +567,8 @@ module.exports.getAll = async (req, res) => {
                         let d = await XVFCGrantULBData.aggregate(qrr);
                         total = d.length ? d[0].count : 0;
                     }
+
+                    //res.json(q);return;
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
