@@ -2410,8 +2410,8 @@ module.exports.getXVFCStateForm = async (req, res) => {
             let field = {
                 state: 'State Name',
                 grantTransferCertificate: 'Grant transfer certificate signed by Principal secretary/ secretary(UD)',
-                serviceLevelBenchmarks: 'tilization report signed by Principal secretary/ secretary (UD)',
-                utilizationReport: 'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs'
+                utilizationReport: 'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs',
+                serviceLevelBenchmarks: 'Utilization report signed by Principal secretary/ secretary (UD)',
             };
             let q = [
                 {
@@ -2441,18 +2441,18 @@ module.exports.getXVFCStateForm = async (req, res) => {
                                 else: '$grantTransferCertificate.url'
                             }
                         },
-                        serviceLevelBenchmarks: {
-                            $cond: {
-                                if: { $eq: ['$serviceLevelBenchmarks',null] },
-                                then: 'N/A',
-                                else: '$serviceLevelBenchmarks.url'
-                            }
-                        },
                         utilizationReport: {
                             $cond: {
                                 if: { $eq: ['$utilizationReport',null] },
                                 then: 'N/A',
                                 else: '$utilizationReport.url'
+                            }
+                        },
+                        serviceLevelBenchmarks: {
+                            $cond: {
+                                if: { $eq: ['$serviceLevelBenchmarks',null] },
+                                then: 'N/A',
+                                else: '$serviceLevelBenchmarks.url'
                             }
                         }
                     } 
