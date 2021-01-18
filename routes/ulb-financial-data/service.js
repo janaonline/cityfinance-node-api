@@ -2411,8 +2411,8 @@ module.exports.getXVFCStateForm = async (req, res) => {
             let field = {
                 state: 'State Name',
                 grantTransferCertificate: 'Grant transfer certificate signed by Principal secretary/ secretary(UD)',
-                utilizationReport: 'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs',
-                serviceLevelBenchmarks: 'Utilization report signed by Principal secretary/ secretary (UD)',
+                utilizationReport: 'Utilization report signed by Principal secretary/ secretary (UD)',
+                serviceLevelBenchmarks: 'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs',
             };
             let q = [
                 {
