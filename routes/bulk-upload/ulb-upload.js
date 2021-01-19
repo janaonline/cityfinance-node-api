@@ -105,7 +105,6 @@ module.exports = async function (req, res, next) {
                             eachRow['code'] = eachRow.ulbcode;
                             eachRow['sbCode'] = eachRow.sbcode;
                             eachRow['censusCode'] = eachRow.censusCode;
-
                             service.put(
                                 { code: eachRow.ulbcode },
                                 eachRow,

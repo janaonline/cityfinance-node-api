@@ -362,7 +362,7 @@ module.exports.getAll = async (req, res) => {
                 $cond: [
                     {
                         $and: [
-                            { $eq: ['$actionTakenByUserName', 'ULB'] },
+                            { $eq: ['$actionTakenByUserRole', 'ULB'] },
                             { $eq: ['$isCompleted', true] },
                         ],
                     },
@@ -496,7 +496,7 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 if (priority) {
-                    sort = { $sort: { priority: -1, createdAt: -1 } };
+                    sort = { $sort: { priority: -1,modifiedAt:-1} };
                 } else {
                     sort = { $sort: { createdAt: -1 } };
                 }
@@ -559,7 +559,8 @@ module.exports.getAll = async (req, res) => {
                     delete field.stateName;
                 }
                 let xlsData = await Service.dataFormating(arr, field);
-                return res.xls('financial-data.xlsx', xlsData);
+                let filename = '15th-FC-Form' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+                return res.xls(filename, xlsData);
             } else {
                 try {
                     if (!skip) {
@@ -567,9 +568,10 @@ module.exports.getAll = async (req, res) => {
                         let d = await XVFCGrantULBData.aggregate(qrr);
                         total = d.length ? d[0].count : 0;
                     }
+
+                    //res.json(q);return;
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
-                    //res.json(q);return;
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
@@ -2392,6 +2394,7 @@ module.exports.getXVFCStateForm = async (req, res) => {
     let user = req.decoded;
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
     let limit = req.query.limit ? parseInt(req.query.limit) : 10;
+    let csv = req.query.csv
     let query = {};
     query['isActive'] = true;
     query['$or']=[
@@ -2404,6 +2407,64 @@ module.exports.getXVFCStateForm = async (req, res) => {
     }
     let actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
     if (actionAllowed.indexOf(user.role) > -1) {
+        if (csv) {
+            let field = {
+                state: 'State Name',
+                grantTransferCertificate: 'Grant transfer certificate signed by Principal secretary/ secretary(UD)',
+                utilizationReport: 'Utilization report signed by Principal secretary/ secretary (UD)',
+                serviceLevelBenchmarks: 'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs',
+            };
+            let q = [
+                {
+                    $match:query
+                },
+                {  $lookup: {
+                    from: 'states',
+                    localField: 'state',
+                    foreignField: '_id',
+                    as: 'state',
+                    }
+                },
+                {$unwind:'$state'},
+                {$project:{
+                       'state': '$state.name',
+                       grantTransferCertificate:{$arrayElemAt:['$grantTransferCertificate',0]},
+                       serviceLevelBenchmarks:{$arrayElemAt:['$serviceLevelBenchmarks',0]},
+                       utilizationReport:{$arrayElemAt:['$utilizationReport',0]}
+                    }
+                },
+                {$project:{
+                    state:1,
+                        grantTransferCertificate: {
+                            $cond: {
+                                if: { $eq: ['$grantTransferCertificate',null] },
+                                then: 'N/A',
+                                else: '$grantTransferCertificate.url'
+                            }
+                        },
+                        utilizationReport: {
+                            $cond: {
+                                if: { $eq: ['$utilizationReport',null] },
+                                then: 'N/A',
+                                else: '$utilizationReport.url'
+                            }
+                        },
+                        serviceLevelBenchmarks: {
+                            $cond: {
+                                if: { $eq: ['$serviceLevelBenchmarks',null] },
+                                then: 'N/A',
+                                else: '$serviceLevelBenchmarks.url'
+                            }
+                        }
+                    } 
+                }
+            ]
+            let arr = await XVStateForm.aggregate(q).exec();
+            let xlsData = await Service.dataFormating(arr, field);
+            let filename = 'state-form' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+            return res.xls(filename, xlsData);
+        }
+
         let total = await XVStateForm.count(query).exec();
         let data = await XVStateForm.find(query)
             .populate([{ path: 'state', select: 'name' }])
