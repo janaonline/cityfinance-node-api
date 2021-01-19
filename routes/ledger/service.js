@@ -2,6 +2,7 @@ const LedgerLogModel = require('../../models/LedgerLog');
 const UlbLedger = require('../../models/UlbLedger');
 const mongoose = require("mongoose");
 const moment = require("moment");
+const ObjectId = require('mongoose').Types.ObjectId;
 
 // Get Income expenditure report
 module.exports.getIE = function (req, res) {
@@ -103,10 +104,17 @@ module.exports.getAll = (req, res)=>{
 
 }
 // Get all ledgers
-module.exports.getAllLegders = function (req, res) {
+module.exports.getAllLegders = async function (req, res) {
     let year = req.body.year ? ( req.body.year.length? req.body.year:null ) : null;
+    let ulb = req.body.ulb ? ( req.body.ulb.length ? req.body.ulb:null ) : null;
     let condition =  { isActive:true };
     year ? condition[ "financialYear"] =  {$all:year } : null;
+    ulb = ulb ? ulb.map(x=> ObjectId(x)):null;
+    ulb ? condition["ulb"] =  {$in:ulb } : null;
+    let ulbMatch = {}
+    if(ulb){
+        ulbMatch ={'ulb._id' : condition[ "ulb"]}
+    }
 
     if(!year){
         // if year is empty, then take all the ledgers from the database irrespective of any year filter
@@ -229,6 +237,7 @@ module.exports.getAllLegders = function (req, res) {
                     population:1
                 }
             },
+            {$match:ulbMatch},
             {$match:{ amount : {$ne: 0}} }
         ]).exec((err, out) => {
             if (err) {
