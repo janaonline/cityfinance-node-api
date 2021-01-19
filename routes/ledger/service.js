@@ -165,7 +165,8 @@ module.exports.getAllLegders = async function (req, res) {
                     financialYear:1,
                     amount:1
                 }
-            }
+            },
+            {$match:ulbMatch}
         ]).exec((err, out) => {
             if (err) {
                 res.json({
