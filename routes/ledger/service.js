@@ -3,6 +3,8 @@ const UlbLedger = require('../../models/UlbLedger');
 const mongoose = require("mongoose");
 const moment = require("moment");
 const ObjectId = require('mongoose').Types.ObjectId;
+const Ulb = require('../../models/Ulb');
+
 
 // Get Income expenditure report
 module.exports.getIE = function (req, res) {
@@ -258,6 +260,82 @@ module.exports.getAllLegders = async function (req, res) {
     }
 };
 
+module.exports.getAllUlbLegders = async function(req,res){
+
+    Ulb.aggregate([
+        {$match:{isActive:true}},
+        {$lookup:
+            {
+                from: 'ulbledgers',
+                localField: '_id',
+                foreignField: 'ulb',
+                as: 'ulbledger',
+            }
+        },
+        {
+            $lookup: {
+                from: 'states',
+                localField: 'state',
+                foreignField: '_id',
+                as: 'state',
+            }
+        },
+        {$unwind:{path:'$ulbledger',preserveNullAndEmptyArrays: true}},
+        {$unwind:'$state'},
+        {$group:{
+                _id:{
+                    ulb : "$_id",
+                    name:"$name",
+                    financialYear :  {
+                        $cond:{
+                         if: '$ulbledger.financialYear',
+                         then: '$ulbledger.financialYear',
+                         else: 'NA'
+                        }
+                    },
+                },
+                state: { "$first": "$state"}
+            }
+        },
+        {$group:{
+                _id:{
+                    ulb : "$_id.ulb",
+                    name :"$_id.name"
+                },    
+                financialYear :{$push: {
+                      $cond:[
+                        { $eq: ["$_id.financialYear",'NA']},
+                        null,
+                        "$_id.financialYear"
+                    ]
+                  }},
+                state: { "$first": "$state"}
+            }
+        },
+        {$group:{
+                _id:{
+                    state : "$state._id",
+                    name :"$state.name"
+                },    
+                ulbList :{$push: {financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
+            }
+        }
+        ]).exec((err, out) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    msg: 'Invalid Payload',
+                    data: err.toString()
+                });
+            }
+            res.json({
+                success: true,
+                msg: 'Success',
+                data: out
+            });
+    });
+
+}
 // Get all ledgers present in database in CSV Format
 module.exports.getAllLedgersCsv = function(req,res){
     let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
