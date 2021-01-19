@@ -519,7 +519,7 @@ module.exports.resendAccountVerificationLink = async (req, res) => {
         return Response.OK(
             res,
             {},
-            `Account verification link sent to ${user.email}.`
+            `Account verification link sent to ${user.email}`
         );
     } catch (e) {
         console.error(e);
@@ -609,7 +609,7 @@ module.exports.forgotPassword = async (req, res) => {
                 return Response.BadRequest(res, {}, verify_msg);
             } 
             else if (!user.isRegistered && user.role=='ULB') {
-                return Response.BadRequest(res, {},'Profile is not completed');
+                return Response.BadRequest(res, {},'Profile Not Updated. Please Login with the credentials received from your State Office.');
             }else if (user.isLocked) {
                 return Response.BadRequest(
                     res,

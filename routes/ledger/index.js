@@ -14,6 +14,9 @@ router.post('/getBS', ledgerService.getBS);
 
 router.post('/getAllLegders', ledgerService.getAllLegders);
 
+router.get('/getOverAllUlbLegders', ledgerService.getAllUlbLegders);
+
+
 //@LedgerLog
 
 // Add Log
