@@ -2140,6 +2140,14 @@ module.exports.correctness = async (req, res) => {
 };
 module.exports.getApprovedFinancialData = async (req, res) => {
     try {
+
+        let year = req.query.year ? ( req.query.year.length? JSON.parse(req.query.year):null ) : null;
+        let ulb = req.query.ulb ? ( req.query.ulb.length ? JSON.parse(req.query.ulb):null ) : null;
+        let condition =  {};
+        year ? condition[ "financialYear"] =  {$in:year } : null;
+        ulb = ulb ? ulb.map(x=> ObjectId(x)):null;
+        ulb ? condition["ulb"] =  {$in:ulb } : null;
+        
         let user = req.decoded,
             filter = req.query.filter
                 ? JSON.parse(req.query.filter)
@@ -2209,6 +2217,7 @@ module.exports.getApprovedFinancialData = async (req, res) => {
                     "auditReport.excelUrl":1*/
                 },
             },
+            {$match:condition}
         ];
         let newFilter = await Service.mapFilter(filter);
         let total = undefined;
