@@ -2144,6 +2144,8 @@ module.exports.getApprovedFinancialData = async (req, res) => {
         let year = req.query.year ? ( req.query.year.length? JSON.parse(req.query.year):null ) : null;
         let ulb = req.query.ulb ? ( req.query.ulb.length ? JSON.parse(req.query.ulb):null ) : null;
         let condition =  {};
+        year = year ? year.split(","):null
+        ulb = ulb ? ulb.split(","):null
         year ? condition[ "financialYear"] =  {$in:year } : null;
         ulb = ulb ? ulb.map(x=> ObjectId(x)):null;
         ulb ? condition["ulb"] =  {$in:ulb } : null;
