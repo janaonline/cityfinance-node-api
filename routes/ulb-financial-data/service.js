@@ -2141,8 +2141,8 @@ module.exports.correctness = async (req, res) => {
 module.exports.getApprovedFinancialData = async (req, res) => {
     try {
 
-        let year = req.query.year ? ( req.query.year.length? JSON.parse(req.query.year):null ) : null;
-        let ulb = req.query.ulb ? ( req.query.ulb.length ? JSON.parse(req.query.ulb):null ) : null;
+        let year = req.query.year ? ( req.query.year.length? req.query.year:null ) : null;
+        let ulb = req.query.ulb ? ( req.query.ulb.length ? req.query.ulb:null ) : null;
         let condition =  {};
         year = year ? year.split(","):null
         ulb = ulb ? ulb.split(","):null
