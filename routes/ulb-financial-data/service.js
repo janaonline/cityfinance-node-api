@@ -10,6 +10,129 @@ const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
 const moment = require('moment');
 const { JsonWebTokenError } = require('jsonwebtoken');
+const fs = require("fs");
+const path = require('path');
+var AdmZip = require('adm-zip');
+const { strict } = require('assert');
+const dir = 'uploads';
+const subDir = "/source";
+const date = moment().format('DD-MMM-YY'); 
+
+async function sleep(millis) {
+    return new Promise((resolve) => setTimeout(resolve, millis));
+}
+module.exports.createDir = function(req,res,next){
+    if (!fs.existsSync(dir+subDir+"_"+date)){
+        fs.mkdirSync(dir+subDir+"_"+date);
+        console.log("Created subDir",dir+subDir+"_"+date);
+    }
+    next();
+}
+module.exports.zip = async (req,res,next)=>{
+    var destinationPath = req.file.path;
+    var zip = new AdmZip(destinationPath);
+    var zipEntries = zip.getEntries(); // an array of ZipEntry records
+    for(let zipEntry of  zipEntries){
+        let st  =  zipEntry.entryName.split("/")
+        st  =  st[st.length-1].split('_')
+        let st1 = st[1].split('.'); // fetch extension of file
+        let resp = st1[0].split('')
+        let year = '20'+resp[0]+resp[1]+'-'+resp[2]+resp[3]
+        let ulb = await Ulb.findOne({code:st[0]},{_id:1});
+        let query =  
+        {
+            financialYear:year,
+            referenceCode:st[0]+'_'+year+'_Audited',
+            ulb:ObjectId(ulb._id)
+        }
+        let ulbFobj = await UlbFinancialData.findOne(query)
+        let dataObj = ulbFobj ? ulbFobj :obj()
+        dataObj["referenceCode"] = st[0]+'_'+year+'_Audited'
+        dataObj["financialYear"] = year
+        dataObj["ulb"] = ObjectId(ulb._id)
+        console.log(st1);
+        if(st1[1]=='pdf'){
+            dataObj["overallReport"]["pdfUrl"] = process.env.HOSTNAME+'/source_'+date+'/'+zipEntry.entryName
+        }
+        if(st1[1]=='xlsx'){  
+            dataObj["overallReport"]["excelUrl"] = process.env.HOSTNAME+'/source_'+date+'/'+zipEntry.entryName
+        }
+        let up = await UlbFinancialData.update(query,dataObj,{
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true
+        });
+       
+    }
+    zip.extractAllTo('uploads/source_'+date+'/', true);
+    res.send({message:'success'});  
+}
+
+const obj = ()=>{
+    let obj = {
+        "tag" : "BULKMIGRATION",
+        "referenceCode" : "",
+        "audited" : true,
+        "financialYear" : "",
+        "completeness" : "APPROVED",
+        "correctness" : "APPROVED",
+        "status" : "APPROVED",
+        "modifiedAt" : new Date(),
+        "createdAt" : new Date(),
+        "isActive" : false,
+        "balanceSheet" : {
+            "completeness" : "NA",
+            "correctness" : "NA",
+            "message" : "",
+            "pdfUrl" : "",
+            "excelUrl" : ""
+        },"schedulesToBalanceSheet" : {
+            "completeness" : "NA",
+            "correctness" : "NA",
+            "message" : "",
+            "pdfUrl" : "",
+            "excelUrl" : ""
+        },
+        "incomeAndExpenditure" : {
+            "completeness" : "NA",
+            "correctness" : "NA",
+            "message" : "",
+            "pdfUrl" : "",
+            "excelUrl" : ""
+        },
+        "schedulesToIncomeAndExpenditure" : {
+            "completeness" : "NA",
+            "correctness" : "NA",
+            "message" : "",
+            "pdfUrl" : "",
+            "excelUrl" : ""
+        },
+        "trialBalance" : {
+            "completeness" : "NA",
+            "correctness" : "NA",
+            "message" : null,
+            "pdfUrl" : "",
+            "excelUrl" : ""
+        },
+        "auditReport" : {
+            "completeness" : "NA",
+            "correctness" : "NA",
+            "message" : null,
+            "pdfUrl" : ""
+        },
+        "ulb" : "",
+        "overallReport" : {
+            "completeness" : "APPROVED",
+            "correctness" : "APPROVED",
+            "message" : null,
+            "pdfUrl" : "",
+            "excelUrl" : ""
+        }
+    }
+    return obj
+}
+
+
 const waterManagementKeys = [
     'serviceLevel',
     'houseHoldCoveredPipedSupply',
@@ -46,6 +169,8 @@ const time = () => {
     dt.setMinutes(dt.getMinutes() + 30);
     return dt;
 };
+
+
 module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;

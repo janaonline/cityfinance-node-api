@@ -3,6 +3,20 @@ const router = express.Router();
 const verifyToken = require('../auth/service').verifyToken;
 const ufdService = require('./service');
 const ufdDashboardService = require('./fc-grant-service');
+const multer = require('multer');
+const moment = require('moment');
+const date = moment().format('DD-MMM-YY');
+const storage1 = multer.diskStorage({
+    
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/source_'+date)
+    },
+    filename: function (req, file, cb) {
+        cb(null,file.originalname.replace(/ /g,'_'))
+    }
+});
+const multerUpload = multer({ storage: storage1 });
+
 router.get("/", verifyToken,ufdService.get);
 router.post("/list", verifyToken,ufdService.get);
 
@@ -27,5 +41,5 @@ router.get("/fc-grant/stateForm",verifyToken,ufdService.getXVFCStateForm);
 router.get("/fc-grant/stateForm/:state",verifyToken,ufdService.getXVFCStateFormById);
 router.post("/multiple-approve-action/:_id",verifyToken,ufdService.multipleApprove);
 router.get("/state",verifyToken,ufdService.state);
-
+router.post("/upload-financial-source",verifyToken,ufdService.createDir,multerUpload.single('file'),ufdService.zip);
 module.exports = router;
