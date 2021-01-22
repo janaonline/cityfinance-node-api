@@ -149,7 +149,8 @@ const millionPlusCitiesKeys = [
 ];
 const mappingKeys = {
     serviceLevel: 'serviceLevel',
-    houseHoldCoveredPipedSupply: '% of households covered with piped water supply',
+    houseHoldCoveredPipedSupply:
+        '% of households covered with piped water supply',
     waterSuppliedPerDay: 'Water Supplied in litre per day(lpcd)',
     reduction: 'Reduction in non-water revenue',
     houseHoldCoveredWithSewerage:
@@ -583,8 +584,8 @@ module.exports.getAll = async (req, res) => {
                             $cond: {
                                 if: { $eq: ['$ulb.isMillionPlus', 'Yes'] },
                                 then: 'Million Plus',
-                                else: 'Non Million'
-                            }
+                                else: 'Non Million',
+                            },
                         },
                         state: '$state._id',
                         stateName: '$state.name',
@@ -621,7 +622,7 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 if (priority) {
-                    sort = { $sort: { priority: -1,modifiedAt:-1} };
+                    sort = { $sort: { priority: -1, modifiedAt: -1 } };
                 } else {
                     sort = { $sort: { createdAt: -1 } };
                 }
@@ -673,7 +674,7 @@ module.exports.getAll = async (req, res) => {
                     stateName: 'State name',
                     ulbName: 'ULB name',
                     ulbType: 'ULB Type',
-                    populationType:'Population Type',
+                    populationType: 'Population Type',
                     censusCode: 'Census Code',
                     sbCode: 'ULB Code',
                     //financialYear: 'Financial Year',
@@ -684,7 +685,10 @@ module.exports.getAll = async (req, res) => {
                     delete field.stateName;
                 }
                 let xlsData = await Service.dataFormating(arr, field);
-                let filename = '15th-FC-Form' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+                let filename =
+                    '15th-FC-Form' +
+                    moment().format('DD-MMM-YY HH:MM:SS') +
+                    '.xlsx';
                 return res.xls(filename, xlsData);
             } else {
                 try {
@@ -950,12 +954,12 @@ module.exports.getDetails = async (req, res) => {
         // match from data
 
         //if(rejectedDataFromHistory.length == 0){
-            var rejectedData = await XVFCGrantULBData.aggregate([
-                {
-                    $match: query,
-                },
-                { $match: { 'status': 'REJECTED' } },
-            ]).exec();
+        var rejectedData = await XVFCGrantULBData.aggregate([
+            {
+                $match: query,
+            },
+            { $match: { status: 'REJECTED' } },
+        ]).exec();
         //}
 
         let firstSubmitedFromHistory = await XVFCGrantULBData.aggregate([
@@ -1007,24 +1011,28 @@ module.exports.getDetails = async (req, res) => {
         ]).exec();
 
         let firstSubmitedAt =
-        firstSubmitedFromHistory.length > 0
+            firstSubmitedFromHistory.length > 0
                 ? firstSubmitedFromHistory[0].history.createdAt
                 : firstSubmited.length > 0
-                ? firstSubmited[firstSubmited.length - 1]
-                      .createdAt
+                ? firstSubmited[firstSubmited.length - 1].createdAt
                 : null;
         let rejectedAt =
             rejectedData.length > 0
                 ? rejectedData[rejectedData.length - 1].modifiedAt
                 : rejectedDataFromHistory.length > 0
-                ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1].history.modifiedAt:null
+                ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1]
+                      .history.modifiedAt
+                : null;
         let history = { histroy: '' };
         let finalData = Object.assign(data[0], {
             rejectedAt: rejectedAt,
             firstSubmitedAt: firstSubmitedAt,
         });
         if (user.role == 'MoHUA') {
-            if(data[0]["actionTakenByUserRole"]=='STATE' && data[0]["status"]=='APPROVED'){
+            if (
+                data[0]['actionTakenByUserRole'] == 'STATE' &&
+                data[0]['status'] == 'APPROVED'
+            ) {
                 let historyData = await commonQuery(query);
                 if (historyData.length > 0) {
                     history['histroy'] = resetDataStatus(
@@ -1041,16 +1049,15 @@ module.exports.getDetails = async (req, res) => {
                     newData = Object.assign(data[0], {
                         rejectedAt: rejectedAt,
                         firstSubmitedAt: firstSubmitedAt,
-                    }); 
-    
+                    });
+
                     return res.status(200).json({
                         timestamp: moment().unix(),
                         success: true,
                         message: 'Ulb update request list',
                         data: newData,
                     });
-                }
-                else{
+                } else {
                     let newData = resetDataStatus(data[0]);
                     let finalData = Object.assign(newData, {
                         rejectedAt: rejectedAt,
@@ -1060,13 +1067,12 @@ module.exports.getDetails = async (req, res) => {
                         timestamp: moment().unix(),
                         success: true,
                         message: 'Ulb update request list',
-                        data:finalData
+                        data: finalData,
                     });
                 }
             }
-
         }
-       
+
         return res.status(200).json({
             timestamp: moment().unix(),
             success: true,
@@ -1531,11 +1537,10 @@ module.exports.action = async (req, res) => {
     }
 };
 
-module.exports.multipleApprove = async(req,res)=>{
-
+module.exports.multipleApprove = async (req, res) => {
     let user = req.decoded;
-    if(user.role == 'MoHUA'){
-        (_id = ObjectId(req.params._id));
+    if (user.role == 'MoHUA') {
+        _id = ObjectId(req.params._id);
         let prevState = await XVFCGrantULBData.findOne(
             { _id: _id },
             '-history'
@@ -1544,22 +1549,22 @@ module.exports.multipleApprove = async(req,res)=>{
         let prevUser = await User.findOne({
             _id: ObjectId(prevState.actionTakenBy),
         }).exec();
-        
+
         let ulbUser = await User.findOne({
             ulb: ObjectId(prevState.ulb),
             isDeleted: false,
             role: 'ULB',
         })
-        .populate([
-            {
-                path: 'state',
-                model: State,
-                select: '_id name',
-            },
-        ])
-        .exec();
+            .populate([
+                {
+                    path: 'state',
+                    model: State,
+                    select: '_id name',
+                },
+            ])
+            .exec();
         let history = Object.assign({}, prevState);
-        let data = setApproveStatus(prevState);
+        let data = setFormStatus(prevState, { status: 'APPROVED' });
         data['actionTakenBy'] = user._id;
         data['status'] = 'APPROVED';
         data['modifiedAt'] = time();
@@ -1605,9 +1610,7 @@ module.exports.multipleApprove = async(req,res)=>{
             for (let d of stateUser) {
                 sleep(700);
                 d.email ? stateEmails.push(d.email) : '';
-                d.departmentEmail
-                    ? stateEmails.push(d.departmentEmail)
-                    : '';
+                d.departmentEmail ? stateEmails.push(d.departmentEmail) : '';
                 let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
                     ulbUser.name,
                     d.name
@@ -1617,33 +1620,140 @@ module.exports.multipleApprove = async(req,res)=>{
                 mailOptions.html = stateTemplate.body;
                 Service.sendEmail(mailOptions);
             }
-            return Response.OK(res,{}, ``);
+            return Response.OK(res, {}, ``);
+        } else {
+            return Response.BadRequest(res, {}, 'Something went wrong!');
         }
-        else{
-            return Response.BadRequest(
-                res,
-                {},
-                'Something went wrong!'
-            );
-        }
-    }
-    else{
+    } else {
         return Response.BadRequest(
             res,
             {},
             'This action is only allowed by MoHUA'
         );
     }
-}
+};
 
-function setApproveStatus(data) {
+module.exports.multipleReject = async (req, res) => {
+    let user = req.decoded;
+    if (user.role == 'MoHUA') {
+        _id = ObjectId(req.params._id);
+        let prevState = await XVFCGrantULBData.findOne(
+            { _id: _id },
+            '-history'
+        ).lean();
+
+        let prevUser = await User.findOne({
+            _id: ObjectId(prevState.actionTakenBy),
+        }).exec();
+
+        let ulbUser = await User.findOne({
+            ulb: ObjectId(prevState.ulb),
+            isDeleted: false,
+            role: 'ULB',
+        })
+            .populate([
+                {
+                    path: 'state',
+                    model: State,
+                    select: '_id name',
+                },
+            ])
+            .exec();
+        let history = Object.assign({}, prevState);
+        let data = setFormStatus(prevState, {
+            status: 'REJECTED',
+            rejectReason: req.body.rejectReason,
+        });
+        data['actionTakenBy'] = user._id;
+        data['status'] = 'REJECTED';
+        data['modifiedAt'] = time();
+
+        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already approved By MoHUA User.'
+            );
+        }
+
+        if (prevState.status == 'REJECTED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already REJECTED By MoHUA User.'
+            );
+        }
+
+        if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
+            let du = await XVFCGrantULBData.update(
+                { _id: ObjectId(prevState._id) },
+                { $set: data, $push: { history: history } }
+            );
+            let mailOptions = {
+                to: '',
+                subject: '',
+                html: '',
+            };
+            /** ULB TRIGGER */
+            let ulbEmails = [];
+            let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
+                ulbUser.name
+            );
+            ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+            ulbUser.accountantEmail
+                ? ulbEmails.push(ulbUser.accountantEmail)
+                : '';
+            (mailOptions.to = ulbEmails.join()),
+                (mailOptions.subject = UlbTemplate.subject),
+                (mailOptions.html = UlbTemplate.body);
+            Service.sendEmail(mailOptions);
+            /** STATE TRIGGER */
+            let stateEmails = [];
+            let stateUser = await User.find({
+                state: ObjectId(ulbUser.state._id),
+                isDeleted: false,
+                role: 'STATE',
+            }).exec();
+            for (let d of stateUser) {
+                sleep(700);
+                d.email ? stateEmails.push(d.email) : '';
+                d.departmentEmail ? stateEmails.push(d.departmentEmail) : '';
+                let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
+                    ulbUser.name,
+                    d.name
+                );
+                mailOptions.to = stateEmails.join();
+                mailOptions.subject = stateTemplate.subject;
+                mailOptions.html = stateTemplate.body;
+                Service.sendEmail(mailOptions);
+            }
+            return Response.OK(res, {}, ``);
+        } else {
+            return Response.BadRequest(res, {}, 'Something went wrong!');
+        }
+    } else {
+        return Response.BadRequest(
+            res,
+            {},
+            'This action is only allowed by MoHUA'
+        );
+    }
+};
+
+/**
+ *
+ * @param {*} data
+ * @param {{status: 'APPROVED'} | {status: 'REJECTED' , rejectReason: string}} option
+ */
+function setFormStatus(data, option) {
     for (key in data) {
         if (typeof data[key] === 'object' && data[key] !== null) {
             if (key == 'waterManagement') {
                 for (let objKey of waterManagementKeys) {
                     if (data[key][objKey]) {
-                        data[key][objKey]['status'] = 'APPROVED';
-                        data[key][objKey]['rejectReason'] = '';
+                        data[key][objKey]['status'] = option.status;
+                        data[key][objKey]['rejectReason'] =
+                            option.rejectReason || '';
                     }
                 }
             }
@@ -1651,8 +1761,8 @@ function setApproveStatus(data) {
                 for (let objKey of solidWasteManagementKeys) {
                     if (data[key]['documents'][objKey]) {
                         for (let d of data[key]['documents'][objKey]) {
-                            d.status = 'APPROVED';
-                            d.rejectReason = '';
+                            d.status = option.status;
+                            d.rejectReason = option.rejectReason || '';
                         }
                     }
                 }
@@ -1661,17 +1771,17 @@ function setApproveStatus(data) {
                 for (let objKey of millionPlusCitiesKeys) {
                     if (data[key]['documents'][objKey]) {
                         for (let d of data[key]['documents'][objKey]) {
-                            d.status = 'APPROVED';
-                            d.rejectReason = '';
+                            d.status = option.status;
+                            d.rejectReason = option.rejectReason || '';
                         }
                     }
                 }
             }
         } else {
-            data['status'] = 'APPROVED';
+            data['status'] = option.status;
         }
     }
-    data['status'] = 'APPROVED';
+    data['status'] = option.status;
     return data;
 }
 
@@ -1918,8 +2028,7 @@ function overAllStatus(data) {
                                     }
                                     rejected = true;
                                     let tab =
-                                        'Upload Plans:' +
-                                        mappingKeys[objKey];
+                                        'Upload Plans:' + mappingKeys[objKey];
                                     let reason = {
                                         [tab]: d.rejectReason,
                                     };
@@ -1960,10 +2069,10 @@ function overAllStatus(data) {
             let finalString = rejectReason.map((obj) => {
                 let service = Object.keys(obj)[0];
                 let reason = obj[service];
-                let s = service.split(':'); 
-                let arr = [...s,reason]
+                let s = service.split(':');
+                let arr = [...s, reason];
                 return arr;
-               // service = `<strong>` + service + `</strong>`;
+                // service = `<strong>` + service + `</strong>`;
                 //return `<p> ${service + ` :` + reason} </p>`;
             });
             let x = `<table border='1'>
@@ -1974,13 +2083,13 @@ function overAllStatus(data) {
             </tr>
             `;
             for (i of finalString) {
-                x += `<tr>`
-                for(t of i){
+                x += `<tr>`;
+                for (t of i) {
                     x += `<td>${t}</td>`;
                 }
-                x += `</tr>`
+                x += `</tr>`;
             }
-            x += `</table>`
+            x += `</table>`;
             resolve({ status: rejected, reason: x });
         }
         resolve({ status: rejected, reason: '' });
@@ -2265,16 +2374,23 @@ module.exports.correctness = async (req, res) => {
 };
 module.exports.getApprovedFinancialData = async (req, res) => {
     try {
+        let year = req.query.year
+            ? req.query.year.length
+                ? req.query.year
+                : null
+            : null;
+        let ulb = req.query.ulb
+            ? req.query.ulb.length
+                ? req.query.ulb
+                : null
+            : null;
+        let condition = {};
+        year = year ? year.split(',') : null;
+        ulb = ulb ? ulb.split(',') : null;
+        year ? (condition['financialYear'] = { $in: year }) : null;
+        ulb = ulb ? ulb.map((x) => ObjectId(x)) : null;
+        ulb ? (condition['ulb'] = { $in: ulb }) : null;
 
-        let year = req.query.year ? ( req.query.year.length? req.query.year:null ) : null;
-        let ulb = req.query.ulb ? ( req.query.ulb.length ? req.query.ulb:null ) : null;
-        let condition =  {};
-        year = year ? year.split(","):null
-        ulb = ulb ? ulb.split(","):null
-        year ? condition[ "financialYear"] =  {$in:year } : null;
-        ulb = ulb ? ulb.map(x=> ObjectId(x)):null;
-        ulb ? condition["ulb"] =  {$in:ulb } : null;
-        
         let user = req.decoded,
             filter = req.query.filter
                 ? JSON.parse(req.query.filter)
@@ -2344,7 +2460,7 @@ module.exports.getApprovedFinancialData = async (req, res) => {
                     "auditReport.excelUrl":1*/
                 },
             },
-            {$match:condition}
+            { $match: condition },
         ];
         let newFilter = await Service.mapFilter(filter);
         let total = undefined;
@@ -2530,14 +2646,14 @@ module.exports.getXVFCStateForm = async (req, res) => {
     let user = req.decoded;
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
     let limit = req.query.limit ? parseInt(req.query.limit) : 10;
-    let csv = req.query.csv
+    let csv = req.query.csv;
     let query = {};
     query['isActive'] = true;
-    query['$or']=[
-        {grantTransferCertificate:{$ne:null}},
-        {serviceLevelBenchmarks:{$ne:null}},
-        {utilizationReport:{$ne:null}}
-    ]
+    query['$or'] = [
+        { grantTransferCertificate: { $ne: null } },
+        { serviceLevelBenchmarks: { $ne: null } },
+        { utilizationReport: { $ne: null } },
+    ];
     if (user.role == 'STATE') {
         query['state'] = ObjectId(user.state);
     }
@@ -2546,58 +2662,73 @@ module.exports.getXVFCStateForm = async (req, res) => {
         if (csv) {
             let field = {
                 state: 'State Name',
-                grantTransferCertificate: 'Grant transfer certificate signed by Principal secretary/ secretary(UD)',
-                utilizationReport: 'Utilization report signed by Principal secretary/ secretary (UD)',
-                serviceLevelBenchmarks: 'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs',
+                grantTransferCertificate:
+                    'Grant transfer certificate signed by Principal secretary/ secretary(UD)',
+                utilizationReport:
+                    'Utilization report signed by Principal secretary/ secretary (UD)',
+                serviceLevelBenchmarks:
+                    'Letter signed by Principal secretary/ secretary (UD) confirming submission of service level benchmarks by all ULBs',
             };
             let q = [
                 {
-                    $match:query
+                    $match: query,
                 },
-                {  $lookup: {
-                    from: 'states',
-                    localField: 'state',
-                    foreignField: '_id',
-                    as: 'state',
-                    }
+                {
+                    $lookup: {
+                        from: 'states',
+                        localField: 'state',
+                        foreignField: '_id',
+                        as: 'state',
+                    },
                 },
-                {$unwind:'$state'},
-                {$project:{
-                       'state': '$state.name',
-                       grantTransferCertificate:{$arrayElemAt:['$grantTransferCertificate',0]},
-                       serviceLevelBenchmarks:{$arrayElemAt:['$serviceLevelBenchmarks',0]},
-                       utilizationReport:{$arrayElemAt:['$utilizationReport',0]}
-                    }
+                { $unwind: '$state' },
+                {
+                    $project: {
+                        state: '$state.name',
+                        grantTransferCertificate: {
+                            $arrayElemAt: ['$grantTransferCertificate', 0],
+                        },
+                        serviceLevelBenchmarks: {
+                            $arrayElemAt: ['$serviceLevelBenchmarks', 0],
+                        },
+                        utilizationReport: {
+                            $arrayElemAt: ['$utilizationReport', 0],
+                        },
+                    },
                 },
-                {$project:{
-                    state:1,
+                {
+                    $project: {
+                        state: 1,
                         grantTransferCertificate: {
                             $cond: {
-                                if: { $eq: ['$grantTransferCertificate',null] },
+                                if: {
+                                    $eq: ['$grantTransferCertificate', null],
+                                },
                                 then: 'N/A',
-                                else: '$grantTransferCertificate.url'
-                            }
+                                else: '$grantTransferCertificate.url',
+                            },
                         },
                         utilizationReport: {
                             $cond: {
-                                if: { $eq: ['$utilizationReport',null] },
+                                if: { $eq: ['$utilizationReport', null] },
                                 then: 'N/A',
-                                else: '$utilizationReport.url'
-                            }
+                                else: '$utilizationReport.url',
+                            },
                         },
                         serviceLevelBenchmarks: {
                             $cond: {
-                                if: { $eq: ['$serviceLevelBenchmarks',null] },
+                                if: { $eq: ['$serviceLevelBenchmarks', null] },
                                 then: 'N/A',
-                                else: '$serviceLevelBenchmarks.url'
-                            }
-                        }
-                    } 
-                }
-            ]
+                                else: '$serviceLevelBenchmarks.url',
+                            },
+                        },
+                    },
+                },
+            ];
             let arr = await XVStateForm.aggregate(q).exec();
             let xlsData = await Service.dataFormating(arr, field);
-            let filename = 'state-form' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+            let filename =
+                'state-form' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
             return res.xls(filename, xlsData);
         }
 
@@ -2640,17 +2771,16 @@ module.exports.getXVFCStateFormById = async (req, res) => {
     }
 };
 
-module.exports.state = async(req,res)=>{
-
+module.exports.state = async (req, res) => {
     let q = [
-        {$match:{isActive:true}},
+        { $match: { isActive: true } },
         {
             $lookup: {
                 from: 'users',
                 localField: 'actionTakenBy',
                 foreignField: '_id',
                 as: 'actionTakenBy',
-            }
+            },
         },
         {
             $lookup: {
@@ -2658,34 +2788,33 @@ module.exports.state = async(req,res)=>{
                 localField: 'ulb',
                 foreignField: '_id',
                 as: 'ulb',
-            }
+            },
         },
-        { $unwind: '$ulb' },       
+        { $unwind: '$ulb' },
         {
             $lookup: {
                 from: 'states',
                 localField: 'ulb.state',
                 foreignField: '_id',
-                as: 'state'
-            }
+                as: 'state',
+            },
         },
-        {$unwind:'$state'},
-        {$unwind: '$actionTakenBy' },
-        {$match:{ status: 'APPROVED', "actionTakenBy.role": 'STATE' }},
-        {$group:{_id:{ "name":"$state.name","_id":"$state._id"}}
-        },    
-        {$project:{
-            "name":"$_id.name",
-            "_id":"$_id._id"    
-            }
-        }
-    ]
+        { $unwind: '$state' },
+        { $unwind: '$actionTakenBy' },
+        { $match: { status: 'APPROVED', 'actionTakenBy.role': 'STATE' } },
+        { $group: { _id: { name: '$state.name', _id: '$state._id' } } },
+        {
+            $project: {
+                name: '$_id.name',
+                _id: '$_id._id',
+            },
+        },
+    ];
     let arr = await XVFCGrantULBData.aggregate(q).exec();
     return res.status(200).json({
         timestamp: moment().unix(),
         success: true,
         message: 'list',
-        data: arr
+        data: arr,
     });
-
-}
+};
