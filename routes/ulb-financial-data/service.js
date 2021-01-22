@@ -28,7 +28,8 @@ module.exports.createDir = function(req,res,next){
     }
     next();
 }
-module.exports.zip = async (req,res,next)=>{
+module.exports.unzip = async (req,res,next)=>{
+    let user = req.decoded;
     var destinationPath = req.file.path;
     var zip = new AdmZip(destinationPath);
     var zipEntries = zip.getEntries(); // an array of ZipEntry records
@@ -52,11 +53,12 @@ module.exports.zip = async (req,res,next)=>{
         dataObj["ulb"] = ObjectId(ulb._id)
         console.log(st1);
         if(st1[1]=='pdf'){
-            dataObj["overallReport"]["pdfUrl"] = process.env.HOSTNAME+'/source_'+date+'/'+zipEntry.entryName
+            dataObj["overallReport"]["pdfUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+zipEntry.entryName
         }
         if(st1[1]=='xlsx'){  
-            dataObj["overallReport"]["excelUrl"] = process.env.HOSTNAME+'/source_'+date+'/'+zipEntry.entryName
+            dataObj["overallReport"]["excelUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+zipEntry.entryName
         }
+        dataObj["actionTakenBy"] = ObjectId(user._id)
         let up = await UlbFinancialData.update(query,dataObj,{
             upsert: true,
             new: true,

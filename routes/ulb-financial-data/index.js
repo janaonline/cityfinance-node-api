@@ -59,6 +59,6 @@ router.post(
     ufdService.multipleReject
 );
 router.get('/state', verifyToken, ufdService.state);
-router.post("/upload-financial-source",verifyToken,ufdService.createDir,multerUpload.single('file'),ufdService.zip);
+router.post("/upload-financial-source",verifyToken,ufdService.createDir,multerUpload.single('file'),ufdService.unzip);
 
 module.exports = router;
