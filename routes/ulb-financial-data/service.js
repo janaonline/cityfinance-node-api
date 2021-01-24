@@ -33,41 +33,47 @@ module.exports.unzip = async (req,res,next)=>{
     var destinationPath = req.file.path;
     var zip = new AdmZip(destinationPath);
     var zipEntries = zip.getEntries(); // an array of ZipEntry records
+    let error = []
     for(let zipEntry of  zipEntries){
         let st  =  zipEntry.entryName.split("/")
+        let filename = st[st.length-1];
         st  =  st[st.length-1].split('_')
         let st1 = st[1].split('.'); // fetch extension of file
         let resp = st1[0].split('')
         let year = '20'+resp[0]+resp[1]+'-'+resp[2]+resp[3]
         let ulb = await Ulb.findOne({code:st[0]},{_id:1});
-        let query =  
-        {
-            financialYear:year,
-            referenceCode:st[0]+'_'+year+'_Audited',
-            ulb:ObjectId(ulb._id)
+        if(ulb){
+            let query =  
+            {
+                financialYear:year,
+                referenceCode:st[0]+'_'+year+'_Audited',
+                ulb:ObjectId(ulb._id)
+            }
+            let ulbFobj = await UlbFinancialData.findOne(query)
+            let dataObj = ulbFobj ? ulbFobj :obj()
+            dataObj["referenceCode"] = st[0]+'_'+year+'_Audited'
+            dataObj["financialYear"] = year
+            dataObj["ulb"] = ObjectId(ulb._id)
+            console.log(st1);
+            if(st1[1]=='pdf'){
+                dataObj["overallReport"]["pdfUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+filename
+            }
+            if(st1[1]=='xlsx'){  
+                dataObj["overallReport"]["excelUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+zipEntry.entryName
+            }
+            dataObj["actionTakenBy"] = ObjectId(user._id)
+            let up = await UlbFinancialData.update(query,dataObj,{
+                upsert: true,
+                new: true,
+                setDefaultsOnInsert: true
+            });
+            zip.extractEntryTo(zipEntry.entryName,'uploads/source_'+date+'/',false,true); 
         }
-        let ulbFobj = await UlbFinancialData.findOne(query)
-        let dataObj = ulbFobj ? ulbFobj :obj()
-        dataObj["referenceCode"] = st[0]+'_'+year+'_Audited'
-        dataObj["financialYear"] = year
-        dataObj["ulb"] = ObjectId(ulb._id)
-        console.log(st1);
-        if(st1[1]=='pdf'){
-            dataObj["overallReport"]["pdfUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+zipEntry.entryName
-        }
-        if(st1[1]=='xlsx'){  
-            dataObj["overallReport"]["excelUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+zipEntry.entryName
-        }
-        dataObj["actionTakenBy"] = ObjectId(user._id)
-        let up = await UlbFinancialData.update(query,dataObj,{
-            upsert: true,
-            new: true,
-            setDefaultsOnInsert: true
-        });
-       
+        else{
+            error.push(`ulb code: ${st[0]} not exist`)
+        } 
     }
-    zip.extractAllTo('uploads/source_'+date+'/', true);
-    res.send({message:'success'});  
+    res.send({message:'success',error:error});  
 }
 
 const obj = ()=>{
