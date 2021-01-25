@@ -1710,8 +1710,6 @@ module.exports.multipleReject = async (req, res) => {
         }
 
         if (prevState['status'] == 'REJECTED' && user.role == 'MoHUA') {
-            return res.send({ prevState, user, prevUser });
-
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set: data, $push: { history: history } }
