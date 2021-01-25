@@ -29,8 +29,8 @@ app.use(express.static(path.join(__dirname, 'uploads')));
 //app.use('/objects',express.static(path.join(__dirname,'uploads/objects')));
 
 //Body Parser Middleware
-app.use(bodyParser.json({limit: '2gb'}));
-app.use(bodyParser.urlencoded({ limit: '2gb', extended: false }));
+app.use(bodyParser.json({limit: '500mb'}));
+app.use(bodyParser.urlencoded({ limit: '500mb', extended: false }));
 
 //Passport Middleware
 app.use(passport.initialize());
