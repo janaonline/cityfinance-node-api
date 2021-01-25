@@ -10,137 +10,154 @@ const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
 const moment = require('moment');
 const { JsonWebTokenError } = require('jsonwebtoken');
-const fs = require("fs");
+const fs = require('fs');
 const path = require('path');
 var AdmZip = require('adm-zip');
 const { strict } = require('assert');
 const dir = 'uploads';
-const subDir = "/source";
-const date = moment().format('DD-MMM-YY'); 
+const subDir = '/source';
+const date = moment().format('DD-MMM-YY');
 
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
 }
-module.exports.createDir = function(req,res,next){
-    if (!fs.existsSync(dir+subDir+"_"+date)){
-        fs.mkdirSync(dir+subDir+"_"+date);
-        console.log("Created subDir",dir+subDir+"_"+date);
+module.exports.createDir = function (req, res, next) {
+    if (!fs.existsSync(dir + subDir + '_' + date)) {
+        fs.mkdirSync(dir + subDir + '_' + date);
+        console.log('Created subDir', dir + subDir + '_' + date);
     }
     next();
-}
-module.exports.unzip = async (req,res,next)=>{
+};
+module.exports.unzip = async (req, res, next) => {
     let user = req.decoded;
     var destinationPath = req.file.path;
     var zip = new AdmZip(destinationPath);
     var zipEntries = zip.getEntries(); // an array of ZipEntry records
-    let error = []
+    let error = [];
     fs.unlinkSync(destinationPath);
-    for(let zipEntry of  zipEntries){
-        let st  =  zipEntry.entryName.split("/")
-        let filename = st[st.length-1];
-        st  =  st[st.length-1].split('_')
+    for (let zipEntry of zipEntries) {
+        let st = zipEntry.entryName.split('/');
+        let filename = st[st.length - 1];
+        st = st[st.length - 1].split('_');
         let st1 = st[1].split('.'); // fetch extension of file
-        let resp = st1[0].split('')
-        let year = '20'+resp[0]+resp[1]+'-'+resp[2]+resp[3]
-        let ulb = await Ulb.findOne({code:st[0]},{_id:1,code:1});
-        if(ulb){
-            let query =  
-            {
-                financialYear:year,
-                referenceCode:st[0]+'_'+year+'_Audited',
-                ulb:ObjectId(ulb._id)
+        let resp = st1[0].split('');
+        let year = '20' + resp[0] + resp[1] + '-' + resp[2] + resp[3];
+        let ulb = await Ulb.findOne({ code: st[0] }, { _id: 1, code: 1 });
+        if (ulb) {
+            let query = {
+                financialYear: year,
+                referenceCode: st[0] + '_' + year + '_Audited',
+                ulb: ObjectId(ulb._id),
+            };
+            let ulbFobj = await UlbFinancialData.findOne(query);
+            let dataObj = ulbFobj ? ulbFobj : obj();
+            dataObj['referenceCode'] = st[0] + '_' + year + '_Audited';
+            dataObj['financialYear'] = year;
+            dataObj['ulb'] = ObjectId(ulb._id);
+            console.log(ulb.code, st1);
+            if (st1[1] == 'pdf') {
+                dataObj['overallReport']['pdfUrl'] =
+                    req.protocol +
+                    '://' +
+                    req.headers.host +
+                    '/source_' +
+                    date +
+                    '/' +
+                    filename;
             }
-            let ulbFobj = await UlbFinancialData.findOne(query)
-            let dataObj = ulbFobj ? ulbFobj :obj()
-            dataObj["referenceCode"] = st[0]+'_'+year+'_Audited'
-            dataObj["financialYear"] = year
-            dataObj["ulb"] = ObjectId(ulb._id)
-            console.log(ulb.code,st1);
-            if(st1[1]=='pdf'){
-                dataObj["overallReport"]["pdfUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+filename
+            if (st1[1] == 'xlsx') {
+                dataObj['overallReport']['excelUrl'] =
+                    req.protocol +
+                    '://' +
+                    req.headers.host +
+                    '/source_' +
+                    date +
+                    '/' +
+                    zipEntry.entryName;
             }
-            if(st1[1]=='xlsx'){  
-                dataObj["overallReport"]["excelUrl"] = req.protocol+"://"+req.headers.host+'/source_'+date+'/'+zipEntry.entryName
-            }
-            dataObj["actionTakenBy"] = ObjectId(user._id)
-            let up = await UlbFinancialData.update(query,dataObj,{
+            dataObj['actionTakenBy'] = ObjectId(user._id);
+            let up = await UlbFinancialData.update(query, dataObj, {
                 upsert: true,
                 new: true,
-                setDefaultsOnInsert: true
+                setDefaultsOnInsert: true,
             });
-            zip.extractEntryTo(zipEntry.entryName,'uploads/source_'+date+'/',false,true); 
+            zip.extractEntryTo(
+                zipEntry.entryName,
+                'uploads/source_' + date + '/',
+                false,
+                true
+            );
+        } else {
+            error.push(`ulb code: ${st[0]} not exist`);
         }
-        else{
-            error.push(`ulb code: ${st[0]} not exist`)
-        } 
     }
-    res.send({message:'success',error:error});  
-}
+    res.send({ message: 'success', error: error });
+};
 
-const obj = ()=>{
+const obj = () => {
     let obj = {
-        "tag" : "BULKMIGRATION",
-        "referenceCode" : "",
-        "audited" : true,
-        "financialYear" : "",
-        "completeness" : "APPROVED",
-        "correctness" : "APPROVED",
-        "status" : "APPROVED",
-        "modifiedAt" : new Date(),
-        "createdAt" : new Date(),
-        "isActive" : false,
-        "balanceSheet" : {
-            "completeness" : "NA",
-            "correctness" : "NA",
-            "message" : "",
-            "pdfUrl" : "",
-            "excelUrl" : ""
-        },"schedulesToBalanceSheet" : {
-            "completeness" : "NA",
-            "correctness" : "NA",
-            "message" : "",
-            "pdfUrl" : "",
-            "excelUrl" : ""
+        tag: 'BULKMIGRATION',
+        referenceCode: '',
+        audited: true,
+        financialYear: '',
+        completeness: 'APPROVED',
+        correctness: 'APPROVED',
+        status: 'APPROVED',
+        modifiedAt: new Date(),
+        createdAt: new Date(),
+        isActive: false,
+        balanceSheet: {
+            completeness: 'NA',
+            correctness: 'NA',
+            message: '',
+            pdfUrl: '',
+            excelUrl: '',
         },
-        "incomeAndExpenditure" : {
-            "completeness" : "NA",
-            "correctness" : "NA",
-            "message" : "",
-            "pdfUrl" : "",
-            "excelUrl" : ""
+        schedulesToBalanceSheet: {
+            completeness: 'NA',
+            correctness: 'NA',
+            message: '',
+            pdfUrl: '',
+            excelUrl: '',
         },
-        "schedulesToIncomeAndExpenditure" : {
-            "completeness" : "NA",
-            "correctness" : "NA",
-            "message" : "",
-            "pdfUrl" : "",
-            "excelUrl" : ""
+        incomeAndExpenditure: {
+            completeness: 'NA',
+            correctness: 'NA',
+            message: '',
+            pdfUrl: '',
+            excelUrl: '',
         },
-        "trialBalance" : {
-            "completeness" : "NA",
-            "correctness" : "NA",
-            "message" : null,
-            "pdfUrl" : "",
-            "excelUrl" : ""
+        schedulesToIncomeAndExpenditure: {
+            completeness: 'NA',
+            correctness: 'NA',
+            message: '',
+            pdfUrl: '',
+            excelUrl: '',
         },
-        "auditReport" : {
-            "completeness" : "NA",
-            "correctness" : "NA",
-            "message" : null,
-            "pdfUrl" : ""
+        trialBalance: {
+            completeness: 'NA',
+            correctness: 'NA',
+            message: null,
+            pdfUrl: '',
+            excelUrl: '',
         },
-        "ulb" : "",
-        "overallReport" : {
-            "completeness" : "APPROVED",
-            "correctness" : "APPROVED",
-            "message" : null,
-            "pdfUrl" : "",
-            "excelUrl" : ""
-        }
-    }
-    return obj
-}
-
+        auditReport: {
+            completeness: 'NA',
+            correctness: 'NA',
+            message: null,
+            pdfUrl: '',
+        },
+        ulb: '',
+        overallReport: {
+            completeness: 'APPROVED',
+            correctness: 'APPROVED',
+            message: null,
+            pdfUrl: '',
+            excelUrl: '',
+        },
+    };
+    return obj;
+};
 
 const waterManagementKeys = [
     'serviceLevel',
@@ -179,7 +196,6 @@ const time = () => {
     dt.setMinutes(dt.getMinutes() + 30);
     return dt;
 };
-
 
 module.exports.create = async (req, res) => {
     let user = req.decoded;
@@ -1693,7 +1709,7 @@ module.exports.multipleReject = async (req, res) => {
             );
         }
 
-        if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
+        if (prevState['status'] == 'REJECTED' && user.role == 'MoHUA') {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set: data, $push: { history: history } }
