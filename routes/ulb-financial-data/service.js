@@ -1721,8 +1721,10 @@ module.exports.multipleReject = async (req, res) => {
             };
             /** ULB TRIGGER */
             let ulbEmails = [];
-            let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
-                ulbUser.name
+            let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
+                ulbUser.name,
+                'reject reason ',
+                'MoHUA'
             );
             ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
             ulbUser.accountantEmail
@@ -1731,7 +1733,7 @@ module.exports.multipleReject = async (req, res) => {
             (mailOptions.to = ulbEmails.join()),
                 (mailOptions.subject = UlbTemplate.subject),
                 (mailOptions.html = UlbTemplate.body);
-            Service.sendEmail(mailOptions);
+            // Service.sendEmail(mailOptions);
             /** STATE TRIGGER */
             let stateEmails = [];
             let stateUser = await User.find({
@@ -1743,14 +1745,15 @@ module.exports.multipleReject = async (req, res) => {
                 sleep(700);
                 d.email ? stateEmails.push(d.email) : '';
                 d.departmentEmail ? stateEmails.push(d.departmentEmail) : '';
-                let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
+                let stateTemplate = await Service.emailTemplate.xvUploadRejectState(
                     ulbUser.name,
-                    d.name
+                    d.name,
+                    'reject reason'
                 );
                 mailOptions.to = stateEmails.join();
                 mailOptions.subject = stateTemplate.subject;
                 mailOptions.html = stateTemplate.body;
-                Service.sendEmail(mailOptions);
+                // Service.sendEmail(mailOptions);
             }
             return Response.OK(res, {}, ``);
         } else {
