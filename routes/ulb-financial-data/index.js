@@ -3,15 +3,26 @@ const router = express.Router();
 const verifyToken = require('../auth/service').verifyToken;
 const ufdService = require('./service');
 const ufdDashboardService = require('./fc-grant-service');
-router.get('/', verifyToken, ufdService.get);
-router.post('/list', verifyToken, ufdService.get);
-
+const multer = require('multer');
+const moment = require('moment');
+const date = moment().format('DD-MMM-YY');
+const storage1 = multer.diskStorage({
+    
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/source_'+date)
+    },
+    filename: function (req, file, cb) {
+        cb(null,file.originalname.replace(/ /g,'_'))
+    }
+});
+const multerUpload = multer({ storage: storage1 });
+router.get("/", verifyToken,ufdService.get);
+router.post("/list", verifyToken,ufdService.get);
 router.post('/all', verifyToken, ufdService.getAll);
 router.get('/all', verifyToken, ufdService.getAll);
 router.post('/history/:_id', verifyToken, ufdService.getHistories);
 router.get('/history/:_id', verifyToken, ufdService.getHistories);
 router.get('/details/:_id', verifyToken, ufdService.getDetails);
-
 router.post('/', verifyToken, ufdService.create);
 router.put('/:_id', verifyToken, ufdService.update);
 router.put('/correctness/:_id', verifyToken, ufdService.correctness);
@@ -48,5 +59,6 @@ router.post(
     ufdService.multipleReject
 );
 router.get('/state', verifyToken, ufdService.state);
+router.post("/upload-financial-source",verifyToken,ufdService.createDir,multerUpload.single('file'),ufdService.unzip);
 
 module.exports = router;
