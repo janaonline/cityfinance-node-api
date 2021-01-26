@@ -44,9 +44,8 @@ const userCreation = (userName, name, link) => {
                     City Finance Team`,
     };
 };
-const userForgotPassword = (name, link,ulbflagForEmail=true) => {
-
-    let text = ulbflagForEmail ?'registered email id':'Ulb Code/Census Code'
+const userForgotPassword = (name, link, ulbflagForEmail = true) => {
+    let text = ulbflagForEmail ? 'registered email id' : 'Ulb Code/Census Code';
     return {
         subject: `City Finance Account Password Reset`,
         body: `Dear ${name},<br>
@@ -159,9 +158,8 @@ const ulbBulkUpload = (name, partner) => {
     };
 };
 
-const sendAccountReActivationEmail = (user, link,ulbflagForEmail=true) => {
-
-    let text = ulbflagForEmail ?'registered email id':'Ulb Code/Census Code'
+const sendAccountReActivationEmail = (user, link, ulbflagForEmail = true) => {
+    let text = ulbflagForEmail ? 'registered email id' : 'Ulb Code/Census Code';
 
     return {
         subject: `Account Activation Link for City Finance`,
@@ -461,6 +459,37 @@ const xvUploadRejectState = (ulbName, stateName, rejectReason) => {
                 <p>
                     The 15<sup>th</sup> FC Grant form for the ${ulbName} has been rejected by MoHUA with the following details.<br>
                     <strong>Rejected Data:</strong>
+                    ${rejectReason}
+                </p>
+                <p>Please login to City Finance Portal to submit the corrected form.</p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`,
+    };
+};
+
+const xvUploadMultiRejectUlb = (ulbName, rejectReason, role) => {
+    return {
+        subject: `15th FC Grant Form Rejected by ${role}`,
+        body: `Dear ${ulbName},<br>
+                <p>
+                    Your 15<sup>th</sup> FC Grant form has been rejected by ${role} with the following details.<br>
+                   
+                    ${rejectReason}
+                </p>
+                <p>Please login to City Finance Portal to submit the corrected form.</p>
+                <br>Regards,<br>
+                City Finance Team`,
+    };
+};
+
+const xvUploadMultiRejectState = (ulbName, stateName, rejectReason) => {
+    return {
+        subject: `15th FC Grant Form Rejected by MoHUA-${ulbName}`,
+        body: `Dear ${stateName},<br>
+                <p>
+                    The 15<sup>th</sup> FC Grant form for the ${ulbName} has been rejected by MoHUA with the following details.<br>
+                   
                     ${rejectReason}
                 </p>
                 <p>Please login to City Finance Portal to submit the corrected form.</p>
@@ -1005,6 +1034,8 @@ module.exports = {
     xvUploadApprovalState: xvUploadApprovalState,
     xvUploadRejectUlb: xvUploadRejectUlb,
     xvUploadRejectState: xvUploadRejectState,
+    xvUploadMultiRejectState,
+    xvUploadMultiRejectUlb,
     userSignup: userSignup,
     userCreation: userCreation,
     userForgotPassword: userForgotPassword,
