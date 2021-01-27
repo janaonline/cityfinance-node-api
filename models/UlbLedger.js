@@ -1,6 +1,6 @@
 require("./dbConnect")
 const LedgerSchema = mongoose.Schema({
-    ulb : { type: Schema.Types.ObjectId, ref: 'Ulb' },
+    ulb : { type: Schema.Types.ObjectId, ref: 'Ulb',index:true},
     lineItem : { type: Schema.Types.ObjectId, ref: 'LineItem' },
     financialYear : { type : String, required : true,index:true, enum:[ "2015-16","2016-17","2017-18"]},
     amount : { type : Number, required : true},

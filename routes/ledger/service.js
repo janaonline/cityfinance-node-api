@@ -2,6 +2,9 @@ const LedgerLogModel = require('../../models/LedgerLog');
 const UlbLedger = require('../../models/UlbLedger');
 const mongoose = require("mongoose");
 const moment = require("moment");
+const ObjectId = require('mongoose').Types.ObjectId;
+const Ulb = require('../../models/Ulb');
+
 
 // Get Income expenditure report
 module.exports.getIE = function (req, res) {
@@ -103,10 +106,17 @@ module.exports.getAll = (req, res)=>{
 
 }
 // Get all ledgers
-module.exports.getAllLegders = function (req, res) {
+module.exports.getAllLegders = async function (req, res) {
     let year = req.body.year ? ( req.body.year.length? req.body.year:null ) : null;
+    let ulb = req.body.ulb ? ( req.body.ulb.length ? req.body.ulb:null ) : null;
     let condition =  { isActive:true };
     year ? condition[ "financialYear"] =  {$all:year } : null;
+    ulb = ulb ? ulb.map(x=> ObjectId(x)):null;
+    ulb ? condition["ulb"] =  {$in:ulb } : null;
+    let ulbMatch = {}
+    if(ulb){
+        ulbMatch ={'ulb._id' : condition[ "ulb"]}
+    }
 
     if(!year){
         // if year is empty, then take all the ledgers from the database irrespective of any year filter
@@ -157,7 +167,8 @@ module.exports.getAllLegders = function (req, res) {
                     financialYear:1,
                     amount:1
                 }
-            }
+            },
+            {$match:ulbMatch}
         ]).exec((err, out) => {
             if (err) {
                 res.json({
@@ -229,6 +240,7 @@ module.exports.getAllLegders = function (req, res) {
                     population:1
                 }
             },
+            {$match:ulbMatch},
             {$match:{ amount : {$ne: 0}} }
         ]).exec((err, out) => {
             if (err) {
@@ -248,6 +260,96 @@ module.exports.getAllLegders = function (req, res) {
     }
 };
 
+module.exports.getAllUlbLegders = async function(req,res){
+
+    Ulb.aggregate([
+        {$match:{isActive:true}},
+        {$lookup:
+            {
+                from: 'ulbledgers',
+                localField: '_id',
+                foreignField: 'ulb',
+                as: 'ulbledger',
+            }
+        },
+        {
+            $lookup: {
+                from: 'states',
+                localField: 'state',
+                foreignField: '_id',
+                as: 'state',
+            }
+        },
+        {
+            $lookup: {
+                from: 'ulbtypes',
+                localField: 'ulbType',
+                foreignField: '_id',
+                as: 'ulbType',
+            }
+        },
+        {$unwind:{path:'$ulbledger',preserveNullAndEmptyArrays: true}},
+        {$unwind:'$state'},
+        {$unwind:'$ulbType'},
+        {$group:{
+            _id:{
+                ulb : "$_id",
+                name:"$name",
+               
+                financialYear :  {
+                    $cond:{
+                     if: '$ulbledger.financialYear',
+                     then: '$ulbledger.financialYear',
+                     else: 'NA'
+                    }
+                },
+            },
+            state: { "$first": "$state"},
+            code:{ "$first": "$code"},
+            ulbType:{"$first":"$ulbType.name"}
+            }
+        },
+        {$group:{
+                _id:{
+                    ulb : "$_id.ulb",
+                    name :"$_id.name"
+                },    
+                financialYear :{$push: {
+                    $cond:[
+                        { $eq: ["$_id.financialYear",'NA']},
+                        null,
+                        "$_id.financialYear"
+                    ]
+                }},
+                state: { "$first": "$state"},
+                code:{ "$first": "$code"},
+                ulbType:{ "$first": "$ulbType"},
+            }
+        },
+        {$group:{
+            _id:{
+                state : "$state._id",
+                name :"$state.name"
+            },    
+            ulbList :{$push: {ulbType:"$ulbType",code:"$code",financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
+            }
+        }
+        ]).exec((err, out) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    msg: 'Invalid Payload',
+                    data: err.toString()
+                });
+            }
+            res.json({
+                success: true,
+                msg: 'Success',
+                data: out
+            });
+    });
+
+}
 // Get all ledgers present in database in CSV Format
 module.exports.getAllLedgersCsv = function(req,res){
     let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
