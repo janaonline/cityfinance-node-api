@@ -280,21 +280,33 @@ module.exports.getAllUlbLegders = async function(req,res){
                 as: 'state',
             }
         },
+        {
+            $lookup: {
+                from: 'ulbtypes',
+                localField: 'ulbType',
+                foreignField: '_id',
+                as: 'ulbType',
+            }
+        },
         {$unwind:{path:'$ulbledger',preserveNullAndEmptyArrays: true}},
         {$unwind:'$state'},
+        {$unwind:'$ulbType'},
         {$group:{
-                _id:{
-                    ulb : "$_id",
-                    name:"$name",
-                    financialYear :  {
-                        $cond:{
-                         if: '$ulbledger.financialYear',
-                         then: '$ulbledger.financialYear',
-                         else: 'NA'
-                        }
-                    },
+            _id:{
+                ulb : "$_id",
+                name:"$name",
+               
+                financialYear :  {
+                    $cond:{
+                     if: '$ulbledger.financialYear',
+                     then: '$ulbledger.financialYear',
+                     else: 'NA'
+                    }
                 },
-                state: { "$first": "$state"}
+            },
+            state: { "$first": "$state"},
+            code:{ "$first": "$code"},
+            ulbType:{"$first":"$ulbType.name"}
             }
         },
         {$group:{
@@ -303,21 +315,23 @@ module.exports.getAllUlbLegders = async function(req,res){
                     name :"$_id.name"
                 },    
                 financialYear :{$push: {
-                      $cond:[
+                    $cond:[
                         { $eq: ["$_id.financialYear",'NA']},
                         null,
                         "$_id.financialYear"
                     ]
-                  }},
-                state: { "$first": "$state"}
+                }},
+                state: { "$first": "$state"},
+                code:{ "$first": "$code"},
+                ulbType:{ "$first": "$ulbType"},
             }
         },
         {$group:{
-                _id:{
-                    state : "$state._id",
-                    name :"$state.name"
-                },    
-                ulbList :{$push: {financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
+            _id:{
+                state : "$state._id",
+                name :"$state.name"
+            },    
+            ulbList :{$push: {ulbType:"$ulbType",code:"$code",financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
             }
         }
         ]).exec((err, out) => {
