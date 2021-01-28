@@ -473,12 +473,15 @@ module.exports.getAll = async (req, res) => {
                 isCompleted: false,
                 actionTakenByUserRole: 'ULB',
             },
-            2: {
-                status: 'PENDING',
-                isCompleted: true,
-                actionTakenByUserRole: 'ULB',
+            2:  { $or:[
+                    {status: 'PENDING',isCompleted: true,actionTakenByUserRole: 'ULB'},
+                    {isCompleted: false,actionTakenByUserRole: 'STATE'}
+                ]
             },
-            3: { status: 'APPROVED', actionTakenByUserRole: 'STATE' },
+            3:  {$or:[
+                    { status: 'APPROVED', actionTakenByUserRole: 'STATE' },
+                    { isCompleted: false, actionTakenByUserRole: 'MoHUA' }
+                ]},
             4: { status: 'REJECTED', actionTakenByUserRole: 'STATE' },
             5: { status: 'REJECTED', actionTakenByUserRole: 'MoHUA' },
             6: { status: 'APPROVED', actionTakenByUserRole: 'MoHUA' },
@@ -664,7 +667,7 @@ module.exports.getAll = async (req, res) => {
             }
             if (newFilter['status']) {
                 Object.assign(newFilter, statusFilter[newFilter['status']]);
-                //delete newFilter['status'];
+                delete newFilter['status'];
             }
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
