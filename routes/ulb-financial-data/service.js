@@ -521,10 +521,6 @@ module.exports.getAll = async (req, res) => {
                     0,
                 ],
             };
-        }
-
-        if (user.role == 'STATE') {
-            priority = true;
             cond['priority_1'] = {
                 $cond: [
                     {
@@ -551,6 +547,19 @@ module.exports.getAll = async (req, res) => {
                     1,
                     0,
                 ],
+            };
+
+            cond['priority_1'] = {
+                $cond: [
+                    {
+                        $and: [
+                            { $eq: ['$actionTakenByUserRole', 'MoHUA'] },
+                            { $eq: ['$isCompleted',false] }
+                        ],
+                    },
+                    1,
+                    0,
+                ]
             };
         }
 
@@ -905,7 +914,7 @@ module.exports.getHistories = async (req, res) => {
                 },
                 {$match:{
                     $or:[
-                        {actionTakenByUserRole:{$nin:['STATE','MOHUA']}},
+                        {actionTakenByUserRole:{$nin:['STATE','MoHUA']}},
                         {isCompleted:{$ne:false}}
                     ]    
                     }
@@ -1013,7 +1022,7 @@ module.exports.getDetails = async (req, res) => {
         }
 
         if(user.role == 'ULB' || user.role == 'STATE'){
-            if(data[0].isCompleted==false && data[0].actionTakenByUserRole=="MOHUA"){
+            if(data[0].isCompleted==false && data[0].actionTakenByUserRole=="MoHUA"){
                 CASE = 'MOHUA'
                 var StateData = await draftQuery(query,'APPROVED','STATE')
             }
