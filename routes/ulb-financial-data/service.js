@@ -1342,6 +1342,9 @@ module.exports.action = async (req, res) => {
         flag.then(
             async (value) => {
                 data['status'] = value.status ? 'REJECTED' : 'APPROVED';
+                if(!data['isCompleted']){
+                    data['status']='PENDING'
+                }
                 let actionAllowed = ['MoHUA', 'STATE'];
                 if (actionAllowed.indexOf(user.role) > -1) {
                     if (user.role == 'STATE') {
