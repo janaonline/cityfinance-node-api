@@ -2019,7 +2019,7 @@ function overAllStatus(data) {
                             data[key][objKey] &&
                             data[key][objKey]['status'] == 'REJECTED'
                         ) {
-                            if (!data[key][objKey]['rejectReason']) {
+                            if (!data[key][objKey]['rejectReason'] && data['isCompleted']) {
                                 reject('reject reason is missing');
                             }
                             rejected = true;
@@ -2053,8 +2053,8 @@ function overAllStatus(data) {
                             for (let d of data[key]['documents'][objKey]) {
                                 if (d.status == 'REJECTED') {
                                     if (
-                                        !d.rejectReason ||
-                                        d.rejectReason == ''
+                                        (!d.rejectReason ||
+                                        d.rejectReason == '') && data['isCompleted']
                                     ) {
                                         reject('reject reason is missing');
                                     }
@@ -2074,7 +2074,7 @@ function overAllStatus(data) {
                     for (let objKey of millionPlusCitiesKeys) {
                         for (let d of data[key]['documents'][objKey]) {
                             if (d.status == 'REJECTED') {
-                                if (!d.rejectReason || d.rejectReason == '') {
+                                if ((!d.rejectReason || d.rejectReason == '') && data['isCompleted']) {
                                     reject('reject reason is missing');
                                 }
                                 rejected = true;
