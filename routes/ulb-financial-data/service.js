@@ -512,12 +512,25 @@ module.exports.getAll = async (req, res) => {
             cond['priority'] = {
                 $cond: [
                     {
-                        $or: [
+                        $and: [
                             { $eq: ['$actionTakenByUserRole', 'ULB'] },
                             { $eq: ['$isCompleted', true] },
+                        ],
+                    },
+                    1,
+                    0,
+                ],
+            };
+        }
+
+        if (user.role == 'STATE') {
+            priority = true;
+            cond['priority_1'] = {
+                $cond: [
+                    {
+                        $and: [
                             { $eq: ['$actionTakenByUserRole', 'STATE'] },
                             { $eq: ['$isCompleted', false] },
-
                         ],
                     },
                     1,
@@ -532,7 +545,7 @@ module.exports.getAll = async (req, res) => {
                     {
                         $and: [
                             { $eq: ['$actionTakenByUserRole', 'STATE'] },
-                            { $eq: ['$status', 'APPROVED'] },
+                            { $eq: ['$status', 'APPROVED'] }
                         ],
                     },
                     1,
@@ -587,6 +600,7 @@ module.exports.getAll = async (req, res) => {
                         _id: 1,
                         audited: 1,
                         priority: 1,
+                        priority_1: 1,
                         // auditStatus: {
                         //     $cond: {
                         //         if: '$audited',
@@ -650,7 +664,7 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 if (priority) {
-                    sort = { $sort: { priority: -1, modifiedAt: -1 } };
+                    sort = { $sort: { priority: -1, modifiedAt: -1,priority_1:-1 } };
                 } else {
                     sort = { $sort: { createdAt: -1 } };
                 }
