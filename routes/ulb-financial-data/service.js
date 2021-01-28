@@ -512,9 +512,12 @@ module.exports.getAll = async (req, res) => {
             cond['priority'] = {
                 $cond: [
                     {
-                        $and: [
+                        $or: [
                             { $eq: ['$actionTakenByUserRole', 'ULB'] },
                             { $eq: ['$isCompleted', true] },
+                            { $eq: ['$actionTakenByUserRole', 'STATE'] },
+                            { $eq: ['$isCompleted', false] },
+
                         ],
                     },
                     1,
@@ -671,8 +674,22 @@ module.exports.getAll = async (req, res) => {
                         d.status = 'Under Review by State';
                     }
                     if (
+                        d.status == 'PENDING' &&
+                        d.isCompleted == false &&
+                        d.actionTakenByUserRole == 'STATE'
+                    ) {
+                        d.status = 'Under Review by State';
+                    }
+                    if (
                         d.status == 'APPROVED' &&
                         d.actionTakenByUserRole == 'STATE'
+                    ) {
+                        d.status = 'Under Review by MoHUA';
+                    }
+                    if (
+                        d.status == 'PENDING' &&
+                        d.actionTakenByUserRole == 'STATE' &&
+                        d.isCompleted == false 
                     ) {
                         d.status = 'Under Review by MoHUA';
                     }
@@ -722,8 +739,6 @@ module.exports.getAll = async (req, res) => {
                         let d = await XVFCGrantULBData.aggregate(qrr);
                         total = d.length ? d[0].count : 0;
                     }
-
-                    //res.json(q);return;
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
