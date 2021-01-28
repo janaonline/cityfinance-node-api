@@ -921,6 +921,7 @@ module.exports.getDetails = async (req, res) => {
     let user = req.decoded,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
     if (actionAllowed.indexOf(user.role) > -1) {
+        let CASE = null    
         let query = { _id: ObjectId(req.params._id) };
         let data = await XVFCGrantULBData.aggregate([
             {
@@ -967,6 +968,20 @@ module.exports.getDetails = async (req, res) => {
                 },
             },
         ]).exec();
+
+        if(user.role == 'ULB'){
+            if(data[0].isCompleted==false && data[0].actionTakenByUserRole=="STATE"){
+                CASE = 'STATE'
+                var ULBdata = await draftQuery(query,'PENDING','ULB')
+            }
+        }
+
+        if(user.role == 'ULB' || user.role == 'STATE'){
+            if(data[0].isCompleted==false && data[0].actionTakenByUserRole=="MOHUA"){
+                CASE = 'MOHUA'
+                var StateData = await draftQuery(query,'APPROVED','STATE')
+            }
+        }
         // Match from history
         let rejectedDataFromHistory = await XVFCGrantULBData.aggregate([
             {
@@ -1053,6 +1068,21 @@ module.exports.getDetails = async (req, res) => {
             rejectedAt: rejectedAt,
             firstSubmitedAt: firstSubmitedAt,
         });
+
+        if(CASE=='STATE'){
+            finalData = Object.assign(ULBdata, {
+                rejectedAt: rejectedAt,
+                firstSubmitedAt: firstSubmitedAt,
+            });
+
+        }
+        if(CASE=='MOHUA'){
+            finalData = Object.assign(StateData, {
+                rejectedAt: rejectedAt,
+                firstSubmitedAt: firstSubmitedAt,
+            });
+        }
+
         if (user.role == 'MoHUA') {
             if (
                 data[0]['actionTakenByUserRole'] == 'STATE' &&
@@ -1108,6 +1138,58 @@ module.exports.getDetails = async (req, res) => {
         return Response.BadRequest(res, {}, 'Action not allowed.');
     }
 };
+
+async function draftQuery(query,status,role){
+    let data = await XVFCGrantULBData.aggregate([
+        {
+            $match: query,
+        },
+        {
+            $lookup: {
+                from: 'ulbs',
+                localField: 'ulb',
+                foreignField: '_id',
+                as: 'ulb',
+            },
+        },
+        { $unwind: '$history' },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'history.actionTakenBy',
+                foreignField: '_id',
+                as: 'actionTakenBy',
+            },
+        },
+        {
+            $unwind: {
+                path: '$actionTakenBy',
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+        { $unwind:'$ulb'},
+        { $match: { 'history.status': status,'actionTakenBy.role':role}},
+        {
+            $project: {
+                _id: 1,
+                waterManagement: "$history.waterManagement",
+                solidWasteManagement: "$history.solidWasteManagement",
+                millionPlusCities: "$history.millionPlusCities",
+                isCompleted: "$history.isCompleted",
+                status: "$history.status",
+                ulb: '$ulb._id',
+                ulbName: '$ulb.name',
+                ulbCode: '$ulb.code',
+                actionTakenByUserName: '$actionTakenBy.name',
+                actionTakenByUserRole: '$actionTakenBy.role',
+                isActive: '$isActive',
+                createdAt: '$createdAt'
+            }
+        }
+    ]).exec()
+    return data >0 ? data[data.length - 1]:data[0]
+}
+
 module.exports.update = async (req, res) => {
     let user = req.decoded,
         data = req.body,
