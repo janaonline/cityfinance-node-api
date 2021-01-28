@@ -874,6 +874,14 @@ module.exports.getHistories = async (req, res) => {
                         modifiedAt: '$history.modifiedAt',
                     },
                 },
+                {$match:{
+                    $and:[
+                    {actionTakenByUserRole:{$nin:['STATE','MOHUA']}},
+                    {isCompleted:{$ne:false}}
+                    ]    
+                    }
+                }   
+
             ];
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
