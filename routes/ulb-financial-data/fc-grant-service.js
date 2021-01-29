@@ -830,7 +830,7 @@ module.exports.chartDataStatus = async (req, res) => {
                 };
             else if (s === 3)
                 match['$match'] = {
-                    $and: [{ state }, { ...match['$match'] }, toggleCond],
+                    $and: [{ ...match['$match'] }, toggleCond],
                 };
             else Object.assign(match['$match'], toogleCond);
         }
