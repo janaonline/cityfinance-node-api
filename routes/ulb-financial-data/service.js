@@ -938,6 +938,7 @@ module.exports.getHistories = async (req, res) => {
                         ],
                     },
                 },
+                {$sort:{modifiedAt:1}}
             ];
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
