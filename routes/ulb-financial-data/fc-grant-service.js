@@ -458,7 +458,7 @@ module.exports = (req, res) => {
                 });
             },
             (rejectError) => {
-                console.log(rejectError);
+                console.error(rejectError);
                 return res.status(400).json({
                     timestamp: moment().unix(),
                     success: false,
@@ -468,7 +468,7 @@ module.exports = (req, res) => {
             }
         )
         .catch((caughtError) => {
-            console.log('final caughtError', caughtError);
+            console.error('final caughtError', caughtError);
             return res.status(400).json({
                 timestamp: moment().unix(),
                 success: false,
@@ -826,7 +826,7 @@ module.exports.chartDataStatus = async (req, res) => {
             if (s === 2)
                 match['$match']['$and'][0] = {
                     ...match['$match']['$and'][0],
-                    toggleCond,
+                    ...toggleCond,
                 };
             else if (s === 3)
                 match['$match'] = {

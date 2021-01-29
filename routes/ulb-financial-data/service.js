@@ -14,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 var AdmZip = require('adm-zip');
 const { strict } = require('assert');
+const { MongooseDocument } = require('mongoose');
 const dir = 'uploads';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
@@ -1744,20 +1745,29 @@ module.exports.multipleApprove = async (req, res) => {
             ])
             .exec();
         let history = Object.assign({}, prevState);
-        let data = setFormStatus(prevState, { status: 'APPROVED' });
-        data['actionTakenBy'] = user._id;
-        data['status'] = 'APPROVED';
-        data['modifiedAt'] = time();
-
-        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
+        if (
+            prevState.status == 'APPROVED' &&
+            prevUser.role == 'MoHUA' &&
+            prevState.isCompleted
+        ) {
             return Response.BadRequest(
                 res,
                 {},
                 'Already approved By MoHUA User.'
             );
         }
+        let data = setFormStatus(prevState, { status: 'APPROVED' });
+        data['actionTakenBy'] = user._id;
+        data['status'] = 'APPROVED';
+        data['modifiedAt'] = time();
 
-        if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
+        // return res.send({ prevState, prevUser, user });
+
+        if (
+            ((prevState['status'] == 'APPROVED' && prevUser.role === 'STATE') ||
+                (!prevState.isCompleted && prevUser.role === 'MoHUA')) &&
+            user.role == 'MoHUA'
+        ) {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set: data, $push: { history: history } }
@@ -1840,6 +1850,20 @@ module.exports.multipleReject = async (req, res) => {
             ])
             .exec();
         let history = Object.assign({}, prevState);
+        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already approved By MoHUA User.'
+            );
+        }
+        if (prevState.status == 'REJECTED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already REJECTED By MoHUA User.'
+            );
+        }
         let data = setFormStatus(prevState, {
             status: 'REJECTED',
             rejectReason: req.body.rejectReason,
@@ -1848,23 +1872,10 @@ module.exports.multipleReject = async (req, res) => {
         data['status'] = 'REJECTED';
         data['modifiedAt'] = time();
 
-        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
-            return Response.BadRequest(
-                res,
-                {},
-                'Already approved By MoHUA User.'
-            );
-        }
-
-        if (prevState.status == 'REJECTED' && prevUser.role == 'MoHUA') {
-            return Response.BadRequest(
-                res,
-                {},
-                'Already REJECTED By MoHUA User.'
-            );
-        }
-
-        if (prevState['status'] == 'REJECTED' && user.role == 'MoHUA') {
+        if (
+            (!prevState.isCompleted && prevUser.role === 'MoHUA') ||
+            (prevState.isCompleted && prevUser.role === 'STATE')
+        ) {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set: data, $push: { history: history } }
@@ -1926,25 +1937,25 @@ module.exports.multipleReject = async (req, res) => {
 
 /**
  *
- * @param {*} data
  * @param {{status: 'APPROVED'} | {status: 'REJECTED' , rejectReason: string}} option
  */
 function setFormStatus(data, option) {
-    for (key in data) {
-        if (typeof data[key] === 'object' && data[key] !== null) {
+    const newData = { ...data };
+    for (key in newData) {
+        if (typeof newData[key] === 'object' && newData[key] !== null) {
             if (key == 'waterManagement') {
                 for (let objKey of waterManagementKeys) {
-                    if (data[key][objKey]) {
-                        data[key][objKey]['status'] = option.status;
-                        data[key][objKey]['rejectReason'] =
+                    if (newData[key][objKey]) {
+                        newData[key][objKey]['status'] = option.status;
+                        newData[key][objKey]['rejectReason'] =
                             option.rejectReason || '';
                     }
                 }
             }
             if (key == 'solidWasteManagement') {
                 for (let objKey of solidWasteManagementKeys) {
-                    if (data[key]['documents'][objKey]) {
-                        for (let d of data[key]['documents'][objKey]) {
+                    if (newData[key]['documents'][objKey]) {
+                        for (let d of newData[key]['documents'][objKey]) {
                             d.status = option.status;
                             d.rejectReason = option.rejectReason || '';
                         }
@@ -1953,8 +1964,8 @@ function setFormStatus(data, option) {
             }
             if (key == 'millionPlusCities') {
                 for (let objKey of millionPlusCitiesKeys) {
-                    if (data[key]['documents'][objKey]) {
-                        for (let d of data[key]['documents'][objKey]) {
+                    if (newData[key]['documents'][objKey]) {
+                        for (let d of newData[key]['documents'][objKey]) {
                             d.status = option.status;
                             d.rejectReason = option.rejectReason || '';
                         }
@@ -1962,11 +1973,12 @@ function setFormStatus(data, option) {
                 }
             }
         } else {
-            data['status'] = option.status;
+            newData['status'] = option.status;
         }
     }
-    data['status'] = option.status;
-    return data;
+    newData['status'] = option.status;
+    newData.isCompleted = true;
+    return newData;
 }
 
 async function commonQuery(query) {
