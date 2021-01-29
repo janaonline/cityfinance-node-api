@@ -630,7 +630,7 @@ module.exports.chartDataStatus = async (req, res) => {
                 {
                     $project: {
                         isMillionPlus: '$ulb.isMillionPlus',
-                        state:'$ulb.state',
+                        state: '$ulb.state',
                     },
                 },
             ];
@@ -667,6 +667,8 @@ module.exports.chartDataStatus = async (req, res) => {
     let UnderReviewState = new Promise(async (rslv, rjct) => {
         try {
             let query = dataUploadStatusQuery(2, state, toggleCond);
+            // return res.send({ query });
+
             let data = await XVFCGrantULBData.aggregate(query).exec();
             rslv(data.length > 0 ? data[0] : { c: 0 });
         } catch (err) {
@@ -767,29 +769,70 @@ module.exports.chartDataStatus = async (req, res) => {
             });
         });
 
+    /**
+     *
+     * @param {1 | 2 | 3 | 4 | 5 | 6} s
+     * @param { string } state
+     * @param {{ isMillionPlus: 'No' | 'Yes'}} toogleCond
+     */
     function dataUploadStatusQuery(s, state = null, toogleCond = null) {
         let statusFilter = {
+            // Drafted By State
             1: {
                 status: 'PENDING',
                 isCompleted: false,
                 actionTakenByUserRole: 'ULB',
             },
+
+            // Under Review By State (including Draft by State)
             2: {
-                status: 'PENDING',
-                isCompleted: true,
-                actionTakenByUserRole: 'ULB',
+                $and: [
+                    {
+                        status: 'PENDING',
+                    },
+                    {
+                        $or: [
+                            { isCompleted: true, actionTakenByUserRole: 'ULB' },
+                            {
+                                isCompleted: false,
+                                actionTakenByUserRole: 'STATE',
+                            },
+                        ],
+                    },
+                ],
             },
-            3: { status: 'APPROVED', actionTakenByUserRole: 'STATE' },
+
+            // Under Review by MoHUA
+            3: {
+                $or: [
+                    { status: 'APPROVED', actionTakenByUserRole: 'STATE' },
+                    { status: 'PENDING', actionTakenByUserRole: 'MoHUA' },
+                ],
+            },
             4: { status: 'REJECTED', actionTakenByUserRole: 'STATE' },
             5: { status: 'REJECTED', actionTakenByUserRole: 'MoHUA' },
+
+            // Approval Completion
             6: { status: 'APPROVED', actionTakenByUserRole: 'MoHUA' },
         };
         let match = { $match: statusFilter[s] };
         if (state) {
-            Object.assign(match['$match'], { state: state });
+            if (s === 2) match['$match']['$and'][0].state = state;
+            else if (s === 3)
+                match['$match'] = { $and: [{ state }, { ...match['$match'] }] };
+            else Object.assign(match['$match'], { state: state });
         }
         if (toogleCond) {
-            Object.assign(match['$match'], toogleCond);
+            if (s === 2)
+                match['$match']['$and'][0] = {
+                    ...match['$match']['$and'][0],
+                    toggleCond,
+                };
+            else if (s === 3)
+                match['$match'] = {
+                    $and: [{ state }, { ...match['$match'] }, toggleCond],
+                };
+            else Object.assign(match['$match'], toogleCond);
         }
         return [
             {
@@ -896,10 +939,8 @@ module.exports.ulbList = async (req, res) => {
                         then: 'Milion Plus',
                         else: 'Non Million',
                     },
-                }
-              
-
-            }
+                },
+            },
         },
         {
             $project: {
@@ -924,7 +965,7 @@ module.exports.ulbList = async (req, res) => {
                         then: 'Yes',
                         else: 'No',
                     },
-                }
+                },
             },
         },
     ];
@@ -954,7 +995,8 @@ module.exports.ulbList = async (req, res) => {
         }
         let arr = await Ulb.aggregate(q).exec();
         let xlsData = await Service.dataFormating(arr, field);
-        let filename = 'ULB List ' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
+        let filename =
+            'ULB List ' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
         return res.xls(filename, xlsData);
     }
 
@@ -965,8 +1007,7 @@ module.exports.ulbList = async (req, res) => {
     }
     q.push({ $skip: skip });
     q.push({ $limit: limit });
-    let arr = await Ulb.aggregate(q).collation({ locale: 'en' })
-    .exec();
+    let arr = await Ulb.aggregate(q).collation({ locale: 'en' }).exec();
 
     return res.status(200).json({
         timestamp: moment().unix(),
