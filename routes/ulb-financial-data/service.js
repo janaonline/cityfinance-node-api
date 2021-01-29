@@ -674,7 +674,8 @@ module.exports.getAll = async (req, res) => {
             }
             if (newFilter['status']) {
                 Object.assign(newFilter, statusFilter[newFilter['status']]);
-                delete newFilter['status'];
+                if(newFilter['status']=='2' || newFilter['status']=='3')
+                {delete newFilter['status'];}
             }
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
@@ -776,7 +777,7 @@ module.exports.getAll = async (req, res) => {
                     }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
-                    //res.json(q);
+                    res.json(q);return;
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
