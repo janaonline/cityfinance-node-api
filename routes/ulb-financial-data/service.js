@@ -1265,7 +1265,7 @@ async function draftQuery(query, status, role) {
             },
         },
     ]).exec();
-    return data > 0 ? data[data.length - 1] : data[0];
+    return data.length > 0 ? data[data.length - 1] : data[0];
 }
 
 module.exports.update = async (req, res) => {
