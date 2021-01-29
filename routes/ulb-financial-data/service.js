@@ -778,7 +778,6 @@ module.exports.getAll = async (req, res) => {
                     }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
-                    res.json(q);return;
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
