@@ -810,7 +810,7 @@ module.exports.getHistories = async (req, res) => {
                 ? JSON.parse(req.query.sort)
                 : req.body.sort
                 ? req.body.sort
-                : { modifiedAt: -1 },
+                : { modifiedAt: 1 },
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
@@ -938,7 +938,6 @@ module.exports.getHistories = async (req, res) => {
                         ],
                     },
                 },
-                {$sort:{modifiedAt:1}}
             ];
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
@@ -951,8 +950,9 @@ module.exports.getHistories = async (req, res) => {
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
+
             if (sort && Object.keys(sort).length) {
-                //q.push({ $sort: sort });
+                q.push({ $sort: sort });
             }
             if (csv) {
                 let arr = await XVFCGrantULBData.aggregate(q).exec();
@@ -966,7 +966,9 @@ module.exports.getHistories = async (req, res) => {
                     total = d.length ? d[0].count : 0;
                 }
                 let arr = await XVFCGrantULBData.aggregate(q).exec();
-                arr.push(arr.shift());
+                if(arr.length > 0 && arr[0]["isCompleted"]==false && arr[0]["actionTakenByUserRole"]=='ULB'){
+                    arr.push(arr.shift());
+                }
                 return res.status(200).json({
                     timestamp: moment().unix(),
                     success: true,
