@@ -473,15 +473,22 @@ module.exports.getAll = async (req, res) => {
                 isCompleted: false,
                 actionTakenByUserRole: 'ULB',
             },
-            2:  { $or:[
-                    {status: 'PENDING',isCompleted: true,actionTakenByUserRole: 'ULB'},
-                    {isCompleted: false,actionTakenByUserRole: 'STATE'}
-                ]
+            2: {
+                $or: [
+                    {
+                        status: 'PENDING',
+                        isCompleted: true,
+                        actionTakenByUserRole: 'ULB',
+                    },
+                    { isCompleted: false, actionTakenByUserRole: 'STATE' },
+                ],
             },
-            3:  {$or:[
+            3: {
+                $or: [
                     { status: 'APPROVED', actionTakenByUserRole: 'STATE' },
-                    { isCompleted: false, actionTakenByUserRole: 'MoHUA' }
-                ]},
+                    { isCompleted: false, actionTakenByUserRole: 'MoHUA' },
+                ],
+            },
             4: { status: 'REJECTED', actionTakenByUserRole: 'STATE' },
             5: { status: 'REJECTED', actionTakenByUserRole: 'MoHUA' },
             6: { status: 'APPROVED', actionTakenByUserRole: 'MoHUA' },
@@ -544,7 +551,7 @@ module.exports.getAll = async (req, res) => {
                     {
                         $and: [
                             { $eq: ['$actionTakenByUserRole', 'STATE'] },
-                            { $eq: ['$status', 'APPROVED'] }
+                            { $eq: ['$status', 'APPROVED'] },
                         ],
                     },
                     1,
@@ -557,12 +564,12 @@ module.exports.getAll = async (req, res) => {
                     {
                         $and: [
                             { $eq: ['$actionTakenByUserRole', 'MoHUA'] },
-                            { $eq: ['$isCompleted',false] }
+                            { $eq: ['$isCompleted', false] },
                         ],
                     },
                     1,
                     0,
-                ]
+                ],
             };
         }
 
@@ -676,7 +683,9 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 if (priority) {
-                    sort = { $sort: { priority: -1,priority_1:-1,modifiedAt: -1} };
+                    sort = {
+                        $sort: { priority: -1, priority_1: -1, modifiedAt: -1 },
+                    };
                 } else {
                     sort = { $sort: { createdAt: -1 } };
                 }
@@ -715,7 +724,7 @@ module.exports.getAll = async (req, res) => {
                     if (
                         d.status == 'PENDING' &&
                         d.actionTakenByUserRole == 'STATE' &&
-                        d.isCompleted == false 
+                        d.isCompleted == false
                     ) {
                         d.status = 'Under Review by MoHUA';
                     }
@@ -916,13 +925,18 @@ module.exports.getHistories = async (req, res) => {
                         modifiedAt: '$history.modifiedAt',
                     },
                 },
-                {$match:{
-                    $or:[
-                        {actionTakenByUserRole:{$nin:['STATE','MoHUA']}},
-                        {isCompleted:{$ne:false}}
-                    ]    
-                    }
-                }   
+                {
+                    $match: {
+                        $or: [
+                            {
+                                actionTakenByUserRole: {
+                                    $nin: ['STATE', 'MoHUA'],
+                                },
+                            },
+                            { isCompleted: { $ne: false } },
+                        ],
+                    },
+                },
             ];
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
@@ -970,7 +984,7 @@ module.exports.getDetails = async (req, res) => {
     let user = req.decoded,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
     if (actionAllowed.indexOf(user.role) > -1) {
-        let CASE = null    
+        let CASE = null;
         let query = { _id: ObjectId(req.params._id) };
         let data = await XVFCGrantULBData.aggregate([
             {
@@ -1018,17 +1032,23 @@ module.exports.getDetails = async (req, res) => {
             },
         ]).exec();
 
-        if(user.role == 'ULB'){
-            if(data[0].isCompleted==false && data[0].actionTakenByUserRole=="STATE"){
-                CASE = 'STATE'
-                var ULBdata = await draftQuery(query,'PENDING','ULB')
+        if (user.role == 'ULB') {
+            if (
+                data[0].isCompleted == false &&
+                data[0].actionTakenByUserRole == 'STATE'
+            ) {
+                CASE = 'STATE';
+                var ULBdata = await draftQuery(query, 'PENDING', 'ULB');
             }
         }
 
-        if(user.role == 'ULB' || user.role == 'STATE'){
-            if(data[0].isCompleted==false && data[0].actionTakenByUserRole=="MoHUA"){
-                CASE = 'MOHUA'
-                var StateData = await draftQuery(query,'APPROVED','STATE')
+        if (user.role == 'ULB' || user.role == 'STATE') {
+            if (
+                data[0].isCompleted == false &&
+                data[0].actionTakenByUserRole == 'MoHUA'
+            ) {
+                CASE = 'MOHUA';
+                var StateData = await draftQuery(query, 'APPROVED', 'STATE');
             }
         }
         // Match from history
@@ -1118,14 +1138,13 @@ module.exports.getDetails = async (req, res) => {
             firstSubmitedAt: firstSubmitedAt,
         });
 
-        if(CASE=='STATE'){
+        if (CASE == 'STATE') {
             finalData = Object.assign(ULBdata, {
                 rejectedAt: rejectedAt,
                 firstSubmitedAt: firstSubmitedAt,
             });
-
         }
-        if(CASE=='MOHUA'){
+        if (CASE == 'MOHUA') {
             finalData = Object.assign(StateData, {
                 rejectedAt: rejectedAt,
                 firstSubmitedAt: firstSubmitedAt,
@@ -1188,7 +1207,7 @@ module.exports.getDetails = async (req, res) => {
     }
 };
 
-async function draftQuery(query,status,role){
+async function draftQuery(query, status, role) {
     let data = await XVFCGrantULBData.aggregate([
         {
             $match: query,
@@ -1216,27 +1235,27 @@ async function draftQuery(query,status,role){
                 preserveNullAndEmptyArrays: true,
             },
         },
-        { $unwind:'$ulb'},
-        { $match: { 'history.status': status,'actionTakenBy.role':role}},
+        { $unwind: '$ulb' },
+        { $match: { 'history.status': status, 'actionTakenBy.role': role } },
         {
             $project: {
                 _id: 1,
-                waterManagement: "$history.waterManagement",
-                solidWasteManagement: "$history.solidWasteManagement",
-                millionPlusCities: "$history.millionPlusCities",
-                isCompleted: "$history.isCompleted",
-                status: "$history.status",
+                waterManagement: '$history.waterManagement',
+                solidWasteManagement: '$history.solidWasteManagement',
+                millionPlusCities: '$history.millionPlusCities',
+                isCompleted: '$history.isCompleted',
+                status: '$history.status',
                 ulb: '$ulb._id',
                 ulbName: '$ulb.name',
                 ulbCode: '$ulb.code',
                 actionTakenByUserName: '$actionTakenBy.name',
                 actionTakenByUserRole: '$actionTakenBy.role',
                 isActive: '$isActive',
-                createdAt: '$createdAt'
-            }
-        }
-    ]).exec()
-    return data >0 ? data[data.length - 1]:data[0]
+                createdAt: '$createdAt',
+            },
+        },
+    ]).exec();
+    return data > 0 ? data[data.length - 1] : data[0];
 }
 
 module.exports.update = async (req, res) => {
@@ -1473,8 +1492,8 @@ module.exports.action = async (req, res) => {
         flag.then(
             async (value) => {
                 data['status'] = value.status ? 'REJECTED' : 'APPROVED';
-                if(!data['isCompleted']){
-                    data['status']='PENDING'
+                if (!data['isCompleted']) {
+                    data['status'] = 'PENDING';
                 }
                 let actionAllowed = ['MoHUA', 'STATE'];
                 if (actionAllowed.indexOf(user.role) > -1) {
@@ -2150,7 +2169,10 @@ function overAllStatus(data) {
                             data[key][objKey] &&
                             data[key][objKey]['status'] == 'REJECTED'
                         ) {
-                            if (!data[key][objKey]['rejectReason'] && data['isCompleted']) {
+                            if (
+                                !data[key][objKey]['rejectReason'] &&
+                                data['isCompleted']
+                            ) {
                                 reject('reject reason is missing');
                             }
                             rejected = true;
@@ -2185,7 +2207,8 @@ function overAllStatus(data) {
                                 if (d.status == 'REJECTED') {
                                     if (
                                         (!d.rejectReason ||
-                                        d.rejectReason == '') && data['isCompleted']
+                                            d.rejectReason == '') &&
+                                        data['isCompleted']
                                     ) {
                                         reject('reject reason is missing');
                                     }
@@ -2205,7 +2228,10 @@ function overAllStatus(data) {
                     for (let objKey of millionPlusCitiesKeys) {
                         for (let d of data[key]['documents'][objKey]) {
                             if (d.status == 'REJECTED') {
-                                if ((!d.rejectReason || d.rejectReason == '') && data['isCompleted']) {
+                                if (
+                                    (!d.rejectReason || d.rejectReason == '') &&
+                                    data['isCompleted']
+                                ) {
                                     reject('reject reason is missing');
                                 }
                                 rejected = true;
@@ -2934,7 +2960,13 @@ module.exports.getXVFCStateFormById = async (req, res) => {
     }
 };
 
+/**
+ *
+ * @param {Express.Request} req
+ * @param {Express.Response} res
+ */
 module.exports.state = async (req, res) => {
+    console.dir(req.query);
     let q = [
         { $match: { isActive: true } },
         {
@@ -2964,15 +2996,35 @@ module.exports.state = async (req, res) => {
         },
         { $unwind: '$state' },
         { $unwind: '$actionTakenBy' },
-        { $match: { status: 'APPROVED', 'actionTakenBy.role': 'STATE' } },
-        { $group: { _id: { name: '$state.name', _id: '$state._id' } } },
-        {
-            $project: {
-                name: '$_id.name',
-                _id: '$_id._id',
-            },
-        },
     ];
+    if (req.query.formStatus === 'draft-by-MoHUA') {
+        q.push({
+            $match: { status: 'PENDING', 'actionTakenBy.role': 'MoHUA' },
+        });
+    } else if (req.query.formStatus === 'under-review-by-MoHUA') {
+        q.push({
+            $match: { status: 'APPROVED', 'actionTakenBy.role': 'STATE' },
+        });
+    } else {
+        q.push({
+            $match: {
+                $or: [
+                    { status: 'APPROVED', 'actionTakenBy.role': 'STATE' },
+                    { status: 'PENDING', 'actionTakenBy.role': 'MoHUA' },
+                ],
+            },
+        });
+    }
+
+    q.push({ $group: { _id: { name: '$state.name', _id: '$state._id' } } });
+    q.push({
+        $project: {
+            name: '$_id.name',
+            _id: '$_id._id',
+        },
+    });
+
+    // return res.send({q})
     let arr = await XVFCGrantULBData.aggregate(q).exec();
     return res.status(200).json({
         timestamp: moment().unix(),
