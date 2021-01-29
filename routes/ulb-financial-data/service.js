@@ -1036,7 +1036,10 @@ module.exports.getDetails = async (req, res) => {
             },
         ]).exec();
 
-        if (user.role == 'ADMIN'|| user.role == 'PARTNER' || user.role == 'ULB' || user.role == 'MoHUA') {
+        if (user.role == 'ADMIN'|| 
+            user.role == 'PARTNER' ||
+            user.role == 'ULB' || 
+            user.role == 'MoHUA') {
             if (
                 data[0].isCompleted == false &&
                 data[0].actionTakenByUserRole == 'STATE'
@@ -1046,7 +1049,10 @@ module.exports.getDetails = async (req, res) => {
             }
         }
 
-        if (user.role == 'PARTNER' || user.role == 'ULB' || user.role == 'STATE' || user.role == 'ADMIN') {
+        if (user.role == 'PARTNER' || 
+            user.role == 'ULB' || 
+            user.role == 'STATE' || 
+            user.role == 'ADMIN') {
             if (
                 data[0].isCompleted == false &&
                 data[0].actionTakenByUserRole == 'MoHUA'
