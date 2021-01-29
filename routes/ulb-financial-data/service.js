@@ -1036,7 +1036,7 @@ module.exports.getDetails = async (req, res) => {
             },
         ]).exec();
 
-        if (user.role == 'ULB' || user.role == 'MoHUA') {
+        if (user.role == 'PARTNER' || user.role == 'ULB' || user.role == 'MoHUA') {
             if (
                 data[0].isCompleted == false &&
                 data[0].actionTakenByUserRole == 'STATE'
