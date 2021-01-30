@@ -14,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 var AdmZip = require('adm-zip');
 const { strict } = require('assert');
+const { MongooseDocument } = require('mongoose');
 const dir = 'uploads';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
@@ -474,11 +475,21 @@ module.exports.getAll = async (req, res) => {
                 actionTakenByUserRole: 'ULB',
             },
             2: {
-                status: 'PENDING',
-                isCompleted: true,
-                actionTakenByUserRole: 'ULB',
+                $or: [
+                    {
+                        status: 'PENDING',
+                        isCompleted: true,
+                        actionTakenByUserRole: 'ULB',
+                    },
+                    { isCompleted: false, actionTakenByUserRole: 'STATE' },
+                ],
             },
-            3: { status: 'APPROVED', actionTakenByUserRole: 'STATE' },
+            3: {
+                $or: [
+                    { status: 'APPROVED', actionTakenByUserRole: 'STATE' },
+                    { isCompleted: false, actionTakenByUserRole: 'MoHUA' },
+                ],
+            },
             4: { status: 'REJECTED', actionTakenByUserRole: 'STATE' },
             5: { status: 'REJECTED', actionTakenByUserRole: 'MoHUA' },
             6: { status: 'APPROVED', actionTakenByUserRole: 'MoHUA' },
@@ -521,6 +532,18 @@ module.exports.getAll = async (req, res) => {
                     0,
                 ],
             };
+            cond['priority_1'] = {
+                $cond: [
+                    {
+                        $and: [
+                            { $eq: ['$actionTakenByUserRole', 'STATE'] },
+                            { $eq: ['$isCompleted', false] },
+                        ],
+                    },
+                    1,
+                    0,
+                ],
+            };
         }
         if (user.role == 'MoHUA') {
             priority = true;
@@ -530,6 +553,19 @@ module.exports.getAll = async (req, res) => {
                         $and: [
                             { $eq: ['$actionTakenByUserRole', 'STATE'] },
                             { $eq: ['$status', 'APPROVED'] },
+                        ],
+                    },
+                    1,
+                    0,
+                ],
+            };
+
+            cond['priority_1'] = {
+                $cond: [
+                    {
+                        $and: [
+                            { $eq: ['$actionTakenByUserRole', 'MoHUA'] },
+                            { $eq: ['$isCompleted', false] },
                         ],
                     },
                     1,
@@ -584,6 +620,7 @@ module.exports.getAll = async (req, res) => {
                         _id: 1,
                         audited: 1,
                         priority: 1,
+                        priority_1: 1,
                         // auditStatus: {
                         //     $cond: {
                         //         if: '$audited',
@@ -638,7 +675,8 @@ module.exports.getAll = async (req, res) => {
             }
             if (newFilter['status']) {
                 Object.assign(newFilter, statusFilter[newFilter['status']]);
-                //delete newFilter['status'];
+                if(newFilter['status']=='2' || newFilter['status']=='3')
+                {delete newFilter['status'];}
             }
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
@@ -647,7 +685,9 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $sort: sort });
             } else {
                 if (priority) {
-                    sort = { $sort: { priority: -1, modifiedAt: -1 } };
+                    sort = {
+                        $sort: { priority: -1, priority_1: -1, modifiedAt: -1 },
+                    };
                 } else {
                     sort = { $sort: { createdAt: -1 } };
                 }
@@ -671,8 +711,22 @@ module.exports.getAll = async (req, res) => {
                         d.status = 'Under Review by State';
                     }
                     if (
+                        d.status == 'PENDING' &&
+                        d.isCompleted == false &&
+                        d.actionTakenByUserRole == 'STATE'
+                    ) {
+                        d.status = 'Under Review by State';
+                    }
+                    if (
                         d.status == 'APPROVED' &&
                         d.actionTakenByUserRole == 'STATE'
+                    ) {
+                        d.status = 'Under Review by MoHUA';
+                    }
+                    if (
+                        d.status == 'PENDING' &&
+                        d.actionTakenByUserRole == 'STATE' &&
+                        d.isCompleted == false
                     ) {
                         d.status = 'Under Review by MoHUA';
                     }
@@ -722,8 +776,6 @@ module.exports.getAll = async (req, res) => {
                         let d = await XVFCGrantULBData.aggregate(qrr);
                         total = d.length ? d[0].count : 0;
                     }
-
-                    //res.json(q);return;
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
@@ -758,7 +810,7 @@ module.exports.getHistories = async (req, res) => {
                 ? JSON.parse(req.query.sort)
                 : req.body.sort
                 ? req.body.sort
-                : { modifiedAt: -1 },
+                : { modifiedAt: 1 },
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
@@ -874,6 +926,18 @@ module.exports.getHistories = async (req, res) => {
                         modifiedAt: '$history.modifiedAt',
                     },
                 },
+                {
+                    $match: {
+                        $or: [
+                            {
+                                actionTakenByUserRole: {
+                                    $nin: ['STATE', 'MoHUA'],
+                                },
+                            },
+                            { isCompleted: { $ne: false } },
+                        ],
+                    },
+                },
             ];
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
@@ -886,8 +950,9 @@ module.exports.getHistories = async (req, res) => {
             if (newFilter && Object.keys(newFilter).length) {
                 q.push({ $match: newFilter });
             }
+
             if (sort && Object.keys(sort).length) {
-                //q.push({ $sort: sort });
+                q.push({ $sort: sort });
             }
             if (csv) {
                 let arr = await XVFCGrantULBData.aggregate(q).exec();
@@ -901,7 +966,9 @@ module.exports.getHistories = async (req, res) => {
                     total = d.length ? d[0].count : 0;
                 }
                 let arr = await XVFCGrantULBData.aggregate(q).exec();
-                arr.push(arr.shift());
+                if(arr.length > 0 && arr[0]["isCompleted"]==false && arr[0]["actionTakenByUserRole"]=='ULB'){
+                    arr.push(arr.shift());
+                }
                 return res.status(200).json({
                     timestamp: moment().unix(),
                     success: true,
@@ -921,6 +988,7 @@ module.exports.getDetails = async (req, res) => {
     let user = req.decoded,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
     if (actionAllowed.indexOf(user.role) > -1) {
+        let CASE = null;
         let query = { _id: ObjectId(req.params._id) };
         let data = await XVFCGrantULBData.aggregate([
             {
@@ -967,6 +1035,32 @@ module.exports.getDetails = async (req, res) => {
                 },
             },
         ]).exec();
+
+        if (user.role == 'ADMIN'|| 
+            user.role == 'PARTNER' ||
+            user.role == 'ULB' || 
+            user.role == 'MoHUA') {
+            if (
+                data[0].isCompleted == false &&
+                data[0].actionTakenByUserRole == 'STATE'
+            ) {
+                CASE = 'STATE';
+                var ULBdata = await draftQuery(query, 'PENDING', 'ULB');
+            }
+        }
+
+        if (user.role == 'PARTNER' || 
+            user.role == 'ULB' || 
+            user.role == 'STATE' || 
+            user.role == 'ADMIN') {
+            if (
+                data[0].isCompleted == false &&
+                data[0].actionTakenByUserRole == 'MoHUA'
+            ) {
+                CASE = 'MOHUA';
+                var StateData = await draftQuery(query, 'APPROVED', 'STATE');
+            }
+        }
         // Match from history
         let rejectedDataFromHistory = await XVFCGrantULBData.aggregate([
             {
@@ -1053,6 +1147,20 @@ module.exports.getDetails = async (req, res) => {
             rejectedAt: rejectedAt,
             firstSubmitedAt: firstSubmitedAt,
         });
+
+        if (CASE == 'STATE') {
+            finalData = Object.assign(ULBdata, {
+                rejectedAt: rejectedAt,
+                firstSubmitedAt: firstSubmitedAt,
+            });
+        }
+        if (CASE == 'MOHUA') {
+            finalData = Object.assign(StateData, {
+                rejectedAt: rejectedAt,
+                firstSubmitedAt: firstSubmitedAt,
+            });
+        }
+
         if (user.role == 'MoHUA') {
             if (
                 data[0]['actionTakenByUserRole'] == 'STATE' &&
@@ -1108,6 +1216,58 @@ module.exports.getDetails = async (req, res) => {
         return Response.BadRequest(res, {}, 'Action not allowed.');
     }
 };
+
+async function draftQuery(query, status, role) {
+    let data = await XVFCGrantULBData.aggregate([
+        {
+            $match: query,
+        },
+        {
+            $lookup: {
+                from: 'ulbs',
+                localField: 'ulb',
+                foreignField: '_id',
+                as: 'ulb',
+            },
+        },
+        { $unwind: '$history' },
+        {
+            $lookup: {
+                from: 'users',
+                localField: 'history.actionTakenBy',
+                foreignField: '_id',
+                as: 'actionTakenBy',
+            },
+        },
+        {
+            $unwind: {
+                path: '$actionTakenBy',
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+        { $unwind: '$ulb' },
+        { $match: { 'history.status': status, 'actionTakenBy.role': role } },
+        {
+            $project: {
+                _id: 1,
+                waterManagement: '$history.waterManagement',
+                solidWasteManagement: '$history.solidWasteManagement',
+                millionPlusCities: '$history.millionPlusCities',
+                isCompleted: '$history.isCompleted',
+                status: '$history.status',
+                ulb: '$ulb._id',
+                ulbName: '$ulb.name',
+                ulbCode: '$ulb.code',
+                actionTakenByUserName: '$actionTakenBy.name',
+                actionTakenByUserRole: '$actionTakenBy.role',
+                isActive: '$isActive',
+                createdAt: '$createdAt',
+            },
+        },
+    ]).exec();
+    return data.length > 0 ? data[data.length - 1] : data[0];
+}
+
 module.exports.update = async (req, res) => {
     let user = req.decoded,
         data = req.body,
@@ -1342,6 +1502,9 @@ module.exports.action = async (req, res) => {
         flag.then(
             async (value) => {
                 data['status'] = value.status ? 'REJECTED' : 'APPROVED';
+                if (!data['isCompleted']) {
+                    data['status'] = 'PENDING';
+                }
                 let actionAllowed = ['MoHUA', 'STATE'];
                 if (actionAllowed.indexOf(user.role) > -1) {
                     if (user.role == 'STATE') {
@@ -1589,20 +1752,29 @@ module.exports.multipleApprove = async (req, res) => {
             ])
             .exec();
         let history = Object.assign({}, prevState);
-        let data = setFormStatus(prevState, { status: 'APPROVED' });
-        data['actionTakenBy'] = user._id;
-        data['status'] = 'APPROVED';
-        data['modifiedAt'] = time();
-
-        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
+        if (
+            prevState.status == 'APPROVED' &&
+            prevUser.role == 'MoHUA' &&
+            prevState.isCompleted
+        ) {
             return Response.BadRequest(
                 res,
                 {},
                 'Already approved By MoHUA User.'
             );
         }
+        let data = setFormStatus(prevState, { status: 'APPROVED' });
+        data['actionTakenBy'] = user._id;
+        data['status'] = 'APPROVED';
+        data['modifiedAt'] = time();
 
-        if (prevState['status'] == 'APPROVED' && user.role == 'MoHUA') {
+        // return res.send({ prevState, prevUser, user });
+
+        if (
+            ((prevState['status'] == 'APPROVED' && prevUser.role === 'STATE') ||
+                (!prevState.isCompleted && prevUser.role === 'MoHUA')) &&
+            user.role == 'MoHUA'
+        ) {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set: data, $push: { history: history } }
@@ -1685,6 +1857,20 @@ module.exports.multipleReject = async (req, res) => {
             ])
             .exec();
         let history = Object.assign({}, prevState);
+        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already approved By MoHUA User.'
+            );
+        }
+        if (prevState.status == 'REJECTED' && prevUser.role == 'MoHUA') {
+            return Response.BadRequest(
+                res,
+                {},
+                'Already REJECTED By MoHUA User.'
+            );
+        }
         let data = setFormStatus(prevState, {
             status: 'REJECTED',
             rejectReason: req.body.rejectReason,
@@ -1693,23 +1879,10 @@ module.exports.multipleReject = async (req, res) => {
         data['status'] = 'REJECTED';
         data['modifiedAt'] = time();
 
-        if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
-            return Response.BadRequest(
-                res,
-                {},
-                'Already approved By MoHUA User.'
-            );
-        }
-
-        if (prevState.status == 'REJECTED' && prevUser.role == 'MoHUA') {
-            return Response.BadRequest(
-                res,
-                {},
-                'Already REJECTED By MoHUA User.'
-            );
-        }
-
-        if (prevState['status'] == 'REJECTED' && user.role == 'MoHUA') {
+        if (
+            (!prevState.isCompleted && prevUser.role === 'MoHUA') ||
+            (prevState.isCompleted && prevUser.role === 'STATE')
+        ) {
             let du = await XVFCGrantULBData.update(
                 { _id: ObjectId(prevState._id) },
                 { $set: data, $push: { history: history } }
@@ -1771,25 +1944,25 @@ module.exports.multipleReject = async (req, res) => {
 
 /**
  *
- * @param {*} data
  * @param {{status: 'APPROVED'} | {status: 'REJECTED' , rejectReason: string}} option
  */
 function setFormStatus(data, option) {
-    for (key in data) {
-        if (typeof data[key] === 'object' && data[key] !== null) {
+    const newData = { ...data };
+    for (key in newData) {
+        if (typeof newData[key] === 'object' && newData[key] !== null) {
             if (key == 'waterManagement') {
                 for (let objKey of waterManagementKeys) {
-                    if (data[key][objKey]) {
-                        data[key][objKey]['status'] = option.status;
-                        data[key][objKey]['rejectReason'] =
+                    if (newData[key][objKey]) {
+                        newData[key][objKey]['status'] = option.status;
+                        newData[key][objKey]['rejectReason'] =
                             option.rejectReason || '';
                     }
                 }
             }
             if (key == 'solidWasteManagement') {
                 for (let objKey of solidWasteManagementKeys) {
-                    if (data[key]['documents'][objKey]) {
-                        for (let d of data[key]['documents'][objKey]) {
+                    if (newData[key]['documents'][objKey]) {
+                        for (let d of newData[key]['documents'][objKey]) {
                             d.status = option.status;
                             d.rejectReason = option.rejectReason || '';
                         }
@@ -1798,8 +1971,8 @@ function setFormStatus(data, option) {
             }
             if (key == 'millionPlusCities') {
                 for (let objKey of millionPlusCitiesKeys) {
-                    if (data[key]['documents'][objKey]) {
-                        for (let d of data[key]['documents'][objKey]) {
+                    if (newData[key]['documents'][objKey]) {
+                        for (let d of newData[key]['documents'][objKey]) {
                             d.status = option.status;
                             d.rejectReason = option.rejectReason || '';
                         }
@@ -1807,11 +1980,12 @@ function setFormStatus(data, option) {
                 }
             }
         } else {
-            data['status'] = option.status;
+            newData['status'] = option.status;
         }
     }
-    data['status'] = option.status;
-    return data;
+    newData['status'] = option.status;
+    newData.isCompleted = true;
+    return newData;
 }
 
 async function commonQuery(query) {
@@ -2016,7 +2190,10 @@ function overAllStatus(data) {
                             data[key][objKey] &&
                             data[key][objKey]['status'] == 'REJECTED'
                         ) {
-                            if (!data[key][objKey]['rejectReason']) {
+                            if (
+                                !data[key][objKey]['rejectReason'] &&
+                                data['isCompleted']
+                            ) {
                                 reject('reject reason is missing');
                             }
                             rejected = true;
@@ -2050,8 +2227,9 @@ function overAllStatus(data) {
                             for (let d of data[key]['documents'][objKey]) {
                                 if (d.status == 'REJECTED') {
                                     if (
-                                        !d.rejectReason ||
-                                        d.rejectReason == ''
+                                        (!d.rejectReason ||
+                                            d.rejectReason == '') &&
+                                        data['isCompleted']
                                     ) {
                                         reject('reject reason is missing');
                                     }
@@ -2071,7 +2249,10 @@ function overAllStatus(data) {
                     for (let objKey of millionPlusCitiesKeys) {
                         for (let d of data[key]['documents'][objKey]) {
                             if (d.status == 'REJECTED') {
-                                if (!d.rejectReason || d.rejectReason == '') {
+                                if (
+                                    (!d.rejectReason || d.rejectReason == '') &&
+                                    data['isCompleted']
+                                ) {
                                     reject('reject reason is missing');
                                 }
                                 rejected = true;
@@ -2800,7 +2981,13 @@ module.exports.getXVFCStateFormById = async (req, res) => {
     }
 };
 
+/**
+ *
+ * @param {Express.Request} req
+ * @param {Express.Response} res
+ */
 module.exports.state = async (req, res) => {
+    console.dir(req.query);
     let q = [
         { $match: { isActive: true } },
         {
@@ -2830,15 +3017,35 @@ module.exports.state = async (req, res) => {
         },
         { $unwind: '$state' },
         { $unwind: '$actionTakenBy' },
-        { $match: { status: 'APPROVED', 'actionTakenBy.role': 'STATE' } },
-        { $group: { _id: { name: '$state.name', _id: '$state._id' } } },
-        {
-            $project: {
-                name: '$_id.name',
-                _id: '$_id._id',
-            },
-        },
     ];
+    if (req.query.formStatus === 'draft-by-MoHUA') {
+        q.push({
+            $match: { status: 'PENDING', 'actionTakenBy.role': 'MoHUA' },
+        });
+    } else if (req.query.formStatus === 'under-review-by-MoHUA') {
+        q.push({
+            $match: { status: 'APPROVED', 'actionTakenBy.role': 'STATE' },
+        });
+    } else {
+        q.push({
+            $match: {
+                $or: [
+                    { status: 'APPROVED', 'actionTakenBy.role': 'STATE' },
+                    { status: 'PENDING', 'actionTakenBy.role': 'MoHUA' },
+                ],
+            },
+        });
+    }
+
+    q.push({ $group: { _id: { name: '$state.name', _id: '$state._id' } } });
+    q.push({
+        $project: {
+            name: '$_id.name',
+            _id: '$_id._id',
+        },
+    });
+
+    // return res.send({q})
     let arr = await XVFCGrantULBData.aggregate(q).exec();
     return res.status(200).json({
         timestamp: moment().unix(),

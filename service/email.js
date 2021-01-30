@@ -15,11 +15,11 @@ module.exports = function(mailOptions, cb){
     let mail = null
     let password = null 
     if(mail1){
-        mail= process.env.EMAIL // cityfinance1@dhwaniris.com
-        password = process.env.PASS
+        mail= process.env.P_EMAIL // cityfinance1@dhwaniris.com
+        password = process.env.P_PASS
     }else if(mail2){
-        mail= process.env.EMAIL //cityfinance2@dhwaniris.com
-        password = process.env.PASS
+        mail= process.env.S_EMAIL //cityfinance2@dhwaniris.com
+        password = process.env.S_PASS
     }
     else if(mail3){   
         mail= process.env.EMAIL // reachus
