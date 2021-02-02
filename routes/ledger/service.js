@@ -306,7 +306,8 @@ module.exports.getAllUlbLegders = async function(req,res){
             },
             state: { "$first": "$state"},
             code:{ "$first": "$code"},
-            ulbType:{"$first":"$ulbType.name"}
+            ulbType:{"$first":"$ulbType.name"},
+            population:{ "$first": "$population"}
             }
         },
         {$group:{
@@ -324,6 +325,8 @@ module.exports.getAllUlbLegders = async function(req,res){
                 state: { "$first": "$state"},
                 code:{ "$first": "$code"},
                 ulbType:{ "$first": "$ulbType"},
+                population:{ "$first": "$population"}
+
             }
         },
         {$group:{
@@ -331,7 +334,7 @@ module.exports.getAllUlbLegders = async function(req,res){
                 state : "$state._id",
                 name :"$state.name"
             },    
-            ulbList :{$push: {ulbType:"$ulbType",code:"$code",financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
+            ulbList :{$push: {population:"$population",ulbType:"$ulbType",code:"$code",financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
             }
         }
         ]).exec((err, out) => {
