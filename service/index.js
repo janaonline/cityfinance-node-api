@@ -1,6 +1,5 @@
 const moment = require('moment');
-//const email = require('./email');
-const email = require('./email_new');
+const email = require('./email');
 
 const bcrypt = require('bcryptjs');
 const find = function(condition = {}, schema, callback) {
