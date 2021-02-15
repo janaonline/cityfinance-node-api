@@ -1,5 +1,7 @@
 const moment = require('moment');
-const email = require('./email');
+//const email = require('./email');
+const email = require('./email_new');
+
 const bcrypt = require('bcryptjs');
 const find = function(condition = {}, schema, callback) {
   // PUT Function where find condition and schema name would be received and accordingly response will be returned
