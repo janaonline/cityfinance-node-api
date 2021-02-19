@@ -437,6 +437,34 @@ const xvUploadApprovalState = (mohuaName, ulbName, stateName) => {
     };
 };
 
+const xvUploadApprovalByStateToUlb = (ulbName) => {
+    return {
+        subject: `15th FC Grant Form Successfully Approved by State`,
+        body: `Dear ${ulbName},<br>
+                <p>
+                    The 15<sup>th</sup> FC Grant form data has been approved by state and is due for approval by MoHUA.
+                    You will receive a confirmation on approval by MoHUA.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`,
+    };
+};
+
+const xvUploadApprovalForState = (ulbName,stateName) => {
+    return {
+        subject: `15th FC Grant Form Successfully Approved by State-${ulbName}`,
+        body: `Dear ${stateName},<br>
+                <p>
+                    The 15<sup>th</sup> FC Grant form for the ${ulbName} has been approved by state and is due for approval by MoHUA.
+                    You will receive a confirmation on approval by MoHUA.
+                </p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`,
+    };
+};
+
 const xvUploadRejectUlb = (ulbName, rejectReason, role) => {
     return {
         subject: `15th FC Grant Form Rejected by ${role}`,
@@ -1048,6 +1076,8 @@ module.exports = {
     sendProfileUpdateStatusEmail: sendProfileUpdateStatusEmail,
     xvUploadApprovalMoHUA: xvUploadApprovalMoHUA,
     xvUploadApprovalByMoHUAtoState: xvUploadApprovalByMoHUAtoState,
+    xvUploadApprovalByStateToUlb:xvUploadApprovalByStateToUlb,
+    xvUploadApprovalForState:xvUploadApprovalForState,
     xvUploadApprovalState: xvUploadApprovalState,
     xvUploadRejectUlb: xvUploadRejectUlb,
     xvUploadRejectState: xvUploadRejectState,

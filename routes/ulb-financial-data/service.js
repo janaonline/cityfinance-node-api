@@ -1604,6 +1604,14 @@ module.exports.action = async (req, res) => {
                             subject: '',
                             html: '',
                         };
+
+                        let UlbTemplate = await Service.emailTemplate.xvUploadApprovalByStateToUlb(
+                            ulbUser.name
+                        );
+                        (mailOptions.to = ulbUser.email),
+                        (mailOptions.subject = UlbTemplate.subject),
+                        (mailOptions.html = UlbTemplate.body);
+                        Service.sendEmail(mailOptions);    
                         /** STATE TRIGGER */
                         let MohuaUser = await User.find({
                             isDeleted: false,
@@ -1619,6 +1627,29 @@ module.exports.action = async (req, res) => {
                             (mailOptions.to = d.email),
                                 (mailOptions.subject = MohuaTemplate.subject),
                                 (mailOptions.html = MohuaTemplate.body);
+                            Service.sendEmail(mailOptions);
+                        }
+
+                        /** STATE TRIGGER */
+                        let stateEmails = [];
+                        let stateUser = await User.find({
+                            state: ObjectId(ulbUser.state._id),
+                            isDeleted: false,
+                            role: 'STATE',
+                        }).exec();
+                        for (let d of stateUser) {
+                            sleep(700);
+                            d.email ? stateEmails.push(d.email) : '';
+                            d.departmentEmail
+                                ? stateEmails.push(d.departmentEmail)
+                                : '';
+                            let stateTemplate = await Service.emailTemplate.xvUploadApprovalForState(
+                                ulbUser.name,
+                                d.name
+                            );
+                            mailOptions.to = stateEmails.join();
+                            mailOptions.subject = stateTemplate.subject;
+                            mailOptions.html = stateTemplate.body;
                             Service.sendEmail(mailOptions);
                         }
 
