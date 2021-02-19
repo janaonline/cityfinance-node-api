@@ -1704,6 +1704,31 @@ module.exports.action = async (req, res) => {
                             (mailOptions.subject = UlbTemplate.subject),
                             (mailOptions.html = UlbTemplate.body);
                         Service.sendEmail(mailOptions);
+                        
+                        /** STATE TRIGGER */
+                        let stateEmails = [];
+                        let stateUser = await User.find({
+                            state: ObjectId(ulbUser.state._id),
+                            isDeleted: false,
+                            role: 'STATE',
+                        }).exec();
+                        for (let d of stateUser) {
+                            sleep(700);
+                            d.email ? stateEmails.push(d.email) : '';
+                            d.departmentEmail
+                                ? stateEmails.push(d.departmentEmail)
+                                : '';
+                            let stateTemplate = await Service.emailTemplate.xvUploadRejectByStateTrigger(
+                                ulbUser.name,
+                                d.name,
+                                value.reason
+                            );
+                            mailOptions.to = stateEmails.join();
+                            mailOptions.subject = stateTemplate.subject;
+                            mailOptions.html = stateTemplate.body;
+                            Service.sendEmail(mailOptions);
+                        }
+
                     }
                     return Response.OK(res, ulbFinancialDataobj, ``);
                 } else {

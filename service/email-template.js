@@ -468,6 +468,23 @@ const xvUploadRejectState = (ulbName, stateName, rejectReason) => {
     };
 };
 
+const xvUploadRejectByStateTrigger = (ulbName, stateName, rejectReason) => {
+    return {
+        subject: `15th FC Grant Form Rejected by State-${ulbName}`,
+        body: `Dear ${stateName},<br>
+                <p>
+                    The 15<sup>th</sup> FC Grant form for the ${ulbName} has been rejected by MoHUA with the following details.<br>
+                    <strong>Rejected Data:</strong>
+                    ${rejectReason}
+                </p>
+                <p>Please login to City Finance Portal to submit the corrected form.</p>
+                <br>
+                <br>Regards,<br>
+                City Finance Team`,
+    };
+};
+
+
 const xvUploadMultiRejectUlb = (ulbName, rejectReason, role) => {
     return {
         subject: `15th FC Grant Form Rejected by ${role}`,
@@ -1034,6 +1051,7 @@ module.exports = {
     xvUploadApprovalState: xvUploadApprovalState,
     xvUploadRejectUlb: xvUploadRejectUlb,
     xvUploadRejectState: xvUploadRejectState,
+    xvUploadRejectByStateTrigger:xvUploadRejectByStateTrigger,
     xvUploadMultiRejectState,
     xvUploadMultiRejectUlb,
     userSignup: userSignup,
