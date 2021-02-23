@@ -4,23 +4,14 @@ const router = express.Router();
 const verifyToken = require('../auth/service').verifyToken;
 //--> ULB Type Routes <---//
 const FinancialYear = require('./service');
+router.get('/financial-year', FinancialYear.get);
+
 router.get(
-    '/financial-year',
-    FinancialYear.get
+    '/dynamic-financial-year',
+    FinancialYear.yearsContainingFinancialYear
 );
-router.put(
-    '/financial-year/:_id',
-    verifyToken,
-    FinancialYear.put
-);
-router.post(
-    '/financial-year',
-    verifyToken,
-    FinancialYear.post
-);
-router.delete(
-    '/financial-year/:_id',
-    verifyToken,
-    FinancialYear.delete
-);
+
+router.put('/financial-year/:_id', verifyToken, FinancialYear.put);
+router.post('/financial-year', verifyToken, FinancialYear.post);
+router.delete('/financial-year/:_id', verifyToken, FinancialYear.delete);
 module.exports = router;
