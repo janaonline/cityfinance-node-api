@@ -414,13 +414,15 @@ module.exports.getAllLedgersCsv = function(req,res){
                 population:1
             }
         }
-    ]).cursor({batchSize:50}).exec()
+    ]).cursor({batchSize:500}).exec()
         cursor.on("data",function(el){
-            let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
-            el.code = el.line_item ? el.line_item.code : "";
-            el.head_of_account =  el.line_item ? el.line_item.headOfAccount : "";
-            el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ')  : "";
-            res.write(el.ulb.name+","+el.ulb.code+","+el.ulb.amrut+","+el.head_of_account+","+el.code+","+line_item+","+el.financialYear+","+el.amount+"\r\n");
+            if(el.ulb!='NA'){
+                let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
+                el.code = el.line_item ? el.line_item.code : "";
+                el.head_of_account =  el.line_item ? el.line_item.headOfAccount : "";
+                el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ')  : "";
+                res.write(el.ulb.name+","+el.ulb.code+","+el.ulb.amrut+","+el.head_of_account+","+el.code+","+line_item+","+el.financialYear+","+el.amount+"\r\n");
+            }
         }) 
         cursor.on("end",function(el){
             res.end()
