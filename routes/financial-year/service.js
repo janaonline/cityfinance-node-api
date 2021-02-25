@@ -1,5 +1,5 @@
 const FinancialYear = require('../../models/FinancialYear');
-const UlbFinancialData = require('../../models/UlbFinancialData');
+const ulbledgers = require('../../models/UlbLedger');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.get = async function (req, res) {
@@ -22,7 +22,7 @@ module.exports.yearsContainingFinancialYear = async function (req, res) {
     let query = {};
     query['isActive'] = true;
     try {
-        let years = await UlbFinancialData.distinct('financialYear');
+        let years = await ulbledgers.distinct('financialYear');
 
         return Response.OK(res, years, `Financial year list.`);
     } catch (e) {
