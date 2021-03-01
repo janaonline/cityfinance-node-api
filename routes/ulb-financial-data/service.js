@@ -628,9 +628,43 @@ module.exports.getAll = async (req, res) => {
                         //         else: 'Unaudited'
                         //     }
                         // },
-                        waterManagement: 1,
-                        solidWasteManagement: 1,
-                        millionPlusCities: 1,
+
+                        baeline_waterSuppliedPerDay_2020_21:"$waterManagement.waterSuppliedPerDay.baseline.2021",
+                        baseline_reduction_2020_21:"$waterManagement.reduction.baseline.2021",
+                        baeline_houseHoldCoveredWithSewerage_2020_21:"$waterManagement.houseHoldCoveredWithSewerage.baseline.2021",
+                        baeline_houseHoldCoveredPipedSupply_2020_21:"$waterManagement.houseHoldCoveredPipedSupply.baseline.2021",
+
+                        target_waterSuppliedPerDay_2021_22:"$waterManagement.waterSuppliedPerDay.target.2122",
+                        target_reduction_2021_22:"$waterManagement.reduction.target.2122",
+                        target_houseHoldCoveredWithSewerage_2021_22:"$waterManagement.houseHoldCoveredWithSewerage.target.2122",
+                        target_houseHoldCoveredPipedSupply_2021_22:"$waterManagement.houseHoldCoveredPipedSupply.target.2122",
+
+                        target_waterSuppliedPerDay_2022_23:"$waterManagement.waterSuppliedPerDay.target.2223",
+                        target_reduction_2022_23:"$waterManagement.reduction.target.2223",
+                        target_houseHoldCoveredWithSewerage_2022_23:"$waterManagement.houseHoldCoveredWithSewerage.target.2223",
+                        target_houseHoldCoveredPipedSupply_2022_23:"$waterManagement.houseHoldCoveredPipedSupply.target.2223",
+
+                        target_waterSuppliedPerDay_2023_24:"$waterManagement.waterSuppliedPerDay.target.2324",
+                        target_reduction_2023_24:"$waterManagement.reduction.target.2324",
+                        target_houseHoldCoveredWithSewerage_2023_24:"$waterManagement.houseHoldCoveredWithSewerage.target.2324",
+                        target_houseHoldCoveredPipedSupply_2023_24:"$waterManagement.houseHoldCoveredPipedSupply.target.2324",
+
+                        target_waterSuppliedPerDay_2024_25:"$waterManagement.waterSuppliedPerDay.target.2425",
+                        target_reduction_2024_25:"$waterManagement.reduction.target.2425",
+                        target_houseHoldCoveredWithSewerage_2024_25:"$waterManagement.houseHoldCoveredWithSewerage.target.2425",
+                        target_houseHoldCoveredPipedSupply_2024_25:"$waterManagement.houseHoldCoveredPipedSupply.target.2425",
+
+                        garbageFreeCities:"$solidWasteManagement.documents.garbageFreeCities",
+                        waterSupplyCoverage:"$solidWasteManagement.documents.waterSupplyCoverage",
+                        
+                        cityPlan:"$millionPlusCities.documents.cityPlan",
+                        waterBalancePlan:"$millionPlusCities.documents.waterBalancePlan",
+                        serviceLevelPlan:"$millionPlusCities.documents.serviceLevelPlan",
+                        solidWastePlan:"$millionPlusCities.documents.solidWastePlan",
+
+                        //waterManagement: 1,
+                        //solidWasteManagement: 1,
+                        //millionPlusCities: 1,
                         completeness: 1,
                         correctness: 1,
                         status: 1,
@@ -748,18 +782,17 @@ module.exports.getAll = async (req, res) => {
                     ) {
                         d.status = 'Approval Completed';
                     }
+
+                    (
+                    d.garbageFreeCities = d.garbageFreeCities &&  d.garbageFreeCities.length > 0 ? d.garbageFreeCities[0]["url"]:'' ,
+                    d.waterSupplyCoverage = d.waterSupplyCoverage && d.waterSupplyCoverage.length > 0 ? d.waterSupplyCoverage[0]["url"]:'', 
+                    d.cityPlan = d.cityPlan  && d.cityPlan.length > 0 ? d.cityPlan[0]["url"]:'' ,
+                    d.waterBalancePlan = d.waterBalancePlan  && d.waterBalancePlan.length > 0 ? d.waterBalancePlan[0]["url"]:'', 
+                    d.serviceLevelPlan = d.serviceLevelPlan  && d.serviceLevelPlan.length > 0 ? d.serviceLevelPlan[0]["url"]:'' ,
+                    d.solidWastePlan =  d.solidWastePlan  && d.solidWastePlan.length > 0 ? d.solidWastePlan[0]["url"]:'' 
+                    )
                 }
-                let field = {
-                    stateName: 'State name',
-                    ulbName: 'ULB name',
-                    ulbType: 'ULB Type',
-                    populationType: 'Population Type',
-                    censusCode: 'Census Code',
-                    sbCode: 'ULB Code',
-                    //financialYear: 'Financial Year',
-                    //auditStatus: 'Audit Status',
-                    status: 'Status',
-                };
+                let field = csvData();
                 if (user.role == 'STATE') {
                     delete field.stateName;
                 }
@@ -798,6 +831,55 @@ module.exports.getAll = async (req, res) => {
         return Response.BadRequest(res, e, e.message);
     }
 };
+
+function csvData(){
+
+    return field = {
+        stateName: 'State name',
+        ulbName: 'ULB name',
+        ulbType: 'ULB Type',
+        populationType: 'Population Type',
+        censusCode: 'Census Code',
+        sbCode: 'ULB Code',
+        //financialYear: 'Financial Year',
+        //auditStatus: 'Audit Status',
+        status: 'Status',
+        'baeline_waterSuppliedPerDay_2020_21':'Baseline 2020-21_Water supplied in litre per day(lpcd)',
+        'baseline_reduction_2020_21':'Baseline 2020-21_Reduction in non-water revenue',
+        'baeline_houseHoldCoveredWithSewerage_2020_21':'Baseline 2020-21_% of households covered with sewerage/septage services',
+        'baeline_houseHoldCoveredPipedSupply_2020_21':'Baseline 2020-21_% of households covered with piped water supply',
+
+        'target_waterSuppliedPerDay_2021_22':'Target 2021-22_Water supplied in litre per day(lpcd)',
+        'target_reduction_2021_22':'Target 2021-22_Reduction in non-water revenue',
+        'target_houseHoldCoveredWithSewerage_2021_22':'Target 2021-22_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredPipedSupply_2021_22':'Target 2021-22_% of households covered with piped water supply',
+
+        'target_waterSuppliedPerDay_2022_23':'Target 2022-23_Water supplied in litre per day(lpcd)',
+        'target_reduction_2022_23':'Target 2022-23_Reduction in non-water revenue',
+        'target_houseHoldCoveredWithSewerage_2022_23':'Target 2022-23_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredPipedSupply_2022_23':'Target 2022-23_% of households covered with piped water supply',
+        
+        'target_waterSuppliedPerDay_2023_24':'Target 2023-24_Water supplied in litre per day(lpcd)',
+        'target_reduction_2023_24':'Target 2023-24_Reduction in non-water revenue',
+        'target_houseHoldCoveredWithSewerage_2023_24':'Target 2023-24_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredPipedSupply_2023_24':'Target 2023-24_% of households covered with piped water supply',
+        
+        'target_waterSuppliedPerDay_2024_25':'Target 2024_25_Water supplied in litre per day(lpcd)',
+        'target_reduction_2024_25':'Target 2024_25_Reduction in non-water revenue',
+        'target_houseHoldCoveredWithSewerage_2024_25':'Target 2024_25_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredPipedSupply_2024_25':'Target 2024_25_% of households covered with piped water supply',
+        'garbageFreeCities':'Plan for garbage free star rating of the cities',
+        'waterSupplyCoverage':'Plan for coverage of water supply for public/community toilets',
+        'cityPlan':'City Plan DPR',
+        'waterBalancePlan':'Water Balance Plan',
+        'serviceLevelPlan':'Service Level Improvement Plan',
+        'solidWastePlan':'Solid Waste Management Plan'
+    };
+
+
+
+}
+
 module.exports.getHistories = async (req, res) => {
     try {
         let user = req.decoded,
