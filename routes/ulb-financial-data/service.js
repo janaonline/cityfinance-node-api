@@ -23,9 +23,9 @@ async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
 }
 module.exports.createDir = function (req, res, next) {
-    if (!fs.existsSync(dir + subDir + '_' + date)) {
-        fs.mkdirSync(dir + subDir + '_' + date);
-        console.log('Created subDir', dir + subDir + '_' + date);
+    if (!fs.existsSync(dir + subDir +  '_' + date)) {
+        fs.mkdirSync(dir + subDir +  '_' + date);
+        console.log('Created subDir', dir + subDir + subDir + '_' + date);
     }
     next();
 };
@@ -61,7 +61,7 @@ module.exports.unzip = async (req, res, next) => {
                     req.protocol +
                     '://' +
                     req.headers.host +
-                    '/source_' +
+                    '/source/source_' +
                     date +
                     '/' +
                     filename;
@@ -71,7 +71,7 @@ module.exports.unzip = async (req, res, next) => {
                     req.protocol +
                     '://' +
                     req.headers.host +
-                    '/source_' +
+                    '/source/source_' +
                     date +
                     '/' +
                     zipEntry.entryName;
@@ -84,7 +84,7 @@ module.exports.unzip = async (req, res, next) => {
             });
             zip.extractEntryTo(
                 zipEntry.entryName,
-                'uploads/source_' + date + '/',
+                'uploads/source/source_' + date + '/',
                 false,
                 true
             );
