@@ -15,7 +15,7 @@ const path = require('path');
 var AdmZip = require('adm-zip');
 const { strict } = require('assert');
 const { MongooseDocument } = require('mongoose');
-const dir = 'uploads';
+const dir = 'uploads/source';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
 
@@ -23,9 +23,9 @@ async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
 }
 module.exports.createDir = function (req, res, next) {
-    if (!fs.existsSync(dir + subDir)) {
-        fs.mkdirSync(dir + subDir);
-        console.log('Created subDir', dir + subDir);
+    if (!fs.existsSync(dir + subDir +  '_' + date)) {
+        fs.mkdirSync(dir + subDir +  '_' + date);
+        console.log('Created subDir', dir + subDir + subDir + '_' + date);
     }
     next();
 };
@@ -61,7 +61,9 @@ module.exports.unzip = async (req, res, next) => {
                     req.protocol +
                     '://' +
                     req.headers.host +
-                    '/source/'+
+                    '/source/source_' +
+                    date +
+                    '/' +
                     filename;
             }
             if (st1[1] == 'xlsx') {
@@ -69,7 +71,9 @@ module.exports.unzip = async (req, res, next) => {
                     req.protocol +
                     '://' +
                     req.headers.host +
-                    '/source/' +
+                    '/source/source_' +
+                    date +
+                    '/' +
                     zipEntry.entryName;
             }
             dataObj['actionTakenBy'] = ObjectId(user._id);
@@ -80,7 +84,7 @@ module.exports.unzip = async (req, res, next) => {
             });
             zip.extractEntryTo(
                 zipEntry.entryName,
-                'uploads/source_' + date + '/',
+                'uploads/source/source_' + date + '/',
                 false,
                 true
             );
