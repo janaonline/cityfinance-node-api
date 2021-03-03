@@ -15,7 +15,7 @@ const path = require('path');
 var AdmZip = require('adm-zip');
 const { strict } = require('assert');
 const { MongooseDocument } = require('mongoose');
-const dir = 'uploads';
+const dir = 'uploads/source';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
 
