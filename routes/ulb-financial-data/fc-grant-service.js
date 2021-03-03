@@ -1002,7 +1002,7 @@ module.exports.ulbList = async (req, res) => {
             //email: 'Email ID',
             area:'Area',
             population:'Population',
-            wards :'No.ofWards',
+            wards :'No of Wards',
             registration: 'Profile Updated',
             commissionerName:"Municipal Commissioner/Executive Officer Name",
             commissionerEmail:"Municipal Commissioner/Executive Officer Email ID",
