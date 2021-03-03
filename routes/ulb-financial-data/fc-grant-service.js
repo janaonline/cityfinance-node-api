@@ -964,7 +964,7 @@ module.exports.ulbList = async (req, res) => {
                 accountantConatactNumber:"$user.accountantConatactNumber",
                 sbCode: 1,
                 isMillionPlus: 1,
-                //email: '$user.accountantEmail',
+                email: '$user.accountantEmail',
                 mobile: '$user.commissionerConatactNumber',
                 registration: {
                     $cond: {
