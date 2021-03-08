@@ -662,9 +662,9 @@ module.exports.getAll = async (req, res) => {
                         serviceLevelPlan:"$millionPlusCities.documents.serviceLevelPlan",
                         solidWastePlan:"$millionPlusCities.documents.solidWastePlan",
 
-                        //waterManagement: 1,
-                        //solidWasteManagement: 1,
-                        //millionPlusCities: 1,
+                        waterManagement: 1,
+                        solidWasteManagement: 1,
+                        millionPlusCities: 1,
                         completeness: 1,
                         correctness: 1,
                         status: 1,
