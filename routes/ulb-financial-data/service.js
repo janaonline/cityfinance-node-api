@@ -64,13 +64,13 @@ module.exports.create = async (req, res) => {
                 }
             } else {
                 try {
-                    await Service.emailTemplate.sendFinancialDataStatusEmail(
+                    await Service.emailTemplate.sendULBFinancialDataStatusEmail(
                         dt._id,
                         'UPLOAD'
                     );
                 } catch (error) {
                     console.error(
-                        'Failed to send Financial Data Upload Email: \n',
+                        'Failed to send email for ULB Data Upload on creation: \n',
                         error
                     );
                 }
@@ -916,10 +916,17 @@ module.exports.completeness = async (req, res) => {
                     prevState.status == 'REJECTED' ||
                     prevState.status == 'APPROVED'
                 ) {
-                    let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
-                        prevState._id,
-                        'ACTION'
-                    );
+                    try {
+                        let email = await Service.emailTemplate.sendULBFinancialDataStatusEmail(
+                            prevState._id,
+                            'ACTION'
+                        );
+                    } catch (error) {
+                        console.log(
+                            `Failed to send email on ULB Upload Data- completeness taking action ${prevState.status}\n`,
+                            error
+                        );
+                    }
                 }
                 return Response.OK(
                     res,
@@ -1027,10 +1034,17 @@ module.exports.correctness = async (req, res) => {
                     prevState.status == 'REJECTED' ||
                     prevState.status == 'APPROVED'
                 ) {
-                    let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
-                        prevState._id,
-                        'ACTION'
-                    );
+                    try {
+                        let email = await Service.emailTemplate.sendULBFinancialDataStatusEmail(
+                            prevState._id,
+                            'ACTION'
+                        );
+                    } catch (error) {
+                        console.log(
+                            `Failed to send email on ULB Upload Data - correctness taking action ${prevState.status}\n`,
+                            error
+                        );
+                    }
                 }
                 return Response.OK(
                     res,
