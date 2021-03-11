@@ -40,7 +40,7 @@ module.exports.create = async (req, res) => {
         let checkData = await UlbFinancialData.count({
             ulb: data.ulb,
             financialYear: data.financialYear,
-            audited: true
+            audited: true,
         });
         if (checkData) {
             return Response.BadRequest(
@@ -49,9 +49,7 @@ module.exports.create = async (req, res) => {
                 `Audited data already been uploaded for ${data.financialYear}.`
             );
         }
-        console.log('checkData', checkData);
         data.actionTakenBy = ObjectId(user._id);
-        console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new UlbFinancialData(data);
         ulbUpdateRequest.save(async (err, dt) => {
             if (err) {
@@ -65,10 +63,17 @@ module.exports.create = async (req, res) => {
                     return Response.DbError(res, err, 'Failed to create entry');
                 }
             } else {
-                let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
-                    dt._id,
-                    'UPLOAD'
-                );
+                try {
+                    await Service.emailTemplate.sendFinancialDataStatusEmail(
+                        dt._id,
+                        'UPLOAD'
+                    );
+                } catch (error) {
+                    console.error(
+                        'Failed to send Financial Data Upload Email: \n',
+                        error
+                    );
+                }
                 return Response.OK(res, dt, 'Request accepted.');
             }
         });
@@ -98,28 +103,28 @@ module.exports.get = async (req, res) => {
                             select: '_id name code state',
                             populate: {
                                 path: 'state',
-                                select: '_id name code'
-                            }
+                                select: '_id name code',
+                            },
                         },
                         {
                             path: 'actionTakenBy',
-                            select: '_id name email role'
-                        }
+                            select: '_id name email role',
+                        },
                     ])
                     .populate([
                         {
                             path: 'history.actionTakenBy',
                             model: User,
-                            select: '_id name email role'
+                            select: '_id name email role',
                         },
                         {
                             path: 'history.ulb',
                             select: '_id name code state',
                             populate: {
                                 path: 'state',
-                                select: '_id name code'
-                            }
-                        }
+                                select: '_id name code',
+                            },
+                        },
                     ])
                     .lean()
                     .exec();
@@ -170,28 +175,28 @@ module.exports.get = async (req, res) => {
                             select: '_id name code state',
                             populate: {
                                 path: 'state',
-                                select: '_id name code'
-                            }
+                                select: '_id name code',
+                            },
                         },
                         {
                             path: 'actionTakenBy',
-                            select: '_id name email role'
-                        }
+                            select: '_id name email role',
+                        },
                     ])
                     .populate([
                         {
                             path: 'history.actionTakenBy',
                             model: User,
-                            select: '_id name email role'
+                            select: '_id name email role',
                         },
                         {
                             path: 'history.ulb',
                             select: '_id name code state',
                             populate: {
                                 path: 'state',
-                                select: '_id name code'
-                            }
-                        }
+                                select: '_id name code',
+                            },
+                        },
                     ])
                     .lean()
                     .exec();
@@ -202,7 +207,7 @@ module.exports.get = async (req, res) => {
                     success: true,
                     message: 'data',
                     total: total,
-                    data: data
+                    data: data,
                 });
             } catch (e) {
                 console.log('Exception:', e);
@@ -249,49 +254,49 @@ module.exports.getAll = async (req, res) => {
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
 
-            let status = 'PENDING'
-            if(user.role=='ULB'){
-                status = 'REJECTED'
-            }
+        let status = 'PENDING';
+        if (user.role == 'ULB') {
+            status = 'REJECTED';
+        }
 
-            console.log(status);
+        console.log(status);
 
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
                 {
-                    $match: { overallReport: null }
+                    $match: { overallReport: null },
                 },
                 {
                     $lookup: {
                         from: 'ulbs',
                         localField: 'ulb',
                         foreignField: '_id',
-                        as: 'ulb'
-                    }
+                        as: 'ulb',
+                    },
                 },
                 {
                     $lookup: {
                         from: 'ulbtypes',
                         localField: 'ulb.ulbType',
                         foreignField: '_id',
-                        as: 'ulbType'
-                    }
+                        as: 'ulbType',
+                    },
                 },
                 {
                     $lookup: {
                         from: 'states',
                         localField: 'ulb.state',
                         foreignField: '_id',
-                        as: 'state'
-                    }
+                        as: 'state',
+                    },
                 },
                 {
                     $lookup: {
                         from: 'users',
                         localField: 'actionTakenBy',
                         foreignField: '_id',
-                        as: 'actionTakenBy'
-                    }
+                        as: 'actionTakenBy',
+                    },
                 },
                 { $unwind: '$ulb' },
                 { $unwind: '$ulbType' },
@@ -299,8 +304,8 @@ module.exports.getAll = async (req, res) => {
                 {
                     $unwind: {
                         path: '$actionTakenBy',
-                        preserveNullAndEmptyArrays: true
-                    }
+                        preserveNullAndEmptyArrays: true,
+                    },
                 },
                 {
                     $addFields: {
@@ -308,10 +313,10 @@ module.exports.getAll = async (req, res) => {
                             $cond: {
                                 if: { $eq: ['$status', `${status}`] },
                                 then: 2,
-                                else: 1
-                            }
-                        }
-                    }
+                                else: 1,
+                            },
+                        },
+                    },
                 },
                 {
                     $project: {
@@ -322,8 +327,8 @@ module.exports.getAll = async (req, res) => {
                             $cond: {
                                 if: '$audited',
                                 then: 'Audited',
-                                else: 'Unaudited'
-                            }
+                                else: 'Unaudited',
+                            },
                         },
                         completeness: 1,
                         correctness: 1,
@@ -339,9 +344,9 @@ module.exports.getAll = async (req, res) => {
                         actionTakenByUserName: '$actionTakenBy.name',
                         actionTakenByUserRole: '$actionTakenBy.role',
                         isActive: '$isActive',
-                        createdAt: '$createdAt'
-                    }
-                }
+                        createdAt: '$createdAt',
+                    },
+                },
             ];
 
             let newFilter = await Service.mapFilter(filter);
@@ -358,7 +363,6 @@ module.exports.getAll = async (req, res) => {
                 q.push({ $match: newFilter });
             }
 
-
             if (sort && Object.keys(sort).length) {
                 q.push({ $sort: sort });
             } else {
@@ -373,7 +377,7 @@ module.exports.getAll = async (req, res) => {
                     ulbCode: 'ULB Code',
                     financialYear: 'Financial Year',
                     auditStatus: 'Audit Status',
-                    status: 'Status'
+                    status: 'Status',
                 });
                 return res.xls('financial-data.xlsx', xlsData);
             } else {
@@ -393,7 +397,7 @@ module.exports.getAll = async (req, res) => {
                         success: true,
                         message: 'Ulb update request list',
                         data: arr,
-                        total: total
+                        total: total,
                     });
                 } catch (e) {
                     console.log('exception', e);
@@ -453,13 +457,13 @@ module.exports.getHistories = async (req, res) => {
                                         trialBalance: '$trialBalance',
                                         financialYear: '$financialYear',
                                         ulb: '$ulb',
-                                        actionTakenBy: '$actionTakenBy'
-                                    }
+                                        actionTakenBy: '$actionTakenBy',
+                                    },
                                 ],
-                                '$history'
-                            ]
-                        }
-                    }
+                                '$history',
+                            ],
+                        },
+                    },
                 },
                 { $unwind: '$history' },
                 {
@@ -467,51 +471,51 @@ module.exports.getHistories = async (req, res) => {
                         from: 'ulbs',
                         localField: 'history.ulb',
                         foreignField: '_id',
-                        as: 'ulb'
-                    }
+                        as: 'ulb',
+                    },
                 },
                 {
                     $lookup: {
                         from: 'ulbtypes',
                         localField: 'ulb.ulbType',
                         foreignField: '_id',
-                        as: 'ulbType'
-                    }
+                        as: 'ulbType',
+                    },
                 },
                 {
                     $lookup: {
                         from: 'states',
                         localField: 'ulb.state',
                         foreignField: '_id',
-                        as: 'state'
-                    }
+                        as: 'state',
+                    },
                 },
                 {
                     $lookup: {
                         from: 'users',
                         localField: 'history.actionTakenBy',
                         foreignField: '_id',
-                        as: 'actionTakenBy'
-                    }
+                        as: 'actionTakenBy',
+                    },
                 },
                 { $unwind: { path: '$ulb', preserveNullAndEmptyArrays: true } },
                 {
                     $unwind: {
                         path: '$ulbType',
-                        preserveNullAndEmptyArrays: true
-                    }
+                        preserveNullAndEmptyArrays: true,
+                    },
                 },
                 {
                     $unwind: {
                         path: '$state',
-                        preserveNullAndEmptyArrays: true
-                    }
+                        preserveNullAndEmptyArrays: true,
+                    },
                 },
                 {
                     $unwind: {
                         path: '$actionTakenBy',
-                        preserveNullAndEmptyArrays: true
-                    }
+                        preserveNullAndEmptyArrays: true,
+                    },
                 },
                 {
                     $project: {
@@ -530,9 +534,9 @@ module.exports.getHistories = async (req, res) => {
                         stateCode: '$state.code',
                         actionTakenByUserName: '$actionTakenBy.name',
                         actionTakenByUserRole: '$actionTakenBy.role',
-                        modifiedAt: '$history.modifiedAt'
-                    }
-                }
+                        modifiedAt: '$history.modifiedAt',
+                    },
+                },
             ];
             let newFilter = await Service.mapFilter(filter);
             let total = undefined;
@@ -565,7 +569,7 @@ module.exports.getHistories = async (req, res) => {
                     success: true,
                     message: 'Ulb update request list',
                     data: arr,
-                    total: total
+                    total: total,
                 });
             }
         } else {
@@ -585,7 +589,7 @@ module.exports.getDetails = async (req, res) => {
             timestamp: moment().unix(),
             success: true,
             message: 'Ulb update request list',
-            data: data
+            data: data,
         });
     } else {
         return Response.BadRequest(res, {}, 'Action not allowed.');
@@ -603,7 +607,7 @@ module.exports.update = async (req, res) => {
         'incomeAndExpenditure',
         'schedulesToIncomeAndExpenditure',
         'trialBalance',
-        'auditReport'
+        'auditReport',
     ];
     if (actionAllowed.indexOf(user.role) > -1) {
         try {
@@ -684,30 +688,42 @@ module.exports.update = async (req, res) => {
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy = user._id;
 
-                if(user.role=="ULB"){
-                    if(data.balanceSheet){
-                        if(data.balanceSheet.pdfUrl=="" || data.balanceSheet.pdfUrl==null  || data.balanceSheet.excelUrl=="" || data.balanceSheet.excelUrl==null){
-
+                if (user.role == 'ULB') {
+                    if (data.balanceSheet) {
+                        if (
+                            data.balanceSheet.pdfUrl == '' ||
+                            data.balanceSheet.pdfUrl == null ||
+                            data.balanceSheet.excelUrl == '' ||
+                            data.balanceSheet.excelUrl == null
+                        ) {
                             return Response.BadRequest(
                                 res,
                                 {},
                                 `balanceSheet must be provided`
                             );
-                        }   
+                        }
                     }
-                    if(data.incomeAndExpenditure){
-                    
-                        if(data.incomeAndExpenditure.pdfUrl=="" || data.incomeAndExpenditure.pdfUrl==null || data.incomeAndExpenditure.excelUrl=="" || data.incomeAndExpenditure.excelUrl==null){
+                    if (data.incomeAndExpenditure) {
+                        if (
+                            data.incomeAndExpenditure.pdfUrl == '' ||
+                            data.incomeAndExpenditure.pdfUrl == null ||
+                            data.incomeAndExpenditure.excelUrl == '' ||
+                            data.incomeAndExpenditure.excelUrl == null
+                        ) {
                             return Response.BadRequest(
                                 res,
                                 {},
-                                 `incomeAndExpenditure must be provided`
+                                `incomeAndExpenditure must be provided`
                             );
                         }
                     }
-                    if(data.trialBalance){
-                        if(data.trialBalance.pdfUrl=="" || data.trialBalance.pdfUrl==null || data.trialBalance.excelUrl=="" || data.trialBalance.excelUrl==null){
-
+                    if (data.trialBalance) {
+                        if (
+                            data.trialBalance.pdfUrl == '' ||
+                            data.trialBalance.pdfUrl == null ||
+                            data.trialBalance.excelUrl == '' ||
+                            data.trialBalance.excelUrl == null
+                        ) {
                             return Response.BadRequest(
                                 res,
                                 {},
@@ -715,9 +731,12 @@ module.exports.update = async (req, res) => {
                             );
                         }
                     }
-                    if(data.audited==true){
-
-                        if(!data.auditReport || data.auditReport.pdfUrl=="" || data.auditReport.pdfUrl==null){
+                    if (data.audited == true) {
+                        if (
+                            !data.auditReport ||
+                            data.auditReport.pdfUrl == '' ||
+                            data.auditReport.pdfUrl == null
+                        ) {
                             return Response.BadRequest(
                                 res,
                                 {},
@@ -727,13 +746,12 @@ module.exports.update = async (req, res) => {
                     }
                 }
 
-
                 let du = await UlbFinancialData.update(
                     { _id: prevState._id },
                     { $set: prevState, $push: { history: history } }
                 );
                 let ulbFinancialDataobj = await UlbFinancialData.findOne({
-                    _id: prevState._id
+                    _id: prevState._id,
                 }).exec();
 
                 return Response.OK(
@@ -771,7 +789,7 @@ module.exports.completeness = async (req, res) => {
         'incomeAndExpenditure',
         'schedulesToIncomeAndExpenditure',
         'trialBalance',
-        'auditReport'
+        'auditReport',
     ];
     if (actionAllowed.indexOf(user.role) > -1) {
         try {
@@ -831,31 +849,52 @@ module.exports.completeness = async (req, res) => {
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy = user._id;
 
-                if(user.role=="ULB"){
-                    if( !data.balanceSheet || data.balanceSheet.pdfUrl!="" || data.balanceSheet.pdfUrl!=null  || data.balanceSheet.excelUrl!="" || data.balanceSheet.excelUrl!=null){
-                            return Response.BadRequest(
-                                res,
-                                {},
-                                `balanceSheet must be provided`
-                            );
-                    }
-                    if( !data.incomeAndExpenditure || data.incomeAndExpenditure.pdfUrl!="" || data.incomeAndExpenditure.pdfUrl!=null || data.incomeAndExpenditure.excelUrl!="" || data.incomeAndExpenditure.excelUrl!=null){
+                if (user.role == 'ULB') {
+                    if (
+                        !data.balanceSheet ||
+                        data.balanceSheet.pdfUrl != '' ||
+                        data.balanceSheet.pdfUrl != null ||
+                        data.balanceSheet.excelUrl != '' ||
+                        data.balanceSheet.excelUrl != null
+                    ) {
                         return Response.BadRequest(
                             res,
                             {},
-                             `incomeAndExpenditure must be provided`
+                            `balanceSheet must be provided`
                         );
                     }
-                    if( !data.trialBalance || data.trialBalance.pdfUrl!="" || data.trialBalance.pdfUrl!=null || data.trialBalance.excelUrl!="" || data.trialBalance.excelUrl!=null){
+                    if (
+                        !data.incomeAndExpenditure ||
+                        data.incomeAndExpenditure.pdfUrl != '' ||
+                        data.incomeAndExpenditure.pdfUrl != null ||
+                        data.incomeAndExpenditure.excelUrl != '' ||
+                        data.incomeAndExpenditure.excelUrl != null
+                    ) {
+                        return Response.BadRequest(
+                            res,
+                            {},
+                            `incomeAndExpenditure must be provided`
+                        );
+                    }
+                    if (
+                        !data.trialBalance ||
+                        data.trialBalance.pdfUrl != '' ||
+                        data.trialBalance.pdfUrl != null ||
+                        data.trialBalance.excelUrl != '' ||
+                        data.trialBalance.excelUrl != null
+                    ) {
                         return Response.BadRequest(
                             res,
                             {},
                             `trialBalance must be provided`
                         );
                     }
-                    if(data.audited==true){
-
-                        if( !data.auditReport || data.auditReport.pdfUrl!="" || data.auditReport.pdfUrl!=null){
+                    if (data.audited == true) {
+                        if (
+                            !data.auditReport ||
+                            data.auditReport.pdfUrl != '' ||
+                            data.auditReport.pdfUrl != null
+                        ) {
                             return Response.BadRequest(
                                 res,
                                 {},
@@ -870,7 +909,7 @@ module.exports.completeness = async (req, res) => {
                     { $set: prevState, $push: { history: history } }
                 );
                 let ulbFinancialDataobj = await UlbFinancialData.findOne({
-                    _id: prevState._id
+                    _id: prevState._id,
                 }).exec();
 
                 if (
@@ -914,7 +953,7 @@ module.exports.correctness = async (req, res) => {
         'incomeAndExpenditure',
         'schedulesToIncomeAndExpenditure',
         'trialBalance',
-        'auditReport'
+        'auditReport',
     ];
     if (actionAllowed.indexOf(user.role) > -1) {
         try {
@@ -981,7 +1020,7 @@ module.exports.correctness = async (req, res) => {
                     { $set: prevState, $push: { history: history } }
                 );
                 let ulbFinancialDataobj = await UlbFinancialData.findOne({
-                    _id: prevState._id
+                    _id: prevState._id,
                 }).exec();
 
                 if (
@@ -1038,24 +1077,24 @@ module.exports.getApprovedFinancialData = async (req, res) => {
                     from: 'ulbs',
                     localField: 'ulb',
                     foreignField: '_id',
-                    as: 'ulb'
-                }
+                    as: 'ulb',
+                },
             },
             {
                 $lookup: {
                     from: 'ulbtypes',
                     localField: 'ulb.ulbType',
                     foreignField: '_id',
-                    as: 'ulbType'
-                }
+                    as: 'ulbType',
+                },
             },
             {
                 $lookup: {
                     from: 'states',
                     localField: 'ulb.state',
                     foreignField: '_id',
-                    as: 'state'
-                }
+                    as: 'state',
+                },
             },
             { $unwind: '$ulb' },
             { $unwind: '$ulbType' },
@@ -1071,7 +1110,7 @@ module.exports.getApprovedFinancialData = async (req, res) => {
                     ulbCode: '$ulb.code',
                     state: '$state._id',
                     stateName: '$state.name',
-                    stateCode: '$state.code'
+                    stateCode: '$state.code',
                     /*"balanceSheet.pdfUrl":1,
                     "balanceSheet.excelUrl":1,
                     "schedulesToBalanceSheet.pdfUrl":1,
@@ -1084,8 +1123,8 @@ module.exports.getApprovedFinancialData = async (req, res) => {
                     "trialBalance.excelUrl":1,
                     "auditReport.pdfUrl":1,
                     "auditReport.excelUrl":1*/
-                }
-            }
+                },
+            },
         ];
         let newFilter = await Service.mapFilter(filter);
         let total = undefined;
@@ -1103,7 +1142,7 @@ module.exports.getApprovedFinancialData = async (req, res) => {
                 ulbCode: 'ULB Code',
                 financialYear: 'Financial Year',
                 auditStatus: 'Audit Status',
-                status: 'Status'
+                status: 'Status',
             });
             return res.xls('financial-data.xlsx', xlsData);
         } else {
@@ -1120,7 +1159,7 @@ module.exports.getApprovedFinancialData = async (req, res) => {
                 success: true,
                 message: 'Ulb update request list',
                 data: arr,
-                total: total
+                total: total,
             });
         }
     } catch (e) {
@@ -1145,7 +1184,7 @@ module.exports.sourceFiles = async (req, res) => {
             'auditReport.pdfUrl': 1,
             'auditReport.excelUrl': 1,
             'overallReport.pdfUrl': 1,
-            'overallReport.excelUrl': 1
+            'overallReport.excelUrl': 1,
         };
         let data = await UlbFinancialData.find({ _id: _id }, select).exec();
         let lh = await LoginHistory.update(
@@ -1160,7 +1199,7 @@ module.exports.sourceFiles = async (req, res) => {
 function getSourceFiles(obj) {
     let o = {
         pdf: [],
-        excel: []
+        excel: [],
     };
     obj.balanceSheet && obj.balanceSheet.pdfUrl
         ? o.pdf.push({ name: 'Balance Sheet', url: obj.balanceSheet.pdfUrl })
@@ -1168,33 +1207,33 @@ function getSourceFiles(obj) {
     obj.balanceSheet && obj.balanceSheet.excelUrl
         ? o.excel.push({
               name: 'Balance Sheet',
-              url: obj.balanceSheet.excelUrl
+              url: obj.balanceSheet.excelUrl,
           })
         : '';
 
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl
         ? o.pdf.push({
               name: 'Schedules To Balance Sheet',
-              url: obj.schedulesToBalanceSheet.pdfUrl
+              url: obj.schedulesToBalanceSheet.pdfUrl,
           })
         : '';
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl
         ? o.excel.push({
               name: 'Schedules To Balance Sheet',
-              url: obj.schedulesToBalanceSheet.excelUrl
+              url: obj.schedulesToBalanceSheet.excelUrl,
           })
         : '';
 
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl
         ? o.pdf.push({
               name: 'Income And Expenditure',
-              url: obj.incomeAndExpenditure.pdfUrl
+              url: obj.incomeAndExpenditure.pdfUrl,
           })
         : '';
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl
         ? o.excel.push({
               name: 'Income And Expenditure',
-              url: obj.incomeAndExpenditure.excelUrl
+              url: obj.incomeAndExpenditure.excelUrl,
           })
         : '';
 
@@ -1202,14 +1241,14 @@ function getSourceFiles(obj) {
     obj.schedulesToIncomeAndExpenditure.pdfUrl
         ? o.pdf.push({
               name: 'Schedules To Income And Expenditure',
-              url: obj.schedulesToIncomeAndExpenditure.pdfUrl
+              url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
           })
         : '';
     obj.schedulesToIncomeAndExpenditure &&
     obj.schedulesToIncomeAndExpenditure.excelUrl
         ? o.excel.push({
               name: 'Schedules To Income And Expenditure',
-              url: obj.schedulesToIncomeAndExpenditure.excelUrl
+              url: obj.schedulesToIncomeAndExpenditure.excelUrl,
           })
         : '';
 
@@ -1219,7 +1258,7 @@ function getSourceFiles(obj) {
     obj.trialBalance && obj.trialBalance.excelUrl
         ? o.excel.push({
               name: 'Trial Balance',
-              url: obj.trialBalance.excelUrl
+              url: obj.trialBalance.excelUrl,
           })
         : '';
 
@@ -1236,7 +1275,7 @@ function getSourceFiles(obj) {
     obj.overallReport && obj.overallReport.excelUrl
         ? o.excel.push({
               name: 'Overall Report',
-              url: obj.overallReport.excelUrl
+              url: obj.overallReport.excelUrl,
           })
         : '';
 
