@@ -27,7 +27,7 @@ module.exports =  (req,res)=>{
         }
         else{
             try{
-                let count = await OverallUlb.count(query).exec();
+                let count = await Ulb.count({"isActive" : true}).exec();
                 rslv(count)
             }
             catch(err){
