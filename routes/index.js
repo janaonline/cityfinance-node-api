@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 // @Base Url
-router.use((req, res, next)=>{
-    req["currentUrl"] = `${req.protocol+"://"+req.headers.host}`;
+router.use((req, res, next) => {
+    req['currentUrl'] = `${req.protocol + '://' + req.headers.host}`;
     next();
 });
 // @Auth
@@ -27,10 +27,16 @@ router.use(Ulb);
 
 // @ULBUPDATEREQUEST
 const ulbUpdateRequest = require('./ulb-update-request');
-router.use('/ulb-update-request',ulbUpdateRequest);
+router.use('/ulb-update-request', ulbUpdateRequest);
 // @ULBFINANCIALDATA
 const ulbFinancialData = require('./ulb-financial-data');
-router.use('/ulb-financial-data',ulbFinancialData);
+router.use('/ulb-financial-data', ulbFinancialData);
+
+/**
+ * @description Routes for 15th FC Forms
+ */
+const fcFormData = require('./xv-fc-form');
+router.use('/xv-fc-form', fcFormData);
 
 // @LineItem
 const LineItem = require('./line-item');
@@ -46,7 +52,7 @@ router.use(BulkUploadRoute);
 
 // @Report
 const ReportRoutes = require('./report');
-router.use('/report',ReportRoutes);
+router.use('/report', ReportRoutes);
 
 // @Fileupload
 const fileUploadRoutes = require('./file-upload');
