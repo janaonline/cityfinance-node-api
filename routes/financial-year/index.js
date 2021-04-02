@@ -1,7 +1,7 @@
 const passport = require('passport');
 const express = require('express');
 const router = express.Router();
-const verifyToken = require('../auth/service').verifyToken;
+const verifyToken = require('../auth/services/verifyToken').verifyToken;
 //--> ULB Type Routes <---//
 const FinancialYear = require('./service');
 router.get('/financial-year', FinancialYear.get);

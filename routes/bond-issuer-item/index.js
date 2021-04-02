@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const BondIssuerItem = require('./service');
-const verifyToken = require('../auth/service').verifyToken;
+const verifyToken = require('../auth/services/verifyToken').verifyToken;
 
 router.get('/BondIssuer', BondIssuerItem.getJson);
 router.get('/Bond/Ulbs', BondIssuerItem.BondUlbs);

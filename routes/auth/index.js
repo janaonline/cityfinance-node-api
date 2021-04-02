@@ -1,20 +1,34 @@
 const express = require('express');
 const router = express.Router();
-const service = require('./service');
-router.get('/start_session', service.startSession);
-router.get('/end_session/:_id', service.endSession);
-router.post('/register', service.register);
-router.post('/login', service.login);
-router.get(
-    '/email_verification',
-    service.verifyToken,
-    service.emailVerification
-);
-router.post('/forgot_password', service.forgotPassword);
-router.post('/resend_verification_link', service.resendAccountVerificationLink);
-router.post('/reset_password', service.verifyToken, service.resetPassword);
-router.post('/captcha_validate', service.captcha);
-router.get('/visit_count', service.totalVisit);
-router.get('/change_password',service.verifyToken,service.changePassword);
+const { sendOtp } = require('./services/sendOtp');
+const { verifyOtp } = require('./services/verifyOtp')
+const { resendOtp } = require('./services/resendOtp')
+const { register } = require('./services/register')
+const { login } = require('./services/login')
+const { verifyToken } = require('./services/verifyToken')
+const { resendAccountVerificationLink } = require('./services/resendAccountVerificationLink')
+const { emailVerification } = require('./services/emailVerification')
+const { forgotPassword } = require('./services/forgotPassword')
+const { resetPassword } = require('./services/resetPassword')
+const { captcha } = require('./services/captcha')
+const { totalVisit } = require('./services/totalVisit')
+const { startSession } = require('./services/startSession')
+const { endSession } = require('./services/endSession')
+const { changePassword } = require('./services/changePassword')
+
+router.get('/start_session', startSession);
+router.get('/end_session/:_id', endSession);
+router.post('/register', register);
+router.post('/login', login);
+router.post('/verifyOtp', verifyOtp);
+router.get('/sendOtp', sendOtp);
+router.get('/resendOtp', sendOtp);
+router.get('/email_verification', verifyToken, emailVerification);
+router.post('/forgot_password', forgotPassword);
+router.post('/resend_verification_link', resendAccountVerificationLink);
+router.post('/reset_password', verifyToken, resetPassword);
+router.post('/captcha_validate', captcha);
+router.get('/visit_count', totalVisit);
+router.get('/change_password', verifyToken, changePassword);
 
 module.exports = router;

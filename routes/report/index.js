@@ -1,18 +1,18 @@
 const UlbRanking = require("./ulb-ranking");
 const FinancialData = require("./financial-data");
 const Usage = require("./usage");
-const verifyToken = require('../auth/service').verifyToken;
+const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const express = require('express');
 const router = express.Router();
 const dashboards = require('./dashboard');
 router.post("/ulb-ranking", UlbRanking);
 router.get("/ulb-ranking", UlbRanking);
 
-router.get("/financial-data/overall", verifyToken,FinancialData.filter,FinancialData.overall);
-router.get("/financial-data/statewise", verifyToken,FinancialData.filter,FinancialData.statewise);
-router.get("/financial-data/ulbtypewise",verifyToken, FinancialData.filter,FinancialData.ulbtypewise);
-router.get("/financial-data/stateandulbtypewise",verifyToken, FinancialData.filter,FinancialData.stateandulbtypewise);
-router.get("/financial-data/chart",verifyToken,FinancialData.chart);
-router.get("/usage", verifyToken,FinancialData.filter,Usage);
-router.use('/dashboard',dashboards);
+router.get("/financial-data/overall", verifyToken, FinancialData.filter, FinancialData.overall);
+router.get("/financial-data/statewise", verifyToken, FinancialData.filter, FinancialData.statewise);
+router.get("/financial-data/ulbtypewise", verifyToken, FinancialData.filter, FinancialData.ulbtypewise);
+router.get("/financial-data/stateandulbtypewise", verifyToken, FinancialData.filter, FinancialData.stateandulbtypewise);
+router.get("/financial-data/chart", verifyToken, FinancialData.chart);
+router.get("/usage", verifyToken, FinancialData.filter, Usage);
+router.use('/dashboard', dashboards);
 module.exports = router;
