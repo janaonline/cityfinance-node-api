@@ -25,7 +25,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 })
             }
         }
-        let msg = `Otp for your login request is ${otp}, Please do not share it with anybody`;
+        let msg = `Otp for your login request is ${otp}, Please do not share it with anybody.`;
         if (OtpMethods.validatePhoneNumber(user.mobile) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
@@ -35,7 +35,8 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 otp: otp,
                 createdAt: Date.now(),
                 expireAt: Date.now() + expireTimeMS,
-                isVerified: 0
+                isVerified: 0,
+                role: user.role
             })
             await Otp.save();
             if (user.mobile) {
@@ -57,7 +58,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 message: "OTP SENT SUCCESSFULLY",
                 mobile: user.mobile,
                 email: user.email,
-                requestId: otpToDB._id
+                requestId: Otp._id
             })
 
         } else {

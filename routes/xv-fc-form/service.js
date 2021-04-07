@@ -18,6 +18,7 @@ const { MongooseDocument } = require('mongoose');
 const dir = 'uploads';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
+const Year = require('../../models/Year')
 
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
@@ -198,8 +199,27 @@ const time = () => {
     return dt;
 };
 
+const yearFilter = async (res, query, data) => {
+
+    // let year = await Year.findOne({ "year": data.financialYear })
+    let design_year = await Year.findOne({ "year": data.design_year })
+
+    if (design_year) {
+        Object.assign(query, { design_year: ObjectId(design_year._id) })
+    }
+
+}
+
 module.exports.create = async (req, res) => {
+    //this api adds the 'data' to the xvfcgrantulbforms, if data already exists, then it updates it
+    //data is the object which we send in req.body
+    // in order to fetch the relevant xvfcgrantulbform, it checks through ulb code,
+    // and design year(the present year).
+    //if design year is not present, then it filters only through ulb code
+
+
     let user = req.decoded;
+    console.log(user)
     let data = req.body;
     if (user.role == 'ULB') {
         // for (k in data) {
@@ -251,10 +271,9 @@ module.exports.create = async (req, res) => {
         req.body['overallReport'] = null;
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
-        query['year'] = ObjectId(data.year);
-        query['design_year'] = (data.design_year);
+        await yearFilter(res, query, data);
+        let ulbData = await XVFCGrantULBData.findOne(query);
 
-        let ulbData = await XVFCGrantULBData.findOne({ ulb: query['ulb'], year: query['year'], design_year: query['design_year'] });
         if (ulbData && ulbData.status == 'PENDING') {
             if (ulbData.isCompleted) {
                 return Response.BadRequest(
@@ -269,6 +288,8 @@ module.exports.create = async (req, res) => {
             ulbData.history = [];
             req.body['history'].push(ulbData);
         }
+
+        console.log(query)
         Service.put(query, req.body, XVFCGrantULBData, async function (
             response,
             value
@@ -469,6 +490,7 @@ module.exports.get = async (req, res) => {
     }
 };
 module.exports.getAll = async (req, res) => {
+
     try {
         let statusFilter = {
             1: {
@@ -514,6 +536,7 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+        console.log(user)
         let status = 'PENDING';
         // if(user.role=='ULB'){
         //     status = 'REJECTED'
@@ -577,10 +600,22 @@ module.exports.getAll = async (req, res) => {
         }
 
         if (actionAllowed.indexOf(user.role) > -1) {
+            let match = {
+                $match: { overallReport: null, isActive: true },
+            };
+
+
+            if (req.body.design_year && req.body.design_year != null) {
+                let design_year = await Year.findOne({ "year": req.body.design_year })
+                console.log(design_year._id)
+                match = {
+                    $match: { overallReport: null, isActive: true, design_year: ObjectId(design_year._id) },
+                };
+            }
             let q = [
-                {
-                    $match: { overallReport: null, isActive: true },
-                },
+
+                match,
+
                 {
                     $lookup: {
                         from: 'ulbs',
@@ -812,6 +847,7 @@ module.exports.getAll = async (req, res) => {
                     }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
+
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),

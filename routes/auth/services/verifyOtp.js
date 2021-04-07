@@ -5,15 +5,9 @@ const OtpMethods = require('../../../util/otp_generator')
 const { getUSer } = require('./getUser')
 const { createToken } = require('./createToken')
 const ObjectId = require('mongoose').Types.ObjectId;
+
 module.exports.verifyOtp = catchAsync(async (req, res, next) => {
     let { otp, requestId } = req.body;
-    if (!OtpMethods.validateUserOtp(otp)) {
-        res.status(400).json({
-            success: false,
-            message: 'OTP must be 4 digit number'
-        })
-
-    }
     if (!otp) {
         res.status(400).json({
             success: false,
@@ -21,6 +15,14 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         })
 
     }
+    if (!OtpMethods.validateUserOtp(otp)) {
+        res.status(400).json({
+            success: false,
+            message: 'OTP must be 4 digit number'
+        })
+
+    }
+
 
 
     const verification = await OTP.findOne({ _id: ObjectId(requestId) });
@@ -36,8 +38,17 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         })
     }
     else {
-        let email = verification.censusCode;
-        let user = await getUSer({ email });
+        let user, email;
+        if (!verification.censusCode) {
+            email = verification.emailId;
+            user = await getUSer({ email });
+        }
+        else {
+            email = verification.censusCode;
+            user = await getUSer({ email });
+        }
+
+
         let expirytime = verification.expireAt.getTime()
         let currentTime = Date.now();
         if (currentTime < expirytime) {
@@ -45,12 +56,9 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
                 let sessionId = req.headers.sessionid;
                 let token = await createToken(user, sessionId);
-
-                return res.status(200).json({
-                    token: token,
-                    success: true,
-                    message: 'OTP VERIFIED',
-                    user: {
+                let UserData = {};
+                if (user.role === 'ULB') {
+                    UserData = {
                         name: user.name,
                         email: user.email,
                         isActive: user.isActive,
@@ -58,6 +66,22 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                         state: user.state,
                         ulb: user.ulb,
                     }
+                }
+                else if (user.role === 'ADMIN' || 'MoHUA' || 'PARTNER' || 'STATE') {
+                    UserData = {
+                        name: user.name,
+                        email: user.email,
+                        isActive: user.isActive,
+                        role: user.role,
+                    }
+                }
+
+                return res.status(200).json({
+                    token: token,
+                    success: true,
+                    message: 'OTP VERIFIED',
+                    user: UserData
+
                 })
             } else {
                 return res.status(400).json({
