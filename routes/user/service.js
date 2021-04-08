@@ -99,6 +99,7 @@ module.exports.getAll = async (req, res) => {
                     ? req.body.role
                     : 'USER';
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
+        let access = Constants.USER.LEVEL_ACCESS;
         if (!role) {
             Response.BadRequest(res, req.body, 'Role is required field.');
         } else if (
