@@ -9,6 +9,10 @@ router.use((req, res, next) => {
 const Auth = require('./auth');
 router.use(Auth);
 
+// @Annual accounts
+const AnnualAccountData = require('./annual-accounts');
+router.use(AnnualAccountData);
+
 // @FinancialYear
 const FinancialYear = require('./financial-year');
 router.use(FinancialYear);

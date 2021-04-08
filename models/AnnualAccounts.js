@@ -9,6 +9,9 @@ const ContentSchema = new Schema({
 const YesNoSchema = new Schema({
     answer: { type: String, enum: ['Yes', 'No'] },
 });
+const AuditSchema = new Schema({
+    answer: { type: String, enum: ['Audited', 'Unaudited'] },
+});
 
 const ContentPDFSchema = new Schema({
     pdfUrl: [{ type: String }],
@@ -22,19 +25,19 @@ const AnnualAccountDataSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true },
         year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
-        audit_status: { type: Schema.Types.ObjectId, ref: '', required: true },
+        audit_status: { type: AuditSchema, required: true },
 
         submit_annual_accounts: { type: YesNoSchema, required: true },
         submit_standardized_data: { type: YesNoSchema, required: true },
 
         bal_sheet: { type: ContentSchema, required: true },
         bal_sheet_schedules: { type: ContentSchema }, //check if requrired: true or not
-        inc_exp: { type: ContentSchema, required: true },
+        inc_exp: { type: ContentSchema },
         inc_exp_schedules: { type: ContentSchema }, //check if requrired: true or not
-        cash_flow: { type: ContentSchema, required: true },
+        cash_flow: { type: ContentPDFSchema },
         cash_flow_schedules: { type: ContentSchema }, //check if requrired: true or not
-        auditor_report: { type: ContentPDFSchema, required: true },
-        standardized_data: { type: ContentEXCELSchema, required: true },
+        auditor_report: { type: ContentPDFSchema },
+        standardized_data: { type: ContentEXCELSchema },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
         isActive: { type: Boolean, default: 1 },
