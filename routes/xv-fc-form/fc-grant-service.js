@@ -15,7 +15,7 @@ const ulbTye = {
 };
 module.exports = (req, res) => {
     let user = req.decoded;
-    let cond = { $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true } }, { sbCode: { $exists: true } }] }] } };
+    let cond = { $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] } };
     let cond1 = { $match: { isDeleted: false, role: 'ULB' } };
     if (user.role == 'STATE') {
         Object.assign(cond['$match'], { state: ObjectId(user.state) });
@@ -903,7 +903,7 @@ module.exports.ulbList = async (req, res) => {
     csv = req.query.csv;
     let q = [
         {
-            $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true } }, { sbCode: { $exists: true } }] }] }
+            $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] }
         },
         {
             $lookup: {

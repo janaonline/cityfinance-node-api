@@ -112,7 +112,7 @@ module.exports.getAll = async (req, res) => {
             );
         } else {
             try {
-                let query = { $and: [{ role: role }, { isDeleted: false }, { $or: [{ censusCode: { $exists: true } }, { sbCode: { $exists: true } }] }] };
+                let query = { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] };
 
                 let q = [
                     { $match: query },
