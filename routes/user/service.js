@@ -83,21 +83,21 @@ module.exports.getAll = async (req, res) => {
             filter = req.query.filter
                 ? JSON.parse(req.query.filter)
                 : req.body.filter
-                ? req.body.filter
-                : {},
+                    ? req.body.filter
+                    : {},
             sort = req.query.sort
                 ? JSON.parse(req.query.sort)
                 : req.body.sort
-                ? req.body.sort
-                : {},
+                    ? req.body.sort
+                    : {},
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             role = req.query.role
                 ? req.query.role
                 : req.body.role
-                ? req.body.role
-                : 'USER';
+                    ? req.body.role
+                    : 'USER';
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         let access = Constants.USER.LEVEL_ACCESS;
         if (!role) {
@@ -525,8 +525,8 @@ module.exports.create = async (req, res) => {
             newUser.createdBy = user._id;
             newUser.isEmailVerified = false;
             console.log(newUser);
-            let u = await User.findOne({email:data['email'],role:{$in:['MoHUA','USER','PARTNER','STATE']}}).exec()
-            if(u){
+            let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE'] } }).exec()
+            if (u) {
                 return Response.BadRequest(
                     res,
                     {},
@@ -661,7 +661,7 @@ module.exports.ulbSignupAction = async (req, res) => {
             if (access[user.role].indexOf(userData.role) > -1) {
                 try {
 
-                    if(userData.status!='PENDING' ){
+                    if (userData.status != 'PENDING') {
                         return Response.BadRequest(
                             res,
                             req.body,
@@ -674,7 +674,7 @@ module.exports.ulbSignupAction = async (req, res) => {
                         status: data.status,
                         rejectReason: data.rejectReason
                     };
-                    let forgotPassword =  userData.role=="ULB" ? true :false;  
+                    let forgotPassword = userData.role == "ULB" ? true : false;
                     let u = await User.update(condition, { $set: d });
                     let link = await Service.emailVerificationLink(
                         userData._id,

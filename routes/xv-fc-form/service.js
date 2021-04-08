@@ -607,7 +607,7 @@ module.exports.getAll = async (req, res) => {
 
             if (req.body.design_year && req.body.design_year != null) {
                 let design_year = await Year.findOne({ "year": req.body.design_year })
-                console.log(design_year._id)
+
                 match = {
                     $match: { overallReport: null, isActive: true, design_year: ObjectId(design_year._id) },
                 };

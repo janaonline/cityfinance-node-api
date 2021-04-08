@@ -19,11 +19,9 @@ const overallStatusType = () => {
         default: 'PENDING',
     };
 };
-const ContentSchema = new Schema({
+
+const ContentPDFSchema = new Schema({
     pdfUrl: { type: String },
-    excelUrl: { type: String },
-    completeness: statusType(),
-    correctness: statusType(),
     message: { type: String, default: '' },
 });
 
@@ -36,7 +34,7 @@ const waterManagementSchema = new Schema({
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
-            2526: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
@@ -193,7 +191,7 @@ const millionPlusCitiesSchema = new Schema({
 const XVFcGrantULBFormSchema = new Schema(
     {
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true },
-        year: { type: Schema.Types.ObjectId, ref: 'Year', required: true, default: null },
+        // year: { type: Schema.Types.ObjectId, ref: 'Year', required: true, default: null },
         design_year: {
             type: Schema.Types.ObjectId,
             required: true,
@@ -222,11 +220,12 @@ const XVFcGrantULBFormSchema = new Schema(
         },
         millionPlusCities: { type: millionPlusCitiesSchema, default: null },
         isCompleted: { type: Boolean, default: 0 },
+        document: { type: ContentPDFSchema, required: true, default: null },
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
 XVFcGrantULBFormSchema.index(
-    { ulb: 1 }, //
+    { ulb: 1, design_year: 1 },
     { unique: true }
 );
 module.exports = mongoose.model('XVFcGrantULBForm', XVFcGrantULBFormSchema);
