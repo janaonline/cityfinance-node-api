@@ -99,7 +99,6 @@ module.exports.getAll = async (req, res) => {
                     ? req.body.role
                     : 'USER';
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
-        let access = Constants.USER.LEVEL_ACCESS;
         if (!role) {
             Response.BadRequest(res, req.body, 'Role is required field.');
         } else if (
@@ -112,7 +111,7 @@ module.exports.getAll = async (req, res) => {
             );
         } else {
             try {
-                let query = { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] };
+                let query = { $and: [{ role: role }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] };
 
                 let q = [
                     { $match: query },
@@ -304,6 +303,7 @@ module.exports.getAll = async (req, res) => {
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
                     }
+
                     let users = await User.aggregate(q)
                         .collation({ locale: 'en' })
                         .exec();
@@ -526,7 +526,6 @@ module.exports.create = async (req, res) => {
                 : '';
             newUser.createdBy = user._id;
             newUser.isEmailVerified = false;
-            console.log(newUser);
             let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE'] } }).exec()
             if (u) {
                 return Response.BadRequest(
