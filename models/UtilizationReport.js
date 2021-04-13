@@ -54,7 +54,7 @@ const UtilizationReportSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    remarks: { type: String },
+    remarks: { type: String, default: "" },
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },

@@ -11,7 +11,7 @@ const {
 module.exports.createOrUpdate = async (req, res) => {
   const { ulb, financialYear, isDraft } = req.body;
   try {
-    req.body.actionTakenBy = req.decoded?.user?.id;
+    req.body.actionTakenBy = req.decoded?._id;
     await UtilizationReport.updateOne(
       { ulb: ObjectId(ulb), financialYear },
       { $set: req.body },
@@ -23,7 +23,7 @@ module.exports.createOrUpdate = async (req, res) => {
     );
 
     if (!isDraft) {
-      UpdateMasterSubmitForm(req.body, "utilReport");
+      await UpdateMasterSubmitForm(req, "utilReport");
     }
 
     return res.status(200).json({ msg: "UtilizationReport Submitted!" });
@@ -68,7 +68,7 @@ exports.update = async (req, res) => {
   const { ulb, financialYear } = req.params;
   try {
     const report = await UtilizationReport.findOneAndUpdate(
-      { _id: ulb, financialYear, isActive: true },
+      { ulb, financialYear, isActive: true },
       req.body,
       {
         returnOriginal: false,
@@ -108,32 +108,25 @@ exports.remove = async (req, res) => {
 
 exports.action = async (req, res) => {
   const data = req.body,
-    user = req.decoded?.user;
+    user = req.decoded;
   try {
     let currentState = await UtilizationReport.findOne(
-      { ulb: ObjectId(data.ulb) },
+      { ulb: ObjectId(data.ulb), isActive: true },
       { history: 0 }
     );
     let ulb = currentState
-      ? await Ulb.findById({ _id: ObjectId(currentState.ulb) })
+      ? await Ulb.findById({ _id: ObjectId(currentState.ulb), isActive: true })
       : null;
     if (ulb === null) {
       return res.status(400).json({ msg: "ulb not found" });
     }
-    if (user?.role === "STATE" && ulb?.state?.id?.toString() !== user?.state) {
+    if (user?.role === "STATE" && ulb?.state?.toString() !== user?.state) {
       return res.status(402).json({ msg: "State not matching" });
-    } else if (user?.role === "ULB") {
-      if (ulb?.id?.toString() !== user?.ulb)
-        return res.status(402).json({ msg: "Ulb not matching" });
-      else if (data.status !== "CANCELED")
-        return res
-          .status(401)
-          .json({ msg: `Requested status(${data.status}) is not allowed.` });
     }
     try {
       let updateData = {
         status: data?.status,
-        actionTakenBy: user?.id,
+        actionTakenBy: user?._id,
         remarks: data?.remarks,
         modifiedAt: new Date(),
       };
@@ -153,7 +146,7 @@ exports.action = async (req, res) => {
           .json({ msg: "The record is already cancelled." });
       } else {
         let updatedRecord = await UtilizationReport.findOneAndUpdate(
-          { ulb: ObjectId(data.ulb) },
+          { ulb: ObjectId(data.ulb), isActive: true },
           updateData,
           { $push: { history: currentState } }
         );
@@ -163,7 +156,7 @@ exports.action = async (req, res) => {
 
         // update master form collection
         if (!data.isDraft) {
-          UpdateMasterSubmitForm(data, "utilReport");
+          await UpdateMasterSubmitForm(req, "utilReport");
         }
 
         return res.status(200).json({ msg: "Action successful" });
