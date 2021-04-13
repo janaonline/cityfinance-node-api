@@ -10,11 +10,7 @@ const statusType = () => {
 
 const XVFcGrantPlansSchema = mongoose.Schema({
   ulb: { type: Schema.Types.ObjectId, ref: "Ulb", index: true, required: true },
-  designYear: {
-    type: String,
-    require: true,
-    index: true,
-  },
+  designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
   plans: {
     water: {
       url: {

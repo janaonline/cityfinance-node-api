@@ -26,7 +26,7 @@ exports.formAction = async (req, res) => {
       return res.status(404).json({ msg: "Master Form not found!" });
     }
     if (!form.isSubmit) {
-      return res.status(400).json({ msg: "take actions on all steps" });
+      return res.status(400).json({ msg: "take actions on all forms" });
     }
     if (form.status === "REJECTED") {
       // reject email

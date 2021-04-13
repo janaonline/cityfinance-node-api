@@ -2,6 +2,7 @@ const UtilizationReport = require("../../models/UtilizationReport");
 const Ulb = require("../../models/Ulb");
 const User = require("../../models/User");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
+const ObjectId = require("mongoose").Types.ObjectId;
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -12,7 +13,7 @@ module.exports.createOrUpdate = async (req, res) => {
   try {
     req.body.actionTakenBy = req.decoded?.user?.id;
     await UtilizationReport.updateOne(
-      { ulb, financialYear },
+      { ulb: ObjectId(ulb), financialYear },
       { $set: req.body },
       {
         upsert: true,
@@ -110,11 +111,11 @@ exports.action = async (req, res) => {
     user = req.decoded?.user;
   try {
     let currentState = await UtilizationReport.findOne(
-      { ulb: data.ulb },
+      { ulb: ObjectId(data.ulb) },
       { history: 0 }
     );
     let ulb = currentState
-      ? await Ulb.findById({ _id: currentState.ulb })
+      ? await Ulb.findById({ _id: ObjectId(currentState.ulb) })
       : null;
     if (ulb === null) {
       return res.status(400).json({ msg: "ulb not found" });
@@ -152,7 +153,7 @@ exports.action = async (req, res) => {
           .json({ msg: "The record is already cancelled." });
       } else {
         let updatedRecord = await UtilizationReport.findOneAndUpdate(
-          { ulb: data.ulb },
+          { ulb: ObjectId(data.ulb) },
           updateData,
           { $push: { history: currentState } }
         );
@@ -176,59 +177,3 @@ exports.action = async (req, res) => {
     return res.status(500).json({ msg: "server error" });
   }
 };
-
-// async function UpdateMasterSubmitForm(data, formName) {
-//   try {
-//     const oldForm = await MasterForm.findOne({ ulb: data?.ulb });
-//     if (oldForm) {
-//       let NewForm;
-//       if (data?.decoded?.user?.id !== oldForm.actionTakenBy) {
-//         const formHistory = oldForm;
-//         oldForm.actionTakenBy = data?.decoded?.user?.id;
-//         oldForm.steps.formName.status = data?.status;
-//         oldForm.steps.formName.remarks = data.remarks;
-//         oldForm.steps.formName.isSubmit = true;
-//         NewForm = await MasterForm.replaceOne(
-//           { ulb: data?.ulb },
-//           { oldForm },
-//           { $push: { history: formHistory } }
-//         );
-//       } else {
-//         oldForm.actionTakenBy = data?.decoded?.user?.id;
-//         oldForm.steps.formName.status = data?.status;
-//         oldForm.steps.formName.remarks = data.remarks;
-//         oldForm.steps.formName.isSubmit = true;
-//         NewForm = await MasterForm.updateOne({ ulb: data?.ulb }, { oldForm });
-//       }
-//     } else {
-//       let form = new MasterForm({
-//         steps: {
-//           formName: {
-//             remarks: data?.remarks,
-//             status: data?.status,
-//             isSubmit: true,
-//           },
-//         },
-//       });
-//       form.save();
-//       return;
-//     }
-//     let tempSubmit = true,
-//       tempStatus = "APPROVE";
-//     NewForm.steps.forEach((ele) => {
-//       if (ele.isSubmit === false) tempSubmit = false;
-//       if (ele.status === "NA") {
-//         tempStatus = "NA";
-//       } else if (ele.status === "REJECTED" && tempStatus == "APPROVE") {
-//         tempStatus = "REJECTED";
-//       }
-//     });
-//     NewForm.status = tempStatus;
-//     NewForm.isSubmit = tempSubmit;
-//     await MasterForm.update({ ulb: data?.ulb }, { NewForm });
-//     return;
-//   } catch (error) {
-//     console.error(error.message);
-//     return res.status(500).json({ msg: "server error" });
-//   }
-// }

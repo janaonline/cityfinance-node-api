@@ -1,10 +1,11 @@
 const requestLogs = require("../../models/XVFcGrantRequestLogs");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 exports.saveLogs = async (req, res) => {
   const { ulb } = req.body;
   try {
     await requestLogs.findOneAndUpdate(
-      { ulb, financialYear: req.body?.financialYear },
+      { ulb: ObjectId(ulb), financialYear: req.body?.financialYear },
       {
         ulb,
         financialYear: req.body?.financialYear,
@@ -26,7 +27,7 @@ exports.saveLogs = async (req, res) => {
 exports.getLogs = async (req, res) => {
   const { ulb, financialYear } = req.body;
   try {
-    const logs = await requestLogs.find({ ulb, financialYear });
+    const logs = await requestLogs.find({ ulb: ObjectId(ulb), financialYear });
     return res.status(200).json({ msg: "Success", logs });
   } catch (err) {
     console.error(err.message);

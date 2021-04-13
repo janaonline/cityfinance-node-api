@@ -19,30 +19,30 @@ exports.reportCreateValidator = [
     .withMessage("grantType is required")
     .isString()
     .withMessage("grantType is required as string"),
-  check("grantPosition.utilizedPrevInstallments")
+  check("grantPosition.unUtilizedPrevYr")
     .not()
     .isEmpty()
-    .withMessage("utilizedPrevInstallments is required")
+    .withMessage("unUtilizedPrevYr is required")
     .isNumeric()
-    .withMessage("utilizedPrevInstallments is required as number"),
-  check("grantPosition.receivedDuringYear")
+    .withMessage("unUtilizedPrevYr is required as number"),
+  check("grantPosition.receivedDuringYr")
     .not()
     .isEmpty()
-    .withMessage("receivedDuringYear is required")
+    .withMessage("receivedDuringYr is required")
     .isNumeric()
-    .withMessage("receivedDuringYear is required as number"),
-  check("grantPosition.expenditureIncurredDuringYear")
+    .withMessage("receivedDuringYr is required as number"),
+  check("grantPosition.expDuringYr")
     .not()
     .isEmpty()
-    .withMessage("expenditureIncurredDuringYear is required")
+    .withMessage("expDuringYr is required")
     .isNumeric()
-    .withMessage("expenditureIncurredDuringYear is required as number"),
-  check("grantPosition.closingBalanceEndYear")
+    .withMessage("expDuringYr is required as number"),
+  check("grantPosition.closingBal")
     .not()
     .isEmpty()
-    .withMessage("closingBalanceEndYear is required")
+    .withMessage("closingBal is required")
     .isNumeric()
-    .withMessage("closingBalanceEndYear is required as number"),
+    .withMessage("closingBal is required as number"),
   check("projects")
     .not()
     .isEmpty()
@@ -61,11 +61,11 @@ exports.reportCreateValidator = [
     .not()
     .isEmpty()
     .withMessage("projects description required "),
-  check("projects.*.photographs")
+  check("projects.*.photos")
     .not()
     .isEmpty()
     .isArray({ min: 1, max: 5 })
-    .withMessage("photographs  are required as array max 5"),
+    .withMessage("photos  are required as array max 5"),
   check("projects.*.location")
     .not()
     .isEmpty()

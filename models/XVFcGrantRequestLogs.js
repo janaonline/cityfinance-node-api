@@ -1,11 +1,7 @@
 require("./dbConnect");
 const XVFcGrantRequestLogsSchema = mongoose.Schema({
   ulb: { type: Schema.Types.ObjectId, ref: "Ulb", index: true, required: true },
-  financialYear: {
-    type: String,
-    index: true,
-    required: true,
-  },
+  financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
   logs: { type: Array, default: [] },
   modifiedAt: { type: Date, default: Date.now() },
   createdAt: { type: Date, default: Date.now() },

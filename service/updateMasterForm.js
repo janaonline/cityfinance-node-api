@@ -1,8 +1,10 @@
 const MasterForm = require("../models/MasterForm");
-
+const ObjectId = require("mongoose").Types.ObjectId;
 exports.UpdateMasterSubmitForm = async (data, formName) => {
   try {
-    const oldForm = await MasterForm.findOne({ ulb: data?.ulb }).select({
+    const oldForm = await MasterForm.findOne({
+      ulb: ObjectId(data?.ulb),
+    }).select({
       history: 0,
     });
     if (oldForm) {
@@ -20,7 +22,7 @@ exports.UpdateMasterSubmitForm = async (data, formName) => {
           isSubmit: false,
         };
         await MasterForm.findOneAndUpdate(
-          { ulb: data?.ulb },
+          { ulb: ObjectId(data?.ulb) },
           {
             $set: {
               steps: newForm.steps,
@@ -39,14 +41,14 @@ exports.UpdateMasterSubmitForm = async (data, formName) => {
         newForm.steps[formName].isSubmit = true;
 
         let tempSubmit = true,
-          tempStatus = "APPROVE";
+          tempStatus = "APPROVED";
 
         // calculate final submit & status
         Object.entries(newForm.steps).forEach((ele) => {
           if (ele[1].isSubmit === false) tempSubmit = false;
           if (ele[1].status === "NA") {
             tempStatus = "NA";
-          } else if (ele[1].status === "REJECTED" && tempStatus == "APPROVE") {
+          } else if (ele[1].status === "REJECTED" && tempStatus == "APPROVED") {
             tempStatus = "REJECTED";
           }
         });
@@ -59,12 +61,12 @@ exports.UpdateMasterSubmitForm = async (data, formName) => {
           newForm.isSubmit === true
         ) {
           await MasterForm.findOneAndUpdate(
-            { ulb: data?.ulb },
+            { ulb: ObjectId(data?.ulb) },
             { $set: newForm, $push: { history: temp } }
           );
         } else {
           await MasterForm.findOneAndUpdate(
-            { ulb: data?.ulb },
+            { ulb: ObjectId(data?.ulb) },
             {
               $set: {
                 steps: newForm.steps,

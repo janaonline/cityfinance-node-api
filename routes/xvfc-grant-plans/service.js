@@ -1,10 +1,11 @@
 const Plans = require("../../models/XVFcGrantPlans");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 exports.savePlans = async (req, res) => {
   let { ulb, designYear, isDraft } = req.body;
   try {
-    await Plans.findOneAndUpdate({ ulb }, req.body, {
+    await Plans.findOneAndUpdate({ ulb: ObjectId(ulb) }, req.body, {
       upsert: true,
       new: true,
       setDefaultsOnInsert: true,
@@ -21,7 +22,7 @@ exports.getPlans = async (req, res) => {
   const { ulb, designYear } = req.body;
   try {
     const plan = await Plans.findOne({
-      ulb,
+      ulb: ObjectId(ulb),
       designYear,
       isActive: true,
     }).select({ history: 0 });
@@ -55,12 +56,12 @@ exports.removePlans = async (req, res) => {
 exports.action = async (req, res) => {
   let { ulb, designYear, isDraft } = req.body;
   try {
-    let currentPlan = await Plans.findOne({ ulb }).select({
+    let currentPlan = await Plans.findOne({ ulb: ObjectId(ulb) }).select({
       history: 0,
     });
 
     const newPlan = await Plans.findOneAndUpdate(
-      { ulb },
+      { ulb: ObjectId(ulb) },
       { $set: req.body, $push: { currentPlan } }
     );
 

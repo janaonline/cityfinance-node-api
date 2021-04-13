@@ -8,8 +8,8 @@ const UtilizationReportProjectSchema = new Schema({
   },
   name: { type: String },
   description: { type: String },
-  capacity: { type: String },
-  photographs: [
+  capacity: { type: Number },
+  photos: [
     {
       url: { type: String },
       remarks: { type: String },
@@ -28,30 +28,23 @@ const UtilizationReportProjectSchema = new Schema({
 
 const UtilizationReportSchema = new Schema(
   {
-    name: { type: String, required: true },
+    stateName: { type: String, required: true },
+    name: { type: String },
+    designation: { type: String },
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
     grantType: { type: String, required: true },
     grantPosition: {
-      utilizedPrevInstallments: { type: Number },
-      receivedDuringYear: { type: Number },
-      expenditureIncurredDuringYear: {
+      unUtilizedPrevYr: { type: Number },
+      receivedDuringYr: { type: Number },
+      expDuringYr: {
         type: Number,
       },
-      closingBalanceEndYear: { type: String },
+      closingBal: { type: String },
     },
     projects: { type: [UtilizationReportProjectSchema], default: [] },
     // asked year from ulb
-    financialYear: { type: String, required: true },
-    // on going year
-    currentFinancialYear: {
-      type: String,
-      required: true,
-      default: () => {
-        return `${moment().format("YYYY")}-${moment()
-          .add(1, "y")
-          .format("YYYY")}`;
-      },
-    },
+    financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+    designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     status: {
       type: String,
       enum: ["APPROVED", "REJECTED", "CANCELLED"],
@@ -72,7 +65,7 @@ const UtilizationReportSchema = new Schema(
 );
 
 UtilizationReportSchema.index(
-  { ulb: 1, financialYear: 1, currentFinancialYear: 1 },
+  { ulb: 1, financialYear: 1, designYear: 1 },
   { unique: true }
 );
 
