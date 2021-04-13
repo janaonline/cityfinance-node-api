@@ -4,13 +4,14 @@ const ObjectId = require("mongoose").Types.ObjectId;
 
 exports.savePlans = async (req, res) => {
   let { ulb, designYear, isDraft } = req.body;
+  req.body.actionTakenBy = req?.decoded?._id;
   try {
-    await Plans.findOneAndUpdate({ ulb: ObjectId(ulb) }, req.body, {
+    await Plans.findOneAndUpdate({ ulb: ObjectId(ulb), designYear }, req.body, {
       upsert: true,
       new: true,
       setDefaultsOnInsert: true,
     });
-    if (!isDraft) UpdateMasterSubmitForm(req.body, "plans");
+    if (!isDraft) await UpdateMasterSubmitForm(req, "plans");
     return res.status(200).json({ msg: "Plans Submitted!" });
   } catch (err) {
     console.error(err.message);
@@ -56,13 +57,17 @@ exports.removePlans = async (req, res) => {
 exports.action = async (req, res) => {
   let { ulb, designYear, isDraft } = req.body;
   try {
-    let currentPlan = await Plans.findOne({ ulb: ObjectId(ulb) }).select({
+    let currentPlan = await Plans.findOne({
+      ulb: ObjectId(ulb),
+      designYear: ObjectId(designYear),
+      isActive: true,
+    }).select({
       history: 0,
     });
 
     const newPlan = await Plans.findOneAndUpdate(
-      { ulb: ObjectId(ulb) },
-      { $set: req.body, $push: { currentPlan } }
+      { ulb: ObjectId(ulb), isActive: true },
+      { $set: req.body, $push: { history: currentPlan } }
     );
 
     if (!newPlan) {
@@ -74,7 +79,7 @@ exports.action = async (req, res) => {
         water: req?.body?.plans?.water?.remarks,
         sanitation: req?.body?.plans?.sanitation?.remarks,
       };
-      UpdateMasterSubmitForm(req.body, "plans");
+      await UpdateMasterSubmitForm(req, "plans");
     }
 
     return res.status(200).json({ msg: "Action Submitted!" });

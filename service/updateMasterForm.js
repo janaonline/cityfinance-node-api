@@ -1,33 +1,36 @@
 const MasterForm = require("../models/MasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
-exports.UpdateMasterSubmitForm = async (data, formName) => {
+exports.UpdateMasterSubmitForm = async (req, formName) => {
+  let data = {
+    body: req?.body,
+    user: req?.decoded,
+  };
   try {
     const oldForm = await MasterForm.findOne({
-      ulb: ObjectId(data?.ulb),
+      ulb: ObjectId(data?.body?.ulb),
     }).select({
       history: 0,
     });
     if (oldForm) {
-      if (data?.decoded?.user?.id !== oldForm.actionTakenBy) {
+      console.log(`${data?.user?._id} != ${oldForm.actionTakenBy}`);
+      if (data?.user?._id.toString() != oldForm.actionTakenBy) {
         let newForm = {
-          ulb: data?.ulb,
           steps: {
             [formName]: {
-              status: data?.status,
-              remarks: data?.remarks,
+              status: data?.body?.status,
+              remarks: data?.body?.remarks,
               isSubmit: true,
             },
           },
-          status: "NA",
-          isSubmit: false,
         };
         await MasterForm.findOneAndUpdate(
-          { ulb: ObjectId(data?.ulb) },
+          { ulb: ObjectId(data?.body?.ulb), isActive: true },
           {
             $set: {
               steps: newForm.steps,
               status: "NA",
               isSubmit: false,
+              actionTakenBy: data?.user?._id,
             },
             $push: { history: oldForm },
           }
@@ -36,8 +39,8 @@ exports.UpdateMasterSubmitForm = async (data, formName) => {
         //   // values changes
         temp = oldForm;
         let newForm = new MasterForm(oldForm);
-        newForm.steps[formName].status = data?.status;
-        newForm.steps[formName].remarks = data.remarks;
+        newForm.steps[formName].status = data?.body?.status;
+        newForm.steps[formName].remarks = data?.body?.remarks;
         newForm.steps[formName].isSubmit = true;
 
         let tempSubmit = true,
@@ -46,7 +49,7 @@ exports.UpdateMasterSubmitForm = async (data, formName) => {
         // calculate final submit & status
         Object.entries(newForm.steps).forEach((ele) => {
           if (ele[1].isSubmit === false) tempSubmit = false;
-          if (ele[1].status === "NA") {
+          if (ele[1].status === "NA" || ele[1].status === null) {
             tempStatus = "NA";
           } else if (ele[1].status === "REJECTED" && tempStatus == "APPROVED") {
             tempStatus = "REJECTED";
@@ -56,17 +59,23 @@ exports.UpdateMasterSubmitForm = async (data, formName) => {
         newForm.status = tempStatus;
         newForm.isSubmit = tempSubmit;
         if (
-          (data?.decoded?.user?.role === "MoHUA" ||
-            data?.decoded?.user?.role === "STATE") &&
+          (data?.user?.role === "MoHUA" || data?.user?.role === "STATE") &&
           newForm.isSubmit === true
         ) {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data?.ulb) },
-            { $set: newForm, $push: { history: temp } }
+            { ulb: ObjectId(data?.body?.ulb), isActive: true },
+            {
+              $set: {
+                steps: newForm.steps,
+                status: newForm.status,
+                isSubmit: newForm.isSubmit,
+              },
+              $push: { history: temp },
+            }
           );
         } else {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data?.ulb) },
+            { ulb: ObjectId(data?.body?.ulb), isActive: true },
             {
               $set: {
                 steps: newForm.steps,
@@ -79,18 +88,20 @@ exports.UpdateMasterSubmitForm = async (data, formName) => {
       }
     } else {
       let form = new MasterForm({
-        ulb: data?.ulb,
+        ulb: data?.body?.ulb,
         steps: {
           [formName]: {
-            remarks: data?.remarks,
-            status: data?.status,
+            remarks: data?.body?.remarks,
+            status: data?.body?.status,
             isSubmit: true,
           },
         },
+        actionTakenBy: data?.user?._id,
       });
       await form.save();
     }
+    return Promise.resolve();
   } catch (error) {
-    throw new error(error);
+    return Promise.reject(error);
   }
 };
