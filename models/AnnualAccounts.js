@@ -6,12 +6,11 @@ const ContentSchema = new Schema({
 
 });
 
+
 const YesNoSchema = new Schema({
     answer: { type: String, enum: ['Yes', 'No'] },
 });
-const AuditSchema = new Schema({
-    answer: { type: String, enum: ['Audited', 'Unaudited'] },
-});
+
 
 const ContentPDFSchema = new Schema({
     pdfUrl: [{ type: String }],
@@ -25,11 +24,12 @@ const AnnualAccountDataSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true },
         year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
-        audit_status: { type: AuditSchema, required: true },
+        audit_status: { type: String, enum: ['Audited', 'Unaudited'], required: true },
 
         submit_annual_accounts: { type: YesNoSchema, required: true },
         submit_standardized_data: { type: YesNoSchema, required: true },
-
+        isCompleted: { type: Boolean, default: false },
+        history: { type: Array, default: [] },
         bal_sheet: { type: ContentSchema, required: true },
         bal_sheet_schedules: { type: ContentSchema }, //check if requrired: true or not
         inc_exp: { type: ContentSchema },

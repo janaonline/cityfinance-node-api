@@ -18,7 +18,8 @@ const { MongooseDocument } = require('mongoose');
 const dir = 'uploads';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
-const Year = require('../../models/Year')
+const Year = require('../../models/Year');
+const { findOne } = require('../../models/LedgerLog');
 
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
@@ -200,26 +201,20 @@ const time = () => {
 };
 
 const yearFilter = async (res, query, data) => {
-
-    // let year = await Year.findOne({ "year": data.financialYear })
     let design_year = await Year.findOne({ "year": data.design_year })
-
     if (design_year) {
         Object.assign(query, { design_year: ObjectId(design_year._id) })
+    } else {
+        return res.status(400).json({
+            success: false,
+            message: 'Design Year Not Found'
+        })
     }
-
 }
 
 module.exports.create = async (req, res) => {
-    //this api adds the 'data' to the xvfcgrantulbforms, if data already exists, then it updates it
-    //data is the object which we send in req.body
-    // in order to fetch the relevant xvfcgrantulbform, it checks through ulb code,
-    // and design year(the present year).
-    //if design year is not present, then it filters only through ulb code
-
-
     let user = req.decoded;
-    console.log(user)
+    // console.log(user)
     let data = req.body;
     if (user.role == 'ULB') {
         // for (k in data) {
@@ -250,30 +245,34 @@ module.exports.create = async (req, res) => {
         data.ulb = user.ulb;
         req.body['createdAt'] = time();
         data.modifiedAt = time();
+        let dYear = await Year.findOne({ "year": data.design_year })
+
         let checkData = await XVFCGrantULBData.count({
-            ulb: data.ulb,
-            financialYear: data.financialYear,
-            audited: true,
+            ulb: ObjectId(data.ulb),
+            design_year: ObjectId(dYear._id),
+            // audited: true,
         });
         if (checkData) {
             return Response.BadRequest(
                 res,
                 {},
-                `Audited data already been uploaded for ${data.financialYear}.`
+                `Audited data already been uploaded for ${data.design_year}.`
             );
         }
-        console.log('checkData', checkData);
+        // console.log('checkData', checkData);
         data.actionTakenBy = ObjectId(user._id);
-        console.log(JSON.stringify(data, 0, 3));
+        // console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new XVFCGrantULBData(data);
+
         /**Now**/
         let query = {};
         req.body['overallReport'] = null;
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
         await yearFilter(res, query, data);
+        console.log(query)
         let ulbData = await XVFCGrantULBData.findOne(query);
-
+        console.log(ulbData)
         if (ulbData && ulbData.status == 'PENDING') {
             if (ulbData.isCompleted) {
                 return Response.BadRequest(
@@ -297,6 +296,7 @@ module.exports.create = async (req, res) => {
             if (response) {
                 let ulbData = await XVFCGrantULBData.findOne({
                     ulb: query['ulb'],
+                    design_year: query['design_year']
                 });
                 if (ulbData.isCompleted) {
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
@@ -347,6 +347,7 @@ module.exports.get = async (req, res) => {
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+
     if (actionAllowed.indexOf(user.role) > -1) {
         if (req.query._id) {
             try {
@@ -402,7 +403,9 @@ module.exports.get = async (req, res) => {
                 ulbs = [ObjectId(user.ulb)];
             }
             try {
+
                 let query = ulbs ? { ulb: { $in: ulbs } } : {};
+                await yearFilter(res, query, req.body);
                 let total = undefined;
                 if (filter) {
                     for (key in filter) {
@@ -417,9 +420,11 @@ module.exports.get = async (req, res) => {
                         }
                     }
                 }
+
                 if (!skip) {
                     total = await XVFCGrantULBData.count(query);
                 }
+                console.log(query)
                 let data = await XVFCGrantULBData.find(query)
                     .sort(sort ? sort : { modifiedAt: -1 })
                     .skip(skip)
