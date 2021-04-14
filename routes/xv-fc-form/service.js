@@ -214,65 +214,30 @@ const yearFilter = async (res, query, data) => {
 
 module.exports.create = async (req, res) => {
     let user = req.decoded;
-    // console.log(user)
     let data = req.body;
     if (user.role == 'ULB') {
-        // for (k in data) {
-        //     if (
-        //         data[k] &&
-        //         typeof data[k] == 'object' &&
-        //         Object.keys(data[k]).length
-        //     ) {
-        //         if (!(data[k].pdfUrl || data[k].excelUrl)) {
-        //             data[k].completeness = 'NA';
-        //             data[k].correctness = 'NA';
-        //         } else {
-        //             data[k].completeness = 'PENDING';
-        //             data[k].correctness = 'PENDING';
-        //         }
-        //     }
-        // }
+
         let ulb = await Ulb.findOne({ _id: user.ulb }, '_id name code').lean();
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
         }
-        let audited =
-            typeof data.audited == 'boolean'
-                ? data.audited
-                : typeof data.audited == 'string' && data.audited == 'true';
-        data.referenceCode = `${ulb.code}_${data.financialYear}_${audited ? 'Audited' : 'Unaudited'
-            }`;
+
         data.ulb = user.ulb;
         req.body['createdAt'] = time();
         data.modifiedAt = time();
-        let dYear = await Year.findOne({ "year": data.design_year })
-
-        let checkData = await XVFCGrantULBData.count({
-            ulb: ObjectId(data.ulb),
-            design_year: ObjectId(dYear._id),
-            // audited: true,
-        });
-        if (checkData) {
-            return Response.BadRequest(
-                res,
-                {},
-                `Audited data already been uploaded for ${data.design_year}.`
-            );
-        }
-        // console.log('checkData', checkData);
         data.actionTakenBy = ObjectId(user._id);
-        // console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new XVFCGrantULBData(data);
-
         /**Now**/
         let query = {};
         req.body['overallReport'] = null;
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
-        await yearFilter(res, query, data);
-        console.log(query)
+        if (data.design_year) {
+            let design_year = await Year.findOne({ "year": data.design_year })
+            Object.assign(query, { design_year: ObjectId(design_year._id) })
+            req.body['design_year'] = ObjectId(design_year._id);
+        }
         let ulbData = await XVFCGrantULBData.findOne(query);
-        console.log(ulbData)
         if (ulbData && ulbData.status == 'PENDING') {
             if (ulbData.isCompleted) {
                 return Response.BadRequest(
@@ -284,20 +249,15 @@ module.exports.create = async (req, res) => {
         }
         if (ulbData && ulbData.isCompleted == true) {
             req.body['history'] = [...ulbData.history];
-            ulbData.history = [];
+            ulbData.history = undefined;
             req.body['history'].push(ulbData);
         }
-
-        console.log(query)
         Service.put(query, req.body, XVFCGrantULBData, async function (
             response,
             value
         ) {
             if (response) {
-                let ulbData = await XVFCGrantULBData.findOne({
-                    ulb: query['ulb'],
-                    design_year: query['design_year']
-                });
+                let ulbData = await XVFCGrantULBData.findOne(query);
                 if (ulbData.isCompleted) {
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                         ulbData._id,
@@ -309,29 +269,7 @@ module.exports.create = async (req, res) => {
                 return Response.DbError(res, err, 'Failed to create entry');
             }
         });
-        /****/
 
-        /*** before 
-        ulbUpdateRequest.save(async (err, dt) => {
-            if (err) {
-                if (err.code == 11000) {
-                    return Response.DbError(
-                        res,
-                        err,
-                        `Data for - ${ulb.name}(${ulb.code}) of ${data.financialYear} already been uploaded.`
-                    );
-                } else {
-                    return Response.DbError(res, err, 'Failed to create entry');
-                }
-            } else {
-                // let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
-                //     dt._id,
-                //     'UPLOAD'
-                // );
-                return Response.OK(res, dt, 'Request accepted.');
-            }
-        });
-        */
     } else {
         return Response.BadRequest(
             res,
@@ -340,6 +278,8 @@ module.exports.create = async (req, res) => {
         );
     }
 };
+
+
 module.exports.get = async (req, res) => {
     let user = req.decoded,
         filter = req.body.filter,
@@ -405,7 +345,11 @@ module.exports.get = async (req, res) => {
             try {
 
                 let query = ulbs ? { ulb: { $in: ulbs } } : {};
-                await yearFilter(res, query, req.body);
+                if (req.body.design_year) {
+                    let design_year = await Year.findOne({ "year": req.body.design_year })
+                    Object.assign(query, { design_year: ObjectId(design_year._id) })
+                }
+
                 let total = undefined;
                 if (filter) {
                     for (key in filter) {
@@ -424,7 +368,7 @@ module.exports.get = async (req, res) => {
                 if (!skip) {
                     total = await XVFCGrantULBData.count(query);
                 }
-                console.log(query)
+
                 let data = await XVFCGrantULBData.find(query)
                     .sort(sort ? sort : { modifiedAt: -1 })
                     .skip(skip)
@@ -463,6 +407,7 @@ module.exports.get = async (req, res) => {
                 for (s of data) {
                     s['status'] = getStatus(s);
                 }
+
                 return res.status(200).json({
                     success: true,
                     message: 'data',

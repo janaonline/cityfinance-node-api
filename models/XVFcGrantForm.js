@@ -194,8 +194,8 @@ const XVFcGrantULBFormSchema = new Schema(
         // year: { type: Schema.Types.ObjectId, ref: 'Year', required: true, default: null },
         design_year: {
             type: Schema.Types.ObjectId,
-            required: true,
             ref: 'Year',
+            required: true,
             default: null
         },
         status: overallStatusType(),

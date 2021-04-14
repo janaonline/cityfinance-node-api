@@ -5,6 +5,7 @@ const UlbSchema = new Schema({
     name: { type: String, required: true },
     regionalName: { type: String, default: "" },
     code: { type: String, required: true, index: { unique: true } },
+    isUA: { type: Boolean, required: true },
     UA: { type: Schema.Types.ObjectId, ref: 'UA' },
     state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
     ulbType: { type: Schema.Types.ObjectId, ref: 'UlbType', required: true },
