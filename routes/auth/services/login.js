@@ -8,7 +8,6 @@ module.exports.login = async (req, res) => {
     /**Conditional Query For CensusCode/ULB Code **/
     try {
         let user = await getUSer(req.body);
-        console.log(user)
         let sessionId = req.headers.sessionid;
         let isMatch = await Service.compareHash(
             req.body.password,

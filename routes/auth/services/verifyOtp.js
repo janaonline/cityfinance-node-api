@@ -1,6 +1,5 @@
 const OTP = require('../../../models/Otp')
 const catchAsync = require('../../../util/catchAsync')
-const ExpressError = require('../../../util/ExpressError')
 const OtpMethods = require('../../../util/otp_generator')
 const { getUSer } = require('./getUser')
 const { createToken } = require('./createToken')
