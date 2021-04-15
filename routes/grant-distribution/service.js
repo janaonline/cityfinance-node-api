@@ -9,14 +9,28 @@ exports.getTemplate = async (req, res) => {
     const ulbs = await ULB.find({
       state: ObjectId(state),
       isActive: true,
-    }).select({ code: 1, name: 1 });
+    }).select({ censusCode: 1, name: 1, sbCode: 1 });
+
+    if (ulbs.length === 0) {
+      return Response.BadRequest(res, "No ULB found");
+    }
+
+    let data = [];
+    ulbs.forEach((element) => {
+      let obj = {
+        name: element?.name,
+        code: element?.censusCode ? element?.censusCode : element?.sbCode,
+      };
+      if (obj.code !== "" && obj.code !== undefined && obj.code !== null) {
+        data.push(obj);
+      }
+    });
     let field = {
       code: "ULB Census Code/ULB Code",
       name: "ULB Name",
       amount: "Grant Amount",
-      error: "Errors",
     };
-    let xlsData = await Service.dataFormating(ulbs, field);
+    let xlsData = await Service.dataFormating(data, field);
     return res.xls("grant_template.xlsx", xlsData);
   } catch (err) {
     console.error(err.message);

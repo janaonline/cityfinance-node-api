@@ -28,7 +28,6 @@ const UtilizationReportProjectSchema = new Schema({
 
 const UtilizationReportSchema = new Schema(
   {
-    stateName: { type: String, required: true },
     name: { type: String },
     designation: { type: String },
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
