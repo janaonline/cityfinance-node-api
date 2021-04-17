@@ -1,12 +1,5 @@
 require("./dbConnect");
 
-const statusType = () => {
-  return {
-    type: String,
-    enum: ["APPROVED", "REJECTED", "NA"],
-    default: "NA",
-  };
-};
 const GrantDistributionSchema = new Schema(
   {
     state: { type: Schema.Types.ObjectId, ref: "State", required: true },
@@ -15,8 +8,6 @@ const GrantDistributionSchema = new Schema(
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
-    status: statusType(),
-    history: { type: Array, default: [] },
     actionTakenBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
