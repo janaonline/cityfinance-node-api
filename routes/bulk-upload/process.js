@@ -124,14 +124,16 @@ module.exports = function (req, res) {
     async function processData(reqFile, financialYear, reqId, balanceSheet) {
         try {
             try {
+                console.log('entered process data')
                 // extract the overviewSheet and dataSheet
                 let { overviewSheet, dataSheet } = await readXlsxFile(reqFile);
                 // validate overview sheet 
                 //console.log(dataSheet);return;    
-
+                console.log(overviewSheet)
                 let objOfSheet = await validateOverview(overviewSheet, financialYear); // rejection in case of error
                 delete objOfSheet['state'];
                 objOfSheet['state'] = objOfSheet.state_name;
+                console.log(objOfSheet)
                 let du = {
                     query: { ulb_code_year: objOfSheet.ulb_code_year },
                     update: Object.assign({ lastModifiedAt: new Date() }, objOfSheet),
@@ -189,7 +191,7 @@ module.exports = function (req, res) {
             let exceltojson;
             try {
                 let fileInfo = file.path.split('.');
-
+                console.log(fileInfo)
                 exceltojson = fileInfo && fileInfo.length > 0 && fileInfo[(fileInfo.length - 1)] == 'xlsx' ? xlsxtojson : xlstojson;
                 let prms1 = new Promise((rslv, rjct) => {
                     exceltojson({

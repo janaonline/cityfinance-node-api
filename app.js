@@ -75,7 +75,10 @@ app.use(function (err, req, res) {
 
 app.use((err, req, res, next) => {
 	const { statusCode = 500, message = 'Something went wrong' } = err
-	res.status(statusCode).send({ 'msg': message })
+	res.status(statusCode).json({
+		success: false,
+		message: message
+	})
 })
 
 app.listen(port, () => {
