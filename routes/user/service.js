@@ -112,7 +112,8 @@ module.exports.getAll = async (req, res) => {
             );
         } else {
             try {
-                let query = { role: role, isDeleted: false };
+                let query = { $and: [{ role: role }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] };
+
                 let q = [
                     { $match: query },
                     {
@@ -235,6 +236,7 @@ module.exports.getAll = async (req, res) => {
                         }
                     }
                 ];
+
                 let newFilter = await Service.mapFilter(filter);
                 let total = undefined;
                 if (user.role == 'STATE') {
@@ -302,6 +304,7 @@ module.exports.getAll = async (req, res) => {
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
                     }
+
                     let users = await User.aggregate(q)
                         .collation({ locale: 'en' })
                         .exec();
@@ -524,7 +527,6 @@ module.exports.create = async (req, res) => {
                 : '';
             newUser.createdBy = user._id;
             newUser.isEmailVerified = false;
-            console.log(newUser);
             let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE'] } }).exec()
             if (u) {
                 return Response.BadRequest(

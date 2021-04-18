@@ -33,9 +33,8 @@ module.exports.create = async (req, res) => {
             typeof data.audited == 'boolean'
                 ? data.audited
                 : typeof data.audited == 'string' && data.audited == 'true';
-        data.referenceCode = `${ulb.code}_${data.financialYear}_${
-            audited ? 'Audited' : 'Unaudited'
-        }`;
+        data.referenceCode = `${ulb.code}_${data.financialYear}_${audited ? 'Audited' : 'Unaudited'
+            }`;
         data.ulb = user.ulb;
         let checkData = await UlbFinancialData.count({
             ulb: data.ulb,
@@ -241,14 +240,14 @@ module.exports.getAll = async (req, res) => {
                 req.query.filter && !req.query.filter != 'null'
                     ? JSON.parse(req.query.filter)
                     : req.body.filter
-                    ? req.body.filter
-                    : {},
+                        ? req.body.filter
+                        : {},
             sort =
                 req.query.sort && !req.query.sort != 'null'
                     ? JSON.parse(req.query.sort)
                     : req.body.sort
-                    ? req.body.sort
-                    : {},
+                        ? req.body.sort
+                        : {},
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
@@ -411,19 +410,63 @@ module.exports.getAll = async (req, res) => {
         return Response.BadRequest(res, e, e.message);
     }
 };
+function csvData() {
+
+    return field = {
+        stateName: 'State name',
+        ulbName: 'ULB name',
+        ulbType: 'ULB Type',
+        populationType: 'Population Type',
+        censusCode: 'Census Code',
+        sbCode: 'ULB Code',
+        //financialYear: 'Financial Year',
+        //auditStatus: 'Audit Status',
+        status: 'Status',
+        'baeline_waterSuppliedPerDay_2020_21': 'Baseline 2020-21_Water supplied in litre per day(lpcd)',
+        'target_waterSuppliedPerDay_2021_22': 'Target 2021-22_Water supplied in litre per day(lpcd)',
+        'target_waterSuppliedPerDay_2022_23': 'Target 2022-23_Water supplied in litre per day(lpcd)',
+        'target_waterSuppliedPerDay_2023_24': 'Target 2023-24_Water supplied in litre per day(lpcd)',
+        'target_waterSuppliedPerDay_2024_25': 'Target 2024_25_Water supplied in litre per day(lpcd)',
+
+        'baseline_reduction_2020_21': 'Baseline 2020-21_Reduction in non-water revenue',
+        'target_reduction_2021_22': 'Target 2021-22_Reduction in non-water revenue',
+        'target_reduction_2022_23': 'Target 2022-23_Reduction in non-water revenue',
+        'target_reduction_2023_24': 'Target 2023-24_Reduction in non-water revenue',
+        'target_reduction_2024_25': 'Target 2024_25_Reduction in non-water revenue',
+
+        'baeline_houseHoldCoveredWithSewerage_2020_21': 'Baseline 2020-21_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredWithSewerage_2021_22': 'Target 2021-22_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredWithSewerage_2022_23': 'Target 2022-23_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredWithSewerage_2023_24': 'Target 2023-24_% of households covered with sewerage/septage services',
+        'target_houseHoldCoveredWithSewerage_2024_25': 'Target 2024_25_% of households covered with sewerage/septage services',
+
+        'baeline_houseHoldCoveredPipedSupply_2020_21': 'Baseline 2020-21_% of households covered with piped water supply',
+        'target_houseHoldCoveredPipedSupply_2021_22': 'Target 2021-22_% of households covered with piped water supply',
+        'target_houseHoldCoveredPipedSupply_2022_23': 'Target 2022-23_% of households covered with piped water supply',
+        'target_houseHoldCoveredPipedSupply_2023_24': 'Target 2023-24_% of households covered with piped water supply',
+        'target_houseHoldCoveredPipedSupply_2024_25': 'Target 2024_25_% of households covered with piped water supply',
+
+        'garbageFreeCities': 'Plan for garbage free star rating of the cities',
+        'waterSupplyCoverage': 'Plan for coverage of water supply for public/community toilets',
+        'cityPlan': 'City Plan DPR',
+        'waterBalancePlan': 'Water Balance Plan',
+        'serviceLevelPlan': 'Service Level Improvement Plan',
+        'solidWastePlan': 'Solid Waste Management Plan'
+    };
+}
 module.exports.getHistories = async (req, res) => {
     try {
         let user = req.decoded,
             filter = req.query.filter
                 ? JSON.parse(req.query.filter)
                 : req.body.filter
-                ? req.body.filter
-                : {},
+                    ? req.body.filter
+                    : {},
             sort = req.query.sort
                 ? JSON.parse(req.query.sort)
                 : req.body.sort
-                ? req.body.sort
-                : { modifiedAt: -1 },
+                    ? req.body.sort
+                    : { modifiedAt: -1 },
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
@@ -840,8 +883,8 @@ module.exports.completeness = async (req, res) => {
                 prevState['completeness'] = pending.length
                     ? 'PENDING'
                     : rejected.length
-                    ? 'REJECTED'
-                    : 'APPROVED';
+                        ? 'REJECTED'
+                        : 'APPROVED';
                 prevState['status'] =
                     prevState['completeness'] == 'REJECTED'
                         ? 'REJECTED'
@@ -1017,8 +1060,8 @@ module.exports.correctness = async (req, res) => {
                 prevState['correctness'] = pending.length
                     ? 'PENDING'
                     : rejected.length
-                    ? 'REJECTED'
-                    : 'APPROVED';
+                        ? 'REJECTED'
+                        : 'APPROVED';
                 prevState['status'] = prevState['correctness'];
                 prevState.modifiedAt = new Date();
                 prevState.actionTakenBy = user._id;
@@ -1074,13 +1117,13 @@ module.exports.getApprovedFinancialData = async (req, res) => {
             filter = req.query.filter
                 ? JSON.parse(req.query.filter)
                 : req.body.filter
-                ? req.body.filter
-                : {},
+                    ? req.body.filter
+                    : {},
             sort = req.query.sort
                 ? JSON.parse(req.query.sort)
                 : req.body.sort
-                ? req.body.sort
-                : {},
+                    ? req.body.sort
+                    : {},
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv;
@@ -1220,50 +1263,50 @@ function getSourceFiles(obj) {
         : '';
     obj.balanceSheet && obj.balanceSheet.excelUrl
         ? o.excel.push({
-              name: 'Balance Sheet',
-              url: obj.balanceSheet.excelUrl,
-          })
+            name: 'Balance Sheet',
+            url: obj.balanceSheet.excelUrl,
+        })
         : '';
 
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl
         ? o.pdf.push({
-              name: 'Schedules To Balance Sheet',
-              url: obj.schedulesToBalanceSheet.pdfUrl,
-          })
+            name: 'Schedules To Balance Sheet',
+            url: obj.schedulesToBalanceSheet.pdfUrl,
+        })
         : '';
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl
         ? o.excel.push({
-              name: 'Schedules To Balance Sheet',
-              url: obj.schedulesToBalanceSheet.excelUrl,
-          })
+            name: 'Schedules To Balance Sheet',
+            url: obj.schedulesToBalanceSheet.excelUrl,
+        })
         : '';
 
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl
         ? o.pdf.push({
-              name: 'Income And Expenditure',
-              url: obj.incomeAndExpenditure.pdfUrl,
-          })
+            name: 'Income And Expenditure',
+            url: obj.incomeAndExpenditure.pdfUrl,
+        })
         : '';
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl
         ? o.excel.push({
-              name: 'Income And Expenditure',
-              url: obj.incomeAndExpenditure.excelUrl,
-          })
+            name: 'Income And Expenditure',
+            url: obj.incomeAndExpenditure.excelUrl,
+        })
         : '';
 
     obj.schedulesToIncomeAndExpenditure &&
-    obj.schedulesToIncomeAndExpenditure.pdfUrl
+        obj.schedulesToIncomeAndExpenditure.pdfUrl
         ? o.pdf.push({
-              name: 'Schedules To Income And Expenditure',
-              url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
-          })
+            name: 'Schedules To Income And Expenditure',
+            url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
+        })
         : '';
     obj.schedulesToIncomeAndExpenditure &&
-    obj.schedulesToIncomeAndExpenditure.excelUrl
+        obj.schedulesToIncomeAndExpenditure.excelUrl
         ? o.excel.push({
-              name: 'Schedules To Income And Expenditure',
-              url: obj.schedulesToIncomeAndExpenditure.excelUrl,
-          })
+            name: 'Schedules To Income And Expenditure',
+            url: obj.schedulesToIncomeAndExpenditure.excelUrl,
+        })
         : '';
 
     obj.trialBalance && obj.trialBalance.pdfUrl
@@ -1271,9 +1314,9 @@ function getSourceFiles(obj) {
         : '';
     obj.trialBalance && obj.trialBalance.excelUrl
         ? o.excel.push({
-              name: 'Trial Balance',
-              url: obj.trialBalance.excelUrl,
-          })
+            name: 'Trial Balance',
+            url: obj.trialBalance.excelUrl,
+        })
         : '';
 
     obj.auditReport && obj.auditReport.pdfUrl
@@ -1288,9 +1331,9 @@ function getSourceFiles(obj) {
         : '';
     obj.overallReport && obj.overallReport.excelUrl
         ? o.excel.push({
-              name: 'Overall Report',
-              url: obj.overallReport.excelUrl,
-          })
+            name: 'Overall Report',
+            url: obj.overallReport.excelUrl,
+        })
         : '';
 
     return o;

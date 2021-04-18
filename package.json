@@ -4,7 +4,7 @@
   "description": "test project",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon app.js",
     "start": "node app"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "dotenv": "^8.2.0",
     "express": "4.16.4",
     "express-sanitizer": "^1.0.5",
+    "express-validator": "^6.10.0",
     "formidable": "^1.2.2",
     "html-pdf": "^2.2.0",
     "json2xls": "^0.1.2",
@@ -41,5 +42,8 @@
     "xlsx-to-json-lc": "0.5.0"
   },
   "author": "vivek sharma",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
 }
