@@ -11,7 +11,10 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         let user = await getUSer(req.body);
         if (!process.env.MSG91_AUTH_KEY) {
-            throw new ExpressError('MSG91 AUTH KEY NOT FOUND', 400);
+            return res.status(400).json({
+                success: false,
+                message: 'MSG91 AUTH KEY NOT FOUND'
+            })
         }
         if (!process.env.SENDER_ID) {
             throw new ExpressError('SENDER ID NOT FOUND', 400);
