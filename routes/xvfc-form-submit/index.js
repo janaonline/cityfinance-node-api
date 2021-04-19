@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { formAction, formSubmit } = require("./service");
-const verifyToken = require("../auth/service").verifyToken;
+const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
 //middleware
 const { userAuth } = require("../../middlewares/actionUserAuth");

@@ -10,7 +10,7 @@ const {
   action,
 } = require("./service");
 
-const verifyToken = require("../auth/service").verifyToken;
+const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
 //Middleware
 const { draftChecker } = require("../../util/validator");
