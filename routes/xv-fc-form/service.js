@@ -1524,7 +1524,7 @@ module.exports.action = async (req, res) => {
     try {
         let user = req.decoded;
         (data = req.body), (_id = ObjectId(req.params._id));
-
+        console.log(_id)
         if (data.design_year === '2021-22') {
             delete data.waterManagement.houseHoldCoveredPipedSupply['status'];
             delete data.waterManagement.houseHoldCoveredPipedSupply['rejectReason'];

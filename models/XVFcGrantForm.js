@@ -91,7 +91,7 @@ const waterManagementSchema = new Schema({
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
-    status: overallStatusType(),
+    status: statusType(),
     rejectReason: { type: String, default: '' },
 });
 
