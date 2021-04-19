@@ -18,12 +18,7 @@ app.use(json2xls.middleware);;
 const port = config.APP.PORT;
 
 
-if (!process.env.MSG91_AUTH_KEY) {
-	throw new ExpressError('MSG91 AUTH KEY NOT FOUND', 400);
-}
-if (!process.env.SENDER_ID) {
-	throw new ExpressError('SENDER ID NOT FOUND', 400);
-}
+
 
 app.use(logger('dev'));
 
