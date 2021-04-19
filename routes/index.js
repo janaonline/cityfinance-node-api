@@ -79,23 +79,23 @@ const Form = require("./form");
 router.use(Form);
 
 // @category
-const Category = require("./category");
-router.use(Category);
+// const Category = require("./category");
+// router.use(Category);
 
-// @report
-const UtilizationReport = require("./utilization-report");
-router.use(UtilizationReport);
+// // @report
+// const UtilizationReport = require("./utilization-report");
+// router.use(UtilizationReport);
 
-// @logs
-const SaveLogs = require("./xvfc-grant-request-logs");
-router.use(SaveLogs);
+// // @logs
+// const SaveLogs = require("./xvfc-grant-request-logs");
+// router.use(SaveLogs);
 
-// @Plans
-const plans = require("./xvfc-grant-plans");
-router.use(plans);
+// // @Plans
+// const plans = require("./xvfc-grant-plans");
+// router.use(plans);
 
-//@xvfc form submit
-const submit = require("./xvfc-form-submit");
-router.use(submit);
+// // @xvfc form submit
+// const submit = require("./xvfc-form-submit");
+// router.use(submit);
 
 module.exports = router;

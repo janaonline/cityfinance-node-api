@@ -1524,6 +1524,22 @@ module.exports.action = async (req, res) => {
     try {
         let user = req.decoded;
         (data = req.body), (_id = ObjectId(req.params._id));
+
+        if (data.design_year === '2021-22') {
+            delete data.waterManagement.houseHoldCoveredPipedSupply['status'];
+            delete data.waterManagement.houseHoldCoveredPipedSupply['rejectReason'];
+            delete data.waterManagement.waterSuppliedPerDay['status'];
+            delete data.waterManagement.waterSuppliedPerDay['rejectReason'];
+            delete data.waterManagement.reduction['status'];
+            delete data.waterManagement.reduction['rejectReason'];
+            delete data.waterManagement.houseHoldCoveredWithSewerage['status'];
+            delete data.waterManagement.houseHoldCoveredWithSewerage['rejectReason'];
+        } else {
+            delete data.waterManagement['status'];
+            delete data.waterManagement['rejectReason'];
+        }
+
+        console.log(data)
         let prevState = await XVFCGrantULBData.findOne(
             { _id: _id },
             '-history'
@@ -1531,6 +1547,11 @@ module.exports.action = async (req, res) => {
         let prevUser = await User.findOne({
             _id: ObjectId(prevState.actionTakenBy),
         }).exec();
+
+
+
+
+
         if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
             return Response.BadRequest(
                 res,
@@ -1568,6 +1589,7 @@ module.exports.action = async (req, res) => {
             );
         }
         let flag = overAllStatus(data);
+
         flag.then(
             async (value) => {
                 data['status'] = value.status ? 'REJECTED' : 'APPROVED';
@@ -1604,6 +1626,9 @@ module.exports.action = async (req, res) => {
                     data['actionTakenBy'] = user._id;
                     data['ulb'] = prevState.ulb;
                     data['modifiedAt'] = time();
+                    let design_year = await Year.findOne({ "year": data.design_year })
+                    data['design_year'] = design_year._id;
+                    console.log(data)
                     let du = await XVFCGrantULBData.update(
                         { _id: ObjectId(prevState._id) },
                         { $set: data, $push: { history: history } }
@@ -1847,6 +1872,9 @@ module.exports.action = async (req, res) => {
         });
     } catch (e) {
         console.log('Exception', e);
+        res.json({
+            message: e.message
+        })
     }
 };
 
