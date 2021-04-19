@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const verifyToken = require('../auth/service').verifyToken;
+const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const ufdService = require('./service');
 const ufdDashboardService = require('./fc-grant-service');
 const multer = require('multer');

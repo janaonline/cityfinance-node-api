@@ -3,7 +3,7 @@ const router = express.Router();
 
 //--> ULB Type Routes <---//
 const UlbType = require('./service');
-const verifyToken = require('../auth/service').verifyToken;
+const verifyToken = require('../auth/services/verifyToken').verifyToken;
 
 router.get(
     '/UlbType',
