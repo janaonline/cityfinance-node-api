@@ -8,7 +8,7 @@ const UtilizationReportProjectSchema = new Schema({
   },
   name: { type: String },
   description: { type: String },
-  capacity: { type: Number },
+  capacity: { type: String },
   photos: [
     {
       url: { type: String },
