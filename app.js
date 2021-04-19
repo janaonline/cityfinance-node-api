@@ -11,7 +11,7 @@ require("./initialization/initialize")();
 const Service = require('./service');
 const json2xls = require('json2xls');
 const expressSanitizer = require('express-sanitizer');
-const verifyToken = require('./routes/auth/service').verifyToken;
+const verifyToken = require('./routes/auth/services/verifyToken').verifyToken;
 const ExpressError = require('./util/ExpressError')
 app.use(json2xls.middleware);;
 //Port Number

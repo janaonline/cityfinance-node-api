@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { saveLogs, getLogs } = require("./service");
-const verifyToken = require("../auth/service").verifyToken;
+const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
 //create
 router.post("/save-logs", verifyToken, saveLogs);
