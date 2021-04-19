@@ -37,3 +37,5 @@ lerna-debug.log*
 .env_bk
 public
 /public
+
+package-lock.json

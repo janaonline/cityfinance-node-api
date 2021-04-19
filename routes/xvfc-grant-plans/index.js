@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { savePlans, getPlans, removePlans, action } = require("./service");
-const verifyToken = require("../auth/service").verifyToken;
+const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
 //validator
 const { planCreateValidator } = require("./validator");

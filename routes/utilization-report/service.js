@@ -9,7 +9,8 @@ const {
 } = require("../../service");
 
 module.exports.createOrUpdate = async (req, res) => {
-  const { ulb, financialYear, isDraft } = req.body;
+  const { financialYear, isDraft } = req.body;
+  const ulb = req.decoded?._id;
   try {
     req.body.actionTakenBy = req.decoded?._id;
     await UtilizationReport.updateOne(
@@ -47,7 +48,9 @@ exports.read = async (req, res) => {
 };
 
 exports.readById = async (req, res) => {
-  const { ulb, financialYear } = req.params;
+  const { financialYear } = req.params;
+  const ulb = req.decoded?._id;
+
   try {
     const report = await UtilizationReport.findOne({
       ulb,
@@ -65,7 +68,8 @@ exports.readById = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
-  const { ulb, financialYear } = req.params;
+  const { financialYear } = req.params;
+  const ulb = req.decoded?._id;
   try {
     const report = await UtilizationReport.findOneAndUpdate(
       { ulb, financialYear, isActive: true },
@@ -86,7 +90,8 @@ exports.update = async (req, res) => {
 };
 
 exports.remove = async (req, res) => {
-  const { ulb, financialYear } = req.params;
+  const { financialYear } = req.params;
+  const ulb = req.decoded?._id;
   try {
     const report = await UtilizationReport.findOneAndUpdate(
       { ulb, financialYear, isActive: true },

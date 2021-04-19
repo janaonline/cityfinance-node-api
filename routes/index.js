@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 // @Base Url
 router.use((req, res, next) => {
-    req['currentUrl'] = `${req.protocol + '://' + req.headers.host}`;
-    next();
+  req["currentUrl"] = `${req.protocol + "://" + req.headers.host}`;
+  next();
 });
 // @Auth
 const Auth = require("./auth");
@@ -30,17 +30,17 @@ const Ulb = require("./ulb");
 router.use(Ulb);
 
 // @ULBUPDATEREQUEST
-const ulbUpdateRequest = require('./ulb-update-request');
-router.use('/ulb-update-request', ulbUpdateRequest);
+const ulbUpdateRequest = require("./ulb-update-request");
+router.use("/ulb-update-request", ulbUpdateRequest);
 // @ULBFINANCIALDATA
-const ulbFinancialData = require('./ulb-financial-data');
-router.use('/ulb-financial-data', ulbFinancialData);
+const ulbFinancialData = require("./ulb-financial-data");
+router.use("/ulb-financial-data", ulbFinancialData);
 
 /**
  * @description Routes for 15th FC Forms
  */
-const fcFormData = require('./xv-fc-form');
-router.use('/xv-fc-form', fcFormData);
+const fcFormData = require("./xv-fc-form");
+router.use("/xv-fc-form", fcFormData);
 
 // @LineItem
 const LineItem = require("./line-item");
@@ -97,5 +97,9 @@ router.use(Form);
 // // @xvfc form submit
 // const submit = require("./xvfc-form-submit");
 // router.use(submit);
+
+//@Grant Distribution
+const grantDistribution = require("./grant-distribution");
+router.use(grantDistribution);
 
 module.exports = router;

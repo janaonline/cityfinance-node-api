@@ -8,7 +8,7 @@ const UtilizationReportProjectSchema = new Schema({
   },
   name: { type: String },
   description: { type: String },
-  capacity: { type: Number },
+  capacity: { type: String },
   photos: [
     {
       url: { type: String },
@@ -28,11 +28,10 @@ const UtilizationReportProjectSchema = new Schema({
 
 const UtilizationReportSchema = new Schema(
   {
-    stateName: { type: String, required: true },
     name: { type: String },
     designation: { type: String },
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
-    grantType: { type: String, required: true },
+    grantType: { type: String, required: true, enum: ["Tied", "Untied"] },
     grantPosition: {
       unUtilizedPrevYr: { type: Number },
       receivedDuringYr: { type: Number },
