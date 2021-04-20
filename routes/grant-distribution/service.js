@@ -8,7 +8,7 @@ const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
 
 exports.getTemplate = async (req, res) => {
-  let { state } = req.params;
+  let { state } = req?.decoded;
   try {
     const ulbs = await ULB.find({
       state: ObjectId(state),
@@ -43,7 +43,8 @@ exports.getTemplate = async (req, res) => {
 };
 
 exports.uploadTemplate = async (req, res) => {
-  let { url, designYear, state } = req.body;
+  let { url, designYear } = req.body;
+  let state = req?.decoded;
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {

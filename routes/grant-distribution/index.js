@@ -10,9 +10,9 @@ const verifyToken = require("../auth/service").verifyToken;
 // const { draftChecker } = require("../../util/validator");
 
 //get template
-router.get("/template/:state", getTemplate);
+router.get("/template", verifyToken, getTemplate);
 
 //upload
-router.post("/upload", uploadTemplate);
+router.post("/upload", verifyToken, uploadTemplate);
 
 module.exports = router;
