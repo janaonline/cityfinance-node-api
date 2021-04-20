@@ -31,7 +31,7 @@ module.exports.createOrUpdate = async (req, res) => {
     return res.status(200).json({ msg: "UtilizationReport Submitted!" });
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,err.message);
+    return Response.BadRequest(res,{},err.message);
   }
 };
 
@@ -44,7 +44,7 @@ exports.read = async (req, res) => {
     return res.status(200).json(reports);
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,err.message);
+    return Response.BadRequest(res,{},err.message);
   }
 };
 
@@ -64,7 +64,7 @@ exports.readById = async (req, res) => {
     return res.json(report);
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,err.message);
+    return Response.BadRequest(res,{},err.message);
   }
 };
 
@@ -108,7 +108,7 @@ exports.remove = async (req, res) => {
     res.status(200).json({ msg: "UtilizationReport Deleted" });
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,err.message);
+    return Response.BadRequest(res,{},err.message);
   }
 };
 
@@ -169,10 +169,10 @@ exports.action = async (req, res) => {
       }
     } catch (e) {
       console.error(e.message);
-      return Response.BadRequest(res,e.message);
+      return Response.BadRequest(res,{},e.message);
     }
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,err.message);
+    return Response.BadRequest(res,{},err.message);
   }
 };
