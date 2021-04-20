@@ -19,7 +19,7 @@ router.post(
 );
 
 //get
-router.get("/plans/:ulb/:designYear", verifyToken, getPlans);
+router.get("/plans/:designYear", verifyToken, getPlans);
 
 //delete
 router.delete("/plans", verifyToken, removePlans);

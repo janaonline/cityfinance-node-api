@@ -20,7 +20,8 @@ exports.savePlans = async (req, res) => {
 };
 
 exports.getPlans = async (req, res) => {
-  const { ulb, designYear } = req.body;
+  const { designYear } = req.body;
+  const ulb = req?.decoded?._id;
   try {
     const plan = await Plans.findOne({
       ulb: ObjectId(ulb),
