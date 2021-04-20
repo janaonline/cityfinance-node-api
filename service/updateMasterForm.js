@@ -12,7 +12,6 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
       history: 0,
     });
     if (oldForm) {
-      console.log(`${data?.user?._id} != ${oldForm.actionTakenBy}`);
       if (data?.user?._id.toString() != oldForm.actionTakenBy) {
         let newForm = {
           steps: {
