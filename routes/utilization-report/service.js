@@ -30,7 +30,7 @@ module.exports.createOrUpdate = async (req, res) => {
     return res.status(200).json({ msg: "UtilizationReport Submitted!" });
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return res.status(400).json({ msg: err.message });
   }
 };
 
@@ -43,7 +43,7 @@ exports.read = async (req, res) => {
     return res.status(200).json(reports);
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return res.status(400).json({ msg: err.message });
   }
 };
 
@@ -63,7 +63,7 @@ exports.readById = async (req, res) => {
     return res.json(report);
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return res.status(400).json({ msg: err.message });
   }
 };
 
@@ -85,7 +85,7 @@ exports.update = async (req, res) => {
     res.status(200).json({ success: true, data: report });
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return res.status(400).json({ msg: err.message });
   }
 };
 
@@ -107,7 +107,8 @@ exports.remove = async (req, res) => {
     res.status(200).json({ msg: "UtilizationReport Deleted" });
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return res.status(400).json({ msg: err.message });
+
   }
 };
 
@@ -168,10 +169,10 @@ exports.action = async (req, res) => {
       }
     } catch (e) {
       console.error(e.message);
-      return res.status(500).json({ msg: "server error" });
+      return res.status(400).json({ msg: e.message });
     }
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return res.status(400).json({ msg: err.message });
   }
 };
