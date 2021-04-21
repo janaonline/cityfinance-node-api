@@ -2,11 +2,23 @@ require('./dbConnect');
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+const statusType = () => {
+    return {
+        type: String,
+        enum: {
+            values: ['PENDING', 'APPROVED', 'REJECTED'],
+            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'"
+        },
+        default: 'PENDING',
+    };
+};
+
 const ContentSchema = new Schema({
     pdfUrl: [{ type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] }],
     excelUrl: [{ type: String }],
+    status: statusType(),
+    rejectReason: { type: String, default: '' }
 });
-
 
 const YesNoSchema = new Schema({
     answer: {
@@ -21,13 +33,30 @@ const YesNoSchema = new Schema({
 
 });
 
-
 const ContentPDFSchema = new Schema({
     pdfUrl: [{ type: String }],
+    status: statusType(),
+    rejectReason: { type: String, default: '' }
 });
 const ContentEXCELSchema = new Schema({
     excelUrl: [{ type: String }],
 });
+
+const provisionalDataSchema = new Schema({
+    bal_sheet: { type: ContentSchema },
+    bal_sheet_schedules: { type: ContentSchema },
+    inc_exp: { type: ContentSchema },
+    inc_exp_schedules: { type: ContentSchema },
+    cash_flow: { type: ContentSchema },
+    cash_flow_schedules: { type: ContentSchema },
+    auditor_report: { type: ContentPDFSchema },
+})
+
+const standardizedDataSchema = new Schema({
+    excelUrl: { type: String },
+    auditor_certificate: { type: String },
+    auditor_registration: { type: String },
+})
 
 const AnnualAccountDataSchema = new Schema(
     {
@@ -35,10 +64,13 @@ const AnnualAccountDataSchema = new Schema(
         year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
         audit_status: {
-            type: String, enum: {
+            type: String,
+            enum:
+            {
                 values: ['Audited', 'Unaudited'],
                 message: "ERROR: AUDIT STATUS CAN BE EITHER 'Audited' or 'Unaudited' "
-            }, required: true
+            },
+            required: true
         },
         status: {
             type: String, enum: {
@@ -50,22 +82,23 @@ const AnnualAccountDataSchema = new Schema(
         submit_standardized_data: { type: YesNoSchema },
         isCompleted: { type: Boolean, default: false, required: true },
         history: { type: Array, default: [] },
-        bal_sheet: { type: ContentSchema },
-        bal_sheet_schedules: { type: ContentSchema },
-        inc_exp: { type: ContentSchema },
-        inc_exp_schedules: { type: ContentSchema },
-        cash_flow: { type: ContentSchema },
-        cash_flow_schedules: { type: ContentSchema },
-        auditor_report: { type: ContentPDFSchema },
-        standardized_data: { type: ContentEXCELSchema },
+        provisional_data: { type: provisionalDataSchema },
+        standardized_data: { type: standardizedDataSchema },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
         isActive: { type: Boolean, default: 1 },
+        actionTakenBy: {
+            type: Schema.Types.ObjectId,
+            ref: 'User',
+            required: true,
+        }
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
 AnnualAccountDataSchema.index(
     { ulb: 1, year: 1 },
-    // { unique: true }
+    { unique: true }
 );
 module.exports = mongoose.model('AnnualAccountData', AnnualAccountDataSchema);
+
+

@@ -252,6 +252,7 @@ module.exports.create = async (req, res) => {
             ulbData.history = undefined;
             req.body['history'].push(ulbData);
         }
+        console.log(req.body)
         Service.put(query, req.body, XVFCGrantULBData, async function (
             response,
             value
@@ -1524,7 +1525,7 @@ module.exports.action = async (req, res) => {
     try {
         let user = req.decoded;
         (data = req.body), (_id = ObjectId(req.params._id));
-        console.log(_id)
+
         if (data.design_year === '2021-22') {
             delete data.waterManagement.houseHoldCoveredPipedSupply['status'];
             delete data.waterManagement.houseHoldCoveredPipedSupply['rejectReason'];
@@ -1539,7 +1540,7 @@ module.exports.action = async (req, res) => {
             delete data.waterManagement['rejectReason'];
         }
 
-        console.log(data)
+
         let prevState = await XVFCGrantULBData.findOne(
             { _id: _id },
             '-history'
@@ -1547,10 +1548,6 @@ module.exports.action = async (req, res) => {
         let prevUser = await User.findOne({
             _id: ObjectId(prevState.actionTakenBy),
         }).exec();
-
-
-
-
 
         if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
             return Response.BadRequest(
@@ -1602,6 +1599,7 @@ module.exports.action = async (req, res) => {
                         let ulb = await Ulb.findOne({
                             _id: ObjectId(data.ulb),
                         }).exec();
+
                         if (
                             !(
                                 ulb &&
@@ -1627,7 +1625,7 @@ module.exports.action = async (req, res) => {
                     data['ulb'] = prevState.ulb;
                     data['modifiedAt'] = time();
                     let design_year = await Year.findOne({ "year": data.design_year })
-                    data['design_year'] = design_year._id;
+                    data['design_year'] = ObjectId(design_year._id);
                     console.log(data)
                     let du = await XVFCGrantULBData.update(
                         { _id: ObjectId(prevState._id) },
@@ -1649,212 +1647,212 @@ module.exports.action = async (req, res) => {
                             },
                         ])
                         .exec();
+                    // console.log(ulbUser)
 
-                    if (data['status'] == 'APPROVED' && user.role == 'MoHUA') {
-                        let mailOptions = {
-                            to: '',
-                            subject: '',
-                            html: '',
-                        };
-                        /** ULB TRIGGER */
-                        let ulbEmails = [];
-                        let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
-                            ulbUser.name
-                        );
-                        ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
-                        ulbUser.accountantEmail
-                            ? ulbEmails.push(ulbUser.accountantEmail)
-                            : '';
-                        (mailOptions.to = ulbEmails.join()),
-                            (mailOptions.subject = UlbTemplate.subject),
-                            (mailOptions.html = UlbTemplate.body);
-                        Service.sendEmail(mailOptions);
-                        /** STATE TRIGGER */
-                        let stateEmails = [];
-                        let stateUser = await User.find({
-                            state: ObjectId(ulbUser.state._id),
-                            isDeleted: false,
-                            role: 'STATE',
-                        }).exec();
-                        for (let d of stateUser) {
-                            sleep(700);
-                            d.email ? stateEmails.push(d.email) : '';
-                            d.departmentEmail
-                                ? stateEmails.push(d.departmentEmail)
-                                : '';
-                            let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
-                                ulbUser.name,
-                                d.name
-                            );
-                            mailOptions.to = stateEmails.join();
-                            mailOptions.subject = stateTemplate.subject;
-                            mailOptions.html = stateTemplate.body;
-                            Service.sendEmail(mailOptions);
-                        }
-                    }
-                    if (data['status'] == 'APPROVED' && user.role == 'STATE') {
-                        let mailOptions = {
-                            to: '',
-                            subject: '',
-                            html: '',
-                        };
+                    // if (data['status'] == 'APPROVED' && user.role == 'MoHUA') {
+                    //     let mailOptions = {
+                    //         to: '',
+                    //         subject: '',
+                    //         html: '',
+                    //     };
+                    //     /** ULB TRIGGER */
+                    //     let ulbEmails = [];
+                    //     let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
+                    //         ulbUser.name
+                    //     );
+                    //     ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                    //     ulbUser.accountantEmail
+                    //         ? ulbEmails.push(ulbUser.accountantEmail)
+                    //         : '';
+                    //     (mailOptions.to = ulbEmails.join()),
+                    //         (mailOptions.subject = UlbTemplate.subject),
+                    //         (mailOptions.html = UlbTemplate.body);
+                    //     Service.sendEmail(mailOptions);
+                    //     /** STATE TRIGGER */
+                    //     let stateEmails = [];
+                    //     let stateUser = await User.find({
+                    //         state: ObjectId(ulbUser.state._id),
+                    //         isDeleted: false,
+                    //         role: 'STATE',
+                    //     }).exec();
+                    //     for (let d of stateUser) {
+                    //         sleep(700);
+                    //         d.email ? stateEmails.push(d.email) : '';
+                    //         d.departmentEmail
+                    //             ? stateEmails.push(d.departmentEmail)
+                    //             : '';
+                    //         let stateTemplate = await Service.emailTemplate.xvUploadApprovalByMoHUAtoState(
+                    //             ulbUser.name,
+                    //             d.name
+                    //         );
+                    //         mailOptions.to = stateEmails.join();
+                    //         mailOptions.subject = stateTemplate.subject;
+                    //         mailOptions.html = stateTemplate.body;
+                    //         Service.sendEmail(mailOptions);
+                    //     }
+                    // }
+                    // if (data['status'] == 'APPROVED' && user.role == 'STATE') {
+                    //     let mailOptions = {
+                    //         to: '',
+                    //         subject: '',
+                    //         html: '',
+                    //     };
 
-                        let UlbTemplate = await Service.emailTemplate.xvUploadApprovalByStateToUlb(
-                            ulbUser.name
-                        );
-                        (mailOptions.to = ulbUser.email),
-                            (mailOptions.subject = UlbTemplate.subject),
-                            (mailOptions.html = UlbTemplate.body);
-                        Service.sendEmail(mailOptions);
-                        /** STATE TRIGGER */
-                        let MohuaUser = await User.find({
-                            isDeleted: false,
-                            role: 'MoHUA',
-                        }).exec();
-                        for (let d of MohuaUser) {
-                            sleep(700);
-                            let MohuaTemplate = await Service.emailTemplate.xvUploadApprovalState(
-                                d.name,
-                                ulbUser.name,
-                                ulbUser.state.name
-                            );
-                            (mailOptions.to = d.email),
-                                (mailOptions.subject = MohuaTemplate.subject),
-                                (mailOptions.html = MohuaTemplate.body);
-                            Service.sendEmail(mailOptions);
-                        }
+                    //     let UlbTemplate = await Service.emailTemplate.xvUploadApprovalByStateToUlb(
+                    //         ulbUser.name
+                    //     );
+                    //     (mailOptions.to = ulbUser.email),
+                    //         (mailOptions.subject = UlbTemplate.subject),
+                    //         (mailOptions.html = UlbTemplate.body);
+                    //     Service.sendEmail(mailOptions);
+                    //     /** STATE TRIGGER */
+                    //     let MohuaUser = await User.find({
+                    //         isDeleted: false,
+                    //         role: 'MoHUA',
+                    //     }).exec();
+                    //     for (let d of MohuaUser) {
+                    //         sleep(700);
+                    //         let MohuaTemplate = await Service.emailTemplate.xvUploadApprovalState(
+                    //             d.name,
+                    //             ulbUser.name,
+                    //             ulbUser.state.name
+                    //         );
+                    //         (mailOptions.to = d.email),
+                    //             (mailOptions.subject = MohuaTemplate.subject),
+                    //             (mailOptions.html = MohuaTemplate.body);
+                    //         Service.sendEmail(mailOptions);
+                    //     }
 
-                        /** STATE TRIGGER */
-                        let stateEmails = [];
-                        let stateUser = await User.find({
-                            state: ObjectId(ulbUser.state._id),
-                            isDeleted: false,
-                            role: 'STATE',
-                        }).exec();
-                        for (let d of stateUser) {
-                            sleep(700);
-                            d.email ? stateEmails.push(d.email) : '';
-                            d.departmentEmail
-                                ? stateEmails.push(d.departmentEmail)
-                                : '';
-                            let stateTemplate = await Service.emailTemplate.xvUploadApprovalForState(
-                                ulbUser.name,
-                                d.name
-                            );
-                            mailOptions.to = stateEmails.join();
-                            mailOptions.subject = stateTemplate.subject;
-                            mailOptions.html = stateTemplate.body;
-                            Service.sendEmail(mailOptions);
-                        }
+                    //     /** STATE TRIGGER */
+                    //     let stateEmails = [];
+                    //     let stateUser = await User.find({
+                    //         state: ObjectId(ulbUser.state._id),
+                    //         isDeleted: false,
+                    //         role: 'STATE',
+                    //     }).exec();
+                    //     for (let d of stateUser) {
+                    //         sleep(700);
+                    //         d.email ? stateEmails.push(d.email) : '';
+                    //         d.departmentEmail
+                    //             ? stateEmails.push(d.departmentEmail)
+                    //             : '';
+                    //         let stateTemplate = await Service.emailTemplate.xvUploadApprovalForState(
+                    //             ulbUser.name,
+                    //             d.name
+                    //         );
+                    //         mailOptions.to = stateEmails.join();
+                    //         mailOptions.subject = stateTemplate.subject;
+                    //         mailOptions.html = stateTemplate.body;
+                    //         Service.sendEmail(mailOptions);
+                    //     }
 
-                        let historyData = await commonQuery({ _id: _id });
-                        if (historyData.length > 0) {
-                            let du = await XVFCGrantULBData.update(
-                                { _id: ObjectId(prevState._id) },
-                                { $set: data }
-                            );
-                        } else {
-                            let newData = resetDataStatus(data);
-                            let du = await XVFCGrantULBData.update(
-                                { _id: ObjectId(prevState._id) },
-                                { $set: newData }
-                            );
-                        }
-                    }
-                    if (data['status'] == 'REJECTED' && user.role == 'MoHUA') {
-                        let mailOptions = {
-                            to: '',
-                            subject: '',
-                            html: '',
-                        };
-                        /** ULB TRIGGER */
-                        let ulbEmails = [];
-                        let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
-                            ulbUser.name,
-                            value.reason,
-                            'MoHUA'
-                        );
-                        ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
-                        ulbUser.accountantEmail
-                            ? ulbEmails.push(ulbUser.accountantEmail)
-                            : '';
-                        (mailOptions.to = ulbEmails.join()),
-                            (mailOptions.subject = UlbTemplate.subject),
-                            (mailOptions.html = UlbTemplate.body);
-                        Service.sendEmail(mailOptions);
+                    //     let historyData = await commonQuery({ _id: _id });
+                    //     if (historyData.length > 0) {
+                    //         let du = await XVFCGrantULBData.update(
+                    //             { _id: ObjectId(prevState._id) },
+                    //             { $set: data }
+                    //         );
+                    //     } else {
+                    //         let newData = resetDataStatus(data);
+                    //         let du = await XVFCGrantULBData.update(
+                    //             { _id: ObjectId(prevState._id) },
+                    //             { $set: newData }
+                    //         );
+                    //     }
+                    // }
+                    // if (data['status'] == 'REJECTED' && user.role == 'MoHUA') {
+                    //     let mailOptions = {
+                    //         to: '',
+                    //         subject: '',
+                    //         html: '',
+                    //     };
+                    //     /** ULB TRIGGER */
+                    //     let ulbEmails = [];
+                    //     let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
+                    //         ulbUser.name,
+                    //         value.reason,
+                    //         'MoHUA'
+                    //     );
+                    //     ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                    //     ulbUser.accountantEmail
+                    //         ? ulbEmails.push(ulbUser.accountantEmail)
+                    //         : '';
+                    //     (mailOptions.to = ulbEmails.join()),
+                    //         (mailOptions.subject = UlbTemplate.subject),
+                    //         (mailOptions.html = UlbTemplate.body);
+                    //     Service.sendEmail(mailOptions);
 
-                        /** STATE TRIGGER */
-                        let stateEmails = [];
-                        let stateUser = await User.find({
-                            state: ObjectId(ulbUser.state._id),
-                            isDeleted: false,
-                            role: 'STATE',
-                        }).exec();
-                        for (let d of stateUser) {
-                            sleep(700);
-                            d.email ? stateEmails.push(d.email) : '';
-                            d.departmentEmail
-                                ? stateEmails.push(d.departmentEmail)
-                                : '';
-                            let stateTemplate = await Service.emailTemplate.xvUploadRejectState(
-                                ulbUser.name,
-                                d.name,
-                                value.reason
-                            );
-                            mailOptions.to = stateEmails.join();
-                            mailOptions.subject = stateTemplate.subject;
-                            mailOptions.html = stateTemplate.body;
-                            Service.sendEmail(mailOptions);
-                        }
-                    }
+                    //     /** STATE TRIGGER */
+                    //     let stateEmails = [];
+                    //     let stateUser = await User.find({
+                    //         state: ObjectId(ulbUser.state._id),
+                    //         isDeleted: false,
+                    //         role: 'STATE',
+                    //     }).exec();
+                    //     for (let d of stateUser) {
+                    //         sleep(700);
+                    //         d.email ? stateEmails.push(d.email) : '';
+                    //         d.departmentEmail
+                    //             ? stateEmails.push(d.departmentEmail)
+                    //             : '';
+                    //         let stateTemplate = await Service.emailTemplate.xvUploadRejectState(
+                    //             ulbUser.name,
+                    //             d.name,
+                    //             value.reason
+                    //         );
+                    //         mailOptions.to = stateEmails.join();
+                    //         mailOptions.subject = stateTemplate.subject;
+                    //         mailOptions.html = stateTemplate.body;
+                    //         Service.sendEmail(mailOptions);
+                    //     }
+                    // }
+                    // if (data['status'] == 'REJECTED' && user.role == 'STATE') {
+                    //     let mailOptions = {
+                    //         to: '',
+                    //         subject: '',
+                    //         html: '',
+                    //     };
+                    //     /** ULB TRIGGER */
+                    //     let ulbEmails = [];
+                    //     let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
+                    //         ulbUser.name,
+                    //         value.reason,
+                    //         'STATE'
+                    //     );
+                    //     ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
+                    //     ulbUser.accountantEmail
+                    //         ? ulbEmails.push(ulbUser.accountantEmail)
+                    //         : '';
+                    //     (mailOptions.to = ulbEmails.join()),
+                    //         (mailOptions.subject = UlbTemplate.subject),
+                    //         (mailOptions.html = UlbTemplate.body);
+                    //     Service.sendEmail(mailOptions);
 
-                    if (data['status'] == 'REJECTED' && user.role == 'STATE') {
-                        let mailOptions = {
-                            to: '',
-                            subject: '',
-                            html: '',
-                        };
-                        /** ULB TRIGGER */
-                        let ulbEmails = [];
-                        let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
-                            ulbUser.name,
-                            value.reason,
-                            'STATE'
-                        );
-                        ulbUser.email ? ulbEmails.push(ulbUser.email) : '';
-                        ulbUser.accountantEmail
-                            ? ulbEmails.push(ulbUser.accountantEmail)
-                            : '';
-                        (mailOptions.to = ulbEmails.join()),
-                            (mailOptions.subject = UlbTemplate.subject),
-                            (mailOptions.html = UlbTemplate.body);
-                        Service.sendEmail(mailOptions);
+                    //     /** STATE TRIGGER */
+                    //     let stateEmails = [];
+                    //     let stateUser = await User.find({
+                    //         state: ObjectId(ulbUser.state._id),
+                    //         isDeleted: false,
+                    //         role: 'STATE',
+                    //     }).exec();
+                    //     for (let d of stateUser) {
+                    //         sleep(700);
+                    //         d.email ? stateEmails.push(d.email) : '';
+                    //         d.departmentEmail
+                    //             ? stateEmails.push(d.departmentEmail)
+                    //             : '';
+                    //         let stateTemplate = await Service.emailTemplate.xvUploadRejectByStateTrigger(
+                    //             ulbUser.name,
+                    //             d.name,
+                    //             value.reason
+                    //         );
+                    //         mailOptions.to = stateEmails.join();
+                    //         mailOptions.subject = stateTemplate.subject;
+                    //         mailOptions.html = stateTemplate.body;
+                    //         Service.sendEmail(mailOptions);
+                    //     }
 
-                        /** STATE TRIGGER */
-                        let stateEmails = [];
-                        let stateUser = await User.find({
-                            state: ObjectId(ulbUser.state._id),
-                            isDeleted: false,
-                            role: 'STATE',
-                        }).exec();
-                        for (let d of stateUser) {
-                            sleep(700);
-                            d.email ? stateEmails.push(d.email) : '';
-                            d.departmentEmail
-                                ? stateEmails.push(d.departmentEmail)
-                                : '';
-                            let stateTemplate = await Service.emailTemplate.xvUploadRejectByStateTrigger(
-                                ulbUser.name,
-                                d.name,
-                                value.reason
-                            );
-                            mailOptions.to = stateEmails.join();
-                            mailOptions.subject = stateTemplate.subject;
-                            mailOptions.html = stateTemplate.body;
-                            Service.sendEmail(mailOptions);
-                        }
-
-                    }
+                    // }
                     return Response.OK(res, ulbFinancialDataobj, ``);
                 } else {
                     return Response.BadRequest(
@@ -2335,6 +2333,7 @@ function overAllStatus(data) {
         let rejected = false;
         let rejectReason = [];
         let rejectDataSet = [];
+        console.log(data)
         for (key in data) {
             if (typeof data[key] === 'object' && data[key] !== null) {
                 if (key == 'waterManagement') {

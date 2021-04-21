@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 // @Base Url
 router.use((req, res, next) => {
-  req["currentUrl"] = `${req.protocol + "://" + req.headers.host}`;
-  next();
+    req["currentUrl"] = `${req.protocol + "://" + req.headers.host}`;
+    next();
 });
 // @Auth
 const Auth = require("./auth");
@@ -11,7 +11,7 @@ router.use(Auth);
 
 // @Annual accounts
 const AnnualAccountData = require('./annual-accounts');
-router.use(AnnualAccountData);
+router.use("/annual-accounts", AnnualAccountData);
 
 // @FinancialYear
 const FinancialYear = require("./financial-year");
