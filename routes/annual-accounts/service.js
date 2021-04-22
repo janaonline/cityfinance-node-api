@@ -17,7 +17,7 @@ const LineItem = require("../../models/LineItem");
 const UlbLedger = require("../../models/UlbLedger");
 const LedgerLog = require("../../models/LedgerLog");
 const Redis = require('../../service/redis')
-
+const util = require('util')
 
 const balanceSheet = {
     liability: 0,
@@ -55,7 +55,7 @@ const provisional_dataKeys = [
     'auditor_report'
 
 ];
-module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
+module.exports.createOrUpdate = (async (req, res, next) => {
 
     let user = req.decoded;
     let data = req.body
@@ -122,149 +122,141 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
         else if (data.submit_annual_accounts.answer.toLowerCase() === 'no' && data.submit_standardized_data.answer.toLowerCase() === 'yes') {
             delete data.provisional_data;
         }
-
-
         data.design_year = ObjectId(design_year._id);
         data.year = ObjectId(year._id);
-
-        // let standardData = data.files.standardized_data;
-        // delete data.files.standardized_data;
-        // data.standardized_data = standardData;
-        // let files = data.files
-        // delete data.files;
-        // let provisional_data = {};
-        // Object.assign(provisional_data, files)
-        // Object.assign(data, { provisional_data })
-        console.log(data)
+        let downloadFileToDiskAsync;
         if (data.standardized_data.excelUrl) {
-            downloadFileToDisk(data.standardized_data.excelUrl, async (err, file) => {
-                if (err) {
-                    console.log(err)
-                    // return res.status(400).json({
-                    //     timestamp: moment().unix(),
-                    //     success: false,
-                    //     message: "Error Occurred",
-                    //     error: err.message
-                    // });
-                } else if (!file) {
-                    console.log('File not available')
-                    // return res.status(400).json({
-                    //     timestamp: moment().unix(),
-                    //     success: false,
-                    //     message: "File not available"
-                    // });
-                } else {
-                    try {
-                        let reqLog = await RequestLog.findOne({ url: data.standardized_data.excelUrl, financialYear: year.year });
-                        if (!reqLog) {
-                            let requestLog = new RequestLog({
-                                user: req.decoded ? ObjectId(req.decoded.id) : null,
-                                url: data.standardized_data.excelUrl,
-                                message: "Data Processing",
-                                financialYear: year.year
-                            });
-                            requestLog.save(async (err, data) => {
+            downloadFileToDiskAsync = util.promisify(downloadFileToDisk)
+        }
+        try {
+            const file = await downloadFileToDiskAsync(data.standardized_data.excelUrl)
+            if (!file) {
+                console.log('File not available')
+                return res.status(400).json({
+                    timestamp: moment().unix(),
+                    success: false,
+                    message: "File not available"
+                });
+            }
+            try {
+                let reqLog = await RequestLog.findOne({ url: data.standardized_data.excelUrl, financialYear: year.year });
+                if (!reqLog) {
+                    let requestLog = new RequestLog({
+                        user: req.decoded ? ObjectId(req.decoded.id) : null,
+                        url: data.standardized_data.excelUrl,
+                        message: "Data Processing",
+                        financialYear: year.year
+                    });
+                    requestLog.save(async (err, data) => {
 
-                                if (err) {
-                                    // return res.status(400).json({
-                                    //     timestamp: moment().unix(),
-                                    //     success: false,
-                                    //     message: err.message,
-                                    //     data: err
-                                    // })
-                                    console.log(err)
-                                } else {
-                                    try {
-                                        console.log(year.year)
-                                        processData(file, year.year, data._id, balanceSheet);
-                                        // return res.status(200).json({
-                                        //     timestamp: moment().unix(),
-                                        //     success: true,
-                                        //     message: `Request recieved.`,
-                                        //     data: data
-                                        // })
-                                    } catch (e) {
-                                        // return res.status(400).json({
-                                        //     timestamp: moment().unix(),
-                                        //     success: false,
-                                        //     message: `${e.message} \n ${e.errMessage}.`
-                                        // })
-                                        console.log(e)
-                                    }
-
-                                }
-                            });
+                        if (err) {
+                            return res.status(400).json({
+                                timestamp: moment().unix(),
+                                success: false,
+                                message: err.message,
+                                data: err
+                            })
 
                         } else {
-                            // return res.status(400).json({
-                            //     timestamp: moment().unix(),
-                            //     success: false,
-                            //     message: reqLog.completed ? `Already processed.` : `Already in process.`,
-                            //     data: reqLog
-                            // })
-                            console.log('aalready processed')
+                            try {
+                                console.log(data._id)
+                                processData(file, year.year, data._id, balanceSheet);
+                                console.log('processing done')
+                                let query = { "ulb": ObjectId(ulb._id), "year": ObjectId(year._id) }
+                                let annualAccountData = await AnnualAccountData.findOne(query);
+
+                                if (annualAccountData && annualAccountData.isCompleted && annualAccountData.status === 'PENDING') {
+                                    return res.status(400).json({
+                                        success: false,
+                                        message: 'Data Already Submitted for ' + user.name + '. You can re-submit the data after Action is taken by State Govt and MoHUA'
+                                    })
+                                }
+                                if (annualAccountData && annualAccountData.isCompleted && annualAccountData.status != 'PENDING') {
+                                    req.body['history'] = [...annualAccountData.history];
+                                    annualAccountData.history = undefined;
+                                    req.body['history'].push(annualAccountData);
+                                    data['status'] = 'PENDING';
+                                    await AnnualAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
+                                        .then((response) => {
+                                            return res.status(200).json({
+                                                success: true,
+                                                message: 'Annual Accounts Data Updated for ' + user.name,
+                                                response: response
+                                            })
+                                        }
+
+                                        ).catch(e => {
+                                            console.log(`Error - ${e}`);
+                                            return res.status(400).json({
+                                                success: false,
+                                                message: 'Failed to Update Annual Accounts Data for ' + user.name,
+                                                error: e.message
+                                            })
+                                        })
+
+                                }
+                                else if (annualAccountData && !annualAccountData.isCompleted) {
+                                    return res.status(400).json({
+                                        success: false,
+                                        message: 'Action Not Allowed. Data is in Draft Mode.',
+                                    })
+                                }
+                                else {
+                                    data['status'] = 'PENDING';
+                                    const annual_account_data = new AnnualAccountData(data);
+                                    await annual_account_data.save();
+                                    return res.status(200).json({
+                                        success: true,
+                                        message: 'Annual Accounts for ' + user.name + ' Successfully Submitted. ',
+                                    })
+                                }
+
+                                // return res.status(200).json({
+                                //     timestamp: moment().unix(),
+                                //     success: true,
+                                //     message: `Request recieved.`,
+                                //     data: data
+                                // })
+                            } catch (e) {
+                                return res.status(400).json({
+                                    timestamp: moment().unix(),
+                                    success: false,
+                                    message: `${e.message} \n ${e.errMessage}.`
+                                })
+
+                            }
+
                         }
-                    } catch (e) {
-                        // return res.status(400).json({
-                        //     timestamp: moment().unix(),
-                        //     success: false,
-                        //     message: `Caught Error:${e.message}`
-                        // })
-                        console.log(e)
-                    }
-                }
-            })
-        }
-        let query = { "ulb": ObjectId(ulb._id), "year": ObjectId(year._id) }
-        let annualAccountData = await AnnualAccountData.findOne(query);
+                    });
 
-        if (annualAccountData && annualAccountData.isCompleted && annualAccountData.status === 'PENDING') {
-            return res.status(400).json({
-                success: false,
-                message: 'Data Already Submitted for ' + user.name + '. You can re-submit the data after Action is taken by State Govt and MoHUA'
-            })
-        }
-
-
-        if (annualAccountData && annualAccountData.isCompleted && annualAccountData.status != 'PENDING') {
-            req.body['history'] = [...annualAccountData.history];
-            annualAccountData.history = undefined;
-            req.body['history'].push(annualAccountData);
-            data['status'] = 'PENDING';
-            await AnnualAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
-                .then((response) => {
-                    res.status(200).json({
-                        success: true,
-                        message: 'Annual Accounts Data Updated for ' + user.name,
-                        response: response
-                    })
-                }
-
-                ).catch(e => {
-                    console.log(`Error - ${e}`);
-                    res.status(400).json({
+                } else {
+                    return res.status(400).json({
+                        timestamp: moment().unix(),
                         success: false,
-                        message: 'Failed to Update Annual Accounts Data for ' + user.name,
-                        error: e.message
+                        message: reqLog.completed ? `Already processed.` : `Already in process.`,
+                        data: reqLog
                     })
-                })
 
+                }
+            } catch (e) {
+                return res.status(400).json({
+                    timestamp: moment().unix(),
+                    success: false,
+                    message: `Caught Error:${e.message}`
+                })
+            }
         }
-        else if (annualAccountData && !annualAccountData.isCompleted) {
+        catch {
+            console.log(err)
             return res.status(400).json({
+                timestamp: moment().unix(),
                 success: false,
-                message: 'Action Not Allowed. Data is in Draft Mode.',
-            })
+                message: "Error Occurred",
+                error: err.message
+            });
         }
-        else {
-            data['status'] = 'PENDING';
-            const annual_account_data = new AnnualAccountData(data);
-            await annual_account_data.save();
-            return res.status(200).json({
-                success: true,
-                message: 'Annual Accounts for ' + user.name + ' Successfully Submitted. ',
-            })
-        }
+
+
     } else {
         return res.status(400).json({
             success: false,
@@ -276,7 +268,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
     async function processData(reqFile, financialYear, reqId, balanceSheet) {
         try {
             try {
-                console.log('entered process data')
+
                 // extract the overviewSheet and dataSheet
                 let { overviewSheet, dataSheet } = await readXlsxFile(reqFile);
                 // validate overview sheet 
@@ -566,7 +558,6 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
 
 })
 
-
 module.exports.action = catchAsync(async (req, res, next) => {
 
     let user = req.decoded;
@@ -672,7 +663,6 @@ module.exports.action = catchAsync(async (req, res, next) => {
                 let annualAccountDataobj = await AnnualAccountData.findOne({
                     _id: ObjectId(prevState._id),
                 }).exec();
-                console.log(annualAccountDataobj)
                 let ulbUser = await User.findOne({
                     ulb: ObjectId(annualAccountDataobj.ulb),
                     isDeleted: false,
@@ -706,7 +696,6 @@ module.exports.action = catchAsync(async (req, res, next) => {
     });
 
 })
-
 
 function overAllStatus(data) {
 

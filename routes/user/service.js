@@ -707,35 +707,3 @@ module.exports.ulbSignupAction = async (req, res) => {
     }
 };
 
-module.exports.getNodalOfficers = async (req, res) => {
-
-    try {
-        if (!req.body.state) {
-            res.status(400).json({
-                success: false,
-                message: 'State ID Not Found'
-            })
-        }
-        let user = await User.findOne({ "state": ObjectId(req.body.state), isNodalOfficer: true })
-        if (!user) {
-            res.status(400).json({
-                success: false,
-                message: 'User Not Found in DB'
-            })
-        } else {
-            res.status(200).json({
-                success: true,
-                message: 'User Found Successfully',
-                name: user.name,
-                email: user.email,
-                mobile: user.mobile
-            })
-        }
-
-    } catch (e) {
-        console.log(e)
-        res.json({
-            message: 'Exception Caught -' + e.message
-        })
-    }
-}

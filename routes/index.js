@@ -13,6 +13,10 @@ router.use(Auth);
 const AnnualAccountData = require('./annual-accounts');
 router.use("/annual-accounts", AnnualAccountData);
 
+//@PFMS Account
+const PFMSAccountData = require('./pfmsAccount');
+router.use("/pfmsAccount", PFMSAccountData);
+
 // @FinancialYear
 const FinancialYear = require("./financial-year");
 router.use(FinancialYear);
