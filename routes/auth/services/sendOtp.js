@@ -6,7 +6,8 @@ const Service = require('../../../service');
 const sendEmail = Service.sendEmail;
 let countryCode = "91", Subject = "Authentication Mail";
 let expireTimeMS = 15 * 60000;
-const { getUSer } = require('./getUser')
+const { getUSer } = require('./getUser');
+const User = require('../../../models/User');
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         let user = await getUSer(req.body);
@@ -69,6 +70,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 message: "OTP SENT SUCCESSFULLY",
                 mobile: user.mobile,
                 email: user.email,
+                name: user.name,
                 requestId: Otp._id
             })
         } else {
