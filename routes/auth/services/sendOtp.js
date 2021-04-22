@@ -10,7 +10,6 @@ const { getUSer } = require('./getUser')
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         let user = await getUSer(req.body);
-        console.log(user)
         if (!process.env.MSG91_AUTH_KEY) {
             return res.status(400).json({
                 success: false,
