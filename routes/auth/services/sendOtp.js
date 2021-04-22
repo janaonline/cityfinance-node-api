@@ -10,11 +10,18 @@ const { getUSer } = require('./getUser')
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         let user = await getUSer(req.body);
+        console.log(user)
         if (!process.env.MSG91_AUTH_KEY) {
-            throw new ExpressError('MSG91 AUTH KEY NOT FOUND', 400);
+            return res.status(400).json({
+                success: false,
+                message: 'MSG91 AUTH KEY NOT FOUND'
+            })
         }
         if (!process.env.SENDER_ID) {
-            throw new ExpressError('SENDER ID NOT FOUND', 400);
+            return res.status(400).json({
+                success: false,
+                message: 'SENDER ID KEY NOT FOUND'
+            })
         }
         if (!user) {
             res.status(400).json({
@@ -31,7 +38,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 })
             }
         }
-        let msg = `Otp for your login request is ${otp}, Please do not share it with anybody`;
+        let msg = `Otp for your login request is ${otp}, Please do not share it with anybody.`;
         if (OtpMethods.validatePhoneNumber(user.mobile) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
@@ -41,7 +48,8 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 otp: otp,
                 createdAt: Date.now(),
                 expireAt: Date.now() + expireTimeMS,
-                isVerified: 0
+                isVerified: 0,
+                role: user.role
             })
             await Otp.save();
             if (user.mobile) {
@@ -52,7 +60,6 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                             message: error.message
                         })
                     }
-
                 });
             }
             if (user.email) {
@@ -63,9 +70,8 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 message: "OTP SENT SUCCESSFULLY",
                 mobile: user.mobile,
                 email: user.email,
-                requestId: otpToDB._id
+                requestId: Otp._id
             })
-
         } else {
             res.status(400).json({
                 success: false,
@@ -80,5 +86,4 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             message: error.message ? error.message : error
         })
     }
-
 })
