@@ -18,6 +18,7 @@ router.post('/onboard', passport.authenticate('jwt', { session: false }), (req, 
 router.post('/', verifyToken, userService.get);
 router.post('/all', verifyToken, userService.getAll);
 router.get('/all', verifyToken, userService.getAll);
+router.get('/nodal/:_id', userService.getNodalOfficers)
 router.put('/profile', verifyToken, userService.profileUpdate)
 router.put('/profile/:_id', verifyToken, userService.profileUpdate)
 

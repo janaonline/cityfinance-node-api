@@ -37,17 +37,14 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         })
     }
     else {
-        let user, email;
-        if (!verification.censusCode) {
-            email = verification.emailId;
-            user = await getUSer({ email });
-        }
-        else {
+        let email;
+        if (verification.role === 'ULB') {
             email = verification.censusCode;
-            user = await getUSer({ email });
+        } else {
+            email = verification.emailId;
         }
 
-
+        let user = await getUSer({ email });
         let expirytime = verification.expireAt.getTime()
         let currentTime = Date.now();
         if (currentTime < expirytime) {

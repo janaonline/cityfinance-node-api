@@ -6,10 +6,26 @@ const Service = require('../../../service');
 const sendEmail = Service.sendEmail;
 let countryCode = "91", Subject = "Authentication Mail";
 let expireTimeMS = 15 * 60000;
-const { getUSer } = require('./getUser')
+const { getUSer } = require('./getUser');
+const User = require('../../../models/User');
+const State = require('../../../models/State')
+const Ulb = require('../../../models/Ulb')
+const { isValidObjectId } = require('mongoose');
+const ObjectId = require('mongoose').Types.ObjectId;
+
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         let user = await getUSer(req.body);
+        let entity;
+        if (user.role === 'STATE') {
+            entity = await State.findOne({ _id: ObjectId(user.state) })
+        } else if (user.role === 'ULB') {
+            entity = await Ulb.findOne({ _id: ObjectId(user.ulb) })
+        } else {
+            entity = { name: user.name }
+        }
+
+
         if (!process.env.MSG91_AUTH_KEY) {
             return res.status(400).json({
                 success: false,
@@ -17,7 +33,10 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             })
         }
         if (!process.env.SENDER_ID) {
-            throw new ExpressError('SENDER ID NOT FOUND', 400);
+            return res.status(400).json({
+                success: false,
+                message: 'SENDER ID KEY NOT FOUND'
+            })
         }
         if (!user) {
             res.status(400).json({
@@ -56,7 +75,6 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                             message: error.message
                         })
                     }
-
                 });
             }
             if (user.email) {
@@ -67,9 +85,9 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 message: "OTP SENT SUCCESSFULLY",
                 mobile: user.mobile,
                 email: user.email,
+                name: entity.name,
                 requestId: Otp._id
             })
-
         } else {
             res.status(400).json({
                 success: false,
@@ -84,5 +102,4 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             message: error.message ? error.message : error
         })
     }
-
 })

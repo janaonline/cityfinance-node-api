@@ -1,6 +1,7 @@
 const Plans = require("../../models/XVFcGrantPlans");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
+const Response = require("../../service").response;
 
 exports.savePlans = async (req, res) => {
   let { ulb, designYear, isDraft } = req.body;
@@ -15,7 +16,7 @@ exports.savePlans = async (req, res) => {
     return res.status(200).json({ msg: "Plans Submitted!" });
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return Response.BadRequest(res,{},err.message);
   }
 };
 
@@ -33,8 +34,7 @@ exports.getPlans = async (req, res) => {
     return res.status(200).json(plan);
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
-  }
+    return Response.BadRequest(res,{},err.message);  }
 };
 
 exports.removePlans = async (req, res) => {
@@ -50,7 +50,7 @@ exports.removePlans = async (req, res) => {
     return res.status(200).json({ msg: "Plans Removed" });
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return Response.BadRequest(res,{},err.message);
   }
 };
 
@@ -85,6 +85,6 @@ exports.action = async (req, res) => {
     return res.status(200).json({ msg: "Action Submitted!" });
   } catch (err) {
     console.error(err.message);
-    return res.status(500).json({ msg: "server error" });
+    return Response.BadRequest(res,{},err.message);
   }
 };
