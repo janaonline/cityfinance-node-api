@@ -7,6 +7,7 @@ const OtpSchema = new Schema({
     createdAt: { type: Date },
     expireAt: { type: Date },
     isVerified: { type: Boolean, default: 0 },
+    role: { type: String }
 });
 
 
