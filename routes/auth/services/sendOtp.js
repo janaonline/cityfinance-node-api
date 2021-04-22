@@ -21,6 +21,8 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             entity = await State.findOne({ _id: ObjectId(user.state) })
         } else if (user.role === 'ULB') {
             entity = await Ulb.findOne({ _id: ObjectId(user.ulb) })
+        } else {
+            entity = { name: user.name }
         }
 
 
