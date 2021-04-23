@@ -4,8 +4,9 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 
 exports.savePlans = async (req, res) => {
-  let { ulb, designYear, isDraft } = req.body;
+  let { designYear, isDraft } = req.body;
   req.body.actionTakenBy = req?.decoded?._id;
+  const ulb = req?.decoded?._id;
   try {
     await Plans.findOneAndUpdate({ ulb: ObjectId(ulb), designYear }, req.body, {
       upsert: true,
@@ -16,7 +17,7 @@ exports.savePlans = async (req, res) => {
     return res.status(200).json({ msg: "Plans Submitted!" });
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,{},err.message);
+    return Response.BadRequest(res, {}, err.message);
   }
 };
 
@@ -35,7 +36,8 @@ exports.getPlans = async (req, res) => {
     return res.status(200).json(plan);
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,{},err.message);  }
+    return Response.BadRequest(res, {}, err.message);
+  }
 };
 
 exports.removePlans = async (req, res) => {
@@ -51,7 +53,7 @@ exports.removePlans = async (req, res) => {
     return res.status(200).json({ msg: "Plans Removed" });
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,{},err.message);
+    return Response.BadRequest(res, {}, err.message);
   }
 };
 
@@ -86,6 +88,6 @@ exports.action = async (req, res) => {
     return res.status(200).json({ msg: "Action Submitted!" });
   } catch (err) {
     console.error(err.message);
-    return Response.BadRequest(res,{},err.message);
+    return Response.BadRequest(res, {}, err.message);
   }
 };
