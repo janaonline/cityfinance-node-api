@@ -5,6 +5,8 @@ const RequestLogSchema = new Schema({
     financialYear: { type: String, required: true },
     message: { type: String, default: null },
     status: { type: String, enum: ["SUCCESS", "FAILED", ""], default: "" },
+    ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', default: null },
+    design_year: { type: Schema.Types.ObjectId, ref: 'Year', default: null },
     completed: { type: Boolean, default: 0 },
     modifiedAt: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }

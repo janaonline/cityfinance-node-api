@@ -35,6 +35,7 @@ const overviewHeader = ["Basic Details", "Value"];
 
 module.exports = function (req, res) {
     let user = req.decoded;
+    let data = req.body;
     if (!user) {
         return res.status(400).json({
             success: false,
@@ -74,9 +75,10 @@ module.exports = function (req, res) {
                 });
             } else {
                 try {
+                    let design_year;
                     let query = { url: req.body.alias, financialYear: financialYear };
-                    if (req.body.design_year && req.body.design_year != "") {
-                        let design_year = await Year.findOne({ "year": req.body.design_year })
+                    if (data.design_year && data.design_year != "") {
+                        design_year = await Year.findOne({ "year": data.design_year })
                         Object.assign(query, { design_year: ObjectId(design_year._id) })
                     }
                     if (user.role === 'ULB') {
@@ -89,10 +91,11 @@ module.exports = function (req, res) {
                             user: req.decoded ? ObjectId(req.decoded.id) : null,
                             url: req.body.alias,
                             message: "Data Processing",
-                            financialYear: financialYear
+                            financialYear: financialYear,
+                            design_year: data.design_year ? ObjectId(design_year._id) : undefined,
+                            ulb: user.role === 'ULB' ? ObjectId(user.ulb) : undefined
                         });
                         requestLog.save(async (err, data) => {
-                            console.log(data)
                             if (err) {
                                 return res.status(400).json({
                                     timestamp: moment().unix(),
@@ -102,6 +105,7 @@ module.exports = function (req, res) {
                                 })
                             } else {
                                 try {
+                                    console.log(`Data - ${data}`)
                                     processData(file, financialYear, data._id, balanceSheet);
                                     return res.status(200).json({
                                         timestamp: moment().unix(),
@@ -147,7 +151,7 @@ module.exports = function (req, res) {
                 let { overviewSheet, dataSheet } = await readXlsxFile(reqFile);
                 // validate overview sheet 
                 //console.log(dataSheet);return;    
-
+                console.log(overViewSheet, dataSheet);
                 let objOfSheet = await validateOverview(overviewSheet, financialYear); // rejection in case of error
                 delete objOfSheet['state'];
                 objOfSheet['state'] = objOfSheet.state_name;
