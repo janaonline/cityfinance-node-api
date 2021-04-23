@@ -105,7 +105,7 @@ module.exports = function (req, res) {
                                 })
                             } else {
                                 try {
-                                    console.log(`Data - ${data}`)
+
                                     processData(file, financialYear, data._id, balanceSheet);
                                     return res.status(200).json({
                                         timestamp: moment().unix(),
@@ -151,7 +151,6 @@ module.exports = function (req, res) {
                 let { overviewSheet, dataSheet } = await readXlsxFile(reqFile);
                 // validate overview sheet 
                 //console.log(dataSheet);return;    
-                console.log(overViewSheet, dataSheet);
                 let objOfSheet = await validateOverview(overviewSheet, financialYear); // rejection in case of error
                 delete objOfSheet['state'];
                 objOfSheet['state'] = objOfSheet.state_name;
@@ -209,6 +208,7 @@ module.exports = function (req, res) {
         }
     }
     async function readXlsxFile(file) {
+
         return new Promise(async (resolve, reject) => {
             let exceltojson;
             try {
@@ -314,6 +314,7 @@ module.exports = function (req, res) {
                 Object.assign(objOfSheet, JSON.parse(JSON.stringify(ulb)));
                 objOfSheet['ulb_code_year'] = objOfSheet.ulb_code + '_' + objOfSheet.year;
                 objOfSheet['state_name'] = state.name;
+                console.log(objOfSheet)
             }
         });
     }
