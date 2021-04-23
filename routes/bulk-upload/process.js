@@ -11,6 +11,7 @@ const UlbLedger = require("../../models/UlbLedger");
 const LedgerLog = require("../../models/LedgerLog");
 const Redis = require('../../service/redis')
 const ObjectId = require('mongoose').Types.ObjectId;
+const Year = require('../../models/Year')
 
 const overViewSheet = {
     'State Code': 'state_code',
@@ -33,6 +34,13 @@ const inputHeader = ["Head of Account", "Code", "Line Item", "Amount in INR"];
 const overviewHeader = ["Basic Details", "Value"];
 
 module.exports = function (req, res) {
+    let user = req.decoded;
+    if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: 'User Not Found!'
+        })
+    }
     let financialYear = req.body.financialYear;
     // maintaining list items which needs to get sum up in liability and assets
     const balanceSheet = {
@@ -41,7 +49,7 @@ module.exports = function (req, res) {
         liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
         assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
     }
-    console.log("here coming")
+
     if (!financialYear) {
         return res.status(400).json({
             timestamp: moment().unix(),
@@ -49,6 +57,7 @@ module.exports = function (req, res) {
             message: "Financial Year is required."
         });
     } else {
+
         downloadFileToDisk(req.body.alias, async (err, file) => {
             if (err) {
                 return res.status(400).json({
@@ -65,7 +74,16 @@ module.exports = function (req, res) {
                 });
             } else {
                 try {
-                    let reqLog = await RequestLog.findOne({ url: req.body.alias, financialYear: financialYear });
+                    let query = { url: req.body.alias, financialYear: financialYear };
+                    if (req.body.design_year && req.body.design_year != "") {
+                        let design_year = await Year.findOne({ "year": req.body.design_year })
+                        Object.assign(query, { design_year: ObjectId(design_year._id) })
+                    }
+                    if (user.role === 'ULB') {
+                        Object.assign(query, { ulb: ObjectId(user.ulb) })
+                    }
+                    console.log(query)
+                    let reqLog = await RequestLog.findOne(query);
                     if (!reqLog) {
                         let requestLog = new RequestLog({
                             user: req.decoded ? ObjectId(req.decoded.id) : null,
@@ -124,16 +142,16 @@ module.exports = function (req, res) {
     async function processData(reqFile, financialYear, reqId, balanceSheet) {
         try {
             try {
-                console.log('entered process data')
+
                 // extract the overviewSheet and dataSheet
                 let { overviewSheet, dataSheet } = await readXlsxFile(reqFile);
                 // validate overview sheet 
                 //console.log(dataSheet);return;    
-                console.log(overviewSheet)
+
                 let objOfSheet = await validateOverview(overviewSheet, financialYear); // rejection in case of error
                 delete objOfSheet['state'];
                 objOfSheet['state'] = objOfSheet.state_name;
-                console.log(objOfSheet)
+
                 let du = {
                     query: { ulb_code_year: objOfSheet.ulb_code_year },
                     update: Object.assign({ lastModifiedAt: new Date() }, objOfSheet),
@@ -191,7 +209,6 @@ module.exports = function (req, res) {
             let exceltojson;
             try {
                 let fileInfo = file.path.split('.');
-                console.log(fileInfo)
                 exceltojson = fileInfo && fileInfo.length > 0 && fileInfo[(fileInfo.length - 1)] == 'xlsx' ? xlsxtojson : xlstojson;
                 let prms1 = new Promise((rslv, rjct) => {
                     exceltojson({
@@ -293,7 +310,6 @@ module.exports = function (req, res) {
                 Object.assign(objOfSheet, JSON.parse(JSON.stringify(ulb)));
                 objOfSheet['ulb_code_year'] = objOfSheet.ulb_code + '_' + objOfSheet.year;
                 objOfSheet['state_name'] = state.name;
-                console.log(objOfSheet)
             }
         });
     }
