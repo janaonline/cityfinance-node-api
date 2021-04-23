@@ -82,7 +82,7 @@ module.exports = function (req, res) {
                     if (user.role === 'ULB') {
                         Object.assign(query, { ulb: ObjectId(user.ulb) })
                     }
-                    console.log(query)
+                    // console.log(query)
                     let reqLog = await RequestLog.findOne(query);
                     if (!reqLog) {
                         let requestLog = new RequestLog({
