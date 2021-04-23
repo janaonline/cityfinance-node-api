@@ -6,6 +6,7 @@ const Response = require("../../service").response;
 exports.savePlans = async (req, res) => {
   let { designYear, isDraft } = req.body;
   req.body.actionTakenBy = req?.decoded?._id;
+  req.body.ulb = req?.decoded?._id;
   const ulb = req?.decoded?._id;
   try {
     await Plans.findOneAndUpdate({ ulb: ObjectId(ulb), designYear }, req.body, {
