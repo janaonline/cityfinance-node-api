@@ -16,13 +16,16 @@ const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         let user = await getUSer(req.body);
-        let entity;
+        let entity, state;
         if (user.role === 'STATE') {
             entity = await State.findOne({ _id: ObjectId(user.state) })
+            state = entity;
         } else if (user.role === 'ULB') {
             entity = await Ulb.findOne({ _id: ObjectId(user.ulb) })
+            state = await State.findOne({ _id: ObjectId(entity.state) })
         } else {
             entity = { name: user.name }
+            state = entity
         }
 
 
@@ -86,7 +89,8 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 mobile: user.mobile,
                 email: user.email,
                 name: entity.name,
-                requestId: Otp._id
+                requestId: Otp._id,
+                state: state.name
             })
         } else {
             res.status(400).json({
