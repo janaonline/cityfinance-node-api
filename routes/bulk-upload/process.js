@@ -314,7 +314,7 @@ module.exports = function (req, res) {
                 Object.assign(objOfSheet, JSON.parse(JSON.stringify(ulb)));
                 objOfSheet['ulb_code_year'] = objOfSheet.ulb_code + '_' + objOfSheet.year;
                 objOfSheet['state_name'] = state.name;
-                console.log(objOfSheet)
+
             }
         });
     }
