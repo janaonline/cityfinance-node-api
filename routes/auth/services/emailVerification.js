@@ -6,6 +6,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 
 module.exports.emailVerification = async (req, res) => {
     try {
+        console.log(req.decoded)
         let msg = req.decoded.forgotPassword ? '' : 'Email verified';
         let ud = { isEmailVerified: true };
         if (req.decoded.role == 'USER') {
@@ -27,6 +28,7 @@ module.exports.emailVerification = async (req, res) => {
         ];
         let query = { _id: ObjectId(req.decoded._id) };
         let user = await User.findOne(query, keys.join(' ')).exec();
+        console.log(user)
         if (user.role != 'USER') {
             ud.isEmailVerified = user.isEmailVerified;
         }

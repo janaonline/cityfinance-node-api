@@ -65,7 +65,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
 
 })
-module.exports.createOrUpdate = (async (req, res, next) => {
+module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
 
     let user = req.decoded;
     let data = req.body
