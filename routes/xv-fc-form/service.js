@@ -252,7 +252,6 @@ module.exports.create = async (req, res) => {
             ulbData.history = undefined;
             req.body['history'].push(ulbData);
         }
-        console.log(req.body)
         Service.put(query, req.body, XVFCGrantULBData, async function (
             response,
             value
@@ -487,7 +486,6 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
-        console.log(user)
         let status = 'PENDING';
         // if(user.role=='ULB'){
         //     status = 'REJECTED'
@@ -1626,7 +1624,6 @@ module.exports.action = async (req, res) => {
                     data['modifiedAt'] = time();
                     let design_year = await Year.findOne({ "year": data.design_year })
                     data['design_year'] = ObjectId(design_year._id);
-                    console.log(data)
                     let du = await XVFCGrantULBData.update(
                         { _id: ObjectId(prevState._id) },
                         { $set: data, $push: { history: history } }
@@ -2333,7 +2330,6 @@ function overAllStatus(data) {
         let rejected = false;
         let rejectReason = [];
         let rejectDataSet = [];
-        console.log(data)
         for (key in data) {
             if (typeof data[key] === 'object' && data[key] !== null) {
                 if (key == 'waterManagement') {
