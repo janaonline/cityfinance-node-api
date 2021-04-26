@@ -19,11 +19,9 @@ const overallStatusType = () => {
         default: 'PENDING',
     };
 };
-const ContentSchema = new Schema({
+
+const ContentPDFSchema = new Schema({
     pdfUrl: { type: String },
-    excelUrl: { type: String },
-    completeness: statusType(),
-    correctness: statusType(),
     message: { type: String, default: '' },
 });
 
@@ -36,7 +34,7 @@ const waterManagementSchema = new Schema({
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
-            2526: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
@@ -49,7 +47,7 @@ const waterManagementSchema = new Schema({
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
-            2526: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
@@ -62,7 +60,7 @@ const waterManagementSchema = new Schema({
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
-            2526: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
@@ -75,7 +73,7 @@ const waterManagementSchema = new Schema({
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
-            2526: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
@@ -88,13 +86,13 @@ const waterManagementSchema = new Schema({
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
-            2526: { type: String, required: true },
+            // 2526: { type: String, required: true },
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
-
-
+    status: statusType(),
+    rejectReason: { type: String, default: '' },
 });
 
 
@@ -192,16 +190,13 @@ const millionPlusCitiesSchema = new Schema({
 
 const XVFcGrantULBFormSchema = new Schema(
     {
-
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true },
-        year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
-        overallReport: { type: ContentSchema, default: null },
-
-
+        // year: { type: Schema.Types.ObjectId, ref: 'Year', required: true, default: null },
         design_year: {
-            type: String,
-            default: '2021-22',
-            required: true
+            type: Schema.Types.ObjectId,
+            ref: 'Year',
+            required: true,
+            default: null
         },
         status: overallStatusType(),
         actionTakenBy: {
@@ -214,7 +209,7 @@ const XVFcGrantULBFormSchema = new Schema(
         createdAt: { type: Date, default: Date.now },
         isActive: { type: Boolean, default: 1 },
         waterManagement: { type: waterManagementSchema, default: null },
-        water_index: { type: Boolean, required: true, default: false },
+        water_index: { type: Boolean, default: false },
         waterPotability: {
             type: waterPotabilityPlanSchema,
             default: null
@@ -225,11 +220,12 @@ const XVFcGrantULBFormSchema = new Schema(
         },
         millionPlusCities: { type: millionPlusCitiesSchema, default: null },
         isCompleted: { type: Boolean, default: 0 },
+        document: { type: ContentPDFSchema, required: true, default: null },
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
 XVFcGrantULBFormSchema.index(
-    { ulb: 1, financialYear: 1, audited: 1 },
+    { ulb: 1, design_year: 1 },
     { unique: true }
 );
 module.exports = mongoose.model('XVFcGrantULBForm', XVFcGrantULBFormSchema);
