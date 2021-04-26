@@ -1,5 +1,5 @@
 
-const moment = require("moment");
+
 const catchAsync = require('../../util/catchAsync')
 const AnnualAccountData = require('../../models/AnnualAccounts')
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -8,16 +8,6 @@ const Year = require('../../models/Year')
 const User = require('../../models/User')
 const Response = require('../../service').response
 const State = require('../../models/State');
-const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
-const RequestLog = require("../../models/RequestLog")
-const xlstojson = require("xls-to-json-lc");
-const xlsxtojson = require("xlsx-to-json-lc");
-const CONSTANTS = require('../../_helper/constants');
-const LineItem = require("../../models/LineItem");
-const UlbLedger = require("../../models/UlbLedger");
-const LedgerLog = require("../../models/LedgerLog");
-const Redis = require('../../service/redis')
-const util = require('util')
 
 
 const mappingKeys = {
@@ -46,6 +36,35 @@ const time = () => {
     dt.setMinutes(dt.getMinutes() + 30);
     return dt;
 };
+
+module.exports.get = catchAsync(async (req, res) => {
+    let user = req.decoded;
+    let design_year = req.query.design_year;
+    let year = req.query.year;
+    let Yyear = await Year.findOne({ "year": year })
+    let DYear = await Year.findOne({ "year": design_year })
+    if (!Yyear || !DYear) {
+        return res.status(400).json({
+            success: false,
+            message: !Year ? 'Year Not Found' : 'Design Year Not Found'
+        })
+    }
+    let annualAccountData = await AnnualAccountData.findOne({ "ulb": ObjectId(user.ulb), "year": ObjectId(Yyear._id), "design_year": ObjectId(DYear._id) })
+    if (!annualAccountData) {
+        return res.status(400).json({
+            success: false,
+            message: 'No Annual Account Data Found for ' + user.name
+        })
+    } else {
+        return res.status(200).json({
+            success: true,
+            message: 'Annual Account Found Successfully!',
+            data: annualAccountData
+        })
+    }
+
+
+})
 module.exports.createOrUpdate = (async (req, res, next) => {
 
     let user = req.decoded;
