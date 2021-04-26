@@ -18,6 +18,8 @@ const { MongooseDocument } = require('mongoose');
 const dir = 'uploads';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
+const Year = require('../../models/Year');
+const { findOne } = require('../../models/LedgerLog');
 
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
@@ -198,63 +200,44 @@ const time = () => {
     return dt;
 };
 
+const yearFilter = async (res, query, data) => {
+    let design_year = await Year.findOne({ "year": data.design_year })
+    if (design_year) {
+        Object.assign(query, { design_year: ObjectId(design_year._id) })
+    } else {
+        return res.status(400).json({
+            success: false,
+            message: 'Design Year Not Found'
+        })
+    }
+}
+
 module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
     if (user.role == 'ULB') {
-        // for (k in data) {
-        //     if (
-        //         data[k] &&
-        //         typeof data[k] == 'object' &&
-        //         Object.keys(data[k]).length
-        //     ) {
-        //         if (!(data[k].pdfUrl || data[k].excelUrl)) {
-        //             data[k].completeness = 'NA';
-        //             data[k].correctness = 'NA';
-        //         } else {
-        //             data[k].completeness = 'PENDING';
-        //             data[k].correctness = 'PENDING';
-        //         }
-        //     }
-        // }
+
         let ulb = await Ulb.findOne({ _id: user.ulb }, '_id name code').lean();
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
         }
-        let audited =
-            typeof data.audited == 'boolean'
-                ? data.audited
-                : typeof data.audited == 'string' && data.audited == 'true';
-        data.referenceCode = `${ulb.code}_${data.financialYear}_${audited ? 'Audited' : 'Unaudited'
-            }`;
+
         data.ulb = user.ulb;
         req.body['createdAt'] = time();
         data.modifiedAt = time();
-        let checkData = await XVFCGrantULBData.count({
-            ulb: data.ulb,
-            financialYear: data.financialYear,
-            audited: true,
-        });
-        if (checkData) {
-            return Response.BadRequest(
-                res,
-                {},
-                `Audited data already been uploaded for ${data.financialYear}.`
-            );
-        }
-        console.log('checkData', checkData);
         data.actionTakenBy = ObjectId(user._id);
-        console.log(JSON.stringify(data, 0, 3));
         let ulbUpdateRequest = new XVFCGrantULBData(data);
         /**Now**/
         let query = {};
         req.body['overallReport'] = null;
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
-        query['year'] = ObjectId(data.year);
-        query['design_year'] = (data.design_year);
-
-        let ulbData = await XVFCGrantULBData.findOne({ ulb: query['ulb'], year: query['year'], design_year: query['design_year'] });
+        if (data.design_year) {
+            let design_year = await Year.findOne({ "year": data.design_year })
+            Object.assign(query, { design_year: ObjectId(design_year._id) })
+            req.body['design_year'] = ObjectId(design_year._id);
+        }
+        let ulbData = await XVFCGrantULBData.findOne(query);
         if (ulbData && ulbData.status == 'PENDING') {
             if (ulbData.isCompleted) {
                 return Response.BadRequest(
@@ -266,7 +249,7 @@ module.exports.create = async (req, res) => {
         }
         if (ulbData && ulbData.isCompleted == true) {
             req.body['history'] = [...ulbData.history];
-            ulbData.history = [];
+            ulbData.history = undefined;
             req.body['history'].push(ulbData);
         }
         Service.put(query, req.body, XVFCGrantULBData, async function (
@@ -274,9 +257,7 @@ module.exports.create = async (req, res) => {
             value
         ) {
             if (response) {
-                let ulbData = await XVFCGrantULBData.findOne({
-                    ulb: query['ulb'],
-                });
+                let ulbData = await XVFCGrantULBData.findOne(query);
                 if (ulbData.isCompleted) {
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                         ulbData._id,
@@ -288,29 +269,7 @@ module.exports.create = async (req, res) => {
                 return Response.DbError(res, err, 'Failed to create entry');
             }
         });
-        /****/
 
-        /*** before 
-        ulbUpdateRequest.save(async (err, dt) => {
-            if (err) {
-                if (err.code == 11000) {
-                    return Response.DbError(
-                        res,
-                        err,
-                        `Data for - ${ulb.name}(${ulb.code}) of ${data.financialYear} already been uploaded.`
-                    );
-                } else {
-                    return Response.DbError(res, err, 'Failed to create entry');
-                }
-            } else {
-                // let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
-                //     dt._id,
-                //     'UPLOAD'
-                // );
-                return Response.OK(res, dt, 'Request accepted.');
-            }
-        });
-        */
     } else {
         return Response.BadRequest(
             res,
@@ -319,6 +278,8 @@ module.exports.create = async (req, res) => {
         );
     }
 };
+
+
 module.exports.get = async (req, res) => {
     let user = req.decoded,
         filter = req.body.filter,
@@ -326,6 +287,7 @@ module.exports.get = async (req, res) => {
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+
     if (actionAllowed.indexOf(user.role) > -1) {
         if (req.query._id) {
             try {
@@ -381,7 +343,13 @@ module.exports.get = async (req, res) => {
                 ulbs = [ObjectId(user.ulb)];
             }
             try {
+
                 let query = ulbs ? { ulb: { $in: ulbs } } : {};
+                if (req.body.design_year) {
+                    let design_year = await Year.findOne({ "year": req.body.design_year })
+                    Object.assign(query, { design_year: ObjectId(design_year._id) })
+                }
+
                 let total = undefined;
                 if (filter) {
                     for (key in filter) {
@@ -396,9 +364,11 @@ module.exports.get = async (req, res) => {
                         }
                     }
                 }
+
                 if (!skip) {
                     total = await XVFCGrantULBData.count(query);
                 }
+
                 let data = await XVFCGrantULBData.find(query)
                     .sort(sort ? sort : { modifiedAt: -1 })
                     .skip(skip)
@@ -437,6 +407,7 @@ module.exports.get = async (req, res) => {
                 for (s of data) {
                     s['status'] = getStatus(s);
                 }
+
                 return res.status(200).json({
                     success: true,
                     message: 'data',
@@ -469,6 +440,7 @@ module.exports.get = async (req, res) => {
     }
 };
 module.exports.getAll = async (req, res) => {
+
     try {
         let statusFilter = {
             1: {
@@ -577,10 +549,22 @@ module.exports.getAll = async (req, res) => {
         }
 
         if (actionAllowed.indexOf(user.role) > -1) {
+            let match = {
+                $match: { overallReport: null, isActive: true },
+            };
+
+
+            if (req.body.design_year && req.body.design_year != null) {
+                let design_year = await Year.findOne({ "year": req.body.design_year })
+
+                match = {
+                    $match: { overallReport: null, isActive: true, design_year: ObjectId(design_year._id) },
+                };
+            }
             let q = [
-                {
-                    $match: { overallReport: null, isActive: true },
-                },
+
+                match,
+
                 {
                     $lookup: {
                         from: 'ulbs',
@@ -812,6 +796,7 @@ module.exports.getAll = async (req, res) => {
                     }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
+
                     let arr = await XVFCGrantULBData.aggregate(q).exec();
                     return res.status(200).json({
                         timestamp: moment().unix(),
@@ -1538,6 +1523,22 @@ module.exports.action = async (req, res) => {
     try {
         let user = req.decoded;
         (data = req.body), (_id = ObjectId(req.params._id));
+
+        if (data.design_year === '2021-22') {
+            delete data.waterManagement.houseHoldCoveredPipedSupply['status'];
+            delete data.waterManagement.houseHoldCoveredPipedSupply['rejectReason'];
+            delete data.waterManagement.waterSuppliedPerDay['status'];
+            delete data.waterManagement.waterSuppliedPerDay['rejectReason'];
+            delete data.waterManagement.reduction['status'];
+            delete data.waterManagement.reduction['rejectReason'];
+            delete data.waterManagement.houseHoldCoveredWithSewerage['status'];
+            delete data.waterManagement.houseHoldCoveredWithSewerage['rejectReason'];
+        } else {
+            delete data.waterManagement['status'];
+            delete data.waterManagement['rejectReason'];
+        }
+
+
         let prevState = await XVFCGrantULBData.findOne(
             { _id: _id },
             '-history'
@@ -1545,6 +1546,7 @@ module.exports.action = async (req, res) => {
         let prevUser = await User.findOne({
             _id: ObjectId(prevState.actionTakenBy),
         }).exec();
+
         if (prevState.status == 'APPROVED' && prevUser.role == 'MoHUA') {
             return Response.BadRequest(
                 res,
@@ -1582,6 +1584,7 @@ module.exports.action = async (req, res) => {
             );
         }
         let flag = overAllStatus(data);
+
         flag.then(
             async (value) => {
                 data['status'] = value.status ? 'REJECTED' : 'APPROVED';
@@ -1594,6 +1597,7 @@ module.exports.action = async (req, res) => {
                         let ulb = await Ulb.findOne({
                             _id: ObjectId(data.ulb),
                         }).exec();
+
                         if (
                             !(
                                 ulb &&
@@ -1618,6 +1622,8 @@ module.exports.action = async (req, res) => {
                     data['actionTakenBy'] = user._id;
                     data['ulb'] = prevState.ulb;
                     data['modifiedAt'] = time();
+                    let design_year = await Year.findOne({ "year": data.design_year })
+                    data['design_year'] = ObjectId(design_year._id);
                     let du = await XVFCGrantULBData.update(
                         { _id: ObjectId(prevState._id) },
                         { $set: data, $push: { history: history } }
@@ -1638,6 +1644,7 @@ module.exports.action = async (req, res) => {
                             },
                         ])
                         .exec();
+
 
                     if (data['status'] == 'APPROVED' && user.role == 'MoHUA') {
                         let mailOptions = {
@@ -1796,7 +1803,6 @@ module.exports.action = async (req, res) => {
                             Service.sendEmail(mailOptions);
                         }
                     }
-
                     if (data['status'] == 'REJECTED' && user.role == 'STATE') {
                         let mailOptions = {
                             to: '',
@@ -1861,6 +1867,9 @@ module.exports.action = async (req, res) => {
         });
     } catch (e) {
         console.log('Exception', e);
+        res.json({
+            message: e.message
+        })
     }
 };
 
