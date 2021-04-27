@@ -31,7 +31,6 @@ const PFMSAccountSchema = new Schema(
             }, required: [true, 'ERROR: ANSWER IS MANDATORY']
         },
         history: { type: Array, default: [] },
-        report: { type: String, default: null },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
     },

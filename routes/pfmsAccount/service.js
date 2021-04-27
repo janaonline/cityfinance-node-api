@@ -4,6 +4,41 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Year = require('../../models/Year')
 const User = require('../../models/User')
 
+module.exports.get = catchAsync(async (req, res, next) => {
+    let user = req.decoded
+
+    let { design_year } = req.params;
+    if (!design_year) {
+        return res.status(400).json({
+            success: false,
+            message: 'Design Year Not Found'
+        })
+    }
+    if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: 'User Not Found'
+        })
+    }
+    let pfmsData = await PFMSAccountData.findOne({
+        "ulb": ObjectId(user.ulb),
+        "design_year": ObjectId(design_year)
+    },
+        '-history')
+    if (!pfmsData) {
+        return res.status(500).json({
+            success: false,
+            message: 'No PFMS ACCOUNT Data Found for ' + user.name
+        })
+    } else {
+        return res.status(200).json({
+            success: true,
+            message: 'Data Found Successfully!',
+            response: pfmsData
+        })
+    }
+})
+
 module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
     let user = req.decoded;
     let data = req.body
@@ -19,40 +54,29 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
         data['design_year'] = ObjectId(design_year._id)
         let query = { ulb: ObjectId(user.ulb), design_year: ObjectId(design_year._id) };
         let pfmsAccountData = await PFMSAccountData.findOne(query)
-        if (data.account == 'yes' && data.linked == 'yes') {
-            if (!data.report || data.report == "") {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Must Submit Report (Pdf Format)'
-                })
-            } else if (pfmsAccountData) {
-                req.body['history'] = [...pfmsAccountData.history];
-                pfmsAccountData.history = undefined;
-                req.body['history'].push(pfmsAccountData);
+        if (pfmsAccountData) {
+            req.body['history'] = [...pfmsAccountData.history];
+            pfmsAccountData.history = undefined;
+            req.body['history'].push(pfmsAccountData);
 
-                await PFMSAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
-                    .then(response => {
-                        return res.status(200).json({
-                            success: true,
-                            message: 'PFMS Accounts Data Updated for ' + user.name,
-                            response: response
-                        })
+            await PFMSAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
+                .then(response => {
+                    return res.status(200).json({
+                        success: true,
+                        message: 'PFMS Accounts Data Updated for ' + user.name,
+                        response: response
                     })
-            } else {
-                const pfms_account_data = new PFMSAccountData(data);
-                await pfms_account_data.save();
-                return res.status(200).json({
-                    success: true,
-                    message: 'Report for ' + user.name + ' Successfully Submitted.',
                 })
-            }
-
         } else {
-            return res.status(400).json({
-                success: false,
-                message: 'No Form Submitted by ' + user.name
+            const pfms_account_data = new PFMSAccountData(data);
+            await pfms_account_data.save();
+            return res.status(200).json({
+                success: true,
+                message: 'Report for ' + user.name + ' Successfully Submitted.',
             })
         }
+
+
     }
     else {
         return res.status(400).json({
