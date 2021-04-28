@@ -200,17 +200,6 @@ const time = () => {
     return dt;
 };
 
-const yearFilter = async (res, query, data) => {
-    let design_year = await Year.findOne({ "year": data.design_year })
-    if (design_year) {
-        Object.assign(query, { design_year: ObjectId(design_year._id) })
-    } else {
-        return res.status(400).json({
-            success: false,
-            message: 'Design Year Not Found'
-        })
-    }
-}
 
 module.exports.create = async (req, res) => {
     let user = req.decoded;
@@ -233,9 +222,9 @@ module.exports.create = async (req, res) => {
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
         if (data.design_year) {
-            let design_year = await Year.findOne({ "year": data.design_year })
-            Object.assign(query, { design_year: ObjectId(design_year._id) })
-            req.body['design_year'] = ObjectId(design_year._id);
+            // let design_year = await Year.findOne({ "year": data.design_year })
+            Object.assign(query, { design_year: ObjectId(data.design_year) })
+            // req.body['design_year'] = ObjectId(design_year._id);
         }
         let ulbData = await XVFCGrantULBData.findOne(query);
         if (ulbData && ulbData.status == 'PENDING') {
@@ -346,8 +335,8 @@ module.exports.get = async (req, res) => {
 
                 let query = ulbs ? { ulb: { $in: ulbs } } : {};
                 if (req.body.design_year) {
-                    let design_year = await Year.findOne({ "year": req.body.design_year })
-                    Object.assign(query, { design_year: ObjectId(design_year._id) })
+                    // let design_year = await Year.findOne({ _id: req.body.design_year })
+                    Object.assign(query, { design_year: ObjectId(req.body.design_year) })
                 }
 
                 let total = undefined;
@@ -555,10 +544,9 @@ module.exports.getAll = async (req, res) => {
 
 
             if (req.body.design_year && req.body.design_year != null) {
-                let design_year = await Year.findOne({ "year": req.body.design_year })
-
+                // let design_year = await Year.findOne({ "year": req.body.design_year })
                 match = {
-                    $match: { overallReport: null, isActive: true, design_year: ObjectId(design_year._id) },
+                    $match: { overallReport: null, isActive: true, design_year: ObjectId(req.body.design_year) },
                 };
             }
             let q = [
@@ -1523,8 +1511,8 @@ module.exports.action = async (req, res) => {
     try {
         let user = req.decoded;
         (data = req.body), (_id = ObjectId(req.params._id));
-
-        if (data.design_year === '2021-22') {
+        let design_year = await Year.findOne({ _id: ObjectId(data.design_year) })
+        if (design_year.year === '2021-22') {
             delete data.waterManagement.houseHoldCoveredPipedSupply['status'];
             delete data.waterManagement.houseHoldCoveredPipedSupply['rejectReason'];
             delete data.waterManagement.waterSuppliedPerDay['status'];
@@ -1622,8 +1610,8 @@ module.exports.action = async (req, res) => {
                     data['actionTakenBy'] = user._id;
                     data['ulb'] = prevState.ulb;
                     data['modifiedAt'] = time();
-                    let design_year = await Year.findOne({ "year": data.design_year })
-                    data['design_year'] = ObjectId(design_year._id);
+                    // let design_year = await Year.findOne({ "year": data.design_year })
+                    // data['design_year'] = ObjectId(design_year._id);
                     let du = await XVFCGrantULBData.update(
                         { _id: ObjectId(prevState._id) },
                         { $set: data, $push: { history: history } }
