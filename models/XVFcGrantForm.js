@@ -97,13 +97,16 @@ const waterManagementSchema = new Schema({
 
 
 const waterPotabilityPlanSchema = new Schema({
-    waterPotabilityPlan: {
-        type: {
-            url: { type: String, required: true },
-            name: { type: String, required: true },
+    documents: {
+        waterPotabilityPlan: {
+            type: [{
+                url: { type: String, required: true },
+                name: { type: String, required: true },
+            }],
+            default: null,
         },
-        default: null,
-    },
+    }
+
 });
 
 const solidWasteManagementSchema = new Schema({
