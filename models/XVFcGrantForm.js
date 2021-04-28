@@ -97,18 +97,12 @@ const waterManagementSchema = new Schema({
 
 
 const waterPotabilityPlanSchema = new Schema({
-    documents: {
-        waterPotabilityPlan: {
-            type: [
-                {
-                    url: { type: String, required: true },
-                    name: { type: String, required: true },
-                    status: statusType(),
-                    rejectReason: { type: String, default: '' },
-                },
-            ],
-            default: null,
+    waterPotabilityPlan: {
+        type: {
+            url: { type: String, required: true },
+            name: { type: String, required: true },
         },
+        default: null,
     },
 });
 
