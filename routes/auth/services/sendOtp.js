@@ -61,6 +61,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
                 censusCode: user.censusCode,
+                sbCode: user.sbCode,
                 contactNumber: user.mobile,
                 emailId: user.email,
                 otp: otp,

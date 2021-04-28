@@ -38,8 +38,10 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
     }
     else {
         let email;
-        if (verification.role === 'ULB') {
+        if (verification.role === 'ULB' && verification.censusCode) {
             email = verification.censusCode;
+        } else if (verification.role === 'ULB' && verification.sbCode) {
+            email = verification.sbCode;
         } else {
             email = verification.emailId;
         }
