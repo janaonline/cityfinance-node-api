@@ -164,9 +164,8 @@ const sendAccountReActivationEmail = (user, link, ulbflagForEmail = true) => {
   return {
     subject: `Account Activation Link for City Finance`,
     body: `Dear  ${user.name},<br>
-                    <p>Please follow this link to activate your account ${
-                      user.role !== "USER" ? "and set your password" : ""
-                    }  - <a href="${link}">${link}</a>.</p> 
+                    <p>Please follow this link to activate your account ${user.role !== "USER" ? "and set your password" : ""
+      }  - <a href="${link}">${link}</a>.</p> 
                     <br>
                     <p> After setting your password, please visit <a href="https://www.cityfinance.in ">https://www.cityfinance.in </a> to login using your ${text}.</p>
                     
@@ -264,9 +263,9 @@ const fdUploadUlb = (name) => {
 };
 
 const fdDataUploadUlb = (name, refCode, fy, audited) => {
-    return {
-        subject: `Data Upload Form Successfully Submitted`,
-        body: `Dear ${name},<br xmlns="http://www.w3.org/1999/html">
+  return {
+    subject: `Data Upload Form Successfully Submitted`,
+    body: `Dear ${name},<br xmlns="http://www.w3.org/1999/html">
                         <p>
                             Your data upload form has been successfully submitted with the following details.
                         </p>
@@ -275,9 +274,8 @@ const fdDataUploadUlb = (name, refCode, fy, audited) => {
                             
                             Reference Number - ${refCode} <br>
                             Year - ${fy} <br>
-                            Audit Status - ${
-                                audited ? 'Audited' : 'Unaudited'
-                            }<br>
+                            Audit Status - ${audited ? 'Audited' : 'Unaudited'
+      }<br>
                         </p>
                         <br>
                         <p>
@@ -286,7 +284,7 @@ const fdDataUploadUlb = (name, refCode, fy, audited) => {
                         <br>
                     <br>Regards,<br>
                     City Finance Team`,
-    };
+  };
 };
 
 const fdUploadPartner = (partner, ulb, refCode, fy, audited) => {
@@ -300,9 +298,8 @@ const fdUploadPartner = (partner, ulb, refCode, fy, audited) => {
                         <p>
                             Reference Number - ${refCode} <br>
                             Year - ${fy} <br>
-                            Audit Status - ${
-                              audited ? "Audited" : "Unaudited"
-                            }<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"
+      }<br>
                         </p>
                         <br>
                         <p>
@@ -329,9 +326,9 @@ const fdUploadState = (name, ulbName, refCode, fy, audited) => {
 };
 
 const fdULBDataUploadState = (name, ulbName, refCode, fy, audited) => {
-    return {
-        subject: `Data Upload Form Successfully Submitted - ${ulbName}`,
-        body: `Dear ${name},<br>
+  return {
+    subject: `Data Upload Form Successfully Submitted - ${ulbName}`,
+    body: `Dear ${name},<br>
                         <p>
                             The data for the ${ulbName} has been successfully submitted with the following details.
                         </p>
@@ -339,9 +336,8 @@ const fdULBDataUploadState = (name, ulbName, refCode, fy, audited) => {
                         <p>
                             Reference Number - ${refCode}<br>
                             Year - ${fy}<br>
-                            Audit Status - ${
-                                audited ? 'Audited' : 'Unaudited'
-                            }<br>
+                            Audit Status - ${audited ? 'Audited' : 'Unaudited'
+      }<br>
                         </p>
                         <br>
                         <p>    
@@ -350,7 +346,7 @@ const fdULBDataUploadState = (name, ulbName, refCode, fy, audited) => {
                         <br>
                     <br>Regards,<br>
                     City Finance Team`,
-    };
+  };
 };
 
 const fdUploadApprovalUlb = (name, refCode, fy, audited) => {
@@ -364,9 +360,8 @@ const fdUploadApprovalUlb = (name, refCode, fy, audited) => {
                         <p>
                             Reference Number - ${refCode}<br>
                             Year - ${fy}<br>
-                            Audit Status - ${
-                              audited ? "Audited" : "Unaudited"
-                            }<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"
+      }<br>
                         </p>
                         <br>
                     <br>Regards,<br>
@@ -384,9 +379,8 @@ const fdUploadApprovalState = (name, ulbName, refCode, fy, audited) => {
                         <p>
                             Reference Number - ${refCode}<br>
                             Year - ${fy} <br>
-                            Audit Status - ${
-                              audited ? "Audited" : "Unaudited"
-                            }<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"
+      }<br>
                         </p>
                         <br>
                     <br>Regards,<br>
@@ -435,9 +429,9 @@ const xvUploadApprovalState = (mohuaName, ulbName, stateName) => {
 };
 
 const xvUploadApprovalByStateToUlb = (ulbName) => {
-    return {
-        subject: `15th FC Grant Form Successfully Approved by State`,
-        body: `Dear ${ulbName},<br>
+  return {
+    subject: `15th FC Grant Form Successfully Approved by State`,
+    body: `Dear ${ulbName},<br>
                 <p>
                     The 15<sup>th</sup> FC Grant form data has been approved by state and is due for approval by MoHUA.
                     You will receive a confirmation on approval by MoHUA.
@@ -445,13 +439,13 @@ const xvUploadApprovalByStateToUlb = (ulbName) => {
                 <br>
                 <br>Regards,<br>
                 City Finance Team`,
-    };
+  };
 };
 
 const xvUploadApprovalForState = (ulbName, stateName) => {
-    return {
-        subject: `15th FC Grant Form Successfully Approved by State-${ulbName}`,
-        body: `Dear ${stateName},<br>
+  return {
+    subject: `15th FC Grant Form Successfully Approved by State-${ulbName}`,
+    body: `Dear ${stateName},<br>
                 <p>
                     The 15<sup>th</sup> FC Grant form for the ${ulbName} has been approved by state and is due for approval by MoHUA.
                     You will receive a confirmation on approval by MoHUA.
@@ -459,7 +453,7 @@ const xvUploadApprovalForState = (ulbName, stateName) => {
                 <br>
                 <br>Regards,<br>
                 City Finance Team`,
-    };
+  };
 };
 
 const xvUploadRejectUlb = (ulbName, rejectReason, role) => {
@@ -494,9 +488,9 @@ const xvUploadRejectState = (ulbName, stateName, rejectReason) => {
 };
 
 const xvUploadRejectByStateTrigger = (ulbName, stateName, rejectReason) => {
-    return {
-        subject: `15th FC Grant Form Rejected by State-${ulbName}`,
-        body: `Dear ${stateName},<br>
+  return {
+    subject: `15th FC Grant Form Rejected by State-${ulbName}`,
+    body: `Dear ${stateName},<br>
                 <p>
                     The 15<sup>th</sup> FC Grant form for the ${ulbName} has been rejected by MoHUA with the following details.<br>
                     <strong>Rejected Data:</strong>
@@ -506,7 +500,7 @@ const xvUploadRejectByStateTrigger = (ulbName, stateName, rejectReason) => {
                 <br>
                 <br>Regards,<br>
                 City Finance Team`,
-    };
+  };
 };
 
 const xvUploadMultiRejectUlb = (ulbName, rejectReason, role) => {
@@ -551,9 +545,8 @@ const fdUploadRejectionUlb = (name, refCode, fy, audited, reports) => {
                         <p>
                             Reference Number - ${refCode}<br>
                             Year - ${fy}<br>
-                            Audit Status - ${
-                              audited ? "Audited" : "Unaudited"
-                            }<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"
+      }<br>
                             Rejected Reports:   <br>
                             ${reports}
                             <br>
@@ -582,9 +575,8 @@ const fdUploadRejectionState = (
                         <p>
                             Reference Number - ${refCode}<br>
                             Year - ${fy}<br>
-                            Audit Status - ${
-                              audited ? "Audited" : "Unaudited"
-                            }<br>
+                            Audit Status - ${audited ? "Audited" : "Unaudited"
+      }<br>
                             Rejected Reports:   <br>
                             ${reports}
                         </p>
@@ -759,39 +751,39 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
         html: "",
       };
 
-            if (data && (type == 'UPLOAD' || type == 'ACTION')) {
-                if (type == 'UPLOAD') {
-                    let templateUlb = fdUploadUlb(data.ulbUser.name);
-                    mailOptionUlb.subject = templateUlb.subject;
-                    mailOptionUlb.html = templateUlb.body;
-                    Email(mailOptionUlb);
-                    /*    
-                    let partner = await User.find({
-                        isActive: true,
-                        role: 'PARTNER',
-                        isDeleted : false
-                    }).exec();
+      if (data && (type == 'UPLOAD' || type == 'ACTION')) {
+        if (type == 'UPLOAD') {
+          let templateUlb = fdUploadUlb(data.ulbUser.name);
+          mailOptionUlb.subject = templateUlb.subject;
+          mailOptionUlb.html = templateUlb.body;
+          Email(mailOptionUlb);
+          /*    
+          let partner = await User.find({
+              isActive: true,
+              role: 'PARTNER',
+              isDeleted : false
+          }).exec();
 
-                    if (partner.length >0) {
-                        for (p of partner) {
-                            await sleep(1000);     
-                            let template = fdUploadPartner(
-                                p.name,
-                                data.ulbUser.name,
-                                data.referenceCode,
-                                data.financialYear,
-                                data.audited
-                            );    
+          if (partner.length >0) {
+              for (p of partner) {
+                  await sleep(1000);     
+                  let template = fdUploadPartner(
+                      p.name,
+                      data.ulbUser.name,
+                      data.referenceCode,
+                      data.financialYear,
+                      data.audited
+                  );    
 
-                            let mailOptions = {
-                                to: p.email,
-                                subject: template.subject,
-                                html: template.body
-                            };
-                            Email(mailOptions);
-                        }
-                    }
-                    */
+                  let mailOptions = {
+                      to: p.email,
+                      subject: template.subject,
+                      html: template.body
+                  };
+                  Email(mailOptions);
+              }
+          }
+          */
 
           for (let d of data.stateUser) {
             //data.stateUser.email ? stateEmails.push(data.stateUser.email) : '';
@@ -828,65 +820,65 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
               d.email ? stateEmails.push(d.email) : "";
               d.departmentEmail ? stateEmails.push(d.departmentEmail) : "";
 
-                            let templateState = fdUploadApprovalState(
-                                d.name,
-                                data.ulbUser.name,
-                                data.referenceCode,
-                                data.financialYear,
-                                data.audited
-                            );
-                            mailOptionState.to = stateEmails.join();
-                            mailOptionState.subject = templateState.subject;
-                            mailOptionState.html = templateState.body;
-                            Email(mailOptionState);
-                        }
-                    } else if (data.status == 'REJECTED') {
-                        let reportsStr = ``;
-                        for (let m of data.reports) {
-                            if (m.message) {
-                                reportsStr += `${m.name} : ${m.message} <br>`;
-                            }
-                        }
-                        let templateUlb = fdUploadRejectionUlb(
-                            data.ulbUser.name,
-                            data.referenceCode,
-                            data.financialYear,
-                            data.audited,
-                            reportsStr
-                        );
-                        mailOptionUlb.subject = templateUlb.subject;
-                        mailOptionUlb.html = templateUlb.body;
-                        Email(mailOptionUlb);
-
-                        for (let d of data.stateUser) {
-                            d.email ? stateEmails.push(d.email) : '';
-                            d.departmentEmail
-                                ? stateEmails.push(d.departmentEmail)
-                                : '';
-                            let templateState = fdUploadRejectionState(
-                                d.name,
-                                data.ulbUser.name,
-                                data.referenceCode,
-                                data.financialYear,
-                                data.audited,
-                                reportsStr
-                            );
-                            mailOptionState.to = stateEmails.join();
-                            mailOptionState.subject = templateState.subject;
-                            mailOptionState.html = templateState.body;
-                            Email(mailOptionState);
-                        }
-                    }
-                }
-                resolve('send');
-            } else {
-                reject(`Record not found.`);
+              let templateState = fdUploadApprovalState(
+                d.name,
+                data.ulbUser.name,
+                data.referenceCode,
+                data.financialYear,
+                data.audited
+              );
+              mailOptionState.to = stateEmails.join();
+              mailOptionState.subject = templateState.subject;
+              mailOptionState.html = templateState.body;
+              Email(mailOptionState);
             }
-        } catch (e) {
-            console.error('Exception', e);
-            reject(e);
+          } else if (data.status == 'REJECTED') {
+            let reportsStr = ``;
+            for (let m of data.reports) {
+              if (m.message) {
+                reportsStr += `${m.name} : ${m.message} <br>`;
+              }
+            }
+            let templateUlb = fdUploadRejectionUlb(
+              data.ulbUser.name,
+              data.referenceCode,
+              data.financialYear,
+              data.audited,
+              reportsStr
+            );
+            mailOptionUlb.subject = templateUlb.subject;
+            mailOptionUlb.html = templateUlb.body;
+            Email(mailOptionUlb);
+
+            for (let d of data.stateUser) {
+              d.email ? stateEmails.push(d.email) : '';
+              d.departmentEmail
+                ? stateEmails.push(d.departmentEmail)
+                : '';
+              let templateState = fdUploadRejectionState(
+                d.name,
+                data.ulbUser.name,
+                data.referenceCode,
+                data.financialYear,
+                data.audited,
+                reportsStr
+              );
+              mailOptionState.to = stateEmails.join();
+              mailOptionState.subject = templateState.subject;
+              mailOptionState.html = templateState.body;
+              Email(mailOptionState);
+            }
+          }
         }
-    });
+        resolve('send');
+      } else {
+        reject(`Record not found.`);
+      }
+    } catch (e) {
+      console.error('Exception', e);
+      reject(e);
+    }
+  });
 };
 
 /**
@@ -899,251 +891,251 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
  * @returns {Promise<string>}
  */
 const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
-    return new Promise(async (resolve, reject) => {
-        let query = [
-            { $match: { _id: ObjectId(_id) } },
+  return new Promise(async (resolve, reject) => {
+    let query = [
+      { $match: { _id: ObjectId(_id) } },
+      {
+        $lookup: {
+          from: 'ulbs',
+          localField: 'ulb',
+          foreignField: '_id',
+          as: 'ulb',
+        },
+      },
+      { $unwind: '$ulb' },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'ulb._id',
+          foreignField: 'ulb',
+          as: 'ulbUser',
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { state: '$ulb.state' },
+          pipeline: [
             {
-                $lookup: {
-                    from: 'ulbs',
-                    localField: 'ulb',
-                    foreignField: '_id',
-                    as: 'ulb',
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$role', 'STATE'] },
+                    { $eq: ['$state', '$$state'] },
+                    { $eq: ['$isDeleted', false] },
+                  ],
                 },
-            },
-            { $unwind: '$ulb' },
-            {
-                $lookup: {
-                    from: 'users',
-                    localField: 'ulb._id',
-                    foreignField: 'ulb',
-                    as: 'ulbUser',
-                },
-            },
-            {
-                $lookup: {
-                    from: 'users',
-                    let: { state: '$ulb.state' },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ['$role', 'STATE'] },
-                                        { $eq: ['$state', '$$state'] },
-                                        { $eq: ['$isDeleted', false] },
-                                    ],
-                                },
-                            },
-                        },
-                        {
-                            $project: {
-                                name: 1,
-                                email: 1,
-                                departmentEmail: 1,
-                            },
-                        },
-                    ],
-                    as: 'stateUser',
-                },
+              },
             },
             {
-                $project: {
-                    status: 1,
-                    referenceCode: 1,
-                    audited: 1,
-                    financialYear: 1,
-                    reports: [
-                        {
-                            name: 'Balance Sheet',
-                            message: '$balanceSheet.message',
-                        },
-                        {
-                            name: 'Schedules To Balance Sheet',
-                            message: '$schedulesToBalanceSheet.message',
-                        },
-                        {
-                            name: 'Income And Expenditure',
-                            message: '$incomeAndExpenditure.message',
-                        },
-                        {
-                            name: 'Schedules To Income And Expenditure',
-                            message: '$schedulesToIncomeAndExpenditure.message',
-                        },
-                        {
-                            name: 'Trial Balance',
-                            message: '$trialBalance.message',
-                        },
-                        {
-                            name: 'Audit Report',
-                            message: '$auditReport.message',
-                        },
-                    ],
-                    ulbUser: { $arrayElemAt: ['$ulbUser', 0] },
-                    //stateUser: { $arrayElemAt: ['$stateUser', 0] }
-                    stateUser: 1,
-                },
+              $project: {
+                name: 1,
+                email: 1,
+                departmentEmail: 1,
+              },
+            },
+          ],
+          as: 'stateUser',
+        },
+      },
+      {
+        $project: {
+          status: 1,
+          referenceCode: 1,
+          audited: 1,
+          financialYear: 1,
+          reports: [
+            {
+              name: 'Balance Sheet',
+              message: '$balanceSheet.message',
             },
             {
-                $project: {
-                    status: 1,
-                    referenceCode: 1,
-                    audited: 1,
-                    financialYear: 1,
-                    reports: 1,
-                    ulbUser: {
-                        name: '$ulbUser.name',
-                        commissionerName: '$ulbUser.commissionerName',
-                        commissionerEmail: '$ulbUser.commissionerEmail',
-                        accountantName: '$ulbUser.accountantName',
-                        accountantEmail: '$ulbUser.accountantEmail',
-                    },
-                    // stateUser: {
-                    //     name: '$stateUser.name',
-                    //     email: '$stateUser.email',
-                    //     departmentEmail: '$stateUser.departmentEmail'
-                    // }
-                    stateUser: 1,
-                },
+              name: 'Schedules To Balance Sheet',
+              message: '$schedulesToBalanceSheet.message',
             },
-        ];
+            {
+              name: 'Income And Expenditure',
+              message: '$incomeAndExpenditure.message',
+            },
+            {
+              name: 'Schedules To Income And Expenditure',
+              message: '$schedulesToIncomeAndExpenditure.message',
+            },
+            {
+              name: 'Trial Balance',
+              message: '$trialBalance.message',
+            },
+            {
+              name: 'Audit Report',
+              message: '$auditReport.message',
+            },
+          ],
+          ulbUser: { $arrayElemAt: ['$ulbUser', 0] },
+          //stateUser: { $arrayElemAt: ['$stateUser', 0] }
+          stateUser: 1,
+        },
+      },
+      {
+        $project: {
+          status: 1,
+          referenceCode: 1,
+          audited: 1,
+          financialYear: 1,
+          reports: 1,
+          ulbUser: {
+            name: '$ulbUser.name',
+            commissionerName: '$ulbUser.commissionerName',
+            commissionerEmail: '$ulbUser.commissionerEmail',
+            accountantName: '$ulbUser.accountantName',
+            accountantEmail: '$ulbUser.accountantEmail',
+          },
+          // stateUser: {
+          //     name: '$stateUser.name',
+          //     email: '$stateUser.email',
+          //     departmentEmail: '$stateUser.departmentEmail'
+          // }
+          stateUser: 1,
+        },
+      },
+    ];
 
-        try {
-            let ufd = await UlbFinancialData.aggregate(query).exec();
-            let data = ufd && ufd.length ? ufd[0] : null;
+    try {
+      let ufd = await UlbFinancialData.aggregate(query).exec();
+      let data = ufd && ufd.length ? ufd[0] : null;
 
-            let ulbEmails = [];
-            if (data.ulbUser.commissionerEmail) {
-                ulbEmails.push(data.ulbUser.commissionerEmail);
+      let ulbEmails = [];
+      if (data.ulbUser.commissionerEmail) {
+        ulbEmails.push(data.ulbUser.commissionerEmail);
+      }
+      if (data.ulbUser.accountantEmail) {
+        ulbEmails.push(data.ulbUser.accountantEmail);
+      }
+
+      let stateEmails = [];
+
+      let mailOptionUlb = {
+        to: ulbEmails.join(),
+        subject: '',
+        html: '',
+      };
+      let mailOptionState = {
+        to: '',
+        subject: '',
+        html: '',
+      };
+
+      if (data && (type == 'UPLOAD' || type == 'ACTION')) {
+        if (type == 'UPLOAD') {
+          let templateUlb = fdDataUploadUlb(
+            data.ulbUser.name,
+            data.referenceCode,
+            data.financialYear,
+            data.audited
+          );
+          // console.log(`email to`, mailOptionUlb.to);
+          mailOptionUlb.subject = templateUlb.subject;
+          mailOptionUlb.html = templateUlb.body;
+          Email(mailOptionUlb);
+
+          let partner = await User.find({
+            isActive: true,
+            role: 'PARTNER',
+            isDeleted: false,
+          }).exec();
+
+          if (partner.length > 0) {
+            for (let p of partner) {
+              await sleep(1000);
+              let template = fdUploadPartner(
+                p.name,
+                data.ulbUser.name,
+                data.referenceCode,
+                data.financialYear,
+                data.audited
+              );
+
+              let mailOptions = {
+                to: p.email,
+                subject: template.subject,
+                html: template.body,
+              };
+              // console.log(`email to`, mailOptions.to);
+
+              Email(mailOptions);
             }
-            if (data.ulbUser.accountantEmail) {
-                ulbEmails.push(data.ulbUser.accountantEmail);
+          }
+
+          for (let d of data.stateUser) {
+            if (d.email) {
+              stateEmails.push(d.email);
+            }
+            if (d.departmentEmail) {
+              stateEmails.push(d.departmentEmail);
             }
 
-            let stateEmails = [];
+            let templateState = fdULBDataUploadState(
+              d.name,
+              data.ulbUser.name,
+              data.referenceCode,
+              data.financialYear,
+              data.audited
+            );
 
-            let mailOptionUlb = {
-                to: ulbEmails.join(),
-                subject: '',
-                html: '',
-            };
-            let mailOptionState = {
-                to: '',
-                subject: '',
-                html: '',
-            };
+            mailOptionState.to = stateEmails.join();
+            mailOptionState.subject = templateState.subject;
+            mailOptionState.html = templateState.body;
+            // console.log(`email to`, mailOptionState.to);
 
-            if (data && (type == 'UPLOAD' || type == 'ACTION')) {
-                if (type == 'UPLOAD') {
-                    let templateUlb = fdDataUploadUlb(
-                        data.ulbUser.name,
-                        data.referenceCode,
-                        data.financialYear,
-                        data.audited
-                    );
-                    // console.log(`email to`, mailOptionUlb.to);
-                    mailOptionUlb.subject = templateUlb.subject;
-                    mailOptionUlb.html = templateUlb.body;
-                    Email(mailOptionUlb);
+            Email(mailOptionState);
+          }
+        } else if (type == 'ACTION') {
+          if (data.status == 'APPROVED') {
+            let templateUlb = fdUploadApprovalUlb(
+              data.ulbUser.name,
+              data.referenceCode,
+              data.financialYear,
+              data.audited
+            );
+            mailOptionUlb.subject = templateUlb.subject;
+            mailOptionUlb.html = templateUlb.body;
+            Email(mailOptionUlb);
 
-                    let partner = await User.find({
-                        isActive: true,
-                        role: 'PARTNER',
-                        isDeleted: false,
-                    }).exec();
+            for (let d of data.stateUser) {
+              d.email ? stateEmails.push(d.email) : '';
+              d.departmentEmail
+                ? stateEmails.push(d.departmentEmail)
+                : '';
 
-                    if (partner.length > 0) {
-                        for (let p of partner) {
-                            await sleep(1000);
-                            let template = fdUploadPartner(
-                                p.name,
-                                data.ulbUser.name,
-                                data.referenceCode,
-                                data.financialYear,
-                                data.audited
-                            );
-
-                            let mailOptions = {
-                                to: p.email,
-                                subject: template.subject,
-                                html: template.body,
-                            };
-                            // console.log(`email to`, mailOptions.to);
-
-                            Email(mailOptions);
-                        }
-                    }
-
-                    for (let d of data.stateUser) {
-                        if (d.email) {
-                            stateEmails.push(d.email);
-                        }
-                        if (d.departmentEmail) {
-                            stateEmails.push(d.departmentEmail);
-                        }
-
-                        let templateState = fdULBDataUploadState(
-                            d.name,
-                            data.ulbUser.name,
-                            data.referenceCode,
-                            data.financialYear,
-                            data.audited
-                        );
-
-                        mailOptionState.to = stateEmails.join();
-                        mailOptionState.subject = templateState.subject;
-                        mailOptionState.html = templateState.body;
-                        // console.log(`email to`, mailOptionState.to);
-
-                        Email(mailOptionState);
-                    }
-                } else if (type == 'ACTION') {
-                    if (data.status == 'APPROVED') {
-                        let templateUlb = fdUploadApprovalUlb(
-                            data.ulbUser.name,
-                            data.referenceCode,
-                            data.financialYear,
-                            data.audited
-                        );
-                        mailOptionUlb.subject = templateUlb.subject;
-                        mailOptionUlb.html = templateUlb.body;
-                        Email(mailOptionUlb);
-
-                        for (let d of data.stateUser) {
-                            d.email ? stateEmails.push(d.email) : '';
-                            d.departmentEmail
-                                ? stateEmails.push(d.departmentEmail)
-                                : '';
-
-                            let templateState = fdUploadApprovalState(
-                                d.name,
-                                data.ulbUser.name,
-                                data.referenceCode,
-                                data.financialYear,
-                                data.audited
-                            );
-                            mailOptionState.to = stateEmails.join();
-                            mailOptionState.subject = templateState.subject;
-                            mailOptionState.html = templateState.body;
-                            Email(mailOptionState);
-                        }
-                    } else if (data.status == 'REJECTED') {
-                        let reportsStr = ``;
-                        for (let m of data.reports) {
-                            if (m.message) {
-                                reportsStr += `${m.name} : ${m.message} <br>`;
-                            }
-                        }
-                        // data.reports.map(m=>{ return m.message ? `${m.name} : ${m.message} <br>` : '' });
-                        let templateUlb = fdUploadRejectionUlb(
-                            data.ulbUser.name,
-                            data.referenceCode,
-                            data.financialYear,
-                            data.audited,
-                            reportsStr
-                        );
-                        mailOptionUlb.subject = templateUlb.subject;
-                        mailOptionUlb.html = templateUlb.body;
-                        Email(mailOptionUlb);
+              let templateState = fdUploadApprovalState(
+                d.name,
+                data.ulbUser.name,
+                data.referenceCode,
+                data.financialYear,
+                data.audited
+              );
+              mailOptionState.to = stateEmails.join();
+              mailOptionState.subject = templateState.subject;
+              mailOptionState.html = templateState.body;
+              Email(mailOptionState);
+            }
+          } else if (data.status == 'REJECTED') {
+            let reportsStr = ``;
+            for (let m of data.reports) {
+              if (m.message) {
+                reportsStr += `${m.name} : ${m.message} <br>`;
+              }
+            }
+            // data.reports.map(m=>{ return m.message ? `${m.name} : ${m.message} <br>` : '' });
+            let templateUlb = fdUploadRejectionUlb(
+              data.ulbUser.name,
+              data.referenceCode,
+              data.financialYear,
+              data.audited,
+              reportsStr
+            );
+            mailOptionUlb.subject = templateUlb.subject;
+            mailOptionUlb.html = templateUlb.body;
+            Email(mailOptionUlb);
 
             for (let d of data.stateUser) {
               d.email ? stateEmails.push(d.email) : "";
@@ -1299,7 +1291,7 @@ const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl) => {
       if (userOldInfo.email && userOldInfo.email != userInfo.email) {
         let up = await User.update(
           { _id: userOldInfo._id },
-          { $set: { isEmailVerified: false } }
+          { $set: { isEmailVerified: true } }
         );
         let link = await emailVericationLink(userInfo._id, currentUrl, true);
         let template = userEmailEdit(userInfo.name, link);

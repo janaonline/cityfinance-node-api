@@ -10,7 +10,7 @@ module.exports.emailVerification = async (req, res) => {
         let ud = { isEmailVerified: true };
         if (req.decoded.role == 'USER') {
             if (req.decoded.forgotPassword) {
-                ud['isEmailVerified'] = false;
+                ud['isEmailVerified'] = true;
             }
             ud.isActive = true;
         }
