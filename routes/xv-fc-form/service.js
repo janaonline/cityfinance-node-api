@@ -210,6 +210,17 @@ module.exports.create = async (req, res) => {
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
         }
+        if (data.water_index && (!data.waterPotability.documents.waterPotabilityPlan[0].url || data.waterPotability.documents.waterPotabilityPlan[0].url === "")) {
+            return res.status(400).json({
+                success: false,
+                message: 'Must Submit Water Potability Plan (PDF Format)'
+            })
+        } else if (!data.water_index && (data.waterPotability.documents.waterPotabilityPlan[0].url || data.waterPotability.documents.waterPotabilityPlan[0].url != "")) {
+            return res.status(400).json({
+                success: false,
+                message: 'Water Potability Plan Cannot be Submitted.'
+            })
+        }
 
         data.ulb = user.ulb;
         req.body['createdAt'] = time();
