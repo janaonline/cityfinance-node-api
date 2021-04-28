@@ -210,6 +210,17 @@ module.exports.create = async (req, res) => {
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
         }
+        if (data.water_index && (!data.waterPotability.documents.waterPotabilityPlan[0].url || data.waterPotability.documents.waterPotabilityPlan[0].url === "")) {
+            return res.status(400).json({
+                success: false,
+                message: 'Must Submit Water Potability Plan (PDF Format)'
+            })
+        } else if (!data.water_index && (data.waterPotability.documents.waterPotabilityPlan[0].url || data.waterPotability.documents.waterPotabilityPlan[0].url != "")) {
+            return res.status(400).json({
+                success: false,
+                message: 'Water Potability Plan Cannot be Submitted.'
+            })
+        }
 
         data.ulb = user.ulb;
         req.body['createdAt'] = time();
@@ -221,7 +232,7 @@ module.exports.create = async (req, res) => {
         req.body['overallReport'] = null;
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
-        if (data.design_year) {
+        if (data.design_year && data.design_year != "") {
             // let design_year = await Year.findOne({ "year": data.design_year })
             Object.assign(query, { design_year: ObjectId(data.design_year) })
             // req.body['design_year'] = ObjectId(design_year._id);
@@ -334,7 +345,7 @@ module.exports.get = async (req, res) => {
             try {
 
                 let query = ulbs ? { ulb: { $in: ulbs } } : {};
-                if (req.body.design_year) {
+                if (req.body.design_year && req.body.design_year != "") {
                     // let design_year = await Year.findOne({ _id: req.body.design_year })
                     Object.assign(query, { design_year: ObjectId(req.body.design_year) })
                 }
