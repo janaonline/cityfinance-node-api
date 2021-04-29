@@ -15,7 +15,7 @@ const mappingKeys = {
     bal_sheet_schedules: 'bal_sheet_schedules',
     inc_exp: 'inc_exp',
     inc_exp_schedules: 'inc_exp_schedules',
-    cash_flow_schedules: 'cash_flow_schedules',
+    // cash_flow_schedules: 'cash_flow_schedules',
     cash_flow: 'cash_flow',
     auditor_report: 'auditor_report'
 };
@@ -25,7 +25,7 @@ const provisional_dataKeys = [
     'bal_sheet_schedules',
     'inc_exp',
     'inc_exp_schedules',
-    'cash_flow_schedules',
+    // 'cash_flow_schedules',
     'cash_flow',
     'auditor_report'
 
