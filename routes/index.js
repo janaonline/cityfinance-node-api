@@ -9,6 +9,14 @@ router.use((req, res, next) => {
 const Auth = require("./auth");
 router.use(Auth);
 
+// @Annual accounts
+const AnnualAccountData = require('./annual-accounts');
+router.use("/annual-accounts", AnnualAccountData);
+
+//@PFMS Account
+const PFMSAccountData = require('./pfmsAccount');
+router.use("/pfmsAccount", PFMSAccountData);
+
 // @FinancialYear
 const FinancialYear = require("./financial-year");
 router.use(FinancialYear);
@@ -78,19 +86,19 @@ router.use(Form);
 const Category = require("./category");
 router.use(Category);
 
-// @report
+// // @report
 const UtilizationReport = require("./utilization-report");
 router.use(UtilizationReport);
 
-// @logs
+// // @logs
 const SaveLogs = require("./xvfc-grant-request-logs");
 router.use(SaveLogs);
 
-// @Plans
+// // @Plans
 const plans = require("./xvfc-grant-plans");
 router.use(plans);
 
-//@xvfc form submit
+// // @xvfc form submit
 const submit = require("./xvfc-form-submit");
 router.use(submit);
 

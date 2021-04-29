@@ -44,7 +44,7 @@ const UserSchema = mongoose.Schema({
 	isDeleted: { type: Boolean, default: false },
 	passwordExpires: { type: Number },
 	passwordHistory: { type: Array, default: [] },
-	isRegistered: { type: Boolean, default: false }
-
+	isRegistered: { type: Boolean, default: false },
+	isNodalOfficer: { type: Boolean, default: false }
 });
 module.exports = mongoose.model('User', UserSchema);;
