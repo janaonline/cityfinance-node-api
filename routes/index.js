@@ -9,6 +9,14 @@ router.use((req, res, next) => {
 const Auth = require("./auth");
 router.use(Auth);
 
+// @Annual accounts
+const AnnualAccountData = require('./annual-accounts');
+router.use("/annual-accounts", AnnualAccountData);
+
+//@PFMS Account
+const PFMSAccountData = require('./pfmsAccount');
+router.use("/pfmsAccount", PFMSAccountData);
+
 // @FinancialYear
 const FinancialYear = require("./financial-year");
 router.use(FinancialYear);
@@ -75,24 +83,24 @@ const Form = require("./form");
 router.use(Form);
 
 // @category
-const Category = require("./category");
-router.use(Category);
+// const Category = require("./category");
+// router.use(Category);
 
-// @report
-const UtilizationReport = require("./utilization-report");
-router.use(UtilizationReport);
+// // @report
+// const UtilizationReport = require("./utilization-report");
+// router.use(UtilizationReport);
 
-// @logs
-const SaveLogs = require("./xvfc-grant-request-logs");
-router.use(SaveLogs);
+// // @logs
+// const SaveLogs = require("./xvfc-grant-request-logs");
+// router.use(SaveLogs);
 
-// @Plans
-const plans = require("./xvfc-grant-plans");
-router.use(plans);
+// // @Plans
+// const plans = require("./xvfc-grant-plans");
+// router.use(plans);
 
-//@xvfc form submit
-const submit = require("./xvfc-form-submit");
-router.use(submit);
+// // @xvfc form submit
+// const submit = require("./xvfc-form-submit");
+// router.use(submit);
 
 //@Grant Distribution
 const grantDistribution = require("./grant-distribution");
