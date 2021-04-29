@@ -39,7 +39,7 @@ const UserSchema = mongoose.Schema({
 	status: { type: String, enum: ["PENDING", "APPROVED", "REJECTED", "NA"], default: "NA" },
 	rejectReason: { type: String, default: "" },
 	isActive: { type: Boolean, default: true },
-	isEmailVerified: { type: Boolean, default: false },
+	isEmailVerified: { type: Boolean, default: true },
 	isPasswordResetInProgress: { type: Boolean, default: false }, // It is used to redirection to login page after reset
 	isDeleted: { type: Boolean, default: false },
 	passwordExpires: { type: Number },

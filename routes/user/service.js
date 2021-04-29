@@ -526,7 +526,7 @@ module.exports.create = async (req, res) => {
                 ? (newUser.email = newUser.commissionerEmail)
                 : '';
             newUser.createdBy = user._id;
-            newUser.isEmailVerified = false;
+            newUser.isEmailVerified = true;
             let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE'] } }).exec()
             if (u) {
                 return Response.BadRequest(
