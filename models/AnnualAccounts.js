@@ -100,5 +100,3 @@ AnnualAccountDataSchema.index(
     { unique: true }
 );
 module.exports = mongoose.model('AnnualAccountData', AnnualAccountDataSchema);
-
-

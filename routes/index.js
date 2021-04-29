@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 // @Base Url
 router.use((req, res, next) => {
-    req["currentUrl"] = `${req.protocol + "://" + req.headers.host}`;
-    next();
+  req["currentUrl"] = `${req.protocol + "://" + req.headers.host}`;
+  next();
 });
 // @Auth
 const Auth = require("./auth");
@@ -87,20 +87,20 @@ router.use(Form);
 // router.use(Category);
 
 // // @report
-// const UtilizationReport = require("./utilization-report");
-// router.use(UtilizationReport);
+const UtilizationReport = require("./utilization-report");
+router.use(UtilizationReport);
 
 // // @logs
-// const SaveLogs = require("./xvfc-grant-request-logs");
-// router.use(SaveLogs);
+const SaveLogs = require("./xvfc-grant-request-logs");
+router.use(SaveLogs);
 
 // // @Plans
-// const plans = require("./xvfc-grant-plans");
-// router.use(plans);
+const plans = require("./xvfc-grant-plans");
+router.use(plans);
 
 // // @xvfc form submit
-// const submit = require("./xvfc-form-submit");
-// router.use(submit);
+const submit = require("./xvfc-form-submit");
+router.use(submit);
 
 //@Grant Distribution
 const grantDistribution = require("./grant-distribution");
