@@ -48,11 +48,11 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             message: 'User Not Found',
         })
     }
-    let design_year = await Year.findOne({ "year": data.design_year })
+    // let design_year = await Year.findOne({ "year": data.design_year })
     if (user.role === 'ULB') {
         data['ulb'] = ObjectId(user.ulb)
-        data['design_year'] = ObjectId(design_year._id)
-        let query = { ulb: ObjectId(user.ulb), design_year: ObjectId(design_year._id) };
+        // data['design_year'] = ObjectId(design_year._id)
+        let query = { ulb: ObjectId(user.ulb), design_year: ObjectId(data.design_year) };
         let pfmsAccountData = await PFMSAccountData.findOne(query)
         if (pfmsAccountData) {
             req.body['history'] = [...pfmsAccountData.history];

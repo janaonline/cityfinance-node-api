@@ -78,8 +78,8 @@ module.exports = function (req, res) {
                     let design_year;
                     let query = { url: req.body.alias, financialYear: financialYear };
                     if (data.design_year && data.design_year != "") {
-                        design_year = await Year.findOne({ "year": data.design_year })
-                        Object.assign(query, { design_year: ObjectId(design_year._id) })
+                        // design_year = await Year.findOne({ "year": data.design_year })
+                        Object.assign(query, { design_year: ObjectId(data.design_year) })
                     }
                     if (user.role === 'ULB') {
                         Object.assign(query, { ulb: ObjectId(user.ulb) })
@@ -92,7 +92,7 @@ module.exports = function (req, res) {
                             url: req.body.alias,
                             message: "Data Processing",
                             financialYear: financialYear,
-                            design_year: data.design_year ? ObjectId(design_year._id) : undefined,
+                            design_year: data.design_year ? ObjectId(data.design_year) : undefined,
                             ulb: user.role === 'ULB' ? ObjectId(user.ulb) : undefined
                         });
                         requestLog.save(async (err, data) => {
