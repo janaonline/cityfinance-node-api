@@ -41,15 +41,21 @@ module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
     let design_year = req.query.design_year;
     let year = req.query.year;
-    let Yyear = await Year.findOne({ "year": year })
-    let DYear = await Year.findOne({ "year": design_year })
-    if (!Yyear || !DYear) {
+    // let Yyear = await Year.findOne({ "year": year })
+    // let DYear = await Year.findOne({ "year": design_year })
+    if (!year || !design_year) {
         return res.status(400).json({
             success: false,
-            message: !Year ? 'Year Not Found' : 'Design Year Not Found'
+            message: !year ? 'Year Not Found' : 'Design Year Not Found'
         })
     }
-    let annualAccountData = await AnnualAccountData.findOne({ "ulb": ObjectId(user.ulb), "year": ObjectId(Yyear._id), "design_year": ObjectId(DYear._id) })
+    let annualAccountData = await AnnualAccountData.findOne(
+        {
+            "ulb": ObjectId(user.ulb),
+            "year": ObjectId(year),
+            "design_year": ObjectId(design_year)
+        }
+    )
     if (!annualAccountData) {
         return res.status(400).json({
             success: false,
@@ -93,32 +99,27 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                 message: 'Must Answer the Question before Submit',
             })
         }
-        let design_year = await Year.findOne({ "year": data.design_year })
+        let design_year = await Year.findOne({ _id: ObjectId(data.design_year) })
         if (!design_year) {
             return res.status(400).json({
                 success: false,
                 message: 'Design Year Not Found',
             })
         }
-        let year = await Year.findOne({ "year": data.year })
+        let year = await Year.findOne({ _id: ObjectId(data.year) })
         if (!year) {
             return res.status(400).json({
                 success: false,
                 message: 'Year Not Found',
             })
         }
-        if (data.year === '2019-20') {
-            data.audit_status = 'Audited';
-        } else if (data.year === '2020-21') {
-            data.audit_status = 'Unaudited';
-        }
-        if (data.year === '2019-20' && !data.provisional_data.auditor_report.pdfUrl) {
+        if (year.year === '2019-20' && (!data.provisional_data.auditor_report.pdfUrl || data.provisional_data.auditor_report.pdfUrl == "")) {
             return res.status(400).json({
                 success: false,
                 message: 'Must Submit Auditor Report (PDF Format)',
             })
         }
-        if (data.year != '2019-20' && data.provisional_data.auditor_report.pdfUrl) {
+        if (year.year != '2019-20' && data.provisional_data.auditor_report.pdfUrl) {
             delete data.provisional_data.auditor_report;
         }
 
@@ -132,9 +133,11 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
         else if (data.submit_annual_accounts.answer.toLowerCase() === 'no' && data.submit_standardized_data.answer.toLowerCase() === 'yes') {
             delete data.provisional_data;
         }
-        data.design_year = ObjectId(design_year._id);
-        data.year = ObjectId(year._id);
-        let query = { "ulb": ObjectId(ulb._id), "year": ObjectId(year._id) }
+        let query = {
+            "ulb": ObjectId(ulb._id),
+            "year": ObjectId(data.year),
+            "design_year": ObjectId(data.design_year)
+        }
         let annualAccountData = await AnnualAccountData.findOne(query);
         if (annualAccountData && annualAccountData.isCompleted && annualAccountData.status === 'PENDING') {
             return res.status(400).json({
@@ -201,7 +204,7 @@ module.exports.action = catchAsync(async (req, res, next) => {
         '-history'
     ).lean();
     let accountYear = await Year.findOne({ _id: ObjectId(prevState.year) })
-    console.log(accountYear)
+
     if (accountYear.year != '2019-20') {
         delete data.provisional_data.auditor_report;
     }
@@ -285,9 +288,6 @@ module.exports.action = catchAsync(async (req, res, next) => {
                 data['actionTakenBy'] = user._id;
                 data['ulb'] = prevState.ulb;
                 data['modifiedAt'] = time();
-                let design_year = await Year.findOne({ "year": data.design_year })
-                data['design_year'] = design_year._id;
-
                 let du = await AnnualAccountData.updateOne(
                     { _id: ObjectId(prevState._id) },
                     { $set: data, $push: { history: history } }
