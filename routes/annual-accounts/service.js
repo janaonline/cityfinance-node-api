@@ -110,7 +110,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                 message: 'Year Not Found',
             })
         }
-        if (year.year === '2019-20' && (!data.provisional_data.auditor_report.pdfUrl || data.provisional_data.auditor_report.pdfUrl == "")) {
+        if (year.year === '2019-20' && data.submit_annual_accounts.answer.toLowerCase() === 'yes' && (!data.provisional_data.auditor_report.pdfUrl || data.provisional_data.auditor_report.pdfUrl == "")) {
             return res.status(400).json({
                 success: false,
                 message: 'Must Submit Auditor Report (PDF Format)',
