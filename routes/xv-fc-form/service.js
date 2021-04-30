@@ -205,7 +205,13 @@ module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
     if (user.role == 'ULB') {
-
+        let design_year = data.design_year;
+        if (!design_year) {
+            return res.status(400).json({
+                success: false,
+                message: 'Design Year Not Found!'
+            })
+        }
         let ulb = await Ulb.findOne({ _id: user.ulb }, '_id name code').lean();
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
@@ -232,10 +238,8 @@ module.exports.create = async (req, res) => {
         req.body['overallReport'] = null;
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
-        if (data.design_year && data.design_year != "") {
-            // let design_year = await Year.findOne({ "year": data.design_year })
-            Object.assign(query, { design_year: ObjectId(data.design_year) })
-            // req.body['design_year'] = ObjectId(design_year._id);
+        if (design_year && design_year != "") {
+            Object.assign(query, { design_year: ObjectId(design_year) })
         }
         let ulbData = await XVFCGrantULBData.findOne(query);
         if (ulbData && ulbData.status == 'PENDING') {
@@ -286,12 +290,21 @@ module.exports.get = async (req, res) => {
         sort = req.body.sort,
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
+        design_year = req.query.design_year,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+
+    if (!design_year || design_year === "") {
+        return res.status(400).json({
+            success: false,
+            message: 'Design Year Not Found!'
+        })
+    }
 
     if (actionAllowed.indexOf(user.role) > -1) {
         if (req.query._id) {
             try {
                 let query = { _id: ObjectId(req.query._id) };
+
                 let data = await XVFCGrantULBData.findOne(query)
                     .populate([
                         {
@@ -345,9 +358,8 @@ module.exports.get = async (req, res) => {
             try {
 
                 let query = ulbs ? { ulb: { $in: ulbs } } : {};
-                if (req.body.design_year && req.body.design_year != "") {
-                    // let design_year = await Year.findOne({ _id: req.body.design_year })
-                    Object.assign(query, { design_year: ObjectId(req.body.design_year) })
+                if (design_year && design_year != "") {
+                    Object.assign(query, { design_year: ObjectId(design_year) })
                 }
 
                 let total = undefined;
@@ -486,6 +498,7 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
+        let design_year = req.body.design_year;
         let status = 'PENDING';
         // if(user.role=='ULB'){
         //     status = 'REJECTED'
@@ -554,10 +567,10 @@ module.exports.getAll = async (req, res) => {
             };
 
 
-            if (req.body.design_year && req.body.design_year != null) {
-                // let design_year = await Year.findOne({ "year": req.body.design_year })
+            if (design_year && design_year != null) {
+
                 match = {
-                    $match: { overallReport: null, isActive: true, design_year: ObjectId(req.body.design_year) },
+                    $match: { overallReport: null, isActive: true, design_year: ObjectId(design_year) },
                 };
             }
             let q = [
@@ -1621,8 +1634,6 @@ module.exports.action = async (req, res) => {
                     data['actionTakenBy'] = user._id;
                     data['ulb'] = prevState.ulb;
                     data['modifiedAt'] = time();
-                    // let design_year = await Year.findOne({ "year": data.design_year })
-                    // data['design_year'] = ObjectId(design_year._id);
                     let du = await XVFCGrantULBData.update(
                         { _id: ObjectId(prevState._id) },
                         { $set: data, $push: { history: history } }
