@@ -54,7 +54,8 @@ module.exports.get = catchAsync(async (req, res) => {
             "ulb": ObjectId(user.ulb),
             "year": ObjectId(year),
             "design_year": ObjectId(design_year)
-        }
+        },
+        '-history'
     )
     if (!annualAccountData) {
         return res.status(400).json({
