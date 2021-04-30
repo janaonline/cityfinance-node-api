@@ -54,7 +54,9 @@ const provisionalDataSchema = new Schema({
 
 const standardizedDataSchema = new Schema({
     excelUrl: { type: String },
-    auditor_certificate: { type: String },
+    auditor_certificate: {
+        pdfUrl: { type: String }
+    },
     auditor_registration: { type: String },
 })
 
