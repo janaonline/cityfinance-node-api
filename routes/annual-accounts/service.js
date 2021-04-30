@@ -15,7 +15,6 @@ const mappingKeys = {
     bal_sheet_schedules: 'bal_sheet_schedules',
     inc_exp: 'inc_exp',
     inc_exp_schedules: 'inc_exp_schedules',
-    // cash_flow_schedules: 'cash_flow_schedules',
     cash_flow: 'cash_flow',
     auditor_report: 'auditor_report'
 };
@@ -25,7 +24,6 @@ const provisional_dataKeys = [
     'bal_sheet_schedules',
     'inc_exp',
     'inc_exp_schedules',
-    // 'cash_flow_schedules',
     'cash_flow',
     'auditor_report'
 
@@ -41,8 +39,6 @@ module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
     let design_year = req.query.design_year;
     let year = req.query.year;
-    // let Yyear = await Year.findOne({ "year": year })
-    // let DYear = await Year.findOne({ "year": design_year })
     if (!year || !design_year) {
         return res.status(400).json({
             success: false,
@@ -69,9 +65,9 @@ module.exports.get = catchAsync(async (req, res) => {
             data: annualAccountData
         })
     }
-
-
 })
+
+
 module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
 
     let user = req.decoded;
