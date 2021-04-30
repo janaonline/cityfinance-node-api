@@ -290,7 +290,7 @@ module.exports.get = async (req, res) => {
         sort = req.body.sort,
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
-        design_year = req.query.design_year,
+        design_year = req.body.design_year,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
 
     if (!design_year || design_year === "") {
