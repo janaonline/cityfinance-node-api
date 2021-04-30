@@ -15,7 +15,9 @@ const statusType = () => {
 
 const ContentSchema = new Schema({
     pdfUrl: [{ type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] }],
+    pdfName: [{ type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] }],
     excelUrl: [{ type: String }],
+    excelName: [{ type: String }],
     status: statusType(),
     rejectReason: { type: String, default: '' }
 });
@@ -35,12 +37,11 @@ const YesNoSchema = new Schema({
 
 const ContentPDFSchema = new Schema({
     pdfUrl: [{ type: String }],
+    pdfName: [{ type: String }],
     status: statusType(),
     rejectReason: { type: String, default: '' }
 });
-const ContentEXCELSchema = new Schema({
-    excelUrl: [{ type: String }],
-});
+
 
 const provisionalDataSchema = new Schema({
     bal_sheet: { type: ContentSchema },
@@ -48,14 +49,17 @@ const provisionalDataSchema = new Schema({
     inc_exp: { type: ContentSchema },
     inc_exp_schedules: { type: ContentSchema },
     cash_flow: { type: ContentSchema },
-    // cash_flow_schedules: { type: ContentSchema },
     auditor_report: { type: ContentPDFSchema },
 })
 
 const standardizedDataSchema = new Schema({
-    excelUrl: { type: String },
+    upload: {
+        excelUrl: { type: String },
+        excelName: { type: String }
+    },
     auditor_certificate: {
-        pdfUrl: { type: String }
+        pdfUrl: { type: String },
+        pdfName: { type: String }
     },
     auditor_registration: { type: String },
 })
