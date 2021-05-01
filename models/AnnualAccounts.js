@@ -14,10 +14,10 @@ const statusType = () => {
 };
 
 const ContentSchema = new Schema({
-    pdfUrl: [{ type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] }],
-    pdfName: [{ type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] }],
-    excelUrl: [{ type: String }],
-    excelName: [{ type: String }],
+    pdfUrl: { type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] },
+    pdfName: { type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] },
+    excelUrl: { type: String },
+    excelName: { type: String },
     status: statusType(),
     rejectReason: { type: String, default: '' }
 });

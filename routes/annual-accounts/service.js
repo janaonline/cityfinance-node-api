@@ -116,7 +116,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                 message: 'Must Submit Auditor Report (PDF Format)',
             })
         }
-        if (year.year != '2019-20' && data.provisional_data.auditor_report.pdfUrl) {
+        if (year.year != '2019-20' && data.provisional_data?.auditor_report?.pdfUrl) {
             delete data.provisional_data.auditor_report;
         }
 
