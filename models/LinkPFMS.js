@@ -33,6 +33,7 @@ const PFMSAccountSchema = new Schema(
         history: { type: Array, default: [] },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
+        isDraft: { type: Boolean, default: true }
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
