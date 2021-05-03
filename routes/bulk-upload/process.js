@@ -275,7 +275,7 @@ module.exports = function (req, res) {
 
 
         } else {
-            console.log('entered new if')
+            console.log('entered old if')
             return new Promise(async (resolve, reject) => {
                 let exceltojson;
                 try {
