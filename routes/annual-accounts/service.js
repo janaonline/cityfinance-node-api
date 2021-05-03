@@ -39,16 +39,15 @@ module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
     let design_year = req.query.design_year;
     let year = req.query.year;
-    if (!year || !design_year) {
+    if (!design_year) {
         return res.status(400).json({
             success: false,
-            message: !year ? 'Year Not Found' : 'Design Year Not Found'
+            message: 'Design Year Not Found'
         })
     }
     let annualAccountData = await AnnualAccountData.findOne(
         {
             "ulb": ObjectId(user.ulb),
-            "year": ObjectId(year),
             "design_year": ObjectId(design_year)
         },
         '-history'
@@ -90,12 +89,12 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
         data['modifiedAt'] = time();
         data['actionTakenBy'] = ObjectId(user._id);
         data['ulb'] = ObjectId(ulb._id);
-        if (!data.submit_annual_accounts.answer || !data.submit_standardized_data.answer) {
-            return res.status(400).json({
-                success: false,
-                message: 'Must Answer the Question before Submit',
-            })
-        }
+        // if (!data.submit_annual_accounts.answer || !data.submit_standardized_data.answer) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Must Answer the Question before Submit',
+        //     })
+        // }
         let design_year = await Year.findOne({ _id: ObjectId(data.design_year) })
         if (!design_year) {
             return res.status(400).json({
@@ -110,12 +109,12 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                 message: 'Year Not Found',
             })
         }
-        if (year.year === '2019-20' && data.submit_annual_accounts.answer.toLowerCase() === 'yes' && (!data.provisional_data.auditor_report.pdfUrl || data.provisional_data.auditor_report.pdfUrl == "")) {
-            return res.status(400).json({
-                success: false,
-                message: 'Must Submit Auditor Report (PDF Format)',
-            })
-        }
+        // if (year.year === '2019-20' && data.submit_annual_accounts.answer.toLowerCase() === 'yes' && (!data.provisional_data.auditor_report.pdfUrl || data.provisional_data.auditor_report.pdfUrl == "")) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Must Submit Auditor Report (PDF Format)',
+        //     })
+        // }
         if (year.year != '2019-20' && data.provisional_data?.auditor_report?.pdfUrl) {
             delete data.provisional_data.auditor_report;
         }
@@ -136,13 +135,24 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             "design_year": ObjectId(data.design_year)
         }
         let annualAccountData = await AnnualAccountData.findOne(query);
-        if (annualAccountData && annualAccountData.isCompleted && annualAccountData.status === 'PENDING') {
-            return res.status(400).json({
-                success: false,
-                message: 'Data Already Submitted for ' + user.name + '. You can re-submit the data after Action is taken by State Govt and MoHUA'
-            })
-        }
-        if (annualAccountData && annualAccountData.isCompleted && annualAccountData.status != 'PENDING') {
+        if (annualAccountData && annualAccountData.status === 'PENDING') {
+            await AnnualAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
+                .then((response) => {
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Annual Accounts Data Updated for ' + user.name,
+                        response: response
+                    })
+                })
+                .catch(e => {
+                    console.log(`Error - ${e}`);
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Failed to Update Annual Accounts Data for ' + user.name,
+                        error: e.message
+                    })
+                })
+        } else if (annualAccountData && annualAccountData.status != 'PENDING') {
             req.body['history'] = [...annualAccountData.history];
             annualAccountData.history = undefined;
             req.body['history'].push(annualAccountData);
@@ -165,12 +175,12 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                 })
 
         }
-        else if (annualAccountData && !annualAccountData.isCompleted) {
-            return res.status(400).json({
-                success: false,
-                message: 'Action Not Allowed. Data is in Draft Mode.',
-            })
-        }
+        // else if (annualAccountData && !annualAccountData.isCompleted) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Action Not Allowed. Data is in Draft Mode.',
+        //     })
+        // }
         else {
             data['status'] = 'PENDING';
             const annual_account_data = new AnnualAccountData(data);
