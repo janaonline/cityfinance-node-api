@@ -187,25 +187,20 @@ module.exports = function (req, res) {
                 }
                 delete du.update._id;
                 delete du.update.__v;
-                console.log('just before ledger log')
+
                 // insert the oviewViewSheet content in ledger logs
                 let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
-                console.log(ud)
-                console.log('after ledger log update command')
                 // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
                 let inputDataArr = await validateData(dataSheet, objOfSheet, balanceSheet, design_year, user); //  return line item data array
                 let responseArr = [];
-                console.log(inputDataArr)
                 let aborted = false;
                 for (let el of inputDataArr) {
                     let options = el.options;//Object.assign(el.options,{session:session});
                     try {
                         let result = await UlbLedger.findOneAndUpdate(el.query, el.update, options);
                         responseArr.push(result);
-
                         // Update in the request log collection, the current status of file
                         await updateLog(reqId, { message: `Status: (${responseArr.length}/${inputDataArr.length}) processed`, completed: 0 });
-
                         continue;
                     } catch (e) {
 
@@ -402,7 +397,6 @@ module.exports = function (req, res) {
             let errors = [];
 
             let d = Object.keys(data[0]);
-            console.log(d)
             var filtered = d.filter(function (el) { return el; });
             if (filtered.length != inputHeader.length) {
                 console.log("===>Input sheet header is missing");
@@ -442,7 +436,7 @@ module.exports = function (req, res) {
                 console.log("validateData: message", message)
                 reject({ message: message });
             } else {
-                console.log('balane sheet was valid')
+
                 let lineItemCodes = Object.keys(inputSheetObj);
                 for (let el of lineItemCodes) {
                     // Validate each line Item, whether applicable or not
@@ -460,10 +454,8 @@ module.exports = function (req, res) {
                     console.log("validateData: errors.length", errors)
                     reject({ message: errors.join(","), errMessage: "" })
                 } else {
-                    console.log('this is last else')
                     Object.assign(objOfSheet, { ledger: JSON.parse(JSON.stringify(inputSheetObj)) });
                     let dataArr = [];
-                    console.log(objOfSheet)
                     for (let el of Object.keys(objOfSheet.ledger)) {
                         let query = {
                             ulb: objOfSheet._id,
