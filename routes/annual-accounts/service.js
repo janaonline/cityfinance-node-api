@@ -141,6 +141,8 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                     return res.status(200).json({
                         success: true,
                         message: 'Annual Accounts Data Updated for ' + user.name,
+                        year: year.year,
+                        design_year: design_year.year,
                         response: response
                     })
                 })
@@ -149,6 +151,8 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                     return res.status(400).json({
                         success: false,
                         message: 'Failed to Update Annual Accounts Data for ' + user.name,
+                        year: year.year,
+                        design_year: design_year.year,
                         error: e.message
                     })
                 })
@@ -162,6 +166,8 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                     return res.status(200).json({
                         success: true,
                         message: 'Annual Accounts Data Updated for ' + user.name,
+                        year: year.year,
+                        design_year: design_year.year,
                         response: response
                     })
                 })
@@ -170,6 +176,8 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
                     return res.status(400).json({
                         success: false,
                         message: 'Failed to Update Annual Accounts Data for ' + user.name,
+                        year: year.year,
+                        design_year: design_year.year,
                         error: e.message
                     })
                 })
@@ -188,6 +196,8 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             return res.status(200).json({
                 success: true,
                 message: 'Annual Accounts for ' + user.name + ' Successfully Submitted. ',
+                year: year.year,
+                design_year: design_year.year
             })
         }
 
