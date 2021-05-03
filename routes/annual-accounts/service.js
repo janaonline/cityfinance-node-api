@@ -119,14 +119,14 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             delete data.provisional_data.auditor_report;
         }
 
-        if (data.submit_annual_accounts.answer.toLowerCase() === 'no' && data.submit_standardized_data.answer.toLowerCase() === 'no') {
+        if (data.submit_annual_accounts.answer === 'No' && data.submit_standardized_data.answer === 'No') {
             delete data.provisional_data;
             delete data.standardized_data;
         }
-        else if (data.submit_annual_accounts.answer.toLowerCase() === 'yes' && data.submit_standardized_data.answer.toLowerCase() === 'no') {
+        else if (data.submit_annual_accounts.answer === 'Yes' && data.submit_standardized_data.answer === 'No') {
             delete data.standardized_data;
         }
-        else if (data.submit_annual_accounts.answer.toLowerCase() === 'no' && data.submit_standardized_data.answer.toLowerCase() === 'yes') {
+        else if (data.submit_annual_accounts.answer === 'No' && data.submit_standardized_data.answer === 'Yes') {
             delete data.provisional_data;
         }
         let query = {
