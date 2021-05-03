@@ -80,7 +80,10 @@ module.exports = function (req, res) {
                     if (data.design_year && data.design_year != "" && user.role === 'ULB') {
                         design_year = data.design_year;
                         Object.assign(query,
-                            { design_year: ObjectId(design_year), ulb: ObjectId(user.ulb) }
+                            {
+                                design_year: ObjectId(design_year),
+                                ulb: ObjectId(user.ulb)
+                            }
                         )
                     }
                     // console.log(query)
@@ -105,7 +108,7 @@ module.exports = function (req, res) {
                             } else {
                                 try {
 
-                                    processData(file, financialYear, data._id, balanceSheet, design_year, user.role);
+                                    processData(file, financialYear, data._id, balanceSheet, design_year, user);
                                     return res.status(200).json({
                                         timestamp: moment().unix(),
                                         success: true,
@@ -142,33 +145,41 @@ module.exports = function (req, res) {
         })
 
     }
-    async function processData(reqFile, financialYear, reqId, balanceSheet, design_year, role) {
+    async function processData(reqFile, financialYear, reqId, balanceSheet, design_year, user) {
         try {
             try {
 
                 // extract the overviewSheet and dataSheet
-                let { overviewSheet, dataSheet } = await readXlsxFile(reqFile);
+                let { overviewSheet, dataSheet } = await readXlsxFile(reqFile, design_year, user.role);
+
                 // validate overview sheet 
-                console.log('overviewsheet and data sheet read')
-                //console.log(dataSheet);return;    
-                // console.log(overviewSheet, dataSheet)
-                let objOfSheet = await validateOverview(overviewSheet, financialYear); // rejection in case of error
 
-                console.log('came out of overviewvalidation function')
-                delete objOfSheet['state'];
-                objOfSheet['state'] = objOfSheet.state_name;
-                // console.log(objOfSheet);
-                let query = {
-                    ulb_code_year: objOfSheet.ulb_code_year
+                let objOfSheet
+                if (overviewSheet != null) {
+                    objOfSheet = await validateOverview(overviewSheet, financialYear); // rejection in case of error
+                } else if (overviewSheet == null) {
+                    objOfSheet = {
+                        ulb_id: ObjectId(user.ulb),
+                        financialYear: (financialYear)
+                    }
                 }
+                let query;
+                if (user.role != 'ULB' && !design_year) {
+                    delete objOfSheet['state'];
+                    objOfSheet['state'] = objOfSheet.state_name;
+                    query = {
+                        ulb_code_year: objOfSheet.ulb_code_year
+                    }
 
-                if (role === 'ULB' && design_year) {
+                } else if (user.role === 'ULB' && design_year) {
+                    query = {
+                        ulb_id: ObjectId(user.ulb),
+                        financialYear: (financialYear)
+                    }
                     Object.assign(objOfSheet, { design_year: ObjectId(design_year) })
-                    Object.assign(query, { design_year: design_year })
+                    Object.assign(query, { design_year: ObjectId(design_year) })
                 }
 
-                console.log(objOfSheet);
-                console.log(query);
                 let du = {
                     query,
                     update: Object.assign({ lastModifiedAt: new Date() }, objOfSheet),
@@ -182,7 +193,7 @@ module.exports = function (req, res) {
                 console.log(ud)
                 console.log('after ledger log update command')
                 // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
-                let inputDataArr = await validateData(dataSheet, objOfSheet, balanceSheet, design_year); //  return line item data array
+                let inputDataArr = await validateData(dataSheet, objOfSheet, balanceSheet, design_year, user); //  return line item data array
                 let responseArr = [];
                 console.log(inputDataArr)
                 let aborted = false;
@@ -224,61 +235,107 @@ module.exports = function (req, res) {
             await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
         }
     }
-    async function readXlsxFile(file) {
+    async function readXlsxFile(file, design_year, role) {
+        if (role === 'ULB' && design_year) {
+            console.log('entered new if')
+            return new Promise(async (resolve, reject) => {
+                let exceltojson;
+                try {
+                    let fileInfo = file.path.split('.');
+                    exceltojson = fileInfo && fileInfo.length > 0 && fileInfo[(fileInfo.length - 1)] == 'xlsx' ? xlsxtojson : xlstojson;
 
-        return new Promise(async (resolve, reject) => {
-            let exceltojson;
-            try {
-                let fileInfo = file.path.split('.');
-                exceltojson = fileInfo && fileInfo.length > 0 && fileInfo[(fileInfo.length - 1)] == 'xlsx' ? xlsxtojson : xlstojson;
-                let prms1 = new Promise((rslv, rjct) => {
-                    exceltojson({
-                        input: file.path,
-                        output: null, //since we don't need output.json
-                        lowerCaseHeaders: true,
-                        sheet: CONSTANTS.LEDGER.BULK_ENTRY.OVERVIEW_SHEET_NAME,
-                    }, function (err, sheet) {
-                        if (err) {
-                            rjct({ message: "Error: OVERVIEW_SHEET_NAME" })
+                    let prms2 = new Promise((rslv, rjct) => {
+                        exceltojson({
+                            input: file.path,
+                            output: null, //since we don't need output.json
+                            lowerCaseHeaders: true,
+                            sheet: CONSTANTS.LEDGER.BULK_ENTRY.INPUT_SHEET_NAME,
+                        }, function (err, sheet) {
+                            if (err) {
+                                rjct({ message: "Error: INPUT_SHEET_NAME" })
+                            } else {
+                                rslv(sheet)
+                            }
+                        })
+                    })
+                    Promise.all([prms2]).then(sheet => {
+                        let dataSheet = sheet[0];
+                        let overviewSheet = null;
+                        if (dataSheet) {
+                            resolve({ overviewSheet, dataSheet });
                         } else {
-                            rslv(sheet)
+                            console.log("readXlsxFile: sheet count")
+                            reject({ message: "Two sheet is required in the file." });
+                        }
+                    }, e => {
+                        reject(e);
+                    }).catch(e => {
+                        reject(e);
+                    })
+                } catch (e) {
+                    console.log("readXlsxFile: Exception", e)
+                    reject({ message: "Caught Exception while reading file.", errMessage: e.message });
+                }
+            });
 
-                        }
+
+        } else {
+            console.log('entered new if')
+            return new Promise(async (resolve, reject) => {
+                let exceltojson;
+                try {
+                    let fileInfo = file.path.split('.');
+                    exceltojson = fileInfo && fileInfo.length > 0 && fileInfo[(fileInfo.length - 1)] == 'xlsx' ? xlsxtojson : xlstojson;
+                    let prms1 = new Promise((rslv, rjct) => {
+                        exceltojson({
+                            input: file.path,
+                            output: null, //since we don't need output.json
+                            lowerCaseHeaders: true,
+                            sheet: CONSTANTS.LEDGER.BULK_ENTRY.OVERVIEW_SHEET_NAME,
+                        }, function (err, sheet) {
+                            if (err) {
+                                rjct({ message: "Error: OVERVIEW_SHEET_NAME" })
+                            } else {
+                                rslv(sheet)
+
+                            }
+                        })
                     })
-                })
-                let prms2 = new Promise((rslv, rjct) => {
-                    exceltojson({
-                        input: file.path,
-                        output: null, //since we don't need output.json
-                        lowerCaseHeaders: true,
-                        sheet: CONSTANTS.LEDGER.BULK_ENTRY.INPUT_SHEET_NAME,
-                    }, function (err, sheet) {
-                        if (err) {
-                            rjct({ message: "Error: INPUT_SHEET_NAME" })
+                    let prms2 = new Promise((rslv, rjct) => {
+                        exceltojson({
+                            input: file.path,
+                            output: null, //since we don't need output.json
+                            lowerCaseHeaders: true,
+                            sheet: CONSTANTS.LEDGER.BULK_ENTRY.INPUT_SHEET_NAME,
+                        }, function (err, sheet) {
+                            if (err) {
+                                rjct({ message: "Error: INPUT_SHEET_NAME" })
+                            } else {
+                                rslv(sheet)
+                            }
+                        })
+                    })
+                    Promise.all([prms1, prms2]).then(sheets => {
+                        let overviewSheet = sheets[0];
+                        let dataSheet = sheets[1];
+                        if (overviewSheet && dataSheet) {
+                            resolve({ overviewSheet, dataSheet });
                         } else {
-                            rslv(sheet)
+                            console.log("readXlsxFile: sheet count")
+                            reject({ message: "Two sheet is required in the file." });
                         }
+                    }, e => {
+                        reject(e);
+                    }).catch(e => {
+                        reject(e);
                     })
-                })
-                Promise.all([prms1, prms2]).then(sheets => {
-                    let overviewSheet = sheets[0];
-                    let dataSheet = sheets[1];
-                    if (overviewSheet && dataSheet) {
-                        resolve({ overviewSheet, dataSheet });
-                    } else {
-                        console.log("readXlsxFile: sheet count")
-                        reject({ message: "Two sheet is required in the file." });
-                    }
-                }, e => {
-                    reject(e);
-                }).catch(e => {
-                    reject(e);
-                })
-            } catch (e) {
-                console.log("readXlsxFile: Exception", e)
-                reject({ message: "Caught Exception while reading file.", errMessage: e.message });
-            }
-        });
+                } catch (e) {
+                    console.log("readXlsxFile: Exception", e)
+                    reject({ message: "Caught Exception while reading file.", errMessage: e.message });
+                }
+            });
+        }
+
     }
     async function validateOverview(data, financialYear) {
         return new Promise(async (resolve, reject) => {
@@ -339,7 +396,7 @@ module.exports = function (req, res) {
             }
         });
     }
-    async function validateData(data, objOfSheet, balanceSheet, design_year) {
+    async function validateData(data, objOfSheet, balanceSheet, design_year, user) {
         return new Promise(async (resolve, reject) => {
             let inputSheetObj = {}
             let errors = [];
@@ -406,18 +463,25 @@ module.exports = function (req, res) {
                     console.log('this is last else')
                     Object.assign(objOfSheet, { ledger: JSON.parse(JSON.stringify(inputSheetObj)) });
                     let dataArr = [];
+                    console.log(objOfSheet)
                     for (let el of Object.keys(objOfSheet.ledger)) {
                         let query = {
                             ulb: objOfSheet._id,
                             lineItem: el,
                             financialYear: financialYear
                         };
-                        if (design_year) {
-                            Object.assign(query, { design_year: ObjectId(design_year) })
+                        if (design_year && user.role === 'ULB') {
+                            query = {
+                                ulb: ObjectId(user.ulb),
+                                lineItem: el,
+                                financialYear: financialYear,
+                                design_year: ObjectId(design_year)
+                            }
+
                         }
                         dataArr.push({
-                            query
-                            , update: {
+                            query,
+                            update: {
                                 amount: objOfSheet.ledger[el]
                             }, options: {
                                 upsert: true,

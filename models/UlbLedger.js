@@ -16,6 +16,7 @@ LedgerSchema.index(
         ulb: 1,
         financialYear: 1,
         lineItem: 1,
+        design_year: 1
     },
     {
         unique: true
