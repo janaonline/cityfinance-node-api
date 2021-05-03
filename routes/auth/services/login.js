@@ -3,6 +3,7 @@ const User = require('../../../models/User');
 const Service = require('../../../service');
 const { createToken } = require('./createToken')
 const { getUSer } = require('./getUser')
+const Years =  require('../../../models/Year')
 
 module.exports.login = async (req, res) => {
     /**Conditional Query For CensusCode/ULB Code **/
@@ -16,6 +17,7 @@ module.exports.login = async (req, res) => {
         );
         if (isMatch) {
             let token = await createToken(user, sessionId);
+            let allYears = await Years.find()
             return res.status(200).json({
                 success: true,
                 message: ``,
@@ -27,7 +29,8 @@ module.exports.login = async (req, res) => {
                     role: user.role,
                     state: user.state,
                     ulb: user.ulb,
-                }
+                },
+                allYears
             })
         } else {
             let update = Service.incLoginAttempts(user);
