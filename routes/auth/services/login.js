@@ -17,7 +17,7 @@ module.exports.login = async (req, res) => {
         );
         if (isMatch) {
             let token = await createToken(user, sessionId);
-            let allYears = await Years.find()
+            const allYears = await getYears()
             return res.status(200).json({
                 success: true,
                 message: ``,
@@ -50,3 +50,12 @@ module.exports.login = async (req, res) => {
         })
     }
 };
+
+getYears = async () =>{
+    let allYears = await Years.find({isActive:true}).select({isActive:0})
+    newObj = {}
+    allYears.forEach(element => {
+        newObj[element.year] = element._id   
+    });
+    return newObj
+}
