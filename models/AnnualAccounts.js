@@ -14,10 +14,10 @@ const statusType = () => {
 };
 
 const ContentSchema = new Schema({
-    pdfUrl: [{ type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] }],
-    pdfName: [{ type: String, required: [true, 'ERROR: PDF MUST BE SUBMITTED'] }],
-    excelUrl: [{ type: String }],
-    excelName: [{ type: String }],
+    pdfUrl: { type: String },
+    pdfName: { type: String },
+    excelUrl: { type: String },
+    excelName: { type: String },
     status: statusType(),
     rejectReason: { type: String, default: '' }
 });
@@ -27,10 +27,9 @@ const YesNoSchema = new Schema({
         type: String,
         lowercase: true,
         enum: {
-            values: ['yes', 'no'],
+            values: ['yes', 'no', null],
             message: 'ERROR: ANSWER CAN BE EITHER YES / NO.'
         },
-        required: [true, 'ERROR: ANSWER IS MANDATORY']
     }
 
 });
@@ -76,7 +75,6 @@ const AnnualAccountDataSchema = new Schema(
                 values: ['Audited', 'Unaudited'],
                 message: "ERROR: AUDIT STATUS CAN BE EITHER 'Audited' or 'Unaudited' "
             },
-            required: true
         },
         status: {
             type: String, enum: {
@@ -102,7 +100,7 @@ const AnnualAccountDataSchema = new Schema(
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
 AnnualAccountDataSchema.index(
-    { ulb: 1, year: 1 },
+    { ulb: 1, design_year: 1, year: 1 },
     { unique: true }
 );
 module.exports = mongoose.model('AnnualAccountData', AnnualAccountDataSchema);
