@@ -20,13 +20,13 @@ const PFMSAccountSchema = new Schema(
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
         account: {
             type: String, enum: {
-                values: ['yes', 'no', null],
+                values: ['yes', 'no', null, ""],
                 message: 'ERROR: ANSWER CAN BE EITHER YES / NO.'
             }
         },
         linked: {
             type: String, enum: {
-                values: ['yes', 'no', null],
+                values: ['yes', 'no', null, ""],
                 message: 'ERROR: ANSWER CAN BE EITHER YES / NO.'
             }
         },
