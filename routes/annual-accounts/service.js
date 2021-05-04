@@ -45,7 +45,7 @@ module.exports.get = catchAsync(async (req, res) => {
             message: 'Design Year Not Found'
         })
     }
-    let annualAccountData = await AnnualAccountData.findOne(
+    let annualAccountData = await AnnualAccountData.find(
         {
             "ulb": ObjectId(user.ulb),
             "design_year": ObjectId(design_year)
