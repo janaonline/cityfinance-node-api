@@ -6,16 +6,19 @@ const Response = require("../../service").response;
 exports.savePlans = async (req, res) => {
   let { designYear, isDraft } = req.body;
   req.body.actionTakenBy = req?.decoded._id;
-  req.body.ulb = req?.decoded._id;
-  const ulb = req?.decoded._id;
+  req.body.ulb = req?.decoded.ulb;
+  const ulb = req?.decoded.ulb;
   try {
-    await Plans.findOneAndUpdate({ ulb: ObjectId(ulb), designYear }, req.body, {
+    let plans = await Plans.findOneAndUpdate({ ulb: ObjectId(ulb), designYear: ObjectId(designYear) }, req.body, {
       upsert: true,
       new: true,
       setDefaultsOnInsert: true,
     });
     if (!isDraft) await UpdateMasterSubmitForm(req, "plans");
-    return res.status(200).json({ msg: "Plans Submitted!" });
+    return res.status(200).json({
+      msg: "Plans Submitted!",
+      isCompleted: !plans.isDraft
+    });
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
@@ -24,7 +27,7 @@ exports.savePlans = async (req, res) => {
 
 exports.getPlans = async (req, res) => {
   const { designYear } = req.params;
-  const ulb = req?.decoded?._id;
+  const ulb = req?.decoded?.ulb;
   try {
     const plan = await Plans.findOne({
       ulb: ObjectId(ulb),

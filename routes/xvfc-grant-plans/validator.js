@@ -5,13 +5,13 @@ exports.planCreateValidator = [
   check("plans.water.url")
     .not()
     .isEmpty()
-    .withMessage("water Plan is required")
     .isURL()
+    .withMessage("water Plan is required")
     .withMessage("Water Plan is required as URL"),
   check("plans.sanitation.url")
     .not()
     .isEmpty()
-    .withMessage("Sanitation plan is required")
     .isURL()
+    .withMessage("Sanitation plan is required")
     .withMessage("Sanitation Plan is required as URL"),
 ];

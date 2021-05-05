@@ -58,22 +58,38 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             req.body['history'] = [...pfmsAccountData.history];
             pfmsAccountData.history = undefined;
             req.body['history'].push(pfmsAccountData);
-
-            await PFMSAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
-                .then(response => {
-                    return res.status(200).json({
-                        success: true,
-                        message: 'PFMS Accounts Data Updated for ' + user.name,
-                        response: response
-                    })
+            let updatedData = await PFMSAccountData.findOneAndUpdate(query, data, { new: true, runValidators: true, setDefaultsOnInsert: true })
+            if (updatedData) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'PFMS Accounts Data Updated for ' + user.name,
+                    isCompleted: !updatedData.isDraft
                 })
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Failed to Update PFMS Account Data for ' + user.name,
+                })
+            }
+
+
         } else {
             const pfms_account_data = new PFMSAccountData(data);
-            await pfms_account_data.save();
-            return res.status(200).json({
-                success: true,
-                message: 'Report for ' + user.name + ' Successfully Submitted.',
-            })
+            let savedData = await pfms_account_data.save();
+
+            if (savedData) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Report for ' + user.name + ' Successfully Submitted.',
+                    isCompleted: !savedData.isDraft
+                })
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Failed to Submit PFMS Account Data for ' + user.name,
+                })
+            }
+
         }
 
 

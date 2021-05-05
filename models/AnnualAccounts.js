@@ -27,9 +27,10 @@ const YesNoSchema = new Schema({
         type: String,
         lowercase: true,
         enum: {
-            values: ['yes', 'no', null],
+            values: ['yes', 'no', null, ""],
             message: 'ERROR: ANSWER CAN BE EITHER YES / NO.'
         },
+        default: null
     }
 
 });

@@ -10,26 +10,37 @@ const {
 } = require("../../service");
 
 module.exports.createOrUpdate = async (req, res) => {
-  const { financialYear, isDraft } = req.body;
-  const ulb = req.decoded?._id;
+  const { financialYear, isDraft, designYear } = req.body;
+  const ulb = req.decoded?.ulb;
   req.body.ulb = ulb;
   try {
     req.body.actionTakenBy = req.decoded?._id;
-    await UtilizationReport.updateOne(
-      { ulb: ObjectId(ulb), financialYear },
+    let savedData = await UtilizationReport.findOneAndUpdate(
+      { ulb: ObjectId(ulb), financialYear, designYear },
       { $set: req.body },
       {
         upsert: true,
         new: true,
         setDefaultsOnInsert: true,
       }
-    );
-
+    )
     if (!isDraft) {
       await UpdateMasterSubmitForm(req, "utilReport");
     }
+    if (savedData) {
+      return res.status(200).json({
+        msg: "Utilization Report Submitted Successfully!",
+        isCompleted: savedData.isDraft ? !savedData.isDraft : true
+      })
+    } else {
+      return res.status(400).json({
+        msg: "Failed to Submit Data"
+      })
+    }
 
-    return res.status(200).json({ msg: "UtilizationReport Submitted!" });
+
+
+
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
