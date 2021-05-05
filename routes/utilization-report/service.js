@@ -61,13 +61,14 @@ exports.read = async (req, res) => {
 };
 
 exports.readById = async (req, res) => {
-  const { financialYear } = req.params;
-  const ulb = req.decoded?._id;
+  const { financialYear, designYear } = req.params;
+  const ulb = req.decoded?.ulb;
 
   try {
     const report = await UtilizationReport.findOne({
       ulb,
       financialYear,
+      designYear,
       isActive: true,
     }).select({ history: 0 });
     if (!report) {
