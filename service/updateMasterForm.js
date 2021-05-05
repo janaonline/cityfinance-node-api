@@ -7,7 +7,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
   };
   try {
     const oldForm = await MasterForm.findOne({
-      ulb: ObjectId(data?.body?.ulb),
+      ulb: ObjectId(data?.user?.ulb),
     }).select({
       history: 0,
     });
@@ -23,7 +23,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           },
         };
         await MasterForm.findOneAndUpdate(
-          { ulb: ObjectId(data?.body?.ulb), isActive: true },
+          { ulb: ObjectId(data?.user?.ulb), isActive: true },
           {
             $set: {
               steps: newForm.steps,
@@ -62,7 +62,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           newForm.isSubmit === true
         ) {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data?.body?.ulb), isActive: true },
+            { ulb: ObjectId(data?.user?.ulb), isActive: true },
             {
               $set: {
                 steps: newForm.steps,
@@ -74,7 +74,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           );
         } else {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data?.body?.ulb), isActive: true },
+            { ulb: ObjectId(data?.user?.ulb), isActive: true },
             {
               $set: {
                 steps: newForm.steps,
@@ -87,7 +87,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
       }
     } else {
       let form = new MasterForm({
-        ulb: data?.body?.ulb,
+        ulb: data?.user?.ulb,
         steps: {
           [formName]: {
             remarks: data?.body?.remarks,

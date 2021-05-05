@@ -11,6 +11,7 @@ const statusType = () => {
 const MasterFormSchema = new Schema(
   {
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
+    design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     actionTakenBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
