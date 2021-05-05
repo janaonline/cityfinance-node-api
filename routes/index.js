@@ -17,6 +17,9 @@ router.use("/annual-accounts", AnnualAccountData);
 const PFMSAccountData = require('./pfmsAccount');
 router.use("/pfmsAccount", PFMSAccountData);
 
+const MasterFormData = require('./masterForm');
+router.use("/masterForm", MasterFormData);
+
 // @FinancialYear
 const FinancialYear = require("./financial-year");
 router.use(FinancialYear);
