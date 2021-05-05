@@ -216,12 +216,12 @@ module.exports.create = async (req, res) => {
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
         }
-        if (data.water_index && (!data.waterPotability.documents.waterPotabilityPlan[0].url || data.waterPotability.documents.waterPotabilityPlan[0].url === "")) {
+        if (data?.water_index && (!data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url || data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url === "")) {
             return res.status(400).json({
                 success: false,
                 message: 'Must Submit Water Potability Plan (PDF Format)'
             })
-        } else if (!data.water_index && (data.waterPotability.documents.waterPotabilityPlan[0].url || data.waterPotability.documents.waterPotabilityPlan[0].url != "")) {
+        } else if (!data?.water_index && (data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url || data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url != "")) {
             return res.status(400).json({
                 success: false,
                 message: 'Water Potability Plan Cannot be Submitted.'
@@ -290,7 +290,7 @@ module.exports.get = async (req, res) => {
         sort = req.body.sort,
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
-        design_year = req.body.design_year,
+        design_year = req.query.design_year,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
 
     if (!design_year || design_year === "") {
