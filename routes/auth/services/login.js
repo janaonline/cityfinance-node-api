@@ -3,13 +3,18 @@ const User = require('../../../models/User');
 const Service = require('../../../service');
 const { createToken } = require('./createToken')
 const { getUSer } = require('./getUser')
-const Years =  require('../../../models/Year')
+const Years = require('../../../models/Year')
+const Ulb = require('../../../models/Ulb')
 
 module.exports.login = async (req, res) => {
     /**Conditional Query For CensusCode/ULB Code **/
     try {
+        let ulb, role
         let user = await getUSer(req.body);
-        console.log(user)
+        if (user.role === 'ULB') {
+            ulb = await Ulb.findOne({ "_id": ObjectId(user.ulb) });
+            role = user.role;
+        }
         let sessionId = req.headers.sessionid;
         let isMatch = await Service.compareHash(
             req.body.password,
@@ -29,6 +34,8 @@ module.exports.login = async (req, res) => {
                     role: user.role,
                     state: user.state,
                     ulb: user.ulb,
+                    isUA: role === 'ULB' ? ulb.isUA : null,
+                    isMillionPlus: role === 'ULB' ? ulb.isMillionPlus : null
                 },
                 allYears
             })
@@ -51,11 +58,11 @@ module.exports.login = async (req, res) => {
     }
 };
 
-getYears = async () =>{
-    let allYears = await Years.find({isActive:true}).select({isActive:0})
+getYears = async () => {
+    let allYears = await Years.find({ isActive: true }).select({ isActive: 0 })
     newObj = {}
     allYears.forEach(element => {
-        newObj[element.year] = element._id   
+        newObj[element.year] = element._id
     });
     return newObj
 }
