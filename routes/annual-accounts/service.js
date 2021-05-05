@@ -135,80 +135,56 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             "design_year": ObjectId(data.design_year)
         }
         let annualAccountData = await AnnualAccountData.findOne(query);
-        if (annualAccountData && annualAccountData.status === 'PENDING') {
-            await AnnualAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
-                .then((response) => {
-                    return res.status(200).json({
-                        success: true,
-                        message: 'Annual Accounts Data Updated for ' + user.name,
-                        year: year.year,
-                        design_year: design_year.year,
-                        response: response
-                    })
-                })
-                .catch(e => {
-                    console.log(`Error - ${e}`);
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Failed to Update Annual Accounts Data for ' + user.name,
-                        year: year.year,
-                        design_year: design_year.year,
-                        error: e.message
-                    })
-                })
-        } else if (annualAccountData && annualAccountData.status != 'PENDING') {
+        if (annualAccountData) {
             req.body['history'] = [...annualAccountData.history];
             annualAccountData.history = undefined;
             req.body['history'].push(annualAccountData);
             data['status'] = 'PENDING';
-            await AnnualAccountData.updateOne(query, data, { runValidators: true, setDefaultsOnInsert: true })
-                .then((response) => {
-                    return res.status(200).json({
-                        success: true,
-                        message: 'Annual Accounts Data Updated for ' + user.name,
-                        year: year.year,
-                        design_year: design_year.year,
-                        response: response
-                    })
+            let updatedData = await AnnualAccountData.findOneAndUpdate(query, data, { new: true, runValidators: true, setDefaultsOnInsert: true })
+            if (updatedData) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Annual Accounts Data Updated for ' + user.name,
+                    year: year.year,
+                    design_year: design_year.year,
+                    isCompleted: updatedData.isCompleted
                 })
-                .catch(e => {
-                    console.log(`Error - ${e}`);
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Failed to Update Annual Accounts Data for ' + user.name,
-                        year: year.year,
-                        design_year: design_year.year,
-                        error: e.message
-                    })
+            } else {
+                console.log(`Error - ${e}`);
+                return res.status(400).json({
+                    success: false,
+                    message: 'Failed to Update Annual Accounts Data for ' + user.name,
+                    year: year.year,
+                    design_year: design_year.year,
+                    error: e.message
                 })
+            }
 
-        }
-        // else if (annualAccountData && !annualAccountData.isCompleted) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: 'Action Not Allowed. Data is in Draft Mode.',
-        //     })
-        // }
-        else {
+        } else {
             data['status'] = 'PENDING';
             const annual_account_data = new AnnualAccountData(data);
-            await annual_account_data.save();
-            return res.status(200).json({
-                success: true,
-                message: 'Annual Accounts for ' + user.name + ' Successfully Submitted. ',
-                year: year.year,
-                design_year: design_year.year
-            })
+            let savedData = await annual_account_data.save();
+            if (savedData) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Annual Accounts for ' + user.name + ' Successfully Submitted. ',
+                    year: year.year,
+                    design_year: design_year.year,
+                    isCompleted: savedData.isCompleted
+                })
+            } else {
+                return res.status(400).json({
+                    success: true,
+                    message: 'Failed to Submit Annual Accounts Data for ' + user.name
+                })
+            }
         }
-
-
     } else {
         return res.status(400).json({
             success: false,
             message: !user.role ? 'User.Role Does Not Exist' : user.role + ' is not Authenticated to Perform this Action. Only ULB Users Allowed.',
         })
     }
-
 })
 
 module.exports.action = catchAsync(async (req, res, next) => {
