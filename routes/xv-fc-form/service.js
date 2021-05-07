@@ -498,7 +498,7 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
-        let design_year = req.body.design_year;
+        let design_year = req.query?.design_year;
         let status = 'PENDING';
         // if(user.role=='ULB'){
         //     status = 'REJECTED'
@@ -567,7 +567,7 @@ module.exports.getAll = async (req, res) => {
             };
 
 
-            if (design_year && design_year != null) {
+            if (design_year) {
 
                 match = {
                     $match: { overallReport: null, isActive: true, design_year: ObjectId(design_year) },
