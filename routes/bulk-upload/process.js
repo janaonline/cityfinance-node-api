@@ -160,7 +160,8 @@ module.exports = function (req, res) {
                 } else if (overviewSheet == null) {
                     objOfSheet = {
                         ulb_id: ObjectId(user.ulb),
-                        financialYear: (financialYear)
+                        financialYear: (financialYear),
+                        design_year: ObjectId(design_year)
                     }
                 }
                 let query;
@@ -171,36 +172,45 @@ module.exports = function (req, res) {
                         ulb_code_year: objOfSheet.ulb_code_year
                     }
 
+                    let du = {
+                        query,
+                        update: Object.assign({ lastModifiedAt: new Date() }, objOfSheet),
+                        options: { upsert: true, setDefaultsOnInsert: true, new: true }
+                    }
+                    delete du.update._id;
+                    delete du.update.__v;
+
+                    // insert the oviewViewSheet content in ledger logs
+                    let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
+
                 } else if (user.role === 'ULB' && design_year) {
                     query = {
                         ulb_id: ObjectId(user.ulb),
-                        financialYear: (financialYear)
+                        financialYear: (financialYear),
+                        design_year: ObjectId(design_year)
                     }
-                    Object.assign(objOfSheet, { design_year: ObjectId(design_year) })
-                    Object.assign(query, { design_year: ObjectId(design_year) })
                 }
 
-                let du = {
-                    query,
-                    update: Object.assign({ lastModifiedAt: new Date() }, objOfSheet),
-                    options: { upsert: true, setDefaultsOnInsert: true, new: true }
-                }
-                delete du.update._id;
-                delete du.update.__v;
 
-                // insert the oviewViewSheet content in ledger logs
-                let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
                 // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
                 let inputDataArr = await validateData(dataSheet, objOfSheet, balanceSheet, design_year, user); //  return line item data array
+                // console.log(inputDataArr)
                 let responseArr = [];
                 let aborted = false;
                 for (let el of inputDataArr) {
                     let options = el.options;//Object.assign(el.options,{session:session});
                     try {
-                        let result = await UlbLedger.findOneAndUpdate(el.query, el.update, options);
-                        responseArr.push(result);
-                        // Update in the request log collection, the current status of file
-                        await updateLog(reqId, { message: `Status: (${responseArr.length}/${inputDataArr.length}) processed`, completed: 0 });
+                        if (user.role != 'ULB' && !design_year) {
+                            // console.log('!ULB')
+                            let result = await UlbLedger.findOneAndUpdate(el.query, el.update, options);
+                            responseArr.push(result);
+                            // Update in the request log collection, the current status of file
+                            await updateLog(reqId, { message: `Status: (${responseArr.length}/${inputDataArr.length}) processed`, completed: 0 });
+                        } else {
+                            // console.log('ULB')
+                            await updateLog(reqId, { message: `Status: 1 processed`, completed: 0 });
+                        }
+
                         continue;
                     } catch (e) {
 
