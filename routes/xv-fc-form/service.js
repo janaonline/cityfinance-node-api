@@ -20,7 +20,7 @@ const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
 const Year = require('../../models/Year');
 const { findOne } = require('../../models/LedgerLog');
-
+const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -263,6 +263,9 @@ module.exports.create = async (req, res) => {
             if (response) {
                 let ulbData = await XVFCGrantULBData.findOne(query);
                 if (ulbData.isCompleted) {
+                    if (ulbData?.isCompleted) {
+                        await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
+                    }
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                         ulbData._id,
                         'UPLOAD'

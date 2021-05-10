@@ -11,7 +11,7 @@ const statusType = () => {
 const MasterFormSchema = new Schema(
   {
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
-    design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+    design_year: { type: Schema.Types.ObjectId, ref: "Year" },
     actionTakenBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -28,6 +28,33 @@ const MasterFormSchema = new Schema(
         },
       },
       plans: {
+        remarks: {},
+        // individual status of sub form
+        status: statusType(),
+        isSubmit: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      pfmsAccount: {
+        remarks: {},
+        // individual status of sub form
+        status: statusType(),
+        isSubmit: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      slbForWaterSupplyAndSanitation: {
+        remarks: {},
+        // individual status of sub form
+        status: statusType(),
+        isSubmit: {
+          type: Boolean,
+          default: false,
+        },
+      },
+      annualAccounts: {
         remarks: {},
         // individual status of sub form
         status: statusType(),

@@ -25,6 +25,7 @@ module.exports.createOrUpdate = async (req, res) => {
       }
     )
     if (!isDraft) {
+      // req['design_year'] = designYear;
       await UpdateMasterSubmitForm(req, "utilReport");
     }
     if (savedData) {

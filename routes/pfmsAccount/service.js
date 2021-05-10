@@ -3,7 +3,7 @@ const PFMSAccountData = require('../../models/LinkPFMS')
 const ObjectId = require('mongoose').Types.ObjectId;
 const Year = require('../../models/Year')
 const User = require('../../models/User')
-
+const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
 module.exports.get = catchAsync(async (req, res, next) => {
     let user = req.decoded
 
@@ -78,6 +78,9 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             let savedData = await pfms_account_data.save();
 
             if (savedData) {
+                if (!savedData?.isDraft) {
+                    await UpdateMasterSubmitForm(req, "pfmsAccount");
+                }
                 return res.status(200).json({
                     success: true,
                     message: 'Report for ' + user.name + ' Successfully Submitted.',

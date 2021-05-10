@@ -96,6 +96,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           },
         },
         actionTakenBy: data?.user?._id,
+        design_year: data?.body?.designYear ? data?.body?.designYear : data?.body?.design_year
       });
       await form.save();
     }
