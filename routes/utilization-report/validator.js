@@ -7,12 +7,12 @@ exports.reportCreateValidator = [
     .withMessage("Name is required")
     .isString()
     .withMessage("Name is required as string"),
-  // check("ulb")
-  //   .not()
-  //   .isEmpty()
-  //   .withMessage("Image is required")
-  //   .isString()
-  //   .withMessage("Image is required as string"),
+  check("ulb")
+    .not()
+    .isEmpty()
+    .withMessage("Image is required")
+    .isString()
+    .withMessage("Image is required as string"),
   check("grantType")
     .not()
     .isEmpty()
