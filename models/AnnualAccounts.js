@@ -57,11 +57,7 @@ const standardizedDataSchema = new Schema({
         excelUrl: { type: String },
         excelName: { type: String }
     },
-    auditor_certificate: {
-        pdfUrl: { type: String },
-        pdfName: { type: String }
-    },
-    auditor_registration: { type: String },
+    declaration: { type: Boolean, default: false },
 })
 
 const AnnualAccountDataSchema = new Schema(
