@@ -58,11 +58,11 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         newForm.status = tempStatus;
         newForm.isSubmit = tempSubmit;
         if (
-          (data?.user?.role === "MoHUA" || data?.user?.role === "STATE") &&
+          (data.user?.role === "MoHUA" || data.user?.role === "STATE") &&
           newForm.isSubmit === true
         ) {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data?.user?.ulb), isActive: true },
+            { ulb: ObjectId(data.user?.ulb), isActive: true },
             {
               $set: {
                 steps: newForm.steps,
@@ -74,7 +74,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           );
         } else {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data?.user?.ulb), isActive: true },
+            { ulb: ObjectId(data.user?.ulb), isActive: true },
             {
               $set: {
                 steps: newForm.steps,
@@ -87,15 +87,16 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
       }
     } else {
       let form = new MasterForm({
-        ulb: data?.user?.ulb,
+        ulb: data.user?.ulb,
         steps: {
           [formName]: {
-            remarks: data?.body?.remarks,
-            status: data?.body?.status,
+            remarks: data.body?.remarks,
+            status: data.body?.status,
             isSubmit: true,
           },
         },
         actionTakenBy: data?.user?._id,
+        design_year: data.body?.designYear ? data.body?.designYear : data.body?.design_year
       });
       await form.save();
     }

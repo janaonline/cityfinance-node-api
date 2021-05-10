@@ -20,7 +20,7 @@ const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
 const Year = require('../../models/Year');
 const { findOne } = require('../../models/LedgerLog');
-
+const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -238,11 +238,17 @@ module.exports.create = async (req, res) => {
         req.body['overallReport'] = null;
         req.body['status'] = 'PENDING';
         query['ulb'] = ObjectId(data.ulb);
+
         if (design_year && design_year != "") {
             Object.assign(query, { design_year: ObjectId(design_year) })
         }
         let ulbData = await XVFCGrantULBData.findOne(query);
-        if (ulbData && ulbData.status == 'PENDING') {
+        if (ulbData && !data.isOldForm) {
+            req.body['history'] = [...ulbData.history];
+            ulbData.history = undefined;
+            req.body['history'].push(ulbData);
+        }
+        if (ulbData && ulbData.status == 'PENDING' && data.isOldForm) {
             if (ulbData.isCompleted) {
                 return Response.BadRequest(
                     res,
@@ -251,7 +257,7 @@ module.exports.create = async (req, res) => {
                 );
             }
         }
-        if (ulbData && ulbData.isCompleted == true) {
+        if (ulbData && ulbData.isCompleted == true && data.isOldForm) {
             req.body['history'] = [...ulbData.history];
             ulbData.history = undefined;
             req.body['history'].push(ulbData);
@@ -263,6 +269,9 @@ module.exports.create = async (req, res) => {
             if (response) {
                 let ulbData = await XVFCGrantULBData.findOne(query);
                 if (ulbData.isCompleted) {
+                    if (!ulbData?.isOldForm) {
+                        await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
+                    }
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                         ulbData._id,
                         'UPLOAD'

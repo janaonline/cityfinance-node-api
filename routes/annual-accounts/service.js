@@ -8,7 +8,7 @@ const Year = require('../../models/Year')
 const User = require('../../models/User')
 const Response = require('../../service').response
 const State = require('../../models/State');
-
+const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
 
 const mappingKeys = {
     bal_sheet: 'bal_sheet',
@@ -165,6 +165,9 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             const annual_account_data = new AnnualAccountData(data);
             let savedData = await annual_account_data.save();
             if (savedData) {
+                if (savedData?.isCompleted) {
+                    await UpdateMasterSubmitForm(req, "annualAccounts");
+                }
                 return res.status(200).json({
                     success: true,
                     message: 'Annual Accounts for ' + user.name + ' Successfully Submitted. ',
