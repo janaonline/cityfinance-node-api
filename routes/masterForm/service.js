@@ -40,8 +40,14 @@ module.exports.get = catchAsync(async (req, res) => {
 
 
 module.exports.getAll = catchAsync(async (req, res) => {
-    let user = req.decoded
-    if (user.role === 'ADMIN') {
+    let user = req.decoded;
+    if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: 'User Not Found!'
+        })
+    }
+    if (user.role === 'ADMIN' || 'MoHUA' || 'PARTNER' || 'USER' || 'STATE') {
         let { design_year } = req.params;
         if (!design_year) {
             return res.status(400).json({
@@ -55,14 +61,28 @@ module.exports.getAll = catchAsync(async (req, res) => {
                 message: 'User Not Found'
             })
         }
+
+        let match = {
+            $match:
+            {
+                design_year: ObjectId(design_year)
+            }
+        }
+
+        if (user.role === 'STATE') {
+            match = {
+                $match:
+                {
+                    design_year: ObjectId(design_year),
+                    state: ObjectId(user.state)
+                }
+            }
+        }
+
         let query =
             [
-                {
-                    $match:
-                    {
-                        design_year: ObjectId(design_year)
-                    }
-                },
+                match
+                ,
                 {
                     $lookup:
                     {
@@ -103,6 +123,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
                     },
                 },
                 { $unwind: '$actionTakenBy' },
+                // {
+                //     $lookup: {
+                //         from: 'UA',
+                //         localField: 'UA',
+                //         foreignField: '_id',
+                //         as: 'UA',
+                //     },
+                // },
+                // { $unwind: '$UA' },
                 {
                     $project: {
                         "state.name": 1,
@@ -116,7 +145,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
                                 else: 'Non Million',
                             },
                         },
-                        "ulb.isUA": 1,
+                        "ulb.isUA": { $ifNull: ["$ulb.isUA", "No"] },
+                        "UA": {
+                            $cond: {
+                                if: { $eq: ['$ulb.isUA', 'Yes'] },
+                                then: { $ifNull: ["$ulb.UA.name", "Does Not Exist"] },
+                                else: 'NA',
+                            },
+                        },
                         "ulbType.name": 1,
                         "status": {
                             $cond: {
@@ -131,7 +167,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
                 }
 
             ]
-        let masterFormData = await MasterFormData.aggregate(query).exec();
+
+        let masterFormData = await MasterFormData.aggregate(query);
         if (masterFormData) {
             console.log(masterFormData)
             return res.status(200).json({
@@ -142,15 +179,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
             );
         } else {
-            res.status(400).json({
+            return res.status(400).json({
                 success: false,
                 message: "No Data Found"
             })
         }
     } else {
-        res.status(403).json({
+        return res.status(403).json({
             success: false,
-            message: "Not Authenticated to Perform this Action"
+            message: user.role + " is Not Authenticated to Perform this Action"
         })
     }
 

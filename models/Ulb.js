@@ -25,6 +25,7 @@ const UlbSchema = new Schema({
     censusCode: { type: String, default: null },
     isMillionPlus: { type: String, enum: ["YES", "No"], default: "No" },
     isUA: { type: String, enum: ["YES", "No"], default: "No" },
+    UA: { type: Schema.Types.ObjectId, ref: 'UA' },
     amrut: { type: String, default: "" },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },

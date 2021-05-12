@@ -73,6 +73,10 @@ const MasterFormSchema = new Schema(
     },
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
+    state: {
+      type: Schema.Types.ObjectId,
+      ref: "State",
+    },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
   },
