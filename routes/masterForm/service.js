@@ -163,15 +163,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
             },
             { $unwind: '$actionTakenBy' },
 
-            // {
-            //     $lookup: {
-            //         from: 'uas',
-            //         localField: 'ulb.UA',
-            //         foreignField: '_id',
-            //         as: 'ulb.UA',
+            {
+                $lookup: {
+                    from: 'uas',
+                    localField: 'ulb.UA',
+                    foreignField: '_id',
+                    as: 'ulb.UA',
 
-            //     }
-            // },
+                }
+            },
             // { $unwind: '$ulb.UA' },
             {
                 $project: {
@@ -187,7 +187,13 @@ module.exports.getAll = catchAsync(async (req, res) => {
                         },
                     },
                     "ulb.isUA": "$ulb.isUA",
-                    "ulb.UA": '$ulb.UA.name',
+                    "ulb.UA": {
+                        $cond: {
+                            if: { $eq: ['$ulb.isUA', 'Yes'] },
+                            then: '$ulb.UA.name',
+                            else: 'NA',
+                        },
+                    },
                     "ulb.ulbType": '$ulb.ulbType.name',
                     actionTakenByUserRole: '$actionTakenBy.role',
                     "status": {
