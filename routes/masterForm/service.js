@@ -190,7 +190,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                     "ulb.UA": {
                         $cond: {
                             if: { $eq: ['$ulb.isUA', 'Yes'] },
-                            then: '$ulb.UA.name',
+                            then: { $arrayElemAt: ['$ulb.UA.name', 0] },
                             else: 'NA',
                         },
                     },
