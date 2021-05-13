@@ -8,6 +8,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
   try {
     const oldForm = await MasterForm.findOne({
       ulb: ObjectId(data?.user?.ulb),
+      design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
     }).select({
       history: 0,
     });
@@ -18,12 +19,16 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
             [formName]: {
               status: data?.body?.status,
               remarks: data?.body?.remarks,
-              isSubmit: true,
+              isSubmit: data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
             },
           },
         };
         await MasterForm.findOneAndUpdate(
-          { ulb: ObjectId(data?.user?.ulb), isActive: true },
+          {
+            ulb: ObjectId(data.user?.ulb),
+            isActive: true,
+            design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
+          },
           {
             $set: {
               steps: newForm.steps,
@@ -62,7 +67,11 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           newForm.isSubmit === true
         ) {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data.user?.ulb), isActive: true },
+            {
+              ulb: ObjectId(data.user?.ulb),
+              isActive: true,
+              design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
+            },
             {
               $set: {
                 steps: newForm.steps,
@@ -74,7 +83,11 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           );
         } else {
           await MasterForm.findOneAndUpdate(
-            { ulb: ObjectId(data.user?.ulb), isActive: true },
+            {
+              ulb: ObjectId(data.user?.ulb),
+              isActive: true,
+              design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
+            },
             {
               $set: {
                 steps: newForm.steps,
@@ -92,7 +105,8 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           [formName]: {
             remarks: data.body?.remarks,
             status: data.body?.status,
-            isSubmit: true,
+            isSubmit: data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
+
           },
         },
         actionTakenBy: data?.user?._id,
