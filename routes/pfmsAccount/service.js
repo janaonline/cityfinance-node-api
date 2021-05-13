@@ -78,9 +78,9 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             let savedData = await pfms_account_data.save();
 
             if (savedData) {
-                if (!savedData?.isDraft) {
-                    await UpdateMasterSubmitForm(req, "pfmsAccount");
-                }
+
+                await UpdateMasterSubmitForm(req, "pfmsAccount");
+
                 return res.status(200).json({
                     success: true,
                     message: 'Report for ' + user.name + ' Successfully Submitted.',

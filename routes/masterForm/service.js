@@ -120,99 +120,94 @@ module.exports.getAll = catchAsync(async (req, res) => {
             }
         }
 
-        let query =
-            [
-                match
-                ,
+        let query = [
+            match,
+            {
+                $lookup:
                 {
-                    $lookup:
-                    {
-                        from: 'ulbs',
-                        localField: 'ulb',
-                        foreignField: '_id',
-                        as: 'ulb'
+                    from: 'ulbs',
+                    localField: 'ulb',
+                    foreignField: '_id',
+                    as: 'ulb'
 
-                    }
-                },
-                { $unwind: "$ulb" },
-                {
-                    $lookup:
-                    {
-                        from: 'ulbtypes',
-                        localField: 'ulb.ulbType',
-                        foreignField: '_id',
-                        as: 'ulbType'
-                    }
-                },
-                { $unwind: "$ulbType" },
-                {
-                    $lookup: {
-                        from: 'states',
-                        localField: 'ulb.state',
-                        foreignField: '_id',
-                        as: 'state'
-
-                    }
-                },
-                { $unwind: "$state" },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'actionTakenBy',
-                        foreignField: '_id',
-                        as: 'actionTakenBy',
-                    },
-                },
-                { $unwind: '$actionTakenBy' },
-                {
-                    $lookup: {
-                        from: 'UA',
-                        localField: 'UA',
-                        foreignField: '_id',
-                        as: 'UA',
-                    },
-                },
-                { $unwind: '$UA' },
-                {
-                    $project: {
-                        "state.name": 1,
-                        "ulb.name": 1,
-                        "ulb.censusCode": 1,
-                        "ulb.sbCode": 1,
-                        "populationType": {
-                            $cond: {
-                                if: { $eq: ['$ulb.isMillionPlus', 'Yes'] },
-                                then: 'Million Plus',
-                                else: 'Non Million',
-                            },
-                        },
-                        "ulb.isUA": { $ifNull: ["$ulb.isUA", "No"] },
-                        "UA": {
-                            $cond: {
-                                if: { $eq: ['$ulb.isUA', 'Yes'] },
-                                then: { $ifNull: ["$ulb.UA.name", "Does Not Exist"] },
-                                else: 'NA',
-                            },
-                        },
-                        "ulbType.name": 1,
-                        actionTakenByUserRole: '$actionTakenBy.role',
-                        "status": {
-                            $cond: {
-                                if: { $eq: ['$status', 'NA'] },
-                                then: 'Not Started',
-                                else: '$status',
-                            }
-                        },
-                        "createdAt": '$createdAt',
-                        "modifiedAt": '$modifiedAt'
-                    }
                 }
+            },
+            { $unwind: "$ulb" },
+            {
+                $lookup:
+                {
+                    from: 'ulbtypes',
+                    localField: 'ulb.ulbType',
+                    foreignField: '_id',
+                    as: 'ulb.ulbType'
+                }
+            },
+            { $unwind: "$ulb.ulbType" },
+            {
+                $lookup: {
+                    from: 'states',
+                    localField: 'ulb.state',
+                    foreignField: '_id',
+                    as: 'state'
 
-            ]
+                }
+            },
+            { $unwind: "$state" },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'actionTakenBy',
+                    foreignField: '_id',
+                    as: 'actionTakenBy',
+                },
+            },
+            { $unwind: '$actionTakenBy' },
+
+            // {
+            //     $lookup: {
+            //         from: 'uas',
+            //         localField: 'ulb.UA',
+            //         foreignField: '_id',
+            //         as: 'ulb.UA',
+
+            //     }
+            // },
+            // { $unwind: '$ulb.UA' },
+            {
+                $project: {
+                    "state": '$state.name',
+                    "ulb.name": 1,
+                    "ulb.censusCode": 1,
+                    "ulb.sbCode": 1,
+                    "ulb.populationType": {
+                        $cond: {
+                            if: { $eq: ['$ulb.isMillionPlus', 'Yes'] },
+                            then: 'Million Plus',
+                            else: 'Non Million',
+                        },
+                    },
+                    "ulb.isUA": "$ulb.isUA",
+                    "ulb.UA": '$ulb.UA.name',
+                    "ulb.ulbType": '$ulb.ulbType.name',
+                    actionTakenByUserRole: '$actionTakenBy.role',
+                    "status": {
+                        $cond: {
+                            if: { $eq: ['$status', 'NA'] },
+                            then: 'Not Started',
+                            else: '$status',
+                        }
+                    },
+                    "createdAt": '$createdAt',
+                    "modifiedAt": '$modifiedAt'
+                }
+            }
+
+        ]
 
         let newFilter = await Service.mapFilter(filter);
         let total = undefined;
-        let priority = true;
+        let priority = false;
+        let csv = false;
         if (newFilter['status']) {
             Object.assign(newFilter, statusFilter[newFilter['status']]);
             if (newFilter['status'] == '2' || newFilter['status'] == '3') { delete newFilter['status']; }
