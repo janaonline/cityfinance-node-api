@@ -6,7 +6,7 @@ const Service = require('../../service')
 module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded
 
-    let { design_year } = req.params;
+    let { design_year, masterform_id } = req.params;
     if (!design_year) {
         return res.status(400).json({
             success: false,
@@ -19,10 +19,16 @@ module.exports.get = catchAsync(async (req, res) => {
             message: 'User Not Found'
         })
     }
-    let masterFormData = await MasterFormData.findOne({
+    let query = {
         "ulb": ObjectId(user.ulb),
         "design_year": ObjectId(design_year)
-    },
+    }
+    if (masterform_id && user.role != 'ULB') {
+        query = {
+            "_id": ObjectId(masterform_id)
+        }
+    }
+    let masterFormData = await MasterFormData.findOne(query,
         '-history')
     if (!masterFormData) {
         return res.status(500).json({
