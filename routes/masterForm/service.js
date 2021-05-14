@@ -176,25 +176,24 @@ module.exports.getAll = catchAsync(async (req, res) => {
             {
                 $project: {
                     "state": '$state.name',
-                    "ulb.name": 1,
-                    "ulb.censusCode": 1,
-                    "ulb.sbCode": 1,
-                    "ulb.populationType": {
+                    "ulbName": "$ulb.name",
+                    "censusCode": "$ulb.censusCode",
+                    "sbCode": "$ulb.sbCode",
+                    "populationType": {
                         $cond: {
                             if: { $eq: ['$ulb.isMillionPlus', 'Yes'] },
                             then: 'Million Plus',
                             else: 'Non Million',
                         },
                     },
-                    "ulb.isUA": "$ulb.isUA",
-                    "ulb.UA": {
+                    "UA": {
                         $cond: {
                             if: { $eq: ['$ulb.isUA', 'Yes'] },
                             then: { $arrayElemAt: ['$ulb.UA.name', 0] },
                             else: 'NA',
                         },
                     },
-                    "ulb.ulbType": '$ulb.ulbType.name',
+                    "ulbType": '$ulb.ulbType.name',
                     actionTakenByUserRole: '$actionTakenBy.role',
                     "status": {
                         $cond: {
