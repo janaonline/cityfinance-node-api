@@ -24,8 +24,9 @@ const MasterFormSchema = new Schema(
         status: statusType(),
         isSubmit: {
           type: Boolean,
-          default: false,
+          default: null,
         },
+
       },
       plans: {
         remarks: {},
@@ -33,8 +34,9 @@ const MasterFormSchema = new Schema(
         status: statusType(),
         isSubmit: {
           type: Boolean,
-          default: false,
+          default: null,
         },
+
       },
       pfmsAccount: {
         remarks: {},
@@ -42,8 +44,9 @@ const MasterFormSchema = new Schema(
         status: statusType(),
         isSubmit: {
           type: Boolean,
-          default: false,
+          default: null,
         },
+
       },
       slbForWaterSupplyAndSanitation: {
         remarks: {},
@@ -51,8 +54,9 @@ const MasterFormSchema = new Schema(
         status: statusType(),
         isSubmit: {
           type: Boolean,
-          default: false,
+          default: null,
         },
+
       },
       annualAccounts: {
         remarks: {},
@@ -60,8 +64,9 @@ const MasterFormSchema = new Schema(
         status: statusType(),
         isSubmit: {
           type: Boolean,
-          default: false,
+          default: null,
         },
+
       },
     },
     //over all status of form
@@ -85,7 +90,7 @@ const MasterFormSchema = new Schema(
 
 MasterFormSchema.index(
   {
-    ulb: 1,
+    ulb: 1, design_year: 1
   },
   {
     unique: true,

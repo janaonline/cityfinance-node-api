@@ -5,6 +5,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
     body: req?.body,
     user: req?.decoded,
   };
+  console.log(data.body)
   try {
     const oldForm = await MasterForm.findOne({
       ulb: ObjectId(data?.user?.ulb),
