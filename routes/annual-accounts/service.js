@@ -56,7 +56,7 @@ module.exports.get = catchAsync(async (req, res) => {
             "design_year": ObjectId(design_year)
         }
     }
-    let annualAccountData = await AnnualAccountData.find(
+    let annualAccountData = await AnnualAccountData.findOne(
         query,
         '-history'
     )
