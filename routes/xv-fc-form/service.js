@@ -268,10 +268,11 @@ module.exports.create = async (req, res) => {
         ) {
             if (response) {
                 let ulbData = await XVFCGrantULBData.findOne(query);
+                if (!ulbData?.isOldForm) {
+                    await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
+                }
                 if (ulbData.isCompleted) {
-                    if (!ulbData?.isOldForm) {
-                        await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
-                    }
+
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                         ulbData._id,
                         'UPLOAD'
@@ -300,6 +301,7 @@ module.exports.get = async (req, res) => {
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
         design_year = req.query.design_year,
+        { ulb } = req.params,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
 
     if (!design_year || design_year === "") {
@@ -308,7 +310,52 @@ module.exports.get = async (req, res) => {
             message: 'Design Year Not Found!'
         })
     }
+    if (user.role != 'ULB' && ulb) {
+        let query = {
+            "ulb": ObjectId(ulb),
+            "design_year": ObjectId(design_year)
+        }
+        try {
 
+            let data = await XVFCGrantULBData.findOne(query)
+                .populate([
+                    {
+                        path: 'ulb',
+                        select: '_id name code state',
+                        populate: {
+                            path: 'state',
+                            select: '_id name code',
+                        },
+                    },
+                    {
+                        path: 'actionTakenBy',
+                        select: '_id name email role',
+                    },
+                ])
+                .populate([
+                    {
+                        path: 'history.actionTakenBy',
+                        model: User,
+                        select: '_id name email role',
+                    },
+                    {
+                        path: 'history.ulb',
+                        select: '_id name code state',
+                        populate: {
+                            path: 'state',
+                            select: '_id name code',
+                        },
+                    },
+                ])
+                .lean()
+                .exec();
+            return Response.OK(res, data, 'Request fetched.');
+        } catch (e) {
+            console.log('Exception:', e);
+            return Response.DbError(res, e, e.message);
+        }
+
+    }
     if (actionAllowed.indexOf(user.role) > -1) {
         if (req.query._id) {
             try {

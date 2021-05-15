@@ -7,7 +7,7 @@ const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
 module.exports.get = catchAsync(async (req, res, next) => {
     let user = req.decoded
 
-    let { design_year } = req.params;
+    let { design_year, ulb } = req.params;
     if (!design_year) {
         return res.status(400).json({
             success: false,
@@ -20,10 +20,18 @@ module.exports.get = catchAsync(async (req, res, next) => {
             message: 'User Not Found'
         })
     }
-    let pfmsData = await PFMSAccountData.findOne({
+
+    let query = {
         "ulb": ObjectId(user.ulb),
         "design_year": ObjectId(design_year)
-    },
+    }
+    if (user.role != 'ULB' && ulb) {
+        query = {
+            "ulb": ObjectId(ulb),
+            "design_year": ObjectId(design_year)
+        }
+    }
+    let pfmsData = await PFMSAccountData.findOne(query,
         '-history')
     if (!pfmsData) {
         return res.status(500).json({
@@ -60,6 +68,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             req.body['history'].push(pfmsAccountData);
             let updatedData = await PFMSAccountData.findOneAndUpdate(query, data, { new: true, runValidators: true, setDefaultsOnInsert: true })
             if (updatedData) {
+                await UpdateMasterSubmitForm(req, "pfmsAccount");
                 return res.status(200).json({
                     success: true,
                     message: 'PFMS Accounts Data Updated for ' + user.name,

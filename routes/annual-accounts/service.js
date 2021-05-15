@@ -38,18 +38,26 @@ const time = () => {
 module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
     let design_year = req.query.design_year;
-    let year = req.query.year;
+    let { ulb } = req.params;
     if (!design_year) {
         return res.status(400).json({
             success: false,
             message: 'Design Year Not Found'
         })
     }
-    let annualAccountData = await AnnualAccountData.find(
-        {
-            "ulb": ObjectId(user.ulb),
+
+    let query = {
+        "ulb": ObjectId(user.ulb),
+        "design_year": ObjectId(design_year)
+    }
+    if (user.role != 'ULB' && ulb) {
+        query = {
+            "ulb": ObjectId(ulb),
             "design_year": ObjectId(design_year)
-        },
+        }
+    }
+    let annualAccountData = await AnnualAccountData.find(
+        query,
         '-history'
     )
     if (!annualAccountData) {
@@ -142,6 +150,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             data['status'] = 'PENDING';
             let updatedData = await AnnualAccountData.findOneAndUpdate(query, data, { new: true, runValidators: true, setDefaultsOnInsert: true })
             if (updatedData) {
+                await UpdateMasterSubmitForm(req, "annualAccounts");
                 return res.status(200).json({
                     success: true,
                     message: 'Annual Accounts Data Updated for ' + user.name,
@@ -165,9 +174,9 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             const annual_account_data = new AnnualAccountData(data);
             let savedData = await annual_account_data.save();
             if (savedData) {
-                if (savedData?.isCompleted) {
-                    await UpdateMasterSubmitForm(req, "annualAccounts");
-                }
+
+                await UpdateMasterSubmitForm(req, "annualAccounts");
+
                 return res.status(200).json({
                     success: true,
                     message: 'Annual Accounts for ' + user.name + ' Successfully Submitted. ',

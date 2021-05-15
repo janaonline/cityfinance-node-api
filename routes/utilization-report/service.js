@@ -24,11 +24,12 @@ module.exports.createOrUpdate = async (req, res) => {
         setDefaultsOnInsert: true,
       }
     )
-    if (!isDraft) {
-      // req['design_year'] = designYear;
-      await UpdateMasterSubmitForm(req, "utilReport");
-    }
+
+    // req['design_year'] = designYear;
+
+
     if (savedData) {
+      await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
         msg: "Utilization Report Submitted Successfully!",
         isCompleted: savedData.isDraft ? !savedData.isDraft : true
