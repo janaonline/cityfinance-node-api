@@ -16,6 +16,7 @@ const storage1 = multer.diskStorage({
 });
 const multerUpload = multer({ storage: storage1 });
 router.get('/:ulb', verifyToken, ufdService.get);
+router.get('/', verifyToken, ufdService.get);
 router.post('/list', verifyToken, ufdService.get);
 router.post('/all', verifyToken, ufdService.getAll);
 router.get('/all', verifyToken, ufdService.getAll);

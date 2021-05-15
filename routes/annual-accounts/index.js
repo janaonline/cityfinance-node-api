@@ -7,6 +7,7 @@ const { action } = require('./service');
 const { get } = require('./service')
 
 router.get('/get/:ulb', verifyToken, get);
+router.get('/get', verifyToken, get);
 router.post('/create', verifyToken, createOrUpdate);
 router.post('/action/:_id', verifyToken, action);
 
