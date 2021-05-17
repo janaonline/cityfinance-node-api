@@ -24,8 +24,55 @@ module.exports.get = catchAsync(async (req, res) => {
         "design_year": ObjectId(design_year)
     }
     if (masterform_id && user.role != 'ULB') {
-        query = {
-            "_id": ObjectId(masterform_id)
+        query = [
+            {
+                $match: {
+                    "_id": ObjectId(masterform_id)
+                }
+            },
+            {
+                $lookup: {
+                    from: 'ulbs',
+                    localField: 'ulb',
+                    foreignField: '_id',
+                    as: 'ulbInfo'
+                }
+            },
+            { $unwind: '$ulbInfo' },
+            {
+                $project: {
+                    "steps": "$steps",
+                    "isUA": "$ulbInfo.isUA",
+                    "isMillionPlus": "$ulbInfo.isMillionPlus",
+                    "UA": "$ulbInfo.UA",
+                    "status": "$status",
+                    "isSubmit": "$isSubmit",
+                    "modifiedAt": "$modifiedAt",
+                    "createdAt": "$createdAt",
+                    "isActive": "$isActive",
+                    "ulb": "$ulb",
+                    "actionTakenBy": "$actionTakenBy",
+                    "state": "$state",
+                    "design_year": "$design_year",
+
+                }
+            }
+
+        ]
+
+
+        let masterFormData = await MasterFormData.aggregate(query);
+        if (!masterFormData) {
+            return res.status(500).json({
+                success: false,
+                message: 'Master Data Not Found for ' + user.name
+            })
+        } else {
+            return res.status(200).json({
+                success: true,
+                message: 'Data Found Successfully!',
+                response: masterFormData
+            })
         }
     }
     let masterFormData = await MasterFormData.findOne(query,
