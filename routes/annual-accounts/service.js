@@ -56,11 +56,11 @@ module.exports.get = catchAsync(async (req, res) => {
             "design_year": ObjectId(design_year)
         }
     }
-    let annualAccountData = await AnnualAccountData.findOne(
+    let annualAccountData = await AnnualAccountData.find(
         query,
         '-history'
     )
-    if (!annualAccountData) {
+    if (!annualAccountData || annualAccountData.length === 0) {
         return res.status(400).json({
             success: false,
             message: 'No Annual Account Data Found for ' + user.name
