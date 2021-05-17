@@ -18,8 +18,8 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         let newForm = {
           steps: {
             [formName]: {
-              status: data?.body?.status,
-              remarks: data?.body?.remarks,
+              status: data.body?.status,
+              remarks: data.body?.remarks,
               isSubmit: data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
             },
           },
@@ -34,7 +34,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
             $set: {
               steps: newForm.steps,
               status: "NA",
-              isSubmit: false,
+              isSubmit: false,      // total isSubmit
               actionTakenBy: data?.user?._id,
             },
             $push: { history: oldForm },
@@ -46,7 +46,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         let newForm = new MasterForm(oldForm);
         newForm.steps[formName].status = data?.body?.status;
         newForm.steps[formName].remarks = data?.body?.remarks;
-        newForm.steps[formName].isSubmit = true;
+        newForm.steps[formName].isSubmit = data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
 
         let tempSubmit = true,
           tempStatus = "APPROVED";
