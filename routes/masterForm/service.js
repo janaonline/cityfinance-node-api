@@ -40,6 +40,15 @@ module.exports.get = catchAsync(async (req, res) => {
             },
             { $unwind: '$ulbInfo' },
             {
+                $lookup: {
+                    from: 'states',
+                    localField: 'ulbInfo.state',
+                    foreignField: '_id',
+                    as: 'state'
+                }
+            },
+            { $unwind: "$state" },
+            {
                 $project: {
                     "steps": "$steps",
                     "isUA": "$ulbInfo.isUA",
@@ -51,8 +60,10 @@ module.exports.get = catchAsync(async (req, res) => {
                     "createdAt": "$createdAt",
                     "isActive": "$isActive",
                     "ulb": "$ulb",
+                    "ulbName": "$ulbInfo.name",
                     "actionTakenBy": "$actionTakenBy",
-                    "state": "$state",
+                    "state": "$state._id",
+                    "stateName": "$state.name",
                     "design_year": "$design_year",
 
                 }
@@ -62,7 +73,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
 
         let masterFormData = await MasterFormData.aggregate(query);
-        if (!masterFormData) {
+        if (!masterFormData || masterFormData.length === 0) {
             return res.status(500).json({
                 success: false,
                 message: 'Master Data Not Found for ' + user.name
@@ -71,7 +82,7 @@ module.exports.get = catchAsync(async (req, res) => {
             return res.status(200).json({
                 success: true,
                 message: 'Data Found Successfully!',
-                response: masterFormData
+                response: masterFormData[0]
             })
         }
     }

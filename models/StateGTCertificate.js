@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const ContentPDFSchema = new Schema({
-    pdfUrl: [{ type: String }],
-    pdfName: [{ type: String }],
+    pdfUrl: { type: String },
+    pdfName: { type: String },
 });
 
 
@@ -12,7 +12,7 @@ const StateGrantTransferCertificateSchema = new Schema(
     {
         state: { type: Schema.Types.ObjectId, ref: 'State', required: true, },
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
-        isCompleted: { type: Boolean, default: false, required: true },
+        isCompleted: { type: Boolean, default: false },
         history: { type: Array, default: [] },
         million_tied: { type: ContentPDFSchema },
         nonmillion_tied: { type: ContentPDFSchema },
