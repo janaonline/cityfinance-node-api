@@ -9,15 +9,19 @@ exports.savePlans = async (req, res) => {
   req.body.ulb = req?.decoded.ulb;
   const ulb = req?.decoded.ulb;
   try {
-    let plans = await Plans.findOneAndUpdate({ ulb: ObjectId(ulb), designYear: ObjectId(designYear) }, req.body, {
-      upsert: true,
-      new: true,
-      setDefaultsOnInsert: true,
-    });
-    if (!isDraft) await UpdateMasterSubmitForm(req, "plans");
+    let plans = await Plans.findOneAndUpdate(
+      { ulb: ObjectId(ulb), designYear: ObjectId(designYear) },
+      req.body,
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+    await UpdateMasterSubmitForm(req, "plans");
     return res.status(200).json({
       msg: "Plans Submitted!",
-      isCompleted: !plans.isDraft
+      isCompleted: !plans.isDraft,
     });
   } catch (err) {
     console.error(err.message);
@@ -27,7 +31,7 @@ exports.savePlans = async (req, res) => {
 
 exports.getPlans = async (req, res) => {
   const { designYear } = req.params;
-  const ulb = req?.decoded?.ulb;
+  const ulb = req?.decoded.ulb;
   try {
     const plan = await Plans.findOne({
       ulb: ObjectId(ulb),
@@ -38,6 +42,31 @@ exports.getPlans = async (req, res) => {
       return res.status(404).json({ msg: "No Plan found" });
     }
     return res.status(200).json(plan);
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
+
+exports.action = async (req, res) => {
+  let { ulb, designYear, isDraft } = req.body;
+  try {
+    let currentPlan = await Plans.findOne({
+      ulb: ObjectId(ulb),
+      designYear: ObjectId(designYear),
+      isActive: true,
+    }).select({
+      history: 0,
+    });
+    const newPlan = await Plans.findOneAndUpdate(
+      { ulb: ObjectId(ulb), isActive: true },
+      { $set: req.body, $push: { history: currentPlan } }
+    );
+    if (!newPlan) {
+      return res.status(404).json({ msg: "no plan found" });
+    }
+    await UpdateMasterSubmitForm(req, "plans");
+    return res.status(200).json({ msg: "Action Submitted!" });
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
@@ -55,41 +84,6 @@ exports.removePlans = async (req, res) => {
       return res.status(404).json({ msg: "No Plan Found" });
     }
     return res.status(200).json({ msg: "Plans Removed" });
-  } catch (err) {
-    console.error(err.message);
-    return Response.BadRequest(res, {}, err.message);
-  }
-};
-
-exports.action = async (req, res) => {
-  let { ulb, designYear, isDraft } = req.body;
-  try {
-    let currentPlan = await Plans.findOne({
-      ulb: ObjectId(ulb),
-      designYear: ObjectId(designYear),
-      isActive: true,
-    }).select({
-      history: 0,
-    });
-
-    const newPlan = await Plans.findOneAndUpdate(
-      { ulb: ObjectId(ulb), isActive: true },
-      { $set: req.body, $push: { history: currentPlan } }
-    );
-
-    if (!newPlan) {
-      return res.status(404).json({ msg: "no plan found" });
-    }
-
-    if (!isDraft) {
-      req.body.remarks = {
-        water: req?.body?.plans?.water?.remarks,
-        sanitation: req?.body?.plans?.sanitation?.remarks,
-      };
-      await UpdateMasterSubmitForm(req, "plans");
-    }
-
-    return res.status(200).json({ msg: "Action Submitted!" });
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);

@@ -53,10 +53,10 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
 
         // calculate final submit & status
         Object.entries(newForm.steps).forEach((ele) => {
-          if (ele[1].isSubmit === false) tempSubmit = false;
+          if (ele[1].isSubmit === false || ele[1].isSubmit === null) tempSubmit = false;
           if (ele[1].status === "NA" || ele[1].status === null) {
             tempStatus = "NA";
-          } else if (ele[1].status === "REJECTED" && tempStatus == "APPROVED") {
+          } else if (ele[1].status === "REJECTED") {
             tempStatus = "REJECTED";
           }
         });
@@ -106,8 +106,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           [formName]: {
             remarks: data.body?.remarks,
             status: data.body?.status,
-            isSubmit: data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
-
+            isSubmit: data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
           },
         },
         actionTakenBy: data?.user?._id,
