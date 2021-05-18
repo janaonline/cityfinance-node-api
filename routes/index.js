@@ -114,7 +114,7 @@ router.use(grantDistribution);
 
 
 //STATE FORMS
-// const StateGTCertificate = require("./State Forms/GT-Certificate");
-// router.use(StateGTCertificate);
+const StateGTCertificate = require("./State-Forms");
+router.use(StateGTCertificate);
 
 module.exports = router;
