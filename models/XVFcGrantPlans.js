@@ -26,9 +26,9 @@ const projectDetails = () => {
       after: {
         type: Number,
       },
-      cost: {
-        type: Number,
-      },
+    },
+    cost: {
+      type: Number,
     },
   };
 };
