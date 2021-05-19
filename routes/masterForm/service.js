@@ -2,7 +2,7 @@ const catchAsync = require('../../util/catchAsync')
 const MasterFormData = require('../../models/MasterForm')
 const ObjectId = require('mongoose').Types.ObjectId;
 const Service = require('../../service')
-
+const moment = require('moment');
 module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded
 
@@ -144,6 +144,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                     ? req.body.sort
                     : {},
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        csv = req.query.csv,
         limit = req.query.limit ? parseInt(req.query.limit) : 50;
 
     if (!user) {
@@ -258,7 +259,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                         },
                     },
                     "ulbType": '$ulb.ulbType.name',
-                    actionTakenByUserRole: '$actionTakenBy.role',
+                    "actionTakenByUserRole": '$actionTakenBy.role',
                     "status": {
                         $cond: {
                             if: { $eq: ['$status', 'NA'] },
@@ -276,7 +277,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
         let newFilter = await Service.mapFilter(filter);
         let total = undefined;
         let priority = false;
-        let csv = false;
+
         if (newFilter['status']) {
             Object.assign(newFilter, statusFilter[newFilter['status']]);
             if (newFilter['status'] == '2' || newFilter['status'] == '3') { delete newFilter['status']; }
@@ -296,26 +297,27 @@ module.exports.getAll = catchAsync(async (req, res) => {
             }
             query.push(sort);
         }
+
         if (csv) {
             let arr = await MasterFormData.aggregate(query).exec();
             for (d of arr) {
                 if (
                     d.status == 'PENDING' &&
-                    d.isCompleted == false &&
+                    d.isSubmit == false &&
                     d.actionTakenByUserRole == 'ULB'
                 ) {
                     d.status = 'Saved as Draft';
                 }
                 if (
                     d.status == 'PENDING' &&
-                    d.isCompleted == true &&
+                    d.isSubmit == true &&
                     d.actionTakenByUserRole == 'ULB'
                 ) {
                     d.status = 'Under Review by State';
                 }
                 if (
                     d.status == 'PENDING' &&
-                    d.isCompleted == false &&
+                    d.isSubmit == false &&
                     d.actionTakenByUserRole == 'STATE'
                 ) {
                     d.status = 'Under Review by State';
@@ -329,7 +331,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                 if (
                     d.status == 'PENDING' &&
                     d.actionTakenByUserRole == 'STATE' &&
-                    d.isCompleted == false
+                    d.isSubmit == false
                 ) {
                     d.status = 'Under Review by MoHUA';
                 }
@@ -351,15 +353,6 @@ module.exports.getAll = catchAsync(async (req, res) => {
                 ) {
                     d.status = 'Approval Completed';
                 }
-
-                // (
-                // d.garbageFreeCities = d.garbageFreeCities && d.garbageFreeCities.length > 0 ? d.garbageFreeCities[0]["url"] : '',
-                // d.waterSupplyCoverage = d.waterSupplyCoverage && d.waterSupplyCoverage.length > 0 ? d.waterSupplyCoverage[0]["url"] : '',
-                // d.cityPlan = d.cityPlan && d.cityPlan.length > 0 ? d.cityPlan[0]["url"] : '',
-                // d.waterBalancePlan = d.waterBalancePlan && d.waterBalancePlan.length > 0 ? d.waterBalancePlan[0]["url"] : '',
-                // d.serviceLevelPlan = d.serviceLevelPlan && d.serviceLevelPlan.length > 0 ? d.serviceLevelPlan[0]["url"] : '',
-                // d.solidWastePlan = d.solidWastePlan && d.solidWastePlan.length > 0 ? d.solidWastePlan[0]["url"] : ''
-                // )
             }
             let field = csvData();
             if (user.role == 'STATE') {
@@ -383,7 +376,6 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
             let masterFormData = await MasterFormData.aggregate(query).exec();
             if (masterFormData) {
-                console.log(masterFormData)
                 return res.status(200).json({
                     success: true,
                     message: "ULB Master Form Data Found Successfully!",
@@ -410,47 +402,16 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
 function csvData() {
 
-    // return field = {
-    //     stateName: 'State name',
-    //     ulbName: 'ULB name',
-    //     ulbType: 'ULB Type',
-    //     populationType: 'Population Type',
-    //     censusCode: 'Census Code',
-    //     sbCode: 'ULB Code',
-    //     //financialYear: 'Financial Year',
-    //     //auditStatus: 'Audit Status',
-    //     status: 'Status',
-    //     'baeline_waterSuppliedPerDay_2020_21': 'Baseline 2020-21_Water supplied in litre per day(lpcd)',
-    //     'target_waterSuppliedPerDay_2021_22': 'Target 2021-22_Water supplied in litre per day(lpcd)',
-    //     'target_waterSuppliedPerDay_2022_23': 'Target 2022-23_Water supplied in litre per day(lpcd)',
-    //     'target_waterSuppliedPerDay_2023_24': 'Target 2023-24_Water supplied in litre per day(lpcd)',
-    //     'target_waterSuppliedPerDay_2024_25': 'Target 2024_25_Water supplied in litre per day(lpcd)',
+    return field = {
+        state: 'State name',
+        ulbName: 'ULB name',
+        ulbType: 'ULB Type',
+        populationType: 'Population Type',
+        censusCode: 'Census Code',
+        sbCode: 'ULB Code',
+        status: 'Status',
 
-    //     'baseline_reduction_2020_21': 'Baseline 2020-21_Reduction in non-water revenue',
-    //     'target_reduction_2021_22': 'Target 2021-22_Reduction in non-water revenue',
-    //     'target_reduction_2022_23': 'Target 2022-23_Reduction in non-water revenue',
-    //     'target_reduction_2023_24': 'Target 2023-24_Reduction in non-water revenue',
-    //     'target_reduction_2024_25': 'Target 2024_25_Reduction in non-water revenue',
+    };
 
-    //     'baeline_houseHoldCoveredWithSewerage_2020_21': 'Baseline 2020-21_% of households covered with sewerage/septage services',
-    //     'target_houseHoldCoveredWithSewerage_2021_22': 'Target 2021-22_% of households covered with sewerage/septage services',
-    //     'target_houseHoldCoveredWithSewerage_2022_23': 'Target 2022-23_% of households covered with sewerage/septage services',
-    //     'target_houseHoldCoveredWithSewerage_2023_24': 'Target 2023-24_% of households covered with sewerage/septage services',
-    //     'target_houseHoldCoveredWithSewerage_2024_25': 'Target 2024_25_% of households covered with sewerage/septage services',
-
-    //     'baeline_houseHoldCoveredPipedSupply_2020_21': 'Baseline 2020-21_% of households covered with piped water supply',
-    //     'target_houseHoldCoveredPipedSupply_2021_22': 'Target 2021-22_% of households covered with piped water supply',
-    //     'target_houseHoldCoveredPipedSupply_2022_23': 'Target 2022-23_% of households covered with piped water supply',
-    //     'target_houseHoldCoveredPipedSupply_2023_24': 'Target 2023-24_% of households covered with piped water supply',
-    //     'target_houseHoldCoveredPipedSupply_2024_25': 'Target 2024_25_% of households covered with piped water supply',
-
-    //     'garbageFreeCities': 'Plan for garbage free star rating of the cities',
-    //     'waterSupplyCoverage': 'Plan for coverage of water supply for public/community toilets',
-    //     'cityPlan': 'City Plan DPR',
-    //     'waterBalancePlan': 'Water Balance Plan',
-    //     'serviceLevelPlan': 'Service Level Improvement Plan',
-    //     'solidWastePlan': 'Solid Waste Management Plan'
-};
-
-
+}
 

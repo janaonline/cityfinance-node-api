@@ -57,7 +57,7 @@ const standardizedDataSchema = new Schema({
         excelUrl: { type: String },
         excelName: { type: String }
     },
-    declaration: { type: Boolean, default: false },
+    declaration: { type: Boolean, default: null },
 })
 
 const AnnualAccountDataSchema = new Schema(
