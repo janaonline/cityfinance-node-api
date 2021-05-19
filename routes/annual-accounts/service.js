@@ -56,10 +56,7 @@ module.exports.get = catchAsync(async (req, res) => {
             "design_year": ObjectId(design_year)
         }
     }
-    let annualAccountData = await AnnualAccountData.find(
-        query,
-        '-history'
-    )
+    let annualAccountData = await AnnualAccountData.find(query)
     if (!annualAccountData || annualAccountData.length === 0) {
         return res.status(400).json({
             success: false,
@@ -137,6 +134,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
         else if (data.submit_annual_accounts.answer === 'No' && data.submit_standardized_data.answer === 'Yes') {
             delete data.provisional_data;
         }
+
         let query = {
             "ulb": ObjectId(ulb._id),
             "year": ObjectId(data.year),
@@ -148,7 +146,10 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             annualAccountData.history = undefined;
             req.body['history'].push(annualAccountData);
             data['status'] = 'PENDING';
-            let updatedData = await AnnualAccountData.findOneAndUpdate(query, data, { new: true, runValidators: true, setDefaultsOnInsert: true })
+            console.log(data)
+            let updatedData = await AnnualAccountData.findOneAndUpdate(query,
+                data,
+                { new: true, upsert: true, setDefaultsOnInsert: true, overwrite: true })
             if (updatedData) {
                 await UpdateMasterSubmitForm(req, "annualAccounts");
                 return res.status(200).json({
