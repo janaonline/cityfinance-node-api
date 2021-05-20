@@ -35,6 +35,7 @@ lerna-debug.log*
 # Environment specific
 .env
 .env_bk
-
+public
+/public
 
 package-lock.json
