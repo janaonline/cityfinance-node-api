@@ -56,7 +56,7 @@ module.exports.get = catchAsync(async (req, res) => {
             "design_year": ObjectId(design_year)
         }
     }
-    let annualAccountData = await AnnualAccountData.find(query)
+    let annualAccountData = await AnnualAccountData.find(query).select({history:0})
     if (!annualAccountData || annualAccountData.length === 0) {
         return res.status(400).json({
             success: false,
