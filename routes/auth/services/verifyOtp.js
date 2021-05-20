@@ -53,7 +53,7 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
                 let sessionId = req.headers.sessionid;
                 let token = await createToken(user, sessionId);
-
+                const allYears = await getYears()
                 return res.status(200).json({
                     token: token,
                     success: true,
@@ -65,7 +65,8 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                         role: user.role,
                         state: user.state,
                         ulb: user.ulb,
-                    }
+                    },
+                    allYears
                 })
             } else {
                 return res.status(400).json({
@@ -81,3 +82,12 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         }
     }
 });
+
+getYears = async () => {
+    let allYears = await Years.find({ isActive: true }).select({ isActive: 0 })
+    newObj = {}
+    allYears.forEach(element => {
+        newObj[element.year] = element._id
+    });
+    return newObj
+}
