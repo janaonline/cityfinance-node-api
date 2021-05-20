@@ -18,6 +18,7 @@ const { MongooseDocument } = require('mongoose');
 const dir = 'uploads';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
+const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year');
 const { findOne } = require('../../models/LedgerLog');
 const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
@@ -294,13 +295,13 @@ module.exports.create = async (req, res) => {
 };
 
 
-module.exports.get = async (req, res) => {
+module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded,
         filter = req.body.filter,
         sort = req.body.sort,
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
-        design_year = req.query.design_year,
+        design_year = req.query?.design_year,
         { ulb } = req.params,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
 
@@ -506,8 +507,8 @@ module.exports.get = async (req, res) => {
     } else {
         return Response.BadRequest(res, {}, 'Action not allowed.');
     }
-};
-module.exports.getAll = async (req, res) => {
+})
+module.exports.getAll = catchAsync(async (req, res) => {
 
     try {
         let statusFilter = {
@@ -554,7 +555,7 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
-        let design_year = req.query?.design_year;
+        let { design_year } = req.params
         let status = 'PENDING';
         // if(user.role=='ULB'){
         //     status = 'REJECTED'
@@ -884,7 +885,7 @@ module.exports.getAll = async (req, res) => {
     } catch (e) {
         return Response.BadRequest(res, e, e.message);
     }
-};
+})
 
 function csvData() {
 
