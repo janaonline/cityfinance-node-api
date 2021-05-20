@@ -222,7 +222,7 @@ module.exports.create = async (req, res) => {
                 success: false,
                 message: 'Must Submit Water Potability Plan (PDF Format)'
             })
-        } else if (!data?.water_index && (data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url || data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url != "")) {
+        } else if (!data?.water_index && (data?.waterPotability?.documents?.waterPotabilityPlan[0].url)) {
             return res.status(400).json({
                 success: false,
                 message: 'Water Potability Plan Cannot be Submitted.'
