@@ -251,6 +251,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
                             else: 'Non Million',
                         },
                     },
+                    "isUA": '$ulb.isUA',
+                    "isMillionPlus": '$ulb.isMillionPlus',
                     "UA": {
                         $cond: {
                             if: { $eq: ['$ulb.isUA', 'Yes'] },
