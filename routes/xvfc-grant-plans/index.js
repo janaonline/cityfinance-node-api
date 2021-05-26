@@ -3,6 +3,8 @@ const router = express.Router();
 const { savePlans, getPlans, removePlans, action } = require("./service");
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
+const { userAuth } = require("../../middlewares/actionUserAuth");
+
 //validator
 const { planCreateValidator } = require("./validator");
 
@@ -13,8 +15,6 @@ const { draftChecker } = require("../../util/validator");
 router.post(
   "/plans",
   verifyToken,
-  planCreateValidator,
-  draftChecker,
   savePlans
 );
 

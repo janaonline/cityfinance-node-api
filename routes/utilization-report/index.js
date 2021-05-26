@@ -31,6 +31,7 @@ router.post(
 router.get("/utilization-report", verifyToken, read);
 //read by id
 router.get("/utilization-report/:financialYear/:designYear", verifyToken, readById);
+router.get("/utilization-report/:financialYear/:designYear/:ulb_id", verifyToken, readById);
 //update by id
 router.put("/utilization-report/:financialYear", verifyToken, update);
 //delete by id

@@ -5,6 +5,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
     body: req?.body,
     user: req?.decoded,
   };
+
   try {
     const oldForm = await MasterForm.findOne({
       ulb: ObjectId(data?.user?.ulb),
@@ -17,8 +18,8 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         let newForm = {
           steps: {
             [formName]: {
-              status: data?.body?.status,
-              remarks: data?.body?.remarks,
+              status: data.body?.status,
+              remarks: data.body?.remarks,
               isSubmit: data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
             },
           },
@@ -33,7 +34,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
             $set: {
               steps: newForm.steps,
               status: "NA",
-              isSubmit: false,
+              isSubmit: false,      // total isSubmit
               actionTakenBy: data?.user?._id,
             },
             $push: { history: oldForm },
@@ -45,17 +46,17 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         let newForm = new MasterForm(oldForm);
         newForm.steps[formName].status = data?.body?.status;
         newForm.steps[formName].remarks = data?.body?.remarks;
-        newForm.steps[formName].isSubmit = true;
+        newForm.steps[formName].isSubmit = data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
 
         let tempSubmit = true,
           tempStatus = "APPROVED";
 
         // calculate final submit & status
         Object.entries(newForm.steps).forEach((ele) => {
-          if (ele[1].isSubmit === false) tempSubmit = false;
+          if (ele[1].isSubmit === false || ele[1].isSubmit === null) tempSubmit = false;
           if (ele[1].status === "NA" || ele[1].status === null) {
             tempStatus = "NA";
-          } else if (ele[1].status === "REJECTED" && tempStatus == "APPROVED") {
+          } else if (ele[1].status === "REJECTED") {
             tempStatus = "REJECTED";
           }
         });
@@ -105,8 +106,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           [formName]: {
             remarks: data.body?.remarks,
             status: data.body?.status,
-            isSubmit: data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
-
+            isSubmit: data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
           },
         },
         actionTakenBy: data?.user?._id,

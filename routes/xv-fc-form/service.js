@@ -18,6 +18,7 @@ const { MongooseDocument } = require('mongoose');
 const dir = 'uploads';
 const subDir = '/source';
 const date = moment().format('DD-MMM-YY');
+const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year');
 const { findOne } = require('../../models/LedgerLog');
 const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
@@ -216,17 +217,17 @@ module.exports.create = async (req, res) => {
         if (!ulb) {
             return Response.BadRequest(res, {}, `Ulb not found.`);
         }
-        if (data?.water_index && (!data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url || data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url === "")) {
-            return res.status(400).json({
-                success: false,
-                message: 'Must Submit Water Potability Plan (PDF Format)'
-            })
-        } else if (!data?.water_index && (data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url || data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url != "")) {
-            return res.status(400).json({
-                success: false,
-                message: 'Water Potability Plan Cannot be Submitted.'
-            })
-        }
+        // if (data?.water_index && (!data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url || data?.waterPotability?.documents?.waterPotabilityPlan[0]?.url === "")) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Must Submit Water Potability Plan (PDF Format)'
+        //     })
+        // } else if (!data?.water_index && (data?.waterPotability?.documents?.waterPotabilityPlan[0].url)) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Water Potability Plan Cannot be Submitted.'
+        //     })
+        // }
 
         data.ulb = user.ulb;
         req.body['createdAt'] = time();
@@ -268,10 +269,11 @@ module.exports.create = async (req, res) => {
         ) {
             if (response) {
                 let ulbData = await XVFCGrantULBData.findOne(query);
+                if (!ulbData?.isOldForm) {
+                    await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
+                }
                 if (ulbData.isCompleted) {
-                    if (!ulbData?.isOldForm) {
-                        await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
-                    }
+
                     let email = await Service.emailTemplate.sendFinancialDataStatusEmail(
                         ulbData._id,
                         'UPLOAD'
@@ -293,13 +295,14 @@ module.exports.create = async (req, res) => {
 };
 
 
-module.exports.get = async (req, res) => {
+module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded,
         filter = req.body.filter,
         sort = req.body.sort,
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 50,
-        design_year = req.query.design_year,
+        design_year = req.query?.design_year,
+        { ulb } = req.params,
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
 
     if (!design_year || design_year === "") {
@@ -308,7 +311,52 @@ module.exports.get = async (req, res) => {
             message: 'Design Year Not Found!'
         })
     }
+    if (user.role != 'ULB' && ulb) {
+        let query = {
+            "ulb": ObjectId(ulb),
+            "design_year": ObjectId(design_year)
+        }
+        try {
 
+            let data = await XVFCGrantULBData.findOne(query)
+                .populate([
+                    {
+                        path: 'ulb',
+                        select: '_id name code state',
+                        populate: {
+                            path: 'state',
+                            select: '_id name code',
+                        },
+                    },
+                    {
+                        path: 'actionTakenBy',
+                        select: '_id name email role',
+                    },
+                ])
+                .populate([
+                    {
+                        path: 'history.actionTakenBy',
+                        model: User,
+                        select: '_id name email role',
+                    },
+                    {
+                        path: 'history.ulb',
+                        select: '_id name code state',
+                        populate: {
+                            path: 'state',
+                            select: '_id name code',
+                        },
+                    },
+                ])
+                .lean()
+                .exec();
+            return Response.OK(res, data, 'Request fetched.');
+        } catch (e) {
+            console.log('Exception:', e);
+            return Response.DbError(res, e, e.message);
+        }
+
+    }
     if (actionAllowed.indexOf(user.role) > -1) {
         if (req.query._id) {
             try {
@@ -459,8 +507,8 @@ module.exports.get = async (req, res) => {
     } else {
         return Response.BadRequest(res, {}, 'Action not allowed.');
     }
-};
-module.exports.getAll = async (req, res) => {
+})
+module.exports.getAll = catchAsync(async (req, res) => {
 
     try {
 
@@ -518,7 +566,7 @@ module.exports.getAll = async (req, res) => {
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
-        let design_year = req.query?.design_year;
+        let { design_year } = req.params
         let status = 'PENDING';
         // if(user.role=='ULB'){
         //     status = 'REJECTED'
@@ -848,7 +896,7 @@ module.exports.getAll = async (req, res) => {
     } catch (e) {
         return Response.BadRequest(res, e, e.message);
     }
-};
+})
 
 function csvData() {
 
