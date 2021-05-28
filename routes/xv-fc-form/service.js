@@ -485,41 +485,41 @@ module.exports.get = catchAsync(async (req, res) => {
                 //         success: false,
                 //         message: 'No Data Found'
                 //     })
-            }
+                // }
                 for (s of data) {
-                s['status'] = getStatus(s);
-            }
+                    s['status'] = getStatus(s);
+                }
 
-            return res.status(200).json({
-                success: true,
-                message: 'data',
-                total: total,
-                data: data,
-            });
-        } catch (e) {
-            console.log('Exception:', e);
-            return Response.DbError(res, e, e.message);
-        }
-        function getStatus() {
-            if (s.correctness == 'PENDING' && s.completeness == 'PENDING') {
-                return 'PENDING';
-            } else if (
-                s.correctness == 'APPROVED' &&
-                s.completeness == 'APPROVED'
-            ) {
-                return 'APPROVED';
-            } else if (s.completeness == 'PENDING') {
-                return 'PENDING';
-            } else if (s.correctness == 'PENDING') {
-                return 'PENDING';
-            } else {
-                return 'REJECTED';
+                return res.status(200).json({
+                    success: true,
+                    message: 'data',
+                    total: total,
+                    data: data,
+                });
+            } catch (e) {
+                console.log('Exception:', e);
+                return Response.DbError(res, e, e.message);
+            }
+            function getStatus() {
+                if (s.correctness == 'PENDING' && s.completeness == 'PENDING') {
+                    return 'PENDING';
+                } else if (
+                    s.correctness == 'APPROVED' &&
+                    s.completeness == 'APPROVED'
+                ) {
+                    return 'APPROVED';
+                } else if (s.completeness == 'PENDING') {
+                    return 'PENDING';
+                } else if (s.correctness == 'PENDING') {
+                    return 'PENDING';
+                } else {
+                    return 'REJECTED';
+                }
             }
         }
+    } else {
+        return Response.BadRequest(res, {}, 'Action not allowed.');
     }
-} else {
-    return Response.BadRequest(res, {}, 'Action not allowed.');
-}
 })
 module.exports.getAll = catchAsync(async (req, res) => {
 
