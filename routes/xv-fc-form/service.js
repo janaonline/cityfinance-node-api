@@ -524,6 +524,17 @@ module.exports.get = catchAsync(async (req, res) => {
 module.exports.getAll = catchAsync(async (req, res) => {
 
     try {
+
+        /**
+        1 Save as draft 
+        2 Under review by State
+        3 Under review by MOHUA
+        4 Rejected By State
+        5 Rejected By MOhua
+        6 Approval Completed
+        */
+        
+
         let statusFilter = {
             1: {
                 status: 'PENDING',

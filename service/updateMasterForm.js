@@ -46,7 +46,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         let newForm = new MasterForm(oldForm);
         newForm.steps[formName].status = data?.body?.status;
         newForm.steps[formName].remarks = data?.body?.remarks;
-        newForm.steps[formName].isSubmit = data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
+        newForm.steps[formName].isSubmit = data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
 
         let tempSubmit = true,
           tempStatus = "APPROVED";
