@@ -394,12 +394,12 @@ module.exports.get = catchAsync(async (req, res) => {
                     ])
                     .lean()
                     .exec();
-                if (data.length == 0) {
-                    return res.status(404).json({
-                        success: false,
-                        message: 'No Data Found'
-                    })
-                }
+                // if (data.length == 0) {
+                //     return res.status(404).json({
+                //         success: false,
+                //         message: 'No Data Found'
+                //     })
+                // }
                 return Response.OK(res, data, 'Request fetched.');
             } catch (e) {
                 console.log('Exception:', e);
@@ -480,46 +480,46 @@ module.exports.get = catchAsync(async (req, res) => {
                     .lean()
                     .exec();
 
-                if (data.length == 0) {
-                    return res.status(404).json({
-                        success: false,
-                        message: 'No Data Found'
-                    })
-                }
-                for (s of data) {
-                    s['status'] = getStatus(s);
-                }
-
-                return res.status(200).json({
-                    success: true,
-                    message: 'data',
-                    total: total,
-                    data: data,
-                });
-            } catch (e) {
-                console.log('Exception:', e);
-                return Response.DbError(res, e, e.message);
+                // if (data.length == 0) {
+                //     return res.status(404).json({
+                //         success: false,
+                //         message: 'No Data Found'
+                //     })
             }
-            function getStatus() {
-                if (s.correctness == 'PENDING' && s.completeness == 'PENDING') {
-                    return 'PENDING';
-                } else if (
-                    s.correctness == 'APPROVED' &&
-                    s.completeness == 'APPROVED'
-                ) {
-                    return 'APPROVED';
-                } else if (s.completeness == 'PENDING') {
-                    return 'PENDING';
-                } else if (s.correctness == 'PENDING') {
-                    return 'PENDING';
-                } else {
-                    return 'REJECTED';
-                }
+                for (s of data) {
+                s['status'] = getStatus(s);
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: 'data',
+                total: total,
+                data: data,
+            });
+        } catch (e) {
+            console.log('Exception:', e);
+            return Response.DbError(res, e, e.message);
+        }
+        function getStatus() {
+            if (s.correctness == 'PENDING' && s.completeness == 'PENDING') {
+                return 'PENDING';
+            } else if (
+                s.correctness == 'APPROVED' &&
+                s.completeness == 'APPROVED'
+            ) {
+                return 'APPROVED';
+            } else if (s.completeness == 'PENDING') {
+                return 'PENDING';
+            } else if (s.correctness == 'PENDING') {
+                return 'PENDING';
+            } else {
+                return 'REJECTED';
             }
         }
-    } else {
-        return Response.BadRequest(res, {}, 'Action not allowed.');
     }
+} else {
+    return Response.BadRequest(res, {}, 'Action not allowed.');
+}
 })
 module.exports.getAll = catchAsync(async (req, res) => {
 
@@ -533,7 +533,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
         5 Rejected By MOhua
         6 Approval Completed
         */
-        
+
 
         let statusFilter = {
             1: {
