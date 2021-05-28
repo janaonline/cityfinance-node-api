@@ -394,6 +394,12 @@ module.exports.get = catchAsync(async (req, res) => {
                     ])
                     .lean()
                     .exec();
+                if (data.length == 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'No Data Found'
+                    })
+                }
                 return Response.OK(res, data, 'Request fetched.');
             } catch (e) {
                 console.log('Exception:', e);
@@ -473,6 +479,13 @@ module.exports.get = catchAsync(async (req, res) => {
                     ])
                     .lean()
                     .exec();
+
+                if (data.length == 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'No Data Found'
+                    })
+                }
                 for (s of data) {
                     s['status'] = getStatus(s);
                 }
