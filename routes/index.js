@@ -10,17 +10,17 @@ const Auth = require("./auth");
 router.use(Auth);
 
 // @Annual accounts
-const AnnualAccountData = require('./annual-accounts');
+const AnnualAccountData = require("./annual-accounts");
 router.use("/annual-accounts", AnnualAccountData);
 
 //@PFMS Account
-const PFMSAccountData = require('./pfmsAccount');
+const PFMSAccountData = require("./pfmsAccount");
 router.use("/pfmsAccount", PFMSAccountData);
 
-const MasterFormData = require('./masterForm');
+const MasterFormData = require("./masterForm");
 router.use("/masterForm", MasterFormData);
 
-const UAData = require('./UA');
+const UAData = require("./UA");
 router.use("/UA", UAData);
 
 // @FinancialYear
@@ -112,9 +112,16 @@ router.use(submit);
 const grantDistribution = require("./grant-distribution");
 router.use(grantDistribution);
 
-
 //STATE FORMS
 const StateGTCertificate = require("./State-Forms");
 router.use(StateGTCertificate);
+
+//state dashboard
+const dashboard = require("./fvcStateDashboard");
+router.use("/dashboard", dashboard);
+
+//WaterRejenuvation
+const WaterRejenuvation = require("./waterRejenuvation");
+router.use(WaterRejenuvation);
 
 module.exports = router;
