@@ -22,6 +22,8 @@ const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year');
 const { findOne } = require('../../models/LedgerLog');
 const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
+const UA = require('../../models/UA')
+const util = require('util')
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -201,6 +203,300 @@ const time = () => {
     return dt;
 };
 
+module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
+    let user = req.decoded;
+
+    if (user.role == 'STATE') {
+        let { design_year } = req.params;
+        if (!design_year) {
+            return res.status(404).json({
+                success: false,
+                message: "Design Year Not Found"
+            })
+        }
+        let state = user.state;
+
+        let query1 = [
+            {
+                "$match": { "state": ObjectId(state) }
+            },
+            {
+                "$lookup": {
+                    "from": "xvfcgrantulbforms",
+                    "localField": "ulb",
+                    "foreignField": "ulb",
+                    "as": "slbForms"
+                }
+            },
+            { "$unwind": "$slbForms" },
+            {
+                $match: {
+                    "slbForms.design_year": ObjectId(design_year),
+                    "slbForms.status": "APPROVED"
+                }
+            },
+            {
+                $project: {
+                    waterSuppliedPerDay: "$slbForms.waterManagement.waterSuppliedPerDay",
+                    reduction: "$slbForms.waterManagement.reduction",
+                    houseHoldCoveredWithSewerage: "$slbForms.waterManagement.houseHoldCoveredWithSewerage",
+                    houseHoldCoveredPipedSupply: "$slbForms.waterManagement.houseHoldCoveredPipedSupply",
+                    value: "$slbForms.waterManagement.waterSuppliedPerDay.baseline.2021"
+                }
+            },
+            {
+                $group: {
+                    _id: "$_id",
+                    waterSuppliedPerDay2021: {
+                        $avg: {
+                            '$convert': { 'input': '$waterSuppliedPerDay.baseline.2021', 'to': 'double' }
+                        }
+                    },
+                    waterSuppliedPerDay2122: {
+                        $avg: {
+                            '$convert': { 'input': '$waterSuppliedPerDay.target.2122', 'to': 'double' }
+                        }
+                    },
+                    waterSuppliedPerDay2223: {
+                        $avg: {
+                            '$convert': { 'input': '$waterSuppliedPerDay.target.2223', 'to': 'double' }
+                        }
+                    },
+                    waterSuppliedPerDay2324: {
+                        $avg: {
+                            '$convert': { 'input': '$waterSuppliedPerDay.target.2324', 'to': 'double' }
+                        }
+                    },
+                    waterSuppliedPerDay2425: {
+                        $avg: {
+                            '$convert': { 'input': '$waterSuppliedPerDay.target.2425', 'to': 'double' }
+                        }
+                    },
+                    reduction2021: {
+                        $avg: {
+                            '$convert': { 'input': '$reduction.baseline.2021', 'to': 'double' }
+                        }
+                    },
+                    reduction2122: {
+                        $avg: {
+                            '$convert': { 'input': '$reduction.target.2122', 'to': 'double' }
+                        }
+                    },
+                    reduction2223: {
+                        $avg: {
+                            '$convert': { 'input': '$reduction.target.2223', 'to': 'double' }
+                        }
+                    },
+                    reduction2324: {
+                        $avg: {
+                            '$convert': { 'input': '$reduction.target.2324', 'to': 'double' }
+                        }
+                    },
+                    reduction2425: {
+                        $avg: {
+                            '$convert': { 'input': '$reduction.target.2425', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredWithSewerage2021: {
+                        $avg: {
+                            '$convert': { 'input': '$reduction.baseline.2021', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredWithSewerage2122: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredWithSewerage.target.2122', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredWithSewerage2223: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredWithSewerage.target.2223', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredWithSewerage2324: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredWithSewerage.target.2324', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredWithSewerage2425: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredWithSewerage.target.2425', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredPipedSupply2021: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredPipedSupply.baseline.2021', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredPipedSupply2122: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredPipedSupply.target.2122', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredPipedSupply2223: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredPipedSupply.target.2223', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredPipedSupply2324: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredPipedSupply.target.2324', 'to': 'double' }
+                        }
+                    },
+                    houseHoldCoveredPipedSupply2425: {
+                        $avg: {
+                            '$convert': { 'input': '$houseHoldCoveredPipedSupply.target.2425', 'to': 'double' }
+                        }
+                    },
+
+
+                    total: { $sum: 1 }
+                }
+            }
+
+
+        ]
+
+        let query2 = [
+            {
+                $match: { "state": ObjectId(state) }
+            },
+            {
+                $lookup: {
+                    from: "xvfcgrantulbforms",
+                    localField: "ulb",
+                    foreignField: "ulb",
+                    as: "slbForms"
+                }
+            },
+            { $unwind: "$slbForms" },
+            {
+                $match: {
+                    "slbForms.design_year": ObjectId(design_year)
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        status: "$slbForms.status"
+                    },
+                    // slbForms: { $addToSet: "$slbForms" },
+                    totalCount: { $sum: 1 }
+
+                },
+
+
+            }
+
+
+        ]
+
+        let { output1, output2 } = await new Promise(async (resolve, reject) => {
+            let prms1 = new Promise(async (rslv, rjct) => {
+                let output = await UA.aggregate(query1);
+                if (output.length > 0) {
+                    rslv(output)
+
+                } else {
+                    rjct({ message: "DATA NOT FOUND" })
+                }
+            })
+            let prms2 = new Promise(async (rslv, rjct) => {
+                let output = await UA.aggregate(query2);
+                if (output.length > 0) {
+                    rslv(output)
+                    console.log('3')
+                } else {
+                    rjct({ message: "DATA NOT FOUND" })
+                    console.log('4')
+                }
+            })
+            Promise.all([prms1, prms2]).then(outputs => {
+                let output1 = outputs[0];
+                let output2 = outputs[1];
+                if (output1 && output2) {
+                    resolve({ output1, output2 });
+                } else {
+                    reject({ message: "No Data Found" });
+                }
+            }, e => {
+                reject(e);
+            })
+
+
+        })
+        console.log(output1[0], output2)
+
+        let finalOutput = formatOutput(output1[0], output2)
+        return res.status(200).json({
+            success: true,
+            message: "Data Found Successfully",
+            data: finalOutput
+        })
+
+
+    } else {
+        return res.status(403).json({
+            success: false,
+            message: user.role + " Not Authenticated to Perform this Action"
+        })
+    }
+})
+
+formatOutput = (arr, arr2) => {
+    let pending = arr2[0]?.totalCount
+    let approved = arr2[1]?.totalCount
+    let output = {
+        "waterSuppliedPerDay": {
+            "target": {
+                "2122": arr.waterSuppliedPerDay2122,
+                "2223": arr.waterSuppliedPerDay2223,
+                "2324": arr.waterSuppliedPerDay2324,
+                "2425": arr.waterSuppliedPerDay2425
+            },
+            "baseline": {
+                "2021": arr.waterSuppliedPerDay2021
+            },
+        },
+        "reduction": {
+            "target": {
+                "2122": arr.reduction2122,
+                "2223": arr.reduction2223,
+                "2324": arr.reduction2324,
+                "2425": arr.reduction2425
+            },
+            "baseline": {
+                "2021": arr.reduction2021
+            },
+        },
+        "houseHoldCoveredWithSewerage": {
+            "target": {
+                "2122": arr.houseHoldCoveredWithSewerage2122,
+                "2223": arr.houseHoldCoveredWithSewerage2223,
+                "2324": arr.houseHoldCoveredWithSewerage2324,
+                "2425": arr.houseHoldCoveredWithSewerage2425
+            },
+            "baseline": {
+                "2021": arr.houseHoldCoveredWithSewerage2021
+            },
+        },
+        "houseHoldCoveredPipedSupply": {
+            "target": {
+                "2122": arr.houseHoldCoveredPipedSupply2122,
+                "2223": arr.houseHoldCoveredPipedSupply2223,
+                "2324": arr.houseHoldCoveredPipedSupply2324,
+                "2425": arr.houseHoldCoveredPipedSupply2425,
+            },
+            "baseline": {
+                "2021": arr.houseHoldCoveredPipedSupply2021,
+            },
+        },
+        "totalPendingUlb": pending,
+        "totalCompletedUlb": approved,
+        "totalULBsInUA": pending + approved
+
+    }
+    return output;
+};
 
 module.exports.create = async (req, res) => {
     let user = req.decoded;
