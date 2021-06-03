@@ -16,6 +16,9 @@ const projectDetails = () => {
     area: {
       type: Number,
     },
+    nameOfBody: {
+      type: String,
+    },
     location: {
       lat: {
         type: Number,

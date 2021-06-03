@@ -4,8 +4,9 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 
 exports.saveWaterRejenuvation = async (req, res) => {
-  let { state } = req.decoded;
+  let { state, _id } = req.decoded;
   let data = req.body;
+  req.body.actionTakenBy = _id;
   try {
     console.log(data);
     await WaterRejenuvation.findOneAndUpdate(
