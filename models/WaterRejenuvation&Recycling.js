@@ -21,10 +21,10 @@ const projectDetails = () => {
     },
     location: {
       lat: {
-        type: Number,
+        type: String,
       },
       long: {
-        type: Number,
+        type: String,
       },
     },
     photos: [
@@ -68,10 +68,10 @@ const projectDetails2 = () => {
     },
     location: {
       lat: {
-        type: Number,
+        type: String,
       },
       long: {
-        type: Number,
+        type: String,
       },
     },
     stp: {
