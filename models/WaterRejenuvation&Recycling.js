@@ -19,13 +19,11 @@ const projectDetails = () => {
     nameOfBody: {
       type: String,
     },
-    location: {
-      lat: {
-        type: String,
-      },
-      long: {
-        type: String,
-      },
+    lat: {
+      type: String,
+    },
+    long: {
+      type: String,
     },
     photos: [
       {
@@ -66,13 +64,11 @@ const projectDetails2 = () => {
     treatmentPlant: {
       type: String,
     },
-    location: {
-      lat: {
-        type: String,
-      },
-      long: {
-        type: String,
-      },
+    lat: {
+      type: String,
+    },
+    long: {
+      type: String,
     },
     stp: {
       type: Number,
