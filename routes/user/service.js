@@ -232,7 +232,10 @@ module.exports.getAll = async (req, res) => {
                             },
                             rejectReason: 1,
                             modifiedAt: 1,
-                            createdAt: 1
+                            createdAt: 1,
+                            accountantConatactNumber: 1,
+                            accountantEmail: 1,
+                            accountantName: 1
                         }
                     }
                 ];

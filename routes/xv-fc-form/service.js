@@ -221,6 +221,15 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
                 "$match": { "state": ObjectId(state) }
             },
             {
+                "$group": {
+                    "_id": "$name",
+                    "ulb": { $addToSet: "$ulb" }
+                }
+            },
+            {
+                "$unwind": "$ulb"
+            },
+            {
                 "$lookup": {
                     "from": "xvfcgrantulbforms",
                     "localField": "ulb",
@@ -229,6 +238,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
                 }
             },
             { "$unwind": "$slbForms" },
+
             {
                 $match: {
                     "slbForms.design_year": ObjectId(design_year),
@@ -492,7 +502,8 @@ formatOutput = (arr, arr2) => {
         },
         "totalPendingUlb": pending,
         "totalCompletedUlb": approved,
-        "totalULBsInUA": pending + approved
+        "totalULBsInUA": pending + approved,
+        "uaName": arr._id
 
     }
     return output;
