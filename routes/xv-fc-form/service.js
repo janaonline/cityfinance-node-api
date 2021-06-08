@@ -403,6 +403,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
         let { output1, output2 } = await new Promise(async (resolve, reject) => {
             let prms1 = new Promise(async (rslv, rjct) => {
                 let output = await UA.aggregate(query1);
+
                 if (output.length > 0) {
                     rslv(output)
 
@@ -422,6 +423,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             })
             Promise.all([prms1, prms2]).then(outputs => {
                 let output1 = outputs[0];
+
                 let output2 = outputs[1];
                 if (output1 && output2) {
                     resolve({ output1, output2 });
@@ -434,9 +436,9 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 
 
         })
-        console.log(output1[0], output2)
 
-        let finalOutput = formatOutput(output1[0], output2)
+
+        let finalOutput = formatOutput(output1, output2)
         return res.status(200).json({
             success: true,
             message: "Data Found Successfully",
@@ -455,58 +457,67 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 formatOutput = (arr, arr2) => {
     let pending = arr2[0]?.totalCount
     let approved = arr2[1]?.totalCount
-    let output = {
-        "waterSuppliedPerDay": {
-            "target": {
-                "2122": arr.waterSuppliedPerDay2122,
-                "2223": arr.waterSuppliedPerDay2223,
-                "2324": arr.waterSuppliedPerDay2324,
-                "2425": arr.waterSuppliedPerDay2425
-            },
-            "baseline": {
-                "2021": arr.waterSuppliedPerDay2021
-            },
-        },
-        "reduction": {
-            "target": {
-                "2122": arr.reduction2122,
-                "2223": arr.reduction2223,
-                "2324": arr.reduction2324,
-                "2425": arr.reduction2425
-            },
-            "baseline": {
-                "2021": arr.reduction2021
-            },
-        },
-        "houseHoldCoveredWithSewerage": {
-            "target": {
-                "2122": arr.houseHoldCoveredWithSewerage2122,
-                "2223": arr.houseHoldCoveredWithSewerage2223,
-                "2324": arr.houseHoldCoveredWithSewerage2324,
-                "2425": arr.houseHoldCoveredWithSewerage2425
-            },
-            "baseline": {
-                "2021": arr.houseHoldCoveredWithSewerage2021
-            },
-        },
-        "houseHoldCoveredPipedSupply": {
-            "target": {
-                "2122": arr.houseHoldCoveredPipedSupply2122,
-                "2223": arr.houseHoldCoveredPipedSupply2223,
-                "2324": arr.houseHoldCoveredPipedSupply2324,
-                "2425": arr.houseHoldCoveredPipedSupply2425,
-            },
-            "baseline": {
-                "2021": arr.houseHoldCoveredPipedSupply2021,
-            },
-        },
-        "totalPendingUlb": pending,
-        "totalCompletedUlb": approved,
-        "totalULBsInUA": pending + approved,
-        "uaName": arr._id
 
-    }
-    return output;
+    let newData = []
+    arr.forEach(el => {
+
+        let data = {
+            "waterSuppliedPerDay": {
+                "target": {
+                    "2122": el.waterSuppliedPerDay2122,
+                    "2223": el.waterSuppliedPerDay2223,
+                    "2324": el.waterSuppliedPerDay2324,
+                    "2425": el.waterSuppliedPerDay2425
+                },
+                "baseline": {
+                    "2021": el.waterSuppliedPerDay2021
+                },
+            },
+            "reduction": {
+                "target": {
+                    "2122": el.reduction2122,
+                    "2223": el.reduction2223,
+                    "2324": el.reduction2324,
+                    "2425": el.reduction2425
+                },
+                "baseline": {
+                    "2021": el.reduction2021
+                },
+            },
+            "houseHoldCoveredWithSewerage": {
+                "target": {
+                    "2122": el.houseHoldCoveredWithSewerage2122,
+                    "2223": el.houseHoldCoveredWithSewerage2223,
+                    "2324": el.houseHoldCoveredWithSewerage2324,
+                    "2425": el.houseHoldCoveredWithSewerage2425
+                },
+                "baseline": {
+                    "2021": el.houseHoldCoveredWithSewerage2021
+                },
+            },
+            "houseHoldCoveredPipedSupply": {
+                "target": {
+                    "2122": el.houseHoldCoveredPipedSupply2122,
+                    "2223": el.houseHoldCoveredPipedSupply2223,
+                    "2324": el.houseHoldCoveredPipedSupply2324,
+                    "2425": el.houseHoldCoveredPipedSupply2425,
+                },
+                "baseline": {
+                    "2021": el.houseHoldCoveredPipedSupply2021,
+                },
+            },
+            "totalPendingUlb": pending,
+            "totalCompletedUlb": approved,
+            "totalULBsInUA": pending + approved,
+            "uaName": el._id
+
+        }
+
+        newData.push(data)
+    });
+    console.debug(newData)
+
+    return newData;
 };
 
 module.exports.create = async (req, res) => {
