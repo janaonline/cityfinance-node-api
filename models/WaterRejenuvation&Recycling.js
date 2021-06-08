@@ -16,13 +16,14 @@ const projectDetails = () => {
     area: {
       type: Number,
     },
-    location: {
-      lat: {
-        type: Number,
-      },
-      long: {
-        type: Number,
-      },
+    nameOfBody: {
+      type: String,
+    },
+    lat: {
+      type: String,
+    },
+    long: {
+      type: String,
     },
     photos: [
       {
@@ -63,13 +64,11 @@ const projectDetails2 = () => {
     treatmentPlant: {
       type: String,
     },
-    location: {
-      lat: {
-        type: Number,
-      },
-      long: {
-        type: Number,
-      },
+    lat: {
+      type: String,
+    },
+    long: {
+      type: String,
     },
     stp: {
       type: Number,

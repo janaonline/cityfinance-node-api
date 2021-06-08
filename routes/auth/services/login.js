@@ -61,7 +61,7 @@ module.exports.login = async (req, res) => {
 
 getYears = async () => {
     let allYears = await Years.find({ isActive: true }).select({ isActive: 0 })
-    newObj = {}
+    let newObj = {}
     allYears.forEach(element => {
         newObj[element.year] = element._id
     });
