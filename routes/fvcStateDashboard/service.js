@@ -71,6 +71,12 @@ module.exports.dashboard = async (req, res) => {
     ];
 
     const data = await State.aggregate(query);
+    if(data[0]){
+      data[0].totalUlbInUas = 0
+      data[0].uaList.forEach(element => {
+        data[0].totalUlbInUas += element.ulb.length
+      });
+    }
     return Response.OK(
       res,
       data[0] ?? null,

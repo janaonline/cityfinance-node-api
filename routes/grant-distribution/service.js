@@ -7,6 +7,46 @@ const Service = require("../../service");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
 
+exports.saveUpdate = async (req, res) => {
+  let { state, _id } = req.decoded;
+  let data = req.body;
+  req.body.actionTakenBy = _id;
+  try {
+    await GrantDistribution.findOneAndUpdate(
+      { state: ObjectId(state), design_year: ObjectId(data.design_year) },
+      data,
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+    return Response.OK(res, null, "Submitted!");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
+
+exports.getGrantDistribution = async (req, res) => {
+  const { design_year } = req.params;
+  const state = req.decoded.state;
+  try {
+    const grantDistribution = await GrantDistribution.findOne({
+      state: ObjectId(state),
+      design_year,
+      isActive: true,
+    }).select({ history: 0 });
+    if (!grantDistribution) {
+      return Response.BadRequest(res, null, "No GrantDistribution found");
+    }
+    return Response.OK(res, waterRej, "Success");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
+
 exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
   try {

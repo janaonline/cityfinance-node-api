@@ -4,6 +4,7 @@ const GrantDistributionSchema = new Schema(
   {
     state: { type: Schema.Types.ObjectId, ref: "State", required: true },
     answer: { type: Boolean, default: 0 },
+    isDraft: { type: Boolean, default: 0 },
     url: { type: String, default: "" },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
