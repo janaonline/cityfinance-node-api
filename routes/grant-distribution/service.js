@@ -7,27 +7,6 @@ const Service = require("../../service");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
 
-exports.saveUpdate = async (req, res) => {
-  let { state, _id } = req.decoded;
-  let data = req.body;
-  req.body.actionTakenBy = _id;
-  try {
-    await GrantDistribution.findOneAndUpdate(
-      { state: ObjectId(state), design_year: ObjectId(data.design_year) },
-      data,
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      }
-    );
-    return Response.OK(res, null, "Submitted!");
-  } catch (err) {
-    console.error(err.message);
-    return Response.BadRequest(res, {}, err.message);
-  }
-};
-
 exports.getGrantDistribution = async (req, res) => {
   const { design_year } = req.params;
   const state = req.decoded.state;
@@ -40,7 +19,7 @@ exports.getGrantDistribution = async (req, res) => {
     if (!grantDistribution) {
       return Response.BadRequest(res, null, "No GrantDistribution found");
     }
-    return Response.OK(res, waterRej, "Success");
+    return Response.OK(res, grantDistribution, "Success");
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
@@ -83,9 +62,25 @@ exports.getTemplate = async (req, res) => {
 };
 
 exports.uploadTemplate = async (req, res) => {
-  let { url, designYear } = req.body;
-  let state = req?.decoded;
+  let { url, design_year } = req.body;
+  let state = req.decoded?.state;
   try {
+    if (url == "" || url == null || url == undefined) {
+      await GrantDistribution.findOneAndUpdate(
+        {
+          state: ObjectId(state),
+          isActive: true,
+          design_year,
+        },
+        req.body,
+        {
+          upsert: true,
+          setDefaultsOnInsert: true,
+          new: true,
+        }
+      );
+      return Response.OK(res, [], "file submitted");
+    }
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
         return Response.BadRequest(err, err.message);
@@ -107,7 +102,7 @@ exports.uploadTemplate = async (req, res) => {
         {
           state: ObjectId(state),
           isActive: true,
-          designYear,
+          design_year,
         },
         req.body,
         {

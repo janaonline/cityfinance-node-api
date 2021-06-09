@@ -4,7 +4,6 @@ const {
   getTemplate,
   uploadTemplate,
   getGrantDistribution,
-  saveUpdate,
 } = require("./service");
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
@@ -15,11 +14,10 @@ const verifyToken = require("../auth/services/verifyToken").verifyToken;
 // const { draftChecker } = require("../../util/validator");
 
 router.get(
-  "/getGrantDistribution/:design_year",
+  "/get/:design_year",
   verifyToken,
   getGrantDistribution
 );
-router.post("/saveUpdate", verifyToken, saveUpdate);
 
 //get template
 router.get("/template", verifyToken, getTemplate);
