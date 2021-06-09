@@ -515,7 +515,7 @@ formatOutput = (arr, arr2) => {
 
         newData.push(data)
     });
-    console.debug(newData)
+
 
     return newData;
 };
