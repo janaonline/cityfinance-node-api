@@ -7,6 +7,25 @@ const Service = require("../../service");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
 
+exports.getGrantDistribution = async (req, res) => {
+  const { design_year } = req.params;
+  const state = req.decoded.state;
+  try {
+    const grantDistribution = await GrantDistribution.findOne({
+      state: ObjectId(state),
+      design_year,
+      isActive: true,
+    }).select({ history: 0 });
+    if (!grantDistribution) {
+      return Response.BadRequest(res, null, "No GrantDistribution found");
+    }
+    return Response.OK(res, grantDistribution, "Success");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
+
 exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
   try {
@@ -43,9 +62,25 @@ exports.getTemplate = async (req, res) => {
 };
 
 exports.uploadTemplate = async (req, res) => {
-  let { url, designYear } = req.body;
-  let state = req?.decoded;
+  let { url, design_year } = req.body;
+  let state = req.decoded?.state;
   try {
+    if (url == "" || url == null || url == undefined) {
+      await GrantDistribution.findOneAndUpdate(
+        {
+          state: ObjectId(state),
+          isActive: true,
+          design_year,
+        },
+        req.body,
+        {
+          upsert: true,
+          setDefaultsOnInsert: true,
+          new: true,
+        }
+      );
+      return Response.OK(res, [], "file submitted");
+    }
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
         return Response.BadRequest(err, err.message);
@@ -67,7 +102,7 @@ exports.uploadTemplate = async (req, res) => {
         {
           state: ObjectId(state),
           isActive: true,
-          designYear,
+          design_year,
         },
         req.body,
         {

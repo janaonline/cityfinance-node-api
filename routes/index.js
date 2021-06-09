@@ -110,7 +110,7 @@ router.use(submit);
 
 //@Grant Distribution
 const grantDistribution = require("./grant-distribution");
-router.use(grantDistribution);
+router.use('/grantDistribution',grantDistribution);
 
 //STATE FORMS
 const StateGTCertificate = require("./State-Forms");
