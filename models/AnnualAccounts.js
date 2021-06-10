@@ -52,6 +52,22 @@ const provisionalDataSchema = new Schema({
     auditor_report: { type: ContentPDFSchema },
 })
 
+
+const formDataSchema = new Schema({
+    provisional_data: { type: provisionalDataSchema },
+    standardized_data: { type: standardizedDataSchema },
+    audit_status: {
+        type: String,
+        enum:
+        {
+            values: ['Audited', 'Unaudited'],
+            message: "ERROR: AUDIT STATUS CAN BE EITHER 'Audited' or 'Unaudited' "
+        },
+    },
+    submit_annual_accounts: { type: YesNoSchema },
+    submit_standardized_data: { type: YesNoSchema },
+})
+
 const standardizedDataSchema = new Schema({
     upload: {
         excelUrl: { type: String },
@@ -65,26 +81,18 @@ const AnnualAccountDataSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true, },
         year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
-        audit_status: {
-            type: String,
-            enum:
-            {
-                values: ['Audited', 'Unaudited'],
-                message: "ERROR: AUDIT STATUS CAN BE EITHER 'Audited' or 'Unaudited' "
-            },
-        },
+
         status: {
             type: String, enum: {
                 values: ['PENDING', 'APPROVED', 'REJECTED'],
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'"
             }, default: 'PENDING'
         },
-        submit_annual_accounts: { type: YesNoSchema },
-        submit_standardized_data: { type: YesNoSchema },
+
         isCompleted: { type: Boolean, default: false, required: true },
         history: { type: Array, default: [] },
-        provisional_data: { type: provisionalDataSchema },
-        standardized_data: { type: standardizedDataSchema },
+        audited: { type: formDataSchema },
+        provisional: { type: formDataSchema },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
         isActive: { type: Boolean, default: 1 },

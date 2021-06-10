@@ -131,14 +131,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
       req.query.filter && !req.query.filter != "null"
         ? JSON.parse(req.query.filter)
         : req.body.filter
-        ? req.body.filter
-        : {},
+          ? req.body.filter
+          : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -260,6 +260,12 @@ module.exports.getAll = catchAsync(async (req, res) => {
           },
           createdAt: "$createdAt",
           modifiedAt: "$modifiedAt",
+          utilReport: "$steps.utilReport",
+          pfmsAccount: "$steps.pfmsAccount",
+          plans: "$steps.plans",
+          slbForWaterSupplyAndSanitation: "$steps.slbForWaterSupplyAndSanitation",
+          annualAccounts: "$steps.annualAccounts"
+
         },
       },
     ];
@@ -375,7 +381,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
 });
 
 module.exports.getAllForms = catchAsync(async (req, res) => {
-  const { design_year, ulb ,financialYear} = req.query;
+  const { design_year, ulb, financialYear } = req.query;
 
   let query = [
     {
@@ -414,7 +420,7 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
             },
           },
           {
-            $project: { 
+            $project: {
               history: 0,
             },
           },
