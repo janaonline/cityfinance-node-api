@@ -62,25 +62,9 @@ exports.getTemplate = async (req, res) => {
 };
 
 exports.uploadTemplate = async (req, res) => {
-  let { url, design_year } = req.body;
+  let { url, design_year } = req.query;
   let state = req.decoded?.state;
   try {
-    if (url == "" || url == null || url == undefined) {
-      await GrantDistribution.findOneAndUpdate(
-        {
-          state: ObjectId(state),
-          isActive: true,
-          design_year,
-        },
-        req.body,
-        {
-          upsert: true,
-          setDefaultsOnInsert: true,
-          new: true,
-        }
-      );
-      return Response.OK(res, [], "file submitted");
-    }
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
         return Response.BadRequest(err, err.message);
@@ -91,28 +75,40 @@ exports.uploadTemplate = async (req, res) => {
       //read file
       const XslData = await readXlsxFile(file);
 
+      if(XslData.length == 0)
+      return Response.BadRequest(res, "No File Found/Data");
       // validate data
       const notValid = await validate(XslData);
       if (notValid) {
-        return res.xls("error_sheet.xlsx", notValid);
+        return res.status(400).xls("error_sheet.xlsx", notValid);
       }
-
-      //save data
-      await GrantDistribution.findOneAndUpdate(
-        {
-          state: ObjectId(state),
-          isActive: true,
-          design_year,
-        },
-        req.body,
-        {
-          upsert: true,
-          setDefaultsOnInsert: true,
-          new: true,
-        }
-      );
-      return Response.OK(res, [], "file submitted");
+      return Response.OK(res, null, "file submitted");
     });
+  } catch (err) {
+    console.error(err.message);
+    return Response.DbError(res, err.message, "server error");
+  }
+};
+
+exports.saveData = async (req, res) => {
+  let { design_year } = req.body;
+  let state = req.decoded?.state;
+  req.body.actionTakenBy = req.decoded._id;
+  try {
+    let data = await GrantDistribution.findOneAndUpdate(
+      {
+        state: ObjectId(state),
+        isActive: true,
+        design_year,
+      },
+      req.body,
+      {
+        upsert: true,
+        setDefaultsOnInsert: true,
+        new: true,
+      }
+    );
+    return Response.OK(res, data, "file submitted");
   } catch (err) {
     console.error(err.message);
     return Response.DbError(res, err.message, "server error");
