@@ -495,6 +495,62 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
   return res.json(data);
 });
 
+module.exports.finalSubmit = catchAsync(async (req, res) => {
+  let user = req.decoded;
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "User Not Found",
+    });
+  }
+  if (user.role === 'ULB') {
+    let data = req.body;
+    let design_year = data.design_year;
+    if (!design_year) {
+      return res.status(400).json({
+        success: false,
+        message: "Design Year Not Found"
+      })
+    }
+    let ulb = user.ulb
+    data['actionTakenBy'] = ObjectId(user._id);
+    data['modifiedAt'] = time();
+
+    let query = {
+      "design_year": ObjectId(design_year),
+      "ulb": ObjectId(ulb)
+    }
+    // console.log(data)
+
+    let updatedData = await MasterFormData.findOneAndUpdate(query, data, { new: true })
+    if (updatedData) {
+      return res.status(200).json({
+        success: true,
+        message: 'Master Form Updated Successfully!',
+        data: data
+      })
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Master Data Update Failed!'
+      })
+    }
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: user.role + ' Not Authenticated to Perform this Action'
+    })
+  }
+
+})
+
+const time = () => {
+  var dt = new Date();
+  dt.setHours(dt.getHours() + 5);
+  dt.setMinutes(dt.getMinutes() + 30);
+  return dt;
+};
+
 function csvData() {
   return (field = {
     state: "State name",
