@@ -36,6 +36,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
               status: "NA",
               isSubmit: false,      // total isSubmit
               actionTakenBy: data?.user?._id,
+              actionTakenByRole: data?.user?.role,
             },
             $push: { history: oldForm },
           }
@@ -110,6 +111,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           },
         },
         actionTakenBy: data?.user?._id,
+        actionTakenByRole: data?.user?.role,
         state: ObjectId(data?.user?.state),
         design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
       });
