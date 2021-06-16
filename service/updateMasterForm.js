@@ -48,12 +48,12 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         newForm.steps[formName].remarks = data?.body?.remarks;
         newForm.steps[formName].isSubmit = data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
 
-        let tempSubmit = true,
-          tempStatus = "APPROVED";
+        // let tempSubmit = true,
+        let tempStatus = "APPROVED";
 
         // calculate final submit & status
         Object.entries(newForm.steps).forEach((ele) => {
-          if (ele[1].isSubmit === false || ele[1].isSubmit === null) tempSubmit = false;
+          // if (ele[1].isSubmit === false || ele[1].isSubmit === null) tempSubmit = false;
           if (ele[1].status === "NA" || ele[1].status === null) {
             tempStatus = "NA";
           } else if (ele[1].status === "REJECTED") {
@@ -62,7 +62,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         });
 
         newForm.status = tempStatus;
-        newForm.isSubmit = tempSubmit;
+        // newForm.isSubmit = tempSubmit;
         if (
           (data.user?.role === "MoHUA" || data.user?.role === "STATE") &&
           newForm.isSubmit === true
