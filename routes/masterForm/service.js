@@ -544,6 +544,39 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
 
 })
 
+module.exports.StateDashboard = catchAsync(async (req, res) => {
+  let user = req.decoded;
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "User Not Found",
+    });
+  }
+  if (user.role != 'ULB') {
+    let { design_year } = req.params;
+    if (!design_year) {
+      return res.status(400).json({
+        success: false,
+        message: "Design Year Not Found",
+      });
+    }
+
+
+
+
+
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: 'ULB is Not Authorized to Access This API'
+    })
+  }
+
+
+
+})
+
+
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
