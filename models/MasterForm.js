@@ -17,6 +17,10 @@ const MasterFormSchema = new Schema(
       ref: "User",
       index: true,
     },
+    actionTakenByRole: {
+      type: String,
+      default: null
+    },
     steps: {
       utilReport: {
         remarks: {},
