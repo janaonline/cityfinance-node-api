@@ -44,7 +44,7 @@ exports.getTemplate = async (req, res) => {
         name: element?.name,
         code: element?.censusCode ? element?.censusCode : element?.sbCode,
       };
-      if (obj.code !== "" && obj.code !== undefined && obj.code !== null) {
+      if (obj.code) {
         data.push(obj);
       }
     });
