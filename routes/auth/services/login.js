@@ -6,12 +6,14 @@ const { getUSer } = require('./getUser')
 const Years = require('../../../models/Year')
 const Ulb = require('../../../models/Ulb')
 const ObjectId = require('mongoose').Types.ObjectId;
+const State = require('../../../models/State')
 
 module.exports.login = async (req, res) => {
     /**Conditional Query For CensusCode/ULB Code **/
     try {
         let ulb, role
         let user = await getUSer(req.body);
+        let state = await State.findOne({ "_id": ObjectId(user.state) })
         if (user.role === 'ULB') {
             ulb = await Ulb.findOne({ "_id": ObjectId(user.ulb) });
             role = user.role;
@@ -34,6 +36,7 @@ module.exports.login = async (req, res) => {
                     isActive: user.isActive,
                     role: user.role,
                     state: user.state,
+                    stateName: state.name,
                     ulb: user.ulb,
                     isUA: role === 'ULB' ? ulb.isUA : null,
                     isMillionPlus: role === 'ULB' ? ulb.isMillionPlus : null

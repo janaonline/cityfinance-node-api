@@ -171,3 +171,21 @@ module.exports.createUA = async (req, res) => {
     console.log('Task Completed')
     res.send('Task Completed')
 }
+
+module.exports.updateUA = async (req, res) => {
+    let arr = await UAData.find({});
+
+    let counter = 1;
+    let code_prefix = 'UA_'
+    arr.forEach(element => {
+        let UACode = String(code_prefix + counter)
+        element['UACode'] = UACode;
+        counter++;
+    })
+    console.log(arr);
+    arr.forEach(async (element) => {
+        await UAData.updateOne({ "_id": element._id }, element)
+    })
+
+
+}
