@@ -564,235 +564,412 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         message: "Design Year Not Found",
       });
     }
-
-    let query1 = [
+    let baseQuery = [
       {
         $match:
         {
-          "isSubmit": true,
-          "design_year": ObjectId(design_year),
+
           "state": ObjectId(user.state)
         }
       },
-      {
-        $project:
-        {
-          "steps": 1,
-          "actionTakenByRole": 1,
-          "status": 1
-
-
-        }
-      },
-      {
-        $group: {
-          _id:
-          {
-            status: "$status",
-            actionTakenByRole: "$actionTakenByRole"
-          },
-          count: { $sum: 1 }
-        }
-      }
-
-    ];
-
-    let query2 = [
-      {
-        $match:
-        {
-          "isSubmit": true,
-          "design_year": ObjectId(design_year),
-          "state": ObjectId(user.state)
-        }
-      },
-
-      {
-        $lookup:
-        {
-          from: "pfmsaccounts",
-          localField: "ulb",
-          foreignField: "ulb",
-          as: "pfms"
-        }
-      },
-      {
-        $unwind: "$pfms"
-      },
-
-      {
-        $group:
-        {
-          _id: "$pfms.linked",
-          count: { $sum: 1 }
-        }
-      }
-    ]
-
-    let query3 = [
-      {
-        $match:
-        {
-          "isSubmit": true,
-          "design_year": ObjectId(design_year),
-          "state": ObjectId(user.state)
-        }
-      },
-      {
-        $lookup:
-        {
-          from: "annualaccountdatas",
-          localField: "ulb",
-          foreignField: "ulb",
-          as: "annualaccount"
-        }
-      },
-      { $unwind: "$annualaccount" },
-      {
-        $project:
-        {
-          "_id": 0,
-          "audit_status": "$annualaccount.audit_status",
-          "annualaccount": 1
-        }
-      },
-      {
-        $group:
-        {
-          _id: {
-            audit_status: "$audit_status",
-            answer: "$annualaccount.submit_annual_accounts.answer"
-          },
-          count: { $sum: 1 }
-
-
-
-        }
-      }
-
-    ];
-
-    let query4 = [
-      {
-        $match:
-        {
-          "design_year": ObjectId(design_year),
-          "state": ObjectId(user.state)
-        }
-      },
-      {
-        $lookup:
-        {
-          from: "utilizationreports",
-          localField: "ulb",
-          foreignField: "ulb",
-          as: "utilReportForm"
-        }
-      },
-      { $unwind: "$utilReportForm" },
       {
         $group:
         {
           _id:
           {
-            "isSubmit": "$isSubmit",
-            "actionTakenByRole": "$actionTakenByRole",
-            "isDraft": "$utilReportForm.isDraft",
-            "status": "$utilReportForm.status"
+            isUA: "$isUA",
+            isMillionPlus: "$isMillionPlus"
 
           },
+          // ulbs: { $addToSet: "$_id" },
           count: { $sum: 1 }
-
-
-        }
-      }
-
-    ]
-
-    let query5 = [
-      {
-        $match:
-        {
-          "design_year": ObjectId("606aaf854dff55e6c075d219"),
-          "state": ObjectId("5dcf9d7316a06aed41c748e7")
-        }
-      },
-      {
-        $lookup:
-        {
-          from: "xvfcgrantulbforms",
-          localField: "ulb",
-          foreignField: "ulb",
-          as: "slbForm"
-        }
-      },
-      { $unwind: "$slbForm" },
-      {
-        $group:
-        {
-          _id:
-          {
-            "isSubmit": "$isSubmit",
-            "actionTakenByRole": "$actionTakenByRole",
-            "status": "$slbForm.status",
-            "isCompleted": "$slbForm.isCompleted"
-
-          },
-          count: { $sum: 1 }
-
         }
       }
     ]
 
-    let { output1, output2, output3, output4, output5 } = await new Promise(async (resolve, reject) => {
-      let prms1 = new Promise(async (rslv, rjct) => {
-        let output = await MasterFormData.aggregate(query1);
+    let ulbData = await Ulb.aggregate(baseQuery)
 
-        rslv(output)
-      })
-      let prms2 = new Promise(async (rslv, rjct) => {
-        let output = await MasterFormData.aggregate(query2);
-
-        rslv(output)
-      })
-      let prms3 = new Promise(async (rslv, rjct) => {
-        let output = await MasterFormData.aggregate(query3);
-
-        rslv(output)
-      })
-      let prms4 = new Promise(async (rslv, rjct) => {
-        let output = await MasterFormData.aggregate(query4);
-
-        rslv(output)
-      })
-      let prms5 = new Promise(async (rslv, rjct) => {
-        let output = await MasterFormData.aggregate(query5);
-
-        rslv(output)
-      })
-      Promise.all([prms1, prms2, prms3, prms4, prms5]).then(outputs => {
-        let output1 = outputs[0];
-        let output2 = outputs[1];
-        let output3 = outputs[2];
-        let output4 = outputs[3];
-        let output5 = outputs[4];
-        if (output1 && output2 && output3 && output4 && output5) {
-          resolve({ output1, output2, output3, output4, output5 });
-        } else {
-          reject({ message: "No Data Found" });
-        }
-      }, e => {
-        reject(e);
-      })
-
-
-    })
-
+    let numbers = calculateTotalNumbers(ulbData);
+    console.log(numbers)
     let finalOutput = [];
-    let data = formatOutput(output1, output2, output3, output4, output5);
-    finalOutput.push(data)
+
+    for (let i = 0; i < 3; i++) {
+      let match, match2;
+
+      if (i == 0) {
+        match = {
+          $match:
+          {
+            "isSubmit": true,
+            "design_year": ObjectId(design_year),
+            "state": ObjectId(user.state)
+          }
+        };
+        match2 = {
+          $match:
+          {
+            "design_year": ObjectId(design_year),
+            "state": ObjectId(user.state)
+          }
+        }
+      } else if (i == 1) {
+        match = {
+          $match:
+          {
+            "isSubmit": true,
+            "design_year": ObjectId(design_year),
+            "state": ObjectId(user.state),
+            "isUA": "Yes"
+          }
+        };
+        match2 = {
+          $match:
+          {
+            "design_year": ObjectId(design_year),
+            "state": ObjectId(user.state),
+            "isUA": "Yes"
+          }
+        }
+      } else if (i == 2) {
+        match = {
+          $match:
+          {
+            "isSubmit": true,
+            "design_year": ObjectId(design_year),
+            "state": ObjectId(user.state),
+            "isMillionPlus": "No"
+          }
+        };
+        match2 = {
+          $match:
+          {
+            "design_year": ObjectId(design_year),
+            "state": ObjectId(user.state),
+            "isMillionPlus": "No"
+          }
+        }
+      }
 
 
+      let query1 = [
+        {
+          $lookup:
+          {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData"
+          }
+        },
+        {
+          $unwind: "$ulbData"
+        },
+        {
+          $project:
+          {
+            "steps": 1,
+            "actionTakenByRole": 1,
+            "status": 1,
+            "isSubmit": 1,
+            "ulb": 1,
+            "state": 1,
+            "design_year": 1,
+            "isUA": "$ulbData.isUA",
+            "isMillionPlus": "$ulbData.isMillionPlus"
+
+          }
+        },
+        match,
+        {
+          $group: {
+            _id:
+            {
+              status: "$status",
+              actionTakenByRole: "$actionTakenByRole"
+            },
+            count: { $sum: 1 }
+          }
+        }
+
+      ];
+
+      let query2 = [
+        {
+          $lookup:
+          {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData"
+          }
+        },
+        {
+          $unwind: "$ulbData"
+        },
+        {
+          $project:
+          {
+            "steps": 1,
+            "actionTakenByRole": 1,
+            "status": 1,
+            "isSubmit": 1,
+            "ulb": 1,
+            "state": 1,
+            "design_year": 1,
+            "isUA": "$ulbData.isUA",
+            "isMillionPlus": "$ulbData.isMillionPlus"
+
+          }
+        },
+        match,
+        {
+          $lookup:
+          {
+            from: "pfmsaccounts",
+            localField: "ulb",
+            foreignField: "ulb",
+            as: "pfms"
+          }
+        },
+        {
+          $unwind: "$pfms"
+        },
+
+        {
+          $group:
+          {
+            _id: "$pfms.linked",
+            count: { $sum: 1 }
+          }
+        }
+      ]
+
+      let query3 = [
+        {
+          $lookup:
+          {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData"
+          }
+        },
+        {
+          $unwind: "$ulbData"
+        },
+        {
+          $project:
+          {
+            "steps": 1,
+            "actionTakenByRole": 1,
+            "status": 1,
+            "isSubmit": 1,
+            "ulb": 1,
+            "state": 1,
+            "design_year": 1,
+            "isUA": "$ulbData.isUA",
+            "isMillionPlus": "$ulbData.isMillionPlus"
+
+          }
+        },
+        match,
+        {
+          $lookup:
+          {
+            from: "annualaccountdatas",
+            localField: "ulb",
+            foreignField: "ulb",
+            as: "annualaccount"
+          }
+        },
+        { $unwind: "$annualaccount" },
+        {
+          $project:
+          {
+            "_id": 0,
+            "audit_status": "$annualaccount.audit_status",
+            "annualaccount": 1
+          }
+        },
+        {
+          $group:
+          {
+            _id: {
+              audit_status: "$audit_status",
+              answer: "$annualaccount.submit_annual_accounts.answer"
+            },
+            count: { $sum: 1 }
+
+
+
+          }
+        }
+
+      ];
+
+      let query4 = [
+        {
+          $lookup:
+          {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData"
+          }
+        },
+        {
+          $unwind: "$ulbData"
+        },
+        {
+          $project:
+          {
+            "steps": 1,
+            "actionTakenByRole": 1,
+            "status": 1,
+            "isSubmit": 1,
+            "ulb": 1,
+            "state": 1,
+            "design_year": 1,
+            "isUA": "$ulbData.isUA",
+            "isMillionPlus": "$ulbData.isMillionPlus"
+
+          }
+        },
+        match2,
+        {
+          $lookup:
+          {
+            from: "utilizationreports",
+            localField: "ulb",
+            foreignField: "ulb",
+            as: "utilReportForm"
+          }
+        },
+        { $unwind: "$utilReportForm" },
+        {
+          $group:
+          {
+            _id:
+            {
+              "isSubmit": "$isSubmit",
+              "actionTakenByRole": "$actionTakenByRole",
+              "isDraft": "$utilReportForm.isDraft",
+              "status": "$utilReportForm.status"
+
+            },
+            count: { $sum: 1 }
+
+
+          }
+        }
+
+      ]
+
+      let query5 = [
+        {
+          $lookup:
+          {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData"
+          }
+        },
+        {
+          $unwind: "$ulbData"
+        },
+        {
+          $project:
+          {
+            "steps": 1,
+            "actionTakenByRole": 1,
+            "status": 1,
+            "isSubmit": 1,
+            "ulb": 1,
+            "state": 1,
+            "design_year": 1,
+            "isUA": "$ulbData.isUA",
+            "isMillionPlus": "$ulbData.isMillionPlus"
+
+          }
+        },
+        match2,
+        {
+          $lookup:
+          {
+            from: "xvfcgrantulbforms",
+            localField: "ulb",
+            foreignField: "ulb",
+            as: "slbForm"
+          }
+        },
+        { $unwind: "$slbForm" },
+        {
+          $group:
+          {
+            _id:
+            {
+              "isSubmit": "$isSubmit",
+              "actionTakenByRole": "$actionTakenByRole",
+              "status": "$slbForm.status",
+              "isCompleted": "$slbForm.isCompleted"
+
+            },
+            count: { $sum: 1 }
+
+          }
+        }
+      ]
+
+      let { output1, output2, output3, output4, output5 } = await new Promise(async (resolve, reject) => {
+        let prms1 = new Promise(async (rslv, rjct) => {
+          let output = await MasterFormData.aggregate(query1);
+
+          rslv(output)
+        })
+        let prms2 = new Promise(async (rslv, rjct) => {
+          let output = await MasterFormData.aggregate(query2);
+
+          rslv(output)
+        })
+        let prms3 = new Promise(async (rslv, rjct) => {
+          let output = await MasterFormData.aggregate(query3);
+
+          rslv(output)
+        })
+        let prms4 = new Promise(async (rslv, rjct) => {
+          let output = await MasterFormData.aggregate(query4);
+
+          rslv(output)
+        })
+        let prms5 = new Promise(async (rslv, rjct) => {
+          let output = await MasterFormData.aggregate(query5);
+
+          rslv(output)
+        })
+        Promise.all([prms1, prms2, prms3, prms4, prms5]).then(outputs => {
+          let output1 = outputs[0];
+          let output2 = outputs[1];
+          let output3 = outputs[2];
+          let output4 = outputs[3];
+          let output5 = outputs[4];
+          if (output1 && output2 && output3 && output4 && output5) {
+            resolve({ output1, output2, output3, output4, output5 });
+          } else {
+            reject({ message: "No Data Found" });
+          }
+        }, e => {
+          reject(e);
+        })
+
+
+      })
+
+
+      let data = formatOutput(output1, output2, output3, output4, output5, i, numbers);
+      finalOutput.push(data)
+
+    }
     // console.log(util.inspect({
     //   "overall": output1,
     //   "pfms": output2,
@@ -819,7 +996,24 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
 })
 
-const formatOutput = (output1, output2, output3, output4, output5) => {
+const calculateTotalNumbers = (data) => {
+  let totalUlbs = 0;
+  let ulbInMillionPlusUA = 0
+  let nonMillionPlusULBs = 0;
+  data.forEach(el => {
+
+    totalUlbs = el.count + totalUlbs
+    if (el._id.isUA == "Yes") {
+      ulbInMillionPlusUA = ulbInMillionPlusUA + el.count
+    }
+    if (el._id.isMillionPlus == "No") {
+      nonMillionPlusULBs = nonMillionPlusULBs + el.count;
+    }
+  })
+  return [totalUlbs, ulbInMillionPlusUA, nonMillionPlusULBs];
+}
+
+const formatOutput = (output1, output2, output3, output4, output5, i, numbers) => {
   // console.log(util.inspect({
   //   "overall": output1,
   //   "pfms": output2,
@@ -847,10 +1041,17 @@ const formatOutput = (output1, output2, output3, output4, output5) => {
 
   output1.forEach((el) => {
 
+
+
     if (el._id.status == "PENDING" && el._id.actionTakenByRole == "ULB") {
       underReviewByState = el.count;
-    } else if (el._id.status === "APPROVED" && el._id.actionTakenByRole === "STATE")
+    } else if (el._id.status === "APPROVED" && el._id.actionTakenByRole === "STATE") {
       overall_approvedByState = el.count;
+    }
+
+    pendingForSubmission = numbers[i] - underReviewByState - overall_approvedByState
+
+
   })
 
   output2.forEach((el) => {
@@ -892,9 +1093,9 @@ const formatOutput = (output1, output2, output3, output4, output5) => {
 
 
   let finalOutput = {
-    "type": "allULB",
+    "type": i == 0 ? "allULB" : i == 1 ? "ulbsInMillionPlusUA" : "nonMillionPlusULBs",
     "overallFormStatus": {
-      "pendingForSubmission": 2300,
+      "pendingForSubmission": pendingForSubmission,
       "underReviewByState": underReviewByState,
       "approvedByState": overall_approvedByState
     },
