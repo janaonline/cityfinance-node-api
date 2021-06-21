@@ -147,7 +147,7 @@ exports.action = async (req, res) => {
       let updateData = {
         status: data?.status,
         actionTakenBy: user?._id,
-        remarks: data?.remarks,
+        rejectReason: data?.rejectReason,
         modifiedAt: new Date(),
       };
       if (!currentState) {
@@ -158,8 +158,8 @@ exports.action = async (req, res) => {
       ) {
         return res.status(402).json({ msg: "The record is already approved." });
       } else if (
-        currentState.status === "CANCELLED" &&
-        updateData.status === "CANCELLED"
+        currentState.status === "REJECTED" &&
+        updateData.status === "REJECTED"
       ) {
         return res
           .status(402)
