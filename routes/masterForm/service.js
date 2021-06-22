@@ -3,6 +3,7 @@ const MasterFormData = require("../../models/MasterForm");
 const Ulb = require("../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require("../../service");
+const UA = require('../../models/UA')
 const moment = require("moment");
 const util = require('util');
 const { forEach } = require("jszip");
@@ -546,6 +547,139 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
   }
 
 })
+
+module.exports.plansData = catchAsync(async (req, res) => {
+  let user = req.decoded;
+  let { design_year } = req.params
+  // console.log(user)
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "User Not Found",
+    });
+  }
+  let state = user.state;
+  let baseQuery = [
+    {
+      $match:
+      {
+        state: ObjectId(state)
+      }
+    },
+    {
+      $project:
+      {
+        "name": 1,
+        "totalULBs": { $size: "$ulb" }
+      }
+    }
+  ];
+
+  let count = await UA.aggregate(baseQuery)
+  console.log(count)
+  let query = [
+    {
+      $match:
+      {
+        state: ObjectId(state),
+        design_year: ObjectId(design_year)
+      }
+    },
+    {
+      $lookup:
+      {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulbData"
+      }
+    },
+
+    { $unwind: "$ulbData" },
+    {
+      $lookup:
+      {
+        from: "uas",
+        localField: "ulb",
+        foreignField: "ulb",
+        as: "uaData"
+      }
+    },
+
+    { $unwind: "$uaData" },
+
+
+    {
+      $project:
+      {
+        "steps": 1,
+        "actionTakenByRole": 1,
+        "status": 1,
+        "isSubmit": 1,
+        "ulb": 1,
+        "state": 1,
+        "design_year": 1,
+        "isUA": "$ulbData.isUA",
+        "isMillionPlus": "$ulbData.isMillionPlus",
+        "UA": "$uaData.name"
+
+      }
+    },
+    {
+      $match:
+      {
+        status: "PENDING"
+      }
+
+    },
+    {
+      $group: {
+        _id: "$UA",
+        count: { $sum: 1 }
+      }
+
+    }
+  ]
+  let data = await MasterFormData.aggregate(query)
+  const finalData = formatPlansData(data, count);
+  res.json({
+    success: true,
+    data: finalData
+  })
+
+})
+
+const formatPlansData = (data, count) => {
+  let ulbCount = 0,
+    plans = 0,
+    submissionOfPlans = false,
+    UA = '',
+    compiledUlbs = 0,
+    totalUlbs = 0;
+  let finalOutput = [];
+  data.forEach(el1 => {
+    count.forEach(el2 => {
+      if (el1._id == el2.name) {
+        compiledUlbs = el1.count;
+        totalUlbs = el2?.totalULBs
+        ulbCount = (compiledUlbs / totalUlbs) * 100
+        let obj = {
+          "UA": el1._id,
+          "submissionOfPlans": true,
+          "plans": 25,
+          "ulbCount": parseInt(ulbCount),
+          "ulbs": compiledUlbs
+        }
+        finalOutput.push(obj)
+      }
+
+    })
+  })
+
+  console.log(finalOutput)
+
+  return finalOutput;
+}
 
 module.exports.StateDashboard = catchAsync(async (req, res) => {
   let user = req.decoded;
