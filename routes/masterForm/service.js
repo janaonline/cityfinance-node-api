@@ -176,8 +176,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       match = {
         $match: {
           design_year: ObjectId(design_year),
-          state: ObjectId(user.state),
-          isSubmit: true
+          state: ObjectId(user.state)
         },
       };
     }
@@ -262,6 +261,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
             },
           },
           createdAt: "$createdAt",
+          "isSubmit": 1,
           modifiedAt: "$modifiedAt",
           utilReport: "$steps.utilReport",
           pfmsAccount: "$steps.pfmsAccount",
