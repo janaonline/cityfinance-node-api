@@ -1042,7 +1042,7 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
     audited_yes = 0,
     audited_no = 0;
 
-
+  //overall
   output1.forEach((el) => {
 
 
@@ -1058,12 +1058,18 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
 
   })
 
+  //pfms
   output2.forEach((el) => {
     if (el._id === "no") {
       notRegistered = el.count;
     } else if (el._id === "yes")
       registered = el.count;
+
+    pendingResponse = numbers[i] - registered - notRegistered
+
   })
+
+  //annualaccounts
   output3.forEach((el) => {
     if (el._id.audit_status === "Unaudited" && el._id.answer === "yes") {
       provisional_yes = el.count;
@@ -1078,8 +1084,8 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
   provisional = ((provisional_yes) / (provisional_yes + provisional_no)) * 100
   audited = ((audited_yes) / (audited_yes + audited_no)) * 100
 
+  //detailed utilization report
   output4.forEach(el => {
-    // console.log(el)
     if (el._id.actionTakenByRole === "ULB" && el._id.status === "PENDING" && el._id.isSubmit) {
       util_underStateReview = el.count
     } else if (el._id.actionTakenByRole === "STATE" && el._id.status === "APPROVED" && el._id.isSubmit) {
@@ -1087,6 +1093,8 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
     } else if (!el._id.isSubmit && el._id.actionTakenByRole === "ULB" && !el._id.isDraft) {
       util_completedAndPendingSubmission = el.count
     }
+
+    util_pendingCompletion = numbers[i] - util_underStateReview - util_approvedbyState - util_completedAndPendingSubmission
   })
 
   output5.forEach(el => {
@@ -1097,6 +1105,8 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
     } else if (!el._id.isSubmit && el._id.actionTakenByRole === "ULB" && el._id.isCompleted) {
       slb_completedAndPendingSubmission = el.count
     }
+
+    slb_pendingCompletion = numbers[i] - slb_underStateReview - slb_approvedbyState - slb_completedAndPendingSubmission
   })
 
 
@@ -1116,16 +1126,16 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
     "pfms": {
       "registered": registered,
       "notRegistered": notRegistered,
-      "pendingResponse": 44
+      "pendingResponse": pendingResponse
     },
     "utilReport": {
-      "pendingCompletion": 44,
+      "pendingCompletion": util_pendingCompletion,
       "completedAndPendingSubmission": util_completedAndPendingSubmission,
       "underStateReview": util_underStateReview,
       "approvedbyState": util_approvedbyState
     },
     "slb": {
-      "pendingCompletion": 44,
+      "pendingCompletion": slb_pendingCompletion,
       "completedAndPendingSubmission": slb_completedAndPendingSubmission,
       "underStateReview": slb_underStateReview,
       "approvedbyState": slb_approvedbyState
