@@ -176,8 +176,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       match = {
         $match: {
           design_year: ObjectId(design_year),
-          state: ObjectId(user.state),
-          isSubmit: true
+          state: ObjectId(user.state)
         },
       };
     }
@@ -262,6 +261,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
             },
           },
           createdAt: "$createdAt",
+          "isSubmit": 1,
           modifiedAt: "$modifiedAt",
           utilReport: "$steps.utilReport",
           pfmsAccount: "$steps.pfmsAccount",
@@ -1036,7 +1036,11 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
     slb_pendingCompletion = 0,
     slb_completedAndPendingSubmission = 0,
     slb_underStateReview = 0,
-    slb_approvedbyState = 0;
+    slb_approvedbyState = 0,
+    provisional_yes = 0,
+    provisional_no = 0,
+    audited_yes = 0,
+    audited_no = 0;
 
 
   output1.forEach((el) => {
@@ -1062,11 +1066,17 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
   })
   output3.forEach((el) => {
     if (el._id.audit_status === "Unaudited" && el._id.answer === "yes") {
-      provisional = el.count
+      provisional_yes = el.count;
     } else if (el._id.audit_status === "Audited" && el._id.answer === "yes") {
-      audited = el.count
+      audited_yes = el.count;
+    } else if (el._id.audit_status === "Audited" && el._id.answer === "no") {
+      audited_no = el.count;
+    } else if (el._id.audit_status === "Unaudited" && el._id.answer === "no") {
+      provisional_no = el.count;
     }
   })
+  provisional = ((provisional_yes) / (provisional_yes + provisional_no)) * 100
+  audited = ((audited_yes) / (audited_yes + audited_no)) * 100
 
   output4.forEach(el => {
     // console.log(el)
