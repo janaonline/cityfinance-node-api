@@ -1081,8 +1081,8 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
       provisional_no = el.count;
     }
   })
-  provisional = ((provisional_yes) / (provisional_yes + provisional_no)) * 100
-  audited = ((audited_yes) / (audited_yes + audited_no)) * 100
+  provisional = ((provisional_yes) / (numbers[i])) * 100
+  audited = ((audited_yes) / (numbers[i])) * 100
 
   //detailed utilization report
   output4.forEach(el => {
@@ -1120,8 +1120,8 @@ const formatOutput = (output1, output2, output3, output4, output5, i, numbers) =
       "approvedByState": overall_approvedByState
     },
     "annualAccounts": {
-      "provisional": provisional,
-      "audited": audited
+      "provisional": parseInt(provisional),
+      "audited": parseInt(audited)
     },
     "pfms": {
       "registered": registered,
