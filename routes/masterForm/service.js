@@ -234,6 +234,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
         $project: {
           state: "$state.name",
           ulbName: "$ulb.name",
+          ulb: "$ulb._id",
           censusCode: "$ulb.censusCode",
           sbCode: "$ulb.sbCode",
           populationType: {
@@ -628,7 +629,7 @@ module.exports.plansData = catchAsync(async (req, res) => {
     {
       $match:
       {
-        status: "PENDING"
+        status: "APPROVED"
       }
 
     },
