@@ -1131,6 +1131,283 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
 })
 
+
+module.exports.viewList = catchAsync(async (req, res) => {
+  let user = req.decoded;
+  // console.log(user)
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "User Not Found",
+    });
+  }
+  if (user.role != 'ULB') {
+    let { design_year } = req.params;
+    if (!design_year) {
+      return res.status(400).json({
+        success: false,
+        message: "Design Year Not Found",
+      });
+    }
+
+    let query = [
+      {
+        $match: {
+          state: ObjectId(user.state)
+
+        }
+      }, {
+        $lookup: {
+          from: "uas",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "uas"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$uas",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+
+      {
+        $lookup: {
+          from: "masterforms",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "masterforms"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$masterforms",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        $lookup: {
+          from: "annualaccountdatas",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "annualaccountdatas"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$annualaccountdatas",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+
+      {
+        $lookup: {
+          from: "pfmsaccounts",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "pfmsaccounts"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$pfmsaccounts",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        $lookup: {
+          from: "utilizationreports",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "utilizationreports"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$utilizationreports",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        $lookup: {
+          from: "xvfcgrantplans",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "xvfcgrantplans"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$xvfcgrantplans",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        $lookup: {
+          from: "xvfcgrantulbforms",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "xvfcgrantulbforms"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$xvfcgrantulbforms",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "state"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$state",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulbType",
+          foreignField: "_id",
+          as: "ulbtypes"
+
+        }
+      }, {
+        $unwind: {
+          "path": "$ulbtypes",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "xvfcgrantplans.actionTakenBy",
+          foreignField: "_id",
+          as: "xvfcgrantplans.actionTakenBy"
+
+        }
+
+      }, {
+        $unwind: {
+          "path": "$xvfcgrantplans.actionTakenBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "utilizationreports.actionTakenBy",
+          foreignField: "_id",
+          as: "utilizationreports.actionTakenBy"
+
+        }
+
+      }, {
+        $unwind: {
+          "path": "$utilizationreports.actionTakenBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      {
+        $lookup: {
+          from: "users",
+          localField: "xvfcgrantulbforms.actionTakenBy",
+          foreignField: "_id",
+          as: "xvfcgrantulbforms.actionTakenBy"
+
+        }
+
+      }, {
+        $unwind: {
+          "path": "$xvfcgrantulbforms.actionTakenBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      {
+        $project:
+        {
+          "state": "$state.name",
+          "ulbName": "$name",
+          "ulbType": "$ulbtypes.name",
+          "censusCode": 1,
+          "sbCode": 1,
+          "isMillionPlus": 1,
+          "isUA": 1,
+          "UA": "$uas.name",
+          "masterform": {
+            "isSubmit": "$masterforms.isSubmit",
+            "actionTakenByRole": "$masterforms.actionTakenByRole",
+            "status": "$masterforms.status"
+          },
+
+          "pfmsaccount": {
+            "isDraft": "$pfmsaccounts.isDraft",
+            "registered": "$pfmsaccounts.linked"
+          },
+
+          "utilizationreport": {
+            "isDraft": "$utilizationreports.isDraft",
+            "status": "$utilizationreports.status",
+            "actionTakenBy": "$utilizationreports.actionTakenBy.role"
+
+          },
+          "xvfcgrantplans": {
+            $cond: {
+              if: { $eq: ["$isMillionPlus", "Yes"] },
+              then: "Not Applicable",
+              else: {
+                "isDraft": "$xvfcgrantplans.isDraft",
+                "status": "$xvfcgrantplans.status",
+                "actionTakenBy": "$xvfcgrantplans.actionTakenBy.role"
+              }
+            },
+          },
+          "xvfcgrantulbforms": {
+            $cond: {
+              if: { $eq: ["$isUA", "No"] },
+              then: "Not Applicable",
+              else: {
+                "isCompleted": "$xvfcgrantulbforms.isCompleted",
+                "status": "$xvfcgrantulbforms.status",
+                "actionTakenBy": "$xvfcgrantulbforms.actionTakenBy.role"
+              }
+            },
+          }
+        }
+      }
+    ]
+
+    let data = await Ulb.aggregate(query);
+    if (data.length > 0) {
+      return res.status(200).json({
+        success: true,
+        data: data
+      })
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Data Not Found"
+      })
+    }
+
+    // console.log(util.inspect({ data }, { showHidden: false, depth: null }))
+  } else {
+    return res.status(400).json({
+      success: false,
+      message: user.role + " is Authorized to Perform this Action"
+    })
+  }
+})
+
 const calculateTotalNumbers = (data) => {
   let totalUlbs = 0;
   let ulbInMillionPlusUA = 0
