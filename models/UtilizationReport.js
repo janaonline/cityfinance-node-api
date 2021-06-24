@@ -46,8 +46,8 @@ const UtilizationReportSchema = new Schema(
     designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     status: {
       type: String,
-      enum: ["APPROVED", "REJECTED", "CANCELLED"],
-      default: "NA",
+      enum: ["PENDING", "APPROVED", "REJECTED"],
+      default: "PENDING",
     },
     actionTakenBy: {
       type: Schema.Types.ObjectId,
