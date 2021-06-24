@@ -1403,7 +1403,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
   } else {
     return res.status(400).json({
       success: false,
-      message: user.role + " is Authorized to Perform this Action"
+      message: user.role + " is Not Authorized to Perform this Action"
     })
   }
 })
