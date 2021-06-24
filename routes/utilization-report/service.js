@@ -140,38 +140,6 @@ exports.action = async (req, res) => {
     if (user?.role === "STATE" && ulb?.state?.toString() !== user?.state) {
       return res.status(402).json({ msg: "State not matching" });
     }
-<<<<<<< Updated upstream
-    try {
-      let updateData = {
-        status: data?.status,
-        actionTakenBy: user?._id,
-        rejectReason: data?.rejectReason,
-        modifiedAt: new Date(),
-      };
-      if (!currentState) {
-        return res.status(404).json({ msg: "Requested record not found." });
-      } else if (
-        currentState.status === "APPROVED" &&
-        updateData.status === "APPROVED"
-      ) {
-        return res.status(402).json({ msg: "The record is already approved." });
-      } else if (
-        currentState.status === "REJECTED" &&
-        updateData.status === "REJECTED"
-      ) {
-        return res
-          .status(402)
-          .json({ msg: "The record is already cancelled." });
-      } else {
-        let updatedRecord = await UtilizationReport.findOneAndUpdate(
-          { ulb: ObjectId(data.ulb), isActive: true },
-          updateData,
-          { $push: { history: currentState } }
-        );
-        if (!updatedRecord) {
-          return res.status(404).json({ msg: "No Record Found" });
-        }
-=======
     let updateData = {
       status: data?.status,
       actionTakenBy: user?._id,
@@ -189,7 +157,6 @@ exports.action = async (req, res) => {
       if (!updatedRecord) {
         return res.status(404).json({ msg: "No Record Found" });
       }
->>>>>>> Stashed changes
 
       await UpdateMasterSubmitForm(req, "utilReport");
 
