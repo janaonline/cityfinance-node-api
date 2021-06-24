@@ -1388,6 +1388,64 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     let data = await Ulb.aggregate(query);
     if (data.length > 0) {
+
+      data.forEach(el => {
+
+        if (Object.entries(el.masterform).length === 0) {
+          el.masterform = 'Not Started'
+        } else if (el.masterform.isSubmit == true && el.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
+          el.masterform = 'Under Review by State'
+        } else if (el.masterform.actionTakenByRole === 'STATE' && el.masterform.status === 'REJECTED') {
+          el.masterform = 'Rejected by State'
+        } else if (el.masterform.actionTakenByRole === 'MoHUA' && el.masterform.status === 'REJECTED') {
+          el.masterform = 'Rejected by MoHUA'
+        } else if (el.masterform.actionTakenByRole === 'MoHUA' && el.masterform.status === 'APPROVED') {
+          el.masterform = 'Approval Completed'
+        } else if (el.masterform.actionTakenByRole === 'STATE' && el.masterform.status === 'REJECTED') {
+          el.masterform = 'Approved by State'
+        } else if (el.masterform.isSubmit == true && el.masterform.actionTakenByRole === 'STATE' && el.masterform.status === 'PENDING') {
+          el.masterform = 'Under Review by MoHUA'
+        }
+
+        if (Object.entries(el.pfmsaccount).length === 0) {
+          el.pfmsaccount = 'Not Started'
+        } else if (el.pfmsaccount.isDraft == false && el.pfmsaccount.registered == "no") {
+          el.pfmsaccount = 'Not Registered'
+        } else if (el.pfmsaccount.isDraft == false && el.pfmsaccount.registered == "yes") {
+          el.pfmsaccount = 'Registered'
+        } else if (el.pfmsaccount.isDraft == false && el.pfmsaccount.registered == "") {
+          el.pfmsaccount = 'Not Registered'
+        } else if (el.pfmsaccount.isDraft == "true") {
+          el.pfmsaccount = 'In Progress'
+        }
+
+        if (Object.entries(el.utilizationreport).length === 0) {
+          el.utilizationreport = 'Not Started'
+        } else if (el.utilizationreport.isDraft == false) {
+          el.utilizationreport = 'Completed'
+        } else if (el.utilizationreport.isDraft == true) {
+          el.utilizationreport = 'In Progress'
+        }
+
+
+        if (Object.entries(el.xvfcgrantplans).length === 0) {
+          el.xvfcgrantplans = 'Not Started'
+        } else if (el.xvfcgrantplans.isDraft == false) {
+          el.xvfcgrantplans = 'Completed'
+        } else if (el.xvfcgrantplans.isDraft == true) {
+          el.xvfcgrantplans = 'In Progress'
+        }
+
+
+        if (Object.entries(el.xvfcgrantulbforms).length === 0) {
+          el.xvfcgrantulbforms = 'Not Started'
+        } else if (el.xvfcgrantulbforms.isCompleted == true) {
+          el.xvfcgrantulbforms = 'Completed'
+        } else if (el.xvfcgrantulbforms.isCompleted == false) {
+          el.xvfcgrantulbforms = 'In Progress'
+        }
+
+      })
       return res.status(200).json({
         success: true,
         data: data
