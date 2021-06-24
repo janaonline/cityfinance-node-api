@@ -10,11 +10,15 @@ const {
 } = require("../../service");
 
 module.exports.createOrUpdate = async (req, res) => {
-  const { financialYear, isDraft, designYear } = req.body;
-  const ulb = req.decoded?.ulb;
-  req.body.ulb = ulb;
   try {
+    const { financialYear, isDraft, designYear } = req.body;
+    const ulb = req.decoded?.ulb;
+    req.body.ulb = ulb;
     req.body.actionTakenBy = req.decoded?._id;
+    req.body.status = "PENDING";
+    if (req.body?.rejectReason) {
+      delete req.body.rejectReason;
+    }
     let savedData = await UtilizationReport.findOneAndUpdate(
       { ulb: ObjectId(ulb), financialYear, designYear },
       { $set: req.body },
@@ -23,21 +27,17 @@ module.exports.createOrUpdate = async (req, res) => {
         new: true,
         setDefaultsOnInsert: true,
       }
-    )
-
-    // req['design_year'] = designYear;
-
-
+    );
     if (savedData) {
       await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
         msg: "Utilization Report Submitted Successfully!",
-        isCompleted: savedData.isDraft ? !savedData.isDraft : true
-      })
+        isCompleted: savedData.isDraft ? !savedData.isDraft : true,
+      });
     } else {
       return res.status(400).json({
-        msg: "Failed to Submit Data"
-      })
+        msg: "Failed to Submit Data",
+      });
     }
   } catch (err) {
     console.error(err.message);
@@ -61,10 +61,9 @@ exports.read = async (req, res) => {
 exports.readById = async (req, res) => {
   const { financialYear, designYear, ulb_id } = req.params;
   let ulb = req.decoded?.ulb;
-  if (req.decoded?.role != 'ULB' && ulb_id) {
+  if (req.decoded?.role != "ULB" && ulb_id) {
     ulb = ulb_id;
   }
-
   try {
     const report = await UtilizationReport.findOne({
       ulb,
@@ -114,11 +113,9 @@ exports.remove = async (req, res) => {
         isActive: false,
       }
     );
-
     if (!report) {
       return res.status(400).json({ msg: "No UtilizationReport found" });
     }
-
     res.status(200).json({ msg: "UtilizationReport Deleted" });
   } catch (err) {
     console.error(err.message);
@@ -143,47 +140,27 @@ exports.action = async (req, res) => {
     if (user?.role === "STATE" && ulb?.state?.toString() !== user?.state) {
       return res.status(402).json({ msg: "State not matching" });
     }
-    try {
-      let updateData = {
-        status: data?.status,
-        actionTakenBy: user?._id,
-        rejectReason: data?.rejectReason,
-        modifiedAt: new Date(),
-      };
-      if (!currentState) {
-        return res.status(404).json({ msg: "Requested record not found." });
-      } else if (
-        currentState.status === "APPROVED" &&
-        updateData.status === "APPROVED"
-      ) {
-        return res.status(402).json({ msg: "The record is already approved." });
-      } else if (
-        currentState.status === "REJECTED" &&
-        updateData.status === "REJECTED"
-      ) {
-        return res
-          .status(402)
-          .json({ msg: "The record is already cancelled." });
-      } else {
-        let updatedRecord = await UtilizationReport.findOneAndUpdate(
-          { ulb: ObjectId(data.ulb), isActive: true },
-          updateData,
-          { $push: { history: currentState } }
-        );
-        if (!updatedRecord) {
-          return res.status(404).json({ msg: "No Record Found" });
-        }
-
-        // update master form collection
-        if (!data.isDraft) {
-          await UpdateMasterSubmitForm(req, "utilReport");
-        }
-
-        return res.status(200).json({ msg: "Action successful" });
+    let updateData = {
+      status: data?.status,
+      actionTakenBy: user?._id,
+      rejectReason: data?.rejectReason,
+      modifiedAt: new Date(),
+    };
+    if (!currentState) {
+      return res.status(404).json({ msg: "Requested record not found." });
+    } else {
+      let updatedRecord = await UtilizationReport.findOneAndUpdate(
+        { ulb: ObjectId(data.ulb), isActive: true },
+        updateData,
+        { $push: { history: currentState } }
+      );
+      if (!updatedRecord) {
+        return res.status(404).json({ msg: "No Record Found" });
       }
-    } catch (e) {
-      console.error(e.message);
-      return Response.BadRequest(res, {}, e.message);
+
+      await UpdateMasterSubmitForm(req, "utilReport");
+
+      return res.status(200).json({ msg: "Action successful" });
     }
   } catch (err) {
     console.error(err.message);
