@@ -30,9 +30,12 @@ exports.savePlans = async (req, res) => {
 };
 
 exports.getPlans = async (req, res) => {
-  const { designYear } = req.params;
-  const ulb = req?.decoded.ulb;
   try {
+    const { designYear } = req.params;
+    const ulb = req?.decoded.ulb;
+    if (ulb == undefined) {
+      ulb = req?.query.ulb;
+    }
     const plan = await Plans.findOne({
       ulb: ObjectId(ulb),
       designYear,
