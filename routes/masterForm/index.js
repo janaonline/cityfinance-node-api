@@ -13,6 +13,8 @@ router.get('/getAllForms', verifyToken, getAllForms)//
 router.get('/state-dashboard/:design_year', verifyToken, StateDashboard)//
 router.get('/dashboard-plansData/:design_year', verifyToken, plansData)
 router.get('/dashboard-viewlist/:design_year', verifyToken, viewList)
+router.get('/dashboard-viewlist/:design_year/:formName', verifyToken, viewList)
+
 
 router.post('/finalSubmit', verifyToken, finalSubmit)
 
