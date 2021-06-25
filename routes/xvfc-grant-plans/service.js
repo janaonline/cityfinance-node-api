@@ -32,7 +32,7 @@ exports.savePlans = async (req, res) => {
 exports.getPlans = async (req, res) => {
   try {
     const { designYear } = req.params;
-    const ulb = req?.decoded.ulb;
+    let ulb = req?.decoded.ulb;
     if (ulb == undefined) {
       ulb = req?.query.ulb;
     }
