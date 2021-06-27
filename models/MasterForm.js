@@ -3,8 +3,8 @@ require("./dbConnect");
 const statusType = () => {
   return {
     type: String,
-    enum: ["APPROVED", "REJECTED", "PENDING", "NA"],
-    default: "NA",
+    enum: ["APPROVED", "REJECTED", "PENDING"],
+    default: "PENDING",
   };
 };
 
@@ -23,7 +23,7 @@ const MasterFormSchema = new Schema(
     },
     steps: {
       utilReport: {
-        remarks: {},
+        rejectReason: {},
         // individual status of sub form
         status: statusType(),
         isSubmit: {
@@ -33,7 +33,7 @@ const MasterFormSchema = new Schema(
 
       },
       plans: {
-        remarks: {},
+        rejectReason: {},
         // individual status of sub form
         status: statusType(),
         isSubmit: {
@@ -43,7 +43,7 @@ const MasterFormSchema = new Schema(
 
       },
       pfmsAccount: {
-        remarks: {},
+        rejectReason: {},
         // individual status of sub form
         status: statusType(),
         isSubmit: {
@@ -53,7 +53,7 @@ const MasterFormSchema = new Schema(
 
       },
       slbForWaterSupplyAndSanitation: {
-        remarks: {},
+        rejectReason: {},
         // individual status of sub form
         status: statusType(),
         isSubmit: {
@@ -63,7 +63,7 @@ const MasterFormSchema = new Schema(
 
       },
       annualAccounts: {
-        remarks: {},
+        rejectReason: {},
         // individual status of sub form
         status: statusType(),
         isSubmit: {

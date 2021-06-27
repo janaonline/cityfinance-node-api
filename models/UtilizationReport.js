@@ -54,7 +54,6 @@ const UtilizationReportSchema = new Schema(
       ref: "User",
     },
     rejectReason: { type: String, default: "" },
-    remarks: { type: String, default: "" },
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
