@@ -15,19 +15,36 @@ module.exports.createOrUpdate = async (req, res) => {
     const ulb = req.decoded?.ulb;
     req.body.ulb = ulb;
     req.body.actionTakenBy = req.decoded?._id;
-    req.body.status = "PENDING";
-    if (req.body?.rejectReason) {
-      delete req.body.rejectReason;
+    req.body.modifiedAt = new Date();
+
+    let currentSavedUtilRep;
+    if (req.body?.status == "REJECTED") {
+      req.body.status = "PENDING";
+      req.body.rejectReason = null;
+      currentSavedUtilRep = await UtilizationReport.findOne(
+        { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
+        { history: 0 }
+      );
     }
-    let savedData = await UtilizationReport.findOneAndUpdate(
-      { ulb: ObjectId(ulb), financialYear, designYear },
-      { $set: req.body },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      }
-    );
+
+    let savedData;
+    if (currentSavedUtilRep) {
+      savedData = await UtilizationReport.findOneAndUpdate(
+        { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
+        { $set: req.body, $push: { history: currentSavedUtilRep } }
+      );
+    } else {
+      savedData = await UtilizationReport.findOneAndUpdate(
+        { ulb: ObjectId(ulb), financialYear, designYear },
+        { $set: req.body },
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+    }
+
     if (savedData) {
       await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
@@ -72,7 +89,7 @@ exports.readById = async (req, res) => {
       isActive: true,
     }).select({ history: 0 });
     if (!report) {
-      return res.status(404).json({ msg: "No UtilizationReport Found" });
+      return res.status(400).json({ msg: "No UtilizationReport Found" });
     }
     return res.json(report);
   } catch (err) {
@@ -124,22 +141,25 @@ exports.remove = async (req, res) => {
 };
 
 exports.action = async (req, res) => {
-  const data = req.body,
-    user = req.decoded;
   try {
+    const data = req.body,
+      user = req.decoded;
+    const { financialYear, designYear } = req.body;
+    req.body.actionTakenBy = req.decoded._id;
+
     let currentState = await UtilizationReport.findOne(
       { ulb: ObjectId(data.ulb), isActive: true },
       { history: 0 }
     );
-    let ulb = currentState
-      ? await Ulb.findById({ _id: ObjectId(currentState.ulb), isActive: true })
-      : null;
-    if (ulb === null) {
-      return res.status(400).json({ msg: "ulb not found" });
-    }
-    if (user?.role === "STATE" && ulb?.state?.toString() !== user?.state) {
-      return res.status(402).json({ msg: "State not matching" });
-    }
+    // let ulb = currentState
+    //   ? await Ulb.findById({ _id: ObjectId(currentState.ulb), isActive: true })
+    //   : null;
+    // if (ulb === null) {
+    //   return res.status(400).json({ msg: "ulb not found" });
+    // }
+    // if (user?.role === "STATE" && ulb?.state?.toString() !== user?.state) {
+    //   return res.status(400).json({ msg: "State not matching" });
+    // }
     let updateData = {
       status: data?.status,
       actionTakenBy: user?._id,
@@ -147,15 +167,14 @@ exports.action = async (req, res) => {
       modifiedAt: new Date(),
     };
     if (!currentState) {
-      return res.status(404).json({ msg: "Requested record not found." });
+      return res.status(400).json({ msg: "Requested record not found." });
     } else {
       let updatedRecord = await UtilizationReport.findOneAndUpdate(
-        { ulb: ObjectId(data.ulb), isActive: true },
-        updateData,
-        { $push: { history: currentState } }
+        { ulb: ObjectId(data.ulb), isActive: true, financialYear, designYear },
+        { $set: updateData, $push: { history: currentState } }
       );
       if (!updatedRecord) {
-        return res.status(404).json({ msg: "No Record Found" });
+        return res.status(400).json({ msg: "No Record Found" });
       }
 
       await UpdateMasterSubmitForm(req, "utilReport");
