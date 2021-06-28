@@ -8,7 +8,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
 
   try {
     const oldForm = await MasterForm.findOne({
-      ulb: ObjectId(data?.user?.ulb),
+      ulb: ObjectId(data.user?.ulb ? data?.user?.ulb : data.body?.ulb),
       design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
     }).select({
       history: 0,
