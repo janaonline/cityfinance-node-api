@@ -4,6 +4,13 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Year = require('../../models/Year')
 const User = require('../../models/User')
 const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
+const time = () => {
+    var dt = new Date();
+    dt.setHours(dt.getHours() + 5);
+    dt.setMinutes(dt.getMinutes() + 30);
+    return dt;
+};
+
 module.exports.get = catchAsync(async (req, res, next) => {
     let user = req.decoded
 
