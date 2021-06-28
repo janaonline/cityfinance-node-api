@@ -23,7 +23,8 @@ const Year = require('../../models/Year');
 const { findOne } = require('../../models/LedgerLog');
 const { UpdateMasterSubmitForm } = require('../../service/updateMasterForm')
 const UA = require('../../models/UA')
-const util = require('util')
+const util = require('util');
+const { isNull } = require('util');
 async function sleep(millis) {
     return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -371,6 +372,14 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
                 $match: { "state": ObjectId(state) }
             },
             {
+                $project: {
+                    totalUlbsInUA: { $size: "$ulb" },
+                    name: 1,
+                    state: 1,
+                    ulb: 1
+                }
+            },
+            {
                 $lookup: {
                     from: "xvfcgrantulbforms",
                     localField: "ulb",
@@ -387,15 +396,17 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             {
                 $group: {
                     _id: {
-                        status: "$slbForms.status"
+                        status: "$slbForms.status",
+                        UA: "$name"
                     },
-                    // slbForms: { $addToSet: "$slbForms" },
+                    totalUlbInUA: { $addToSet: "$totalUlbsInUA" },
                     totalCount: { $sum: 1 }
 
-                },
-
-
+                }
             }
+
+
+
 
 
         ]
@@ -414,7 +425,9 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             let prms2 = new Promise(async (rslv, rjct) => {
                 let output = await UA.aggregate(query2);
                 if (output.length > 0) {
+                    console.log(output)
                     rslv(output)
+
                     console.log('3')
                 } else {
                     rjct({ message: "DATA NOT FOUND" })
@@ -454,64 +467,74 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
     }
 })
 
+fakefunc = () => {
+
+}
 formatOutput = (arr, arr2) => {
-    let pending = arr2[0]?.totalCount
-    let approved = arr2[1]?.totalCount
 
-    let newData = []
+
+    let newData = [];
+    let data, copyData;
     arr.forEach(el => {
+        arr2.forEach(el2 => {
+            if (el._id == el2._id.UA) {
+                data = {
+                    "waterSuppliedPerDay": {
+                        "target": {
+                            "2122": el.waterSuppliedPerDay2122,
+                            "2223": el.waterSuppliedPerDay2223,
+                            "2324": el.waterSuppliedPerDay2324,
+                            "2425": el.waterSuppliedPerDay2425
+                        },
+                        "baseline": {
+                            "2021": el.waterSuppliedPerDay2021
+                        },
+                    },
+                    "reduction": {
+                        "target": {
+                            "2122": el.reduction2122,
+                            "2223": el.reduction2223,
+                            "2324": el.reduction2324,
+                            "2425": el.reduction2425
+                        },
+                        "baseline": {
+                            "2021": el.reduction2021
+                        },
+                    },
+                    "houseHoldCoveredWithSewerage": {
+                        "target": {
+                            "2122": el.houseHoldCoveredWithSewerage2122,
+                            "2223": el.houseHoldCoveredWithSewerage2223,
+                            "2324": el.houseHoldCoveredWithSewerage2324,
+                            "2425": el.houseHoldCoveredWithSewerage2425
+                        },
+                        "baseline": {
+                            "2021": el.houseHoldCoveredWithSewerage2021
+                        },
+                    },
+                    "houseHoldCoveredPipedSupply": {
+                        "target": {
+                            "2122": el.houseHoldCoveredPipedSupply2122,
+                            "2223": el.houseHoldCoveredPipedSupply2223,
+                            "2324": el.houseHoldCoveredPipedSupply2324,
+                            "2425": el.houseHoldCoveredPipedSupply2425,
+                        },
+                        "baseline": {
+                            "2021": el.houseHoldCoveredPipedSupply2021,
+                        },
+                    },
+                    "totalPendingUlb": el2._id.status == 'PENDING' ? el2.totalCount : copyData?.totalPendingUlb,
+                    "totalCompletedUlb": el2._id.status == 'APPROVED' ? el2.totalCount : copyData?.totalCompletedUlb,
+                    "totalULBsInUA": el2.totalUlbInUA[0],
+                    "uaName": el._id
 
-        let data = {
-            "waterSuppliedPerDay": {
-                "target": {
-                    "2122": el.waterSuppliedPerDay2122,
-                    "2223": el.waterSuppliedPerDay2223,
-                    "2324": el.waterSuppliedPerDay2324,
-                    "2425": el.waterSuppliedPerDay2425
-                },
-                "baseline": {
-                    "2021": el.waterSuppliedPerDay2021
-                },
-            },
-            "reduction": {
-                "target": {
-                    "2122": el.reduction2122,
-                    "2223": el.reduction2223,
-                    "2324": el.reduction2324,
-                    "2425": el.reduction2425
-                },
-                "baseline": {
-                    "2021": el.reduction2021
-                },
-            },
-            "houseHoldCoveredWithSewerage": {
-                "target": {
-                    "2122": el.houseHoldCoveredWithSewerage2122,
-                    "2223": el.houseHoldCoveredWithSewerage2223,
-                    "2324": el.houseHoldCoveredWithSewerage2324,
-                    "2425": el.houseHoldCoveredWithSewerage2425
-                },
-                "baseline": {
-                    "2021": el.houseHoldCoveredWithSewerage2021
-                },
-            },
-            "houseHoldCoveredPipedSupply": {
-                "target": {
-                    "2122": el.houseHoldCoveredPipedSupply2122,
-                    "2223": el.houseHoldCoveredPipedSupply2223,
-                    "2324": el.houseHoldCoveredPipedSupply2324,
-                    "2425": el.houseHoldCoveredPipedSupply2425,
-                },
-                "baseline": {
-                    "2021": el.houseHoldCoveredPipedSupply2021,
-                },
-            },
-            "totalPendingUlb": pending,
-            "totalCompletedUlb": approved,
-            "totalULBsInUA": pending + approved,
-            "uaName": el._id
+                }
+            }
 
-        }
+            copyData = data
+            console.log(copyData.totalPendingUlb)
+        })
+
 
         newData.push(data)
     });

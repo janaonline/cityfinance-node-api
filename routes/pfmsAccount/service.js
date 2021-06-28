@@ -59,6 +59,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
     // let design_year = await Year.findOne({ "year": data.design_year })
     if (user.role === 'ULB') {
         data['ulb'] = ObjectId(user.ulb)
+        data['modifiedAt'] = time();
         // data['design_year'] = ObjectId(design_year._id)
         let query = { ulb: ObjectId(user.ulb), design_year: ObjectId(data.design_year) };
         let pfmsAccountData = await PFMSAccountData.findOne(query)
@@ -66,6 +67,7 @@ module.exports.createOrUpdate = catchAsync(async (req, res, next) => {
             req.body['history'] = [...pfmsAccountData.history];
             pfmsAccountData.history = undefined;
             req.body['history'].push(pfmsAccountData);
+
             let updatedData = await PFMSAccountData.findOneAndUpdate(query, data, { new: true, runValidators: true, setDefaultsOnInsert: true })
             if (updatedData) {
                 await UpdateMasterSubmitForm(req, "pfmsAccount");
