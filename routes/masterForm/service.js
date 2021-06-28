@@ -255,7 +255,13 @@ module.exports.getAll = catchAsync(async (req, res) => {
           },
           ulbType: "$ulb.ulbType.name",
           actionTakenByUserRole: "$actionTakenBy.role",
-          status: 1,
+          status: {
+            $cond: {
+              if: { $eq: ["$status", "NA"] },
+              then: "Not Started",
+              else: "$status"
+            }
+          },
           createdAt: "$createdAt",
           "isSubmit": 1,
           modifiedAt: "$modifiedAt",

@@ -19,21 +19,21 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
           steps: {
             [formName]: {
               status: data.body?.status,
-              remarks: data.body?.remarks,
-              isSubmit: data.body?.isDraft ? !data.body?.isDraft : data.body?.isCompleted
+              rejectReason: data.body?.rejectReason,
+              isSubmit: data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
             },
           },
         };
         await MasterForm.findOneAndUpdate(
           {
-            ulb: ObjectId(data.user?.ulb),
+            ulb: ObjectId(data.user?.ulb ? data?.user?.ulb : data.body?.ulb),
             isActive: true,
             design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
           },
           {
             $set: {
               steps: newForm.steps,
-              status: "NA",
+              status: "PENDING",
               isSubmit: false,      // total isSubmit
               actionTakenBy: data?.user?._id,
               actionTakenByRole: data?.user?.role,
@@ -46,7 +46,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         temp = oldForm;
         let newForm = new MasterForm(oldForm);
         newForm.steps[formName].status = data?.body?.status;
-        newForm.steps[formName].remarks = data?.body?.remarks;
+        newForm.steps[formName].rejectReason = data?.body?.rejectReason;
         newForm.steps[formName].isSubmit = data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
 
         // let tempSubmit = true,
@@ -55,8 +55,8 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         // calculate final submit & status
         Object.entries(newForm.steps).forEach((ele) => {
           // if (ele[1].isSubmit === false || ele[1].isSubmit === null) tempSubmit = false;
-          if (ele[1].status === "NA" || ele[1].status === null) {
-            tempStatus = "NA";
+          if (ele[1].status === "PENDING" || ele[1].status === null) {
+            tempStatus = "PENDING";
           } else if (ele[1].status === "REJECTED") {
             tempStatus = "REJECTED";
           }
@@ -70,7 +70,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         ) {
           await MasterForm.findOneAndUpdate(
             {
-              ulb: ObjectId(data.user?.ulb),
+              ulb: ObjectId(data.user?.ulb ? data?.user?.ulb : data.body?.ulb),
               isActive: true,
               design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
             },
@@ -86,7 +86,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         } else {
           await MasterForm.findOneAndUpdate(
             {
-              ulb: ObjectId(data.user?.ulb),
+              ulb: ObjectId(data.user?.ulb ? data?.user?.ulb : data.body?.ulb),
               isActive: true,
               design_year: data.body?.designYear ? ObjectId(data.body?.designYear) : ObjectId(data.body?.design_year)
             },
@@ -102,10 +102,10 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
       }
     } else {
       let form = new MasterForm({
-        ulb: data.user?.ulb,
+        ulb: data.user?.ulb ? data?.user?.ulb : data.body?.ulb,
         steps: {
           [formName]: {
-            remarks: data.body?.remarks,
+            rejectReason: data.body?.rejectReason,
             status: data.body?.status,
             isSubmit: data.body.hasOwnProperty("isDraft") ? !data.body.isDraft : data.body?.isCompleted
           },
