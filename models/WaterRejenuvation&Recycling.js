@@ -3,8 +3,8 @@ require("./dbConnect");
 const statusType = () => {
   return {
     type: String,
-    enum: ["APPROVED", "REJECTED", "NA"],
-    default: "NA",
+    enum: ["APPROVED", "REJECTED", "PENDING"],
+    default: "PENDING",
   };
 };
 
@@ -92,6 +92,7 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
       rejectReason: {
         type: String,
       },
+      status: statusType(),
     },
   ],
   status: statusType(),
