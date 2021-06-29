@@ -1346,6 +1346,21 @@ module.exports.viewList = catchAsync(async (req, res) => {
       {
         $lookup: {
           from: "users",
+          localField: "annualaccountdatas.actionTakenBy",
+          foreignField: "_id",
+          as: "annualaccountdatas.actionTakenBy"
+
+        }
+
+      }, {
+        $unwind: {
+          "path": "$annualaccountdatas.actionTakenBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
           localField: "utilizationreports.actionTakenBy",
           foreignField: "_id",
           as: "utilizationreports.actionTakenBy"
@@ -1386,6 +1401,19 @@ module.exports.viewList = catchAsync(async (req, res) => {
           "isMillionPlus": 1,
           "isUA": 1,
           "UA": "$uas.name",
+
+          "audited_annualaccounts": {
+            "isDraft": "$annualaccountdatas.isDraft",
+            "status": "$annualaccountdatas.status",
+            "actionTakenBy": "$annualaccountdatas.actionTakenBy.role",
+            "auditedSubmitted": "$annualaccountdatas.audited.submit_annual_accounts"
+          },
+          "unaudited_annualaccounts": {
+            "isDraft": "$annualaccountdatas.isDraft",
+            "status": "$annualaccountdatas.status",
+            "actionTakenBy": "$annualaccountdatas.actionTakenBy.role",
+            "unAuditedSubmitted": "$annualaccountdatas.unAudited.submit_annual_accounts"
+          },
           "masterform": {
             "isSubmit": "$masterforms.isSubmit",
             "actionTakenByRole": "$masterforms.actionTakenByRole",
@@ -1431,7 +1459,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     let data = await Ulb.aggregate(query);
     if (data.length > 0) {
-
+      console.log(data)
       data.forEach(el => {
 
         if (Object.entries(el?.masterform).length === 0) {
@@ -1468,6 +1496,24 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el.utilizationreport = 'Completed'
         } else if (el?.utilizationreport.isDraft == true) {
           el.utilizationreport = 'In Progress'
+        }
+        if (Object.entries(el?.audited_annualaccounts).length === 0) {
+          el.audited_annualaccounts = 'Not Started'
+        } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == false) {
+          el.audited_annualaccounts = 'Completed but Not Submitted'
+        } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == true) {
+          el.audited_annualaccounts = 'Completed and Submitted'
+        } else if (el?.audited_annualaccounts.isDraft == true) {
+          el.audited_annualaccounts = 'In Progress'
+        }
+        if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
+          el.unaudited_annualaccounts = 'Not Started'
+        } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == false) {
+          el.unaudited_annualaccounts = 'Completed but Not Submitted'
+        } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == true) {
+          el.unaudited_annualaccounts = 'Completed and Submitted'
+        } else if (el?.unaudited_annualaccounts.isDraft == true) {
+          el.unaudited_annualaccounts = 'In Progress'
         }
 
 
