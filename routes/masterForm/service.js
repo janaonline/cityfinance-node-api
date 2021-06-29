@@ -1176,6 +1176,21 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
 module.exports.viewList = catchAsync(async (req, res) => {
   let user = req.decoded;
+  let filter =
+    req.query.filter && !req.query.filter != "null"
+      ? JSON.parse(req.query.filter)
+      : req.body.filter
+        ? req.body.filter
+        : {},
+    sort =
+      req.query.sort && !req.query.sort != "null"
+        ? JSON.parse(req.query.sort)
+        : req.body.sort
+          ? req.body.sort
+          : {},
+    skip = req.query.skip ? parseInt(req.query.skip) : 0,
+    csv = req.query.csv,
+    limit = req.query.limit ? parseInt(req.query.limit) : 50;
   // console.log(user)
   if (!user) {
     return res.status(400).json({
@@ -1456,7 +1471,19 @@ module.exports.viewList = catchAsync(async (req, res) => {
         }
       }
     ]
-
+    let newFilter = await Service.mapFilter(filter);
+    if (newFilter["status"]) {
+      Object.assign(newFilter, statusFilter[newFilter["status"]]);
+      if (newFilter["status"] == "2" || newFilter["status"] == "3") {
+        delete newFilter["status"];
+      }
+    }
+    if (newFilter && Object.keys(newFilter).length) {
+      query.push({ $match: newFilter });
+    }
+    if (sort && Object.keys(sort).length) {
+      query.push({ $sort: sort });
+    }
     let data = await Ulb.aggregate(query);
     if (data.length > 0) {
       console.log(data)
@@ -1564,6 +1591,14 @@ module.exports.viewList = catchAsync(async (req, res) => {
         data.forEach(el => {
           delete el.masterform;
           delete el?.annualaccount;
+          delete el.utilizationreport;
+          delete el.pfmsaccount;
+          delete el.xvfcgrantplans;
+        })
+      } else if (formName == "annualaccount") {
+        data.forEach(el => {
+          delete el.masterform;
+          delete el.xvfcgrantulbforms;
           delete el.utilizationreport;
           delete el.pfmsaccount;
           delete el.xvfcgrantplans;
