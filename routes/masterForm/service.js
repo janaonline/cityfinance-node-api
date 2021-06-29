@@ -363,6 +363,48 @@ module.exports.getAll = catchAsync(async (req, res) => {
       query.push({ $limit: limit });
 
       let masterFormData = await MasterFormData.aggregate(query).exec();
+      for (d of masterFormData) {
+        if (
+          d.status == "PENDING" &&
+          d.isSubmit == false &&
+          d.actionTakenByUserRole == "ULB"
+        ) {
+          d.status = "Saved as Draft";
+        }
+        if (
+          d.status == "PENDING" &&
+          d.isSubmit == true &&
+          d.actionTakenByUserRole == "ULB"
+        ) {
+          d.status = "Under Review by State";
+        }
+        if (
+          d.status == "PENDING" &&
+          d.isSubmit == false &&
+          d.actionTakenByUserRole == "STATE"
+        ) {
+          d.status = "Under Review by State";
+        }
+        if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
+          d.status = "Under Review by MoHUA";
+        }
+        if (
+          d.status == "PENDING" &&
+          d.actionTakenByUserRole == "STATE" &&
+          d.isSubmit == false
+        ) {
+          d.status = "Under Review by MoHUA";
+        }
+        if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
+          d.status = "Rejected by STATE";
+        }
+        if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
+          d.status = "Rejected by MoHUA";
+        }
+        if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
+          d.status = "Approval Completed";
+        }
+      }
       if (masterFormData) {
         return res.status(200).json({
           success: true,
