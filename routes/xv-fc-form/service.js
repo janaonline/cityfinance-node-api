@@ -394,12 +394,22 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
                 }
             },
             {
+                $lookup:
+                {
+                    from: "ulbs",
+                    localField: "slbForms.ulb",
+                    foreignField: "_id",
+                    as: "ulbData"
+                }
+            }, { $unwind: "$ulbData" },
+            {
                 $group: {
                     _id: {
                         status: "$slbForms.status",
                         UA: "$name"
                     },
                     totalUlbInUA: { $addToSet: "$totalUlbsInUA" },
+                    ulbData: { $push: { name: "$ulbData.name", censusCode: "$ulbData.censusCode", sbCode: "$ulbData.sbCode" } },
                     totalCount: { $sum: 1 }
 
                 }
@@ -450,7 +460,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 
         })
 
-
+        // let ulbData = extractUlbData(output2);
         let finalOutput = formatOutput(output1, output2)
         return res.status(200).json({
             success: true,
@@ -467,11 +477,28 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
     }
 })
 
-fakefunc = () => {
+extractUlbData = (arr2) => {
+    let approved = [];
+    let pending = [];
+    let output = {};
+    // console.log(util.inspect(arr2, false, null))
+    arr2.forEach(el => {
+        if (el._id.status == "APPROVED") {
+            approved.push(el.ulbData)
+        } else if (el._id.status == "PENDING") {
+            pending.push(el.ulbData)
+        }
+
+    })
+
+    output['pending'] = pending;
+    output['approved'] = approved;
+    console.log(util.inspect(output, false, null))
+    // console.log(output);
 
 }
 formatOutput = (arr, arr2) => {
-
+    console.log(util.inspect(arr2, false, null))
 
     let newData = [];
     let data, copyData;
@@ -523,16 +550,18 @@ formatOutput = (arr, arr2) => {
                             "2021": el.houseHoldCoveredPipedSupply2021,
                         },
                     },
-                    "totalPendingUlb": el2._id.status == 'PENDING' ? el2.totalCount : copyData?.totalPendingUlb,
-                    "totalCompletedUlb": el2._id.status == 'APPROVED' ? el2.totalCount : copyData?.totalCompletedUlb,
+                    "totalPendingUlb": el2._id.status == 'PENDING' ? el2.totalCount : copyData?.totalPendingUlb ? copyData?.totalPendingUlb : 0,
+                    "totalCompletedUlb": el2._id.status == 'APPROVED' ? el2.totalCount : copyData?.totalCompletedUlb ? copyData?.totalCompletedUlb : 0,
                     "totalULBsInUA": el2.totalUlbInUA[0],
-                    "uaName": el._id
+                    "uaName": el._id,
+                    "approvedUlbs": el2._id.status == 'APPROVED' ? el2.ulbData : copyData?.approvedUlbs,
+                    "pendingUlbs": el2._id.status == 'PENDING' ? el2.ulbData : copyData?.pendingUlbs,
 
                 }
             }
 
             copyData = data
-            console.log(copyData.totalPendingUlb)
+            console.log(data)
         })
 
 
