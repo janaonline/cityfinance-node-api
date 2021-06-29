@@ -3663,3 +3663,39 @@ module.exports.state = async (req, res) => {
         data: arr,
     });
 };
+
+exports.newFormAction = async (req, res) => {
+    try {
+      const data = req.body,
+        user = req.decoded;
+      const { design_year } = req.body;
+      req.body.actionTakenBy = req.decoded._id;
+  
+      let currentState = await XVFCGrantULBData.findOne(
+        { ulb: ObjectId(data.ulb), isActive: true },
+        { history: 0 }
+      );
+       
+      if (!currentState) {
+        return res.status(400).json({ msg: "Requested record not found." });
+      } else {
+        let updatedRecord = await XVFCGrantULBData.findOneAndUpdate(
+          { ulb: ObjectId(data.ulb), isActive: true, design_year },
+          { $set: req.body, $push: { history: currentState } }
+        );
+        if (!updatedRecord) {
+          return res.status(400).json({ msg: "No Record Found" });
+        }
+        req.body.status = req.body.waterManagement.status
+        req.body.rejectReason = req.body.waterManagement.rejectReason
+  
+        await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
+  
+        return res.status(200).json({ msg: "Action successful" });
+      }
+    } catch (err) {
+      console.error(err.message);
+      return Response.BadRequest(res, {}, err.message);
+    }
+  };
+  
