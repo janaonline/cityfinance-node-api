@@ -1184,7 +1184,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
     1://Not Started
     {
       masterform: {
-
       }
     },
     2: {
@@ -1200,11 +1199,9 @@ module.exports.viewList = catchAsync(async (req, res) => {
       // Under Review By State
       $or: [
         {
-
           "masterform.status": "PENDING",
           "masterform.isSubmit": true,
           "masterform.actionTakenByRole": "ULB"
-
         },
         {
 
@@ -1213,8 +1210,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
           "masterform.status": "PENDING"
 
         }]
-
-
     },
     5: {          //Under Review By Mohua
       $or: [
@@ -1230,7 +1225,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
         }
       ]
-
     },
     6: {
       //Approved By MoHUA
@@ -1238,8 +1232,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
         status: "APPROVED",
         actionTakenByRole: "MoHUA",
       }
-
-
     },
 
     7: {
@@ -1248,7 +1240,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
         status: "REJECTED",
         actionTakenByRole: "STATE",
       }
-
     },
     8: {
       //Rejected By MoHUA
@@ -1256,9 +1247,143 @@ module.exports.viewList = catchAsync(async (req, res) => {
         status: "REJECTED",
         actionTakenByRole: "MoHUA",
       }
+    },
+    9: {
+      pfmsaccount: {
+        //Not Started
+      }
+    },
+    10: {
+      pfmsaccount: {
+        "isDraft": "true"
+      }
+    },
+    11: {
+      pfmsaccount: {
+        "isDraft": false,
+        "registered": "yes"
+      }
+    },
+    12: {
+      $or: [
+        {
+          "pfmsaccount.isDraft": false,
+          "pfmsaccount.registered": "no"
+        },
+        {
+          "pfmsaccount.isDraft": false,
+          "pfmsaccount.registered": ""
 
+        }
+      ]
+    },
+    13: {
+      audited_annualaccounts: {
+        //Not Started
+      }
 
     },
+    14: { //In Progress
+      audited_annualaccounts: {
+        isDraft: true
+      }
+    },
+    15: { // Not Submitted Accounts
+      audited_annualaccounts: {
+        isDraft: false,
+        auditedSubmitted: false
+      }
+
+    },
+    16: {
+      audited_annualaccounts: {
+        isDraft: false,
+        auditedSubmitted: true
+      }
+    },
+    17: {
+      unaudited_annualaccounts: {
+        //Not Started
+      }
+
+    },
+    18: { //In Progress
+      unaudited_annualaccounts: {
+        isDraft: true
+      }
+    },
+    19: { //Not Submitted Accounts
+      unaudited_annualaccounts: {
+        isDraft: false,
+        unAuditedSubmitted: false
+      }
+
+    },
+    20: { // Submitted Accounts
+      unaudited_annualaccounts: {
+        isDraft: false,
+        unAuditedSubmitted: true
+      }
+    },
+
+    21: {//not started
+      utilizationreport: {
+
+      }
+
+    },
+    22: {
+      utilizationreport: {
+        isDraft: true
+      }
+
+    },
+    23: {
+      utilizationreport: {
+        isDraft: false
+      }
+
+    },
+    24: {//not started
+      xvfcgrantulbforms: {
+
+      }
+
+    },
+    25: {
+      xvfcgrantulbforms: {
+        isCompleted: false
+      }
+
+    },
+    26: {
+      xvfcgrantulbforms: {
+        isCompleted: true
+      }
+
+    },
+    27: {//not started
+      xvfcgrantplans: {
+
+      }
+
+    },
+    28: {
+      xvfcgrantplans: {
+        isDraft: true
+      }
+
+    },
+    29: {
+      xvfcgrantplans: {
+        isDraft: false
+      }
+
+    },
+
+
+
+
 
   };
   let filter =
@@ -1558,12 +1683,28 @@ module.exports.viewList = catchAsync(async (req, res) => {
     ]
     let newFilter = await Service.mapFilter(filter);
 
-    if (newFilter["status"]) {
-
+    if (newFilter["status"] ||
+      newFilter["pfmsStatus"] ||
+      newFilter["auditedStatus"] ||
+      newFilter["unauditedStatus"] ||
+      newFilter["utilStatus"] ||
+      newFilter["slbStatus"] ||
+      newFilter["plansStatus"]) {
       Object.assign(newFilter, statusFilter[newFilter["status"]]);
-      // if (newFilter["status"] == "2" || newFilter["status"] == "3") {
+      Object.assign(newFilter, statusFilter[newFilter["pfmsStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["auditedStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["unauditedStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["utilStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["slbStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["plansStatus"]]);
       delete newFilter["status"];
-      // }
+      delete newFilter["pfmsStatus"];
+      delete newFilter["auditedStatus"];
+      delete newFilter["unauditedStatus"];
+      delete newFilter["utilStatus"];
+      delete newFilter["slbStatus"];
+      delete newFilter["plansStatus"];
+
     }
     if (newFilter && Object.keys(newFilter).length) {
       query.push({ $match: newFilter });
@@ -1598,59 +1739,59 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
 
       if (Object.entries(el?.pfmsaccount).length === 0) {
-        el.pfmsaccount = 'Not Started'
+        el['pfmsaccountStatus'] = 'Not Started'
       } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "no") {
-        el.pfmsaccount = 'Not Registered'
+        el['pfmsaccountStatus'] = 'Not Registered'
       } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "yes") {
-        el.pfmsaccount = 'Registered'
+        el['pfmsaccountStatus'] = 'Registered'
       } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "") {
-        el.pfmsaccount = 'Not Registered'
+        el['pfmsaccountStatus'] = 'Not Registered'
       } else if (el?.pfmsaccount.isDraft == "true") {
-        el.pfmsaccount = 'In Progress'
+        el['pfmsaccountStatus'] = 'In Progress'
       }
 
       if (Object.entries(el?.utilizationreport).length === 0) {
-        el.utilizationreport = 'Not Started'
+        el['utilizationreportStatus'] = 'Not Started'
       } else if (el?.utilizationreport.isDraft == false) {
-        el.utilizationreport = 'Completed'
+        el['utilizationreportStatus'] = 'Completed'
       } else if (el?.utilizationreport.isDraft == true) {
-        el.utilizationreport = 'In Progress'
+        el['utilizationreportStatus'] = 'In Progress'
       }
       if (Object.entries(el?.audited_annualaccounts).length === 0) {
-        el.audited_annualaccounts = 'Not Started'
+        el['audited_annualaccountsStatus'] = 'Not Started'
       } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == false) {
-        el.audited_annualaccounts = 'Accounts Not Submitted'
+        el['audited_annualaccountsStatus'] = 'Accounts Not Submitted'
       } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == true) {
-        el.audited_annualaccounts = 'Accounts Submitted'
+        el['audited_annualaccountsStatus'] = 'Accounts Submitted'
       } else if (el?.audited_annualaccounts.isDraft == true) {
-        el.audited_annualaccounts = 'In Progress'
+        el['audited_annualaccountsStatus'] = 'In Progress'
       }
       if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
-        el.unaudited_annualaccounts = 'Not Started'
+        el['unaudited_annualaccountsStatus'] = 'Not Started'
       } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == false) {
-        el.unaudited_annualaccounts = 'Completed but Not Submitted'
+        el['unaudited_annualaccountsStatus'] = 'Accounts Not Submitted'
       } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == true) {
-        el.unaudited_annualaccounts = 'Completed and Submitted'
+        el['unaudited_annualaccountsStatus'] = 'Accounts Submitted'
       } else if (el?.unaudited_annualaccounts.isDraft == true) {
-        el.unaudited_annualaccounts = 'In Progress'
+        el['unaudited_annualaccountsStatus'] = 'In Progress'
       }
 
 
       if (Object.entries(el?.xvfcgrantplans).length === 0) {
-        el.xvfcgrantplans = 'Not Started'
+        el['xvfcgrantplansStatus'] = 'Not Started'
       } else if (el?.xvfcgrantplans.isDraft == false) {
-        el.xvfcgrantplans = 'Completed'
+        el['xvfcgrantplansStatus'] = 'Completed'
       } else if (el?.xvfcgrantplans.isDraft == true) {
-        el.xvfcgrantplans = 'In Progress'
+        el['xvfcgrantplansStatus'] = 'In Progress'
       }
 
 
       if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
-        el.xvfcgrantulbforms = 'Not Started'
+        el['xvfcgrantulbformsStatus'] = 'Not Started'
       } else if (el?.xvfcgrantulbforms.isCompleted == true) {
-        el.xvfcgrantulbforms = 'Completed'
+        el['xvfcgrantulbformsStatus'] = 'Completed'
       } else if (el?.xvfcgrantulbforms.isCompleted == false) {
-        el.xvfcgrantulbforms = 'In Progress'
+        el['xvfcgrantulbformsStatus'] = 'In Progress'
       }
 
     })
