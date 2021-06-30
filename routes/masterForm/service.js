@@ -1575,12 +1575,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
     console.log(data)
     data.forEach(el => {
 
-
-
-  
-=
-
-
       if (Object.entries(el?.masterform).length === 0) {
         el.masterform = 'Not Started'
       } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
@@ -1623,9 +1617,9 @@ module.exports.viewList = catchAsync(async (req, res) => {
       if (Object.entries(el?.audited_annualaccounts).length === 0) {
         el.audited_annualaccounts = 'Not Started'
       } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == false) {
-        el.audited_annualaccounts = 'Completed but Not Submitted'
+        el.audited_annualaccounts = 'Accounts Not Submitted'
       } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == true) {
-        el.audited_annualaccounts = 'Completed and Submitted'
+        el.audited_annualaccounts = 'Accounts Submitted'
       } else if (el?.audited_annualaccounts.isDraft == true) {
         el.audited_annualaccounts = 'In Progress'
       }
