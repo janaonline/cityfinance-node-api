@@ -7,6 +7,7 @@ const UA = require('../../models/UA')
 const moment = require("moment");
 const util = require('util');
 const { forEach } = require("jszip");
+const { toUnicode } = require("punycode");
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
 
@@ -1176,6 +1177,72 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
 module.exports.viewList = catchAsync(async (req, res) => {
   let user = req.decoded;
+  let statusFilter = {
+    1://Not Started
+    {
+      masterform: {
+
+      }
+    },
+    2: {
+      //In Progress   
+      masterform: {
+        "isSubmit": false,
+        "actionTakenByRole": "ULB",
+        "status": "PENDING",
+      }
+
+    },
+    3: {
+      masterform: {
+        //Under Review By Mohua
+        $or: [
+          { isSubmit: true, status: "PENDING", actionTakenByRole: "STATE" },
+          { isSubmit: false, actionTakenByRole: "MoHUA" },
+        ],
+
+      }
+    }
+
+
+    ,
+    4: {
+      // Under Review By State
+
+      masterform: {
+        status: "PENDING",
+        isSubmit: true,
+        actionTakenByRole: "ULB"
+      }
+
+    },
+    5: {
+      //Rejected By State
+      masterform: {
+        status: "REJECTED",
+        actionTakenByRole: "STATE",
+      }
+
+    },
+    6: {
+      //Rejected By MoHUA
+      masterform: {
+        status: "REJECTED",
+        actionTakenByUserRole: "MoHUA",
+      }
+
+
+    },
+    7: {
+      //Approved By MoHUA
+      masterform: {
+        status: "APPROVED",
+        actionTakenByUserRole: "MoHUA",
+      }
+
+
+    },
+  };
   let filter =
     req.query.filter && !req.query.filter != "null"
       ? JSON.parse(req.query.filter)
@@ -1472,11 +1539,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
     ]
     let newFilter = await Service.mapFilter(filter);
+
     if (newFilter["status"]) {
+
       Object.assign(newFilter, statusFilter[newFilter["status"]]);
-      if (newFilter["status"] == "2" || newFilter["status"] == "3") {
-        delete newFilter["status"];
-      }
+      // if (newFilter["status"] == "2" || newFilter["status"] == "3") {
+      delete newFilter["status"];
+      // }
     }
     if (newFilter && Object.keys(newFilter).length) {
       query.push({ $match: newFilter });
@@ -1484,6 +1553,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
     if (sort && Object.keys(sort).length) {
       query.push({ $sort: sort });
     }
+    console.log(util.inspect(query, false, null))
     let data = await Ulb.aggregate(query);
     if (data.length > 0) {
       console.log(data)
@@ -1493,14 +1563,16 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el.masterform = 'Not Started'
         } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
           el.masterform = 'Under Review by State'
+        } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
+          el.masterform = 'In Progress'
         } else if (el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'REJECTED') {
           el.masterform = 'Rejected by State'
         } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'REJECTED') {
           el.masterform = 'Rejected by MoHUA'
         } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'APPROVED') {
           el.masterform = 'Approval Completed'
-        } else if (el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'REJECTED') {
-          el.masterform = 'Approved by State'
+        } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.isSubmit === false) {
+          el.masterform = 'Under Review by MoHUA'
         } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'PENDING') {
           el.masterform = 'Under Review by MoHUA'
         }
