@@ -1,0 +1,74 @@
+const LinkPfmsState = require("../../models/LinkPfmsState");
+// const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
+const ObjectId = require("mongoose").Types.ObjectId;
+const Response = require("../../service").response;
+
+exports.saveLinkPfmsState = async (req, res) => {
+  let { state, _id } = req.decoded;
+  let data = req.body;
+  req.body.actionTakenBy = _id;
+  try {
+    console.log(data);
+    await LinkPfmsState.findOneAndUpdate(
+      { state: ObjectId(state), design_year: ObjectId(data.design_year) },
+      data,
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+    return Response.OK(res, null, "Submitted!");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
+
+exports.getLinkPfmsState = async (req, res) => {
+  const { design_year } = req.params;
+  const state = req.decoded.state;
+  try {
+    const newLink = await LinkPfmsState.findOne({
+      state: ObjectId(state),
+      design_year,
+      isActive: true,
+    }).select({ history: 0 });
+    if (!newLink) {
+      return Response.BadRequest(res, null, "No LinkPfmsState found");
+    }
+    return Response.OK(res, newLink, "Success");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
+
+exports.action = async (req, res) => {
+  let { design_year, isDraft } = req.body;
+  let { state } = req.decoded;
+  try {
+    let currentLinkPfmsState = await LinkPfmsState.findOne({
+      state: ObjectId(state),
+      design_year: ObjectId(design_year),
+      isActive: true,
+    }).select({
+      history: 0,
+    });
+    const newLinkPfmsState = await LinkPfmsState.findOneAndUpdate(
+      {
+        state: ObjectId(state),
+        design_year: ObjectId(design_year),
+        isActive: true,
+      },
+      { $set: req.body, $push: { history: currentLinkPfmsState } }
+    );
+    if (!newLinkPfmsState) {
+      return Response.BadRequest(res, null, "No LinkPfmsState found");
+    }
+    return Response.OK(res, newLinkPfmsState, "Action Submitted!");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
