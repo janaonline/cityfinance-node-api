@@ -1577,11 +1577,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
       if (Object.entries(el?.masterform).length === 0) {
         el['masterformStatus'] = 'Not Started'
-      } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
+      } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && (el.masterform.status === 'PENDING' || el.masterform.status === 'NA')) {
         el['masterformStatus'] = 'Under Review by State'
       } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'STATE') {
         el['masterformStatus'] = 'Under Review by State'
-      } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
+      } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'ULB' && (el.masterform.status === 'PENDING' || el.masterform.status === 'NA')) {
         el['masterformStatus'] = 'In Progress'
       } else if (el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'REJECTED') {
         el['masterformStatus'] = 'Rejected by State'
