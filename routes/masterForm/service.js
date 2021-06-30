@@ -1680,11 +1680,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
         success: true,
         data: data
       })
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Data Not Found"
-      })
     }
 
     // console.log(util.inspect({ data }, { showHidden: false, depth: null }))
