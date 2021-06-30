@@ -1234,7 +1234,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
       //Approved By MoHUA
       masterform: {
         status: "APPROVED",
-        actionTakenByUserRole: "MoHUA",
+        actionTakenByRole: "MoHUA",
       }
 
 
@@ -1252,7 +1252,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
       //Rejected By MoHUA
       masterform: {
         status: "REJECTED",
-        actionTakenByUserRole: "MoHUA",
+        actionTakenByRole: "MoHUA",
       }
 
 
@@ -1576,23 +1576,23 @@ module.exports.viewList = catchAsync(async (req, res) => {
     data.forEach(el => {
 
       if (Object.entries(el?.masterform).length === 0) {
-        el.masterform = 'Not Started'
+        el['masterformStatus'] = 'Not Started'
       } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
-        el.masterform = 'Under Review by State'
+        el['masterformStatus'] = 'Under Review by State'
       } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'STATE') {
-        el.masterform = 'Under Review by State'
+        el['masterformStatus'] = 'Under Review by State'
       } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
-        el.masterform = 'In Progress'
+        el['masterformStatus'] = 'In Progress'
       } else if (el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'REJECTED') {
-        el.masterform = 'Rejected by State'
+        el['masterformStatus'] = 'Rejected by State'
       } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'REJECTED') {
-        el.masterform = 'Rejected by MoHUA'
+        el['masterformStatus'] = 'Rejected by MoHUA'
       } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'APPROVED') {
-        el.masterform = 'Approval Completed'
+        el['masterformStatus'] = 'Approval Completed'
       } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.isSubmit === false) {
-        el.masterform = 'Under Review by MoHUA'
+        el['masterformStatus'] = 'Under Review by MoHUA'
       } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'PENDING') {
-        el.masterform = 'Under Review by MoHUA'
+        el['masterformStatus'] = 'Under Review by MoHUA'
       }
 
       if (Object.entries(el?.pfmsaccount).length === 0) {
