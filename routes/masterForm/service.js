@@ -370,7 +370,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.isSubmit == false &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d['printStatus'] = "Saved as Draft";
+          d['printStatus'] = "In Progress";
         }
         if (
           d.status == "PENDING" &&
@@ -387,6 +387,9 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d['printStatus'] = "Under Review by State";
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
+          d['printStatus'] = "Under Review by MoHUA";
+        }
+        if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
           d['printStatus'] = "Under Review by MoHUA";
         }
         if (
@@ -1571,6 +1574,12 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     console.log(data)
     data.forEach(el => {
+
+
+
+  
+=
+
 
       if (Object.entries(el?.masterform).length === 0) {
         el.masterform = 'Not Started'
