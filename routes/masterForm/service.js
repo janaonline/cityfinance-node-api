@@ -1188,11 +1188,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
     },
     2: {
       //In Progress   
-      masterform: {
-        "isSubmit": false,
-        "actionTakenByRole": "ULB",
-        "status": "PENDING",
-      }
+
+      "masterform.isSubmit": false,
+      "masterform.actionTakenByRole": "ULB",
+      "masterform.status": "PENDING",
+
 
     },
     4: {
@@ -1228,25 +1228,18 @@ module.exports.viewList = catchAsync(async (req, res) => {
     },
     6: {
       //Approved By MoHUA
-      masterform: {
-        status: "APPROVED",
-        actionTakenByRole: "MoHUA",
-      }
+      "masterform.status": "APPROVED",
+      "masterform.actionTakenByRole": "MoHUA",
     },
-
     7: {
       //Rejected By State
-      masterform: {
-        status: "REJECTED",
-        actionTakenByRole: "STATE",
-      }
+      "masterform.status": "REJECTED",
+      "masterform.actionTakenByRole": "STATE",
     },
     8: {
       //Rejected By MoHUA
-      masterform: {
-        status: "REJECTED",
-        actionTakenByRole: "MoHUA",
-      }
+      "masterform.status": "REJECTED",
+      "masterform.actionTakenByRole": "MoHUA",
     },
     9: {
       pfmsaccount: {
@@ -1254,15 +1247,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
     },
     10: {
-      pfmsaccount: {
-        "isDraft": "true"
-      }
+      "pfmsaccount.isDraft": "true"
     },
     11: {
-      pfmsaccount: {
-        "isDraft": false,
-        "registered": "yes"
-      }
+
+      "pfmsaccount.isDraft": false,
+      "pfmsaccount.registered": "yes"
+
     },
     12: {
       $or: [
@@ -1284,22 +1275,21 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     },
     14: { //In Progress
-      audited_annualaccounts: {
-        isDraft: true
-      }
+
+      "audited_annualaccounts.isDraft": true
+
     },
     15: { // Not Submitted Accounts
-      audited_annualaccounts: {
-        isDraft: false,
-        auditedSubmitted: false
-      }
+
+      "audited_annualaccounts.isDraft": false,
+      "audited_annualaccounts.auditedSubmitted": false,
+
+
 
     },
     16: {
-      audited_annualaccounts: {
-        isDraft: false,
-        auditedSubmitted: true
-      }
+      "audited_annualaccounts.isDraft": false,
+      "audited_annualaccounts.auditedSubmitted": true,
     },
     17: {
       unaudited_annualaccounts: {
@@ -1308,22 +1298,19 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     },
     18: { //In Progress
-      unaudited_annualaccounts: {
-        isDraft: true
-      }
-    },
-    19: { //Not Submitted Accounts
-      unaudited_annualaccounts: {
-        isDraft: false,
-        unAuditedSubmitted: false
-      }
+
+      "unaudited_annualaccounts.isDraft": true
 
     },
+    19: { //Not Submitted Accounts
+      "unaudited_annualaccounts.isDraft": false,
+      "unaudited_annualaccounts.unAuditedSubmitted": false
+    },
     20: { // Submitted Accounts
-      unaudited_annualaccounts: {
-        isDraft: false,
-        unAuditedSubmitted: true
-      }
+
+      "unaudited_annualaccounts.isDraft": false,
+      "unaudited_annualaccounts.unAuditedSubmitted": true
+
     },
 
     21: {//not started
@@ -1333,15 +1320,10 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     },
     22: {
-      utilizationreport: {
-        isDraft: true
-      }
-
+      "utilizationreport.isDraft": true
     },
     23: {
-      utilizationreport: {
-        isDraft: false
-      }
+      "utilizationreport.isDraft": false
 
     },
     24: {//not started
@@ -1351,15 +1333,15 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     },
     25: {
-      xvfcgrantulbforms: {
-        isCompleted: false
-      }
+
+      "xvfcgrantulbforms.isCompleted": false
+
 
     },
     26: {
-      xvfcgrantulbforms: {
-        isCompleted: true
-      }
+
+      "xvfcgrantulbforms.isCompleted": true
+
 
     },
     27: {//not started
@@ -1369,15 +1351,15 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     },
     28: {
-      xvfcgrantplans: {
-        isDraft: true
-      }
+
+      "xvfcgrantplans.isDraft": true
+
 
     },
     29: {
-      xvfcgrantplans: {
-        isDraft: false
-      }
+
+      "xvfcgrantplans.isDraft": false
+
 
     },
 
