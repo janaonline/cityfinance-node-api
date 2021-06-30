@@ -370,40 +370,40 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.isSubmit == false &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d.status = "Saved as Draft";
+          d['printStatus'] = "Saved as Draft";
         }
         if (
           d.status == "PENDING" &&
           d.isSubmit == true &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d.status = "Under Review by State";
+          d['printStatus'] = "Under Review by State";
         }
         if (
           d.status == "PENDING" &&
           d.isSubmit == false &&
           d.actionTakenByUserRole == "STATE"
         ) {
-          d.status = "Under Review by State";
+          d['printStatus'] = "Under Review by State";
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
-          d.status = "Under Review by MoHUA";
+          d['printStatus'] = "Under Review by MoHUA";
         }
         if (
           d.status == "PENDING" &&
           d.actionTakenByUserRole == "STATE" &&
           d.isSubmit == false
         ) {
-          d.status = "Under Review by MoHUA";
+          d['printStatus'] = "Under Review by MoHUA";
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
-          d.status = "Rejected by STATE";
+          d['printStatus'] = "Rejected by STATE";
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
-          d.status = "Rejected by MoHUA";
+          d['printStatus'] = "Rejected by MoHUA";
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
-          d.status = "Approval Completed";
+          d['printStatus'] = "Approval Completed";
         }
       }
       if (masterFormData) {
@@ -1195,23 +1195,37 @@ module.exports.viewList = catchAsync(async (req, res) => {
     },
     4: {
       // Under Review By State
+      $or: [
+        {
+          masterform: {
+            status: "PENDING",
+            isSubmit: true,
+            actionTakenByRole: "ULB"
+          }
+        },
+        {
+          masterform: {
+            isSubmit: false,
+            actionTakenByRole: "STATE"
+          }
+        }]
 
-      masterform: {
-        status: "PENDING",
-        isSubmit: true,
-        actionTakenByRole: "ULB"
-      }
 
     },
-    5: {
-      masterform: {
-        //Under Review By Mohua
-        $or: [
-          { isSubmit: true, status: "PENDING", actionTakenByRole: "STATE" },
-          { isSubmit: false, actionTakenByRole: "MoHUA" },
-        ],
+    5: {          //Under Review By Mohua
+      $or: [
+        {
+          masterform: {
+            isSubmit: true, status: "PENDING", actionTakenByRole: "STATE"
+          }
+        },
+        {
+          masterform: {
+            isSubmit: false, actionTakenByRole: "MoHUA"
+          }
+        }
+      ]
 
-      }
     },
     6: {
       //Approved By MoHUA
@@ -1561,6 +1575,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
       if (Object.entries(el?.masterform).length === 0) {
         el.masterform = 'Not Started'
       } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
+        el.masterform = 'Under Review by State'
+      } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'STATE') {
         el.masterform = 'Under Review by State'
       } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
         el.masterform = 'In Progress'
