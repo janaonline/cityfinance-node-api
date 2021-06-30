@@ -1209,7 +1209,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           masterform: {
             isSubmit: false,
-            actionTakenByRole: "STATE"
+            actionTakenByRole: "STATE",
+            status: "PENDING"
           }
         }]
 
