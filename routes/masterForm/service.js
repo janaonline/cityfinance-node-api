@@ -394,7 +394,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.actionTakenByUserRole == "STATE" &&
           d.isSubmit == false
         ) {
-          d['printStatus'] = "Under Review by MoHUA";
+          d['printStatus'] = "Under Review by State";
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
           d['printStatus'] = "Rejected by STATE";
