@@ -1554,132 +1554,132 @@ module.exports.viewList = catchAsync(async (req, res) => {
     }
     console.log(util.inspect(query, false, null))
     let data = await Ulb.aggregate(query);
-    if (data.length > 0) {
-      console.log(data)
-      data.forEach(el => {
 
-        if (Object.entries(el?.masterform).length === 0) {
-          el.masterform = 'Not Started'
-        } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
-          el.masterform = 'Under Review by State'
-        } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
-          el.masterform = 'In Progress'
-        } else if (el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'REJECTED') {
-          el.masterform = 'Rejected by State'
-        } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'REJECTED') {
-          el.masterform = 'Rejected by MoHUA'
-        } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'APPROVED') {
-          el.masterform = 'Approval Completed'
-        } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.isSubmit === false) {
-          el.masterform = 'Under Review by MoHUA'
-        } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'PENDING') {
-          el.masterform = 'Under Review by MoHUA'
-        }
+    console.log(data)
+    data.forEach(el => {
 
-        if (Object.entries(el?.pfmsaccount).length === 0) {
-          el.pfmsaccount = 'Not Started'
-        } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "no") {
-          el.pfmsaccount = 'Not Registered'
-        } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "yes") {
-          el.pfmsaccount = 'Registered'
-        } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "") {
-          el.pfmsaccount = 'Not Registered'
-        } else if (el?.pfmsaccount.isDraft == "true") {
-          el.pfmsaccount = 'In Progress'
-        }
-
-        if (Object.entries(el?.utilizationreport).length === 0) {
-          el.utilizationreport = 'Not Started'
-        } else if (el?.utilizationreport.isDraft == false) {
-          el.utilizationreport = 'Completed'
-        } else if (el?.utilizationreport.isDraft == true) {
-          el.utilizationreport = 'In Progress'
-        }
-        if (Object.entries(el?.audited_annualaccounts).length === 0) {
-          el.audited_annualaccounts = 'Not Started'
-        } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == false) {
-          el.audited_annualaccounts = 'Completed but Not Submitted'
-        } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == true) {
-          el.audited_annualaccounts = 'Completed and Submitted'
-        } else if (el?.audited_annualaccounts.isDraft == true) {
-          el.audited_annualaccounts = 'In Progress'
-        }
-        if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
-          el.unaudited_annualaccounts = 'Not Started'
-        } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == false) {
-          el.unaudited_annualaccounts = 'Completed but Not Submitted'
-        } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == true) {
-          el.unaudited_annualaccounts = 'Completed and Submitted'
-        } else if (el?.unaudited_annualaccounts.isDraft == true) {
-          el.unaudited_annualaccounts = 'In Progress'
-        }
-
-
-        if (Object.entries(el?.xvfcgrantplans).length === 0) {
-          el.xvfcgrantplans = 'Not Started'
-        } else if (el?.xvfcgrantplans.isDraft == false) {
-          el.xvfcgrantplans = 'Completed'
-        } else if (el?.xvfcgrantplans.isDraft == true) {
-          el.xvfcgrantplans = 'In Progress'
-        }
-
-
-        if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
-          el.xvfcgrantulbforms = 'Not Started'
-        } else if (el?.xvfcgrantulbforms.isCompleted == true) {
-          el.xvfcgrantulbforms = 'Completed'
-        } else if (el?.xvfcgrantulbforms.isCompleted == false) {
-          el.xvfcgrantulbforms = 'In Progress'
-        }
-
-      })
-
-      if (formName == "utilReport") {
-        data.forEach(el => {
-          delete el.masterform;
-          delete el?.annualaccount;
-          delete el.pfmsaccount;
-          delete el.xvfcgrantplans;
-          delete el.xvfcgrantulbforms;
-        })
-      } else if (formName == "pfms") {
-        data.forEach(el => {
-          delete el.masterform;
-          delete el?.annualaccount;
-          delete el.utilizationreport;
-          delete el.xvfcgrantplans;
-          delete el.xvfcgrantulbforms;
-        })
-      } else if (formName == "plans") {
-        data.forEach(el => {
-          delete el.masterform;
-          delete el?.annualaccount;
-          delete el.utilizationreport;
-          delete el.pfmsaccount;
-          delete el.xvfcgrantulbforms;
-        })
-      } else if (formName == "slb") {
-        data.forEach(el => {
-          delete el.masterform;
-          delete el?.annualaccount;
-          delete el.utilizationreport;
-          delete el.pfmsaccount;
-          delete el.xvfcgrantplans;
-        })
-      } else if (formName == "annualaccount") {
-        data.forEach(el => {
-          delete el.masterform;
-          delete el.xvfcgrantulbforms;
-          delete el.utilizationreport;
-          delete el.pfmsaccount;
-          delete el.xvfcgrantplans;
-        })
+      if (Object.entries(el?.masterform).length === 0) {
+        el.masterform = 'Not Started'
+      } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
+        el.masterform = 'Under Review by State'
+      } else if (el?.masterform.isSubmit == false && el?.masterform.actionTakenByRole === 'ULB' && el.masterform.status === 'PENDING' || 'NA') {
+        el.masterform = 'In Progress'
+      } else if (el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'REJECTED') {
+        el.masterform = 'Rejected by State'
+      } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'REJECTED') {
+        el.masterform = 'Rejected by MoHUA'
+      } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.status === 'APPROVED') {
+        el.masterform = 'Approval Completed'
+      } else if (el?.masterform.actionTakenByRole === 'MoHUA' && el?.masterform.isSubmit === false) {
+        el.masterform = 'Under Review by MoHUA'
+      } else if (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole === 'STATE' && el?.masterform.status === 'PENDING') {
+        el.masterform = 'Under Review by MoHUA'
       }
-      return res.status(200).json({
-        success: true,
-        data: data
+
+      if (Object.entries(el?.pfmsaccount).length === 0) {
+        el.pfmsaccount = 'Not Started'
+      } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "no") {
+        el.pfmsaccount = 'Not Registered'
+      } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "yes") {
+        el.pfmsaccount = 'Registered'
+      } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "") {
+        el.pfmsaccount = 'Not Registered'
+      } else if (el?.pfmsaccount.isDraft == "true") {
+        el.pfmsaccount = 'In Progress'
+      }
+
+      if (Object.entries(el?.utilizationreport).length === 0) {
+        el.utilizationreport = 'Not Started'
+      } else if (el?.utilizationreport.isDraft == false) {
+        el.utilizationreport = 'Completed'
+      } else if (el?.utilizationreport.isDraft == true) {
+        el.utilizationreport = 'In Progress'
+      }
+      if (Object.entries(el?.audited_annualaccounts).length === 0) {
+        el.audited_annualaccounts = 'Not Started'
+      } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == false) {
+        el.audited_annualaccounts = 'Completed but Not Submitted'
+      } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == true) {
+        el.audited_annualaccounts = 'Completed and Submitted'
+      } else if (el?.audited_annualaccounts.isDraft == true) {
+        el.audited_annualaccounts = 'In Progress'
+      }
+      if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
+        el.unaudited_annualaccounts = 'Not Started'
+      } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == false) {
+        el.unaudited_annualaccounts = 'Completed but Not Submitted'
+      } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == true) {
+        el.unaudited_annualaccounts = 'Completed and Submitted'
+      } else if (el?.unaudited_annualaccounts.isDraft == true) {
+        el.unaudited_annualaccounts = 'In Progress'
+      }
+
+
+      if (Object.entries(el?.xvfcgrantplans).length === 0) {
+        el.xvfcgrantplans = 'Not Started'
+      } else if (el?.xvfcgrantplans.isDraft == false) {
+        el.xvfcgrantplans = 'Completed'
+      } else if (el?.xvfcgrantplans.isDraft == true) {
+        el.xvfcgrantplans = 'In Progress'
+      }
+
+
+      if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
+        el.xvfcgrantulbforms = 'Not Started'
+      } else if (el?.xvfcgrantulbforms.isCompleted == true) {
+        el.xvfcgrantulbforms = 'Completed'
+      } else if (el?.xvfcgrantulbforms.isCompleted == false) {
+        el.xvfcgrantulbforms = 'In Progress'
+      }
+
+    })
+
+    if (formName == "utilReport") {
+      data.forEach(el => {
+        delete el.masterform;
+        delete el?.annualaccount;
+        delete el.pfmsaccount;
+        delete el.xvfcgrantplans;
+        delete el.xvfcgrantulbforms;
+      })
+    } else if (formName == "pfms") {
+      data.forEach(el => {
+        delete el.masterform;
+        delete el?.annualaccount;
+        delete el.utilizationreport;
+        delete el.xvfcgrantplans;
+        delete el.xvfcgrantulbforms;
+      })
+    } else if (formName == "plans") {
+      data.forEach(el => {
+        delete el.masterform;
+        delete el?.annualaccount;
+        delete el.utilizationreport;
+        delete el.pfmsaccount;
+        delete el.xvfcgrantulbforms;
+      })
+    } else if (formName == "slb") {
+      data.forEach(el => {
+        delete el.masterform;
+        delete el?.annualaccount;
+        delete el.utilizationreport;
+        delete el.pfmsaccount;
+        delete el.xvfcgrantplans;
+      })
+    } else if (formName == "annualaccount") {
+      data.forEach(el => {
+        delete el.masterform;
+        delete el.xvfcgrantulbforms;
+        delete el.utilizationreport;
+        delete el.pfmsaccount;
+        delete el.xvfcgrantplans;
       })
     }
+    return res.status(200).json({
+      success: true,
+      data: data
+    })
+
 
     // console.log(util.inspect({ data }, { showHidden: false, depth: null }))
   } else {
