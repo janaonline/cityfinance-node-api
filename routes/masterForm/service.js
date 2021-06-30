@@ -1193,19 +1193,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
 
     },
-    3: {
-      masterform: {
-        //Under Review By Mohua
-        $or: [
-          { isSubmit: true, status: "PENDING", actionTakenByRole: "STATE" },
-          { isSubmit: false, actionTakenByRole: "MoHUA" },
-        ],
-
-      }
-    }
-
-
-    ,
     4: {
       // Under Review By State
 
@@ -1217,23 +1204,16 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     },
     5: {
-      //Rejected By State
       masterform: {
-        status: "REJECTED",
-        actionTakenByRole: "STATE",
-      }
+        //Under Review By Mohua
+        $or: [
+          { isSubmit: true, status: "PENDING", actionTakenByRole: "STATE" },
+          { isSubmit: false, actionTakenByRole: "MoHUA" },
+        ],
 
+      }
     },
     6: {
-      //Rejected By MoHUA
-      masterform: {
-        status: "REJECTED",
-        actionTakenByUserRole: "MoHUA",
-      }
-
-
-    },
-    7: {
       //Approved By MoHUA
       masterform: {
         status: "APPROVED",
@@ -1242,6 +1222,25 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
 
     },
+
+    7: {
+      //Rejected By State
+      masterform: {
+        status: "REJECTED",
+        actionTakenByRole: "STATE",
+      }
+
+    },
+    8: {
+      //Rejected By MoHUA
+      masterform: {
+        status: "REJECTED",
+        actionTakenByUserRole: "MoHUA",
+      }
+
+
+    },
+
   };
   let filter =
     req.query.filter && !req.query.filter != "null"
