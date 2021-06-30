@@ -1344,6 +1344,9 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
 
     },
+    30: {
+      "xvfcgrantulbforms": "Not Applicable"
+    },
     27: {//not started
       xvfcgrantplans: {
 
@@ -1361,6 +1364,9 @@ module.exports.viewList = catchAsync(async (req, res) => {
       "xvfcgrantplans.isDraft": false
 
 
+    },
+    31: {
+      "xvfcgrantplans": "Not Applicable"
     },
 
 
@@ -1765,6 +1771,10 @@ module.exports.viewList = catchAsync(async (req, res) => {
         el['xvfcgrantplansStatus'] = 'Completed'
       } else if (el?.xvfcgrantplans.isDraft == true) {
         el['xvfcgrantplansStatus'] = 'In Progress'
+      } else if (el?.xvfcgrantplans == "Not Applicable") {
+        el['xvfcgrantplansStatus'] = 'Not Applicable'
+      } else {
+
       }
 
 
@@ -1774,6 +1784,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
         el['xvfcgrantulbformsStatus'] = 'Completed'
       } else if (el?.xvfcgrantulbforms.isCompleted == false) {
         el['xvfcgrantulbformsStatus'] = 'In Progress'
+      } else if (el?.xvfcgrantulbforms == "Not Applicable") {
+        el['xvfcgrantulbformsStatus'] = 'Not Applicable'
       }
 
     })
