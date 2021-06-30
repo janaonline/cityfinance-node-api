@@ -1200,18 +1200,18 @@ module.exports.viewList = catchAsync(async (req, res) => {
       // Under Review By State
       $or: [
         {
-          masterform: {
-            status: "PENDING",
-            isSubmit: true,
-            actionTakenByRole: "ULB"
-          }
+
+          "masterform.status": "PENDING",
+          "masterform.isSubmit": true,
+          "masterform.actionTakenByRole": "ULB"
+
         },
         {
-          masterform: {
-            isSubmit: false,
-            actionTakenByRole: "STATE",
-            status: "PENDING"
-          }
+
+          "masterform.isSubmit": false,
+          "masterform.actionTakenByRole": "STATE",
+          "masterform.status": "PENDING"
+
         }]
 
 
@@ -1219,14 +1219,15 @@ module.exports.viewList = catchAsync(async (req, res) => {
     5: {          //Under Review By Mohua
       $or: [
         {
-          masterform: {
-            isSubmit: true, status: "PENDING", actionTakenByRole: "STATE"
-          }
+          "masterform.isSubmit": true,
+          "masterform.status": "PENDING",
+          "masterform.actionTakenByRole": "STATE"
         },
         {
-          masterform: {
-            isSubmit: false, actionTakenByRole: "MoHUA"
-          }
+
+          "masterform.isSubmit": false,
+          "masterform.actionTakenByRole": "MoHUA"
+
         }
       ]
 
