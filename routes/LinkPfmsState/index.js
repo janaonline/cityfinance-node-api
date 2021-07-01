@@ -19,7 +19,7 @@ router.post(
 );
 
 //get
-router.get("/LinkPfmsState/:design_year", verifyToken, getLinkPfmsState);
+router.get("/LinkPfmsState", verifyToken, getLinkPfmsState);
 
 //delete
 // router.delete("/LinkPfmsState", verifyToken, removeLinkPfmsState);

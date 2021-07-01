@@ -26,13 +26,12 @@ exports.saveLinkPfmsState = async (req, res) => {
 };
 
 exports.getLinkPfmsState = async (req, res) => {
-  const { design_year } = req.params;
-  const state = req.decoded.state;
+  const { design_year, state_id } = req.query;
+  let state = req.decoded.state ?? state_id;
   try {
     const newLink = await LinkPfmsState.findOne({
       state: ObjectId(state),
       design_year,
-      isActive: true,
     }).select({ history: 0 });
     if (!newLink) {
       return Response.BadRequest(res, null, "No LinkPfmsState found");
@@ -59,7 +58,6 @@ exports.action = async (req, res) => {
       {
         state: ObjectId(state),
         design_year: ObjectId(design_year),
-        isActive: true,
       },
       { $set: req.body, $push: { history: currentLinkPfmsState } }
     );
