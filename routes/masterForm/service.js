@@ -139,14 +139,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
       req.query.filter && !req.query.filter != "null"
         ? JSON.parse(req.query.filter)
         : req.body.filter
-        ? req.body.filter
-        : {},
+          ? req.body.filter
+          : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -1092,8 +1092,54 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           },
         },
       ];
-
-      let { output1, output2, output3, output4, output5 } = await new Promise(
+      let query6 = [
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData",
+          },
+        },
+        {
+          $unwind: "$ulbData",
+        },
+        {
+          $project: {
+            steps: 1,
+            actionTakenByRole: 1,
+            status: 1,
+            isSubmit: 1,
+            ulb: 1,
+            state: 1,
+            design_year: 1,
+            isUA: "$ulbData.isUA",
+            isMillionPlus: "$ulbData.isMillionPlus",
+          },
+        },
+        match2,
+        {
+          $lookup: {
+            from: "xvfcgrantplans",
+            localField: "ulb",
+            foreignField: "ulb",
+            as: "plans",
+          },
+        },
+        { $unwind: "$plans" },
+        {
+          $group: {
+            _id: {
+              isSubmit: "$isSubmit",
+              actionTakenByRole: "$actionTakenByRole",
+              status: "$plans.status",
+              isDraft: "$plans.isDraft",
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ];
+      let { output1, output2, output3, output4, output5, output6 } = await new Promise(
         async (resolve, reject) => {
           let prms1 = new Promise(async (rslv, rjct) => {
             let output = await MasterFormData.aggregate(query1);
@@ -1120,15 +1166,21 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
             rslv(output);
           });
-          Promise.all([prms1, prms2, prms3, prms4, prms5]).then(
+          let prms6 = new Promise(async (rslv, rjct) => {
+            let output = await MasterFormData.aggregate(query6);
+
+            rslv(output);
+          });
+          Promise.all([prms1, prms2, prms3, prms4, prms5, prms6]).then(
             (outputs) => {
               let output1 = outputs[0];
               let output2 = outputs[1];
               let output3 = outputs[2];
               let output4 = outputs[3];
               let output5 = outputs[4];
-              if (output1 && output2 && output3 && output4 && output5) {
-                resolve({ output1, output2, output3, output4, output5 });
+              let output6 = outputs[5];
+              if (output1 && output2 && output3 && output4 && output5 && output6) {
+                resolve({ output1, output2, output3, output4, output5, output6 });
               } else {
                 reject({ message: "No Data Found" });
               }
@@ -1146,6 +1198,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         output3,
         output4,
         output5,
+        output6,
         i,
         numbers
       );
@@ -1367,17 +1420,17 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
   };
   let filter =
-      req.query.filter && !req.query.filter != "null"
-        ? JSON.parse(req.query.filter)
-        : req.body.filter
+    req.query.filter && !req.query.filter != "null"
+      ? JSON.parse(req.query.filter)
+      : req.body.filter
         ? req.body.filter
         : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -1598,7 +1651,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
           ulbType: "$ulbtypes.name",
           censusCode: 1,
           sbCode: 1,
-          isMillionPlus: 1,
+          populationType: {
+            $cond: {
+              if: { $eq: ["$isMillionPlus", "Yes"] },
+              then: "Million Plus",
+              else: "Non Million",
+            }
+          },
           isUA: 1,
           UA: "$uas.name",
 
@@ -1878,16 +1937,18 @@ const formatOutput = (
   output3,
   output4,
   output5,
+  output6,
   i,
   numbers
 ) => {
-  // console.log(util.inspect({
-  //   "overall": output1,
-  //   "pfms": output2,
-  //   "annualaccounts": output3,
-  //   "utilreport": output4,
-  //   "slb": output5
-  // }, { showHidden: false, depth: null }))
+  console.log(util.inspect({
+    "overall": output1,
+    "pfms": output2,
+    "annualaccounts": output3,
+    "utilreport": output4,
+    "slb": output5,
+    "plans": output6
+  }, { showHidden: false, depth: null }))
   let underReviewByState = 0,
     pendingForSubmission = 0,
     overall_approvedByState = 0,
@@ -1907,7 +1968,11 @@ const formatOutput = (
     provisional_yes = 0,
     provisional_no = 0,
     audited_yes = 0,
-    audited_no = 0;
+    audited_no = 0,
+    plans_pendingCompletion = 0,
+    plans_completedAndPendingSubmission = 0,
+    plans_underStateReview = 0,
+    plans_approvedbyState = 0;
 
   //overall
   output1.forEach((el) => {
@@ -1928,7 +1993,9 @@ const formatOutput = (
   output2.forEach((el) => {
     if (el._id === "no") {
       notRegistered = el.count;
-    } else if (el._id === "yes") registered = el.count;
+    } else if (el._id === "yes") {
+      registered = el.count;
+    }
 
     pendingResponse = numbers[i] - registered - notRegistered;
   });
@@ -1977,6 +2044,7 @@ const formatOutput = (
       util_completedAndPendingSubmission;
   });
 
+  //slb
   output5.forEach((el) => {
     if (
       el._id.actionTakenByRole === "ULB" &&
@@ -2004,6 +2072,35 @@ const formatOutput = (
       slb_approvedbyState -
       slb_completedAndPendingSubmission;
   });
+
+  output6.forEach((el) => {
+    if (
+      el._id.actionTakenByRole === "ULB" &&
+      el._id.status === "PENDING" &&
+      el._id.isSubmit
+    ) {
+      plans_underStateReview = el.count;
+    } else if (
+      el._id.actionTakenByRole === "STATE" &&
+      el._id.status === "APPROVED" &&
+      el._id.isSubmit
+    ) {
+      plans_approvedbyState = el.count;
+    } else if (
+      !el._id.isSubmit &&
+      el._id.actionTakenByRole === "ULB" &&
+      el._id.isCompleted
+    ) {
+      plans_completedAndPendingSubmission = el.count;
+    }
+
+    plans_pendingCompletion =
+      numbers[i] -
+      plans_underStateReview -
+      plans_approvedbyState -
+      plans_completedAndPendingSubmission;
+  });
+
 
   let finalOutput = {
     type:
@@ -2033,6 +2130,12 @@ const formatOutput = (
       completedAndPendingSubmission: slb_completedAndPendingSubmission,
       underStateReview: slb_underStateReview,
       approvedbyState: slb_approvedbyState,
+    },
+    plans: {
+      pendingCompletion: plans_pendingCompletion,
+      completedAndPendingSubmission: plans_completedAndPendingSubmission,
+      underStateReview: plans_underStateReview,
+      approvedbyState: plans_approvedbyState,
     },
   };
 
