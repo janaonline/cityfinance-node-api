@@ -686,6 +686,7 @@ module.exports.get = catchAsync(async (req, res) => {
             "ulb": ObjectId(ulb),
             "design_year": ObjectId(design_year)
         }
+        let output = [];
         try {
 
             let data = await XVFCGrantULBData.findOne(query)
@@ -720,7 +721,8 @@ module.exports.get = catchAsync(async (req, res) => {
                 ])
                 .lean()
                 .exec();
-            return Response.OK(res, data, 'Request fetched.');
+            output.push(data)
+            return Response.OK(res, output, 'Request fetched.');
         } catch (e) {
             console.log('Exception:', e);
             return Response.DbError(res, e, e.message);
@@ -3666,36 +3668,35 @@ module.exports.state = async (req, res) => {
 
 exports.newFormAction = async (req, res) => {
     try {
-      const data = req.body,
-        user = req.decoded;
-      const { design_year } = req.body;
-      req.body.actionTakenBy = req.decoded._id;
-  
-      let currentState = await XVFCGrantULBData.findOne(
-        { ulb: ObjectId(data.ulb), isActive: true },
-        { history: 0 }
-      );
-       
-      if (!currentState) {
-        return res.status(400).json({ msg: "Requested record not found." });
-      } else {
-        let updatedRecord = await XVFCGrantULBData.findOneAndUpdate(
-          { ulb: ObjectId(data.ulb), isActive: true, design_year },
-          { $set: req.body, $push: { history: currentState } }
+        const data = req.body,
+            user = req.decoded;
+        const { design_year } = req.body;
+        req.body.actionTakenBy = req.decoded._id;
+
+        let currentState = await XVFCGrantULBData.findOne(
+            { ulb: ObjectId(data.ulb), isActive: true },
+            { history: 0 }
         );
-        if (!updatedRecord) {
-          return res.status(400).json({ msg: "No Record Found" });
+
+        if (!currentState) {
+            return res.status(400).json({ msg: "Requested record not found." });
+        } else {
+            let updatedRecord = await XVFCGrantULBData.findOneAndUpdate(
+                { ulb: ObjectId(data.ulb), isActive: true, design_year },
+                { $set: req.body, $push: { history: currentState } }
+            );
+            if (!updatedRecord) {
+                return res.status(400).json({ msg: "No Record Found" });
+            }
+            req.body.status = req.body.waterManagement.status
+            req.body.rejectReason = req.body.waterManagement.rejectReason
+
+            await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
+
+            return res.status(200).json({ msg: "Action successful" });
         }
-        req.body.status = req.body.waterManagement.status
-        req.body.rejectReason = req.body.waterManagement.rejectReason
-  
-        await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
-  
-        return res.status(200).json({ msg: "Action successful" });
-      }
     } catch (err) {
-      console.error(err.message);
-      return Response.BadRequest(res, {}, err.message);
+        console.error(err.message);
+        return Response.BadRequest(res, {}, err.message);
     }
-  };
-  
+};
