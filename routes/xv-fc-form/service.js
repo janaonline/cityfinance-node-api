@@ -243,7 +243,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             {
                 $match: {
                     "slbForms.design_year": ObjectId(design_year),
-                    "slbForms.status": "APPROVED"
+                    "slbForms.waterManagement.status": "APPROVED"
                 }
             },
             {
