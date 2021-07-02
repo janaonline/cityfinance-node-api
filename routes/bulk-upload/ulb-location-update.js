@@ -70,39 +70,34 @@ module.exports.signup = async (req, res)=>{
             //console.log(eachRow.code,eachRow.name)
             let message = "";
             let ulb = await Ulb.findOne({code : eachRow.ulbCode,isActive : true}).exec();
-            let user = await User.findOne({ulb : ObjectId(ulb._id),role:'ULB'}).exec();
-            if(user){
-                message = "Ulb user already exists for:"+eachRow.ulbCode;
+            //let user = await User.findOne({ulb : ObjectId(ulb._id),role:'ULB'}).exec();
+            ulb ? eachRow.ulbCode == ulb.code : message+="Ulb "+eachRow.ulbcode+" don't exists";
+            if(message!=""){
+                // if any state or ulb type not exists, then return message
                 errors.push(message);
-            }
-            else{
-                ulb ? eachRow.ulbCode == ulb.code : message+="Ulb "+eachRow.ulbcode+" don't exists";
-                if(message!=""){
-                    // if any state or ulb type not exists, then return message
-                    errors.push(message);
-                }else{
-                
-                    eachRow["state"] = ObjectId(ulb.state)
-                    eachRow["ulb"] = ObjectId(ulb._id)
-                    eachRow["name"] = ulb.name
-                    eachRow["sbCode"] = ulb.sbCode
-                    eachRow["censusCode"] = ulb.censusCode
-                    eachRow["role"] = 'ULB'
-                    eachRow["status"] = 'APPROVED'
-                    eachRow["isEmailVerified"] = true
-                    eachRow["isRegistered"] = false
-                    eachRow["password"] = await service.getHash(eachRow.password);
-                    //res.json(eachRow);return;
-                    service.put({ ulb : eachRow["ulb"],role:'ULB'},eachRow,User,function(response,value){
-                        if(!response){
-                            errors.push("Not able to create ulb => ",eachRow.code+""+response);
-                        }
-                        console.log(value.message);
-                    });
-
-                }
+            }else{
+            
+                eachRow["state"] = ObjectId(ulb.state)
+                eachRow["ulb"] = ObjectId(ulb._id)
+                eachRow["name"] = ulb.name
+                eachRow["sbCode"] = ulb.sbCode
+                eachRow["censusCode"] = ulb.censusCode
+                eachRow["role"] = 'ULB'
+                eachRow["status"] = 'APPROVED'
+                eachRow["isEmailVerified"] = true
+                eachRow["isRegistered"] = false
+                eachRow["password"] = await service.getHash(eachRow.password);
+                //res.json(eachRow);return;
+                service.put({ ulb : eachRow["ulb"],role:'ULB'},eachRow,User,function(response,value){
+                    if(!response){
+                        errors.push("Not able to create ulb => ",eachRow.code+""+response);
+                    }
+                    console.log(value.message);
+                });
 
             }
+
+            
 
         }
         return res.status(200).json({
