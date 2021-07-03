@@ -2406,6 +2406,62 @@ module.exports.finalAction = catchAsync(async (req, res) => {
   }
 });
 
+
+module.exports.getHistory = catchAsync(async (req, res) => {
+
+  let user = req.decoded;
+  let { formId } = req.params;
+  if (user.role != "ULB") {
+    let query = {
+      _id: ObjectId(formId),
+    }
+    let getData = await MasterFormData.findOne(query, { "history": 1 })
+    let outputArr = [];
+    if (getData) {
+      getData['history'].forEach(el => {
+        let output = {};
+
+        if (el.actionTakenByRole == 'ULB' && el.status == "PENDING") {
+          output['status'] = 'Submitted by ULB';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'STATE' && el.status == "APPROVED") {
+          output['status'] = 'Approved By State';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'STATE' && el.status == "REJECTED") {
+          output['status'] = 'Rejected By State';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'MoHUA' && el.status == "REJECTED") {
+          output['status'] = 'Rejected By MoHUA';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'MoHUA' && el.status == "APPROVED") {
+          output['status'] = 'Approved By MoHUA';
+          output['time'] = el.modifiedAt
+        }
+
+        outputArr.push(output)
+      })
+
+
+      return res.status(200).json({
+        success: true,
+        message: "Data Fetched Successfully!",
+        data: outputArr
+      })
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'No Data Found'
+      })
+    }
+
+
+  } else {
+    return res.status('403').json({
+      success: false,
+      message: user.role + " Not Authorized to Access this Data"
+    })
+  }
+})
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
