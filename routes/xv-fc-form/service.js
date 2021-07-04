@@ -374,11 +374,12 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             {
                 $project: {
                     totalUlbsInUA: { $size: "$ulb" },
+                    ulb: 1,
                     name: 1,
-                    state: 1,
-                    ulb: 1
+                    state: 1
                 }
             },
+
             {
                 $lookup: {
                     from: "xvfcgrantulbforms",
@@ -387,36 +388,52 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
                     as: "slbForms"
                 }
             },
-            { $unwind: "$slbForms" },
+
+            {
+                $unwind: {
+                    path: "$slbForms",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
             {
                 $match: {
-                    "slbForms.design_year": ObjectId(design_year)
+                    "slbForms.design_year": ObjectId(design_year),
+                    "slbForms.waterManagement.status": "APPROVED"
                 }
             },
             {
                 $lookup:
                 {
                     from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            {
+                $lookup: {
+                    from: "ulbs",
                     localField: "slbForms.ulb",
                     foreignField: "_id",
-                    as: "ulbData"
+                    as: "ulbFilledForm"
                 }
-            }, { $unwind: "$ulbData" },
+            },
+
             {
-                $group: {
+                $group:
+                {
                     _id: {
-                        status: "$slbForms.status",
-                        UA: "$name"
+                        UA: "$name",
+                        status: "$slbForms.waterManagement.status"
                     },
-                    totalUlbInUA: { $addToSet: "$totalUlbsInUA" },
-                    ulbData: { $push: { name: "$ulbData.name", censusCode: "$ulbData.censusCode", sbCode: "$ulbData.sbCode" } },
-                    totalCount: { $sum: 1 }
+                    count: { $sum: 1 },
+                    ulbsFilledForm: { $addToSet: "$ulbFilledForm" },
+                    ulb: { $addToSet: "$ulb" },
+                    totalUlbsInUA: { $addToSet: "$totalUlbsInUA" }
+                },
 
-                }
+
             }
-
-
-
 
 
         ]
@@ -435,7 +452,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             let prms2 = new Promise(async (rslv, rjct) => {
                 let output = await UA.aggregate(query2);
                 if (output.length > 0) {
-                    console.log(output)
+                    // console.log(output)
                     rslv(output)
 
                     console.log('3')
@@ -498,8 +515,18 @@ extractUlbData = (arr2) => {
 
 }
 formatOutput = (arr, arr2) => {
-    console.log(util.inspect(arr2, false, null))
-
+    // eliminating those ulbs from pending which have completely filled the form
+    arr2.forEach(el => {
+        el.ulbsFilledForm[0].forEach(el2 => {
+            el.ulb[0].forEach((el3, index, object) => {
+                console.log(el2._id, el3._id)
+                if (String(el2._id) === String(el3._id)) {
+                    el.ulb[0].splice(index, 1)
+                }
+            })
+        })
+    })
+    // setting the data as per json 
     let newData = [];
     let data, copyData;
     arr.forEach(el => {
@@ -550,18 +577,18 @@ formatOutput = (arr, arr2) => {
                             "2021": el.houseHoldCoveredPipedSupply2021,
                         },
                     },
-                    "totalPendingUlb": el2._id.status == 'PENDING' ? el2.totalCount : copyData?.totalPendingUlb ? copyData?.totalPendingUlb : 0,
-                    "totalCompletedUlb": el2._id.status == 'APPROVED' ? el2.totalCount : copyData?.totalCompletedUlb ? copyData?.totalCompletedUlb : 0,
-                    "totalULBsInUA": el2.totalUlbInUA[0],
+                    "totalPendingUlb": el2.totalUlbsInUA[0] - el2.count ? el2.totalUlbsInUA[0] - el2.count : 0,
+                    "totalCompletedUlb": el2.count ? el2.count : 0,
+                    "totalULBsInUA": el2.totalUlbsInUA[0],
                     "uaName": el._id,
-                    "approvedUlbs": el2._id.status == 'APPROVED' ? el2.ulbData : copyData?.approvedUlbs,
-                    "pendingUlbs": el2._id.status == 'PENDING' ? el2.ulbData : copyData?.pendingUlbs,
+                    "approvedUlbs": el2.ulbsFilledForm[0],
+                    "pendingUlbs": el2.ulb[0],
 
                 }
             }
 
             copyData = data
-            console.log(data)
+            // console.log(data)
         })
 
 
