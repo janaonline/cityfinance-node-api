@@ -410,6 +410,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
                     as: "ulb"
                 }
             },
+
             {
                 $lookup: {
                     from: "ulbs",
@@ -418,6 +419,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
                     as: "ulbFilledForm"
                 }
             },
+            { $unwind: "$ulbFilledForm" },
 
             {
                 $group:
@@ -517,7 +519,7 @@ extractUlbData = (arr2) => {
 formatOutput = (arr, arr2) => {
     // eliminating those ulbs from pending which have completely filled the form
     arr2.forEach(el => {
-        el.ulbsFilledForm[0].forEach(el2 => {
+        el.ulbsFilledForm.forEach(el2 => {
             el.ulb[0].forEach((el3, index, object) => {
                 console.log(el2._id, el3._id)
                 if (String(el2._id) === String(el3._id)) {
@@ -581,7 +583,7 @@ formatOutput = (arr, arr2) => {
                     "totalCompletedUlb": el2.count ? el2.count : 0,
                     "totalULBsInUA": el2.totalUlbsInUA[0],
                     "uaName": el._id,
-                    "approvedUlbs": el2.ulbsFilledForm[0],
+                    "approvedUlbs": el2.ulbsFilledForm,
                     "pendingUlbs": el2.ulb[0],
 
                 }
