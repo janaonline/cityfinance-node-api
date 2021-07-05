@@ -15,7 +15,7 @@ const ulbTye = {
 };
 module.exports = (req, res) => {
     let user = req.decoded;
-    let cond = { $match: { isActive: true } };
+    let cond = { $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] } };
     let cond1 = { $match: { isDeleted: false, role: 'ULB' } };
     if (user.role == 'STATE') {
         Object.assign(cond['$match'], { state: ObjectId(user.state) });
@@ -886,21 +886,22 @@ module.exports.chartDataStatus = async (req, res) => {
 module.exports.ulbList = async (req, res) => {
     let user = req.decoded;
     let filter =
-            req.query.filter && req.query.filter != 'null'
-                ? JSON.parse(req.query.filter)
-                : req.body.filter
+        req.query.filter && req.query.filter != 'null'
+            ? JSON.parse(req.query.filter)
+            : req.body.filter
                 ? req.body.filter
                 : {},
         sort =
             req.query.sort && req.query.sort != 'null'
                 ? JSON.parse(req.query.sort)
                 : req.body.sort
-                ? req.body.sort
-                : {},
+                    ? req.body.sort
+                    : {},
         skip = req.query.skip ? parseInt(req.query.skip) : 0;
     limit = req.query.limit ? parseInt(req.query.limit) : 10;
     csv = req.query.csv;
     let q = [
+        { $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] } },
         {
             $lookup: {
                 from: 'users',
@@ -931,6 +932,9 @@ module.exports.ulbList = async (req, res) => {
                 user: { $arrayElemAt: ['$user', 0] },
                 ulbType: { $arrayElemAt: ['$ulbType', 0] },
                 ulbName: '$name',
+                area: "$area",
+                population: "$population",
+                wards: "$wards",
                 censusCode: 1,
                 sbCode: 1,
                 isMillionPlus: {
@@ -947,9 +951,18 @@ module.exports.ulbList = async (req, res) => {
                 stateName: '$state.name',
                 state: '$state._id',
                 ulbName: 1,
+                area: 1,
+                population: 1,
+                wards: 1,
                 ulbType: '$ulbType.name',
                 censusCode: 1,
                 role: '$user.role',
+                commissionerName: "$user.commissionerName",
+                commissionerEmail: "$user.commissionerEmail",
+                commissionerConatactNumber: "$user.commissionerConatactNumber",
+                accountantName: "$user.accountantName",
+                accountantEmail: "$user.accountantEmail",
+                accountantConatactNumber: "$user.accountantConatactNumber",
                 sbCode: 1,
                 isMillionPlus: 1,
                 email: '$user.accountantEmail',
@@ -987,8 +1000,17 @@ module.exports.ulbList = async (req, res) => {
             censusCode: 'Census Code',
             sbCode: 'ULB Code',
             isMillionPlus: 'Population Type',
-            email: 'Email ID',
+            //email: 'Email ID',
+            area: 'Area',
+            population: 'Population',
+            wards: 'No of Wards',
             registration: 'Profile Updated',
+            commissionerName: "Municipal Commissioner/Executive Officer Name",
+            commissionerEmail: "Municipal Commissioner/Executive Officer Email ID",
+            commissionerConatactNumber: "Municipal Commissioner/Executive Officer Contact No",
+            accountantName: "ULB Nodal Officer Name",
+            accountantEmail: "ULB Nodal Officer Email ID",
+            accountantConatactNumber: "ULB Nodal Officer Contact No",
         };
         if (user.role == 'STATE') {
             delete field.stateName;
