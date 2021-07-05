@@ -1,0 +1,73 @@
+const User = require("../../../models/User");
+const Service = require("../../../service");
+const { createToken } = require("./createToken");
+const { getUSer } = require("./getUser");
+const Years = require("../../../models/Year");
+const Ulb = require("../../../models/Ulb");
+const ObjectId = require("mongoose").Types.ObjectId;
+const State = require('../../../models/State')
+
+module.exports.login = async (req, res) => {
+  /**Conditional Query For CensusCode/ULB Code **/
+  try {
+    let ulb, role;
+    let user = await getUSer(req.body);
+    let state;
+    if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
+    if (user.role === "ULB") {
+      ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
+      role = user.role;
+    }
+    let sessionId = req.headers.sessionid;
+    let isMatch = await Service.compareHash(req.body.password, user.password);
+    if (isMatch) {
+      let token = await createToken(user, sessionId);
+      const allYears = await getYears();
+      return res.status(200).json({
+        success: true,
+        message: ``,
+        token: token,
+        user: {
+          name: user.name,
+          email: user.email,
+          isActive: user.isActive,
+          role: user.role,
+          state: user.state,
+          stateName: state?.name,
+          ulb: user.ulb,
+          isUA: role === "ULB" ? ulb.isUA : null,
+          isMillionPlus: role === "ULB" ? ulb.isMillionPlus : null,
+        },
+        allYears,
+      });
+    } else {
+      let update = Service.incLoginAttempts(user);
+      if (!user.ulbflagForEmail) {
+        user.email = user.accountantEmail;
+        let up = await User.update({ _id: user._id }, update).exec();
+      }
+      let attempt = user;
+      return res
+        .status(400)
+        .json({
+          message: `Invalid credentials.`,
+          loginAttempts: attempt.loginAttempts,
+        });
+    }
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || error,
+      loginAttempts: error.loginAttempts,
+    });
+  }
+};
+
+getYears = async () => {
+  let allYears = await Years.find({ isActive: true }).select({ isActive: 0 });
+  let newObj = {};
+  allYears.forEach((element) => {
+    newObj[element.year] = element._id;
+  });
+  return newObj;
+};

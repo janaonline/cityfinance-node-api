@@ -771,3 +771,35 @@ const getUlbs = (yrs) => {
         }
     });
 };
+
+module.exports.getUlbInUas = async function (req, res) {
+    try {
+        const {state} = req.query
+        let response = await Ulb.find({state:ObjectId(state)}).select({name:1,_id:1})
+        let newRes = {}
+        response.forEach(element => {
+            newRes[element._id] = element.name
+            newRes[element.name] = element._id
+        });
+        if (response) {
+            return res.status(200).json({
+                success: true,
+                message: 'Ulb',
+                data: newRes,
+            });
+        } else {
+            return res.status(200).json({
+                success: true,
+                message: 'Ulb',
+                data: null,
+            });
+        }
+    } catch (e) {
+        console.log('Error', e);
+        return res.status(400).json({
+            success: true,
+            message: 'Db Error',
+            data: null,
+        });
+    }
+};

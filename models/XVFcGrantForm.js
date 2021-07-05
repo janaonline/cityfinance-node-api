@@ -11,6 +11,7 @@ const statusType = () => {
         default: '',
     };
 };
+
 const overallStatusType = () => {
     return {
         type: String,
@@ -18,84 +19,94 @@ const overallStatusType = () => {
         default: 'PENDING',
     };
 };
-const ContentSchema = new Schema({
+
+const ContentPDFSchema = new Schema({
     pdfUrl: { type: String },
-    excelUrl: { type: String },
-    completeness: statusType(),
-    correctness: statusType(),
     message: { type: String, default: '' },
 });
 
 const waterManagementSchema = new Schema({
     serviceLevel: {
         baseline: { 2021: { type: String, required: true } },
+        actual: { 2021: { type: String } },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
     houseHoldCoveredPipedSupply: {
         baseline: { 2021: { type: String, required: true } },
+        actual: { 2021: { type: String } },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
     waterSuppliedPerDay: {
         baseline: { 2021: { type: String, required: true } },
+        actual: { 2021: { type: String } },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
     reduction: {
         baseline: { 2021: { type: String, required: true } },
+        actual: { 2021: { type: String } },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
+
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
     houseHoldCoveredWithSewerage: {
         baseline: { 2021: { type: String, required: true } },
+        actual: { 2021: { type: String } },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
             2324: { type: String, required: true },
             2425: { type: String, required: true },
+            // 2526: { type: String, required: true },
         },
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
+    status: statusType(),
+    rejectReason: { type: String, default: '' },
+});
 
-    // documents:{
-    //     wasteWaterPlan:{
-    //         type:[
-    //             {
-    //                 url : { type: String, required: true},
-    //                 name : { type: String, required: true},
-    //                 status:statusType(),
-    //                 rejectReason:{type:String,default:""}
-    //             }
-    //         ],
-    //         default:null
-    //     }
-    // }
+
+const waterPotabilityPlanSchema = new Schema({
+    documents: {
+        waterPotabilityPlan: {
+            type: [{
+                url: { type: String, required: true },
+                name: { type: String, required: true },
+            }],
+            default: null,
+        },
+    }
+
 });
 
 const solidWasteManagementSchema = new Schema({
@@ -176,19 +187,13 @@ const millionPlusCitiesSchema = new Schema({
 
 const XVFcGrantULBFormSchema = new Schema(
     {
-        //referenceCode:{type:String, default:""},
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true },
-        // financialYear:{ type: String,required : true},
-        // audited:{type:Boolean, default:false},
-        // balanceSheet: { type:ContentSchema, required:true},
-        // schedulesToBalanceSheet: { type:ContentSchema, required:true},
-        // incomeAndExpenditure: { type:ContentSchema, required:true},
-        // schedulesToIncomeAndExpenditure: { type:ContentSchema, required:true},
-        // trialBalance: { type:ContentSchema, required:true},
-        // auditReport: { type:ContentSchema, required:audited},
-        overallReport: { type: ContentSchema, default: null },
-        // completeness:overallStatusType(),
-        // correctness:overallStatusType(),
+        design_year: {
+            type: Schema.Types.ObjectId,
+            ref: 'Year',
+            required: true,
+            default: null
+        },
         status: overallStatusType(),
         actionTakenBy: {
             type: Schema.Types.ObjectId,
@@ -200,17 +205,24 @@ const XVFcGrantULBFormSchema = new Schema(
         createdAt: { type: Date, default: Date.now },
         isActive: { type: Boolean, default: 1 },
         waterManagement: { type: waterManagementSchema, default: null },
+        water_index: { type: Boolean, default: false },
+        waterPotability: {
+            type: waterPotabilityPlanSchema,
+            default: null
+        },
         solidWasteManagement: {
             type: solidWasteManagementSchema,
             default: null,
         },
         millionPlusCities: { type: millionPlusCitiesSchema, default: null },
         isCompleted: { type: Boolean, default: 0 },
+        isOldForm: { type: Boolean },
+        document: { type: ContentPDFSchema, required: true, default: null },
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
 XVFcGrantULBFormSchema.index(
-    { ulb: 1, financialYear: 1, audited: 1 },
+    { ulb: 1, design_year: 1 },
     { unique: true }
 );
 module.exports = mongoose.model('XVFcGrantULBForm', XVFcGrantULBFormSchema);

@@ -2,15 +2,15 @@ const passport = require('passport');
 const express = require('express');
 const router = express.Router();
 const Ulb = require('./service')
-const verifyToken = require('../auth/service').verifyToken;
+const verifyToken = require('../auth/services/verifyToken').verifyToken;
 
 router.get('/ulb/filtered', Ulb.getFilteredUlb);  // ulb have no questionnaire
 
 router.get('/ulb', Ulb.get);
 router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
-router.put('/ulb/:_id', verifyToken,Ulb.put);
+router.put('/ulb/:_id', verifyToken, Ulb.put);
 router.post('/Ulb', verifyToken, Ulb.post);
-router.delete('/Ulb/:_id',verifyToken,Ulb.delete);
+router.delete('/Ulb/:_id', verifyToken, Ulb.delete);
 router.get('/ulblist', Ulb.getPopulate);
 router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 // Get ULBs by state
@@ -20,6 +20,10 @@ router.get('/ulbs', Ulb.getAllUlbs);
 router.get('/ulb/:_id', Ulb.getUlbById);
 
 // Get OverallUlb
-router.get("/overall-ulb",Ulb.getOverallUlb);
+router.get("/overall-ulb", Ulb.getOverallUlb);
 router.get('/ulb-by-code', Ulb.getUlbByCode);
+
+//get all ulbs in uas of a state
+router.get('/state/uas-ulb', Ulb.getUlbInUas);
+
 module.exports = router;

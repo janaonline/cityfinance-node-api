@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const passport = require('passport');
 const ledgerService = require('./service');
-const verifyToken = require('../auth/service').verifyToken;
+const verifyToken = require('../auth/services/verifyToken').verifyToken;
 // Route to download all the existing ledgers in the system
 router.get('/getAllLegdersCsv', ledgerService.getAllLedgersCsv);
 
@@ -20,11 +20,11 @@ router.get('/getOverAllUlbLegders', ledgerService.getAllUlbLegders);
 //@LedgerLog
 
 // Add Log
-router.post('/log/addLog',verifyToken,(req, res, next)=>{
+router.post('/log/addLog', verifyToken, (req, res, next) => {
     req.body.isUserExist = false;
     ledgerService.addLog(req, res);
 });
-router.post('/log/addLogByToken',verifyToken,(req, res, next)=>{
+router.post('/log/addLogByToken', verifyToken, (req, res, next) => {
     req.body.email = req.user.email;
     req.body.mobile = req.user.mobile;
     req.body.isUserExist = true;
@@ -32,5 +32,5 @@ router.post('/log/addLogByToken',verifyToken,(req, res, next)=>{
 });
 
 // Get all logs
-router.post('/log/getAll',ledgerService.getAllLogs);
+router.post('/log/getAll', ledgerService.getAllLogs);
 module.exports = router;

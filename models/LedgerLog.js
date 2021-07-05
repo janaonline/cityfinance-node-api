@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const LOOKUP = require('../_helper/constants');
-
+const { Schema } = mongoose;
 const LedgerLogSchema = mongoose.Schema({
 
 	state_code: {
@@ -15,6 +15,22 @@ const LedgerLogSchema = mongoose.Schema({
 		type: String,
 		required: true
 	},
+	ulb_id: {
+		type: Schema.Types.ObjectId,
+		ref: 'Ulb',
+		default: null
+	},
+	financialYear: {
+		type: String,
+
+		default: null
+	},
+	design_year: {
+		type: Schema.Types.ObjectId,
+		ref: 'Year',
+		default: null,
+		// unique: true
+	},
 	ulb_code: {
 		type: String,
 		required: true
@@ -22,7 +38,7 @@ const LedgerLogSchema = mongoose.Schema({
 	ulb_code_year: {
 		type: String,
 		required: true,
-		unique: true
+		// unique: true
 	},
 	year: {
 		type: String,
@@ -71,7 +87,20 @@ const LedgerLogSchema = mongoose.Schema({
 	reverified_by: {
 		type: String
 	},
-	lastModifiedAt:{ type:Date, default:Date.now()}
+	lastModifiedAt: { type: Date, default: Date.now() }
 
 });
+
+LedgerLogSchema.index(
+	{
+		ulb_id: 1,
+		financialYear: 1,
+		design_year: 1,
+		ulb_code_year: 1
+
+	},
+	{
+		unique: true
+	}
+);
 module.exports = mongoose.model('LedgerLog', LedgerLogSchema);
