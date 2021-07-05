@@ -2083,7 +2083,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
     }
     let ulb = user.ulb;
     data["actionTakenBy"] = ObjectId(user._id);
-    data["actionTakenByRole"] = ObjectId(user.role);
+    data["actionTakenByRole"] = user.role;
     data["modifiedAt"] = time();
 
     let query = {
@@ -2192,7 +2192,7 @@ module.exports.finalAction = catchAsync(async (req, res) => {
     }
     let ulb = req.body.ulb;
     data["actionTakenBy"] = ObjectId(user._id);
-    data["actionTakenByRole"] = ObjectId(user.role);
+    data["actionTakenByRole"] = user.role;
     data["modifiedAt"] = time();
 
     let query = {

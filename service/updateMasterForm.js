@@ -37,8 +37,8 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
         {
           $set: {
             steps: newForm.steps,
-            actionTakenBy: this.user._id,
-            actionTakenByRole: this.user.role,
+            actionTakenBy: data.user._id,
+            actionTakenByRole: data.user.role,
             isSubmit: false,
             status: "PENDING",
           },
