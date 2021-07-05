@@ -140,14 +140,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
       req.query.filter && !req.query.filter != "null"
         ? JSON.parse(req.query.filter)
         : req.body.filter
-        ? req.body.filter
-        : {},
+          ? req.body.filter
+          : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -994,8 +994,54 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           },
         },
       ];
-
-      let { output1, output2, output3, output4, output5 } = await new Promise(
+      let query6 = [
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData",
+          },
+        },
+        {
+          $unwind: "$ulbData",
+        },
+        {
+          $project: {
+            steps: 1,
+            actionTakenByRole: 1,
+            status: 1,
+            isSubmit: 1,
+            ulb: 1,
+            state: 1,
+            design_year: 1,
+            isUA: "$ulbData.isUA",
+            isMillionPlus: "$ulbData.isMillionPlus",
+          },
+        },
+        match2,
+        {
+          $lookup: {
+            from: "xvfcgrantplans",
+            localField: "ulb",
+            foreignField: "ulb",
+            as: "plans",
+          },
+        },
+        { $unwind: "$plans" },
+        {
+          $group: {
+            _id: {
+              isSubmit: "$isSubmit",
+              actionTakenByRole: "$actionTakenByRole",
+              status: "$plans.status",
+              isDraft: "$plans.isDraft",
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ];
+      let { output1, output2, output3, output4, output5, output6 } = await new Promise(
         async (resolve, reject) => {
           let prms1 = new Promise(async (rslv, rjct) => {
             let output = await MasterFormData.aggregate(query1);
@@ -1022,15 +1068,21 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
             rslv(output);
           });
-          Promise.all([prms1, prms2, prms3, prms4, prms5]).then(
+          let prms6 = new Promise(async (rslv, rjct) => {
+            let output = await MasterFormData.aggregate(query6);
+
+            rslv(output);
+          });
+          Promise.all([prms1, prms2, prms3, prms4, prms5, prms6]).then(
             (outputs) => {
               let output1 = outputs[0];
               let output2 = outputs[1];
               let output3 = outputs[2];
               let output4 = outputs[3];
               let output5 = outputs[4];
-              if (output1 && output2 && output3 && output4 && output5) {
-                resolve({ output1, output2, output3, output4, output5 });
+              let output6 = outputs[5];
+              if (output1 && output2 && output3 && output4 && output5 && output6) {
+                resolve({ output1, output2, output3, output4, output5, output6 });
               } else {
                 reject({ message: "No Data Found" });
               }
@@ -1048,6 +1100,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         output3,
         output4,
         output5,
+        output6,
         i,
         numbers
       );
@@ -1076,17 +1129,19 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 module.exports.viewList = catchAsync(async (req, res) => {
   let user = req.decoded;
   let statusFilter = {
-    //Not Started
-    1: {
-      masterform: {},
+    1://Not Started
+    {
+      masterform: {
+      }
     },
     2: {
-      //In Progress
-      masterform: {
-        isSubmit: false,
-        actionTakenByRole: "ULB",
-        status: "PENDING",
-      },
+      //In Progress   
+
+      "masterform.isSubmit": false,
+      "masterform.actionTakenByRole": "ULB",
+      "masterform.status": "PENDING",
+
+
     },
     4: {
       // Under Review By State
@@ -1094,14 +1149,14 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           "masterform.status": "PENDING",
           "masterform.isSubmit": true,
-          "masterform.actionTakenByRole": "ULB",
+          "masterform.actionTakenByRole": "ULB"
         },
         {
           "masterform.isSubmit": false,
           "masterform.actionTakenByRole": "STATE",
-          "masterform.status": "PENDING",
-        },
-      ],
+          "masterform.status": "PENDING"
+
+        }]
     },
     5: {
       //Under Review By Mohua
@@ -1113,45 +1168,171 @@ module.exports.viewList = catchAsync(async (req, res) => {
         },
         {
           "masterform.isSubmit": false,
-          "masterform.actionTakenByRole": "MoHUA",
-        },
-      ],
+          "masterform.actionTakenByRole": "MoHUA"
+
+        }
+      ]
     },
     6: {
       //Approved By MoHUA
-      masterform: {
-        status: "APPROVED",
-        actionTakenByRole: "MoHUA",
-      },
+      "masterform.status": "APPROVED",
+      "masterform.actionTakenByRole": "MoHUA",
     },
-
     7: {
       //Rejected By State
-      masterform: {
-        status: "REJECTED",
-        actionTakenByRole: "STATE",
-      },
+      "masterform.status": "REJECTED",
+      "masterform.actionTakenByRole": "STATE",
     },
     8: {
       //Rejected By MoHUA
-      masterform: {
-        status: "REJECTED",
-        actionTakenByRole: "MoHUA",
-      },
+      "masterform.status": "REJECTED",
+      "masterform.actionTakenByRole": "MoHUA",
     },
+    9: {
+      pfmsaccount: {
+        //Not Started
+      }
+    },
+    10: {
+      "pfmsaccount.isDraft": "true"
+    },
+    11: {
+
+      "pfmsaccount.isDraft": false,
+      "pfmsaccount.registered": "yes"
+
+    },
+    12: {
+      $or: [
+        {
+          "pfmsaccount.isDraft": false,
+          "pfmsaccount.registered": "no"
+        },
+        {
+          "pfmsaccount.isDraft": false,
+          "pfmsaccount.registered": ""
+
+        }
+      ]
+    },
+    13: {
+      audited_annualaccounts: {
+        //Not Started
+      }
+
+    },
+    14: { //In Progress
+
+      "audited_annualaccounts.isDraft": true
+
+    },
+    15: { // Not Submitted Accounts
+
+      "audited_annualaccounts.isDraft": false,
+      "audited_annualaccounts.auditedSubmitted": false,
+
+
+
+    },
+    16: {
+      "audited_annualaccounts.isDraft": false,
+      "audited_annualaccounts.auditedSubmitted": true,
+    },
+    17: {
+      unaudited_annualaccounts: {
+        //Not Started
+      }
+
+    },
+    18: { //In Progress
+
+      "unaudited_annualaccounts.isDraft": true
+
+    },
+    19: { //Not Submitted Accounts
+      "unaudited_annualaccounts.isDraft": false,
+      "unaudited_annualaccounts.unAuditedSubmitted": false
+    },
+    20: { // Submitted Accounts
+
+      "unaudited_annualaccounts.isDraft": false,
+      "unaudited_annualaccounts.unAuditedSubmitted": true
+
+    },
+
+    21: {//not started
+      utilizationreport: {
+
+      }
+
+    },
+    22: {
+      "utilizationreport.isDraft": true
+    },
+    23: {
+      "utilizationreport.isDraft": false
+
+    },
+    24: {//not started
+      xvfcgrantulbforms: {
+
+      }
+
+    },
+    25: {
+
+      "xvfcgrantulbforms.isCompleted": false
+
+
+    },
+    26: {
+
+      "xvfcgrantulbforms.isCompleted": true
+
+
+    },
+    30: {
+      "xvfcgrantulbforms": "Not Applicable"
+    },
+    27: {//not started
+      xvfcgrantplans: {
+
+      }
+
+    },
+    28: {
+
+      "xvfcgrantplans.isDraft": true
+
+
+    },
+    29: {
+
+      "xvfcgrantplans.isDraft": false
+
+
+    },
+    31: {
+      "xvfcgrantplans": "Not Applicable"
+    },
+
+
+
+
+
   };
   let filter =
-      req.query.filter && !req.query.filter != "null"
-        ? JSON.parse(req.query.filter)
-        : req.body.filter
+    req.query.filter && !req.query.filter != "null"
+      ? JSON.parse(req.query.filter)
+      : req.body.filter
         ? req.body.filter
         : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -1372,7 +1553,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
           ulbType: "$ulbtypes.name",
           censusCode: 1,
           sbCode: 1,
-          isMillionPlus: 1,
+          populationType: {
+            $cond: {
+              if: { $eq: ["$isMillionPlus", "Yes"] },
+              then: "Million Plus",
+              else: "Non Million",
+            }
+          },
           isUA: 1,
           UA: "$uas.name",
 
@@ -1433,11 +1620,28 @@ module.exports.viewList = catchAsync(async (req, res) => {
     ];
     let newFilter = await Service.mapFilter(filter);
 
-    if (newFilter["status"]) {
+    if (newFilter["status"] ||
+      newFilter["pfmsStatus"] ||
+      newFilter["auditedStatus"] ||
+      newFilter["unauditedStatus"] ||
+      newFilter["utilStatus"] ||
+      newFilter["slbStatus"] ||
+      newFilter["plansStatus"]) {
       Object.assign(newFilter, statusFilter[newFilter["status"]]);
-      // if (newFilter["status"] == "2" || newFilter["status"] == "3") {
+      Object.assign(newFilter, statusFilter[newFilter["pfmsStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["auditedStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["unauditedStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["utilStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["slbStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["plansStatus"]]);
       delete newFilter["status"];
-      // }
+      delete newFilter["pfmsStatus"];
+      delete newFilter["auditedStatus"];
+      delete newFilter["unauditedStatus"];
+      delete newFilter["utilStatus"];
+      delete newFilter["slbStatus"];
+      delete newFilter["plansStatus"];
+
     }
     if (newFilter && Object.keys(newFilter).length) {
       query.push({ $match: newFilter });
@@ -1498,78 +1702,63 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
 
       if (Object.entries(el?.pfmsaccount).length === 0) {
-        el.pfmsaccount = "Not Started";
-      } else if (
-        el?.pfmsaccount.isDraft == false &&
-        el?.pfmsaccount.registered == "no"
-      ) {
-        el.pfmsaccount = "Not Registered";
-      } else if (
-        el?.pfmsaccount.isDraft == false &&
-        el?.pfmsaccount.registered == "yes"
-      ) {
-        el.pfmsaccount = "Registered";
-      } else if (
-        el?.pfmsaccount.isDraft == false &&
-        el?.pfmsaccount.registered == ""
-      ) {
-        el.pfmsaccount = "Not Registered";
+        el['pfmsaccountStatus'] = 'Not Started'
+      } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "no") {
+        el['pfmsaccountStatus'] = 'Not Registered'
+      } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "yes") {
+        el['pfmsaccountStatus'] = 'Registered'
+      } else if (el?.pfmsaccount.isDraft == false && el?.pfmsaccount.registered == "") {
+        el['pfmsaccountStatus'] = 'Not Registered'
       } else if (el?.pfmsaccount.isDraft == "true") {
-        el.pfmsaccount = "In Progress";
+        el['pfmsaccountStatus'] = 'In Progress'
       }
 
       if (Object.entries(el?.utilizationreport).length === 0) {
-        el.utilizationreport = "Not Started";
+        el['utilizationreportStatus'] = 'Not Started'
       } else if (el?.utilizationreport.isDraft == false) {
-        el.utilizationreport = "Completed";
+        el['utilizationreportStatus'] = 'Completed'
       } else if (el?.utilizationreport.isDraft == true) {
-        el.utilizationreport = "In Progress";
+        el['utilizationreportStatus'] = 'In Progress'
       }
       if (Object.entries(el?.audited_annualaccounts).length === 0) {
-        el.audited_annualaccounts = "Not Started";
-      } else if (
-        el?.audited_annualaccounts.isDraft == false &&
-        el?.audited_annualaccounts.auditedSubmitted == false
-      ) {
-        el.audited_annualaccounts = "Accounts Not Submitted";
-      } else if (
-        el?.audited_annualaccounts.isDraft == false &&
-        el?.audited_annualaccounts.auditedSubmitted == true
-      ) {
-        el.audited_annualaccounts = "Accounts Submitted";
+        el['audited_annualaccountsStatus'] = 'Not Started'
+      } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == false) {
+        el['audited_annualaccountsStatus'] = 'Accounts Not Submitted'
+      } else if (el?.audited_annualaccounts.isDraft == false && el?.audited_annualaccounts.auditedSubmitted == true) {
+        el['audited_annualaccountsStatus'] = 'Accounts Submitted'
       } else if (el?.audited_annualaccounts.isDraft == true) {
-        el.audited_annualaccounts = "In Progress";
+        el['audited_annualaccountsStatus'] = 'In Progress'
       }
       if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
-        el.unaudited_annualaccounts = "Not Started";
-      } else if (
-        el?.unaudited_annualaccounts.isDraft == false &&
-        el?.unaudited_annualaccounts.unAuditedSubmitted == false
-      ) {
-        el.unaudited_annualaccounts = "Completed but Not Submitted";
-      } else if (
-        el?.unaudited_annualaccounts.isDraft == false &&
-        el?.unaudited_annualaccounts.unAuditedSubmitted == true
-      ) {
-        el.unaudited_annualaccounts = "Completed and Submitted";
+        el['unaudited_annualaccountsStatus'] = 'Not Started'
+      } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == false) {
+        el['unaudited_annualaccountsStatus'] = 'Accounts Not Submitted'
+      } else if (el?.unaudited_annualaccounts.isDraft == false && el?.unaudited_annualaccounts.unAuditedSubmitted == true) {
+        el['unaudited_annualaccountsStatus'] = 'Accounts Submitted'
       } else if (el?.unaudited_annualaccounts.isDraft == true) {
-        el.unaudited_annualaccounts = "In Progress";
+        el['unaudited_annualaccountsStatus'] = 'In Progress'
       }
 
       if (Object.entries(el?.xvfcgrantplans).length === 0) {
-        el.xvfcgrantplans = "Not Started";
+        el['xvfcgrantplansStatus'] = 'Not Started'
       } else if (el?.xvfcgrantplans.isDraft == false) {
-        el.xvfcgrantplans = "Completed";
+        el['xvfcgrantplansStatus'] = 'Completed'
       } else if (el?.xvfcgrantplans.isDraft == true) {
-        el.xvfcgrantplans = "In Progress";
+        el['xvfcgrantplansStatus'] = 'In Progress'
+      } else if (el?.xvfcgrantplans == "Not Applicable") {
+        el['xvfcgrantplansStatus'] = 'Not Applicable'
+      } else {
+
       }
 
       if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
-        el.xvfcgrantulbforms = "Not Started";
+        el['xvfcgrantulbformsStatus'] = 'Not Started'
       } else if (el?.xvfcgrantulbforms.isCompleted == true) {
-        el.xvfcgrantulbforms = "Completed";
+        el['xvfcgrantulbformsStatus'] = 'Completed'
       } else if (el?.xvfcgrantulbforms.isCompleted == false) {
-        el.xvfcgrantulbforms = "In Progress";
+        el['xvfcgrantulbformsStatus'] = 'In Progress'
+      } else if (el?.xvfcgrantulbforms == "Not Applicable") {
+        el['xvfcgrantulbformsStatus'] = 'Not Applicable'
       }
     });
 
@@ -1650,16 +1839,18 @@ const formatOutput = (
   output3,
   output4,
   output5,
+  output6,
   i,
   numbers
 ) => {
-  // console.log(util.inspect({
-  //   "overall": output1,
-  //   "pfms": output2,
-  //   "annualaccounts": output3,
-  //   "utilreport": output4,
-  //   "slb": output5
-  // }, { showHidden: false, depth: null }))
+  console.log(util.inspect({
+    "overall": output1,
+    "pfms": output2,
+    "annualaccounts": output3,
+    "utilreport": output4,
+    "slb": output5,
+    "plans": output6
+  }, { showHidden: false, depth: null }))
   let underReviewByState = 0,
     pendingForSubmission = 0,
     overall_approvedByState = 0,
@@ -1679,7 +1870,11 @@ const formatOutput = (
     provisional_yes = 0,
     provisional_no = 0,
     audited_yes = 0,
-    audited_no = 0;
+    audited_no = 0,
+    plans_pendingCompletion = 0,
+    plans_completedAndPendingSubmission = 0,
+    plans_underStateReview = 0,
+    plans_approvedbyState = 0;
 
   //overall
   output1.forEach((el) => {
@@ -1700,7 +1895,9 @@ const formatOutput = (
   output2.forEach((el) => {
     if (el._id === "no") {
       notRegistered = el.count;
-    } else if (el._id === "yes") registered = el.count;
+    } else if (el._id === "yes") {
+      registered = el.count;
+    }
 
     pendingResponse = numbers[i] - registered - notRegistered;
   });
@@ -1749,6 +1946,7 @@ const formatOutput = (
       util_completedAndPendingSubmission;
   });
 
+  //slb
   output5.forEach((el) => {
     if (
       el._id.actionTakenByRole === "ULB" &&
@@ -1776,6 +1974,35 @@ const formatOutput = (
       slb_approvedbyState -
       slb_completedAndPendingSubmission;
   });
+
+  output6.forEach((el) => {
+    if (
+      el._id.actionTakenByRole === "ULB" &&
+      el._id.status === "PENDING" &&
+      el._id.isSubmit
+    ) {
+      plans_underStateReview = el.count;
+    } else if (
+      el._id.actionTakenByRole === "STATE" &&
+      el._id.status === "APPROVED" &&
+      el._id.isSubmit
+    ) {
+      plans_approvedbyState = el.count;
+    } else if (
+      !el._id.isSubmit &&
+      el._id.actionTakenByRole === "ULB" &&
+      el._id.isCompleted
+    ) {
+      plans_completedAndPendingSubmission = el.count;
+    }
+
+    plans_pendingCompletion =
+      numbers[i] -
+      plans_underStateReview -
+      plans_approvedbyState -
+      plans_completedAndPendingSubmission;
+  });
+
 
   let finalOutput = {
     type:
@@ -1805,6 +2032,12 @@ const formatOutput = (
       completedAndPendingSubmission: slb_completedAndPendingSubmission,
       underStateReview: slb_underStateReview,
       approvedbyState: slb_approvedbyState,
+    },
+    plans: {
+      pendingCompletion: plans_pendingCompletion,
+      completedAndPendingSubmission: plans_completedAndPendingSubmission,
+      underStateReview: plans_underStateReview,
+      approvedbyState: plans_approvedbyState,
     },
   };
 
@@ -2194,6 +2427,62 @@ module.exports.finalAction = catchAsync(async (req, res) => {
   }
 });
 
+
+module.exports.getHistory = catchAsync(async (req, res) => {
+
+  let user = req.decoded;
+  let { formId } = req.params;
+  if (user.role != "ULB") {
+    let query = {
+      _id: ObjectId(formId),
+    }
+    let getData = await MasterFormData.findOne(query, { "history": 1 })
+    let outputArr = [];
+    if (getData) {
+      getData['history'].forEach(el => {
+        let output = {};
+
+        if (el.actionTakenByRole == 'ULB' && el.status == "PENDING") {
+          output['status'] = 'Submitted by ULB';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'STATE' && el.status == "APPROVED") {
+          output['status'] = 'Approved By State';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'STATE' && el.status == "REJECTED") {
+          output['status'] = 'Rejected By State';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'MoHUA' && el.status == "REJECTED") {
+          output['status'] = 'Rejected By MoHUA';
+          output['time'] = el.modifiedAt
+        } else if (el.actionTakenByRole == 'MoHUA' && el.status == "APPROVED") {
+          output['status'] = 'Approved By MoHUA';
+          output['time'] = el.modifiedAt
+        }
+
+        outputArr.push(output)
+      })
+
+
+      return res.status(200).json({
+        success: true,
+        message: "Data Fetched Successfully!",
+        data: outputArr
+      })
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'No Data Found'
+      })
+    }
+
+
+  } else {
+    return res.status('403').json({
+      success: false,
+      message: user.role + " Not Authorized to Access this Data"
+    })
+  }
+})
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
