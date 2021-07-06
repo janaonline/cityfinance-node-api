@@ -132,4 +132,7 @@ router.use(ActionPlans);
 const LinkPfmsState = require("./LinkPfmsState");
 router.use(LinkPfmsState);
 
+const StateMasterForm = require("./stateMasterForm");
+router.use('/stateMasterForm', StateMasterForm);
+
 module.exports = router;
