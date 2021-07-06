@@ -6,7 +6,7 @@ const Response = require("../../service").response;
 const Service = require("../../service");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
-
+const { UpdateStateMasterForm } = require('../../service/updateStateMasterForm')
 exports.getGrantDistribution = async (req, res) => {
   const { design_year } = req.params;
   const state = req.decoded.state;
@@ -75,8 +75,8 @@ exports.uploadTemplate = async (req, res) => {
       //read file
       const XslData = await readXlsxFile(file);
 
-      if(XslData.length == 0)
-      return Response.BadRequest(res, "No File Found/Data");
+      if (XslData.length == 0)
+        return Response.BadRequest(res, "No File Found/Data");
       // validate data
       const notValid = await validate(XslData);
       if (notValid) {
@@ -108,6 +108,7 @@ exports.saveData = async (req, res) => {
         new: true,
       }
     );
+    await UpdateStateMasterForm(req, 'grantAllocation')
     return Response.OK(res, data, "file submitted");
   } catch (err) {
     console.error(err.message);
@@ -122,8 +123,8 @@ function readXlsxFile(file) {
       let fileInfo = file.path.split(".");
       exceltojson =
         fileInfo &&
-        fileInfo.length > 0 &&
-        fileInfo[fileInfo.length - 1] == "xlsx"
+          fileInfo.length > 0 &&
+          fileInfo[fileInfo.length - 1] == "xlsx"
           ? xlsxtojson
           : xlstojson;
       exceltojson(

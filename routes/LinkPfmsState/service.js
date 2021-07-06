@@ -2,6 +2,7 @@ const LinkPfmsState = require("../../models/LinkPfmsState");
 // const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
+const { UpdateStateMasterForm } = require('../../service/updateStateMasterForm')
 
 exports.saveLinkPfmsState = async (req, res) => {
   let { state, _id } = req.decoded;
@@ -18,6 +19,7 @@ exports.saveLinkPfmsState = async (req, res) => {
         setDefaultsOnInsert: true,
       }
     );
+    await UpdateStateMasterForm(req, 'linkPFMS');
     return Response.OK(res, null, "Submitted!");
   } catch (err) {
     console.error(err.message);

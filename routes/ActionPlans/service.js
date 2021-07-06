@@ -1,5 +1,5 @@
 const ActionPlans = require("../../models/ActionPlans");
-const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
+const { UpdateStateMasterForm } = require("../../service/updateStateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 
@@ -18,6 +18,7 @@ exports.saveActionPlans = async (req, res) => {
         setDefaultsOnInsert: true,
       }
     );
+    await UpdateStateMasterForm(req, 'actionPlans')
     return Response.OK(res, null, "Submitted!");
   } catch (err) {
     console.error(err.message);
