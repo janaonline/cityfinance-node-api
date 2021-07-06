@@ -191,7 +191,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
     }
     if (user.role === "STATE") {
         let data = req.body;
-        let design_year = data.design_year;
+        let design_year = (data.design_year);
         if (!design_year) {
             return res.status(400).json({
                 success: false,
@@ -200,16 +200,24 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         }
         let state = user.state;
         data["actionTakenBy"] = ObjectId(user._id);
-        data["actionTakenByRole"] = ObjectId(user.role);
+        data["actionTakenByRole"] = (user.role);
         data["modifiedAt"] = time();
         //isSubmit and Status comes in the req.body
         let query = {
             design_year: ObjectId(design_year),
             state: ObjectId(state),
         };
+        //create History
+        let masterFormData = await StateMasterForm.findOne(query)
+        if (masterFormData) {
+            data['history'] = [...masterFormData.history];
+            masterFormData.history = undefined;
+            data['history'].push(masterFormData);
+
+        }
 
 
-        let updatedData = await MasterFormData.findOneAndUpdate(query, data, {
+        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, {
             new: true,
         });
 
@@ -265,7 +273,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
             return res.status(200).json({
                 success: true,
                 message: "Final Submit Successful!",
-                data: data,
+                data: updatedData,
             });
         } else {
             return res.status(400).json({
