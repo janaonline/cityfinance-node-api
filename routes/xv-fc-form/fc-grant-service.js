@@ -902,6 +902,7 @@ module.exports.ulbList = async (req, res) => {
     limit = req.query.limit ? parseInt(req.query.limit) : 10;
     csv = req.query.csv;
     let q = [
+        { $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] } },
         {
             $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] }
         },
