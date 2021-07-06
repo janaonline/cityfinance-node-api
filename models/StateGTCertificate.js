@@ -12,7 +12,7 @@ const StateGrantTransferCertificateSchema = new Schema(
     {
         state: { type: Schema.Types.ObjectId, ref: 'State', required: true, },
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
-        isCompleted: { type: Boolean, default: false },
+        isDraft: { type: Boolean, default: true },
         history: { type: Array, default: [] },
         million_tied: { type: ContentPDFSchema },
         nonmillion_tied: { type: ContentPDFSchema },

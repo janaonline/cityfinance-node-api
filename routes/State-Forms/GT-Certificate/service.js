@@ -1,7 +1,7 @@
 const catchAsync = require('../../../util/catchAsync')
 const StateGTCertificate = require('../../../models/StateGTCertificate')
 const ObjectId = require('mongoose').Types.ObjectId;
-
+const { UpdateStateMasterForm } = require('../../../service/updateStateMasterForm')
 
 module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
@@ -58,6 +58,7 @@ module.exports.create = catchAsync(async (req, res) => {
             data,
             { new: true, upsert: true, setDefaultsOnInsert: true })
         if (updatedData) {
+            await UpdateStateMasterForm(req, 'GTCertificate')
             return res.status(200).json({
                 success: true,
                 message: 'Data Updated Successfully!',
