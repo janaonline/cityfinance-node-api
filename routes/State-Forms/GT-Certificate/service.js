@@ -14,7 +14,7 @@ module.exports.get = catchAsync(async (req, res) => {
     }
     let query = {
         "design_year": ObjectId(design_year),
-        "state": ObjectId(user.state)
+        "state": ObjectId(user.state ? user.state : req.query.state)
     }
     let fetchedData = await StateGTCertificate.findOne(
         query,

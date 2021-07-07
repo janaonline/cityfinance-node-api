@@ -5,11 +5,14 @@ const {
   uploadTemplate,
   getGrantDistribution,
   saveData,
+  action,
 } = require("./service");
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
 //validator
 // const { upload } = require("./validator");
+const { userAuth } = require("../../middlewares/actionUserAuth");
+
 
 //middleware
 // const { draftChecker } = require("../../util/validator");
@@ -22,5 +25,6 @@ router.get("/template", verifyToken, getTemplate);
 router.get("/upload", verifyToken, uploadTemplate);
 //save
 router.post("/save", verifyToken, saveData);
+router.post("/action", verifyToken,userAuth, action);
 
 module.exports = router;
