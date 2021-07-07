@@ -214,14 +214,14 @@ module.exports.check = async function (req, res) {
     const { ulb, bodyType, year, type } = req.query;
     let data = await dCForm.find({ ulb, bodyType });
     let historyData = [],
-      temp = {
-        [year]: {
-          [type]: {},
-        },
-      },
       haveHistory = false;
     if (data.length > 0) {
       data.forEach((element) => {
+        let temp = {
+          [year]: {
+            [type]: {},
+          },
+        }
         if (element.documents[year][type].length > 0) {
           temp[year][type] = element.documents[year][type];
           historyData.push(temp);
