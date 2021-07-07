@@ -28,6 +28,12 @@ module.exports.get = catchAsync(async (req, res) => {
         design_year: ObjectId(design_year),
     };
     if (masterform_id && (user.role != "STATE" || user.role != "ULB")) {
+        let masterFormData = await StateMasterForm.findOne({ _id: ObjectId(masterform_id) }, "-history")
+        return res.status(200).json({
+            success: true,
+            message: 'State MasterForm Data Fetched Successfully',
+            data: masterFormData
+        })
         //in progress
     }
     let masterFormData = await StateMasterForm.findOne(query, "-history");
@@ -202,24 +208,58 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         data["actionTakenBy"] = ObjectId(user._id);
         data["actionTakenByRole"] = (user.role);
         data["modifiedAt"] = time();
+
+
+        console.log(data)
         //isSubmit and Status comes in the req.body
         let query = {
             design_year: ObjectId(design_year),
             state: ObjectId(state),
         };
         //create History
-        let masterFormData = await StateMasterForm.findOne(query)
+        let masterFormData = await StateMasterForm.findOne(query).lean()
+
         if (masterFormData) {
+            data['latestFinalResponse'] = masterFormData.steps
+            data['latestFinalResponse']['role'] = masterFormData.actionTakenByRole
+            masterFormData['modifiedAt'] = data["modifiedAt"]
             data['history'] = [...masterFormData.history];
             masterFormData.history = undefined;
             data['history'].push(masterFormData);
-
         }
 
 
-        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, {
-            new: true,
-        });
+        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true })
+        let newData = {
+            "steps": {
+                "linkPFMS": {
+                    rejectReason: null,
+                    status: "PENDING",
+                    isSubmit: false,
+                },
+                "GTCertificate": {
+                    rejectReason: null,
+                    status: "PENDING",
+                    isSubmit: false,
+                },
+                "waterRejuventation": {
+                    rejectReason: [],
+                    status: "PENDING",
+                    isSubmit: false,
+                },
+                "actionPlans": {
+                    rejectReason: [],
+                    status: "PENDING",
+                    isSubmit: false,
+
+                },
+                "grantAllocation": {
+                    isSubmit: false
+                }
+            }
+        };
+
+        let finalUpdatedData = await StateMasterForm.findOneAndUpdate(query, newData, { new: true })
 
         // let ulbUser = await User.findOne({
         //   ulb: ObjectId(req.decoded.ulb),
@@ -273,7 +313,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
             return res.status(200).json({
                 success: true,
                 message: "Final Submit Successful!",
-                data: updatedData,
+                data: finalUpdatedData,
             });
         } else {
             return res.status(400).json({
