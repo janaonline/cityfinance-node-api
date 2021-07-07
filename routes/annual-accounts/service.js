@@ -34,7 +34,6 @@ exports.createUpdate = async (req, res) => {
       }
       req.body.status = "PENDING";
 
-
       currentAnnualAccounts = await AnnualAccountData.findOne({
         ulb: ObjectId(ulb),
         design_year: ObjectId(design_year),
@@ -107,7 +106,6 @@ exports.action = async (req, res) => {
       history: 0,
     });
 
-
     let allReasons = [];
     let finalStatus = "APPROVED";
     if (req.body.unAudited.submit_annual_accounts) {
@@ -146,8 +144,12 @@ exports.action = async (req, res) => {
     }
 
     await UpdateMasterSubmitForm(req, "annualAccounts");
-
-    return res.status(200).json({ msg: "Action Submitted!" });
+    return res
+      .status(200)
+      .json({
+        msg: "Action Submitted!",
+        newAnnualAccountData: { status: req.body.status },
+      });
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);

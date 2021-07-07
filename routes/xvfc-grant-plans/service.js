@@ -13,7 +13,7 @@ exports.savePlans = async (req, res) => {
     let currentSavedPlan;
     if (req.body?.status == "REJECTED") {
       req.body.status = "PENDING";
-      req.body.rejectReason = null
+      req.body.rejectReason = null;
 
       currentSavedPlan = await Plans.findOne({
         ulb: ObjectId(ulb),
@@ -106,8 +106,10 @@ exports.action = async (req, res) => {
     }
 
     await UpdateMasterSubmitForm(req, "plans");
-
-    return res.status(200).json({ msg: "Action Submitted!" });
+    newPlan.history = null;
+    return res
+      .status(200)
+      .json({ msg: "Action Submitted!", newPlan: { status: req.body.status } });
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
