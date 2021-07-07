@@ -7,7 +7,13 @@ const statusType = () => {
         default: "PENDING",
     };
 };
+const statusTypeWithoutDefault = () => {
+    return {
+        type: String,
+        enum: ["APPROVED", "REJECTED", "PENDING"],
 
+    };
+};
 const StateMasterFormSchema = new Schema(
     {
         design_year: { type: Schema.Types.ObjectId, ref: "Year" },
@@ -91,6 +97,63 @@ const StateMasterFormSchema = new Schema(
         },
         createdAt: { type: Date, default: Date.now() },
         isActive: { type: Boolean, default: 1 },
+        latestFinalResponse: {
+            role: { type: String },
+            linkPFMS: {
+                rejectReason: {
+                    type: String,
+
+                },
+                status: statusTypeWithoutDefault(),
+                isSubmit: {
+                    type: Boolean,
+
+                },
+
+            },
+            GTCertificate: {
+                rejectReason: {
+                    type: Array,
+
+                },
+                status: statusTypeWithoutDefault(),
+                isSubmit: {
+                    type: Boolean,
+
+                },
+
+            },
+            waterRejuventation: {
+                status: statusTypeWithoutDefault(),
+                rejectReason: {
+                    type: Array,
+
+                },
+                isSubmit: {
+                    type: Boolean,
+
+                }
+            },
+            actionPlans: {
+                status: statusTypeWithoutDefault(),
+                rejectReason: {
+                    type: Array,
+
+                },
+                isSubmit: {
+                    type: Boolean,
+
+                }
+
+            },
+            grantAllocation: {
+                isSubmit: {
+                    type: Boolean,
+
+                }
+            }
+
+        }
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
