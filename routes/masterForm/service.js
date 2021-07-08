@@ -156,14 +156,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
       req.query.filter && !req.query.filter != "null"
         ? JSON.parse(req.query.filter)
         : req.body.filter
-        ? req.body.filter
-        : {},
+          ? req.body.filter
+          : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -568,8 +568,10 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
 });
 
 module.exports.plansData = catchAsync(async (req, res) => {
+  let { state_id } = req.query
   let user = req.decoded;
   let { design_year } = req.params;
+  let state = user.state ?? state_id
   // console.log(user)
   if (!user) {
     return res.status(400).json({
@@ -577,7 +579,6 @@ module.exports.plansData = catchAsync(async (req, res) => {
       message: "User Not Found",
     });
   }
-  let state = user.state;
   let baseQuery = [
     {
       $match: {
@@ -689,6 +690,9 @@ const formatPlansData = (data, count) => {
 
 module.exports.StateDashboard = catchAsync(async (req, res) => {
   let user = req.decoded;
+  let { state_id } = req.query
+  let state = req.decoded.state ?? state_id
+
   // console.log(user)
   if (!user) {
     return res.status(400).json({
@@ -707,7 +711,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
     let baseQuery = [
       {
         $match: {
-          state: ObjectId(user.state),
+          state: ObjectId(state),
         },
       },
       {
@@ -736,13 +740,13 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           $match: {
             isSubmit: true,
             design_year: ObjectId(design_year),
-            state: ObjectId(user.state),
+            state: ObjectId(state),
           },
         };
         match2 = {
           $match: {
             design_year: ObjectId(design_year),
-            state: ObjectId(user.state),
+            state: ObjectId(state),
           },
         };
       } else if (i == 1) {
@@ -750,14 +754,14 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           $match: {
             isSubmit: true,
             design_year: ObjectId(design_year),
-            state: ObjectId(user.state),
+            state: ObjectId(state),
             isUA: "Yes",
           },
         };
         match2 = {
           $match: {
             design_year: ObjectId(design_year),
-            state: ObjectId(user.state),
+            state: ObjectId(state),
             isUA: "Yes",
           },
         };
@@ -766,14 +770,14 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           $match: {
             isSubmit: true,
             design_year: ObjectId(design_year),
-            state: ObjectId(user.state),
+            state: ObjectId(state),
             isMillionPlus: "No",
           },
         };
         match2 = {
           $match: {
             design_year: ObjectId(design_year),
-            state: ObjectId(user.state),
+            state: ObjectId(state),
             isMillionPlus: "No",
           },
         };
@@ -1317,17 +1321,17 @@ module.exports.viewList = catchAsync(async (req, res) => {
     },
   };
   let filter =
-      req.query.filter && !req.query.filter != "null"
-        ? JSON.parse(req.query.filter)
-        : req.body.filter
+    req.query.filter && !req.query.filter != "null"
+      ? JSON.parse(req.query.filter)
+      : req.body.filter
         ? req.body.filter
         : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
