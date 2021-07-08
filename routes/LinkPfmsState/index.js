@@ -25,6 +25,6 @@ router.get("/LinkPfmsState", verifyToken, getLinkPfmsState);
 // router.delete("/LinkPfmsState", verifyToken, removeLinkPfmsState);
 
 //action
-// router.post("/LinkPfmsState/action", verifyToken, action);
+router.post("/LinkPfmsState/action", verifyToken,userAuth,action);
 
 module.exports = router;
