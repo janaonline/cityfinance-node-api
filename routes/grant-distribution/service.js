@@ -8,8 +8,9 @@ const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
 const { UpdateStateMasterForm } = require('../../service/updateStateMasterForm')
 exports.getGrantDistribution = async (req, res) => {
+  const { state_id } = req.query;
+  let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
-  const state = req.decoded.state;
   try {
     const grantDistribution = await GrantDistribution.findOne({
       state: ObjectId(state),

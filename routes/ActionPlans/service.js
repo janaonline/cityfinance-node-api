@@ -27,8 +27,9 @@ exports.saveActionPlans = async (req, res) => {
 };
 
 exports.getActionPlans = async (req, res) => {
+  const { state_id } = req.query;
+  let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
-  const state = req.query.state_id;
   try {
     const actionPlan = await ActionPlans.findOne({
       state: ObjectId(state),
