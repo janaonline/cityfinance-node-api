@@ -178,8 +178,12 @@ exports.action = async (req, res) => {
       }
 
       await UpdateMasterSubmitForm(req, "utilReport");
-
-      return res.status(200).json({ msg: "Action successful" });
+      let newUtil = {
+        status: data?.status,
+      };
+      return res
+        .status(200)
+        .json({ msg: "Action successful", newUtil});
     }
   } catch (err) {
     console.error(err.message);
