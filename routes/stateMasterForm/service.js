@@ -1,6 +1,7 @@
 const catchAsync = require("../../util/catchAsync");
 const StateMasterForm = require("../../models/StateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
+const State = require('../../models/State')
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -10,7 +11,7 @@ const time = () => {
 module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
 
-    let { design_year, masterform_id } = req.params;
+    let { design_year, state_id } = req.params;
     if (!design_year) {
         return res.status(400).json({
             success: false,
@@ -27,7 +28,17 @@ module.exports.get = catchAsync(async (req, res) => {
         state: ObjectId(user.state),
         design_year: ObjectId(design_year),
     };
-    if (masterform_id && (user.role != "STATE" || user.role != "ULB")) {
+    if (state_id && (user.role != "STATE" || user.role != "ULB")) {
+        let masterFormData = await StateMasterForm.findOne(
+            {
+                state: ObjectId(state_id),
+                design_year: ObjectId(design_year)
+            }, "-history")
+        return res.status(200).json({
+            success: true,
+            message: 'State MasterForm Data Fetched Successfully',
+            data: masterFormData
+        })
         //in progress
     }
     let masterFormData = await StateMasterForm.findOne(query, "-history");
@@ -92,7 +103,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
                     actionTakenByRole: 1,
                     isSubmit: 1,
                     numberOfUas: { $size: "$ua" },
-                    state: "$state.name"
+                    state: "$state.name",
+                    state_id: "$state._id"
                 }
             }
 
@@ -129,6 +141,123 @@ module.exports.getAll = catchAsync(async (req, res) => {
         })
     }
 
+})
+
+module.exports.getAllForms = catchAsync(async (req, res) => {
+    let { design_year, state_id } = req.params;
+    let query = [
+        {
+            $match: {
+                _id: ObjectId(state_id),
+            },
+        },
+        {
+            $lookup: {
+                from: "actionplans",
+                pipeline: [
+                    {
+                        $match: {
+                            state: ObjectId(state_id),
+                            design_year: ObjectId(design_year),
+                        },
+                    },
+                    {
+                        $project: {
+                            history: 0,
+                        },
+                    },
+                ],
+                as: "actionplans",
+            },
+        },
+        {
+            $lookup: {
+                from: "linkpfmsstates",
+                pipeline: [
+                    {
+                        $match: {
+                            state: ObjectId(state_id),
+                            design_year: ObjectId(design_year)
+                        },
+                    },
+                    {
+                        $project: {
+                            history: 0,
+                        },
+                    },
+                ],
+                as: "linkpfmsstates",
+            },
+        },
+        {
+            $lookup: {
+                from: "stategtcertificates",
+                pipeline: [
+                    {
+                        $match: {
+                            state: ObjectId(state_id),
+                            design_year: ObjectId(design_year),
+                        },
+                    },
+                    {
+                        $project: {
+                            history: 0,
+                        },
+                    },
+                ],
+                as: "stategtcertificates",
+            },
+        },
+        {
+            $lookup: {
+                from: "waterrejenuvationrecyclings",
+                pipeline: [
+                    {
+                        $match: {
+                            state: ObjectId(state_id),
+                            design_year: ObjectId(design_year),
+                        },
+                    },
+                    {
+                        $project: {
+                            history: 0,
+                        },
+                    },
+                ],
+                as: "waterrejenuvationrecyclings",
+            },
+        },
+        {
+            $lookup: {
+                from: "grantdistributions",
+                pipeline: [
+                    {
+                        $match: {
+                            state: ObjectId(state_id),
+                            design_year: ObjectId(design_year),
+                        },
+                    },
+                    {
+                        $project: {
+                            history: 0,
+                        },
+                    },
+                ],
+                as: "grantdistributions",
+            },
+        },
+        {
+            $project: {
+                history: 0,
+            },
+        },
+    ];
+    let allFormsData = await State.aggregate(query)
+    return res.status(200).json({
+        success: true,
+        message: 'All State Forms Fetched',
+        data: allFormsData
+    })
 })
 
 module.exports.getHistory = catchAsync(async (req, res) => {
@@ -202,24 +331,58 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         data["actionTakenBy"] = ObjectId(user._id);
         data["actionTakenByRole"] = (user.role);
         data["modifiedAt"] = time();
+
+
+        console.log(data)
         //isSubmit and Status comes in the req.body
         let query = {
             design_year: ObjectId(design_year),
             state: ObjectId(state),
         };
         //create History
-        let masterFormData = await StateMasterForm.findOne(query)
+        let masterFormData = await StateMasterForm.findOne(query).lean()
+
         if (masterFormData) {
+            data['latestFinalResponse'] = masterFormData.steps
+            data['latestFinalResponse']['role'] = masterFormData.actionTakenByRole
+            masterFormData['modifiedAt'] = data["modifiedAt"]
             data['history'] = [...masterFormData.history];
             masterFormData.history = undefined;
             data['history'].push(masterFormData);
-
         }
 
 
-        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, {
-            new: true,
-        });
+        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true })
+        let newData = {
+            "steps": {
+                "linkPFMS": {
+                    rejectReason: null,
+                    status: "PENDING",
+                    isSubmit: false,
+                },
+                "GTCertificate": {
+                    rejectReason: null,
+                    status: "PENDING",
+                    isSubmit: false,
+                },
+                "waterRejuventation": {
+                    rejectReason: [],
+                    status: "PENDING",
+                    isSubmit: false,
+                },
+                "actionPlans": {
+                    rejectReason: [],
+                    status: "PENDING",
+                    isSubmit: false,
+
+                },
+                "grantAllocation": {
+                    isSubmit: false
+                }
+            }
+        };
+
+        let finalUpdatedData = await StateMasterForm.findOneAndUpdate(query, newData, { new: true })
 
         // let ulbUser = await User.findOne({
         //   ulb: ObjectId(req.decoded.ulb),
@@ -273,7 +436,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
             return res.status(200).json({
                 success: true,
                 message: "Final Submit Successful!",
-                data: updatedData,
+                data: finalUpdatedData,
             });
         } else {
             return res.status(400).json({

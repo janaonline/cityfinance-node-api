@@ -5,6 +5,8 @@ const { UpdateStateMasterForm } = require('../../../service/updateStateMasterFor
 
 module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
+    const { state_id } = req.query;
+    let state = req.decoded.state ?? state_id;
     let { design_year } = req.params;
     if (!design_year) {
         return res.status(400).json({
@@ -14,7 +16,7 @@ module.exports.get = catchAsync(async (req, res) => {
     }
     let query = {
         "design_year": ObjectId(design_year),
-        "state": ObjectId(user.state ? user.state : req.query.state)
+        "state": ObjectId(state)
     }
     let fetchedData = await StateGTCertificate.findOne(
         query,

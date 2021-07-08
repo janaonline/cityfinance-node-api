@@ -27,8 +27,9 @@ exports.saveWaterRejenuvation = async (req, res) => {
 };
 
 exports.getWaterRejenuvation = async (req, res) => {
+  const { state_id } = req.query;
+  let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
-  const state = req.decoded?.state ? req.decoded.state : req.query.state;
   try {
     const waterRej = await WaterRejenuvation.findOne({
       state: ObjectId(state),
