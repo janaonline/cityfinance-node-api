@@ -51,7 +51,7 @@ module.exports.get = catchAsync(async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Data Found Successfully!",
-            response: masterFormData,
+            data: masterFormData,
         });
     }
 });
