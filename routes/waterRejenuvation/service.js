@@ -30,7 +30,6 @@ exports.getWaterRejenuvation = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
-
   try {
     const waterRej = await WaterRejenuvation.findOne({
       state: ObjectId(state),
@@ -48,8 +47,7 @@ exports.getWaterRejenuvation = async (req, res) => {
 };
 
 exports.action = async (req, res) => {
-  let { design_year, isDraft } = req.body;
-  let { state } = req.decoded;
+  let { design_year, state } = req.body;
   try {
     let currentWaterRejenuvation = await WaterRejenuvation.findOne({
       state: ObjectId(state),

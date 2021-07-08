@@ -234,3 +234,31 @@ async function getUlbData(ulbCodes, ulbNames) {
   });
   return ulbDataMap;
 }
+
+exports.action = async (req, res) => {
+  let { design_year, state } = req.body;
+  try {
+    let grantDistribution = await GrantDistribution.findOne({
+      state: ObjectId(state),
+      design_year: ObjectId(design_year),
+      isActive: true,
+    }).select({
+      history: 0,
+    });
+    const newGrantDistribution = await GrantDistribution.findOneAndUpdate(
+      {
+        state: ObjectId(state),
+        design_year: ObjectId(design_year),
+        isActive: true,
+      },
+      { $set: req.body, $push: { history: grantDistribution } }
+    );
+    if (!newGrantDistribution) {
+      return Response.BadRequest(res, null, "No GrantDistribution found");
+    }
+    return Response.OK(res, newWaterRejenuvation, "Action Submitted!");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};

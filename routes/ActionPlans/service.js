@@ -47,8 +47,7 @@ exports.getActionPlans = async (req, res) => {
 };
 
 exports.action = async (req, res) => {
-  let { design_year, isDraft } = req.body;
-  let { state } = req.decoded;
+  let { design_year, state } = req.body;
   try {
     let currentActionPlans = await ActionPlans.findOne({
       state: ObjectId(state),

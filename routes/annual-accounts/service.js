@@ -33,7 +33,6 @@ exports.createUpdate = async (req, res) => {
         }
       }
       req.body.status = "PENDING";
-
       currentAnnualAccounts = await AnnualAccountData.findOne({
         ulb: ObjectId(ulb),
         design_year: ObjectId(design_year),
@@ -60,7 +59,12 @@ exports.createUpdate = async (req, res) => {
         }
       );
     }
-
+    if (
+      !req.body.unAudited.submit_annual_accounts &&
+      !req.body.audited.submit_annual_accounts
+    ) {
+      req.body.status = "N/A";
+    }
     await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
@@ -140,16 +144,17 @@ exports.action = async (req, res) => {
     );
 
     if (!newAnnualAccountData) {
-      return res.status(400).json({ msg: "no AnnualAccountData found" });
+      return res.status(400).json({
+        msg: "no AnnualAccountData found",
+      });
     }
 
     await UpdateMasterSubmitForm(req, "annualAccounts");
-    return res
-      .status(200)
-      .json({
-        msg: "Action Submitted!",
-        newAnnualAccountData: { status: req.body.status },
-      });
+
+    return res.status(200).json({
+      msg: "Action Submitted!",
+      newAnnualAccountData: { status: req.body.status },
+    });
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
