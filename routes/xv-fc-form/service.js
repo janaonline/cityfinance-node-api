@@ -3721,8 +3721,9 @@ exports.newFormAction = async (req, res) => {
             req.body.rejectReason = req.body.waterManagement.rejectReason
 
             await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
-
-            return res.status(200).json({ msg: "Action successful" });
+            updatedRecord.history = null
+            let waterManagement = updatedRecord.waterManagement
+            return res.status(200).json({ msg: "Action successful",waterManagement:{status:data.status} });
         }
     } catch (err) {
         console.error(err.message);
