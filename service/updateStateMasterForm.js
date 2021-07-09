@@ -15,7 +15,7 @@ const time = () => {
 exports.UpdateStateMasterForm = catchAsync(async (req, formName) => {
     let user = req.decoded;
     let data = req.body;
-    let { state_id } = req.query
+    let state_id = req.body['state']
     let state = user.state ?? state_id
     if (user.role != 'ULB') {
         if (user.role === 'STATE') {
@@ -61,31 +61,35 @@ exports.UpdateStateMasterForm = catchAsync(async (req, formName) => {
                 await existingData.save();
             }
         } else {
+
             let query = {
                 state: ObjectId(state),
                 design_year: ObjectId(data.design_year)
             }
+
             let existingData = await StateMasterForm.findOne(query)
-            let data = {};
+            let formData = {};
             if (formName === 'GTCertificate') {
-                data = await GTCertificate.findOne(query)
+                formData = await GTCertificate.findOne(query)
             } else if (formName === 'actionPlans') {
-                data = await ActionPlan.findOne(query)
+                formData = await ActionPlan.findOne(query)
             } else if (formName === 'grantAllocation') {
-                data = await GrantAllocation.findOne(query)
+                formData = await GrantAllocation.findOne(query)
             } else if (formName === 'linkPFMS') {
-                data = await LinkingPFMS.findOne(query)
+                formData = await LinkingPFMS.findOne(query)
             } else if (formName === 'waterRejuventation') {
-                data = await WaterRejuvenation.findOne(query)
+                formData = await WaterRejuvenation.findOne(query)
             }
 
             existingData.steps[formName] = {
-                isSubmit: !data['isDraft'],
-                status: data['status'],
+                isSubmit: !formData['isDraft'],
+                status: formData['status'],
             }
             existingData.modifiedAt = time();
             existingData.isSubmit = false
-            await existingData.save();
+            existingData.actionTakenByRole = user.role,
+                existingData.actionTakenBy = user._id,
+                await existingData.save();
 
             //MoHUA, Admin etc
         }
