@@ -200,6 +200,10 @@ const XVFcGrantULBFormSchema = new Schema(
             ref: 'User',
             required: true,
         },
+        actionTakenByRole: {
+            type: String,
+            default: null
+          },
         history: { type: Array, default: [] },
         modifiedAt: { type: Date, default: Date.now },
         createdAt: { type: Date, default: Date.now },

@@ -81,14 +81,39 @@ exports.getAccounts = async (req, res) => {
   try {
     let { design_year, ulb } = req.query;
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
-    const annualAccountData = await AnnualAccountData.findOne({
+    let annualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year,
       isActive: true,
     }).select({ history: 0 });
+
     if (!annualAccountData) {
       return res.status(400).json({ msg: "No AnnualAccountData found" });
     }
+    annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
+    if (
+      req.decoded.role === "MoHUA" &&
+      annualAccountData.actionTakenByRole === "STATE" &&
+      annualAccountData.status == "APPROVED"
+    ) {
+      annualAccountData.status = "PENDING";
+      if (annualAccountData.unAudited.submit_annual_accounts) {
+        let proData = annualAccountData.unAudited.provisional_data;
+        for (const key in proData) {
+          if (key == "auditor_report") continue;
+          proData[key].status = "PENDING";
+          proData[key].rejectReason = null;
+        }
+      }
+      if (annualAccountData.audited.submit_annual_accounts) {
+        let proData = annualAccountData.audited.provisional_data;
+        for (const key in proData) {
+          proData[key].rejectReason = null;
+          proData[key].status = "PENDING";
+        }
+      }
+    }
+
     return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);
@@ -101,7 +126,7 @@ exports.action = async (req, res) => {
     let { ulb, design_year, isDraft } = req.body;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
-
+    req.body.actionTakenByRole = req.decoded.role;
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: ObjectId(design_year),

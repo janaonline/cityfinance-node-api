@@ -8,7 +8,7 @@ const statusType = () => {
     enum: {
       values: ["PENDING", "APPROVED", "REJECTED"],
       message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
-    }
+    },
   };
 };
 
@@ -81,6 +81,10 @@ const AnnualAccountDataSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    actionTakenByRole: {
+      type: String,
+      default: null,
     },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }

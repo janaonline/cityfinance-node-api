@@ -22,7 +22,7 @@ const GrantDistributionSchema = new Schema(
 GrantDistributionSchema.index(
   {
     state: 1,
-    designYear: 1,
+    design_year: 1,
   },
   {
     unique: true,

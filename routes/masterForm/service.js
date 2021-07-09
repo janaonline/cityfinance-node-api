@@ -97,6 +97,17 @@ module.exports.get = catchAsync(async (req, res) => {
       }
       data = { ...masterFormData[0], ...data };
       data.history = null;
+
+      if (
+        user.role == "MoHUA" &&
+        data.actionTakenByRole == "STATE" &&
+        data.status == "APPROVED"
+      ) {
+        for (const key in data.steps) {
+          data.steps[key].status = "PENDING";
+        }
+      }
+
       return res.status(200).json({
         success: true,
         message: "Data Found Successfully!",
@@ -156,14 +167,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
       req.query.filter && !req.query.filter != "null"
         ? JSON.parse(req.query.filter)
         : req.body.filter
-          ? req.body.filter
-          : {},
+        ? req.body.filter
+        : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-          ? req.body.sort
-          : {},
+        ? req.body.sort
+        : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -568,10 +579,10 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
 });
 
 module.exports.plansData = catchAsync(async (req, res) => {
-  let { state_id } = req.query
+  let { state_id } = req.query;
   let user = req.decoded;
   let { design_year } = req.params;
-  let state = user.state ?? state_id
+  let state = user.state ?? state_id;
   // console.log(user)
   if (!user) {
     return res.status(400).json({
@@ -690,8 +701,8 @@ const formatPlansData = (data, count) => {
 
 module.exports.StateDashboard = catchAsync(async (req, res) => {
   let user = req.decoded;
-  let { state_id } = req.query
-  let state = req.decoded.state ?? state_id
+  let { state_id } = req.query;
+  let state = req.decoded.state ?? state_id;
 
   // console.log(user)
   if (!user) {
@@ -1321,17 +1332,17 @@ module.exports.viewList = catchAsync(async (req, res) => {
     },
   };
   let filter =
-    req.query.filter && !req.query.filter != "null"
-      ? JSON.parse(req.query.filter)
-      : req.body.filter
+      req.query.filter && !req.query.filter != "null"
+        ? JSON.parse(req.query.filter)
+        : req.body.filter
         ? req.body.filter
         : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-          ? req.body.sort
-          : {},
+        ? req.body.sort
+        : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv,
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -2108,7 +2119,8 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
     let ulb = user.ulb;
     data["actionTakenBy"] = ObjectId(user._id);
     data["actionTakenByRole"] = user.role;
-    data["modifiedAt"] = time();
+    // data["modifiedAt"] = time();
+    data["modifiedAt"] = new Date();
 
     let query = {
       design_year: ObjectId(design_year),
@@ -2217,7 +2229,8 @@ module.exports.finalAction = catchAsync(async (req, res) => {
     let ulb = req.body.ulb;
     data["actionTakenBy"] = ObjectId(user._id);
     data["actionTakenByRole"] = user.role;
-    data["modifiedAt"] = time();
+    // data["modifiedAt"] = time();
+    data["modifiedAt"] = new Date();
 
     let query = {
       design_year: ObjectId(design_year),

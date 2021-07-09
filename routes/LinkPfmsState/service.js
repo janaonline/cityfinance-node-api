@@ -2,7 +2,9 @@ const LinkPfmsState = require("../../models/LinkPfmsState");
 // const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
-const { UpdateStateMasterForm } = require('../../service/updateStateMasterForm')
+const {
+  UpdateStateMasterForm,
+} = require("../../service/updateStateMasterForm");
 
 exports.saveLinkPfmsState = async (req, res) => {
   let { state, _id } = req.decoded;
@@ -19,7 +21,7 @@ exports.saveLinkPfmsState = async (req, res) => {
         setDefaultsOnInsert: true,
       }
     );
-    await UpdateStateMasterForm(req, 'linkPFMS');
+    await UpdateStateMasterForm(req, "linkPFMS");
     return Response.OK(res, null, "Submitted!");
   } catch (err) {
     console.error(err.message);
@@ -46,9 +48,8 @@ exports.getLinkPfmsState = async (req, res) => {
 };
 
 exports.action = async (req, res) => {
-  let { design_year, isDraft } = req.body;
-  let { state } = req.decoded;
   try {
+    let { design_year, state } = req.body;
     let currentLinkPfmsState = await LinkPfmsState.findOne({
       state: ObjectId(state),
       design_year: ObjectId(design_year),
@@ -63,7 +64,7 @@ exports.action = async (req, res) => {
       },
       { $set: req.body, $push: { history: currentLinkPfmsState } }
     );
-    if (!newLinkPfmsState) {
+    if (!currentLinkPfmsState) {
       return Response.BadRequest(res, null, "No LinkPfmsState found");
     }
     return Response.OK(res, newLinkPfmsState, "Action Submitted!");
