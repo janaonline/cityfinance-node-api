@@ -211,8 +211,8 @@ module.exports.post = async function (req, res) {
 module.exports.delete = async function (req, res) {
   // Delete ulb based
   let condition = {
-      _id: req.params._id,
-    },
+    _id: req.params._id,
+  },
     update = {
       isActive: false,
     };
@@ -528,35 +528,35 @@ module.exports.getAllULBSCSV = function (req, res) {
         el.location = el.location ? el.location : { lat: "NA", lng: "NA" };
         res.write(
           el.name +
-            "," +
-            el.code +
-            "," +
-            el.censusCode +
-            "," +
-            el.sbCode +
-            "," +
-            el.ulbtypes.name +
-            "," +
-            el.state.name +
-            "," +
-            el.state.code +
-            "," +
-            el.natureOfUlb +
-            "," +
-            el.area +
-            "," +
-            el.wards +
-            "," +
-            el.population +
-            "," +
-            el.amrut +
-            "," +
-            el.location.lat +
-            "," +
-            el.location.lng +
-            "," +
-            el.isMillionPlus +
-            "\r\n"
+          "," +
+          el.code +
+          "," +
+          el.censusCode +
+          "," +
+          el.sbCode +
+          "," +
+          el.ulbtypes.name +
+          "," +
+          el.state.name +
+          "," +
+          el.state.code +
+          "," +
+          el.natureOfUlb +
+          "," +
+          el.area +
+          "," +
+          el.wards +
+          "," +
+          el.population +
+          "," +
+          el.amrut +
+          "," +
+          el.location.lat +
+          "," +
+          el.location.lng +
+          "," +
+          el.isMillionPlus +
+          "\r\n"
         );
       }
       res.end();
@@ -765,7 +765,8 @@ const getUlbs = (yrs) => {
 
 module.exports.getUlbInUas = async function (req, res) {
   try {
-    const state = req.decoded.state ?? req.query;
+    let { state_id } = req.query
+    let state = req.decoded.state ?? state_id;
     let response = await Ulb.find({ state: ObjectId(state) }).select({
       name: 1,
       _id: 1,
