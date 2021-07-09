@@ -91,6 +91,16 @@ exports.readById = async (req, res) => {
     if (!report) {
       return res.status(400).json({ msg: "No UtilizationReport Found" });
     }
+
+    if (
+      req.decoded.role === "MoHUA" &&
+      report.actionTakenByRole === "STATE" &&
+      report.status == "APPROVED"
+    ) {
+      report.status = "PENDING";
+      report.rejectReason = null;
+    }
+
     return res.json(report);
   } catch (err) {
     console.error(err.message);
@@ -146,25 +156,16 @@ exports.action = async (req, res) => {
       user = req.decoded;
     const { financialYear, designYear } = req.body;
     req.body.actionTakenBy = req.decoded._id;
-
     let currentState = await UtilizationReport.findOne(
-      { ulb: ObjectId(data.ulb), isActive: true },
+      { ulb: ObjectId(data.ulb), designYear, isActive: true },
       { history: 0 }
     );
-    // let ulb = currentState
-    //   ? await Ulb.findById({ _id: ObjectId(currentState.ulb), isActive: true })
-    //   : null;
-    // if (ulb === null) {
-    //   return res.status(400).json({ msg: "ulb not found" });
-    // }
-    // if (user?.role === "STATE" && ulb?.state?.toString() !== user?.state) {
-    //   return res.status(400).json({ msg: "State not matching" });
-    // }
     let updateData = {
       status: data?.status,
       actionTakenBy: user?._id,
       rejectReason: data?.rejectReason,
       modifiedAt: new Date(),
+      actionTakenByRole: user.role,
     };
     if (!currentState) {
       return res.status(400).json({ msg: "Requested record not found." });
@@ -181,9 +182,7 @@ exports.action = async (req, res) => {
       let newUtil = {
         status: data?.status,
       };
-      return res
-        .status(200)
-        .json({ msg: "Action successful", newUtil});
+      return res.status(200).json({ msg: "Action successful", newUtil });
     }
   } catch (err) {
     console.error(err.message);

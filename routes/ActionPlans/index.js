@@ -25,6 +25,6 @@ router.get("/ActionPlans/:design_year", verifyToken, getActionPlans);
 // router.delete("/ActionPlans", verifyToken, removeActionPlans);
 
 //action
-// router.post("/ActionPlans/action", verifyToken, action);
+router.post("/ActionPlans/action", verifyToken,userAuth, action);
 
 module.exports = router;

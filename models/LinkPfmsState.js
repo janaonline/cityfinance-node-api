@@ -2,6 +2,14 @@ require("./dbConnect");
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+const statusType = () => {
+  return {
+    type: String,
+    enum: ["APPROVED", "REJECTED", "PENDING"],
+    default: "PENDING",
+  };
+};
+
 const LinkPfmsStateSchema = new Schema(
   {
     state: { type: Schema.Types.ObjectId, ref: "state", required: true },
@@ -11,8 +19,24 @@ const LinkPfmsStateSchema = new Schema(
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isDraft: { type: Boolean, default: true },
+    status: statusType(),
+    rejectReason: {
+      type: String,
+      default: null,
+    },
+    isActive: { type: Boolean, default: 1 },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+);
+
+LinkPfmsStateSchema.index(
+  {
+    designYear: 1,
+    state: 1,
+  },
+  {
+    unique: true,
+  }
 );
 
 module.exports = mongoose.model("LinkPfmsState", LinkPfmsStateSchema);

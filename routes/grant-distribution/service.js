@@ -6,7 +6,9 @@ const Response = require("../../service").response;
 const Service = require("../../service");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
-const { UpdateStateMasterForm } = require('../../service/updateStateMasterForm')
+const {
+  UpdateStateMasterForm,
+} = require("../../service/updateStateMasterForm");
 exports.getGrantDistribution = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
@@ -92,10 +94,12 @@ exports.uploadTemplate = async (req, res) => {
 };
 
 exports.saveData = async (req, res) => {
-  let { design_year } = req.body;
-  let state = req.decoded?.state;
-  req.body.actionTakenBy = req.decoded._id;
   try {
+    let { design_year } = req.body;
+    let state = req.decoded?.state;
+    req.body.actionTakenBy = req.decoded._id;
+    req.body.modifiedAt = new Date();
+
     let data = await GrantDistribution.findOneAndUpdate(
       {
         state: ObjectId(state),
@@ -109,7 +113,7 @@ exports.saveData = async (req, res) => {
         new: true,
       }
     );
-    await UpdateStateMasterForm(req, 'grantAllocation')
+    await UpdateStateMasterForm(req, "grantAllocation");
     return Response.OK(res, data, "file submitted");
   } catch (err) {
     console.error(err.message);
@@ -124,8 +128,8 @@ function readXlsxFile(file) {
       let fileInfo = file.path.split(".");
       exceltojson =
         fileInfo &&
-          fileInfo.length > 0 &&
-          fileInfo[fileInfo.length - 1] == "xlsx"
+        fileInfo.length > 0 &&
+        fileInfo[fileInfo.length - 1] == "xlsx"
           ? xlsxtojson
           : xlstojson;
       exceltojson(

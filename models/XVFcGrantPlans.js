@@ -47,6 +47,10 @@ const XVFcGrantPlansSchema = mongoose.Schema({
     type: Schema.Types.ObjectId,
     ref: "User",
   },
+  actionTakenByRole: {
+    type: String,
+    default: null,
+  },
   rejectReason: {
     type: String,
   },

@@ -24,6 +24,6 @@ router.get("/overall-ulb", Ulb.getOverallUlb);
 router.get('/ulb-by-code', Ulb.getUlbByCode);
 
 //get all ulbs in uas of a state
-router.get('/state/uas-ulb', Ulb.getUlbInUas);
+router.get('/state/uas-ulb',verifyToken, Ulb.getUlbInUas);
 
 module.exports = router;
