@@ -1,14 +1,17 @@
 const WaterRejenuvation = require("../../models/WaterRejenuvation&Recycling");
-const { UpdateStateMasterForm } = require("../../service/updateStateMasterForm");
+const {
+  UpdateStateMasterForm,
+} = require("../../service/updateStateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 
 exports.saveWaterRejenuvation = async (req, res) => {
-  let { state, _id } = req.decoded;
-  let data = req.body;
-  req.body.actionTakenBy = _id;
   try {
-    console.log(data);
+    let { state, _id } = req.decoded;
+    let data = req.body;
+    req.body.actionTakenBy = _id;
+    req.body.modifiedAt = new Date();
+
     await WaterRejenuvation.findOneAndUpdate(
       { state: ObjectId(state), design_year: ObjectId(data.design_year) },
       data,
@@ -18,7 +21,7 @@ exports.saveWaterRejenuvation = async (req, res) => {
         setDefaultsOnInsert: true,
       }
     );
-    await UpdateStateMasterForm(req, 'waterRejuventation')
+    await UpdateStateMasterForm(req, "waterRejuventation");
     return Response.OK(res, null, "Submitted!");
   } catch (err) {
     console.error(err.message);
@@ -47,8 +50,10 @@ exports.getWaterRejenuvation = async (req, res) => {
 };
 
 exports.action = async (req, res) => {
-  let { design_year, state } = req.body;
   try {
+    let { design_year, state } = req.body;
+    req.body.modifiedAt = new Date();
+
     let currentWaterRejenuvation = await WaterRejenuvation.findOne({
       state: ObjectId(state),
       design_year: ObjectId(design_year),
@@ -56,6 +61,25 @@ exports.action = async (req, res) => {
     }).select({
       history: 0,
     });
+
+    let finalStatus = "APPROVED",
+      allRejectReasons = [];
+    req.body.uaData.forEach((element) => {
+      let obj = {};
+      obj[element.ua] = element.rejectReason;
+      allRejectReasons.push(obj);
+    });
+    req.body.uaData.forEach((element) => {
+      if (element.status === "REJECTED") {
+        finalStatus = "REJECTED";
+      }
+      if (element.status === "PENDING") {
+        finalStatus = "PENDING";
+        return;
+      }
+    });
+    req.body.status = finalStatus;
+
     const newWaterRejenuvation = await WaterRejenuvation.findOneAndUpdate(
       {
         state: ObjectId(state),

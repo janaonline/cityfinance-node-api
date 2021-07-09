@@ -70,6 +70,7 @@ const uas = new Schema({
     type: String,
     default: "",
   },
+  status: statusType(),
   _id: false,
 });
 
@@ -88,6 +89,7 @@ const ActionPlansSchema = new Schema(
     isDraft: { type: Boolean, default: false, required: true },
     history: { type: Array, default: [] },
     uaData: [uas],
+    status: statusType(),
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
@@ -95,13 +97,9 @@ const ActionPlansSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
-    actionTakenByRole: {
-      type: String,
-      default: null,
-    },
+    }
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
-ActionPlansSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
+ActionPlansSchema.index({ state: 1, design_year: 1 }, { unique: true });
 module.exports = mongoose.model("ActionPlans", ActionPlansSchema);

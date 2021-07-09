@@ -1,805 +1,799 @@
-const State = require('../../models/State');
-const Ulb = require('../../models/Ulb');
-const UlbType = require('../../models/UlbType');
-const UlbLedger = require('../../models/UlbLedger');
-const LineItem = require('../../models/LineItem');
-const OverallUlb = require('../../models/OverallUlb');
-const XVFcForms = require('../../models/XVFinanceComissionReForms');
-const service = require('../../service');
-const Response = require('../../service').response;
-const moment = require('moment');
-const ObjectId = require('mongoose').Types.ObjectId;
+const State = require("../../models/State");
+const Ulb = require("../../models/Ulb");
+const UlbType = require("../../models/UlbType");
+const UlbLedger = require("../../models/UlbLedger");
+const LineItem = require("../../models/LineItem");
+const OverallUlb = require("../../models/OverallUlb");
+const XVFcForms = require("../../models/XVFinanceComissionReForms");
+const service = require("../../service");
+const Response = require("../../service").response;
+const moment = require("moment");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.getFilteredUlb = async function (req, res) {
-    let query = {};
-    let query1 = {};
-    query['isActive'] = true;
+  let query = {};
+  let query1 = {};
+  query["isActive"] = true;
+
+  try {
+    if (req.query.state) {
+      query["state"] = ObjectId(req.query.state);
+      let ulbIds = await Ulb.distinct("_id", query).exec();
+      query1["ulb"] = { $in: ulbIds };
+      query1["questionnaireType"] = "ulb";
+      let ulbId = await XVFcForms.find(query1, { _id: 0, ulb: 1 }).exec();
+      let ulbArray = ulbId.map((s) => {
+        return ObjectId(s.ulb);
+      });
+      query["_id"] = { $in: ulbIds, $nin: ulbArray };
+    }
 
     try {
-        if (req.query.state) {
-            query['state'] = ObjectId(req.query.state);
-            let ulbIds = await Ulb.distinct('_id', query).exec();
-            query1['ulb'] = { $in: ulbIds };
-            query1['questionnaireType'] = 'ulb';
-            let ulbId = await XVFcForms.find(query1, { _id: 0, ulb: 1 }).exec();
-            let ulbArray = ulbId.map((s) => {
-                return ObjectId(s.ulb);
-            });
-            query['_id'] = { $in: ulbIds, $nin: ulbArray };
-        }
-
-        try {
-            service.find(query, Ulb, function (response, value) {
-                return res.status(response ? 200 : 400).send(value);
-            });
-        } catch (e) {
-            Response.DbError(res, e, `Something went wrong.`);
-        }
+      service.find(query, Ulb, function (response, value) {
+        return res.status(response ? 200 : 400).send(value);
+      });
     } catch (e) {
-        return Response.InternalError(res, e.message, `Something went wrong`);
+      Response.DbError(res, e, `Something went wrong.`);
     }
+  } catch (e) {
+    return Response.InternalError(res, e.message, `Something went wrong`);
+  }
 };
 
 module.exports.getUlbById = function (req, res) {
-    if (!req.params._id || req.params._id == 'undefined') {
-        res.status(400).json({
-            timestamp: moment().unix(),
-            status: false,
-            message: "'_id' param can't be blank",
-        });
-    }
-
-    let match = { $match: {} };
-    if (req.params._id) {
-        match['$match'] = Object.assign({}, { _id: ObjectId(req.params._id) });
-    }
-
-    let arr = [
-        match,
-        {
-            $lookup: {
-                from: 'states',
-                localField: 'state',
-                foreignField: '_id',
-                as: 'state',
-            },
-        },
-        { $unwind: '$state' },
-        {
-            $project: {
-                state: '$state',
-                isMillionPlus: {
-                    $cond: {
-                        if: { $eq: ['$isMillionPlus', 'Yes'] },
-                        then: true,
-                        else: false,
-                    },
-                },
-            },
-        },
-    ];
-    service.aggregate(arr, Ulb, function (response, value) {
-        return res.status(response ? 200 : 400).send(value);
+  if (!req.params._id || req.params._id == "undefined") {
+    res.status(400).json({
+      timestamp: moment().unix(),
+      status: false,
+      message: "'_id' param can't be blank",
     });
+  }
+
+  let match = { $match: {} };
+  if (req.params._id) {
+    match["$match"] = Object.assign({}, { _id: ObjectId(req.params._id) });
+  }
+
+  let arr = [
+    match,
+    {
+      $lookup: {
+        from: "states",
+        localField: "state",
+        foreignField: "_id",
+        as: "state",
+      },
+    },
+    { $unwind: "$state" },
+    {
+      $project: {
+        state: "$state",
+        isMillionPlus: {
+          $cond: {
+            if: { $eq: ["$isMillionPlus", "Yes"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+  ];
+  service.aggregate(arr, Ulb, function (response, value) {
+    return res.status(response ? 200 : 400).send(value);
+  });
 };
 
 module.exports.get = async function (req, res) {
-    let query = {};
-    query['isActive'] = true;
-    try {
-        let keys = [];
-        if (req.query.keys) {
-            keys = JSON.parse(req.query.keys);
-        }
-        if (req.params && req.params._code) {
-            query['code'] = req.params._code;
-        }
-        for (key in req.query) {
-            if (key !== 'keys') {
-                if (req.query[key] && ObjectId.isValid(req.query[key])) {
-                    query[key] = ObjectId(req.query[key]);
-                } else if (req.query[key]) {
-                    query[key] = req.query[key];
-                }
-            }
-        }
-        try {
-            let ulbs = await Ulb.find(query, keys.join(' '))
-                .populate([{ path: 'ulbType', select: 'name' }])
-                .exec();
-            Response.OK(res, ulbs, `ulb list.`);
-        } catch (e) {
-            Response.DbError(res, e, `Something went wrong.`);
-        }
-    } catch (e) {
-        return Response.InternalError(res, e.message, `Something went wrong`);
+  let query = {};
+  query["isActive"] = true;
+  try {
+    let keys = [];
+    if (req.query.keys) {
+      keys = JSON.parse(req.query.keys);
     }
+    if (req.params && req.params._code) {
+      query["code"] = req.params._code;
+    }
+    for (key in req.query) {
+      if (key !== "keys") {
+        if (req.query[key] && ObjectId.isValid(req.query[key])) {
+          query[key] = ObjectId(req.query[key]);
+        } else if (req.query[key]) {
+          query[key] = req.query[key];
+        }
+      }
+    }
+    try {
+      let ulbs = await Ulb.find(query, keys.join(" "))
+        .populate([{ path: "ulbType", select: "name" }])
+        .exec();
+      Response.OK(res, ulbs, `ulb list.`);
+    } catch (e) {
+      Response.DbError(res, e, `Something went wrong.`);
+    }
+  } catch (e) {
+    return Response.InternalError(res, e.message, `Something went wrong`);
+  }
 };
 module.exports.put = async function (req, res) {
-    try {
-        let user = req.decoded,
-            _id = ObjectId(req.params._id),
-            obj = req.body;
-        let actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
-        if (actionAllowed.indexOf(user.role) > -1) {
-            let condition = { _id: _id };
-            obj['modifiedAt'] = new Date();
-            try {
-                if (obj.state) {
-                    let state = await State.findOne(
-                        { name: ObjectId(obj.state), isActive: true },
-                        { _id: 1 }
-                    ).exec();
-                    if (!state) {
-                        return Response.BadRequest(
-                            res,
-                            {},
-                            `requested state does not exists.`
-                        );
-                    }
-                }
-                if (obj.ulbType) {
-                    let ulbType = await UlbType.findOne(
-                        { name: ObjectId(obj.ulbType), isActive: true },
-                        { _id: 1 }
-                    ).exec();
-                    if (!ulbType) {
-                        return Response.BadRequest(
-                            res,
-                            {},
-                            `requested ulb type does not exists.`
-                        );
-                    }
-                }
-                let du = await Ulb.update(condition, { $set: obj });
-                return Response.OK(res, du, `updated successfully.`);
-            } catch (err) {
-                console.log('Error caught', err);
-                return Response.BadRequest(res, e);
-            }
-        } else {
+  try {
+    let user = req.decoded,
+      _id = ObjectId(req.params._id),
+      obj = req.body;
+    let actionAllowed = ["ADMIN", "MoHUA", "PARTNER", "STATE"];
+    if (actionAllowed.indexOf(user.role) > -1) {
+      let condition = { _id: _id };
+      obj["modifiedAt"] = new Date();
+      try {
+        if (obj.state) {
+          let state = await State.findOne(
+            { name: ObjectId(obj.state), isActive: true },
+            { _id: 1 }
+          ).exec();
+          if (!state) {
+            return Response.BadRequest(
+              res,
+              {},
+              `requested state does not exists.`
+            );
+          }
         }
-    } catch (e) {
+        if (obj.ulbType) {
+          let ulbType = await UlbType.findOne(
+            { name: ObjectId(obj.ulbType), isActive: true },
+            { _id: 1 }
+          ).exec();
+          if (!ulbType) {
+            return Response.BadRequest(
+              res,
+              {},
+              `requested ulb type does not exists.`
+            );
+          }
+        }
+        let du = await Ulb.update(condition, { $set: obj });
+        return Response.OK(res, du, `updated successfully.`);
+      } catch (err) {
+        console.log("Error caught", err);
         return Response.BadRequest(res, e);
+      }
+    } else {
     }
+  } catch (e) {
+    return Response.BadRequest(res, e);
+  }
 };
 module.exports.post = async function (req, res) {
-    let obj = req.body;
-    // state and ulb type is compulsory
-    if (obj.state && obj.type) {
-        try {
-            let message = '';
-            // find state  information based on name
-            let state = await State.findOne(
-                { name: obj.state, isActive: true },
-                { _id: 1 }
-            ).exec();
+  let obj = req.body;
+  // state and ulb type is compulsory
+  if (obj.state && obj.type) {
+    try {
+      let message = "";
+      // find state  information based on name
+      let state = await State.findOne(
+        { name: obj.state, isActive: true },
+        { _id: 1 }
+      ).exec();
 
-            // find ulb type information based on name
-            let ulbType = await UlbType.findOne(
-                { name: obj.type, isActive: true },
-                { _id: 1 }
-            ).exec();
+      // find ulb type information based on name
+      let ulbType = await UlbType.findOne(
+        { name: obj.type, isActive: true },
+        { _id: 1 }
+      ).exec();
 
-            state ? (obj.state = state._id) : (message += "State don't exists");
-            ulbType
-                ? (obj.ulbType = ulbType._id)
-                : (message += " Ulb don't exists");
+      state ? (obj.state = state._id) : (message += "State don't exists");
+      ulbType ? (obj.ulbType = ulbType._id) : (message += " Ulb don't exists");
 
-            if (!message) {
-                service.post(Ulb, obj, function (response, value) {
-                    return res.status(response ? 200 : 400).send(value);
-                });
-            } else {
-                return res.status(400).send({
-                    message: message,
-                    data: {},
-                });
-            }
-        } catch (err) {
-            console.log('Error caught', err);
-            return res.status(500).send({
-                message: 'Error Caught',
-                err: err,
-            });
-        }
-    } else {
-        return res.status(400).send({
-            message: 'State and Ulb type is compulsory',
-            data: {},
+      if (!message) {
+        service.post(Ulb, obj, function (response, value) {
+          return res.status(response ? 200 : 400).send(value);
         });
+      } else {
+        return res.status(400).send({
+          message: message,
+          data: {},
+        });
+      }
+    } catch (err) {
+      console.log("Error caught", err);
+      return res.status(500).send({
+        message: "Error Caught",
+        err: err,
+      });
     }
+  } else {
+    return res.status(400).send({
+      message: "State and Ulb type is compulsory",
+      data: {},
+    });
+  }
 };
 module.exports.delete = async function (req, res) {
-    // Delete ulb based
-    let condition = {
-            _id: req.params._id,
-        },
-        update = {
-            isActive: false,
-        };
-    service.put(condition, update, Ulb, function (response, value) {
-        return res.status(response ? 200 : 400).send(value);
-    });
+  // Delete ulb based
+  let condition = {
+      _id: req.params._id,
+    },
+    update = {
+      isActive: false,
+    };
+  service.put(condition, update, Ulb, function (response, value) {
+    return res.status(response ? 200 : 400).send(value);
+  });
 };
 module.exports.getByState = async function (req, res) {
-    try {
-        // Get ulb list by state code
-        let data = await Ulb.aggregate([
-            {
-                $lookup: {
-                    from: 'states',
-                    localField: 'state',
-                    foreignField: '_id',
-                    as: 'state',
-                },
+  try {
+    // Get ulb list by state code
+    let data = await Ulb.aggregate([
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "state",
+        },
+      },
+      { $unwind: "$state" },
+      {
+        $match: { "state.code": req.params.stateCode },
+      },
+      {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulbType",
+          foreignField: "_id",
+          as: "ulbType",
+        },
+      },
+      { $unwind: "$ulbType" },
+      {
+        $group: {
+          _id: "$state.code",
+          state: { $first: "$state.name" },
+          ulbs: {
+            $push: {
+              state: "$state.name",
+              code: "$code",
+              name: "$name",
+              natureOfUlb: "$natureOfUlb",
+              type: "$ulbType.name",
+              ward: "$ward",
+              area: "$area",
+              population: "$population",
+              amrut: "$amrut",
             },
-            { $unwind: '$state' },
-            {
-                $match: { 'state.code': req.params.stateCode },
-            },
-            {
-                $lookup: {
-                    from: 'ulbtypes',
-                    localField: 'ulbType',
-                    foreignField: '_id',
-                    as: 'ulbType',
-                },
-            },
-            { $unwind: '$ulbType' },
-            {
-                $group: {
-                    _id: '$state.code',
-                    state: { $first: '$state.name' },
-                    ulbs: {
-                        $push: {
-                            state: '$state.name',
-                            code: '$code',
-                            name: '$name',
-                            natureOfUlb: '$natureOfUlb',
-                            type: '$ulbType.name',
-                            ward: '$ward',
-                            area: '$area',
-                            population: '$population',
-                            amrut: '$amrut',
-                        },
-                    },
-                },
-            },
-            {
-                $project: {
-                    _id: 0,
-                    stateCode: '$_id',
-                    state: 1,
-                    ulbs: 1,
-                },
-            },
-        ]).exec();
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          stateCode: "$_id",
+          state: 1,
+          ulbs: 1,
+        },
+      },
+    ]).exec();
 
-        if (data.length == 1) {
-            return res
-                .status(200)
-                .send({ success: true, data: data[0], msg: 'ULBS Found' });
-        } else {
-            return res.status(200).send({
-                success: true,
-                data: {},
-                msg: 'No ULBS for this state Found',
-            });
-        }
-    } catch (e) {
-        console.log('Error', e.message);
-        return res
-            .status(500)
-            .send({ success: false, err: e.message, message: e.message });
+    if (data.length == 1) {
+      return res
+        .status(200)
+        .send({ success: true, data: data[0], msg: "ULBS Found" });
+    } else {
+      return res.status(200).send({
+        success: true,
+        data: {},
+        msg: "No ULBS for this state Found",
+      });
     }
+  } catch (e) {
+    console.log("Error", e.message);
+    return res
+      .status(500)
+      .send({ success: false, err: e.message, message: e.message });
+  }
 };
 module.exports.getUlbInfo = async function (stateCode, ulbCode) {
-    try {
-        // Get ulb information using ulbCode
-        let response = await Ulb.findOne({ code: ulbCode }).exec();
-        if (response) {
-            return response;
-        } else {
-            return null;
-        }
-    } catch (e) {
-        console.log('Error', e);
-        return {};
+  try {
+    // Get ulb information using ulbCode
+    let response = await Ulb.findOne({ code: ulbCode }).exec();
+    if (response) {
+      return response;
+    } else {
+      return null;
     }
+  } catch (e) {
+    console.log("Error", e);
+    return {};
+  }
 };
 
 module.exports.getUlbByCode = async function (req, res) {
-    try {
-        // get ulb information and other information based on ulbCode
-        let ulbCode = req.query.code;
-        let response = await Ulb.aggregate([
-            { $match: { code: ulbCode } },
-            {
-                $lookup: {
-                    from: 'states',
-                    localField: 'state',
-                    foreignField: '_id',
-                    as: 'state',
-                },
-            },
-            { $unwind: '$state' },
-            {
-                $lookup: {
-                    from: 'ulbtypes',
-                    localField: 'ulbType',
-                    foreignField: '_id',
-                    as: 'ulbType',
-                },
-            },
-            { $unwind: '$ulbType' },
-            {
-                $project: {
-                    _id: 1,
-                    stateCode: '$state.code',
-                    ulbs: 1,
-                    state: '$state.name',
-                    type: '$ulbType.name',
-                    wards: 1,
-                    area: 1,
-                    population: 1,
-                    natureOfUlb: 1,
-                    code: 1,
-                    name: 1,
-                    amrut: 1,
-                },
-            },
-        ]).exec();
-        if (response) {
-            return res.status(200).json({
-                success: true,
-                message: 'Ulb',
-                data: response.length ? response[0] : null,
-            });
-        } else {
-            return res.status(200).json({
-                success: true,
-                message: 'Ulb',
-                data: null,
-            });
-        }
-    } catch (e) {
-        console.log('Error', e);
-        return res.status(400).json({
-            success: true,
-            message: 'Db Error',
-            data: null,
-        });
+  try {
+    // get ulb information and other information based on ulbCode
+    let ulbCode = req.query.code;
+    let response = await Ulb.aggregate([
+      { $match: { code: ulbCode } },
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "state",
+        },
+      },
+      { $unwind: "$state" },
+      {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulbType",
+          foreignField: "_id",
+          as: "ulbType",
+        },
+      },
+      { $unwind: "$ulbType" },
+      {
+        $project: {
+          _id: 1,
+          stateCode: "$state.code",
+          ulbs: 1,
+          state: "$state.name",
+          type: "$ulbType.name",
+          wards: 1,
+          area: 1,
+          population: 1,
+          natureOfUlb: 1,
+          code: 1,
+          name: 1,
+          amrut: 1,
+        },
+      },
+    ]).exec();
+    if (response) {
+      return res.status(200).json({
+        success: true,
+        message: "Ulb",
+        data: response.length ? response[0] : null,
+      });
+    } else {
+      return res.status(200).json({
+        success: true,
+        message: "Ulb",
+        data: null,
+      });
     }
+  } catch (e) {
+    console.log("Error", e);
+    return res.status(400).json({
+      success: true,
+      message: "Db Error",
+      data: null,
+    });
+  }
 };
 
 module.exports.getAllUlbs = async function (req, res) {
-    try {
-        // Get all ulbs list in older format, so that everything works fine
-        let data = await Ulb.aggregate([
-            {
-                $lookup: {
-                    from: 'states',
-                    localField: 'state',
-                    foreignField: '_id',
-                    as: 'state',
-                },
+  try {
+    // Get all ulbs list in older format, so that everything works fine
+    let data = await Ulb.aggregate([
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "state",
+        },
+      },
+      { $unwind: "$state" },
+      {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulbType",
+          foreignField: "_id",
+          as: "ulbType",
+        },
+      },
+      { $unwind: "$ulbType" },
+      {
+        $group: {
+          _id: "$state.code",
+          state: { $first: "$state.name" },
+          ulbs: {
+            $push: {
+              _id: "$_id",
+              state: "$state.name",
+              code: "$code",
+              name: "$name",
+              natureOfUlb: "$natureOfUlb",
+              type: "$ulbType.name",
+              ward: "$ward",
+              area: "$area",
+              population: "$population",
+              amrut: "$amrut",
             },
-            { $unwind: '$state' },
-            {
-                $lookup: {
-                    from: 'ulbtypes',
-                    localField: 'ulbType',
-                    foreignField: '_id',
-                    as: 'ulbType',
-                },
-            },
-            { $unwind: '$ulbType' },
-            {
-                $group: {
-                    _id: '$state.code',
-                    state: { $first: '$state.name' },
-                    ulbs: {
-                        $push: {
-                            _id: '$_id',
-                            state: '$state.name',
-                            code: '$code',
-                            name: '$name',
-                            natureOfUlb: '$natureOfUlb',
-                            type: '$ulbType.name',
-                            ward: '$ward',
-                            area: '$area',
-                            population: '$population',
-                            amrut: '$amrut',
-                        },
-                    },
-                },
-            },
-            {
-                $project: {
-                    _id: 0,
-                    stateCode: '$_id',
-                    ulbs: 1,
-                    state: 1,
-                },
-            },
-        ]).exec();
-        if (data.length) {
-            let obj = {};
-            for (let el of data) {
-                obj[el.stateCode] = {
-                    state: el.state,
-                    ulbs: el.ulbs,
-                };
-            }
-            return res
-                .status(200)
-                .send({ success: true, data: obj, msg: 'ULBS Found' });
-        } else {
-            return res
-                .status(200)
-                .send({ success: true, data: {}, msg: 'No ULBS Found' });
-        }
-    } catch (e) {
-        console.log('Erro', e);
-        return {};
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          stateCode: "$_id",
+          ulbs: 1,
+          state: 1,
+        },
+      },
+    ]).exec();
+    if (data.length) {
+      let obj = {};
+      for (let el of data) {
+        obj[el.stateCode] = {
+          state: el.state,
+          ulbs: el.ulbs,
+        };
+      }
+      return res
+        .status(200)
+        .send({ success: true, data: obj, msg: "ULBS Found" });
+    } else {
+      return res
+        .status(200)
+        .send({ success: true, data: {}, msg: "No ULBS Found" });
     }
+  } catch (e) {
+    console.log("Erro", e);
+    return {};
+  }
 };
 
 // Get all ledgers present in database in CSV Format
 module.exports.getAllULBSCSV = function (req, res) {
-    let filename = 'All Ulbs ' + moment().format('DD-MMM-YY HH:MM:SS') + '.csv';
+  let filename = "All Ulbs " + moment().format("DD-MMM-YY HH:MM:SS") + ".csv";
 
-    // Set approrpiate download headers
-    res.setHeader('Content-disposition', 'attachment; filename=' + filename);
-    res.writeHead(200, { 'Content-Type': 'text/csv;charset=utf-8,%EF%BB%BF' });
-    res.write(
-        'ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus \r\n'
-    );
-    // Flush the headers before we start pushing the CSV content
-    res.flushHeaders();
+  // Set approrpiate download headers
+  res.setHeader("Content-disposition", "attachment; filename=" + filename);
+  res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+  res.write(
+    "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus \r\n"
+  );
+  // Flush the headers before we start pushing the CSV content
+  res.flushHeaders();
 
-    Ulb.aggregate([
-        {
-            $lookup: {
-                from: 'states',
-                as: 'states',
-                foreignField: '_id',
-                localField: 'state',
-            },
-        },
-        {
-            $lookup: {
-                from: 'ulbtypes',
-                as: 'ulbtypes',
-                foreignField: '_id',
-                localField: 'ulbType',
-            },
-        },
-        {
-            $project: {
-                ulbs: { $arrayElemAt: ['$ulbs', 0] },
-                states: { $arrayElemAt: ['$states', 0] },
-                ulbtypes: { $arrayElemAt: ['$ulbtypes', 0] },
-                natureOfUlb: 1,
-                lineitems: { $arrayElemAt: ['$lineitems', 0] },
-                financialYear: '$financialYear',
-                area: 1,
-                population: 1,
-                amrut: 1,
-                name: 1,
-                code: 1,
-                wards: 1,
-                location: 1,
-                isMillionPlus: 1,
-                censusCode: 1,
-                sbCode: 1,
-            },
-        },
-        {
-            $project: {
-                _id: 0,
-                ulb: { $cond: ['$ulbs', '$ulbs', 'NA'] },
-                state: { $cond: ['$states', '$states', 'NA'] },
-                ulbtypes: { $cond: ['$ulbtypes', '$ulbtypes', 'NA'] },
-                financialYear: 1,
-                natureOfUlb: 1,
-                area: 1,
-                population: 1,
-                amrut: 1,
-                name: 1,
-                code: 1,
-                wards: 1,
-                location: 1,
-                isMillionPlus: 1,
-                censusCode: { $cond: ['$censusCode', '$censusCode', 'NA'] },
-                sbCode: { $cond: ['$sbCode', '$sbCode', 'NA'] },
-            },
-        },
-    ]).exec((err, data) => {
-        if (err) {
-            res.json({
-                success: false,
-                msg: 'Invalid Payload',
-                data: err.toString(),
-            });
-        } else {
-            for (let el of data) {
-                el.natureOfUlb = el.natureOfUlb ? el.natureOfUlb : '';
-                el.name = el.name
-                    ? el.name.toString().replace(/[,]/g, ' | ')
-                    : '';
-                el.location = el.location
-                    ? el.location
-                    : { lat: 'NA', lng: 'NA' };
-                res.write(
-                    el.name +
-                        ',' +
-                        el.code +
-                        ',' +
-                        el.censusCode +
-                        ',' +
-                        el.sbCode +
-                        ',' +
-                        el.ulbtypes.name +
-                        ',' +
-                        el.state.name +
-                        ',' +
-                        el.state.code +
-                        ',' +
-                        el.natureOfUlb +
-                        ',' +
-                        el.area +
-                        ',' +
-                        el.wards +
-                        ',' +
-                        el.population +
-                        ',' +
-                        el.amrut +
-                        ',' +
-                        el.location.lat +
-                        ',' +
-                        el.location.lng +
-                        ',' +
-                        el.isMillionPlus +
-                        '\r\n'
-                );
-            }
-            res.end();
-        }
-    });
+  Ulb.aggregate([
+    {
+      $lookup: {
+        from: "states",
+        as: "states",
+        foreignField: "_id",
+        localField: "state",
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbtypes",
+        as: "ulbtypes",
+        foreignField: "_id",
+        localField: "ulbType",
+      },
+    },
+    {
+      $project: {
+        ulbs: { $arrayElemAt: ["$ulbs", 0] },
+        states: { $arrayElemAt: ["$states", 0] },
+        ulbtypes: { $arrayElemAt: ["$ulbtypes", 0] },
+        natureOfUlb: 1,
+        lineitems: { $arrayElemAt: ["$lineitems", 0] },
+        financialYear: "$financialYear",
+        area: 1,
+        population: 1,
+        amrut: 1,
+        name: 1,
+        code: 1,
+        wards: 1,
+        location: 1,
+        isMillionPlus: 1,
+        censusCode: 1,
+        sbCode: 1,
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        ulb: { $cond: ["$ulbs", "$ulbs", "NA"] },
+        state: { $cond: ["$states", "$states", "NA"] },
+        ulbtypes: { $cond: ["$ulbtypes", "$ulbtypes", "NA"] },
+        financialYear: 1,
+        natureOfUlb: 1,
+        area: 1,
+        population: 1,
+        amrut: 1,
+        name: 1,
+        code: 1,
+        wards: 1,
+        location: 1,
+        isMillionPlus: 1,
+        censusCode: { $cond: ["$censusCode", "$censusCode", "NA"] },
+        sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
+      },
+    },
+  ]).exec((err, data) => {
+    if (err) {
+      res.json({
+        success: false,
+        msg: "Invalid Payload",
+        data: err.toString(),
+      });
+    } else {
+      for (let el of data) {
+        el.natureOfUlb = el.natureOfUlb ? el.natureOfUlb : "";
+        el.name = el.name ? el.name.toString().replace(/[,]/g, " | ") : "";
+        el.location = el.location ? el.location : { lat: "NA", lng: "NA" };
+        res.write(
+          el.name +
+            "," +
+            el.code +
+            "," +
+            el.censusCode +
+            "," +
+            el.sbCode +
+            "," +
+            el.ulbtypes.name +
+            "," +
+            el.state.name +
+            "," +
+            el.state.code +
+            "," +
+            el.natureOfUlb +
+            "," +
+            el.area +
+            "," +
+            el.wards +
+            "," +
+            el.population +
+            "," +
+            el.amrut +
+            "," +
+            el.location.lat +
+            "," +
+            el.location.lng +
+            "," +
+            el.isMillionPlus +
+            "\r\n"
+        );
+      }
+      res.end();
+    }
+  });
 };
 
 module.exports.getPopulate = async (req, res, next) => {
-    try {
-        let data = await Ulb.find({}, '_id name code state ulbType')
-            .populate('state', '_id name')
-            .populate('ulbType', '_id name')
-            .exec();
-        return res.status(200).json({
-            timestamp: moment().unix(),
-            success: true,
-            message: 'Ulb list',
-            data: data,
-        });
-    } catch (e) {
-        console.log('Caught Exception:', e);
-        return res.status(500).json({
-            timestamp: moment().unix(),
-            success: true,
-            message: 'Ulb Exception:' + e.message,
-        });
-    }
+  try {
+    let data = await Ulb.find({}, "_id name code state ulbType")
+      .populate("state", "_id name")
+      .populate("ulbType", "_id name")
+      .exec();
+    return res.status(200).json({
+      timestamp: moment().unix(),
+      success: true,
+      message: "Ulb list",
+      data: data,
+    });
+  } catch (e) {
+    console.log("Caught Exception:", e);
+    return res.status(500).json({
+      timestamp: moment().unix(),
+      success: true,
+      message: "Ulb Exception:" + e.message,
+    });
+  }
 };
 module.exports.getUlbs = async (req, res) => {
-    try {
-        let query = {};
-        if (req.query.state) {
-            query['state'] = Schema.Types.ObjectId(req.query.state);
-        }
-        let selectiveUlbs = await UlbLedger.distinct('ulb', {
-            isActive: true,
-        }).exec();
-        query['_id'] = { $in: selectiveUlbs };
-        let ulbs = await Ulb.find(query, {
-            _id: 1,
-            name: 1,
-            code: 1,
-            state: 1,
-            location: 1,
-            population: 1,
-            area: 1,
-        }).exec();
-        return res.status(200).json({
-            message: 'Ulb list with population and coordinates and population.',
-            success: true,
-            data: ulbs,
-        });
-    } catch (e) {
-        console.log('Exception', e);
-        return res
-            .status(400)
-            .json({ message: '', errMessage: e.message, success: false });
+  try {
+    let query = {};
+    if (req.query.state) {
+      query["state"] = Schema.Types.ObjectId(req.query.state);
     }
+    let selectiveUlbs = await UlbLedger.distinct("ulb", {
+      isActive: true,
+    }).exec();
+    query["_id"] = { $in: selectiveUlbs };
+    let ulbs = await Ulb.find(query, {
+      _id: 1,
+      name: 1,
+      code: 1,
+      state: 1,
+      location: 1,
+      population: 1,
+      area: 1,
+    }).exec();
+    return res.status(200).json({
+      message: "Ulb list with population and coordinates and population.",
+      success: true,
+      data: ulbs,
+    });
+  } catch (e) {
+    console.log("Exception", e);
+    return res
+      .status(400)
+      .json({ message: "", errMessage: e.message, success: false });
+  }
 };
 module.exports.getUlbsWithAuditStatus = async (req, res) => {
-    try {
-        let query = {};
-        if (req.query.state) {
-            query['state'] = Schema.Types.ObjectId(req.query.state);
-        }
-        let condition = { isActive: true };
-        let financialYear =
-            req.body.year && req.body.year.length ? req.body.year : null;
-        financialYear
-            ? (condition['financialYear'] = { $in: financialYear })
-            : null;
-
-        let auditLineItem = await LineItem.findOne({ code: '1001' }).exec();
-        if (financialYear && financialYear.length) {
-            let commonUlbs = await getUlbs(financialYear);
-            condition['ulb'] = { $in: commonUlbs };
-        }
-        let ulbs = await UlbLedger.aggregate([
-            { $match: condition },
-            {
-                $group: {
-                    _id: {
-                        ulb: '$ulb',
-                    },
-                    lineItem: {
-                        $addToSet: { _id: '$lineItem', amount: '$amount' },
-                    },
-                },
-            },
-            {
-                $project: {
-                    ulb: '$_id.ulb',
-                    lineItem: {
-                        $filter: {
-                            input: '$lineItem',
-                            as: 'lineItem',
-                            cond: {
-                                $and: [
-                                    {
-                                        $eq: [
-                                            '$$lineItem._id',
-                                            auditLineItem._id,
-                                        ],
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                },
-            },
-            {
-                $project: {
-                    ulb: 1,
-                    lineItem: { $arrayElemAt: ['$lineItem', 0] },
-                },
-            },
-            {
-                $project: {
-                    ulb: 1,
-                    amount: '$lineItem.amount',
-                },
-            },
-            {
-                $project: {
-                    ulb: 1,
-                    auditStatus: {
-                        $switch: {
-                            branches: [
-                                {
-                                    case: { $eq: ['$amount', 0] },
-                                    then: 'unaudited',
-                                },
-                                {
-                                    case: { $gt: ['$amount', 0] },
-                                    then: 'audited',
-                                },
-                            ],
-                            default: 'auditNA',
-                        },
-                    },
-                },
-            },
-            {
-                $lookup: {
-                    from: 'ulbs',
-                    as: 'ulb',
-                    foreignField: '_id',
-                    localField: 'ulb',
-                },
-            },
-            { $unwind: '$ulb' },
-            {
-                $project: {
-                    state: '$ulb.state',
-                    code: '$ulb.code',
-                    name: '$ulb.name',
-                    _id: '$ulb._id',
-                    area: '$ulb.area',
-                    population: '$ulb.population',
-                    auditStatus: 1,
-                    location: '$ulb.location',
-                },
-            },
-        ]);
-        return res.status(200).json({
-            message: 'Ulb list with population and coordinates and population.',
-            success: true,
-            data: ulbs,
-        });
-    } catch (e) {
-        console.log('Exception', e);
-        return res
-            .status(400)
-            .json({ message: '', errMessage: e.message, success: false });
+  try {
+    let query = {};
+    if (req.query.state) {
+      query["state"] = Schema.Types.ObjectId(req.query.state);
     }
+    let condition = { isActive: true };
+    let financialYear =
+      req.body.year && req.body.year.length ? req.body.year : null;
+    financialYear
+      ? (condition["financialYear"] = { $in: financialYear })
+      : null;
+
+    let auditLineItem = await LineItem.findOne({ code: "1001" }).exec();
+    if (financialYear && financialYear.length) {
+      let commonUlbs = await getUlbs(financialYear);
+      condition["ulb"] = { $in: commonUlbs };
+    }
+    let ulbs = await UlbLedger.aggregate([
+      { $match: condition },
+      {
+        $group: {
+          _id: {
+            ulb: "$ulb",
+          },
+          lineItem: {
+            $addToSet: { _id: "$lineItem", amount: "$amount" },
+          },
+        },
+      },
+      {
+        $project: {
+          ulb: "$_id.ulb",
+          lineItem: {
+            $filter: {
+              input: "$lineItem",
+              as: "lineItem",
+              cond: {
+                $and: [
+                  {
+                    $eq: ["$$lineItem._id", auditLineItem._id],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          ulb: 1,
+          lineItem: { $arrayElemAt: ["$lineItem", 0] },
+        },
+      },
+      {
+        $project: {
+          ulb: 1,
+          amount: "$lineItem.amount",
+        },
+      },
+      {
+        $project: {
+          ulb: 1,
+          auditStatus: {
+            $switch: {
+              branches: [
+                {
+                  case: { $eq: ["$amount", 0] },
+                  then: "unaudited",
+                },
+                {
+                  case: { $gt: ["$amount", 0] },
+                  then: "audited",
+                },
+              ],
+              default: "auditNA",
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "ulbs",
+          as: "ulb",
+          foreignField: "_id",
+          localField: "ulb",
+        },
+      },
+      { $unwind: "$ulb" },
+      {
+        $project: {
+          state: "$ulb.state",
+          code: "$ulb.code",
+          name: "$ulb.name",
+          _id: "$ulb._id",
+          area: "$ulb.area",
+          population: "$ulb.population",
+          auditStatus: 1,
+          location: "$ulb.location",
+        },
+      },
+    ]);
+    return res.status(200).json({
+      message: "Ulb list with population and coordinates and population.",
+      success: true,
+      data: ulbs,
+    });
+  } catch (e) {
+    console.log("Exception", e);
+    return res
+      .status(400)
+      .json({ message: "", errMessage: e.message, success: false });
+  }
 };
 module.exports.getOverallUlb = async function (req, res) {
-    let query = {};
-    query['isActive'] = true;
-    if (req.params && req.params._code) {
-        query['code'] = req.params._code;
-    }
-    // Get any ulb
-    // Ulb is model name
-    service.find(query, OverallUlb, function (response, value) {
-        return res.status(response ? 200 : 400).send(value);
-    });
+  let query = {};
+  query["isActive"] = true;
+  if (req.params && req.params._code) {
+    query["code"] = req.params._code;
+  }
+  // Get any ulb
+  // Ulb is model name
+  service.find(query, OverallUlb, function (response, value) {
+    return res.status(response ? 200 : 400).send(value);
+  });
 };
 const getUlbs = (yrs) => {
-    return new Promise(async (resolve, reject) => {
-        let years = yrs ? yrs.sort() : [];
-        let ulbs = [];
-        try {
-            for (let i = 0; i < years.length; i++) {
-                let year = years[i];
-                let query = { financialYear: year };
-                if (i > 0) {
-                    query['ulb'] = { $in: ulbs };
-                }
-                ulbs = await UlbLedger.distinct('ulb', query).exec();
-            }
-            resolve(ulbs);
-        } catch (e) {
-            console.log(e);
-            reject(e);
+  return new Promise(async (resolve, reject) => {
+    let years = yrs ? yrs.sort() : [];
+    let ulbs = [];
+    try {
+      for (let i = 0; i < years.length; i++) {
+        let year = years[i];
+        let query = { financialYear: year };
+        if (i > 0) {
+          query["ulb"] = { $in: ulbs };
         }
-    });
+        ulbs = await UlbLedger.distinct("ulb", query).exec();
+      }
+      resolve(ulbs);
+    } catch (e) {
+      console.log(e);
+      reject(e);
+    }
+  });
 };
 
 module.exports.getUlbInUas = async function (req, res) {
-    try {
-        const {state} = req.query
-        let response = await Ulb.find({state:ObjectId(state)}).select({name:1,_id:1})
-        let newRes = {}
-        response.forEach(element => {
-            newRes[element._id] = element.name
-            newRes[element.name] = element._id
-        });
-        if (response) {
-            return res.status(200).json({
-                success: true,
-                message: 'Ulb',
-                data: newRes,
-            });
-        } else {
-            return res.status(200).json({
-                success: true,
-                message: 'Ulb',
-                data: null,
-            });
-        }
-    } catch (e) {
-        console.log('Error', e);
-        return res.status(400).json({
-            success: true,
-            message: 'Db Error',
-            data: null,
-        });
+  try {
+    const state = req.decoded.state ?? req.query;
+    let response = await Ulb.find({ state: ObjectId(state) }).select({
+      name: 1,
+      _id: 1,
+    });
+    let newRes = {};
+    response.forEach((element) => {
+      newRes[element._id] = element.name;
+      newRes[element.name] = element._id;
+    });
+    if (response) {
+      return res.status(200).json({
+        success: true,
+        message: "Ulb",
+        data: newRes,
+      });
+    } else {
+      return res.status(400).json({
+        success: true,
+        message: "No Ulb Found",
+        data: null,
+      });
     }
+  } catch (e) {
+    console.log("Error", e);
+    return res.status(400).json({
+      success: true,
+      message: "Db Error",
+      data: null,
+    });
+  }
 };
