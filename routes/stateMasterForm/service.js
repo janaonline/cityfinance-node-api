@@ -451,3 +451,73 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         });
     }
 })
+
+module.exports.finalAction = catchAsync(async (req, res) => {
+    let user = req.decoded;
+    if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: "User Not Found",
+        });
+    }
+    if (user.role === "MoHUA") {
+        let data = req.body;
+        let design_year = (data.design_year);
+        let { state_id } = req.query
+        let state = user.state ?? state_id
+        if (!design_year) {
+            return res.status(400).json({
+                success: false,
+                message: "Design Year Not Found",
+            });
+        }
+        data["actionTakenBy"] = ObjectId(user._id);
+        data["actionTakenByRole"] = (user.role);
+        data["modifiedAt"] = time();
+        console.log(data)
+        //isSubmit and Status comes in the req.body
+        let query = {
+            design_year: ObjectId(design_year),
+            state: ObjectId(state),
+        };
+        //create History
+        let masterFormData = await StateMasterForm.findOne(query).lean()
+        if (masterFormData) {
+            //calculate overall status of Form
+            masterFormData.status = "APPROVED"
+            for (let key in masterFormData.steps) {
+                if (masterFormData.steps[key]['status'] === "REJECTED") {
+                    masterFormData.status = "REJECTED";
+                    break;
+                }
+            }
+            data['latestFinalResponse'] = masterFormData.steps
+            data['latestFinalResponse']['role'] = masterFormData.actionTakenByRole
+            masterFormData['modifiedAt'] = data["modifiedAt"]
+            data['history'] = [...masterFormData.history];
+            masterFormData.history = undefined;
+            data['history'].push(masterFormData);
+        }
+        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true })
+
+
+
+        if (updatedData) {
+            return res.status(200).json({
+                success: true,
+                message: "Final Submit Successful!",
+                data: updatedData,
+            });
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: "Final Submit Failed!",
+            });
+        }
+    } else {
+        return res.status(403).json({
+            success: false,
+            message: user.role + " Not Authenticated to Perform this Action",
+        });
+    }
+})
