@@ -96,6 +96,10 @@ const ActionPlansSchema = new Schema(
       ref: "User",
       required: true,
     },
+    actionTakenByRole: {
+      type: String,
+      default: null,
+    },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

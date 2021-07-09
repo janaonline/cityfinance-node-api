@@ -53,6 +53,10 @@ const UtilizationReportSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    actionTakenByRole: {
+      type: String,
+      default: null,
+    },
     rejectReason: { type: String, default: "" },
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },

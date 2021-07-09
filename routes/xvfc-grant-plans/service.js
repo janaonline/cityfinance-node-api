@@ -76,6 +76,15 @@ exports.getPlans = async (req, res) => {
       return res.status(400).json({ msg: "No Plan found" });
     }
 
+    if (
+      req.decoded.role === "MoHUA" &&
+      plan.actionTakenByRole === "STATE" &&
+      plan.status == "APPROVED"
+    ) {
+      plan.status = "PENDING";
+      plan.rejectReason = null;
+    }
+
     return res.status(200).json(plan);
   } catch (err) {
     console.error(err.message);
@@ -87,6 +96,8 @@ exports.action = async (req, res) => {
   try {
     let { ulb, designYear, isDraft } = req.body;
     req.body.actionTakenBy = req.decoded._id;
+    req.body.actionTakenByRole = req.decoded.role;
+    req.body.modifiedAt = new Date();
 
     let currentSavedPlan = await Plans.findOne({
       ulb: ObjectId(ulb),
