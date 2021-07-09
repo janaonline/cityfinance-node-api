@@ -125,9 +125,7 @@ exports.action = async (req, res) => {
         { ulb: ObjectId(data.ulb), isActive: true, design_year },
         { $set: updateData, $push: { history: currentState } }
       );
-      if (!updatedRecord) {
-        return res.status(400).json({ msg: "No Record Found" });
-      }
+      await UpdateStateMasterForm(req, "GTCertificate");
 
       return res.status(200).json({ msg: "Action successful" });
     }

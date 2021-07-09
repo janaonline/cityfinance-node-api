@@ -88,9 +88,7 @@ exports.action = async (req, res) => {
       },
       { $set: req.body, $push: { history: currentWaterRejenuvation } }
     );
-    if (!newWaterRejenuvation) {
-      return Response.BadRequest(res, null, "No WaterRejenuvation found");
-    }
+    await UpdateStateMasterForm(req, "waterRejuventation");
     return Response.OK(res, newWaterRejenuvation, "Action Submitted!");
   } catch (err) {
     console.error(err.message);

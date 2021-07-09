@@ -89,9 +89,7 @@ exports.action = async (req, res) => {
       { $set: req.body, $push: { history: currentActionPlans } }
     );
 
-    if (!newActionPlans) {
-      return Response.BadRequest(res, null, "No ActionPlans found");
-    }
+    await UpdateStateMasterForm(req, "actionPlans");
     return Response.OK(res, newActionPlans, "Action Submitted!");
   } catch (err) {
     console.error(err.message);
