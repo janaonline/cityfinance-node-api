@@ -484,19 +484,21 @@ module.exports.finalAction = catchAsync(async (req, res) => {
         let masterFormData = await StateMasterForm.findOne(query).lean()
         if (masterFormData) {
             //calculate overall status of Form
-            masterFormData.status = "APPROVED"
-            for (let key in masterFormData.steps) {
-                if (masterFormData.steps[key]['status'] === "REJECTED") {
-                    masterFormData.status = "REJECTED";
+            data['status'] = "APPROVED"
+            for (let key in masterFormData['steps']) {
+                if (masterFormData['steps'][key]['status'] === "REJECTED") {
+                    data['status'] = "REJECTED";
                     break;
                 }
             }
             data['latestFinalResponse'] = masterFormData.steps
             data['latestFinalResponse']['role'] = masterFormData.actionTakenByRole
             masterFormData['modifiedAt'] = data["modifiedAt"]
+            masterFormData['status'] = data["status"]
             data['history'] = [...masterFormData.history];
             masterFormData.history = undefined;
             data['history'].push(masterFormData);
+            console.log(masterFormData)
         }
         let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true })
 
