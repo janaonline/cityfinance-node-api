@@ -161,7 +161,7 @@ exports.action = async (req, res) => {
       allReasons.push(audited);
     }
     req.body.status = finalStatus;
-    req.body.rejectReason = allReasons;
+    if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
 
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), isActive: true },

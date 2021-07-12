@@ -89,29 +89,27 @@ module.exports.get = catchAsync(async (req, res) => {
         message: "Master Data Not Found for " + user.name,
       });
     } else {
-      data = { ...masterFormData[0] };
-      if (masterFormData[0].actionTakenByRole != user.role) {
-        masterFormData[0] = {
-          ...masterFormData[0].history[masterFormData[0].history.length - 1],
-        };
+      masterFormData = JSON.parse(JSON.stringify(masterFormData[0]));
+      if (masterFormData.actionTakenByRole != user.role) {
+        if (masterFormData.history.length != 0)
+          masterFormData =
+            masterFormData.history[masterFormData.history.length - 1];
       }
-      data = { ...masterFormData[0], ...data };
-      data.history = null;
-
       if (
         user.role == "MoHUA" &&
-        data.actionTakenByRole == "STATE" &&
-        data.status == "APPROVED"
+        masterFormData.actionTakenByRole == "STATE" &&
+        masterFormData.status == "APPROVED"
       ) {
-        for (const key in data.steps) {
-          data.steps[key].status = "PENDING";
+        for (const key in masterFormData.steps) {
+          masterFormData.steps[key].status = "PENDING";
         }
+        masterFormData = await updateDataInMaster(masterFormData, req.decoded);
       }
 
       return res.status(200).json({
         success: true,
         message: "Data Found Successfully!",
-        response: data,
+        response: masterFormData,
       });
     }
   }
@@ -134,6 +132,143 @@ module.exports.get = catchAsync(async (req, res) => {
     });
   }
 });
+
+const updateDataInMaster = async (data, user) => {
+  const { design_year, state, ulb } = data;
+  let newData = new MasterForm();
+  newData.actionTakenBy = user._id;
+  newData.actionTakenByRole = user.role;
+  newData.modifiedAt = new Date();
+  newData.steps = data.steps;
+  newData = JSON.parse(JSON.stringify(newData));
+  delete newData.history;
+  delete newData._id;
+  let query = [
+    {
+      $match: {
+        _id: ObjectId(ulb),
+      },
+    },
+    {
+      $lookup: {
+        from: "annualaccountdatas",
+        pipeline: [
+          {
+            $match: {
+              ulb: ObjectId(ulb),
+              design_year: ObjectId(design_year),
+            },
+          },
+          {
+            $project: {
+              status: 1,
+              actionTakenByRole: 1,
+              isSubmit: 1,
+            },
+          },
+        ],
+        as: "annualAccountData",
+      },
+    },
+    {
+      $lookup: {
+        from: "utilizationreports",
+        pipeline: [
+          {
+            $match: {
+              ulb: ObjectId(ulb),
+              designYear: ObjectId(design_year),
+            },
+          },
+          {
+            $project: {
+              status: 1,
+              actionTakenByRole: 1,
+              isSubmit: 1,
+            },
+          },
+        ],
+        as: "utilizationReport",
+      },
+    },
+    {
+      $lookup: {
+        from: "xvfcgrantplans",
+        pipeline: [
+          {
+            $match: {
+              ulb: ObjectId(ulb),
+              designYear: ObjectId(design_year),
+            },
+          },
+          {
+            $project: {
+              status: 1,
+              actionTakenByRole: 1,
+              isSubmit: 1,
+            },
+          },
+        ],
+        as: "plansData",
+      },
+    },
+    {
+      $lookup: {
+        from: "xvfcgrantulbforms",
+        pipeline: [
+          {
+            $match: {
+              ulb: ObjectId(ulb),
+              design_year: ObjectId(design_year),
+            },
+          },
+          {
+            $project: {
+              waterManagement: 1,
+              actionTakenByRole: 1,
+              isSubmit: 1,
+            },
+          },
+        ],
+        as: "SLBs",
+      },
+    },
+    {
+      $project: {
+        SLBs: 1,
+        plansData: 1,
+        utilizationReport: 1,
+        annualAccountData: 1,
+      },
+    },
+  ];
+  let compareData = await Ulb.aggregate(query);
+  compareData = JSON.parse(JSON.stringify(compareData[0]));
+  if (compareData.annualAccountData[0].actionTakenByRole == "MoHUA") {
+    newData.steps.annualAccounts.status =
+      compareData.annualAccountData[0].status;
+  }
+  if (compareData.SLBs[0].actionTakenByRole == "MoHUA") {
+    newData.steps.slbForWaterSupplyAndSanitation.status =
+      compareData.SLBs[0].waterManagement.status;
+  }
+  if (compareData.plansData[0].actionTakenByRole == "MoHUA") {
+    newData.steps.plans.status = compareData.plansData[0].status;
+  }
+  if (compareData.utilizationReport[0].actionTakenByRole == "MoHUA") {
+    newData.steps.utilReport.status = compareData.utilizationReport[0].status;
+  }
+  await MasterFormData.findOneAndUpdate(
+    { state: ObjectId(state), design_year: ObjectId(design_year) },
+    newData,
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    }
+  );
+  return newData;
+};
 
 module.exports.getAll = catchAsync(async (req, res) => {
   let statusFilter = {
@@ -2136,7 +2271,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
     currentMasterForm.isSubmit = req.body.isSubmit;
 
     let updatedData = await MasterFormData.findOneAndUpdate(query, {
-      $set: req.body,
+      $set: data,
       $push: { history: currentMasterForm },
       new: true,
     });
@@ -2478,7 +2613,7 @@ module.exports.getHistory = catchAsync(async (req, res) => {
         let output = {};
 
         if (el.actionTakenByRole == "ULB" && el.status == "PENDING") {
-          output["status"] = "Submitted by ULB";
+          output["status"] = "Submitted By ULB";
           output["time"] = el.modifiedAt;
         } else if (el.actionTakenByRole == "STATE" && el.status == "APPROVED") {
           output["status"] = "Approved By State";
