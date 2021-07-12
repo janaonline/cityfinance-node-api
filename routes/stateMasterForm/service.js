@@ -2,6 +2,11 @@ const catchAsync = require("../../util/catchAsync");
 const StateMasterForm = require("../../models/StateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require('../../models/State')
+const ActionPlans = require('../../models/ActionPlans')
+const Grantallocation = require('../../models/GrantDistribution')
+const PFMSState = require('../../models/LinkPfmsState')
+const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
+const GTCertificate = require('../../models/StateGTCertificate')
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -358,22 +363,22 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
                 "linkPFMS": {
                     rejectReason: null,
                     status: "PENDING",
-                    isSubmit: false,
+                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
                 },
                 "GTCertificate": {
                     rejectReason: null,
                     status: "PENDING",
-                    isSubmit: false,
+                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
                 },
                 "waterRejuventation": {
                     rejectReason: [],
                     status: "PENDING",
-                    isSubmit: false,
+                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
                 },
                 "actionPlans": {
                     rejectReason: [],
                     status: "PENDING",
-                    isSubmit: false,
+                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
 
                 },
                 "grantAllocation": {
@@ -522,4 +527,22 @@ module.exports.finalAction = catchAsync(async (req, res) => {
             message: user.role + " Not Authenticated to Perform this Action",
         });
     }
+})
+
+
+module.exports.deleteForms = catchAsync(async (req, res) => {
+    let data = req.body;
+    let user = req.decoded;
+    let query = {
+        state: ObjectId(data.state),
+        design_year: ObjectId(data.design_year)
+
+    }
+    await ActionPlans.findOneAndDelete(query)
+    await Grantallocation.findOneAndDelete(query)
+    await PFMSState.findOneAndDelete(query)
+    await WaterRejuvenation.findOneAndDelete(query)
+    await GTCertificate.findOneAndDelete(query)
+    await StateMasterForm.findOneAndDelete(query)
+    res.send("Data Deleted")
 })
