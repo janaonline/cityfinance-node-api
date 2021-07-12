@@ -362,23 +362,23 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
             "steps": {
                 "linkPFMS": {
                     rejectReason: null,
-                    status: "PENDING",
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    status: updatedData.steps.linkPFMS.status != 'PENDING' ? updatedData.steps.linkPFMS.status : 'PENDING',
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.linkPFMS.isSubmit : false,
                 },
                 "GTCertificate": {
                     rejectReason: null,
-                    status: "PENDING",
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    status: updatedData.steps.GTCertificate.status != 'PENDING' ? updatedData.steps.GTCertificate.status : 'PENDING',
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.GTCertificate.isSubmit : false,
                 },
                 "waterRejuventation": {
                     rejectReason: [],
-                    status: "PENDING",
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    status: updatedData.steps.waterRejuventation.status != 'PENDING' ? updatedData.steps.waterRejuventation.status : 'PENDING',
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.waterRejuventation.isSubmit : false,
                 },
                 "actionPlans": {
                     rejectReason: [],
-                    status: "PENDING",
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    status: updatedData.steps.actionPlans.status != 'PENDING' ? updatedData.steps.actionPlans.status : 'PENDING',
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.actionPlans.isSubmit : false,
 
                 },
                 "grantAllocation": {
