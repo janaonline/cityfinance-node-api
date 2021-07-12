@@ -338,7 +338,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         data["modifiedAt"] = time();
 
 
-        console.log(data)
+        // console.log(data)
         //isSubmit and Status comes in the req.body
         let query = {
             design_year: ObjectId(design_year),
@@ -357,28 +357,29 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         }
 
 
-        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true })
+        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true });
+        updatedData.toObject();
         let newData = {
             "steps": {
                 "linkPFMS": {
                     rejectReason: null,
                     status: updatedData.steps.linkPFMS.status != 'PENDING' ? updatedData.steps.linkPFMS.status : 'PENDING',
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.linkPFMS.isSubmit : false,
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.linkPFMS.isSubmit : false,
                 },
                 "GTCertificate": {
                     rejectReason: null,
                     status: updatedData.steps.GTCertificate.status != 'PENDING' ? updatedData.steps.GTCertificate.status : 'PENDING',
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.GTCertificate.isSubmit : false,
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.GTCertificate.isSubmit : false,
                 },
                 "waterRejuventation": {
                     rejectReason: [],
                     status: updatedData.steps.waterRejuventation.status != 'PENDING' ? updatedData.steps.waterRejuventation.status : 'PENDING',
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.waterRejuventation.isSubmit : false,
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.waterRejuventation.isSubmit : false,
                 },
                 "actionPlans": {
                     rejectReason: [],
                     status: updatedData.steps.actionPlans.status != 'PENDING' ? updatedData.steps.actionPlans.status : 'PENDING',
-                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.steps.actionPlans.isSubmit : false,
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.actionPlans.isSubmit : false,
 
                 },
                 "grantAllocation": {
