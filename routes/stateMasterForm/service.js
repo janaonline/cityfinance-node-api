@@ -377,7 +377,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
 
                 },
                 "grantAllocation": {
-                    isSubmit: false
+                    isSubmit: true
                 }
             }
         };

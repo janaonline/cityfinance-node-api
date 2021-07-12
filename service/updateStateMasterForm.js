@@ -54,11 +54,15 @@ exports.UpdateStateMasterForm = catchAsync(async (req, formName) => {
                 existingData.steps[formName] = {
                     isSubmit: !data['isDraft'],
                     status: 'PENDING',
-                    rejectReason: null
+                    rejectReason: null,
+
                 }
                 existingData.modifiedAt = time();
-                existingData.status = 'PENDING'
-                await existingData.save();
+                existingData.status = 'PENDING',
+                    existingData.actionTakenByRole = user.role,
+                    existingData.actionTakenBy = user._id,
+                    existingData.isSubmit = false,
+                    await existingData.save();
             }
         } else {
 
