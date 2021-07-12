@@ -363,22 +363,22 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
                 "linkPFMS": {
                     rejectReason: null,
                     status: "PENDING",
-                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
                 },
                 "GTCertificate": {
                     rejectReason: null,
                     status: "PENDING",
-                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
                 },
                 "waterRejuventation": {
                     rejectReason: [],
                     status: "PENDING",
-                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
                 },
                 "actionPlans": {
                     rejectReason: [],
                     status: "PENDING",
-                    isSubmit: updatedData.hasOwnProperty('role') ? updatedData.isSubmit : false,
+                    isSubmit: updatedData.lastestFinalResponse.hasOwnProperty('role') ? updatedData.isSubmit : false,
 
                 },
                 "grantAllocation": {
