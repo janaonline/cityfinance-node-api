@@ -21,11 +21,13 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
       newForm.steps[formName].status = data.body?.status
         ? data.body?.status
         : "PENDING";
-      if (data.body?.rejectReason)
-        newForm.steps[formName].rejectReason = data.body?.rejectReason;
       newForm.steps[formName].isSubmit = data.body.hasOwnProperty("isDraft")
         ? !data.body.isDraft
         : data.body?.isCompleted;
+      if (data.body?.rejectReason) {
+        newForm.steps[formName].rejectReason = data.body?.rejectReason;
+        newForm.steps[formName].isSubmit = false;
+      }
       await MasterForm.findOneAndUpdate(
         {
           ulb: ObjectId(data.user?.ulb ? data?.user?.ulb : data.body?.ulb),

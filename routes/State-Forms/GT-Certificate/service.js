@@ -85,11 +85,11 @@ exports.action = async (req, res) => {
     const data = req.body,
       user = req.decoded;
     const { design_year } = req.body;
-    data['actionTakenBy'] = user._id;
+    data["actionTakenBy"] = user._id;
     let currentState = await StateGTCertificate.findOne(
       {
         state: ObjectId(data.state),
-        design_year: ObjectId(design_year)
+        design_year: ObjectId(design_year),
       },
       { history: 0 }
     );
@@ -116,20 +116,19 @@ exports.action = async (req, res) => {
       { nonmillion_untied: req.body.nonmillion_untied.rejectReason },
     ];
 
-    let updateData = {
-      status: finalStatus,
-      actionTakenBy: user?._id,
-      modifiedAt: new Date(),
-    };
+    req.body.status = finalStatus;
+    req.body.actionTakenBy = user?._id;
+    req.body.modifiedAt = new Date();
+    
     if (!currentState) {
       return res.status(400).json({ msg: "Requested record not found." });
     } else {
       let updatedRecord = await StateGTCertificate.findOneAndUpdate(
         {
           state: ObjectId(data.state),
-          design_year: ObjectId(design_year)
+          design_year: ObjectId(design_year),
         },
-        { $set: updateData, $push: { history: currentState } }
+        { $set: req.body, $push: { history: currentState } }
       );
       await UpdateStateMasterForm(req, "GTCertificate");
 
