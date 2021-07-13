@@ -2,6 +2,11 @@ const catchAsync = require("../../util/catchAsync");
 const StateMasterForm = require("../../models/StateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require('../../models/State')
+const ActionPlans = require('../../models/ActionPlans')
+const Grantallocation = require('../../models/GrantDistribution')
+const PFMSState = require('../../models/LinkPfmsState')
+const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
+const GTCertificate = require('../../models/StateGTCertificate')
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -333,7 +338,7 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         data["modifiedAt"] = time();
 
 
-        console.log(data)
+        // console.log(data)
         //isSubmit and Status comes in the req.body
         let query = {
             design_year: ObjectId(design_year),
@@ -352,32 +357,33 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
         }
 
 
-        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true })
+        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true });
+        updatedData.toObject();
         let newData = {
             "steps": {
                 "linkPFMS": {
                     rejectReason: null,
-                    status: "PENDING",
-                    isSubmit: false,
+                    status: updatedData.steps.linkPFMS.status != 'PENDING' ? updatedData.steps.linkPFMS.status : 'PENDING',
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.linkPFMS.isSubmit : false,
                 },
                 "GTCertificate": {
                     rejectReason: null,
-                    status: "PENDING",
-                    isSubmit: false,
+                    status: updatedData.steps.GTCertificate.status != 'PENDING' ? updatedData.steps.GTCertificate.status : 'PENDING',
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.GTCertificate.isSubmit : false,
                 },
                 "waterRejuventation": {
                     rejectReason: [],
-                    status: "PENDING",
-                    isSubmit: false,
+                    status: updatedData.steps.waterRejuventation.status != 'PENDING' ? updatedData.steps.waterRejuventation.status : 'PENDING',
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.waterRejuventation.isSubmit : false,
                 },
                 "actionPlans": {
                     rejectReason: [],
-                    status: "PENDING",
-                    isSubmit: false,
+                    status: updatedData.steps.actionPlans.status != 'PENDING' ? updatedData.steps.actionPlans.status : 'PENDING',
+                    isSubmit: updatedData.latestFinalResponse['role'] ? updatedData.steps.actionPlans.isSubmit : false,
 
                 },
                 "grantAllocation": {
-                    isSubmit: false
+                    isSubmit: true
                 }
             }
         };
@@ -450,4 +456,94 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
             message: user.role + " Not Authenticated to Perform this Action",
         });
     }
+})
+
+module.exports.finalAction = catchAsync(async (req, res) => {
+    let user = req.decoded;
+    if (!user) {
+        return res.status(400).json({
+            success: false,
+            message: "User Not Found",
+        });
+    }
+    if (user.role === "MoHUA") {
+        let data = req.body;
+        let design_year = (data.design_year);
+        let { state_id } = req.query
+        let state = user.state ?? state_id
+        if (!design_year) {
+            return res.status(400).json({
+                success: false,
+                message: "Design Year Not Found",
+            });
+        }
+        data["actionTakenBy"] = ObjectId(user._id);
+        data["actionTakenByRole"] = (user.role);
+        data["modifiedAt"] = time();
+        console.log(data)
+        //isSubmit and Status comes in the req.body
+        let query = {
+            design_year: ObjectId(design_year),
+            state: ObjectId(state),
+        };
+        //create History
+        let masterFormData = await StateMasterForm.findOne(query).lean()
+        if (masterFormData) {
+            //calculate overall status of Form
+            data['status'] = "APPROVED"
+            for (let key in masterFormData['steps']) {
+                if (masterFormData['steps'][key]['status'] === "REJECTED") {
+                    data['status'] = "REJECTED";
+                    break;
+                }
+            }
+            data['latestFinalResponse'] = masterFormData.steps
+            data['latestFinalResponse']['role'] = masterFormData.actionTakenByRole
+            masterFormData['modifiedAt'] = data["modifiedAt"]
+            masterFormData['status'] = data["status"]
+            data['history'] = [...masterFormData.history];
+            masterFormData.history = undefined;
+            data['history'].push(masterFormData);
+            console.log(masterFormData)
+        }
+        let updatedData = await StateMasterForm.findOneAndUpdate(query, data, { new: true, setDefaultsOnInsert: true })
+
+
+
+        if (updatedData) {
+            return res.status(200).json({
+                success: true,
+                message: "Final Submit Successful!",
+                data: updatedData,
+            });
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: "Final Submit Failed!",
+            });
+        }
+    } else {
+        return res.status(403).json({
+            success: false,
+            message: user.role + " Not Authenticated to Perform this Action",
+        });
+    }
+})
+
+
+module.exports.deleteForms = catchAsync(async (req, res) => {
+    let data = req.body;
+    let user = req.decoded;
+    let query = {
+        state: ObjectId(data.state),
+        design_year: ObjectId(data.design_year)
+
+    }
+    await ActionPlans.findOneAndDelete(query)
+    await Grantallocation.findOneAndDelete(query)
+    await PFMSState.findOneAndDelete(query)
+    await WaterRejuvenation.findOneAndDelete(query)
+    await GTCertificate.findOneAndDelete(query)
+    await StateMasterForm.findOneAndDelete(query)
+    res.send("Data Deleted")
 })

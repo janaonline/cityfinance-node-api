@@ -64,9 +64,8 @@ exports.action = async (req, res) => {
       },
       { $set: req.body, $push: { history: currentLinkPfmsState } }
     );
-    if (!currentLinkPfmsState) {
-      return Response.BadRequest(res, null, "No LinkPfmsState found");
-    }
+    await UpdateStateMasterForm(req, "linkPFMS");
+
     return Response.OK(res, newLinkPfmsState, "Action Submitted!");
   } catch (err) {
     console.error(err.message);
