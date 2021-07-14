@@ -54,6 +54,7 @@ const projectDetails = () => {
     details: {
       type: String,
     },
+    _id: false,
   };
 };
 
@@ -74,6 +75,7 @@ const projectDetails2 = () => {
     stp: {
       type: Number,
     },
+    _id: false,
   };
 };
 
@@ -94,6 +96,7 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
         type: String,
       },
       status: statusType(),
+      _id: false,
     },
   ],
   status: statusType(),
