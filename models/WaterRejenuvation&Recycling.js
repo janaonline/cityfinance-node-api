@@ -33,6 +33,7 @@ const projectDetails = () => {
         name: {
           type: String,
         },
+        _id: false,
       },
     ],
     bod: {
