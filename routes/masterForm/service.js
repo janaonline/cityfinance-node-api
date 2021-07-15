@@ -9,6 +9,7 @@ const util = require("util");
 const { forEach } = require("jszip");
 const User = require("../../models/User");
 const State = require("../../models/State");
+const Response = require("../../service").response;
 
 const { toUnicode } = require("punycode");
 const MasterForm = require("../../models/MasterForm");
@@ -2653,3 +2654,85 @@ module.exports.getHistory = catchAsync(async (req, res) => {
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
+
+module.exports.stateUlbData = catchAsync(async (req, res) => {
+  try {
+    let { design_year} = req.query;
+    let allStates = await State.find().select({ _id: 1, name: 1 });
+    const allPromise = [];
+
+    for (let index = 0; index < allStates.length; index++) {
+      const element = allStates[index];
+      allPromise.push(oneStatePromise(element, design_year));
+    }
+
+    temp = await Promise.all(allPromise);
+
+    return Response.OK(res, temp, "Success");
+  } catch (error) {
+    return Response.DbError(res, null, `${error.message} Db Error`);
+  }
+});
+
+const oneStatePromise = (element, design_year) => {
+  return new Promise(async (res, rej) => {
+    let data = await Promise.all([
+      stateULB(element._id),
+      stateAgg(design_year, element._id),
+    ]);
+    let temp = {
+      id: element._id,
+      name: element.name,
+      totalULBs: data[0],
+      notSubmittedForm: data[0] - data[1].submittedForm,
+      ...data[1],
+    };
+    res(temp);
+  });
+};
+
+const stateULB = (state) => {
+  return new Promise(async (res, rej) => {
+    let stateULB = await Ulb.find({ state }).count();
+    res(stateULB);
+  });
+};
+
+const stateAgg = (design_year, state) => {
+  return new Promise(async (res, rej) => {
+    let data = await MasterForm.find({
+      state: ObjectId(state),
+      design_year: ObjectId(design_year),
+    }).select({ actionTakenByRole: 1, status: 1, isSubmit: 1 });
+
+    let approvedByState = 0,
+      withState = 0;
+    submittedForm = 0;
+
+    data.forEach((ele) => {
+      if (ele.actionTakenByRole == "MoHUA") {
+        approvedByState++;
+        submittedForm++;
+        return true;
+      }
+      if (
+        ele.actionTakenByRole == "STATE" &&
+        ele.status == "APPROVED" &&
+        ele.isSubmit
+      ) {
+        approvedByState++;
+        submittedForm++;
+        return true;
+      }
+      if (
+        (ele.actionTakenByRole == "ULB" && ele.isSubmit) ||
+        (ele.actionTakenByRole == "STATE" && !ele.isSubmit)
+      ) {
+        withState++;
+        submittedForm++;
+        return true;
+      }
+    });
+    res({ submittedForm, approvedByState, withState });
+  });
+};
