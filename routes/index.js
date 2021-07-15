@@ -135,4 +135,6 @@ router.use(LinkPfmsState);
 const StateMasterForm = require("./stateMasterForm");
 router.use('/stateMasterForm', StateMasterForm);
 
+const MoHUADashboard = require("./mohua-dashboard");
+router.use('/mohua', MoHUADashboard);
 module.exports = router;
