@@ -10,7 +10,8 @@ const { forEach } = require("jszip");
 const User = require("../../models/User");
 const State = require("../../models/State");
 const Response = require("../../service").response;
-
+const Redis = require("../../service/redis");
+const { promisify } = require("util");
 const { toUnicode } = require("punycode");
 const MasterForm = require("../../models/MasterForm");
 module.exports.get = catchAsync(async (req, res) => {
@@ -2657,8 +2658,19 @@ async function sleep(millis) {
 
 module.exports.stateUlbData = catchAsync(async (req, res) => {
   try {
-    let { design_year} = req.query;
-    let allStates = await State.find().select({ _id: 1, name: 1 });
+    let { design_year } = req.query;
+    const getAsync = promisify(Redis.Client.get).bind(Redis.Client);
+
+    let allStates;
+    allStates = await getAsync("states");
+
+    if (!allStates) {
+      allStates = await State.find().select({ _id: 1, name: 1 });
+      Redis.set("states", JSON.stringify(allStates));
+    }else{
+      allStates = JSON.parse(allStates)
+    }
+
     const allPromise = [];
 
     for (let index = 0; index < allStates.length; index++) {
@@ -2666,9 +2678,9 @@ module.exports.stateUlbData = catchAsync(async (req, res) => {
       allPromise.push(oneStatePromise(element, design_year));
     }
 
-    temp = await Promise.all(allPromise);
+    let allUlbsData = await Promise.all(allPromise);
 
-    return Response.OK(res, temp, "Success");
+    return Response.OK(res, allUlbsData, "Success");
   } catch (error) {
     return Response.DbError(res, null, `${error.message} Db Error`);
   }
