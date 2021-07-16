@@ -754,6 +754,90 @@ module.exports.getTable = catchAsync(async (req, res) => {
 
 })
 
+module.exports.plansData = catchAsync(async (req, res) => {
+    let { state_id } = req.query;
+    let user = req.decoded;
+    let { design_year } = req.params;
+    let state = user.state ?? state_id;
+
+    let baseQuery = [
+
+        {
+            $group: {
+                _id: null,
+                totalUlbs: { $sum: { $size: "$ulb" } }
+            }
+        },
+    ];
+
+    let response = await UA.aggregate(baseQuery);
+    let count = response[0].totalUlbs
+    console.log(count);
+    let query = [
+        {
+            $match: {
+                design_year: ObjectId(design_year),
+            },
+        },
+        {
+            $lookup: {
+                from: "ulbs",
+                localField: "ulb",
+                foreignField: "_id",
+                as: "ulbData",
+            },
+        },
+
+        { $unwind: "$ulbData" },
+        {
+            $lookup: {
+                from: "uas",
+                localField: "ulb",
+                foreignField: "ulb",
+                as: "uaData",
+            },
+        },
+
+        { $unwind: "$uaData" },
+
+        {
+            $project: {
+                steps: 1,
+                actionTakenByRole: 1,
+                status: 1,
+                isSubmit: 1,
+                ulb: 1,
+                state: 1,
+                design_year: 1,
+                isUA: "$ulbData.isUA",
+                isMillionPlus: "$ulbData.isMillionPlus",
+                UA: "$uaData.name",
+            },
+        },
+        {
+            $match: {
+                $or: [{ status: "APPROVED" }, { $and: [{ actionTakenByRole: "MoHUA" }, { status: "PENDING" }] }]
+            },
+        },
+        {
+            $group: {
+                _id: null,
+                count: { $sum: 1 },
+            },
+        },
+    ];
+    let data = await MasterFormData.aggregate(query);
+    console.log(data)
+    const finalData = {
+        ulbs: count,
+        ulbCount: data[0].count
+    }
+    res.json({
+        success: true,
+        data: finalData,
+    });
+});
+
 const formatOutput = (
     output1,
     output2,
