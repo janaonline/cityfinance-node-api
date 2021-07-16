@@ -2662,14 +2662,14 @@ module.exports.stateUlbData = catchAsync(async (req, res) => {
     const getAsync = promisify(Redis.Client.get).bind(Redis.Client);
 
     let allStates;
-    allStates = await getAsync("states");
+    // allStates = await getAsync("states");
 
-    if (!allStates) {
-      allStates = await State.find().select({ _id: 1, name: 1 });
-      Redis.set("states", JSON.stringify(allStates));
-    }else{
-      allStates = JSON.parse(allStates)
-    }
+    // if (!allStates) {
+      allStates = await State.find().select({ _id: 1, name: 1, code: 1 });
+      // Redis.set("states", JSON.stringify(allStates));
+    // } else {
+    //   allStates = JSON.parse(allStates);
+    // }
 
     const allPromise = [];
 
@@ -2695,6 +2695,7 @@ const oneStatePromise = (element, design_year) => {
     let temp = {
       id: element._id,
       name: element.name,
+      code: element.code,
       totalULBs: data[0],
       notSubmittedForm: data[0] - data[1].submittedForm,
       ...data[1],
