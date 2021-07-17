@@ -2,11 +2,14 @@ const catchAsync = require("../../util/catchAsync");
 const StateMasterForm = require("../../models/StateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require('../../models/State')
+const UA = require('../../models/UA')
 const ActionPlans = require('../../models/ActionPlans')
 const Grantallocation = require('../../models/GrantDistribution')
 const PFMSState = require('../../models/LinkPfmsState')
 const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const GTCertificate = require('../../models/StateGTCertificate')
+const Response = require("../../service").response;
+
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -547,3 +550,64 @@ module.exports.deleteForms = catchAsync(async (req, res) => {
     await StateMasterForm.findOneAndDelete(query)
     res.send("Data Deleted")
 })
+
+module.exports.waterRejCard = catchAsync(async (req, res) => {
+    try {
+        const {design_year} = req.query
+
+        let data = await UA.find().select({state:1,_id:0})
+        data = JSON.parse(JSON.stringify(data))
+        let newObj = new Map(),
+        stateIds=[];
+        data.forEach((element)=>{
+            if(!newObj.has(element.state)){
+                newObj.set(element.state,element.state)
+                stateIds.push(element.state)
+            }
+        })
+
+
+        if(req.decoded.role == "STATE" && !stateIds.includes(req.decoded?.state)){
+            return Response.OK(res,{stateAnswer:"N/A"})
+        }
+
+        let masterData
+
+        if(req.decoded.role != "STATE"){
+            masterData = await StateMasterForm.find({
+                state: { $in: stateIds},design_year
+              })
+            let stateCount = 0
+            masterData.forEach(element => {
+                if(element.actionTakenByRole == 'MoHUA' && element.status != 'REJECTED'){
+                    stateCount++;
+                }
+                if(element.actionTakenByRole == 'STATE' && element.isSubmit){
+                    stateCount++;
+                }
+            });
+            if(masterData.length > 0){
+                return Response.OK(res,{stateCount,uaCount:data.length},"Success")
+            }else{
+                return Response.OK(res,{stateCount,uaCount:data.length},"Success")
+            }
+
+        }else{
+            masterData = await StateMasterForm.findOne({state:req.decoded.state,design_year})
+            if(masterData){
+                if(masterData.actionTakenByRole == 'MoHUA' && masterData.status != 'REJECTED'){
+                    return Response.OK(res,{stateAnswer:"yes"},"Success")
+                }
+                if(masterData.actionTakenByRole == 'STATE' && masterData.isSubmit){
+                    return Response.OK(res,{stateAnswer:"yes"},"Success")
+                }
+                return Response.OK(res,{stateAnswer:"no"},"Success")
+            }else{
+                return Response.OK(res,{stateAnswer:"no"},"Success")
+            }
+        }
+
+    } catch (error) {
+        return Response.DbError(res,`${error.message} Db error`)
+    }
+});
