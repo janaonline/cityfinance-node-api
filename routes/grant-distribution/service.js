@@ -170,22 +170,17 @@ async function validate(data) {
     keys.length !== 3
   ) {
     data.forEach((element) => {
-      element.errorFormat = "Incorrect Format";
+      element.Errors = "Incorrect Format,";
     });
     return data;
   }
   for (let index = 0; index < data.length; index++) {
     const keys = Object.keys(data[index]).length;
     if (keys !== 3) {
-      data[index].errorFormat = "Incorrect Format";
-    } else {
-      data[index].errorFormat = null;
-    }
+      data[index].Errors = "Incorrect Format,";
+    } 
     if (data[index][code]) ulbCodes.push(data[index][code]);
     if (data[index][name]) ulbNames.push(data[index][name]);
-    data[index].errorAmount = null;
-    data[index].errorCode = null;
-    data[index].errorName = null;
   }
   // get ulb data
   const compareData = await getUlbData(ulbCodes, ulbNames);
@@ -193,7 +188,10 @@ async function validate(data) {
   for (let index = 0; index < data.length; index++) {
     if (!compareData[data[index][code]]) {
       errorFlag = true;
-      data[index].errorCode = "Code Not Valid";
+      if(data[index].Errors)
+        data[index].Errors += "Code Not Valid,";
+      else
+        data[index].Errors = "Code Not Valid,";
     }
     if (
       data[index][code] === "" ||
@@ -201,11 +199,17 @@ async function validate(data) {
       data[index][name] === ""
     ) {
       errorFlag = true;
-      data[index].errorName = "Name Not Valid";
+      if(data[index].Errors)
+        data[index].Errors += "Name Not Valid,";
+      else
+        data[index].Errors = "Name Not Valid,";
     }
     if (!Number(data[index][amount]) || data[index][amount] === "") {
       errorFlag = true;
-      data[index].errorAmount = "Amount Not valid";
+      if(data[index].Errors)
+        data[index].Errors += "Amount Not valid,";
+      else
+        data[index].Errors = "Amount Not valid,";
     }
   }
   if (errorFlag) {
