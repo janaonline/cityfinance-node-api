@@ -553,8 +553,10 @@ module.exports.deleteForms = catchAsync(async (req, res) => {
 
 module.exports.waterRejCard = catchAsync(async (req, res) => {
     try {
-        const {design_year} = req.query
-
+        const {design_year,state_id} = req.query
+        if(req.decoded.role == "STATE"){
+            state_id = req.decoded.state
+        }
         let data = await UA.find().select({state:1,_id:0})
         data = JSON.parse(JSON.stringify(data))
         let newObj = new Map(),
@@ -567,13 +569,13 @@ module.exports.waterRejCard = catchAsync(async (req, res) => {
         })
 
 
-        if(req.decoded.role == "STATE" && !stateIds.includes(req.decoded?.state)){
+        if(state_id && !stateIds.includes(state_id)){
             return Response.OK(res,{stateAnswer:"N/A"})
         }
 
         let masterData
 
-        if(req.decoded.role != "STATE"){
+        if(!state_id){
             masterData = await StateMasterForm.find({
                 state: { $in: stateIds},design_year
               })
@@ -587,13 +589,13 @@ module.exports.waterRejCard = catchAsync(async (req, res) => {
                 }
             });
             if(masterData.length > 0){
-                return Response.OK(res,{stateCount,uaCount:data.length},"Success")
+                return Response.OK(res,{stateCount,eligibleState:stateIds.length},"Success")
             }else{
-                return Response.OK(res,{stateCount,uaCount:data.length},"Success")
+                return Response.OK(res,{stateCount,eligibleState:stateIds.length},"Success")
             }
 
         }else{
-            masterData = await StateMasterForm.findOne({state:req.decoded.state,design_year})
+            masterData = await StateMasterForm.findOne({state:state_id,design_year})
             if(masterData){
                 if(masterData.actionTakenByRole == 'MoHUA' && masterData.status != 'REJECTED'){
                     return Response.OK(res,{stateAnswer:"yes"},"Success")
