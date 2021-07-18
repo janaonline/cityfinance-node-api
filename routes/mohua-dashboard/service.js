@@ -3,12 +3,13 @@ const Ulb = require('../../models/Ulb');
 const UA = require('../../models/UA');
 const ObjectId = require("mongoose").Types.ObjectId;
 const MasterFormData = require('../../models/MasterForm')
-
+const Util = require('util')
 module.exports.getCards = catchAsync(async (req, res) => {
 
     let user = req.decoded;
     if (user.role != 'STATE' || user.role != 'ULB') {
         let { state_id } = req.query
+        let { design_year } = req.query
 
         let match1 = {
             $match:
@@ -56,8 +57,6 @@ module.exports.getCards = catchAsync(async (req, res) => {
         }
 
         let basequery = [
-
-
             {
                 $group:
 
@@ -76,8 +75,20 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 },
             },
 
-            { $unwind: "$masterformData" },
+            {
+                '$unwind': {
+                    path: '$masterformData',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $match: {
 
+                    $or: [{ 'masterformData.design_year': ObjectId("606aaf854dff55e6c075d219") },
+                    { masterformData: { $exists: false } }]
+                }
+
+            },
             {
                 $group: {
                     _id: {
@@ -217,19 +228,27 @@ module.exports.getCards = catchAsync(async (req, res) => {
 
         let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
             let prms1 = new Promise(async (rslv, rjct) => {
+
                 let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
+
                 rslv(output);
             });
             let prms2 = new Promise(async (rslv, rjct) => {
+
                 let output = await Ulb.aggregate(query1);
+
                 rslv(output);
             });
             let prms3 = new Promise(async (rslv, rjct) => {
+
                 let output = await UA.aggregate(query2);
+
                 rslv(output);
             });
             let prms4 = new Promise(async (rslv, rjct) => {
+
                 let output = await Ulb.aggregate(query3);
+
                 rslv(output);
             });
             Promise.all([prms1, prms2, prms3, prms4]).then(
@@ -260,6 +279,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
         let ulbsInMillionPlusUlbs = 0;
         let submitted_millionPlusUA = 0;
         let millionPlusUA = 0;
+        console.log(output1, output2, output3, output4)
         output1.forEach(el => {
             if (
                 ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
@@ -269,6 +289,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 (el._id.status == 'PENDING' && el._id.isSubmit == true && el._id.actionTakenByRole == 'ULB')
             ) {
                 submitted_totalUlbs = submitted_totalUlbs + el.count
+                totalUlbs = el.totalUlbs[0]
+            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+                submitted_totalUlbs = 0;
                 totalUlbs = el.totalUlbs[0]
             }
         })
@@ -285,6 +308,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
             ) {
                 submitted_nonMillion = submitted_nonMillion + el.count;
                 nonMillion = el.totalUlbs[0]
+            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+                submitted_nonMillion = 0;
+                nonMillion = el.totalUlbs[0]
             }
         })
         submitted_millionPlusUA = output3[0].uas_submitted
@@ -298,6 +324,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 (el._id.status == 'PENDING' && el._id.isSubmit == true && el._id.actionTakenByRole == 'ULB')
             ) {
                 submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs + el.count
+                ulbsInMillionPlusUlbs = el.totalUlbs[0]
+            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+                submitted_ulbsInMillionPlusUlbs = 0;
                 ulbsInMillionPlusUlbs = el.totalUlbs[0]
             }
         })
