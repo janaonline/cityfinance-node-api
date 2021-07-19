@@ -85,7 +85,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             {
                 $match: {
 
-                    $or: [{ 'masterformData.design_year': ObjectId("606aaf854dff55e6c075d219") },
+                    $or: [{ 'masterformData.design_year': ObjectId(design_year) },
                     { masterformData: { $exists: false } }]
                 }
 
@@ -299,16 +299,20 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 if (state_id) {
                     let output1 = await UA.aggregate(query2_totalUAs);
                     let output2 = await State.aggregate(query2_stateVersion);
-                    // console.log(output1, output2)
+                    console.log(output1, output2)
                     if (output1.length == 0) {
+                        console.log('1')
                         output[0].totalUAs = 0;
                         output[0].uas_submitted = 0;
                     }
                     if (output2.length != 0) {
-                        output[0].totalUAs = output1[0].totalUAs;
-                        output[0].uas_submitted = output2[0].totalUAs;
-                    } else if (output1.length != 0 && output2.length == 0) {
-                        output[0].totalUAs = output1[0].totalUAs;
+                        console.log('2')
+                        output[0].totalUAs = output1[0]?.totalUAs;
+                        output[0].uas_submitted = output1[0]?.totalUAs;
+                    }
+                    if (output1.length != 0 && output2.length == 0) {
+                        console.log('3')
+                        output[0].totalUAs = output1[0]?.totalUAs;
                         output[0].uas_submitted = 0;
 
                     }
