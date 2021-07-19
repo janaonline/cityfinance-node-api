@@ -3,6 +3,7 @@ const Ulb = require('../../models/Ulb');
 const UA = require('../../models/UA');
 const ObjectId = require("mongoose").Types.ObjectId;
 const MasterFormData = require('../../models/MasterForm')
+const State = require('../../models/State')
 const Util = require('util')
 module.exports.getCards = catchAsync(async (req, res) => {
 
@@ -221,6 +222,57 @@ module.exports.getCards = catchAsync(async (req, res) => {
             }
 
         ]
+        let query2_totalUAs = [
+            {
+                $match: {
+                    state: ObjectId(state_id)
+                }
+            },
+            {
+                $group: {
+                    _id: "$state",
+                    totalUAs: { $sum: 1 }
+                }
+            }
+        ]
+        let query2_stateVersion = [
+            {
+                $match: {
+                    _id: ObjectId("5dcf9d7316a06aed41c748ec")
+                }
+            },
+            {
+                $lookup:
+                {
+                    from: "statemasterforms",
+                    localField: "_id",
+                    foreignField: "state",
+                    as: "masterformData"
+                }
+            },
+            { $unwind: "$masterformData" },
+
+            {
+                $match: {
+                    $or: [
+                        {
+                            $and: [
+                                { "masterformData.status": "PENDING" },
+                                { "masterformData.actionTakenByRole": "STATE" },
+                                { "masterformData.isSubmit": true }]
+                        },
+                        {
+                            $and: [{ "masterformData.actionTakenByRole": "MoHUA" },
+                            {
+                                $or: [{ "masterformData.status": "APPROVED" },
+                                { "masterformData.status": "PENDING" }]
+                            }]
+                        }
+                    ]
+
+                }
+            }
+        ]
         let query3 = [
             match2,
             ...basequery
@@ -240,8 +292,31 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 rslv(output);
             });
             let prms3 = new Promise(async (rslv, rjct) => {
+                let output = [{
+                    uas_submitted: 0,
+                    totalUAs: 0
+                }]
+                if (state_id) {
+                    let output1 = await UA.aggregate(query2_totalUAs);
+                    let output2 = await State.aggregate(query2_stateVersion);
+                    // console.log(output1, output2)
+                    if (output1.length == 0) {
+                        output[0].totalUAs = 0;
+                        output[0].uas_submitted = 0;
+                    }
+                    if (output2.length != 0) {
+                        output[0].totalUAs = output1[0].totalUAs;
+                        output[0].uas_submitted = output2[0].totalUAs;
+                    } else if (output1.length != 0 && output2.length == 0) {
+                        output[0].totalUAs = output1[0].totalUAs;
+                        output[0].uas_submitted = 0;
 
-                let output = await UA.aggregate(query2);
+                    }
+
+                } else {
+                    output = await UA.aggregate(query2);
+                }
+
 
                 rslv(output);
             });
