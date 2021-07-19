@@ -973,6 +973,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         {
           $group: {
             _id: {
+              isSubmit: "$isSubmit",
               status: "$status",
               actionTakenByRole: "$actionTakenByRole",
             },
