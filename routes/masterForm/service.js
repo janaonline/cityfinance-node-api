@@ -734,11 +734,11 @@ module.exports.plansData = catchAsync(async (req, res) => {
       },
     },
     {
-      $project: {
-        name: 1,
-        totalULBs: { $size: "$ulb" },
-      },
-    },
+      $group: {
+        _id: null,
+        totalULBs: { $sum: { $size: "$ulb" } }
+      }
+    }
   ];
 
   let count = await UA.aggregate(baseQuery);
@@ -787,6 +787,7 @@ module.exports.plansData = catchAsync(async (req, res) => {
     },
     {
       $match: {
+
         status: "APPROVED",
       },
     },
@@ -806,6 +807,7 @@ module.exports.plansData = catchAsync(async (req, res) => {
 });
 
 const formatPlansData = (data, count) => {
+  console.log(data, count)
   let ulbCount = 0,
     plans = 0,
     submissionOfPlans = false,
@@ -813,23 +815,42 @@ const formatPlansData = (data, count) => {
     compiledUlbs = 0,
     totalUlbs = 0;
   let finalOutput = [];
-  data.forEach((el1) => {
-    count.forEach((el2) => {
-      if (el1._id == el2.name) {
-        compiledUlbs = el1.count;
-        totalUlbs = el2?.totalULBs;
-        ulbCount = (compiledUlbs / totalUlbs) * 100;
-        let obj = {
-          UA: el1._id,
-          submissionOfPlans: true,
-          plans: 25,
-          ulbCount: parseInt(ulbCount),
-          ulbs: compiledUlbs,
-        };
-        finalOutput.push(obj);
-      }
-    });
-  });
+  if (data.length == 0) {
+    let obj = {
+      UA: null,
+      plans: 0,
+      ulbCount: parseInt(ulbCount),
+      ulbs: count[0].totalULBs,
+    };
+    finalOutput.push(obj);
+
+  } else {
+    let obj = {
+      UA: null,
+      plans: 0,
+      ulbCount: parseInt(ulbCount),
+      ulbs: count[0].totalULBs,
+    };
+    finalOutput.push(obj);
+    // data.forEach((el1) => {
+    //   count.forEach((el2) => {
+    //     if (el1._id == el2.name) {
+    //       compiledUlbs = el1.count;
+    //       totalUlbs = el2?.totalULBs;
+    //       ulbCount = (count[0].totalULBs / totalUlbs) * 100;
+    //       let obj = {
+    //         UA: el1._id,
+    //         submissionOfPlans: true,
+    //         plans: 0,
+    //         ulbCount: parseInt(ulbCount),
+    //         ulbs: count[0].totalULBs,
+    //       };
+    //       finalOutput.push(obj);
+    //     }
+    //   });
+    // });
+  }
+
 
   console.log(finalOutput);
 
