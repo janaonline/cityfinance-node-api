@@ -727,6 +727,7 @@ module.exports.plansData = catchAsync(async (req, res) => {
       message: "User Not Found",
     });
   }
+
   let baseQuery = [
     {
       $match: {
@@ -740,6 +741,16 @@ module.exports.plansData = catchAsync(async (req, res) => {
       }
     }
   ];
+  if (user.role != 'STATE' && !state) {
+    baseQuery = [
+      {
+        $group: {
+          _id: null,
+          totalULBs: { $sum: { $size: "$ulb" } }
+        }
+      }
+    ]
+  }
 
   let count = await UA.aggregate(baseQuery);
   console.log(count);
@@ -747,115 +758,124 @@ module.exports.plansData = catchAsync(async (req, res) => {
     {
       $match: {
         state: ObjectId(state),
-        design_year: ObjectId(design_year),
-      },
-    },
-    {
-      $lookup: {
-        from: "ulbs",
-        localField: "ulb",
-        foreignField: "_id",
-        as: "ulbData",
-      },
-    },
-
-    { $unwind: "$ulbData" },
-    {
-      $lookup: {
-        from: "uas",
-        localField: "ulb",
-        foreignField: "ulb",
-        as: "uaData",
-      },
-    },
-
-    { $unwind: "$uaData" },
-
-    {
-      $project: {
-        steps: 1,
-        actionTakenByRole: 1,
-        status: 1,
-        isSubmit: 1,
-        ulb: 1,
-        state: 1,
-        design_year: 1,
-        isUA: "$ulbData.isUA",
-        isMillionPlus: "$ulbData.isMillionPlus",
-        UA: "$uaData.name",
-      },
-    },
-    {
-      $match: {
-
-        status: "APPROVED",
       },
     },
     {
       $group: {
-        _id: "$UA",
-        count: { $sum: 1 },
-      },
+        _id: "$state",
+        totalULBs: { $sum: { $size: "$ulb" } },
+        ulbs: { $push: "$ulb" }
+      }
     },
-  ];
-  let data = await MasterFormData.aggregate(query);
-  const finalData = formatPlansData(data, count);
+    {
+      $project: {
+        totalULBs: 1,
+        "ulb": {
+          $reduce: {
+            input: "$ulbs",
+            initialValue: [],
+            in: { $concatArrays: ["$$value", "$$this"] }
+          }
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "ulb",
+        foreignField: "ulb",
+        as: "masterformData"
+
+      }
+    },
+    { $unwind: "$masterformData" },
+    {
+      $match: {
+        "masterformData.design_year": ObjectId(design_year),
+        $or: [{
+          $and: [{ "masterformData.actionTakenByRole": "STATE" },
+          { "masterformData.status": "APPROVED" }]
+        },
+
+        {
+          $and: [{ "masterformData.actionTakenByRole": "MoHUA" }, {
+            $or: [
+              { "masterformData.status": "APPROVED" },
+              { "masterformData.status": "PENDING" }]
+          }]
+        }]
+      }
+    },
+    { $count: "filledULBs" }
+
+
+  ]
+  if (user.role != 'STATE' && !state) {
+    query = [
+
+      {
+        $group: {
+          _id: "$state",
+          totalULBs: { $sum: { $size: "$ulb" } },
+          ulbs: { $push: "$ulb" }
+        }
+      },
+      {
+        $project: {
+          totalULBs: 1,
+          "ulb": {
+            $reduce: {
+              input: "$ulbs",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this"] }
+            }
+          }
+        }
+      },
+      {
+        $lookup: {
+          from: "masterforms",
+          localField: "ulb",
+          foreignField: "ulb",
+          as: "masterformData"
+
+        }
+      },
+      { $unwind: "$masterformData" },
+      {
+        $match: {
+          "masterformData.design_year": ObjectId(design_year),
+          $or: [{
+            $and: [{ "masterformData.actionTakenByRole": "STATE" },
+            { "masterformData.status": "APPROVED" }]
+          },
+
+          {
+            $and: [{ "masterformData.actionTakenByRole": "MoHUA" }, {
+              $or: [
+                { "masterformData.status": "APPROVED" },
+                { "masterformData.status": "PENDING" }]
+            }]
+          }]
+        }
+      },
+      { $count: "filledULBs" }
+
+
+    ]
+  }
+  let data = await UA.aggregate(query);
+  console.log(data[0]?.filledULBs, count[0]?.totalULBs)
+
+  let finalData = {
+    filledULBs: data[0]?.filledULBs ? data[0]?.filledULBs : 0,
+    totalULBs: count[0]?.totalULBs ? count[0]?.totalULBs : 0
+  }
   res.json({
     success: true,
     data: finalData,
   });
 });
-
-const formatPlansData = (data, count) => {
-  console.log(data, count)
-  let ulbCount = 0,
-    plans = 0,
-    submissionOfPlans = false,
-    UA = "",
-    compiledUlbs = 0,
-    totalUlbs = 0;
-  let finalOutput = [];
-  if (data.length == 0) {
-    let obj = {
-      UA: null,
-      plans: 0,
-      ulbCount: parseInt(ulbCount),
-      ulbs: count[0].totalULBs,
-    };
-    finalOutput.push(obj);
-
-  } else {
-    let obj = {
-      UA: null,
-      plans: 0,
-      ulbCount: parseInt(ulbCount),
-      ulbs: count[0].totalULBs,
-    };
-    finalOutput.push(obj);
-    // data.forEach((el1) => {
-    //   count.forEach((el2) => {
-    //     if (el1._id == el2.name) {
-    //       compiledUlbs = el1.count;
-    //       totalUlbs = el2?.totalULBs;
-    //       ulbCount = (count[0].totalULBs / totalUlbs) * 100;
-    //       let obj = {
-    //         UA: el1._id,
-    //         submissionOfPlans: true,
-    //         plans: 0,
-    //         ulbCount: parseInt(ulbCount),
-    //         ulbs: count[0].totalULBs,
-    //       };
-    //       finalOutput.push(obj);
-    //     }
-    //   });
-    // });
-  }
-
-
-  console.log(finalOutput);
-
-  return finalOutput;
-};
 
 module.exports.StateDashboard = catchAsync(async (req, res) => {
   let user = req.decoded;
