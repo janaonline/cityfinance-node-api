@@ -1535,11 +1535,12 @@ module.exports.viewList = catchAsync(async (req, res) => {
       });
     }
     let { formName } = req.params;
-
+    let { state_id } = req.query
+    let state = user.state ?? state_id
     let query = [
       {
         $match: {
-          state: ObjectId(user.state),
+          state: ObjectId(state),
         },
       },
       {
