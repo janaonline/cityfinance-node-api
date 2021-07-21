@@ -1537,271 +1537,537 @@ module.exports.viewList = catchAsync(async (req, res) => {
     let { formName } = req.params;
     let { state_id } = req.query
     let state = user.state ?? state_id
-    let query = [
-      {
-        $match: {
-          state: ObjectId(state),
-        },
-      },
-      {
-        $lookup: {
-          from: "uas",
-          localField: "_id",
-          foreignField: "ulb",
-          as: "uas",
-        },
-      },
-      {
-        $unwind: {
-          path: "$uas",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+    let query;
+    if (user.role == 'MoHUA' && !state) {
+      query = [
 
-      {
-        $lookup: {
-          from: "masterforms",
-          localField: "_id",
-          foreignField: "ulb",
-          as: "masterforms",
+        {
+          $lookup: {
+            from: "uas",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "uas",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$masterforms",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$uas",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "annualaccountdatas",
-          localField: "_id",
-          foreignField: "ulb",
-          as: "annualaccountdatas",
-        },
-      },
-      {
-        $unwind: {
-          path: "$annualaccountdatas",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
 
-      {
-        $lookup: {
-          from: "pfmsaccounts",
-          localField: "_id",
-          foreignField: "ulb",
-          as: "pfmsaccounts",
+        {
+          $lookup: {
+            from: "masterforms",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "masterforms",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$pfmsaccounts",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$masterforms",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "utilizationreports",
-          localField: "_id",
-          foreignField: "ulb",
-          as: "utilizationreports",
+        {
+          $lookup: {
+            from: "annualaccountdatas",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "annualaccountdatas",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$utilizationreports",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$annualaccountdatas",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "xvfcgrantplans",
-          localField: "_id",
-          foreignField: "ulb",
-          as: "xvfcgrantplans",
-        },
-      },
-      {
-        $unwind: {
-          path: "$xvfcgrantplans",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "xvfcgrantulbforms",
-          localField: "_id",
-          foreignField: "ulb",
-          as: "xvfcgrantulbforms",
-        },
-      },
-      {
-        $unwind: {
-          path: "$xvfcgrantulbforms",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "states",
-          localField: "state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      {
-        $unwind: {
-          path: "$state",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulbType",
-          foreignField: "_id",
-          as: "ulbtypes",
-        },
-      },
-      {
-        $unwind: {
-          path: "$ulbtypes",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
 
-      {
-        $lookup: {
-          from: "users",
-          localField: "xvfcgrantplans.actionTakenBy",
-          foreignField: "_id",
-          as: "xvfcgrantplans.actionTakenBy",
+        {
+          $lookup: {
+            from: "pfmsaccounts",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "pfmsaccounts",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$xvfcgrantplans.actionTakenBy",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$pfmsaccounts",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "annualaccountdatas.actionTakenBy",
-          foreignField: "_id",
-          as: "annualaccountdatas.actionTakenBy",
+        {
+          $lookup: {
+            from: "utilizationreports",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "utilizationreports",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$annualaccountdatas.actionTakenBy",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$utilizationreports",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "utilizationreports.actionTakenBy",
-          foreignField: "_id",
-          as: "utilizationreports.actionTakenBy",
+        {
+          $lookup: {
+            from: "xvfcgrantplans",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "xvfcgrantplans",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$utilizationreports.actionTakenBy",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$xvfcgrantplans",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
+        {
+          $lookup: {
+            from: "xvfcgrantulbforms",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "xvfcgrantulbforms",
+          },
+        },
+        {
+          $unwind: {
+            path: "$xvfcgrantulbforms",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: {
+            path: "$state",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbtypes",
+            localField: "ulbType",
+            foreignField: "_id",
+            as: "ulbtypes",
+          },
+        },
+        {
+          $unwind: {
+            path: "$ulbtypes",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
 
-      {
-        $lookup: {
-          from: "users",
-          localField: "xvfcgrantulbforms.actionTakenBy",
-          foreignField: "_id",
-          as: "xvfcgrantulbforms.actionTakenBy",
+        {
+          $lookup: {
+            from: "users",
+            localField: "xvfcgrantplans.actionTakenBy",
+            foreignField: "_id",
+            as: "xvfcgrantplans.actionTakenBy",
+          },
         },
-      },
-      {
-        $unwind: {
-          path: "$xvfcgrantulbforms.actionTakenBy",
-          preserveNullAndEmptyArrays: true,
+        {
+          $unwind: {
+            path: "$xvfcgrantplans.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
         },
-      },
+        {
+          $lookup: {
+            from: "users",
+            localField: "annualaccountdatas.actionTakenBy",
+            foreignField: "_id",
+            as: "annualaccountdatas.actionTakenBy",
+          },
+        },
+        {
+          $unwind: {
+            path: "$annualaccountdatas.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "utilizationreports.actionTakenBy",
+            foreignField: "_id",
+            as: "utilizationreports.actionTakenBy",
+          },
+        },
+        {
+          $unwind: {
+            path: "$utilizationreports.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
 
-      {
-        $project: {
-          state: "$state.name",
-          ulbName: "$name",
-          ulbType: "$ulbtypes.name",
-          censusCode: 1,
-          sbCode: 1,
-          populationType: {
-            $cond: {
-              if: { $eq: ["$isMillionPlus", "Yes"] },
-              then: "Million Plus",
-              else: "Non Million",
+        {
+          $lookup: {
+            from: "users",
+            localField: "xvfcgrantulbforms.actionTakenBy",
+            foreignField: "_id",
+            as: "xvfcgrantulbforms.actionTakenBy",
+          },
+        },
+        {
+          $unwind: {
+            path: "$xvfcgrantulbforms.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $project: {
+            state: "$state.name",
+            ulbName: "$name",
+            ulbType: "$ulbtypes.name",
+            censusCode: 1,
+            sbCode: 1,
+            populationType: {
+              $cond: {
+                if: { $eq: ["$isMillionPlus", "Yes"] },
+                then: "Million Plus",
+                else: "Non Million",
+              },
             },
-          },
-          isUA: 1,
-          UA: "$uas.name",
+            isUA: 1,
+            UA: "$uas.name",
 
-          audited_annualaccounts: {
-            isDraft: "$annualaccountdatas.isDraft",
-            status: "$annualaccountdatas.status",
-            actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
-            auditedSubmitted:
-              "$annualaccountdatas.audited.submit_annual_accounts",
-          },
-          unaudited_annualaccounts: {
-            isDraft: "$annualaccountdatas.isDraft",
-            status: "$annualaccountdatas.status",
-            actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
-            unAuditedSubmitted:
-              "$annualaccountdatas.unAudited.submit_annual_accounts",
-          },
-          masterform: {
-            isSubmit: "$masterforms.isSubmit",
-            actionTakenByRole: "$masterforms.actionTakenByRole",
-            status: "$masterforms.status",
-          },
+            audited_annualaccounts: {
+              isDraft: "$annualaccountdatas.isDraft",
+              status: "$annualaccountdatas.status",
+              actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
+              auditedSubmitted:
+                "$annualaccountdatas.audited.submit_annual_accounts",
+            },
+            unaudited_annualaccounts: {
+              isDraft: "$annualaccountdatas.isDraft",
+              status: "$annualaccountdatas.status",
+              actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
+              unAuditedSubmitted:
+                "$annualaccountdatas.unAudited.submit_annual_accounts",
+            },
+            masterform: {
+              isSubmit: "$masterforms.isSubmit",
+              actionTakenByRole: "$masterforms.actionTakenByRole",
+              status: "$masterforms.status",
+            },
 
-          pfmsaccount: {
-            isDraft: "$pfmsaccounts.isDraft",
-            registered: "$pfmsaccounts.linked",
-          },
+            pfmsaccount: {
+              isDraft: "$pfmsaccounts.isDraft",
+              registered: "$pfmsaccounts.linked",
+            },
 
-          utilizationreport: {
-            isDraft: "$utilizationreports.isDraft",
-            status: "$utilizationreports.status",
-            actionTakenBy: "$utilizationreports.actionTakenBy.role",
-          },
-          xvfcgrantplans: {
-            $cond: {
-              if: { $eq: ["$isMillionPlus", "Yes"] },
-              then: "Not Applicable",
-              else: {
-                isDraft: "$xvfcgrantplans.isDraft",
-                status: "$xvfcgrantplans.status",
-                actionTakenBy: "$xvfcgrantplans.actionTakenBy.role",
+            utilizationreport: {
+              isDraft: "$utilizationreports.isDraft",
+              status: "$utilizationreports.status",
+              actionTakenBy: "$utilizationreports.actionTakenBy.role",
+            },
+            xvfcgrantplans: {
+              $cond: {
+                if: { $eq: ["$isMillionPlus", "Yes"] },
+                then: "Not Applicable",
+                else: {
+                  isDraft: "$xvfcgrantplans.isDraft",
+                  status: "$xvfcgrantplans.status",
+                  actionTakenBy: "$xvfcgrantplans.actionTakenBy.role",
+                },
+              },
+            },
+            xvfcgrantulbforms: {
+              $cond: {
+                if: { $eq: ["$isUA", "No"] },
+                then: "Not Applicable",
+                else: {
+                  isCompleted: "$xvfcgrantulbforms.isCompleted",
+                  status: "$xvfcgrantulbforms.status",
+                  actionTakenBy: "$xvfcgrantulbforms.actionTakenBy.role",
+                },
               },
             },
           },
-          xvfcgrantulbforms: {
-            $cond: {
-              if: { $eq: ["$isUA", "No"] },
-              then: "Not Applicable",
-              else: {
-                isCompleted: "$xvfcgrantulbforms.isCompleted",
-                status: "$xvfcgrantulbforms.status",
-                actionTakenBy: "$xvfcgrantulbforms.actionTakenBy.role",
+        },
+      ];
+    } else {
+      query = [
+        {
+          $match: {
+            state: ObjectId(state),
+          },
+        },
+        {
+          $lookup: {
+            from: "uas",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "uas",
+          },
+        },
+        {
+          $unwind: {
+            path: "$uas",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $lookup: {
+            from: "masterforms",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "masterforms",
+          },
+        },
+        {
+          $unwind: {
+            path: "$masterforms",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "annualaccountdatas",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "annualaccountdatas",
+          },
+        },
+        {
+          $unwind: {
+            path: "$annualaccountdatas",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $lookup: {
+            from: "pfmsaccounts",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "pfmsaccounts",
+          },
+        },
+        {
+          $unwind: {
+            path: "$pfmsaccounts",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "utilizationreports",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "utilizationreports",
+          },
+        },
+        {
+          $unwind: {
+            path: "$utilizationreports",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "xvfcgrantplans",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "xvfcgrantplans",
+          },
+        },
+        {
+          $unwind: {
+            path: "$xvfcgrantplans",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "xvfcgrantulbforms",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "xvfcgrantulbforms",
+          },
+        },
+        {
+          $unwind: {
+            path: "$xvfcgrantulbforms",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: {
+            path: "$state",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbtypes",
+            localField: "ulbType",
+            foreignField: "_id",
+            as: "ulbtypes",
+          },
+        },
+        {
+          $unwind: {
+            path: "$ulbtypes",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $lookup: {
+            from: "users",
+            localField: "xvfcgrantplans.actionTakenBy",
+            foreignField: "_id",
+            as: "xvfcgrantplans.actionTakenBy",
+          },
+        },
+        {
+          $unwind: {
+            path: "$xvfcgrantplans.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "annualaccountdatas.actionTakenBy",
+            foreignField: "_id",
+            as: "annualaccountdatas.actionTakenBy",
+          },
+        },
+        {
+          $unwind: {
+            path: "$annualaccountdatas.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "utilizationreports.actionTakenBy",
+            foreignField: "_id",
+            as: "utilizationreports.actionTakenBy",
+          },
+        },
+        {
+          $unwind: {
+            path: "$utilizationreports.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $lookup: {
+            from: "users",
+            localField: "xvfcgrantulbforms.actionTakenBy",
+            foreignField: "_id",
+            as: "xvfcgrantulbforms.actionTakenBy",
+          },
+        },
+        {
+          $unwind: {
+            path: "$xvfcgrantulbforms.actionTakenBy",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+
+        {
+          $project: {
+            state: "$state.name",
+            ulbName: "$name",
+            ulbType: "$ulbtypes.name",
+            censusCode: 1,
+            sbCode: 1,
+            populationType: {
+              $cond: {
+                if: { $eq: ["$isMillionPlus", "Yes"] },
+                then: "Million Plus",
+                else: "Non Million",
+              },
+            },
+            isUA: 1,
+            UA: "$uas.name",
+
+            audited_annualaccounts: {
+              isDraft: "$annualaccountdatas.isDraft",
+              status: "$annualaccountdatas.status",
+              actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
+              auditedSubmitted:
+                "$annualaccountdatas.audited.submit_annual_accounts",
+            },
+            unaudited_annualaccounts: {
+              isDraft: "$annualaccountdatas.isDraft",
+              status: "$annualaccountdatas.status",
+              actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
+              unAuditedSubmitted:
+                "$annualaccountdatas.unAudited.submit_annual_accounts",
+            },
+            masterform: {
+              isSubmit: "$masterforms.isSubmit",
+              actionTakenByRole: "$masterforms.actionTakenByRole",
+              status: "$masterforms.status",
+            },
+
+            pfmsaccount: {
+              isDraft: "$pfmsaccounts.isDraft",
+              registered: "$pfmsaccounts.linked",
+            },
+
+            utilizationreport: {
+              isDraft: "$utilizationreports.isDraft",
+              status: "$utilizationreports.status",
+              actionTakenBy: "$utilizationreports.actionTakenBy.role",
+            },
+            xvfcgrantplans: {
+              $cond: {
+                if: { $eq: ["$isMillionPlus", "Yes"] },
+                then: "Not Applicable",
+                else: {
+                  isDraft: "$xvfcgrantplans.isDraft",
+                  status: "$xvfcgrantplans.status",
+                  actionTakenBy: "$xvfcgrantplans.actionTakenBy.role",
+                },
+              },
+            },
+            xvfcgrantulbforms: {
+              $cond: {
+                if: { $eq: ["$isUA", "No"] },
+                then: "Not Applicable",
+                else: {
+                  isCompleted: "$xvfcgrantulbforms.isCompleted",
+                  status: "$xvfcgrantulbforms.status",
+                  actionTakenBy: "$xvfcgrantulbforms.actionTakenBy.role",
+                },
               },
             },
           },
         },
-      },
-    ];
+      ];
+    }
+
     let newFilter = await Service.mapFilter(filter);
 
     if (
