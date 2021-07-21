@@ -877,6 +877,86 @@ module.exports.plansData = catchAsync(async (req, res) => {
   });
 });
 
+module.exports.UAList = catchAsync(async (req, res) => {
+  let user = req.decoded;
+  let uaData = await UA.find({ state: ObjectId(user.state) })
+  return res.status(200).json({
+    success: true,
+    data: uaData
+  })
+})
+
+module.exports.plansDataState = catchAsync(async (req, res) => {
+  let user = req.decoded;
+  let { ua_id } = req.query;
+  if (!ua_id) {
+    return res.status(400).json({
+      success: false,
+      message: "UA ID NOT FOUND"
+    })
+  }
+  let { design_year } = req.params
+  let countQuery = [
+    {
+      $match: {
+        _id: ObjectId(ua_id)
+      }
+    },
+    {
+      $project: {
+        totalULBs: { $size: "$ulb" }
+      }
+    }
+  ]
+  let query = [
+    {
+      $match: {
+        _id: ObjectId(ua_id)
+      }
+    },
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "ulb",
+        foreignField: "ulb",
+        as: "masterformData"
+      }
+    },
+    {
+      $unwind: "$masterformData"
+    },
+    {
+      $match: {
+        "masterformData.design_year": ObjectId(design_year),
+        $or: [{
+          $and: [{ "masterformData.actionTakenByRole": "STATE" },
+          { "masterformData.status": "APPROVED" }]
+        },
+
+        {
+          $and: [{ "masterformData.actionTakenByRole": "MoHUA" }, {
+            $or: [
+              { "masterformData.status": "APPROVED" },
+              { "masterformData.status": "PENDING" }]
+          }]
+        }]
+      }
+    },
+    { $count: "filledULBs" }
+  ]
+  let count = await UA.aggregate(countQuery)
+  let data = await UA.aggregate(query)
+  let finalData = {
+    filledULBs: data[0]?.filledULBs ? data[0]?.filledULBs : 0,
+    totalULBs: count[0]?.totalULBs ? count[0]?.totalULBs : 0
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: finalData
+  })
+})
+
 module.exports.StateDashboard = catchAsync(async (req, res) => {
   let user = req.decoded;
   let { state_id } = req.query;
