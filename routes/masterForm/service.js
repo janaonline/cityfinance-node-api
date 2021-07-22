@@ -517,7 +517,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       }
       let field = csvData();
       if (user.role == "STATE") {
-        delete field.stateName;
+        delete field.state;
       }
       let xlsData = await Service.dataFormating(arr, field);
       let filename =
@@ -2197,187 +2197,372 @@ module.exports.viewList = catchAsync(async (req, res) => {
     if (newFilter && Object.keys(newFilter).length) {
       query.push({ $match: newFilter });
     }
-    if (sort && Object.keys(sort).length) {
-      query.push({ $sort: sort });
+
+    if (csv) {
+      let data = await Ulb.aggregate(query).exec();
+      data.forEach((el) => {
+        if (Object.entries(el?.masterform).length === 0) {
+          el["masterformStatus"] = "Not Started";
+        } else if (
+          el?.masterform.isSubmit == true &&
+          el?.masterform.actionTakenByRole === "ULB" &&
+          (el.masterform.status === "PENDING" || el.masterform.status === "NA")
+        ) {
+          el["masterformStatus"] = "Under Review by State";
+        } else if (
+          el?.masterform.isSubmit == false &&
+          el?.masterform.actionTakenByRole === "STATE"
+        ) {
+          el["masterformStatus"] = "Under Review by State";
+        } else if (
+          el?.masterform.isSubmit == false &&
+          el?.masterform.actionTakenByRole === "ULB" &&
+          (el.masterform.status === "PENDING" || el.masterform.status === "NA")
+        ) {
+          el["masterformStatus"] = "In Progress";
+        } else if (
+          el?.masterform.actionTakenByRole === "STATE" &&
+          el?.masterform.status === "REJECTED"
+        ) {
+          el["masterformStatus"] = "Rejected by State";
+        } else if (
+          el?.masterform.actionTakenByRole === "MoHUA" &&
+          el?.masterform.status === "REJECTED"
+        ) {
+          el["masterformStatus"] = "Rejected by MoHUA";
+        } else if (
+          el?.masterform.actionTakenByRole === "MoHUA" &&
+          el?.masterform.status === "APPROVED"
+        ) {
+          el["masterformStatus"] = "Approval Completed";
+        } else if (
+          el?.masterform.actionTakenByRole === "MoHUA" &&
+          el?.masterform.isSubmit === false
+        ) {
+          el["masterformStatus"] = "Under Review by MoHUA";
+        } else if (
+          el?.masterform.isSubmit == true &&
+          el?.masterform.actionTakenByRole === "STATE" &&
+          el?.masterform.status === "PENDING"
+        ) {
+          el["masterformStatus"] = "Under Review by MoHUA";
+        }
+
+        if (Object.entries(el?.pfmsaccount).length === 0) {
+          el["pfmsaccountStatus"] = "Not Started";
+        } else if (
+          el?.pfmsaccount.isDraft == false &&
+          el?.pfmsaccount.registered == "no"
+        ) {
+          el["pfmsaccountStatus"] = "Not Registered";
+        } else if (
+          el?.pfmsaccount.isDraft == false &&
+          el?.pfmsaccount.registered == "yes"
+        ) {
+          el["pfmsaccountStatus"] = "Registered";
+        } else if (
+          el?.pfmsaccount.isDraft == false &&
+          el?.pfmsaccount.registered == ""
+        ) {
+          el["pfmsaccountStatus"] = "Not Registered";
+        } else if (el?.pfmsaccount.isDraft == "true") {
+          el["pfmsaccountStatus"] = "In Progress";
+        }
+
+        if (Object.entries(el?.utilizationreport).length === 0) {
+          el["utilizationreportStatus"] = "Not Started";
+        } else if (el?.utilizationreport.isDraft == false) {
+          el["utilizationreportStatus"] = "Completed";
+        } else if (el?.utilizationreport.isDraft == true) {
+          el["utilizationreportStatus"] = "In Progress";
+        }
+        if (Object.entries(el?.audited_annualaccounts).length === 0) {
+          el["audited_annualaccountsStatus"] = "Not Started";
+        } else if (
+          el?.audited_annualaccounts.isDraft == false &&
+          el?.audited_annualaccounts.auditedSubmitted == false
+        ) {
+          el["audited_annualaccountsStatus"] = "Accounts Not Submitted";
+        } else if (
+          el?.audited_annualaccounts.isDraft == false &&
+          el?.audited_annualaccounts.auditedSubmitted == true
+        ) {
+          el["audited_annualaccountsStatus"] = "Accounts Submitted";
+        } else if (el?.audited_annualaccounts.isDraft == true) {
+          el["audited_annualaccountsStatus"] = "In Progress";
+        }
+        if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
+          el["unaudited_annualaccountsStatus"] = "Not Started";
+        } else if (
+          el?.unaudited_annualaccounts.isDraft == false &&
+          el?.unaudited_annualaccounts.unAuditedSubmitted == false
+        ) {
+          el["unaudited_annualaccountsStatus"] = "Accounts Not Submitted";
+        } else if (
+          el?.unaudited_annualaccounts.isDraft == false &&
+          el?.unaudited_annualaccounts.unAuditedSubmitted == true
+        ) {
+          el["unaudited_annualaccountsStatus"] = "Accounts Submitted";
+        } else if (el?.unaudited_annualaccounts.isDraft == true) {
+          el["unaudited_annualaccountsStatus"] = "In Progress";
+        }
+
+        if (Object.entries(el?.xvfcgrantplans).length === 0) {
+          el["xvfcgrantplansStatus"] = "Not Started";
+        } else if (el?.xvfcgrantplans.isDraft == false) {
+          el["xvfcgrantplansStatus"] = "Completed";
+        } else if (el?.xvfcgrantplans.isDraft == true) {
+          el["xvfcgrantplansStatus"] = "In Progress";
+        } else if (el?.xvfcgrantplans == "Not Applicable") {
+          el["xvfcgrantplansStatus"] = "Not Applicable";
+        } else {
+        }
+
+        if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
+          el["xvfcgrantulbformsStatus"] = "Not Started";
+        } else if (el?.xvfcgrantulbforms.isCompleted == true) {
+          el["xvfcgrantulbformsStatus"] = "Completed";
+        } else if (el?.xvfcgrantulbforms.isCompleted == false) {
+          el["xvfcgrantulbformsStatus"] = "In Progress";
+        } else if (el?.xvfcgrantulbforms == "Not Applicable") {
+          el["xvfcgrantulbformsStatus"] = "Not Applicable";
+        }
+      });
+
+      console.log(data)
+      let field = csvData();
+      if (user.role == "STATE") {
+        delete field.stateName;
+      }
+      if (formName == "utilReport") {
+        delete field.masterformStatus;
+        delete field.pfmsaccountStatus;
+        delete field.audited_annualaccountsStatus;
+        delete field.unaudited_annualaccountsStatus;
+        delete field.xvfcgrantplansStatus;
+        delete field.xvfcgrantulbformsStatus;
+
+      } else if (formName == "pfms") {
+        delete field.masterformStatus;
+        delete field.xvfcgrantulbformsStatus;
+        delete field.audited_annualaccountsStatus;
+        delete field.unaudited_annualaccountsStatus;
+        delete field.xvfcgrantplansStatus;
+        delete field.utilizationreportStatus;
+
+      } else if (formName == "plans") {
+        delete field.masterformStatus;
+        delete field.xvfcgrantulbformsStatus;
+        delete field.audited_annualaccountsStatus;
+        delete field.unaudited_annualaccountsStatus;
+        delete field.pfmsaccountStatus;
+        delete field.utilizationreportStatus;
+      } else if (formName == "slb") {
+        delete field.masterformStatus;
+        delete field.xvfcgrantplansStatus;
+        delete field.audited_annualaccountsStatus;
+        delete field.unaudited_annualaccountsStatus;
+        delete field.pfmsaccountStatus;
+        delete field.utilizationreportStatus;
+      } else if (formName == "annualaccount") {
+        delete field.masterformStatus;
+        delete field.xvfcgrantplansStatus;
+        delete field.pfmsaccountStatus;
+        delete field.utilizationreportStatus;
+        delete field.xvfcgrantulbformsStatus;
+
+      }
+      let xlsData = await Service.dataFormating(data, field);
+      let filename =
+        "15th-FC-Form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
+      return res.xls(filename, xlsData);
+
+    } else {
+      if (sort && Object.keys(sort).length) {
+        query.push({ $sort: sort });
+      }
+      query.push({ $skip: skip });
+      query.push({ $limit: limit });
+      console.log(util.inspect(query, false, null));
+      let data = await Ulb.aggregate(query).exec();
+
+      console.log(data);
+      data.forEach((el) => {
+        if (Object.entries(el?.masterform).length === 0) {
+          el["masterformStatus"] = "Not Started";
+        } else if (
+          el?.masterform.isSubmit == true &&
+          el?.masterform.actionTakenByRole === "ULB" &&
+          (el.masterform.status === "PENDING" || el.masterform.status === "NA")
+        ) {
+          el["masterformStatus"] = "Under Review by State";
+        } else if (
+          el?.masterform.isSubmit == false &&
+          el?.masterform.actionTakenByRole === "STATE"
+        ) {
+          el["masterformStatus"] = "Under Review by State";
+        } else if (
+          el?.masterform.isSubmit == false &&
+          el?.masterform.actionTakenByRole === "ULB" &&
+          (el.masterform.status === "PENDING" || el.masterform.status === "NA")
+        ) {
+          el["masterformStatus"] = "In Progress";
+        } else if (
+          el?.masterform.actionTakenByRole === "STATE" &&
+          el?.masterform.status === "REJECTED"
+        ) {
+          el["masterformStatus"] = "Rejected by State";
+        } else if (
+          el?.masterform.actionTakenByRole === "MoHUA" &&
+          el?.masterform.status === "REJECTED"
+        ) {
+          el["masterformStatus"] = "Rejected by MoHUA";
+        } else if (
+          el?.masterform.actionTakenByRole === "MoHUA" &&
+          el?.masterform.status === "APPROVED"
+        ) {
+          el["masterformStatus"] = "Approval Completed";
+        } else if (
+          el?.masterform.actionTakenByRole === "MoHUA" &&
+          el?.masterform.isSubmit === false
+        ) {
+          el["masterformStatus"] = "Under Review by MoHUA";
+        } else if (
+          el?.masterform.isSubmit == true &&
+          el?.masterform.actionTakenByRole === "STATE" &&
+          el?.masterform.status === "PENDING"
+        ) {
+          el["masterformStatus"] = "Under Review by MoHUA";
+        }
+
+        if (Object.entries(el?.pfmsaccount).length === 0) {
+          el["pfmsaccountStatus"] = "Not Started";
+        } else if (
+          el?.pfmsaccount.isDraft == false &&
+          el?.pfmsaccount.registered == "no"
+        ) {
+          el["pfmsaccountStatus"] = "Not Registered";
+        } else if (
+          el?.pfmsaccount.isDraft == false &&
+          el?.pfmsaccount.registered == "yes"
+        ) {
+          el["pfmsaccountStatus"] = "Registered";
+        } else if (
+          el?.pfmsaccount.isDraft == false &&
+          el?.pfmsaccount.registered == ""
+        ) {
+          el["pfmsaccountStatus"] = "Not Registered";
+        } else if (el?.pfmsaccount.isDraft == "true") {
+          el["pfmsaccountStatus"] = "In Progress";
+        }
+
+        if (Object.entries(el?.utilizationreport).length === 0) {
+          el["utilizationreportStatus"] = "Not Started";
+        } else if (el?.utilizationreport.isDraft == false) {
+          el["utilizationreportStatus"] = "Completed";
+        } else if (el?.utilizationreport.isDraft == true) {
+          el["utilizationreportStatus"] = "In Progress";
+        }
+        if (Object.entries(el?.audited_annualaccounts).length === 0) {
+          el["audited_annualaccountsStatus"] = "Not Started";
+        } else if (
+          el?.audited_annualaccounts.isDraft == false &&
+          el?.audited_annualaccounts.auditedSubmitted == false
+        ) {
+          el["audited_annualaccountsStatus"] = "Accounts Not Submitted";
+        } else if (
+          el?.audited_annualaccounts.isDraft == false &&
+          el?.audited_annualaccounts.auditedSubmitted == true
+        ) {
+          el["audited_annualaccountsStatus"] = "Accounts Submitted";
+        } else if (el?.audited_annualaccounts.isDraft == true) {
+          el["audited_annualaccountsStatus"] = "In Progress";
+        }
+        if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
+          el["unaudited_annualaccountsStatus"] = "Not Started";
+        } else if (
+          el?.unaudited_annualaccounts.isDraft == false &&
+          el?.unaudited_annualaccounts.unAuditedSubmitted == false
+        ) {
+          el["unaudited_annualaccountsStatus"] = "Accounts Not Submitted";
+        } else if (
+          el?.unaudited_annualaccounts.isDraft == false &&
+          el?.unaudited_annualaccounts.unAuditedSubmitted == true
+        ) {
+          el["unaudited_annualaccountsStatus"] = "Accounts Submitted";
+        } else if (el?.unaudited_annualaccounts.isDraft == true) {
+          el["unaudited_annualaccountsStatus"] = "In Progress";
+        }
+
+        if (Object.entries(el?.xvfcgrantplans).length === 0) {
+          el["xvfcgrantplansStatus"] = "Not Started";
+        } else if (el?.xvfcgrantplans.isDraft == false) {
+          el["xvfcgrantplansStatus"] = "Completed";
+        } else if (el?.xvfcgrantplans.isDraft == true) {
+          el["xvfcgrantplansStatus"] = "In Progress";
+        } else if (el?.xvfcgrantplans == "Not Applicable") {
+          el["xvfcgrantplansStatus"] = "Not Applicable";
+        } else {
+        }
+
+        if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
+          el["xvfcgrantulbformsStatus"] = "Not Started";
+        } else if (el?.xvfcgrantulbforms.isCompleted == true) {
+          el["xvfcgrantulbformsStatus"] = "Completed";
+        } else if (el?.xvfcgrantulbforms.isCompleted == false) {
+          el["xvfcgrantulbformsStatus"] = "In Progress";
+        } else if (el?.xvfcgrantulbforms == "Not Applicable") {
+          el["xvfcgrantulbformsStatus"] = "Not Applicable";
+        }
+      });
+
+      if (formName == "utilReport") {
+        data.forEach((el) => {
+          delete el.masterform;
+          delete el?.annualaccount;
+          delete el.pfmsaccount;
+          delete el.xvfcgrantplans;
+          delete el.xvfcgrantulbforms;
+        });
+      } else if (formName == "pfms") {
+        data.forEach((el) => {
+          delete el.masterform;
+          delete el?.annualaccount;
+          delete el.utilizationreport;
+          delete el.xvfcgrantplans;
+          delete el.xvfcgrantulbforms;
+        });
+      } else if (formName == "plans") {
+        data.forEach((el) => {
+          delete el.masterform;
+          delete el?.annualaccount;
+          delete el.utilizationreport;
+          delete el.pfmsaccount;
+          delete el.xvfcgrantulbforms;
+        });
+      } else if (formName == "slb") {
+        data.forEach((el) => {
+          delete el.masterform;
+          delete el?.annualaccount;
+          delete el.utilizationreport;
+          delete el.pfmsaccount;
+          delete el.xvfcgrantplans;
+        });
+      } else if (formName == "annualaccount") {
+        data.forEach((el) => {
+          delete el.masterform;
+          delete el.xvfcgrantulbforms;
+          delete el.utilizationreport;
+          delete el.pfmsaccount;
+          delete el.xvfcgrantplans;
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        data: data,
+      });
     }
-    console.log(util.inspect(query, false, null));
-    let data = await Ulb.aggregate(query);
 
-    console.log(data);
-    data.forEach((el) => {
-      if (Object.entries(el?.masterform).length === 0) {
-        el["masterformStatus"] = "Not Started";
-      } else if (
-        el?.masterform.isSubmit == true &&
-        el?.masterform.actionTakenByRole === "ULB" &&
-        (el.masterform.status === "PENDING" || el.masterform.status === "NA")
-      ) {
-        el["masterformStatus"] = "Under Review by State";
-      } else if (
-        el?.masterform.isSubmit == false &&
-        el?.masterform.actionTakenByRole === "STATE"
-      ) {
-        el["masterformStatus"] = "Under Review by State";
-      } else if (
-        el?.masterform.isSubmit == false &&
-        el?.masterform.actionTakenByRole === "ULB" &&
-        (el.masterform.status === "PENDING" || el.masterform.status === "NA")
-      ) {
-        el["masterformStatus"] = "In Progress";
-      } else if (
-        el?.masterform.actionTakenByRole === "STATE" &&
-        el?.masterform.status === "REJECTED"
-      ) {
-        el["masterformStatus"] = "Rejected by State";
-      } else if (
-        el?.masterform.actionTakenByRole === "MoHUA" &&
-        el?.masterform.status === "REJECTED"
-      ) {
-        el["masterformStatus"] = "Rejected by MoHUA";
-      } else if (
-        el?.masterform.actionTakenByRole === "MoHUA" &&
-        el?.masterform.status === "APPROVED"
-      ) {
-        el["masterformStatus"] = "Approval Completed";
-      } else if (
-        el?.masterform.actionTakenByRole === "MoHUA" &&
-        el?.masterform.isSubmit === false
-      ) {
-        el["masterformStatus"] = "Under Review by MoHUA";
-      } else if (
-        el?.masterform.isSubmit == true &&
-        el?.masterform.actionTakenByRole === "STATE" &&
-        el?.masterform.status === "PENDING"
-      ) {
-        el["masterformStatus"] = "Under Review by MoHUA";
-      }
-
-      if (Object.entries(el?.pfmsaccount).length === 0) {
-        el["pfmsaccountStatus"] = "Not Started";
-      } else if (
-        el?.pfmsaccount.isDraft == false &&
-        el?.pfmsaccount.registered == "no"
-      ) {
-        el["pfmsaccountStatus"] = "Not Registered";
-      } else if (
-        el?.pfmsaccount.isDraft == false &&
-        el?.pfmsaccount.registered == "yes"
-      ) {
-        el["pfmsaccountStatus"] = "Registered";
-      } else if (
-        el?.pfmsaccount.isDraft == false &&
-        el?.pfmsaccount.registered == ""
-      ) {
-        el["pfmsaccountStatus"] = "Not Registered";
-      } else if (el?.pfmsaccount.isDraft == "true") {
-        el["pfmsaccountStatus"] = "In Progress";
-      }
-
-      if (Object.entries(el?.utilizationreport).length === 0) {
-        el["utilizationreportStatus"] = "Not Started";
-      } else if (el?.utilizationreport.isDraft == false) {
-        el["utilizationreportStatus"] = "Completed";
-      } else if (el?.utilizationreport.isDraft == true) {
-        el["utilizationreportStatus"] = "In Progress";
-      }
-      if (Object.entries(el?.audited_annualaccounts).length === 0) {
-        el["audited_annualaccountsStatus"] = "Not Started";
-      } else if (
-        el?.audited_annualaccounts.isDraft == false &&
-        el?.audited_annualaccounts.auditedSubmitted == false
-      ) {
-        el["audited_annualaccountsStatus"] = "Accounts Not Submitted";
-      } else if (
-        el?.audited_annualaccounts.isDraft == false &&
-        el?.audited_annualaccounts.auditedSubmitted == true
-      ) {
-        el["audited_annualaccountsStatus"] = "Accounts Submitted";
-      } else if (el?.audited_annualaccounts.isDraft == true) {
-        el["audited_annualaccountsStatus"] = "In Progress";
-      }
-      if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
-        el["unaudited_annualaccountsStatus"] = "Not Started";
-      } else if (
-        el?.unaudited_annualaccounts.isDraft == false &&
-        el?.unaudited_annualaccounts.unAuditedSubmitted == false
-      ) {
-        el["unaudited_annualaccountsStatus"] = "Accounts Not Submitted";
-      } else if (
-        el?.unaudited_annualaccounts.isDraft == false &&
-        el?.unaudited_annualaccounts.unAuditedSubmitted == true
-      ) {
-        el["unaudited_annualaccountsStatus"] = "Accounts Submitted";
-      } else if (el?.unaudited_annualaccounts.isDraft == true) {
-        el["unaudited_annualaccountsStatus"] = "In Progress";
-      }
-
-      if (Object.entries(el?.xvfcgrantplans).length === 0) {
-        el["xvfcgrantplansStatus"] = "Not Started";
-      } else if (el?.xvfcgrantplans.isDraft == false) {
-        el["xvfcgrantplansStatus"] = "Completed";
-      } else if (el?.xvfcgrantplans.isDraft == true) {
-        el["xvfcgrantplansStatus"] = "In Progress";
-      } else if (el?.xvfcgrantplans == "Not Applicable") {
-        el["xvfcgrantplansStatus"] = "Not Applicable";
-      } else {
-      }
-
-      if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
-        el["xvfcgrantulbformsStatus"] = "Not Started";
-      } else if (el?.xvfcgrantulbforms.isCompleted == true) {
-        el["xvfcgrantulbformsStatus"] = "Completed";
-      } else if (el?.xvfcgrantulbforms.isCompleted == false) {
-        el["xvfcgrantulbformsStatus"] = "In Progress";
-      } else if (el?.xvfcgrantulbforms == "Not Applicable") {
-        el["xvfcgrantulbformsStatus"] = "Not Applicable";
-      }
-    });
-
-    if (formName == "utilReport") {
-      data.forEach((el) => {
-        delete el.masterform;
-        delete el?.annualaccount;
-        delete el.pfmsaccount;
-        delete el.xvfcgrantplans;
-        delete el.xvfcgrantulbforms;
-      });
-    } else if (formName == "pfms") {
-      data.forEach((el) => {
-        delete el.masterform;
-        delete el?.annualaccount;
-        delete el.utilizationreport;
-        delete el.xvfcgrantplans;
-        delete el.xvfcgrantulbforms;
-      });
-    } else if (formName == "plans") {
-      data.forEach((el) => {
-        delete el.masterform;
-        delete el?.annualaccount;
-        delete el.utilizationreport;
-        delete el.pfmsaccount;
-        delete el.xvfcgrantulbforms;
-      });
-    } else if (formName == "slb") {
-      data.forEach((el) => {
-        delete el.masterform;
-        delete el?.annualaccount;
-        delete el.utilizationreport;
-        delete el.pfmsaccount;
-        delete el.xvfcgrantplans;
-      });
-    } else if (formName == "annualaccount") {
-      data.forEach((el) => {
-        delete el.masterform;
-        delete el.xvfcgrantulbforms;
-        delete el.utilizationreport;
-        delete el.pfmsaccount;
-        delete el.xvfcgrantplans;
-      });
-    }
-    return res.status(200).json({
-      success: true,
-      data: data,
-    });
 
     // console.log(util.inspect({ data }, { showHidden: false, depth: null }))
   } else {
@@ -2664,13 +2849,22 @@ const time = () => {
 
 function csvData() {
   return (field = {
-    state: "State name",
     ulbName: "ULB name",
-    ulbType: "ULB Type",
-    populationType: "Population Type",
+    state: "State name",
     censusCode: "Census Code",
     sbCode: "ULB Code",
-    status: "Status",
+    ulbType: "ULB Type",
+    populationType: "Population Type",
+    UA: "Name of UA",
+
+    masterformStatus: "Overall Form Status",
+    pfmsaccountStatus: "PFMS Status",
+    audited_annualaccountsStatus: "Audited Accounts 2019-2020 Status",
+    unaudited_annualaccountsStatus: "Provisional Accounts 2020-2021 Status",
+    utilizationreportStatus: "Utilisation Report Status",
+    xvfcgrantulbformsStatus: "SLB Status",
+    xvfcgrantplansStatus: "Plans for Water Supply and Sanitation Status"
+
   });
 }
 
