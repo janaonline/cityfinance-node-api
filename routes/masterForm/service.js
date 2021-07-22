@@ -2374,7 +2374,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
       let xlsData = await Service.dataFormating(data, field);
       let filename =
-        "15th-FC-Form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
+        `15th-FC-Form${moment().format("DD-MMM-YY HH:MM:SS")}.xlsx`;
       return res.xls(filename, xlsData);
 
     } else {
@@ -2868,6 +2868,18 @@ function csvData() {
   });
 }
 
+function csvTableData() {
+  return (field = {
+    name: "State",
+    totalULBs: "Total ULBs",
+    approvedByState: "ULBs Submitted & Approved",
+    withState: "ULBs Under Review by State",
+    notSubmittedForm: "ULBs Not Submitted Data",
+    submittedForm: "Completed & Approved Forms (%)"
+
+  });
+}
+
 module.exports.finalSubmit = catchAsync(async (req, res) => {
   let user = req.decoded;
   if (!user) {
@@ -3292,7 +3304,7 @@ module.exports.stateUlbData = catchAsync(async (req, res) => {
   try {
     let { design_year } = req.query;
     const getAsync = promisify(Redis.Client.get).bind(Redis.Client);
-
+    let { csv } = req.query
     let allStates;
     // allStates = await getAsync("states");
 
@@ -3310,7 +3322,23 @@ module.exports.stateUlbData = catchAsync(async (req, res) => {
       allPromise.push(oneStatePromise(element, design_year));
     }
 
+
     let allUlbsData = await Promise.all(allPromise);
+
+    if (csv) {
+
+      allUlbsData.forEach(el => {
+        el['submittedForm'] = String(((el['approvedByState'] / el['totalULBs']) * 100).toFixed(2)) + "%"
+      })
+      let field = csvTableData();
+
+      let xlsData = await Service.dataFormating(allUlbsData, field);
+      let filename =
+        "15th-FC-Form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
+      return res.xls(filename, xlsData);
+
+    }
+
 
     return Response.OK(res, allUlbsData, "Success");
   } catch (error) {
