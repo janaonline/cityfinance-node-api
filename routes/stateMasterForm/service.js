@@ -69,7 +69,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
     let user = req.decoded;
     let { design_year } = req.params;
-    let { csv } = req.query
+    let csv = req.query.csv === 'true'
     if (!design_year) {
         return res.status(400).json({
             success: false,
