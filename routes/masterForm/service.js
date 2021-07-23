@@ -96,6 +96,8 @@ module.exports.get = catchAsync(async (req, res) => {
         if (masterFormData.history.length != 0)
           masterFormData =
             masterFormData.history[masterFormData.history.length - 1];
+        masterFormData['stateName'] = masterFormData.stateName
+        masterFormData['ulbName'] = masterFormData.ulbName
       }
       if (
         user.role == "MoHUA" &&
@@ -119,6 +121,8 @@ module.exports.get = catchAsync(async (req, res) => {
   let masterFormData = await MasterFormData.findOne(query);
   if (masterFormData.actionTakenByRole != user.role) {
     masterFormData = masterFormData.history[masterFormData.history.length - 1];
+    // masterFormData['stateName'] = masterFormData.stateName
+    // masterFormData['ulbName'] = masterFormData.ulbName
   }
   masterFormData.history = null;
   if (!masterFormData) {

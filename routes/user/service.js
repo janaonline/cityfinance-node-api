@@ -256,14 +256,18 @@ module.exports.getAll = async (req, res) => {
                 if (csv) {
                     let arr = await User.aggregate(q).exec();
                     let field = {};
+                    Object.assign(field, {
+                        ulbName: 'ULB Name'
+                    });
                     if (['STATE'].indexOf(role) > -1) {
                         Object.assign(field, {
                             stateName: 'State'
                         });
                     }
                     Object.assign(field, {
-                        name: 'Username',
-                        email: 'Email ID'
+                        accountantName: 'ULB Nodal Officer Name',
+                        accountantEmail: 'ULB Nodal Officer Email ID',
+                        accountantConatactNumber: 'ULB Nodal Officer Phone Number'
                     });
                     if (
                         ['MoHUA', 'PARTNER', 'STATE', 'USER'].indexOf(role) > -1
@@ -283,7 +287,10 @@ module.exports.getAll = async (req, res) => {
                             ulbName: 'ULB Name',
                             ulbCode: 'ULB Code',
                             sbCode: 'Swatch Bharat Code',
-                            censusCode: 'Census Code'
+                            censusCode: 'Census Code',
+                            accountantName: 'ULB Nodal Officer Name',
+                            accountantEmail: 'ULB Nodal Officer Email ID',
+                            accountantConatactNumber: 'ULB Nodal Officer Phone Number'
                         };
                     }
                     if (['USER'].indexOf(role) > -1) {
@@ -291,6 +298,7 @@ module.exports.getAll = async (req, res) => {
                             organization: 'Organisation'
                         });
                     }
+                    console.log(field)
                     let xlsData = await Service.dataFormating(arr, field);
                     return res.xls('user.xlsx', xlsData);
                 } else {
