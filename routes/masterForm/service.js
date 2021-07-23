@@ -479,43 +479,46 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.isSubmit == false &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d.status = "Saved as Draft";
+          d["printStatus"] = "In Progress";
         }
         if (
           d.status == "PENDING" &&
           d.isSubmit == true &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d.status = "Under Review by State";
+          d["printStatus"] = "Under Review by State";
         }
         if (
           d.status == "PENDING" &&
           d.isSubmit == false &&
           d.actionTakenByUserRole == "STATE"
         ) {
-          d.status = "Under Review by State";
+          d["printStatus"] = "Under Review by State";
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
-          d.status = "Under Review by MoHUA";
+          d["printStatus"] = "Under Review by MoHUA";
+        }
+        if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
+          d["printStatus"] = "Under Review by MoHUA";
         }
         if (
           d.status == "PENDING" &&
           d.actionTakenByUserRole == "STATE" &&
           d.isSubmit == false
         ) {
-          d.status = "Under Review by MoHUA";
+          d["printStatus"] = "Under Review by State";
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
-          d.status = "Rejected by STATE";
+          d["printStatus"] = "Rejected by STATE";
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
-          d.status = "Rejected by MoHUA";
+          d["printStatus"] = "Rejected by MoHUA";
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
-          d.status = "Approval Completed";
+          d["printStatus"] = "Approval Completed";
         }
       }
-      let field = csvData();
+      let field = csvULBReviewData();
       if (user.role == "STATE") {
         delete field.state;
       }
@@ -2846,6 +2849,20 @@ const time = () => {
   dt.setMinutes(dt.getMinutes() + 30);
   return dt;
 };
+function csvULBReviewData() {
+  return (field = {
+    ulbName: "ULB name",
+    state: "State",
+    censusCode: "Census Code",
+    sbCode: "ULB Code",
+    ulbType: "ULB Type",
+    populationType: "Population Type",
+    UA: "Name of UA",
+    printStatus: "Status"
+  });
+
+
+}
 
 function csvData() {
   return (field = {
