@@ -9,7 +9,8 @@ const PFMSState = require('../../models/LinkPfmsState')
 const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const GTCertificate = require('../../models/StateGTCertificate')
 const Response = require("../../service").response;
-
+const Service = require("../../service");
+const moment = require("moment");
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -68,6 +69,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
     let user = req.decoded;
     let { design_year } = req.params;
+    let { csv } = req.query
     if (!design_year) {
         return res.status(400).json({
             success: false,
@@ -136,6 +138,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
             })
         }
 
+        if (csv) {
+            let field = csvData();
+
+            let xlsData = await Service.dataFormating(masterFormData, field);
+            let filename =
+                "15th-FC-Form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
+            return res.xls(filename, xlsData);
+
+        }
         return res.status(200).json({
             success: true,
             message: masterFormData ? "Data Found Successfully!" : "No Data Found",
@@ -150,6 +161,18 @@ module.exports.getAll = catchAsync(async (req, res) => {
     }
 
 })
+
+function csvData() {
+    return (field = {
+
+        state: "State Name",
+        numberOfUas: "Million Plus UAs in State",
+        formStatus: "Status",
+
+
+
+    });
+}
 
 module.exports.getAllForms = catchAsync(async (req, res) => {
     let { design_year, state_id } = req.params;
@@ -553,63 +576,63 @@ module.exports.deleteForms = catchAsync(async (req, res) => {
 
 module.exports.waterRejCard = catchAsync(async (req, res) => {
     try {
-        const {design_year,state_id} = req.query
-        if(req.decoded.role == "STATE"){
+        const { design_year, state_id } = req.query
+        if (req.decoded.role == "STATE") {
             state_id = req.decoded.state
         }
-        let data = await UA.find().select({state:1,_id:0})
+        let data = await UA.find().select({ state: 1, _id: 0 })
         data = JSON.parse(JSON.stringify(data))
         let newObj = new Map(),
-        stateIds=[];
-        data.forEach((element)=>{
-            if(!newObj.has(element.state)){
-                newObj.set(element.state,element.state)
+            stateIds = [];
+        data.forEach((element) => {
+            if (!newObj.has(element.state)) {
+                newObj.set(element.state, element.state)
                 stateIds.push(element.state)
             }
         })
 
 
-        if(state_id && !stateIds.includes(state_id)){
-            return Response.OK(res,{stateAnswer:"N/A"})
+        if (state_id && !stateIds.includes(state_id)) {
+            return Response.OK(res, { stateAnswer: "N/A" })
         }
 
         let masterData
 
-        if(!state_id){
+        if (!state_id) {
             masterData = await StateMasterForm.find({
-                state: { $in: stateIds},design_year
-              })
+                state: { $in: stateIds }, design_year
+            })
             let stateCount = 0
             masterData.forEach(element => {
-                if(element.actionTakenByRole == 'MoHUA' && element.status != 'REJECTED'){
+                if (element.actionTakenByRole == 'MoHUA' && element.status != 'REJECTED') {
                     stateCount++;
                 }
-                if(element.actionTakenByRole == 'STATE' && element.isSubmit){
+                if (element.actionTakenByRole == 'STATE' && element.isSubmit) {
                     stateCount++;
                 }
             });
-            if(masterData.length > 0){
-                return Response.OK(res,{stateCount,eligibleState:stateIds.length},"Success")
-            }else{
-                return Response.OK(res,{stateCount,eligibleState:stateIds.length},"Success")
+            if (masterData.length > 0) {
+                return Response.OK(res, { stateCount, eligibleState: stateIds.length }, "Success")
+            } else {
+                return Response.OK(res, { stateCount, eligibleState: stateIds.length }, "Success")
             }
 
-        }else{
-            masterData = await StateMasterForm.findOne({state:state_id,design_year})
-            if(masterData){
-                if(masterData.actionTakenByRole == 'MoHUA' && masterData.status != 'REJECTED'){
-                    return Response.OK(res,{stateAnswer:"yes"},"Success")
+        } else {
+            masterData = await StateMasterForm.findOne({ state: state_id, design_year })
+            if (masterData) {
+                if (masterData.actionTakenByRole == 'MoHUA' && masterData.status != 'REJECTED') {
+                    return Response.OK(res, { stateAnswer: "yes" }, "Success")
                 }
-                if(masterData.actionTakenByRole == 'STATE' && masterData.isSubmit){
-                    return Response.OK(res,{stateAnswer:"yes"},"Success")
+                if (masterData.actionTakenByRole == 'STATE' && masterData.isSubmit) {
+                    return Response.OK(res, { stateAnswer: "yes" }, "Success")
                 }
-                return Response.OK(res,{stateAnswer:"no"},"Success")
-            }else{
-                return Response.OK(res,{stateAnswer:"no"},"Success")
+                return Response.OK(res, { stateAnswer: "no" }, "Success")
+            } else {
+                return Response.OK(res, { stateAnswer: "no" }, "Success")
             }
         }
 
     } catch (error) {
-        return Response.DbError(res,`${error.message} Db error`)
+        return Response.DbError(res, `${error.message} Db error`)
     }
 });
