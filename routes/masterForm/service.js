@@ -317,7 +317,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           ? req.body.sort
           : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
-    csv = req.query.csv,
+    csv = req.query.csv === 'true',
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
 
   if (!user) {
@@ -1624,7 +1624,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
           ? req.body.sort
           : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
-    csv = req.query.csv,
+    csv = req.query.csv === 'true',
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
   // console.log(user)
   if (!user) {
