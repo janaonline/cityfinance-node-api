@@ -137,4 +137,8 @@ router.use('/stateMasterForm', StateMasterForm);
 
 const MoHUADashboard = require("./mohua-dashboard");
 router.use('/mohua', MoHUADashboard);
+
+const GrantTransferMohua = require("./grantTransferMohua");
+router.use(GrantTransferMohua);
+
 module.exports = router;
