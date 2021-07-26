@@ -311,7 +311,18 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 
         }
       },
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "xvfcformDataApproved.ulb",
+          foreignField: "_id",
+          as: "approvedULBs"
 
+        }
+      },
+      {
+        $unwind: "$approvedULBs"
+      },
       {
         $project: {
           waterSuppliedPerDay: "$xvfcformDataApproved.waterManagement.waterSuppliedPerDay",
@@ -320,12 +331,14 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             "$xvfcformDataApproved.waterManagement.houseHoldCoveredWithSewerage",
           houseHoldCoveredPipedSupply:
             "$xvfcformDataApproved.waterManagement.houseHoldCoveredPipedSupply",
+          ulb: "$approvedULBs"
 
         },
       },
       {
         $group: {
           _id: '',
+          ulbData: { $addToSet: "$ulb" },
           waterSuppliedPerDay2021: {
             $avg: {
               $convert: {
