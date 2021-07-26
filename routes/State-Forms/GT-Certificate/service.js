@@ -1,5 +1,6 @@
 const catchAsync = require("../../../util/catchAsync");
 const StateGTCertificate = require("../../../models/StateGTCertificate");
+const Ulb = require('../../../models/Ulb')
 const ObjectId = require("mongoose").Types.ObjectId;
 const {
   UpdateStateMasterForm,
@@ -80,6 +81,52 @@ module.exports.create = catchAsync(async (req, res) => {
   }
 });
 
+module.exports.showGTCform = catchAsync(async (req, res) => {
+  let user = req.decoded;
+  let query = [
+    {
+
+      $match: {
+        state: ObjectId(user.state),
+
+      },
+    },
+
+    {
+      $group: {
+        _id: "$isMillionPlus",
+        count: { $sum: 1 }
+      }
+    }
+
+
+
+  ]
+  if (user.role == 'STATE') {
+    let output = {
+      showQ1: false,
+      showQ2: false,
+      showQ3: false
+    }
+    let data = await Ulb.aggregate(query)
+    data.forEach(el => {
+      if (el._id == 'Yes' && el.count >= 1) {
+        output.showQ1 = true
+      } else if (
+        el._id == 'No' && el.count >= 1
+      ) {
+        output.showQ2 = true
+        output.showQ3 = true
+      }
+    })
+
+    return res.status(200).json({
+      success: true,
+      data: output
+    })
+  }
+})
+
 exports.action = async (req, res) => {
   try {
     const data = req.body,
@@ -119,7 +166,7 @@ exports.action = async (req, res) => {
     req.body.status = finalStatus;
     req.body.actionTakenBy = user?._id;
     req.body.modifiedAt = new Date();
-    
+
     if (!currentState) {
       return res.status(400).json({ msg: "Requested record not found." });
     } else {
