@@ -113,7 +113,7 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
 
 WaterRejenuvationRecyclingPlansSchema.index(
   {
-    designYear: 1,
+    design_year: 1,
     state: 1,
   },
   {
