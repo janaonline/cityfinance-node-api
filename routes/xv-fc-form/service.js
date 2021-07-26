@@ -209,6 +209,13 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 
   if (user.role == "STATE") {
     let { design_year } = req.params;
+    let { ua_id } = req.query;
+    if (!ua_id) {
+      return res.status(400).json({
+        success: false,
+        message: "UA Id NOT FOUND"
+      })
+    }
     if (!design_year) {
       return res.status(404).json({
         success: false,
@@ -219,47 +226,106 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 
     let query1 = [
       {
-        $match: { state: ObjectId(state) },
+        $match: {
+
+          _id: ObjectId(ua_id)
+        }
       },
+
       {
-        $group: {
-          _id: "$name",
-          ulb: { $addToSet: "$ulb" },
-        },
-      },
-      {
-        $unwind: "$ulb",
-      },
-      {
+
         $lookup: {
-          from: "xvfcgrantulbforms",
+          from: "masterforms",
           localField: "ulb",
           foreignField: "ulb",
-          as: "slbForms",
-        },
+          as: "masterformData"
+        }
       },
-      { $unwind: "$slbForms" },
+      {
+        $unwind: "$masterformData"
+      },
 
       {
         $match: {
-          "slbForms.design_year": ObjectId(design_year),
-          "slbForms.waterManagement.status": "APPROVED",
-        },
+          "masterformData.design_year": ObjectId(design_year),
+          $or: [
+            {
+              $and: [{ "masterformData.actionTakenByRole": "STATE" },
+              { "masterformData.status": "APPROVED" }]
+            },
+
+            {
+              $and: [{ "masterformData.actionTakenByRole": "MoHUA" }, {
+                $or: [
+                  { "masterformData.status": "APPROVED" },
+                  { "masterformData.status": "PENDING" }]
+              }]
+            }]
+        }
+      },
+
+      {
+        $lookup: {
+          from: "xvfcgrantulbforms",
+          localField: "masterformData.ulb",
+          foreignField: "ulb",
+          as: "xvfcformDataApproved"
+
+        }
+      },
+
+      {
+        $unwind: "$xvfcformDataApproved"
       },
       {
+
+        $match: {
+          "xvfcformDataApproved.design_year": ObjectId(design_year)
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "xvfcformDataApproved.actionTakenBy",
+          foreignField: "_id",
+          as: "actionTakenBy"
+
+        }
+      },
+      { $unwind: "$actionTakenBy" },
+      {
+        $match: {
+          $or: [{
+            $and: [{ "actionTakenBy.role": "STATE" },
+            { "xvfcformDataApproved.waterManagement.status": "APPROVED" }]
+          },
+
+          {
+            $and: [{ "actionTakenBy.role": "MoHUA" }, {
+              $or: [
+                { "xvfcformDataApproved.waterManagement.status": "APPROVED" },
+                { "xvfcformDataApproved.waterManagement.status": "PENDING" }]
+            }]
+          }]
+
+
+        }
+      },
+
+      {
         $project: {
-          waterSuppliedPerDay: "$slbForms.waterManagement.waterSuppliedPerDay",
-          reduction: "$slbForms.waterManagement.reduction",
+          waterSuppliedPerDay: "$xvfcformDataApproved.waterManagement.waterSuppliedPerDay",
+          reduction: "$xvfcformDataApproved.waterManagement.reduction",
           houseHoldCoveredWithSewerage:
-            "$slbForms.waterManagement.houseHoldCoveredWithSewerage",
+            "$xvfcformDataApproved.waterManagement.houseHoldCoveredWithSewerage",
           houseHoldCoveredPipedSupply:
-            "$slbForms.waterManagement.houseHoldCoveredPipedSupply",
-          value: "$slbForms.waterManagement.waterSuppliedPerDay.baseline.2021",
+            "$xvfcformDataApproved.waterManagement.houseHoldCoveredPipedSupply",
+
         },
       },
       {
         $group: {
-          _id: "$_id",
+          _id: '',
           waterSuppliedPerDay2021: {
             $avg: {
               $convert: {
@@ -405,103 +471,143 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 
           total: { $sum: 1 },
         },
-      },
-    ];
+
+
+      }
+
+    ]
 
     let query2 = [
       {
-        $match: { state: ObjectId(state) },
+
+        $match: {
+          _id: ObjectId(ua_id)
+        },
       },
       {
-        $project: {
-          totalUlbsInUA: { $size: "$ulb" },
-          ulb: 1,
-          name: 1,
-          state: 1,
-        },
+        $unwind: "$ulb"
       },
 
       {
         $lookup: {
-          from: "xvfcgrantulbforms",
+          from: "masterforms",
           localField: "ulb",
           foreignField: "ulb",
-          as: "slbForms",
-        },
+          as: "masterformData"
+        }
+      },
+      {
+        $unwind: {
+          path: "$masterformData",
+          preserveNullAndEmptyArrays: true
+        }
       },
 
       {
-        $unwind: {
-          path: "$slbForms",
-          preserveNullAndEmptyArrays: true,
-        },
+        $match:
+        {
+          $or: [
+            { design_year: ObjectId(design_year) },
+            { masterformData: { $exists: false } }
+          ]
+        }
       },
-      {
-        $match: {
-          "slbForms.design_year": ObjectId(design_year),
-          "slbForms.waterManagement.status": "APPROVED",
-        },
-      },
+
       {
         $lookup: {
           from: "ulbs",
           localField: "ulb",
           foreignField: "_id",
-          as: "ulb",
-        },
-      },
+          as: "ulb"
 
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "slbForms.ulb",
-          foreignField: "_id",
-          as: "ulbFilledForm",
-        },
+        }
       },
-      { $unwind: "$ulbFilledForm" },
+      { $unwind: "$ulb" }
 
-      {
-        $group: {
-          _id: {
-            UA: "$name",
-            status: "$slbForms.waterManagement.status",
-          },
-          count: { $sum: 1 },
-          ulbsFilledForm: { $addToSet: "$ulbFilledForm" },
-          ulb: { $addToSet: "$ulb" },
-          totalUlbsInUA: { $addToSet: "$totalUlbsInUA" },
-        },
-      },
-    ];
+
+
+    ]
+
 
     let { output1, output2 } = await new Promise(async (resolve, reject) => {
       let prms1 = new Promise(async (rslv, rjct) => {
         let output = await UA.aggregate(query1);
 
         if (output.length > 0) {
+          console.log('1')
+          console.log(util.inspect(output, { showHidden: false, depth: null }))
           rslv(output);
+
         } else {
           rjct({ message: "DATA NOT FOUND" });
         }
       });
       let prms2 = new Promise(async (rslv, rjct) => {
         let output = await UA.aggregate(query2);
+        let ulbA = []
+        let ulbB = []
+        let ulbC = []
         if (output.length > 0) {
-          // console.log(output)
-          rslv(output);
+          console.log("4");
+          let outputTemplate = {
+            pendingCompletion: ulbA,
+            completedAndpendingSubmission: ulbB,
+            underStateReview: ulbC,
 
-          console.log("3");
+          }
+          output.forEach(el => {
+            if (!el.hasOwnProperty('masterformData')) {
+              ulbA.push({
+                name: el.ulb.name,
+                censusCode: el.ulb.censusCode,
+                sbCode: el.ulb.sbCode
+              })
+            } else {
+              if (el.masterformData.steps.slbForWaterSupplyAndSanitation.isSubmit == null) {
+                ulbA.push({
+                  name: el.ulb.name,
+                  censusCode: el.ulb.censusCode,
+                  sbCode: el.ulb.sbCode
+                })
+              } else if (
+                el.masterformData.steps.slbForWaterSupplyAndSanitation.isSubmit
+                &&
+                el.masterformData.actionTakenByRole == 'ULB'
+                &&
+                !el.masterformData.isSubmit
+              ) {
+                ulbB.push({
+                  name: el.ulb.name,
+                  censusCode: el.ulb.censusCode,
+                  sbCode: el.ulb.sbCode
+                })
+              } else if (
+                (el.masterformData.isSubmit && el.masterformData.actionTakenByRole == 'ULB') ||
+                (!el.masterformData.isSubmit && el.masterformData.actionTakenByRole == 'STATE')
+
+              ) {
+                ulbC.push({
+                  name: el.ulb.name,
+                  censusCode: el.ulb.censusCode,
+                  sbCode: el.ulb.sbCode
+                })
+              }
+            }
+          })
+          console.log(util.inspect(outputTemplate, { showHidden: false, depth: null }))
+          rslv(outputTemplate);
         } else {
           rjct({ message: "DATA NOT FOUND" });
-          console.log("4");
+          console.log("5");
         }
       });
+
       Promise.all([prms1, prms2]).then(
         (outputs) => {
           let output1 = outputs[0];
 
           let output2 = outputs[1];
+
           if (output1 && output2) {
             resolve({ output1, output2 });
           } else {
@@ -515,7 +621,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
     });
 
     // let ulbData = extractUlbData(output2);
-    let finalOutput = formatOutput(output1, output2);
+    let finalOutput = [...output1, output2]
     return res.status(200).json({
       success: true,
       message: "Data Found Successfully",
@@ -547,90 +653,7 @@ extractUlbData = (arr2) => {
   console.log(util.inspect(output, false, null));
   // console.log(output);
 };
-formatOutput = (arr, arr2) => {
-  // eliminating those ulbs from pending which have completely filled the form
-  arr2.forEach((el) => {
-    el.ulbsFilledForm.forEach((el2) => {
-      el.ulb[0].forEach((el3, index, object) => {
-        console.log(el2._id, el3._id);
-        if (String(el2._id) === String(el3._id)) {
-          el.ulb[0].splice(index, 1);
-        }
-      });
-    });
-  });
-  // setting the data as per json
-  let newData = [];
-  let data, copyData;
-  arr.forEach((el) => {
-    arr2.forEach((el2) => {
-      if (el._id == el2._id.UA) {
-        data = {
-          waterSuppliedPerDay: {
-            target: {
-              2122: el.waterSuppliedPerDay2122,
-              2223: el.waterSuppliedPerDay2223,
-              2324: el.waterSuppliedPerDay2324,
-              2425: el.waterSuppliedPerDay2425,
-            },
-            baseline: {
-              2021: el.waterSuppliedPerDay2021,
-            },
-          },
-          reduction: {
-            target: {
-              2122: el.reduction2122,
-              2223: el.reduction2223,
-              2324: el.reduction2324,
-              2425: el.reduction2425,
-            },
-            baseline: {
-              2021: el.reduction2021,
-            },
-          },
-          houseHoldCoveredWithSewerage: {
-            target: {
-              2122: el.houseHoldCoveredWithSewerage2122,
-              2223: el.houseHoldCoveredWithSewerage2223,
-              2324: el.houseHoldCoveredWithSewerage2324,
-              2425: el.houseHoldCoveredWithSewerage2425,
-            },
-            baseline: {
-              2021: el.houseHoldCoveredWithSewerage2021,
-            },
-          },
-          houseHoldCoveredPipedSupply: {
-            target: {
-              2122: el.houseHoldCoveredPipedSupply2122,
-              2223: el.houseHoldCoveredPipedSupply2223,
-              2324: el.houseHoldCoveredPipedSupply2324,
-              2425: el.houseHoldCoveredPipedSupply2425,
-            },
-            baseline: {
-              2021: el.houseHoldCoveredPipedSupply2021,
-            },
-          },
-          totalPendingUlb:
-            el2.totalUlbsInUA[0] - el2.count
-              ? el2.totalUlbsInUA[0] - el2.count
-              : 0,
-          totalCompletedUlb: el2.count ? el2.count : 0,
-          totalULBsInUA: el2.totalUlbsInUA[0],
-          uaName: el._id,
-          approvedUlbs: el2.ulbsFilledForm,
-          pendingUlbs: el2.ulb[0],
-        };
-      }
 
-      copyData = data;
-      // console.log(data)
-    });
-
-    newData.push(data);
-  });
-
-  return newData;
-};
 
 module.exports.create = async (req, res) => {
   let user = req.decoded;
@@ -997,14 +1020,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
         req.query.filter && !req.query.filter != "null"
           ? JSON.parse(req.query.filter)
           : req.body.filter
-          ? req.body.filter
-          : {},
+            ? req.body.filter
+            : {},
       sort =
         req.query.sort && !req.query.sort != "null"
           ? JSON.parse(req.query.sort)
           : req.body.sort
-          ? req.body.sort
-          : {},
+            ? req.body.sort
+            : {},
       skip = req.query.skip ? parseInt(req.query.skip) : 0,
       limit = req.query.limit ? parseInt(req.query.limit) : 50,
       csv = req.query.csv,
@@ -1429,13 +1452,13 @@ module.exports.getHistories = async (req, res) => {
       filter = req.query.filter
         ? JSON.parse(req.query.filter)
         : req.body.filter
-        ? req.body.filter
-        : {},
+          ? req.body.filter
+          : {},
       sort = req.query.sort
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : { modifiedAt: 1 },
+          ? req.body.sort
+          : { modifiedAt: 1 },
       skip = req.query.skip ? parseInt(req.query.skip) : 0,
       limit = req.query.limit ? parseInt(req.query.limit) : 50,
       csv = req.query.csv,
@@ -1766,15 +1789,15 @@ module.exports.getDetails = async (req, res) => {
       firstSubmitedFromHistory.length > 0
         ? firstSubmitedFromHistory[0].history.createdAt
         : firstSubmited.length > 0
-        ? firstSubmited[firstSubmited.length - 1].createdAt
-        : null;
+          ? firstSubmited[firstSubmited.length - 1].createdAt
+          : null;
     let rejectedAt =
       rejectedData.length > 0
         ? rejectedData[rejectedData.length - 1].modifiedAt
         : rejectedDataFromHistory.length > 0
-        ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1].history
+          ? rejectedDataFromHistory[rejectedDataFromHistory.length - 1].history
             .modifiedAt
-        : null;
+          : null;
     let history = { histroy: "" };
     let finalData = Object.assign(data[0], {
       rejectedAt: rejectedAt,
@@ -2998,8 +3021,8 @@ module.exports.completeness = async (req, res) => {
         prevState["completeness"] = pending.length
           ? "PENDING"
           : rejected.length
-          ? "REJECTED"
-          : "APPROVED";
+            ? "REJECTED"
+            : "APPROVED";
         prevState["status"] =
           prevState["completeness"] == "REJECTED" ? "REJECTED" : "PENDING";
         prevState.modifiedAt = new Date();
@@ -3153,8 +3176,8 @@ module.exports.correctness = async (req, res) => {
         prevState["correctness"] = pending.length
           ? "PENDING"
           : rejected.length
-          ? "REJECTED"
-          : "APPROVED";
+            ? "REJECTED"
+            : "APPROVED";
         prevState["status"] = prevState["correctness"];
         prevState.modifiedAt = new Date();
         prevState.actionTakenBy = user._id;
@@ -3213,13 +3236,13 @@ module.exports.getApprovedFinancialData = async (req, res) => {
       filter = req.query.filter
         ? JSON.parse(req.query.filter)
         : req.body.filter
-        ? req.body.filter
-        : {},
+          ? req.body.filter
+          : {},
       sort = req.query.sort
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
       skip = req.query.skip ? parseInt(req.query.skip) : 0,
       limit = req.query.limit ? parseInt(req.query.limit) : 50,
       csv = req.query.csv;
@@ -3360,50 +3383,50 @@ function getSourceFiles(obj) {
     : "";
   obj.balanceSheet && obj.balanceSheet.excelUrl
     ? o.excel.push({
-        name: "Balance Sheet",
-        url: obj.balanceSheet.excelUrl,
-      })
+      name: "Balance Sheet",
+      url: obj.balanceSheet.excelUrl,
+    })
     : "";
 
   obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl
     ? o.pdf.push({
-        name: "Schedules To Balance Sheet",
-        url: obj.schedulesToBalanceSheet.pdfUrl,
-      })
+      name: "Schedules To Balance Sheet",
+      url: obj.schedulesToBalanceSheet.pdfUrl,
+    })
     : "";
   obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl
     ? o.excel.push({
-        name: "Schedules To Balance Sheet",
-        url: obj.schedulesToBalanceSheet.excelUrl,
-      })
+      name: "Schedules To Balance Sheet",
+      url: obj.schedulesToBalanceSheet.excelUrl,
+    })
     : "";
 
   obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl
     ? o.pdf.push({
-        name: "Income And Expenditure",
-        url: obj.incomeAndExpenditure.pdfUrl,
-      })
+      name: "Income And Expenditure",
+      url: obj.incomeAndExpenditure.pdfUrl,
+    })
     : "";
   obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl
     ? o.excel.push({
-        name: "Income And Expenditure",
-        url: obj.incomeAndExpenditure.excelUrl,
-      })
+      name: "Income And Expenditure",
+      url: obj.incomeAndExpenditure.excelUrl,
+    })
     : "";
 
   obj.schedulesToIncomeAndExpenditure &&
-  obj.schedulesToIncomeAndExpenditure.pdfUrl
+    obj.schedulesToIncomeAndExpenditure.pdfUrl
     ? o.pdf.push({
-        name: "Schedules To Income And Expenditure",
-        url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
-      })
+      name: "Schedules To Income And Expenditure",
+      url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
+    })
     : "";
   obj.schedulesToIncomeAndExpenditure &&
-  obj.schedulesToIncomeAndExpenditure.excelUrl
+    obj.schedulesToIncomeAndExpenditure.excelUrl
     ? o.excel.push({
-        name: "Schedules To Income And Expenditure",
-        url: obj.schedulesToIncomeAndExpenditure.excelUrl,
-      })
+      name: "Schedules To Income And Expenditure",
+      url: obj.schedulesToIncomeAndExpenditure.excelUrl,
+    })
     : "";
 
   obj.trialBalance && obj.trialBalance.pdfUrl
@@ -3411,9 +3434,9 @@ function getSourceFiles(obj) {
     : "";
   obj.trialBalance && obj.trialBalance.excelUrl
     ? o.excel.push({
-        name: "Trial Balance",
-        url: obj.trialBalance.excelUrl,
-      })
+      name: "Trial Balance",
+      url: obj.trialBalance.excelUrl,
+    })
     : "";
 
   obj.auditReport && obj.auditReport.pdfUrl
@@ -3428,9 +3451,9 @@ function getSourceFiles(obj) {
     : "";
   obj.overallReport && obj.overallReport.excelUrl
     ? o.excel.push({
-        name: "Overall Report",
-        url: obj.overallReport.excelUrl,
-      })
+      name: "Overall Report",
+      url: obj.overallReport.excelUrl,
+    })
     : "";
 
   return o;
