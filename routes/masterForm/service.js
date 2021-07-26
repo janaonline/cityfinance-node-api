@@ -1625,7 +1625,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
           : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv === 'true',
-    limit = req.query.limit ? parseInt(req.query.limit) : 50;
+    limit = req.query.limit ? parseInt(req.query.limit) : 10000;
   // console.log(user)
   if (!user) {
     return res.status(400).json({
@@ -1648,20 +1648,20 @@ module.exports.viewList = catchAsync(async (req, res) => {
     if (user.role == 'MoHUA' && !state) {
       query = [
 
-        {
-          $lookup: {
-            from: "uas",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "uas",
-          },
-        },
-        {
-          $unwind: {
-            path: "$uas",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
+        // {
+        //   $lookup: {
+        //     from: "uas",
+        //     localField: "_id",
+        //     foreignField: "ulb",
+        //     as: "uas",
+        //   },
+        // },
+        // {
+        //   $unwind: {
+        //     path: "$uas",
+        //     preserveNullAndEmptyArrays: true,
+        //   },
+        // },
 
         {
           $lookup: {
@@ -2567,6 +2567,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
       return res.status(200).json({
         success: true,
         data: data,
+        total: data.length
       });
     }
 
