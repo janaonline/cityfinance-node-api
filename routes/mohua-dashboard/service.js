@@ -363,9 +363,8 @@ module.exports.getCards = catchAsync(async (req, res) => {
             if (
                 ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
                 ||
-                ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'STATE')
-                ||
-                (el._id.status == 'PENDING' && el._id.isSubmit == true && el._id.actionTakenByRole == 'ULB')
+                (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
+
             ) {
                 submitted_totalUlbs = submitted_totalUlbs + el.count
                 totalUlbs = el.totalUlbs[0]
@@ -381,9 +380,8 @@ module.exports.getCards = catchAsync(async (req, res) => {
             if (
                 ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
                 ||
-                ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'STATE')
-                ||
-                (el._id.status == 'PENDING' && el._id.isSubmit == true && el._id.actionTakenByRole == 'ULB')
+                (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
+
             ) {
                 submitted_nonMillion = submitted_nonMillion + el.count;
                 nonMillion = el.totalUlbs[0]
@@ -398,9 +396,8 @@ module.exports.getCards = catchAsync(async (req, res) => {
             if (
                 ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
                 ||
-                ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'STATE')
-                ||
-                (el._id.status == 'PENDING' && el._id.isSubmit == true && el._id.actionTakenByRole == 'ULB')
+                (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
+
             ) {
                 submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs + el.count
                 ulbsInMillionPlusUlbs = el.totalUlbs[0]
