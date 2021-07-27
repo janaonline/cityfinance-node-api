@@ -104,29 +104,29 @@ module.exports.showGTCform = catchAsync(async (req, res) => {
 
 
   ]
-  if (user.role == 'STATE') {
-    let output = {
-      showQ1: false,
-      showQ2: false,
-      showQ3: false
-    }
-    let data = await Ulb.aggregate(query)
-    data.forEach(el => {
-      if (el._id == 'Yes' && el.count >= 1) {
-        output.showQ1 = true
-      } else if (
-        el._id == 'No' && el.count >= 1
-      ) {
-        output.showQ2 = true
-        output.showQ3 = true
-      }
-    })
 
-    return res.status(200).json({
-      success: true,
-      data: output
-    })
+  let output = {
+    showQ1: false,
+    showQ2: false,
+    showQ3: false
   }
+  let data = await Ulb.aggregate(query)
+  data.forEach(el => {
+    if (el._id == 'Yes' && el.count >= 1) {
+      output.showQ1 = true
+    } else if (
+      el._id == 'No' && el.count >= 1
+    ) {
+      output.showQ2 = true
+      output.showQ3 = true
+    }
+  })
+
+  return res.status(200).json({
+    success: true,
+    data: output
+  })
+
 })
 
 exports.action = async (req, res) => {
