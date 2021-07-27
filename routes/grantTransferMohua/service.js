@@ -59,15 +59,18 @@ exports.get = async (req, res) => {
             }
             innerElement.year = yearsMap[innerElement.year];
             innerElement.GrantType = grantTypesMap[innerElement.GrantType];
-            innerElement.submissionDate = moment(
-              innerElement.submissionDate
-            ).format("DD/MM/YYYY");
-            innerElement.releaseDate = moment(innerElement.releaseDate).format(
-              "DD/MM/YYYY"
-            );
-            innerElement.recommendationDate = moment(
-              innerElement.recommendationDate
-            ).format("DD/MM/YYYY");
+            if (innerElement.submissionDate)
+              innerElement.submissionDate = moment(
+                innerElement.submissionDate
+              ).format("DD/MM/YYYY");
+            if (innerElement.releaseDate)
+              innerElement.releaseDate = moment(
+                innerElement.releaseDate
+              ).format("DD/MM/YYYY");
+            if (innerElement.recommendationDate)
+              innerElement.recommendationDate = moment(
+                innerElement.recommendationDate
+              ).format("DD/MM/YYYY");
             ExcelData.push(innerElement);
           });
         });
