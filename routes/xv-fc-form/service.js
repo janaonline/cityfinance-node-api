@@ -251,7 +251,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
           $or: [
             {
               $and: [{ "masterformData.actionTakenByRole": "STATE" },
-              { "masterformData.status": "APPROVED" }]
+              { "masterformData.isSubmit": true }]
             },
 
             {
