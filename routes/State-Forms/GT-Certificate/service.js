@@ -83,11 +83,13 @@ module.exports.create = catchAsync(async (req, res) => {
 
 module.exports.showGTCform = catchAsync(async (req, res) => {
   let user = req.decoded;
+  let { state_id } = req.query;
+  let state = user.state ?? state_id
   let query = [
     {
 
       $match: {
-        state: ObjectId(user.state),
+        state: ObjectId(state),
 
       },
     },
