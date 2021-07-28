@@ -527,8 +527,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
         delete field.state;
       }
       let xlsData = await Service.dataFormating(arr, field);
-      let filename =
-        "15th-FC-Form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
+      let date = moment().format("DD-MMM-YY").toString()
+      let filename =`15th-FC-Form${date}.xlsx`
       return res.xls(filename, xlsData);
     } else {
       if (!skip) {
