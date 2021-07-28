@@ -83,7 +83,14 @@ exports.uploadTemplate = async (req, res) => {
       // validate data
       const notValid = await validate(XslData);
       if (notValid) {
-        return res.status(400).xls("error_sheet.xlsx", notValid);
+        let field = {
+          ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
+          ["grant amount"]: "ULB Name",
+          ["ulb name"]: "Grant Amount",
+          Errors: "Errors",
+        };
+        let xlsDatas = await Service.dataFormating(notValid, field);
+        return res.status(400).xls("error_sheet.xlsx", xlsDatas);
       }
       return Response.OK(res, null, "file submitted");
     });
@@ -178,7 +185,7 @@ async function validate(data) {
     const keys = Object.keys(data[index]).length;
     if (keys !== 3) {
       data[index].Errors = "Incorrect Format,";
-    } 
+    }
     if (data[index][code]) ulbCodes.push(data[index][code]);
     if (data[index][name]) ulbNames.push(data[index][name]);
   }
@@ -188,10 +195,8 @@ async function validate(data) {
   for (let index = 0; index < data.length; index++) {
     if (!compareData[data[index][code]]) {
       errorFlag = true;
-      if(data[index].Errors)
-        data[index].Errors += "Code Not Valid,";
-      else
-        data[index].Errors = "Code Not Valid,";
+      if (data[index].Errors) data[index].Errors += "Code Not Valid,";
+      else data[index].Errors = "Code Not Valid,";
     }
     if (
       data[index][code] === "" ||
@@ -199,20 +204,29 @@ async function validate(data) {
       data[index][name] === ""
     ) {
       errorFlag = true;
-      if(data[index].Errors)
-        data[index].Errors += "Name Not Valid,";
-      else
-        data[index].Errors = "Name Not Valid,";
+      if (data[index].Errors) data[index].Errors += "Name Not Valid,";
+      else data[index].Errors = "Name Not Valid,";
     }
     if (!Number(data[index][amount]) || data[index][amount] === "") {
       errorFlag = true;
-      if(data[index].Errors)
-        data[index].Errors += "Amount Not valid,";
-      else
-        data[index].Errors = "Amount Not valid,";
+      if (data[index].Errors) data[index].Errors += "Amount Not valid,";
+      else data[index].Errors = "Amount Not valid,";
     }
   }
   if (errorFlag) {
+    data.forEach((object) => {
+      let findKey = "Errors";
+      for (const key in object) {
+        const element = object[key];
+        if (key == findKey) {
+          findKey = true;
+          break;
+        }
+      }
+      if (findKey === "Errors") {
+        object.Errors = "";
+      }
+    });
     return data;
   }
 }
