@@ -18,7 +18,7 @@ module.exports.login = async (req, res) => {
       ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
       role = user.role;
     }
-    let sessionId = req.headers.sessionid;
+    let sessionId = req.headers.sessionId;
     let isMatch = await Service.compareHash(req.body.password, user.password);
     if (isMatch) {
       let token = await createToken(user, sessionId);
