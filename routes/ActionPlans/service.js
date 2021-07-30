@@ -156,8 +156,7 @@ let createSheetForUa = (workbook, uaData, sheetName) => {
     (col = ""), (colIndex = 0), rowIndex++;
     console.log(uaData);
     for (const key in object) {
-      if(key == "ulb")
-      {
+      if (key == "ulb") {
         console.log("Ss");
       }
       const element = object[key];
