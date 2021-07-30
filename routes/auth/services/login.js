@@ -5,7 +5,7 @@ const { getUSer } = require("./getUser");
 const Years = require("../../../models/Year");
 const Ulb = require("../../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
-const State = require('../../../models/State')
+const State = require("../../../models/State");
 
 module.exports.login = async (req, res) => {
   /**Conditional Query For CensusCode/ULB Code **/
@@ -18,7 +18,8 @@ module.exports.login = async (req, res) => {
       ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
       role = user.role;
     }
-    let sessionId = req.headers.sessionid;
+    let sessionId = ObjectId.isValid(req.headers.sessionid) ? req.headers.sessionid : null;
+    console.log(ObjectId.isValid(sessionId));
     let isMatch = await Service.compareHash(req.body.password, user.password);
     if (isMatch) {
       let token = await createToken(user, sessionId);
@@ -47,14 +48,13 @@ module.exports.login = async (req, res) => {
         let up = await User.update({ _id: user._id }, update).exec();
       }
       let attempt = user;
-      return res
-        .status(400)
-        .json({
-          message: `Invalid credentials.`,
-          loginAttempts: attempt.loginAttempts,
-        });
+      return res.status(400).json({
+        message: `Invalid credentials.`,
+        loginAttempts: attempt.loginAttempts,
+      });
     }
   } catch (error) {
+    console.log(error);
     return res.status(400).json({
       success: false,
       message: error.message || error,
