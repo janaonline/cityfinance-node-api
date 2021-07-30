@@ -92,7 +92,7 @@ module.exports.getAll = async (req, res) => {
                     : {},
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
-            csv = req.query.csv,
+            csv = req.query.csv == 'true',
             role = req.query.role
                 ? req.query.role
                 : req.body.role
@@ -302,9 +302,9 @@ module.exports.getAll = async (req, res) => {
                     let xlsData = await Service.dataFormating(arr, field);
                     return res.xls('user.xlsx', xlsData);
                 } else {
-                    if (Object.keys(sort).length) {
-                        q.push({ $sort: sort });
-                    }
+                    // if (Object.keys(sort).length) {
+                    //     q.push({ $sort: sort });
+                    // }
                     // if(req.query.role=="ULB"){
                     //     q.push({ $sort: { priority: -1 } });
                     // }
