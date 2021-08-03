@@ -14,6 +14,13 @@ module.exports.login = async (req, res) => {
     let user = await getUSer(req.body);
     let state;
     if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
+
+    if (state && state['accessToXVFC'] == false) {
+      return res.status(403).json({
+        success: false,
+        message: "Sorry! You are not Authorized To Access XV FC Grants Module"
+      })
+    }
     if (user.role === "ULB") {
       ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
       role = user.role;

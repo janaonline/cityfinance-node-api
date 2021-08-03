@@ -59,6 +59,24 @@ module.exports.getCards = catchAsync(async (req, res) => {
 
         let basequery = [
             {
+                $lookup: {
+                    from: "states",
+                    localField: "state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            {
+                $unwind: "$state"
+            },
+
+            {
+                $match: {
+                    "state.accessToXVFC": true
+                }
+            },
+
+            {
                 $group:
 
                 {

@@ -520,7 +520,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
         $match:
         {
           $or: [
-            { design_year: ObjectId(design_year) },
+            { "masterformData.design_year": ObjectId(design_year) },
             { masterformData: { $exists: false } }
           ]
         }
