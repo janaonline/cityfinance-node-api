@@ -85,8 +85,8 @@ exports.uploadTemplate = async (req, res) => {
       if (notValid) {
         let field = {
           ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
-          ["grant amount"]: "ULB Name",
-          ["ulb name"]: "Grant Amount",
+          ["ulb name"]: "ULB Name",
+          ["grant amount"]: "Grant Amount",
           Errors: "Errors",
         };
         let xlsDatas = await Service.dataFormating(notValid, field);

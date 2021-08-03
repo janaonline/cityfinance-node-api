@@ -5,6 +5,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
     body: req?.body,
     user: req?.decoded,
   };
+  if (!data.body?.status) data.body.status = "PENDING";
 
   try {
     const oldForm = await MasterForm.findOne({
