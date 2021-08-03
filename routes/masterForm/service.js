@@ -528,7 +528,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       }
       let xlsData = await Service.dataFormating(arr, field);
       let date = moment().format("DD-MMM-YY").toString()
-      let filename =`15th-FC-Form${date}.xlsx`
+      let filename = `15th-FC-Form${date}.xlsx`
       return res.xls(filename, xlsData);
     } else {
       if (!skip) {
@@ -1761,6 +1761,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
             path: "$state",
             preserveNullAndEmptyArrays: true,
           },
+        },
+        {
+          $match: {
+            "state.accessToXVFC": true
+          }
         },
         {
           $lookup: {
@@ -3331,7 +3336,7 @@ module.exports.stateUlbData = catchAsync(async (req, res) => {
     // allStates = await getAsync("states");
 
     // if (!allStates) {
-    allStates = await State.find().select({ _id: 1, name: 1, code: 1 });
+    allStates = await State.find({ "accessToXVFC": true }).select({ _id: 1, name: 1, code: 1 });
     // Redis.set("states", JSON.stringify(allStates));
     // } else {
     //   allStates = JSON.parse(allStates);
