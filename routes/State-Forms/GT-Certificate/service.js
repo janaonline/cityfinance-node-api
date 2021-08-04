@@ -2,6 +2,7 @@ const catchAsync = require("../../../util/catchAsync");
 const StateGTCertificate = require("../../../models/StateGTCertificate");
 const Ulb = require('../../../models/Ulb')
 const ObjectId = require("mongoose").Types.ObjectId;
+const User = require('../../../models/User')
 const {
   UpdateStateMasterForm,
 } = require("../../../service/updateStateMasterForm");
@@ -22,7 +23,9 @@ module.exports.get = catchAsync(async (req, res) => {
     design_year: ObjectId(design_year),
     state: ObjectId(state),
   };
-  let fetchedData = await StateGTCertificate.findOne(query, "-history");
+  let fetchedData = await StateGTCertificate.findOne(query, "-history").lean();
+  let userData = await User.findOne({ _id: ObjectId(fetchedData['actionTakenBy']) });
+  fetchedData['actionTakenByRole'] = userData['role']
   if (fetchedData) {
     return res.status(200).json({
       success: true,
