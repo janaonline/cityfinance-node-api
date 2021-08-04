@@ -5,6 +5,7 @@ const {
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const ExcelJS = require("exceljs");
+const User = require('../../models/User')
 exports.saveActionPlans = async (req, res) => {
   try {
     let { state, _id } = req.decoded;
@@ -38,7 +39,9 @@ exports.getActionPlans = async (req, res) => {
       state: ObjectId(state),
       design_year,
       isActive: true,
-    }).select({ history: 0 });
+    }).select({ history: 0 }).lean();
+    let userData = await User.findOne({ _id: ObjectId(actionPlan['actionTakenBy']) });
+    actionPlan['actionTakenByRole'] = userData['role'];;
     if (!actionPlan) {
       return Response.BadRequest(res, null, "No ActionPlans found");
     }

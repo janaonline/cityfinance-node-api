@@ -2,6 +2,7 @@ const LinkPfmsState = require("../../models/LinkPfmsState");
 // const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
+const User = require('../../models/User')
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
@@ -9,7 +10,7 @@ const {
 exports.saveLinkPfmsState = async (req, res) => {
   let { state, _id } = req.decoded;
   let data = req.body;
-  req.body.actionTakenBy = _id;
+  data['actionTakenBy'] = req.decoded._id
   try {
     console.log(data);
     await LinkPfmsState.findOneAndUpdate(
@@ -36,7 +37,9 @@ exports.getLinkPfmsState = async (req, res) => {
     const newLink = await LinkPfmsState.findOne({
       state: ObjectId(state),
       design_year,
-    }).select({ history: 0 });
+    }).select({ history: 0 }).lean();
+    let userData = await User.findOne({ _id: ObjectId(newLink['actionTakenBy']) });
+    newLink['actionTakenByRole'] = userData['role'];
     if (!newLink) {
       return Response.BadRequest(res, null, "No LinkPfmsState found");
     }
@@ -57,6 +60,7 @@ exports.action = async (req, res) => {
     }).select({
       history: 0,
     });
+    req.body['actionTakenBy'] = req.decoded._id
     const newLinkPfmsState = await LinkPfmsState.findOneAndUpdate(
       {
         state: ObjectId(state),

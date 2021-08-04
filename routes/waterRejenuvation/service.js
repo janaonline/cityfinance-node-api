@@ -4,7 +4,7 @@ const {
 } = require("../../service/updateStateMasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
-
+const User = require('../../models/User')
 exports.saveWaterRejenuvation = async (req, res) => {
   try {
     let { state, _id } = req.decoded;
@@ -38,7 +38,9 @@ exports.getWaterRejenuvation = async (req, res) => {
       state: ObjectId(state),
       design_year,
       isActive: true,
-    }).select({ history: 0 });
+    }).select({ history: 0 }).lean();
+    let userData = await User.findOne({ _id: ObjectId(waterRej['actionTakenBy']) });
+    waterRej['actionTakenByRole'] = userData['role'];
     if (!waterRej) {
       return Response.BadRequest(res, null, "No WaterRejenuvation found");
     }

@@ -17,6 +17,11 @@ const LinkPfmsStateSchema = new Schema(
     excel: { url: { type: String }, name: { type: String } },
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
+    actionTakenBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     createdAt: { type: Date, default: Date.now() },
     isDraft: { type: Boolean, default: true },
     status: statusType(),
