@@ -55,7 +55,7 @@ exports.action = async (req, res) => {
   try {
     let { design_year, state } = req.body;
     req.body.modifiedAt = new Date();
-
+    req.body['actionTakenBy'] = req.decoded._id
     let currentWaterRejenuvation = await WaterRejenuvation.findOne({
       state: ObjectId(state),
       design_year: ObjectId(design_year),
