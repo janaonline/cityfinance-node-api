@@ -81,61 +81,69 @@ module.exports.getAll = catchAsync(async (req, res) => {
         let query = [
             {
                 $match: {
-                    design_year: ObjectId(design_year)
+                    accessToXVFC: true
                 }
             },
-
+            {
+                $lookup: {
+                    from: "statemasterforms",
+                    localField: "_id",
+                    foreignField: "state",
+                    as: "stateMasterFormData"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$stateMasterFormData",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $match: {
+                    $or: [{ stateMasterFormData: { $exists: false } },
+                    { "stateMasterFormData.design_year": ObjectId(design_year) }]
+                }
+            },
             {
                 $lookup: {
                     from: "uas",
-                    localField: "state",
+                    localField: "_id",
                     foreignField: "state",
-                    as: "ua"
+                    as: "Uas"
                 }
             },
             {
-                $lookup: {
-                    from: "states",
-                    localField: "state",
-                    foreignField: "_id",
-                    as: "state"
-                }
-
-            },
-            {
-                $unwind: "$state"
-            },
-
-            {
-                $project:
-                {
-                    status: 1,
-                    actionTakenByRole: 1,
-                    isSubmit: 1,
-                    numberOfUas: { $size: "$ua" },
-                    state: "$state.name",
-                    state_id: "$state._id"
+                $project: {
+                    "stateMasterFormData": 1,
+                    uas: { $size: "$Uas" },
+                    "state": "$name"
                 }
             }
 
-
         ];
-        let masterFormData = await StateMasterForm.aggregate(query)
+        let masterFormData = await State.aggregate(query)
 
         if (masterFormData.length > 0) {
             masterFormData.forEach(el => {
-                if (el.actionTakenByRole == "STATE" && el.isSubmit == true) {
-                    el['formStatus'] = "Under Review by MoHUA"
-                } else if (el.actionTakenByRole == "STATE" && el.isSubmit == false) {
-                    el['formStatus'] = "In Progress"
-                } else if (el.actionTakenByRole == "MoHUA" && el.status == "APPROVED") {
-                    el['formStatus'] = "Approval Completed"
-                } else if (el.actionTakenByRole == "MoHUA" && el.status == "REJECTED") {
-                    el['formStatus'] = "Rejected By MoHUA"
-                } else if (el.actionTakenByRole == "MoHUA" && el.status == "PENDING") {
-                    el['formStatus'] = "Under Review by MoHUA"
+                if (!el.hasOwnProperty('stateMasterFormData')) {
+                    el['formStatus'] = 'Not Started'
+                } else {
+                    if (el['stateMasterFormData'].actionTakenByRole == "STATE" && el['stateMasterFormData'].isSubmit == true) {
+                        el['formStatus'] = "Under Review by MoHUA"
+                    } else if (el['stateMasterFormData'].actionTakenByRole == "STATE" && el['stateMasterFormData'].isSubmit == false) {
+                        el['formStatus'] = "In Progress"
+                    } else if (el['stateMasterFormData'].actionTakenByRole == "MoHUA" && el['stateMasterFormData'].status == "APPROVED") {
+                        el['formStatus'] = "Approval Completed"
+                    } else if (el['stateMasterFormData'].actionTakenByRole == "MoHUA" && el['stateMasterFormData'].status == "REJECTED") {
+                        el['formStatus'] = "Rejected By MoHUA"
+                    } else if (el['stateMasterFormData'].actionTakenByRole == "MoHUA" && el['stateMasterFormData'].status == "PENDING") {
+                        el['formStatus'] = "Under Review by MoHUA"
+                    }
                 }
+
             })
+
+
         }
 
         if (csv) {
