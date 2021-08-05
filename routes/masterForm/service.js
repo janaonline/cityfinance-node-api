@@ -356,7 +356,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       };
     }
 
-    let query = [
+    let queryFilled = [
       match,
       {
         $lookup: {
@@ -385,6 +385,12 @@ module.exports.getAll = catchAsync(async (req, res) => {
         },
       },
       { $unwind: "$state" },
+      {
+        $match:
+        {
+          "state.accessToXVFC": true
+        }
+      },
       {
         $lookup: {
           from: "users",
@@ -448,6 +454,90 @@ module.exports.getAll = catchAsync(async (req, res) => {
         },
       },
     ];
+    let queryNotStarted = [{
+      $lookup: {
+        from: "states",
+        localField: "state",
+        foreignField: "_id",
+        as: "state",
+      },
+    },
+    { $unwind: "$state" },
+    {
+      $match:
+      {
+        "state.accessToXVFC": true
+      }
+    },
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "_id",
+        foreignField: "ulb",
+        as: "masterformData",
+      },
+    },
+    {
+      $unwind: {
+        path: "$masterformData",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+
+    {
+      $match:
+      {
+        "masterformData": { $exists: false },
+
+      }
+    },
+    {
+      $lookup: {
+        from: "uas",
+        localField: "UA",
+        foreignField: "_id",
+        as: "UA",
+      },
+    },
+
+    {
+      $lookup: {
+        from: "ulbtypes",
+        localField: "ulbType",
+        foreignField: "_id",
+        as: "ulbType",
+      },
+    },
+    { $unwind: "$ulbType" },
+    { $addFields: { "printStatus": "Not Started" } },
+    {
+      $project: {
+        state: "$state.name",
+        ulbName: "$name",
+        ulb: "$_id",
+        censusCode: "$censusCode",
+        sbCode: "$sbCode",
+        populationType: {
+          $cond: {
+            if: { $eq: ["$isMillionPlus", "Yes"] },
+            then: "Million Plus",
+            else: "Non Million",
+          },
+        },
+        isUA: "$isUA",
+        isMillionPlus: "$isMillionPlus",
+        UA: {
+          $cond: {
+            if: { $eq: ["$isUA", "Yes"] },
+            then: { $arrayElemAt: ["$UA.name", 0] },
+            else: "NA",
+          },
+        },
+        ulbType: "$ulbType.name",
+        printStatus: 1
+      },
+    },
+    ]
 
     let newFilter = await Service.mapFilter(filter);
     let total = undefined;
@@ -460,10 +550,10 @@ module.exports.getAll = catchAsync(async (req, res) => {
       }
     }
     if (newFilter && Object.keys(newFilter).length) {
-      query.push({ $match: newFilter });
+      queryFilled.push({ $match: newFilter });
     }
     if (sort && Object.keys(sort).length) {
-      query.push({ $sort: sort });
+      queryFilled.push({ $sort: sort });
     } else {
       if (priority) {
         sort = {
@@ -472,11 +562,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
       } else {
         sort = { $sort: { createdAt: -1 } };
       }
-      query.push(sort);
+      queryFilled.push(sort);
     }
 
     if (csv) {
-      let arr = await MasterFormData.aggregate(query).exec();
+      let arr = await MasterFormData.aggregate(queryFilled).exec();
       for (d of arr) {
         if (
           d.status == "PENDING" &&
@@ -532,14 +622,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
       return res.xls(filename, xlsData);
     } else {
       if (!skip) {
-        let qrr = [...query, { $count: "count" }];
+        let qrr = [...queryFilled, { $count: "count" }];
         let d = await MasterFormData.aggregate(qrr);
         total = d.length ? d[0].count : 0;
       }
-      query.push({ $skip: skip });
-      query.push({ $limit: limit });
+      queryFilled.push({ $skip: skip });
+      queryFilled.push({ $limit: limit });
 
-      let masterFormData = await MasterFormData.aggregate(query).exec();
+      let masterFormData = await MasterFormData.aggregate(queryFilled).exec();
       for (d of masterFormData) {
         if (
           d.status == "PENDING" &&
@@ -585,12 +675,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d["printStatus"] = "Approval Completed";
         }
       }
+      let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
+      masterFormData.push(...noMasterFormData)
       if (masterFormData) {
         return res.status(200).json({
           success: true,
           message: "ULB Master Form Data Found Successfully!",
           data: masterFormData,
-          total: total,
+          total: masterFormData.length,
         });
       } else {
         return res.status(400).json({
