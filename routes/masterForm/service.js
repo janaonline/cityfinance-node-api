@@ -630,6 +630,13 @@ module.exports.getAll = catchAsync(async (req, res) => {
       queryFilled.push({ $limit: limit });
 
       let masterFormData = await MasterFormData.aggregate(queryFilled).exec();
+      let p1 = [];
+      let p2 = [];
+      let p3 = [];
+      let p4 = [];
+      let p5 = [];
+      let p6 = [];
+
       for (d of masterFormData) {
         if (
           d.status == "PENDING" &&
@@ -637,6 +644,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.actionTakenByUserRole == "ULB"
         ) {
           d["printStatus"] = "In Progress";
+          p6.push(d)
         }
         if (
           d.status == "PENDING" &&
@@ -644,6 +652,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.actionTakenByUserRole == "ULB"
         ) {
           d["printStatus"] = "Under Review by State";
+          p2.push(d)
         }
         if (
           d.status == "PENDING" &&
@@ -651,12 +660,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.actionTakenByUserRole == "STATE"
         ) {
           d["printStatus"] = "Under Review by State";
+          p2.push(d)
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
           d["printStatus"] = "Under Review by MoHUA";
+          p1.push(d)
         }
         if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
           d["printStatus"] = "Under Review by MoHUA";
+          p1.push(d)
         }
         if (
           d.status == "PENDING" &&
@@ -664,25 +676,30 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.isSubmit == false
         ) {
           d["printStatus"] = "Under Review by State";
+          p2.push(d)
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
           d["printStatus"] = "Rejected by STATE";
+          p5.push(d)
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
           d["printStatus"] = "Rejected by MoHUA";
+          p4.push(d)
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
           d["printStatus"] = "Approval Completed";
+          p3.push(d)
         }
       }
+      let finalOutput = []
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
-      masterFormData.push(...noMasterFormData)
-      if (masterFormData) {
+      finalOutput.push(...p1, ...p2, ...p3, ...p4, ...p5, ...p6, ...noMasterFormData)
+      if (finalOutput) {
         return res.status(200).json({
           success: true,
           message: "ULB Master Form Data Found Successfully!",
-          data: masterFormData,
-          total: masterFormData.length,
+          data: finalOutput,
+          total: finalOutput.length,
         });
       } else {
         return res.status(400).json({
