@@ -122,22 +122,34 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
         ];
         let masterFormData = await State.aggregate(query)
-
+        let p1 = [];
+        let p2 = [];
+        let p3 = [];
+        let p4 = [];
+        let p5 = [];
+        let finalOutput = [];
         if (masterFormData.length > 0) {
             masterFormData.forEach(el => {
                 if (!el.hasOwnProperty('stateMasterFormData')) {
                     el['formStatus'] = 'Not Started'
+                    p5.push(el)
                 } else {
                     if (el['stateMasterFormData'].actionTakenByRole == "STATE" && el['stateMasterFormData'].isSubmit == true) {
                         el['formStatus'] = "Under Review by MoHUA"
+                        p1.push(el)
                     } else if (el['stateMasterFormData'].actionTakenByRole == "STATE" && el['stateMasterFormData'].isSubmit == false) {
                         el['formStatus'] = "In Progress"
+                        p4.push(el)
                     } else if (el['stateMasterFormData'].actionTakenByRole == "MoHUA" && el['stateMasterFormData'].status == "APPROVED") {
                         el['formStatus'] = "Approval Completed"
+                        p2.push(el)
                     } else if (el['stateMasterFormData'].actionTakenByRole == "MoHUA" && el['stateMasterFormData'].status == "REJECTED") {
                         el['formStatus'] = "Rejected By MoHUA"
+                        p3.push(el)
                     } else if (el['stateMasterFormData'].actionTakenByRole == "MoHUA" && el['stateMasterFormData'].status == "PENDING") {
+
                         el['formStatus'] = "Under Review by MoHUA"
+                        p1.push(el)
                     }
                 }
 
@@ -145,11 +157,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
 
         }
-
+        finalOutput.push(...p1, ...p2, ...p3, ...p4, ...p5)
         if (csv) {
             let field = csvData();
 
-            let xlsData = await Service.dataFormating(masterFormData, field);
+            let xlsData = await Service.dataFormating(finalOutput, field);
             let filename =
                 "15th-FC-Form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
             return res.xls(filename, xlsData);
@@ -157,8 +169,9 @@ module.exports.getAll = catchAsync(async (req, res) => {
         }
         return res.status(200).json({
             success: true,
-            message: masterFormData ? "Data Found Successfully!" : "No Data Found",
-            data: masterFormData
+            message: finalOutput ? "Data Found Successfully!" : "No Data Found",
+            data: finalOutput,
+            total: finalOutput.length
         })
 
     } else {
