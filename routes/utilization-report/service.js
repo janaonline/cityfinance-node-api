@@ -4,6 +4,7 @@ const User = require("../../models/User");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
+const Category = require('../../models/Category')
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -102,6 +103,38 @@ exports.readById = async (req, res) => {
     }
   ]
   let arr = await UtilizationReport.aggregate(query)
+  let catData = await Category.find().lean().exec()
+  let flag = 0;
+  let filteredCat = [];
+
+
+  for (let el of catData) {
+    for (let el2 of arr) {
+      console.log(el['_id'], el2['_id'])
+      if (String(el['_id']) === String(el2['_id'])) {
+        // console.log(ObjectId(el._id), ObjectId(el2._id))
+        flag = 1;
+        break;
+      }
+    }
+    if (!flag) {
+      filteredCat.push(el)
+    } else {
+      flag = 0;
+    }
+  }
+
+  console.log(filteredCat)
+  filteredCat.forEach(el => {
+    arr.push({
+      _id: el._id,
+      count: 0,
+      amount: 0,
+      totalProjectCost: 0
+
+    })
+  })
+
   try {
     let report = await UtilizationReport.findOne({
       ulb,
