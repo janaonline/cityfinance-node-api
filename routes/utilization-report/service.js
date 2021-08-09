@@ -81,17 +81,38 @@ exports.readById = async (req, res) => {
   if (req.decoded?.role != "ULB" && ulb_id) {
     ulb = ulb_id;
   }
+  let query = [
+    {
+      $match: {
+        ulb: ObjectId(ulb),
+        designYear: ObjectId(designYear),
+        financialYear: ObjectId(financialYear)
+      }
+    },
+    {
+      $unwind: "$projects"
+    },
+    {
+      $group: {
+        _id: "$projects.category",
+        count: { "$sum": 1 },
+        amount: { "$sum": { "$toDouble": "$projects.expenditure" } },
+        totalProjectCost: { "$sum": { "$toDouble": "$projects.cost" } }
+      }
+    }
+  ]
+  let arr = await UtilizationReport.aggregate(query)
   try {
-    const report = await UtilizationReport.findOne({
+    let report = await UtilizationReport.findOne({
       ulb,
       financialYear,
       designYear,
       isActive: true,
-    }).select({ history: 0 });
+    }).select({ history: 0 }).lean();
     if (!report) {
       return res.status(400).json({ msg: "No UtilizationReport Found" });
     }
-
+    report['analytics'] = (arr)
     if (
       req.decoded.role === "MoHUA" &&
       report.actionTakenByRole === "STATE" &&
