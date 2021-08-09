@@ -408,8 +408,8 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 nonMillion = el.totalUlbs[0]
             }
         })
-        submitted_millionPlusUA = output3[0].uas_submitted
-        millionPlusUA = output3[0].totalUAs
+        submitted_millionPlusUA = output3[0]?.uas_submitted
+        millionPlusUA = output3[0]?.totalUAs
         output4.forEach(el => {
             if (
                 ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
