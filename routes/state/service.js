@@ -512,12 +512,13 @@ module.exports.eligibleStateForms = async function (req, res) {
     }
     let stateData = await State.findOne({ _id: ObjectId(state) })
     let UAData = await UA.findOne({ state: ObjectId(state) })
+    console.log(UAData)
     let output = {
         "pfms": 0,
         "gtc": 1,
-        "slbWaterSupplySanitation": UAData.length > 0 ? 1 : 0,
-        "waterRejuvenation": UAData.length > 0 ? 1 : 0,
-        "ActionPlan": UAData.length > 0 ? 1 : 0,
+        "slbWaterSupplySanitation": UAData ? 1 : 0,
+        "waterRejuvenation": UAData ? 1 : 0,
+        "ActionPlan": UAData ? 1 : 0,
         "grantAllocation": 1
     }
 
