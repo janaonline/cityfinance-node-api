@@ -24,6 +24,8 @@ router.get("/overall-ulb", Ulb.getOverallUlb);
 router.get('/ulb-by-code', Ulb.getUlbByCode);
 
 //get all ulbs in uas of a state
-router.get('/state/uas-ulb',verifyToken, Ulb.getUlbInUas);
+router.get('/state/uas-ulb', verifyToken, Ulb.getUlbInUas);
 
+//ulbs forms to display
+router.get('/eligibleULBForms', verifyToken, Ulb.eligibleULBForms)
 module.exports = router;

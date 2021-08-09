@@ -798,3 +798,31 @@ module.exports.getUlbInUas = async function (req, res) {
     });
   }
 };
+
+module.exports.eligibleULBForms = async function (req, res) {
+  let user = req.decoded;
+  let { ulb_id } = req.query
+  let ulb = user.ulb ?? ulb_id
+  if (!ulb) {
+    return res.status(400).json({
+      success: false,
+      message: 'ULB ID NOT FOUND'
+    })
+  }
+  let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) })
+
+  let output = {
+    "pfms": 0,
+    "gtc": 1,
+    "utilReport": 1,
+    "annualAccounts": 1,
+    "slbs": 0,
+    "slbWaterSupplySanitation": ulbData.isUA ? 1 : 0,
+    "plansWaterSupplySanitation": 0
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: output
+  })
+}
