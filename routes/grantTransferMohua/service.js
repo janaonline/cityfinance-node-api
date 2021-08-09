@@ -9,24 +9,26 @@ const GrantType = require("../../models/GrantType");
 const ULB = require("../../models/Ulb");
 const Year = require("../../models/Year");
 const State = require("../../models/State");
+const MasterForm = require("../../models/MasterForm");
 const Redis = require("../../service/redis");
 const moment = require("moment");
 const { promisify } = require("util");
 
 exports.get = async (req, res) => {
   try {
-    const { csv, state_id, design_year, year_id, installment } = req.query;
+    let { csv, state_id, design_year, year_id, installment } = req.query;
     grantTypes = GrantType.find().select({ name: 1, _id: 1 }).lean();
     years = Year.find().select({ year: 1, _id: 1 }).lean();
     let data,
       query = { design_year },
       ExcelData = [],
-      latestTime;
+      latestTime,
+      states;
 
     if (state_id) {
       query.state = state_id;
     }
-    gtTransfer = GrantTransferMohua.find(query)
+    let gtTransfer = GrantTransferMohua.find(query)
       .select({ _id: 1, modifiedAt: 1, stateData: 1, state: 1 })
       .lean();
     if (year_id == "2020-21")
@@ -35,18 +37,36 @@ exports.get = async (req, res) => {
       states = ULB.find({ isMillionPlus: "Yes", isUA: "Yes" })
         .select({ state: 1 })
         .lean();
+    delete query.design_year;
+    let allUlb = ULB.find(query)
+      .select({ _id: 1, state: 1, isMillionPlus: 1, status: 1 })
+      .lean();
+    let ulbSubmittedForm = await MasterForm.find({})
+      .select({ status: 1, actionTakenByRole: 1, ulb: 1 })
+      .lean();
 
-    data = await Promise.all([grantTypes, gtTransfer, years, states]);
+    data = await Promise.all([
+      grantTypes,
+      gtTransfer,
+      years,
+      states,
+      allUlb,
+      ulbSubmittedForm,
+    ]);
     if (data[1].length > 0) {
       let grantTypesMap = {},
         yearsMap = {};
+      ulbMap = {};
       data[0].forEach((element) => {
         grantTypesMap[element._id] = element.name;
       });
       data[2].forEach((element) => {
         yearsMap[element._id] = element.year;
       });
-
+      data[4].forEach((element) => {
+        if (yearsMap[element.state]) yearsMap[element.state].push(element);
+        else yearsMap[element.state] = [element];
+      });
       data[1] = JSON.parse(JSON.stringify(data[1]));
       if (csv === "true") {
         data[1].forEach((element) => {
@@ -76,19 +96,28 @@ exports.get = async (req, res) => {
         });
       } else {
         let mill = {
-            start: 0,
-            mid: 0,
-            complete: 0,
+            recommendationDate: 0,
+            releaseDate: 0,
+            submissionDate: 0,
+            amount: 0,
+            ulbSubmittedForm: 0,
+            totalUlb: 0,
           },
           NonMillTied = {
-            start: 0,
-            mid: 0,
-            complete: 0,
+            recommendationDate: 0,
+            releaseDate: 0,
+            submissionDate: 0,
+            amount: 0,
+            ulbSubmittedForm: 0,
+            totalUlb: 0,
           },
           NonMillUntied = {
-            start: 0,
-            mid: 0,
-            complete: 0,
+            recommendationDate: 0,
+            releaseDate: 0,
+            submissionDate: 0,
+            amount: 0,
+            ulbSubmittedForm: 0,
+            totalUlb: 0,
           },
           statesWithMillPlusUlbs = {},
           statesCount = 0,
@@ -96,7 +125,9 @@ exports.get = async (req, res) => {
         data[3].forEach((element) => {
           statesWithMillPlusUlbs[element.state] = element;
         });
-        data[1].forEach((element) => {
+        for (let index = 0; index < data[1].length; index++) {
+          const element = data[1][index];
+
           if (!latestTime) {
             latestTime = moment(element.modifiedAt);
           } else if (moment(element.modifiedAt) > latestTime) {
@@ -106,40 +137,199 @@ exports.get = async (req, res) => {
             statesWithMillPlusUlbsCount++;
           }
           statesCount++;
-          element.stateData.forEach((innerElement) => {
+          for (let index = 0; index < element.stateData.length; index++) {
+            const innerElement = element.stateData[index];
+
             if (year_id && year_id != yearsMap[innerElement.year]) {
-              return true;
+              continue;
             }
-            console.log(installment, innerElement.installment);
+
             if (installment && installment != innerElement.installment) {
-              return true;
+              continue;
             }
             switch (grantTypesMap[innerElement.GrantType]) {
               case "Million Plus for Water Supply and SWM":
-                if (innerElement.recommendationDate) mill.start++;
-                if (innerElement.releaseDate) mill.mid++;
-                if (innerElement.submissionDate) mill.complete++;
+                // if (innerElement.submissionDate) mill.submissionDate++;
+                if (state_id) {
+                  if (innerElement.recommendationDate)
+                    mill.recommendationDate = innerElement.recommendationDate;
+                  if (innerElement.releaseDate)
+                    mill.releaseDate = innerElement.releaseDate;
+                } else {
+                  if (innerElement.recommendationDate)
+                    mill.recommendationDate++;
+                  if (innerElement.releaseDate) mill.releaseDate++;
+                }
+                if (innerElement.amountAssigned)
+                  mill.amount += innerElement.amountAssigned;
+                ulbCountsObj = await ulbInState(
+                  element.state.toString(),
+                  "Yes",
+                  data[4],
+                  data[5]
+                );
+                mill.ulbSubmittedForm = ulbCountsObj.ulbCount;
+                mill.totalUlb += innerElement.noOfUlb;
                 break;
               case "Non-Million Untied":
-                if (innerElement.recommendationDate) NonMillTied.start++;
-                if (innerElement.releaseDate) NonMillTied.mid++;
-                if (innerElement.submissionDate) NonMillTied.complete++;
+                // if (innerElement.submissionDate) NonMillTied.submissionDate++;
+                if (state_id) {
+                  if (innerElement.recommendationDate)
+                    NonMillTied.recommendationDate =
+                      innerElement.recommendationDate;
+                  if (innerElement.releaseDate)
+                    NonMillTied.releaseDate = innerElement.releaseDate;
+                } else {
+                  if (innerElement.recommendationDate)
+                    NonMillTied.recommendationDate++;
+                  if (innerElement.releaseDate) NonMillTied.releaseDate++;
+                }
+                if (innerElement.amountAssigned)
+                  NonMillTied.amount += innerElement.amountAssigned;
+                ulbCountsObj = await ulbInState(
+                  element.state.toString(),
+                  "No",
+                  data[4],
+                  data[5]
+                );
+                NonMillTied.ulbSubmittedForm = ulbCountsObj.ulbCount;
+                NonMillTied.totalUlb += innerElement.noOfUlb;
                 break;
               case "Non-Million Tied":
-                if (innerElement.recommendationDate) NonMillUntied.start++;
-                if (innerElement.releaseDate) NonMillUntied.mid++;
-                if (innerElement.submissionDate) NonMillUntied.complete++;
+                // if (innerElement.submissionDate) NonMillUntied.submissionDate++;
+                if (state_id) {
+                  if (innerElement.recommendationDate)
+                    NonMillUntied.recommendationDate =
+                      innerElement.recommendationDate;
+                  if (innerElement.releaseDate)
+                    NonMillUntied.releaseDate = innerElement.releaseDate;
+                } else {
+                  if (innerElement.recommendationDate)
+                    NonMillUntied.recommendationDate++;
+                  if (innerElement.releaseDate) NonMillUntied.releaseDate++;
+                }
+                if (innerElement.amountAssigned)
+                  NonMillUntied.amount += innerElement.amountAssigned;
+                ulbCountsObj = await ulbInState(
+                  element.state.toString(),
+                  "No",
+                  data[4],
+                  data[5]
+                );
+                NonMillUntied.ulbSubmittedForm = ulbCountsObj.ulbCount;
+                NonMillUntied.totalUlb += innerElement.noOfUlb;
                 break;
             }
+          }
+
+          if (installment == 2) {
+            installment = 1;
+          } else if (installment == 1 && year_id == "2020-22") {
+            year_id == "2020-21";
+            installment = 2;
+          }
+
+          for (let index = 0; index < element.stateData.length; index++) {
+            const innerElement = element.stateData[index];
+
+            if (year_id && year_id != yearsMap[innerElement.year]) {
+              continue;
+            }
+            if (installment && installment != innerElement.installment) {
+              continue;
+            }
+            switch (grantTypesMap[innerElement.GrantType]) {
+              case "Million Plus for Water Supply and SWM":
+                if (state_id) {
+                  if (innerElement.submissionDate)
+                    mill.submissionDate = innerElement.submissionDate;
+                } else {
+                  if (innerElement.submissionDate) mill.submissionDate++;
+                }
+                break;
+              case "Non-Million Untied":
+                if (state_id) {
+                  if (innerElement.submissionDate)
+                    NonMillTied.submissionDate = innerElement.submissionDate;
+                } else {
+                  if (innerElement.submissionDate) NonMillTied.submissionDate++;
+                }
+                break;
+              case "Non-Million Tied":
+                if (state_id) {
+                  if (innerElement.submissionDate)
+                    NonMillUntied.submissionDate = innerElement.submissionDate;
+                } else {
+                  if (innerElement.submissionDate)
+                    NonMillUntied.submissionDate++;
+                }
+                break;
+            }
+          }
+        }
+        if (state_id) {
+          ExcelData.push({
+            "Million Plus for Water Supply and SWM": {
+              recommendationDate: mill.recommendationDate ? `Sent to MoF on ${moment(mill.recommendationDate).format('dd-MM-YYYY')}` : "Not Sent",
+              releaseDate: mill.releaseDate ? `Amount Released on ${moment(mill.releaseDate).format('dd-MM-YYYY')}` : "Not Released",
+              submissionDate: mill.submissionDate
+                ? `Submitted on ${moment(mill.submissionDate).format('DD-MM-YYYY')}`
+                : "Not Submitted",
+              amount: mill.amount,
+              ulb: `${mill.ulbSubmittedForm}/${mill.totalUlb}`,
+            },
+            "Non-Million Tied": {
+              recommendationDate: NonMillTied.recommendationDate
+                ? `Sent to MoF on ${moment(NonMillTied.recommendationDate).format('DD-MM-YYYY')}`
+                : "Not Sent",
+              releaseDate: NonMillTied.releaseDate
+                ? `Amount Released on ${moment(NonMillTied.releaseDate).format('DD-MM-YYYY')}`
+                : "Not Released",
+              submissionDate: NonMillTied.submissionDate
+                ? `Submitted on ${moment(NonMillTied.submissionDate).format('DD-MM-YYYY')}`
+                : "Not Submitted",
+              amount: NonMillTied.amount,
+              ulb: `${NonMillTied.ulbSubmittedForm}/${NonMillTied.totalUlb}`,
+            },
+            "Non-Million Untied": {
+              recommendationDate: NonMillUntied.recommendationDate
+                ? `Sent to MoF on ${moment(NonMillUntied.recommendationDate).format('DD-MM-YYYY')}`
+                : "Not Sent",
+              releaseDate: NonMillUntied.releaseDate
+                ? `Amount Released on ${moment(NonMillUntied.releaseDate).format('DD-MM-YYYY')}`
+                : "Not Released",
+              submissionDate: NonMillUntied.submissionDate
+                ? `Submitted on ${moment(NonMillUntied.submissionDate).format('DD-MM-YYYY')}`
+                : "Not Submitted",
+              amount: NonMillUntied.amount,
+              ulb: `${NonMillUntied.ulbSubmittedForm}/${NonMillUntied.totalUlb}`,
+            },
           });
-        });
-        ExcelData.push({
-          mill,
-          NonMillTied,
-          NonMillUntied,
-          statesCount,
-          statesWithMillPlusUlbsCount,
-        });
+        } else {
+          ExcelData.push({
+            "Million Plus for Water Supply and SWM": {
+              recommendationDate: `${mill.recommendationDate}/${statesWithMillPlusUlbsCount}`,
+              releaseDate: `${mill.releaseDate}/${statesWithMillPlusUlbsCount}`,
+              submissionDate: `${mill.submissionDate}/${statesWithMillPlusUlbsCount}`,
+              amount: mill.amount,
+              ulb: `${mill.ulbSubmittedForm}/${mill.totalUlb}`,
+            },
+            "Non-Million Tied": {
+              recommendationDate: `${NonMillTied.recommendationDate}/${statesCount}`,
+              releaseDate: `${NonMillTied.releaseDate}/${statesCount}`,
+              submissionDate: `${NonMillTied.submissionDate}/${statesCount}`,
+              amount: NonMillTied.amount,
+              ulb: `${NonMillTied.ulbSubmittedForm}/${NonMillTied.totalUlb}`,
+            },
+            "Non-Million Untied": {
+              recommendationDate: `${NonMillUntied.recommendationDate}/${statesCount}`,
+              releaseDate: `${NonMillUntied.releaseDate}/${statesCount}`,
+              submissionDate: `${NonMillUntied.submissionDate}/${statesCount}`,
+              amount: NonMillUntied.amount,
+              ulb: `${NonMillUntied.ulbSubmittedForm}/${NonMillUntied.totalUlb}`,
+            },
+          });
+        }
       }
     } else {
       ExcelData = await makeData();
@@ -168,11 +358,41 @@ exports.get = async (req, res) => {
   }
 };
 
+const ulbInState = async (state, isMillionPlus, allUlb, ulbSubmittedForm) => {
+  let ulbMap = {},
+    ulbIds = [],
+    ulbCount = 0;
+  for (let index = 0; index < allUlb.length; index++) {
+    const element = allUlb[index];
+    if (ulbMap[element.state]) ulbMap[element.state].push(element);
+    else ulbMap[element.state] = [element];
+  }
+  if (ulbMap[state]) {
+    for (const iterator of ulbMap[state]) {
+      if (iterator.isMillionPlus === isMillionPlus)
+        ulbIds.push(iterator._id.toString());
+    }
+  }
+
+  ulbSubmittedForm.forEach((element) => {
+    if (
+      ulbIds.includes(element.ulb.toString()) &&
+      element.actionTakenByRole != "ULB" &&
+      element.status != "REJECTED"
+    )
+      ulbCount++;
+  });
+  return { ulbCount };
+};
+
 const makeData = async () => {
   let allData = await getStates();
   excelData = [];
   allData.forEach((ele) => {
     year = [
+      "2020-21",
+      "2020-21",
+      "2020-21",
       "2020-21",
       "2020-21",
       "2020-21",
@@ -190,7 +410,7 @@ const makeData = async () => {
     ];
     grantIndex = 0;
     installmentIndex = 0;
-    installmentCount = 2;
+    installmentCount = 1;
     year.forEach((element) => {
       let newObj = {
         name: "",
@@ -206,10 +426,10 @@ const makeData = async () => {
       };
       newObj.year = element;
       if (installmentIndex == 3) {
-        if (installmentCount == 2) {
-          installmentCount = 1;
-        } else {
+        if (installmentCount == 1) {
           installmentCount = 2;
+        } else {
+          installmentCount = 1;
         }
         installmentIndex = 0;
       }
@@ -237,15 +457,9 @@ const makeData = async () => {
 
 const getStates = async () => {
   try {
-    const getAsync = promisify(Redis.Client.get).bind(Redis.Client);
-    allStates = await getAsync("states");
-
-    if (!allStates) {
-      allStates = await State.find().select({ _id: 1, name: 1 }).lean();
-      Redis.set("states", JSON.stringify(allStates));
-    } else {
-      allStates = JSON.parse(allStates);
-    }
+    allStates = await State.find({ accessToXVFC: true })
+      .select({ _id: 1, name: 1 })
+      .lean();
     let Ulbs = [];
     for (let index = 0; index < allStates.length; index++) {
       const element = allStates[index];
@@ -339,7 +553,9 @@ exports.uploadTemplate = async (req, res) => {
 
       let dataToSave = result.data;
       const getAsync = promisify(Redis.Client.get).bind(Redis.Client);
-      allStates = JSON.parse(await getAsync("states"));
+      allStates = await State.find({ accessToXVFC: true })
+        .select({ _id: 1, name: 1 })
+        .lean();
       let allPromises = [];
       allStates.forEach((element) => {
         state_id = element._id;
