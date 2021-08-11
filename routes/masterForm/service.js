@@ -107,7 +107,12 @@ module.exports.get = catchAsync(async (req, res) => {
         for (const key in masterFormData.steps) {
           masterFormData.steps[key].status = "PENDING";
         }
+        try {
+          
         masterFormData = await updateDataInMaster(masterFormData, req.decoded);
+        } catch (error) {
+          console.log(error);
+        }
       }
 
       return res.status(200).json({
@@ -250,22 +255,22 @@ const updateDataInMaster = async (data, user) => {
   ];
   let compareData = await Ulb.aggregate(query);
   compareData = JSON.parse(JSON.stringify(compareData[0]));
-  if (compareData.annualAccountData[0].actionTakenByRole == "MoHUA") {
+  if (compareData.annualAccountData[0]?.actionTakenByRole == "MoHUA") {
     newData.steps.annualAccounts.status =
       compareData.annualAccountData[0].status;
   }
-  if (compareData.SLBs[0].actionTakenByRole == "MoHUA") {
+  if (compareData.SLBs[0]?.actionTakenByRole == "MoHUA") {
     newData.steps.slbForWaterSupplyAndSanitation.status =
       compareData.SLBs[0].waterManagement.status;
   }
-  if (compareData.plansData[0].actionTakenByRole == "MoHUA") {
+  if (compareData.plansData[0]?.actionTakenByRole == "MoHUA") {
     newData.steps.plans.status = compareData.plansData[0].status;
   }
-  if (compareData.utilizationReport[0].actionTakenByRole == "MoHUA") {
+  if (compareData.utilizationReport[0]?.actionTakenByRole == "MoHUA") {
     newData.steps.utilReport.status = compareData.utilizationReport[0].status;
   }
   await MasterFormData.findOneAndUpdate(
-    { state: ObjectId(state), design_year: ObjectId(design_year) },
+    { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
     newData,
     {
       upsert: true,
