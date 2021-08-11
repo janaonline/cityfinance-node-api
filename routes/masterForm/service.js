@@ -108,8 +108,8 @@ module.exports.get = catchAsync(async (req, res) => {
           masterFormData.steps[key].status = "PENDING";
         }
         try {
-          
-        masterFormData = await updateDataInMaster(masterFormData, req.decoded);
+
+          masterFormData = await updateDataInMaster(masterFormData, req.decoded);
         } catch (error) {
           console.log(error);
         }
@@ -459,6 +459,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
         },
       },
     ];
+    let match2 = {
+      $match: {
+        state: ObjectId(user.state)
+      }
+    }
     let queryNotStarted = [{
       $lookup: {
         from: "states",
@@ -543,6 +548,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
       },
     },
     ]
+    if (user.role == 'STATE') {
+      queryNotStarted.unshift(match2)
+    }
+
+
 
     let newFilter = await Service.mapFilter(filter);
     let total = undefined;
