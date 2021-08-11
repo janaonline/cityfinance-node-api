@@ -78,6 +78,30 @@ const projectDetails2 = () => {
     _id: false,
   };
 };
+const projectDetails3 = () => {
+
+  return {
+    name: {
+      type: String,
+    },
+    components: {
+      type: String,
+    },
+    indicator: {
+      type: String,
+    },
+    existing: {
+      type: Number,
+    },
+    after: {
+      type: Number,
+    },
+    cost: {
+      type: Number,
+    },
+    _id: false,
+  };
+};
 
 const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
   state: {
@@ -92,6 +116,7 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
       ua: { type: Schema.Types.ObjectId, ref: "UA", required: true },
       waterBodies: [projectDetails()],
       reuseWater: [projectDetails2()],
+      serviceLevelIndicators: [projectDetails3()],
       rejectReason: {
         type: String,
       },

@@ -51,15 +51,15 @@ exports.reportCreateValidator = [
     .not()
     .isEmpty()
     .withMessage("category is required "),
-  check("projects.*.description")
-    .not()
-    .isEmpty()
-    .withMessage("projects description required "),
-  check("projects.*.photos")
-    .not()
-    .isEmpty()
-    .isArray({ min: 1, max: 5 })
-    .withMessage("photos  are required as array max 5"),
+  // check("projects.*.description")
+  //   .not()
+  //   .isEmpty()
+  //   .withMessage("projects description required "),
+  // check("projects.*.photos")
+  //   .not()
+  //   .isEmpty()
+  //   .isArray({ min: 1, max: 5 })
+  //   .withMessage("photos  are required as array max 5"),
   check("projects.*.location")
     .not()
     .isEmpty()

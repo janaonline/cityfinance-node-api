@@ -7,14 +7,14 @@ const UtilizationReportProjectSchema = new Schema({
     ref: "Category",
   },
   name: { type: String },
-  description: { type: String },
-  capacity: { type: String },
-  photos: [
-    {
-      url: { type: String },
-      remarks: { type: String },
-    },
-  ],
+  // description: { type: String },
+  // capacity: { type: String },
+  // photos: [
+  //   {
+  //     url: { type: String },
+  //     remarks: { type: String },
+  //   },
+  // ],
   location: {
     lat: { type: String },
     long: { type: String },
