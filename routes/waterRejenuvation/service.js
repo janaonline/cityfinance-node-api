@@ -39,11 +39,13 @@ exports.getWaterRejenuvation = async (req, res) => {
       design_year,
       isActive: true,
     }).select({ history: 0 }).lean();
-    let userData = await User.findOne({ _id: ObjectId(waterRej['actionTakenBy']) });
-    waterRej['actionTakenByRole'] = userData['role'];
+    let userData;
     if (!waterRej) {
       return Response.BadRequest(res, null, "No WaterRejenuvation found");
     }
+    userData = await User.findOne({ _id: ObjectId(waterRej['actionTakenBy']) });
+    waterRej['actionTakenByRole'] = userData['role'];
+
     return Response.OK(res, waterRej, "Success");
   } catch (err) {
     console.error(err.message);

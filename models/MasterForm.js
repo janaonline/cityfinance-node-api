@@ -32,26 +32,26 @@ const MasterFormSchema = new Schema(
         },
 
       },
-      plans: {
-        rejectReason: {},
-        // individual status of sub form
-        status: statusType(),
-        isSubmit: {
-          type: Boolean,
-          default: null,
-        },
+      // plans: {
+      //   rejectReason: {},
+      //   // individual status of sub form
+      //   status: statusType(),
+      //   isSubmit: {
+      //     type: Boolean,
+      //     default: null,
+      //   },
 
-      },
-      pfmsAccount: {
-        rejectReason: {},
-        // individual status of sub form
-        status: statusType(),
-        isSubmit: {
-          type: Boolean,
-          default: null,
-        },
+      // },
+      // pfmsAccount: {
+      //   rejectReason: {},
+      //   // individual status of sub form
+      //   status: statusType(),
+      //   isSubmit: {
+      //     type: Boolean,
+      //     default: null,
+      //   },
 
-      },
+      // },
       slbForWaterSupplyAndSanitation: {
         rejectReason: {},
         // individual status of sub form

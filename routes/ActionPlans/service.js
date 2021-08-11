@@ -40,11 +40,12 @@ exports.getActionPlans = async (req, res) => {
       design_year,
       isActive: true,
     }).select({ history: 0 }).lean();
-    let userData = await User.findOne({ _id: ObjectId(actionPlan['actionTakenBy']) });
-    actionPlan['actionTakenByRole'] = userData['role'];;
     if (!actionPlan) {
       return Response.BadRequest(res, null, "No ActionPlans found");
     }
+    let userData = await User.findOne({ _id: ObjectId(actionPlan['actionTakenBy']) });
+    actionPlan['actionTakenByRole'] = userData['role'];;
+
     return Response.OK(res, actionPlan, "Success");
   } catch (err) {
     console.error(err.message);
