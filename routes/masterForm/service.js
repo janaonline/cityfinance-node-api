@@ -647,8 +647,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
       }
       queryFilled.push({ $skip: skip });
       queryNotStarted.push({ $skip: skip });
-      queryFilled.push({ $limit: limit });
-      queryNotStarted.push({ $limit: limit });
+      // queryFilled.push({ $limit: limit });
+      // queryNotStarted.push({ $limit: limit });
       console.log(util.inspect(queryFilled, { showHidden: false, depth: null }))
       let masterFormData = await MasterFormData.aggregate(queryFilled).exec();
       let p1 = [];
@@ -2526,7 +2526,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
         query.push({ $sort: sort });
       }
       query.push({ $skip: skip });
-      query.push({ $limit: limit });
+      // query.push({ $limit: limit });
       console.log(util.inspect(query, false, null));
       let data = await Ulb.aggregate(query).exec();
 
