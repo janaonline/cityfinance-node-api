@@ -67,7 +67,13 @@ module.exports.get = catchAsync(async (req, res) => {
 
 module.exports.getAll = catchAsync(async (req, res) => {
 
-    let user = req.decoded;
+    let user = req.decoded,
+        filter =
+            req.query.filter && !req.query.filter != "null"
+                ? JSON.parse(req.query.filter)
+                : req.body.filter
+                    ? req.body.filter
+                    : {};
     let { design_year } = req.params;
     let csv = req.query.csv === 'true'
     if (!design_year) {
@@ -121,6 +127,12 @@ module.exports.getAll = catchAsync(async (req, res) => {
             }
 
         ];
+        let newFilter = await Service.mapFilter(filter);
+        if (newFilter && !newFilter['status'] && Object.keys(newFilter).length) {
+            query.push({ $match: newFilter });
+
+        }
+
         let masterFormData = await State.aggregate(query)
         let p1 = [];
         let p2 = [];
@@ -158,6 +170,13 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
         }
         finalOutput.push(...p1, ...p2, ...p3, ...p4, ...p5)
+        if (newFilter["status"]) {
+
+            finalOutput = finalOutput.filter(data => {
+                // console.log(data.printStatus.toLowerCase() == newFilter["status"].toLowerCase())
+                return data.formStatus.toLowerCase() == newFilter["status"].toLowerCase()
+            });
+        }
         if (csv) {
             let field = csvData();
 
