@@ -559,13 +559,13 @@ module.exports.getAll = catchAsync(async (req, res) => {
     let total = undefined;
     let priority = false;
 
-    if (newFilter["status"]) {
+    // if (newFilter["status"]) {
 
-      Object.assign(newFilter, statusFilter[newFilter["status"]]);
-      newFilter['printStatus'] = newFilter['status']
-      delete newFilter['status']
-    }
-    if (newFilter && Object.keys(newFilter).length) {
+    //   Object.assign(newFilter, statusFilter[newFilter["status"]]);
+    //   newFilter['printStatus'] = newFilter['status']
+    //   delete newFilter['status']
+    // }
+    if (newFilter && !newFilter['status'] && Object.keys(newFilter).length) {
       queryFilled.push({ $match: newFilter });
       queryNotStarted.push({ $match: newFilter });
     }
@@ -716,7 +716,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
       finalOutput.push(...p1, ...p2, ...p3, ...p4, ...p5, ...p6, ...noMasterFormData)
+      let tryData = []
+      if (newFilter["status"]) {
 
+        finalOutput = finalOutput.filter(data => {
+          // console.log(data.printStatus.toLowerCase() == newFilter["status"].toLowerCase())
+          return data.printStatus.toLowerCase() == newFilter["status"].toLowerCase()
+        });
+      }
+      console.log(finalOutput)
       if (finalOutput) {
         return res.status(200).json({
           success: true,
