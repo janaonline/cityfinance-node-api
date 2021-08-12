@@ -560,10 +560,10 @@ module.exports.getAll = catchAsync(async (req, res) => {
     let priority = false;
 
     if (newFilter["status"]) {
+
       Object.assign(newFilter, statusFilter[newFilter["status"]]);
-      if (newFilter["status"] == "2" || newFilter["status"] == "3") {
-        delete newFilter["status"];
-      }
+      newFilter['printStatus'] = newFilter['status']
+      delete newFilter['status']
     }
     if (newFilter && Object.keys(newFilter).length) {
       queryFilled.push({ $match: newFilter });
