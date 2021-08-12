@@ -102,6 +102,7 @@ exports.get = async (req, res) => {
             amount: 0,
             ulbSubmittedForm: 0,
             totalUlb: 0,
+            amountReleased:0
           },
           NonMillTied = {
             recommendationDate: 0,
@@ -110,6 +111,7 @@ exports.get = async (req, res) => {
             amount: 0,
             ulbSubmittedForm: 0,
             totalUlb: 0,
+            amountReleased:0
           },
           NonMillUntied = {
             recommendationDate: 0,
@@ -118,10 +120,12 @@ exports.get = async (req, res) => {
             amount: 0,
             ulbSubmittedForm: 0,
             totalUlb: 0,
+            amountReleased:0
           },
           statesWithMillPlusUlbs = {},
           statesCount = 0,
           statesWithMillPlusUlbsCount = 0;
+
         data[3].forEach((element) => {
           statesWithMillPlusUlbs[element.state] = element;
         });
@@ -154,6 +158,7 @@ exports.get = async (req, res) => {
                   if (innerElement.recommendationDate)
                     mill.recommendationDate = innerElement.recommendationDate;
                   if (innerElement.releaseDate)
+                    mill.amountReleased = innerElement.amountReleased
                     mill.releaseDate = innerElement.releaseDate;
                 } else {
                   if (innerElement.recommendationDate)
@@ -178,6 +183,7 @@ exports.get = async (req, res) => {
                     NonMillTied.recommendationDate =
                       innerElement.recommendationDate;
                   if (innerElement.releaseDate)
+                    NonMillTied.amountReleased = innerElement.amountReleased
                     NonMillTied.releaseDate = innerElement.releaseDate;
                 } else {
                   if (innerElement.recommendationDate)
@@ -202,6 +208,7 @@ exports.get = async (req, res) => {
                     NonMillUntied.recommendationDate =
                       innerElement.recommendationDate;
                   if (innerElement.releaseDate)
+                    NonMillUntied.amountReleased = innerElement.amountReleased
                     NonMillUntied.releaseDate = innerElement.releaseDate;
                 } else {
                   if (innerElement.recommendationDate)
@@ -271,7 +278,7 @@ exports.get = async (req, res) => {
           ExcelData.push({
             "Million Plus for Water Supply and SWM": {
               recommendationDate: mill.recommendationDate ? `Sent to MoF on ${moment(mill.recommendationDate).format('dd-MM-YYYY')}` : "Not Sent",
-              releaseDate: mill.releaseDate ? `Amount Released on ${moment(mill.releaseDate).format('dd-MM-YYYY')}` : "Not Released",
+              releaseDate: mill.releaseDate ? `${mill.amountReleased} Released on ${moment(mill.releaseDate).format('dd-MM-YYYY')}` : "Not Released",
               submissionDate: mill.submissionDate
                 ? `Submitted on ${moment(mill.submissionDate).format('DD-MM-YYYY')}`
                 : "Not Submitted",
@@ -283,7 +290,7 @@ exports.get = async (req, res) => {
                 ? `Sent to MoF on ${moment(NonMillTied.recommendationDate).format('DD-MM-YYYY')}`
                 : "Not Sent",
               releaseDate: NonMillTied.releaseDate
-                ? `Amount Released on ${moment(NonMillTied.releaseDate).format('DD-MM-YYYY')}`
+                ? `${NonMillTied.amountReleased} Released on ${moment(NonMillTied.releaseDate).format('DD-MM-YYYY')}`
                 : "Not Released",
               submissionDate: NonMillTied.submissionDate
                 ? `Submitted on ${moment(NonMillTied.submissionDate).format('DD-MM-YYYY')}`
@@ -296,7 +303,7 @@ exports.get = async (req, res) => {
                 ? `Sent to MoF on ${moment(NonMillUntied.recommendationDate).format('DD-MM-YYYY')}`
                 : "Not Sent",
               releaseDate: NonMillUntied.releaseDate
-                ? `Amount Released on ${moment(NonMillUntied.releaseDate).format('DD-MM-YYYY')}`
+                ? `${NonMillUntied.amountReleased} Released on ${moment(NonMillUntied.releaseDate).format('DD-MM-YYYY')}`
                 : "Not Released",
               submissionDate: NonMillUntied.submissionDate
                 ? `Submitted on ${moment(NonMillUntied.submissionDate).format('DD-MM-YYYY')}`
