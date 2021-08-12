@@ -14,6 +14,7 @@ const Redis = require("../../service/redis");
 const { promisify } = require("util");
 const { toUnicode } = require("punycode");
 const MasterForm = require("../../models/MasterForm");
+
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
 
@@ -566,9 +567,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
     }
     if (newFilter && Object.keys(newFilter).length) {
       queryFilled.push({ $match: newFilter });
+      queryNotStarted.push({ $match: newFilter });
     }
     if (sort && Object.keys(sort).length) {
       queryFilled.push({ $sort: sort });
+      queryNotStarted.push({ $sort: sort });
     } else {
       if (priority) {
         sort = {
@@ -578,6 +581,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
         sort = { $sort: { createdAt: -1 } };
       }
       queryFilled.push(sort);
+      queryNotStarted.push(sort);
     }
 
     if (csv) {
@@ -642,8 +646,10 @@ module.exports.getAll = catchAsync(async (req, res) => {
         total = d.length ? d[0].count : 0;
       }
       queryFilled.push({ $skip: skip });
+      queryNotStarted.push({ $skip: skip });
       queryFilled.push({ $limit: limit });
-
+      queryNotStarted.push({ $limit: limit });
+      console.log(util.inspect(queryFilled, { showHidden: false, depth: null }))
       let masterFormData = await MasterFormData.aggregate(queryFilled).exec();
       let p1 = [];
       let p2 = [];
@@ -651,6 +657,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       let p4 = [];
       let p5 = [];
       let p6 = [];
+      let finalOutput = []
 
       for (d of masterFormData) {
         if (
@@ -706,9 +713,10 @@ module.exports.getAll = catchAsync(async (req, res) => {
           p3.push(d)
         }
       }
-      let finalOutput = []
+
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
       finalOutput.push(...p1, ...p2, ...p3, ...p4, ...p5, ...p6, ...noMasterFormData)
+
       if (finalOutput) {
         return res.status(200).json({
           success: true,
