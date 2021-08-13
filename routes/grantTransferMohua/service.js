@@ -278,7 +278,7 @@ exports.get = async (req, res) => {
           ExcelData.push({
             "Million Plus for Water Supply and SWM": {
               recommendationDate: mill.recommendationDate ? `Sent to MoF on ${moment(mill.recommendationDate).format('dd-MM-YYYY')}` : "Not Sent",
-              releaseDate: mill.releaseDate ? `${mill.amountReleased} Released on ${moment(mill.releaseDate).format('dd-MM-YYYY')}` : "Not Released",
+              releaseDate: mill.releaseDate ? `${mill.amountReleased}Cr Released on ${moment(mill.releaseDate).format('dd-MM-YYYY')}` : "Not Released",
               submissionDate: mill.submissionDate
                 ? `Submitted on ${moment(mill.submissionDate).format('DD-MM-YYYY')}`
                 : "Not Submitted",
@@ -290,7 +290,7 @@ exports.get = async (req, res) => {
                 ? `Sent to MoF on ${moment(NonMillTied.recommendationDate).format('DD-MM-YYYY')}`
                 : "Not Sent",
               releaseDate: NonMillTied.releaseDate
-                ? `${NonMillTied.amountReleased} Released on ${moment(NonMillTied.releaseDate).format('DD-MM-YYYY')}`
+                ? `${NonMillTied.amountReleased}Cr Released on ${moment(NonMillTied.releaseDate).format('DD-MM-YYYY')}`
                 : "Not Released",
               submissionDate: NonMillTied.submissionDate
                 ? `Submitted on ${moment(NonMillTied.submissionDate).format('DD-MM-YYYY')}`
@@ -303,7 +303,7 @@ exports.get = async (req, res) => {
                 ? `Sent to MoF on ${moment(NonMillUntied.recommendationDate).format('DD-MM-YYYY')}`
                 : "Not Sent",
               releaseDate: NonMillUntied.releaseDate
-                ? `${NonMillUntied.amountReleased} Released on ${moment(NonMillUntied.releaseDate).format('DD-MM-YYYY')}`
+                ? `${NonMillUntied.amountReleased}Cr Released on ${moment(NonMillUntied.releaseDate).format('DD-MM-YYYY')}`
                 : "Not Released",
               submissionDate: NonMillUntied.submissionDate
                 ? `Submitted on ${moment(NonMillUntied.submissionDate).format('DD-MM-YYYY')}`
