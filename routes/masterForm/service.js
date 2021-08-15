@@ -1033,7 +1033,7 @@ module.exports.UAList = catchAsync(async (req, res) => {
   })
 })
 
-module.exports.plansDataState = catchAsync(async (req, res) => {
+module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   let user = req.decoded;
   let { ua_id } = req.query;
   if (!ua_id) {
@@ -1050,12 +1050,23 @@ module.exports.plansDataState = catchAsync(async (req, res) => {
       }
     },
     {
-      $project: {
-        totalULBs: { $size: "$ulb" }
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb"
+      }
+    },
+    { $unwind: "$ulb" },
+    {
+      $group: {
+        _id: "$ulb.isMillionPlus",
+        totalULBsinUA: { $sum: 1 }
       }
     }
+
   ]
-  let query = [
+  let queryNotStarted = [
     {
       $match: {
         _id: ObjectId(ua_id)
@@ -1063,46 +1074,349 @@ module.exports.plansDataState = catchAsync(async (req, res) => {
     },
     {
       $lookup: {
-        from: "masterforms",
+        from: "ulbs",
         localField: "ulb",
-        foreignField: "ulb",
-        as: "masterformData"
+        foreignField: "_id",
+        as: "ulb"
       }
     },
+    { $unwind: "$ulb" },
     {
-      $unwind: "$masterformData"
+      $group: {
+        _id: "$ulb.isMillionPlus",
+        totalULBsinUA: { $sum: 1 },
+        ulb: { $addToSet: "$ulb" }
+      }
+    },
+    { $unwind: "$ulb" },
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "ulb._id",
+        foreignField: "ulb",
+        as: "masterFormData"
+
+      }
     },
     {
       $match: {
-        "masterformData.design_year": ObjectId(design_year),
-        $or: [{
-          $and: [{ "masterformData.actionTakenByRole": "STATE" },
-          { "masterformData.status": "APPROVED" }]
-        },
-
-        {
-          $and: [{ "masterformData.actionTakenByRole": "MoHUA" }, {
-            $or: [
-              { "masterformData.status": "APPROVED" },
-              { "masterformData.status": "PENDING" }]
-          }]
-        }]
+        "masterFormData._id": { $exists: false }
       }
     },
-    { $count: "filledULBs" }
+    {
+      $group: {
+        _id: "$_id",
+        totalULBsInUA: { $first: "$totalULBsinUA" },
+        notStarted: { $sum: 1 }
+      }
+    }
+
   ]
-  let count = await UA.aggregate(countQuery)
-  let data = await UA.aggregate(query)
-  let finalData = {
-    filledULBs: data[0]?.filledULBs ? data[0]?.filledULBs : 0,
-    totalULBs: count[0]?.totalULBs ? count[0]?.totalULBs : 0
-  }
+  let queryNonMillion = [
+    {
+      $match: {
+        _id: ObjectId(ua_id)
+      }
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb"
+      }
+    },
+    { $unwind: "$ulb" },
+    {
+      $match: {
+        "ulb.isMillionPlus": "No"
+      }
+    },
+
+
+
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "ulb._id",
+        foreignField: "ulb",
+        as: "masterFormData"
+      }
+    },
+    {
+      $unwind: "$masterFormData"
+    },
+
+    {
+      $group: {
+        _id: {
+          actionTakenByRole: "$masterFormData.actionTakenByRole",
+          status: "$masterFormData.status",
+          isSubmit: "$masterFormData.isSubmit",
+          "slbFormStatus": "$masterFormData.steps.slbForWaterSupplyAndSanitation.status",
+          "slbFormComplete": "$masterFormData.steps.slbForWaterSupplyAndSanitation.isSubmit"
+        },
+        count: { $sum: 1 }
+      }
+    }
+
+  ]
+  let queryMillion = [
+    {
+      $match: {
+        _id: ObjectId(ua_id)
+      }
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb"
+      }
+    },
+    { $unwind: "$ulb" },
+    {
+      $match: {
+        "ulb.isMillionPlus": "Yes"
+      }
+    },
+
+
+
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "ulb._id",
+        foreignField: "ulb",
+        as: "masterFormData"
+      }
+    },
+    {
+      $unwind: "$masterFormData"
+    },
+
+    {
+      $group: {
+        _id: {
+          actionTakenByRole: "$masterFormData.actionTakenByRole",
+          status: "$masterFormData.status",
+          isSubmit: "$masterFormData.isSubmit",
+          "slbFormStatus": "$masterFormData.steps.slbForWaterSupplyAndSanitation.status",
+          "slbFormComplete": "$masterFormData.steps.slbForWaterSupplyAndSanitation.isSubmit"
+
+        },
+        count: { $sum: 1 }
+      }
+    }
+
+  ]
+  let { output1, output2, output3, output4 } =
+    await new Promise(async (resolve, reject) => {
+      let prms1 = new Promise(async (rslv, rjct) => {
+        let output = await UA.aggregate(countQuery);
+        rslv(output);
+      });
+
+      let prms2 = new Promise(async (rslv, rjct) => {
+        let output = await UA.aggregate(queryNotStarted);
+        rslv(output);
+      });
+      let prms3 = new Promise(async (rslv, rjct) => {
+        let output = await UA.aggregate(queryNonMillion);
+        rslv(output);
+      });
+      let prms4 = new Promise(async (rslv, rjct) => {
+        let output = await UA.aggregate(queryMillion);
+        rslv(output);
+      });
+
+
+      Promise.all([prms1, prms2, prms3, prms4]).then(
+        (outputs) => {
+          let output1 = outputs[0];
+          let output2 = outputs[1];
+          let output3 = outputs[2];
+          let output4 = outputs[3];
+          if (
+            output1 &&
+            output2 &&
+            output3 &&
+            output4
+          ) {
+            resolve({
+              output1,
+              output2,
+              output3,
+              output4,
+            });
+          } else {
+            reject({ message: "No Data Found" });
+          }
+        },
+        (e) => {
+          reject(e);
+        }
+      );
+    });
+
+  let finalData = processSLBData(output1, output2, output3, output4)
+
 
   return res.status(200).json({
     success: true,
     data: finalData
   })
 })
+processSLBData = (output1, output2, output3, output4) => {
+  console.log("outputs", output1, output2, output3, output4)
+  let million_pendingCompletion = 0,
+    million_completedAndPendingSubmission = 0,
+    million_underReviewByState = 0,
+    million_approvedByState = 0,
+    nonMillion_pendingCompletion = 0,
+    nonMillion_completedAndPendingSubmission = 0,
+    nonMillion_underReviewByState = 0,
+    nonMillion_approvedByState = 0;
+
+  //not started ulbs (pending completion)
+  output2.forEach(el => {
+    if (el['_id'] == 'No') {
+      nonMillion_pendingCompletion = el['notStarted'] + nonMillion_pendingCompletion;
+    } else if (el['_id'] == 'Yes') {
+      million_pendingCompletion = el['notStarted'] + million_pendingCompletion;
+    }
+  })
+  //nonMillion
+  output3.forEach(el => {
+    let newEl = el['_id']
+    //pendingCompletion
+    if ((newEl['isSubmit'] &&
+      (newEl['actionTakenByRole'] == 'STATE' || newEl['actionTakenByRole'] == 'MoHUA') &&
+      newEl['status'] == 'REJECTED' &&
+      newEl['slbFormStatus'] == 'REJECTED'
+    ) ||
+      (!newEl['isSubmit'] &&
+        newEl['actionTakenByRole'] == 'ULB' &&
+        newEl['status'] == 'PENDING' &&
+        !newEl['slbFormComplete']
+
+      )
+    ) {
+      nonMillion_pendingCompletion = el['count'] + nonMillion_pendingCompletion;
+    }
+
+    //completed but pending submission
+    if (!newEl['isSubmit'] &&
+      newEl['actionTakenByRole'] == 'ULB' &&
+      newEl['status'] == 'PENDING' &&
+      newEl['slbFormComplete']) {
+      nonMillion_completedAndPendingSubmission = el['count'] + nonMillion_completedAndPendingSubmission
+    }
+    //under review by state
+    if ((newEl['isSubmit'] &&
+      newEl['actionTakenByRole'] == 'ULB' &&
+      newEl['status'] == 'PENDING') ||
+      (
+        !newEl['isSubmit'] &&
+        newEl['actionTakenByRole'] == 'STATE' &&
+        newEl['status'] == 'PENDING'
+      )) {
+      nonMillion_underReviewByState = el['count'] + nonMillion_underReviewByState
+    }
+
+    //approvedBySTate
+    if ((newEl['isSubmit'] &&
+      (newEl['actionTakenByRole'] == 'STATE' || newEl['actionTakenByRole'] == 'MoHUA') &&
+      newEl['status'] == 'APPROVED'
+
+    ) ||
+      (
+        !newEl['isSubmit'] &&
+        newEl['actionTakenByRole'] == 'MoHUA' &&
+        (newEl['status'] == 'PENDING' || newEl['status'] == 'APPROVED')
+      )) {
+      nonMillion_approvedByState = el['count'] + nonMillion_approvedByState
+    }
+
+
+  })
+
+  //MillionPlus
+  output4.forEach(el => {
+    let newEl = el['_id']
+    //pendingCompletion
+    if ((newEl['isSubmit'] &&
+      (newEl['actionTakenByRole'] == 'STATE' || newEl['actionTakenByRole'] == 'MoHUA') &&
+      newEl['status'] == 'REJECTED' &&
+      newEl['slbFormStatus'] == 'REJECTED'
+    ) ||
+      (!newEl['isSubmit'] &&
+        newEl['actionTakenByRole'] == 'ULB' &&
+        newEl['status'] == 'PENDING' &&
+        !newEl['slbFormComplete']
+
+      )
+    ) {
+      million_pendingCompletion = el['count'] + million_pendingCompletion;
+    }
+
+    //completed but pending submission
+    if (!newEl['isSubmit'] &&
+      newEl['actionTakenByRole'] == 'ULB' &&
+      newEl['status'] == 'PENDING' &&
+      newEl['slbFormComplete']) {
+      million_completedAndPendingSubmission = el['count'] + million_completedAndPendingSubmission
+    }
+    //under review by state
+    if ((newEl['isSubmit'] &&
+      newEl['actionTakenByRole'] == 'ULB' &&
+      newEl['status'] == 'PENDING') ||
+      (
+        !newEl['isSubmit'] &&
+        newEl['actionTakenByRole'] == 'STATE' &&
+        newEl['status'] == 'PENDING'
+      )) {
+      million_underReviewByState = el['count'] + million_underReviewByState
+    }
+
+    //approvedBySTate
+    if ((newEl['isSubmit'] &&
+      (newEl['actionTakenByRole'] == 'STATE' || newEl['actionTakenByRole'] == 'MoHUA') &&
+      newEl['status'] == 'APPROVED'
+
+    ) ||
+      (
+        !newEl['isSubmit'] &&
+        newEl['actionTakenByRole'] == 'MoHUA' &&
+        (newEl['status'] == 'PENDING' || newEl['status'] == 'APPROVED')
+      )) {
+      million_approvedByState = el['count'] + million_approvedByState
+    }
+
+
+  })
+  let finalOutput = [
+    {
+      category: "MillionPlus",
+      pendingCompletion: million_pendingCompletion,
+      completedAndPendingSubmission: million_completedAndPendingSubmission,
+      underReviewByState: million_underReviewByState,
+      approvedByState: million_approvedByState
+    },
+    {
+      category: "NonMillion",
+      pendingCompletion: nonMillion_pendingCompletion,
+      completedAndPendingSubmission: nonMillion_completedAndPendingSubmission,
+      underReviewByState: nonMillion_underReviewByState,
+      approvedByState: nonMillion_approvedByState
+    }
+  ]
+
+  console.log(finalOutput)
+
+  return finalOutput;
+}
 
 module.exports.StateDashboard = catchAsync(async (req, res) => {
   let user = req.decoded;
@@ -1250,51 +1564,51 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         },
       ];
 
-      let query2 = [
-        {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulbData",
-          },
-        },
-        {
-          $unwind: "$ulbData",
-        },
-        {
-          $project: {
-            steps: 1,
-            actionTakenByRole: 1,
-            status: 1,
-            isSubmit: 1,
-            ulb: 1,
-            state: 1,
-            design_year: 1,
-            isUA: "$ulbData.isUA",
-            isMillionPlus: "$ulbData.isMillionPlus",
-          },
-        },
-        match,
-        {
-          $lookup: {
-            from: "pfmsaccounts",
-            localField: "ulb",
-            foreignField: "ulb",
-            as: "pfms",
-          },
-        },
-        {
-          $unwind: "$pfms",
-        },
+      // let query2 = [
+      //   {
+      //     $lookup: {
+      //       from: "ulbs",
+      //       localField: "ulb",
+      //       foreignField: "_id",
+      //       as: "ulbData",
+      //     },
+      //   },
+      //   {
+      //     $unwind: "$ulbData",
+      //   },
+      //   {
+      //     $project: {
+      //       steps: 1,
+      //       actionTakenByRole: 1,
+      //       status: 1,
+      //       isSubmit: 1,
+      //       ulb: 1,
+      //       state: 1,
+      //       design_year: 1,
+      //       isUA: "$ulbData.isUA",
+      //       isMillionPlus: "$ulbData.isMillionPlus",
+      //     },
+      //   },
+      //   match,
+      //   {
+      //     $lookup: {
+      //       from: "pfmsaccounts",
+      //       localField: "ulb",
+      //       foreignField: "ulb",
+      //       as: "pfms",
+      //     },
+      //   },
+      //   {
+      //     $unwind: "$pfms",
+      //   },
 
-        {
-          $group: {
-            _id: "$pfms.linked",
-            count: { $sum: 1 },
-          },
-        },
-      ];
+      //   {
+      //     $group: {
+      //       _id: "$pfms.linked",
+      //       count: { $sum: 1 },
+      //     },
+      //   },
+      // ];
 
       let query3 = [
         {
@@ -1397,101 +1711,102 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         },
       ];
 
-      let query5 = [
-        {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulbData",
-          },
-        },
-        {
-          $unwind: "$ulbData",
-        },
-        {
-          $project: {
-            steps: 1,
-            actionTakenByRole: 1,
-            status: 1,
-            isSubmit: 1,
-            ulb: 1,
-            state: 1,
-            design_year: 1,
-            isUA: "$ulbData.isUA",
-            isMillionPlus: "$ulbData.isMillionPlus",
-          },
-        },
-        match2,
-        {
-          $lookup: {
-            from: "xvfcgrantulbforms",
-            localField: "ulb",
-            foreignField: "ulb",
-            as: "slbForm",
-          },
-        },
-        { $unwind: "$slbForm" },
-        {
-          $group: {
-            _id: {
-              isSubmit: "$isSubmit",
-              actionTakenByRole: "$actionTakenByRole",
-              status: "$slbForm.status",
-              isCompleted: "$slbForm.isCompleted",
-            },
-            count: { $sum: 1 },
-          },
-        },
-      ];
-      let query6 = [
-        {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulbData",
-          },
-        },
-        {
-          $unwind: "$ulbData",
-        },
-        {
-          $project: {
-            steps: 1,
-            actionTakenByRole: 1,
-            status: 1,
-            isSubmit: 1,
-            ulb: 1,
-            state: 1,
-            design_year: 1,
-            isUA: "$ulbData.isUA",
-            isMillionPlus: "$ulbData.isMillionPlus",
-          },
-        },
-        match2,
-        {
-          $lookup: {
-            from: "xvfcgrantplans",
-            localField: "ulb",
-            foreignField: "ulb",
-            as: "plans",
-          },
-        },
-        { $unwind: "$plans" },
-        {
-          $group: {
-            _id: {
-              isSubmit: "$isSubmit",
-              actionTakenByRole: "$actionTakenByRole",
-              status: "$plans.status",
-              isDraft: "$plans.isDraft",
-            },
-            count: { $sum: 1 },
-          },
-        },
-      ];
-      let { output1, output2, output3, output4, output5, output6 } =
+      // let query5 = [
+      //   {
+      //     $lookup: {
+      //       from: "ulbs",
+      //       localField: "ulb",
+      //       foreignField: "_id",
+      //       as: "ulbData",
+      //     },
+      //   },
+      //   {
+      //     $unwind: "$ulbData",
+      //   },
+      //   {
+      //     $project: {
+      //       steps: 1,
+      //       actionTakenByRole: 1,
+      //       status: 1,
+      //       isSubmit: 1,
+      //       ulb: 1,
+      //       state: 1,
+      //       design_year: 1,
+      //       isUA: "$ulbData.isUA",
+      //       isMillionPlus: "$ulbData.isMillionPlus",
+      //     },
+      //   },
+      //   match2,
+      //   {
+      //     $lookup: {
+      //       from: "xvfcgrantulbforms",
+      //       localField: "ulb",
+      //       foreignField: "ulb",
+      //       as: "slbForm",
+      //     },
+      //   },
+      //   { $unwind: "$slbForm" },
+      //   {
+      //     $group: {
+      //       _id: {
+      //         isSubmit: "$isSubmit",
+      //         actionTakenByRole: "$actionTakenByRole",
+      //         status: "$slbForm.status",
+      //         isCompleted: "$slbForm.isCompleted",
+      //         isMillionPlus:"$isMillionPlus"
+      //       },
+      //       count: { $sum: 1 },
+      //     },
+      //   },
+      // ];
+      // let query6 = [
+      //   {
+      //     $lookup: {
+      //       from: "ulbs",
+      //       localField: "ulb",
+      //       foreignField: "_id",
+      //       as: "ulbData",
+      //     },
+      //   },
+      //   {
+      //     $unwind: "$ulbData",
+      //   },
+      //   {
+      //     $project: {
+      //       steps: 1,
+      //       actionTakenByRole: 1,
+      //       status: 1,
+      //       isSubmit: 1,
+      //       ulb: 1,
+      //       state: 1,
+      //       design_year: 1,
+      //       isUA: "$ulbData.isUA",
+      //       isMillionPlus: "$ulbData.isMillionPlus",
+      //     },
+      //   },
+      //   match2,
+      //   {
+      //     $lookup: {
+      //       from: "xvfcgrantplans",
+      //       localField: "ulb",
+      //       foreignField: "ulb",
+      //       as: "plans",
+      //     },
+      //   },
+      //   { $unwind: "$plans" },
+      //   {
+      //     $group: {
+      //       _id: {
+      //         isSubmit: "$isSubmit",
+      //         actionTakenByRole: "$actionTakenByRole",
+      //         status: "$plans.status",
+      //         isDraft: "$plans.isDraft",
+      //       },
+      //       count: { $sum: 1 },
+      //     },
+      //   },
+      // ];
+      let { output1, output3, output4 } =
         await new Promise(async (resolve, reject) => {
           let prms1 = new Promise(async (rslv, rjct) => {
             // console.log(util.inspect(query1, { showHidden: false, depth: null }))
@@ -1499,11 +1814,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
             rslv(output);
           });
-          let prms2 = new Promise(async (rslv, rjct) => {
-            let output = await MasterFormData.aggregate(query2);
 
-            rslv(output);
-          });
           let prms3 = new Promise(async (rslv, rjct) => {
             let output = await MasterFormData.aggregate(query3);
 
@@ -1514,39 +1825,30 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
             rslv(output);
           });
-          let prms5 = new Promise(async (rslv, rjct) => {
-            let output = await MasterFormData.aggregate(query5);
 
-            rslv(output);
-          });
-          let prms6 = new Promise(async (rslv, rjct) => {
-            let output = await MasterFormData.aggregate(query6);
 
-            rslv(output);
-          });
-          Promise.all([prms1, prms2, prms3, prms4, prms5, prms6]).then(
+          Promise.all([prms1, prms3, prms4]).then(
             (outputs) => {
               let output1 = outputs[0];
-              let output2 = outputs[1];
+
               let output3 = outputs[2];
               let output4 = outputs[3];
-              let output5 = outputs[4];
-              let output6 = outputs[5];
+
+
               if (
                 output1 &&
-                output2 &&
+
                 output3 &&
-                output4 &&
-                output5 &&
-                output6
+                output4
+
               ) {
                 resolve({
                   output1,
-                  output2,
+
                   output3,
                   output4,
-                  output5,
-                  output6,
+
+
                 });
               } else {
                 reject({ message: "No Data Found" });
@@ -1560,11 +1862,11 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
       let data = formatOutput(
         output1,
-        output2,
+
         output3,
         output4,
-        output5,
-        output6,
+
+
         i,
         numbers
       );
@@ -2744,11 +3046,9 @@ const calculateTotalNumbers = (data) => {
 
 const formatOutput = (
   output1,
-  output2,
   output3,
   output4,
-  output5,
-  output6,
+
   i,
   numbers
 ) => {
@@ -2756,11 +3056,11 @@ const formatOutput = (
     util.inspect(
       {
         overall: output1,
-        pfms: output2,
+
         annualaccounts: output3,
         utilreport: output4,
-        slb: output5,
-        plans: output6,
+
+
         numbers: numbers,
         i: i
       },
@@ -2772,25 +3072,18 @@ const formatOutput = (
     overall_approvedByState = 0,
     provisional = 0,
     audited = 0,
-    registered = 0,
-    notRegistered = 0,
+
     pendingResponse = 0,
     util_pendingCompletion = 0,
     util_completedAndPendingSubmission = 0,
     util_underStateReview = 0,
     util_approvedbyState = 0,
-    slb_pendingCompletion = 0,
-    slb_completedAndPendingSubmission = 0,
-    slb_underStateReview = 0,
-    slb_approvedbyState = 0,
+
     provisional_yes = 0,
-    provisional_no = 0,
-    audited_yes = 0,
-    audited_no = 0,
-    plans_pendingCompletion = 0,
-    plans_completedAndPendingSubmission = 0,
-    plans_underStateReview = 0,
-    plans_approvedbyState = 0;
+
+    audited_yes = 0
+
+
 
   //overall
   if (output1.length == 0) {
@@ -2813,22 +3106,6 @@ const formatOutput = (
 
       pendingForSubmission =
         numbers[i] - underReviewByState - overall_approvedByState;
-    });
-  }
-
-
-  //pfms
-  if (output2.length == 0) {
-    pendingResponse = numbers[i]
-  } else {
-    output2.forEach((el) => {
-      if (el._id === "no") {
-        notRegistered = el.count;
-      } else if (el._id === "yes") {
-        registered = el.count;
-      }
-
-      pendingResponse = numbers[i] - registered - notRegistered;
     });
   }
 
@@ -2885,72 +3162,6 @@ const formatOutput = (
   }
 
 
-  //slb
-  if (output5.length == 0) {
-    slb_pendingCompletion = numbers[i]
-  } else {
-    output5.forEach((el) => {
-      if (
-        el._id.status == "PENDING" && el._id.actionTakenByRole == "ULB" && el._id.isSubmit == true
-        || el._id.status == "PENDING" && el._id.actionTakenByRole == "STATE" && el._id.isSubmit == false
-      ) {
-        slb_underStateReview = el.count;
-      } else if (
-        el._id.status === "APPROVED" &&
-        el._id.actionTakenByRole === "STATE"
-        ||
-        (el._id.status === "APPROVED" || el._id.status === "PENDING") &&
-        el._id.actionTakenByRole === "MoHUA"
-      ) {
-        slb_approvedbyState = el.count;
-      } else if (
-        !el._id.isSubmit &&
-        el._id.actionTakenByRole === "ULB" &&
-        el._id.isCompleted
-      ) {
-        slb_completedAndPendingSubmission = el.count;
-      }
-
-      slb_pendingCompletion =
-        numbers[i] -
-        slb_underStateReview -
-        slb_approvedbyState -
-        slb_completedAndPendingSubmission;
-    });
-  }
-
-  if (output6.length == 0) {
-    plans_pendingCompletion = numbers[i]
-  } else {
-    output6.forEach((el) => {
-      if (
-        el._id.actionTakenByRole === "ULB" &&
-        el._id.status === "PENDING" &&
-        el._id.isSubmit
-      ) {
-        plans_underStateReview = el.count;
-      } else if (
-        el._id.actionTakenByRole === "STATE" &&
-        el._id.status === "APPROVED" &&
-        el._id.isSubmit
-      ) {
-        plans_approvedbyState = el.count;
-      } else if (
-        !el._id.isSubmit &&
-        el._id.actionTakenByRole === "ULB" &&
-        el._id.isCompleted
-      ) {
-        plans_completedAndPendingSubmission = el.count;
-      }
-
-      plans_pendingCompletion =
-        numbers[i] -
-        plans_underStateReview -
-        plans_approvedbyState -
-        plans_completedAndPendingSubmission;
-    });
-  }
-
 
   let finalOutput = {
     type:
@@ -2964,29 +3175,15 @@ const formatOutput = (
       provisional: parseInt(provisional),
       audited: parseInt(audited),
     },
-    pfms: {
-      registered: registered,
-      notRegistered: notRegistered,
-      pendingResponse: pendingResponse,
-    },
+
     utilReport: {
       pendingCompletion: util_pendingCompletion,
       completedAndPendingSubmission: util_completedAndPendingSubmission,
       underStateReview: util_underStateReview,
       approvedbyState: util_approvedbyState,
     },
-    slb: {
-      pendingCompletion: slb_pendingCompletion,
-      completedAndPendingSubmission: slb_completedAndPendingSubmission,
-      underStateReview: slb_underStateReview,
-      approvedbyState: slb_approvedbyState,
-    },
-    plans: {
-      pendingCompletion: plans_pendingCompletion,
-      completedAndPendingSubmission: plans_completedAndPendingSubmission,
-      underStateReview: plans_underStateReview,
-      approvedbyState: plans_approvedbyState,
-    },
+
+
   };
 
   // console.log(finalOutput)
