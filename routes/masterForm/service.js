@@ -1831,13 +1831,12 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
             (outputs) => {
               let output1 = outputs[0];
 
-              let output3 = outputs[2];
-              let output4 = outputs[3];
+              let output3 = outputs[1];
+              let output4 = outputs[2];
 
 
               if (
                 output1 &&
-
                 output3 &&
                 output4
 
