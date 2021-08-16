@@ -817,7 +817,7 @@ module.exports.eligibleULBForms = async function (req, res) {
     "utilReport": 1,
     "annualAccounts": 1,
     "slbs": 0,
-    "slbWaterSupplySanitation": ulbData.isUA ? 1 : 0,
+    "slbWaterSupplySanitation": 1,
     "plansWaterSupplySanitation": 0
   }
 
