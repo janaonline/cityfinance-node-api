@@ -1254,6 +1254,7 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
       });
 
       let prms2 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
         let output = await UA.aggregate(queryNotStarted);
         rslv(output);
       });
@@ -1324,8 +1325,8 @@ processSLBData = (output1, output2, output3, output4, output5) => {
   //not started ulbs (pending completion)
 
 
-  nonMillion_pendingCompletion = output2[0]['notStarted'] + nonMillion_pendingCompletion;
-  million_pendingCompletion = output4[0]['notStarted'] + million_pendingCompletion;
+  nonMillion_pendingCompletion = output2[0]?.hasOwnProperty('notStarted') ? output2[0].notStarted : 0 + nonMillion_pendingCompletion;
+  million_pendingCompletion = output4[0]?.hasOwnProperty('notStarted') ? output4[0].notStarted : 0 + million_pendingCompletion;
 
 
   //isUA
