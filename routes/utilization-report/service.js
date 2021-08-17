@@ -9,15 +9,20 @@ const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
 } = require("../../service");
-
+const time = () => {
+  var dt = new Date();
+  dt.setHours(dt.getHours() + 5);
+  dt.setMinutes(dt.getMinutes() + 30);
+  return dt;
+};
 module.exports.createOrUpdate = async (req, res) => {
   try {
     const { financialYear, isDraft, designYear } = req.body;
     const ulb = req.decoded?.ulb;
     req.body.ulb = ulb;
     req.body.actionTakenBy = req.decoded?._id;
-    req.body.modifiedAt = new Date();
-
+    req.body.modifiedAt = time();
+    // 
     let currentSavedUtilRep;
     if (req.body?.status == "REJECTED") {
       req.body.status = "PENDING";
@@ -218,7 +223,7 @@ exports.action = async (req, res) => {
       status: data?.status,
       actionTakenBy: user?._id,
       rejectReason: data?.rejectReason,
-      modifiedAt: new Date(),
+      modifiedAt: time(),
       actionTakenByRole: user.role,
     };
     if (!currentState) {
