@@ -2,14 +2,19 @@ const AnnualAccountData = require("../../models/AnnualAccounts");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
-
+const time = () => {
+  var dt = new Date();
+  dt.setHours(dt.getHours() + 5);
+  dt.setMinutes(dt.getMinutes() + 30);
+  return dt;
+};
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
     req.body.actionTakenBy = req?.decoded._id;
     req.body.ulb = req?.decoded.ulb;
     const ulb = req?.decoded.ulb;
-    req.body.modifiedAt = new Date();
+    req.body.modifiedAt = time();
 
     let currentAnnualAccounts;
     if (req.body?.status == "REJECTED") {
@@ -125,7 +130,7 @@ exports.action = async (req, res) => {
   try {
     let { ulb, design_year, isDraft } = req.body;
     req.body.actionTakenBy = req.decoded._id;
-    req.body.modifiedAt = new Date();
+    req.body.modifiedAt = time();
     req.body.actionTakenByRole = req.decoded.role;
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),

@@ -668,7 +668,7 @@ extractUlbData = (arr2) => {
 };
 
 
-module.exports.create = async (req, res) => {
+module.exports.create = catchAsync(async (req, res) => {
   let user = req.decoded;
   let data = req.body;
   if (user.role == "ULB") {
@@ -751,8 +751,7 @@ module.exports.create = async (req, res) => {
   } else {
     return Response.BadRequest(res, {}, "This action is only allowed by ULB");
   }
-};
-
+});
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded,
     filter = req.body.filter,

@@ -125,10 +125,10 @@ module.exports.get = catchAsync(async (req, res) => {
   }
 
   let masterFormData = await MasterFormData.findOne(query);
-  if (masterFormData.actionTakenByRole != user.role) {
+  if (masterFormData['actionTakenByRole'] != user.role) {
     masterFormData = masterFormData.history[masterFormData.history.length - 1];
-    // masterFormData['stateName'] = masterFormData.stateName
-    // masterFormData['ulbName'] = masterFormData.ulbName
+    masterFormData['stateName'] = masterFormData.stateName
+    masterFormData['ulbName'] = masterFormData.ulbName
   }
   masterFormData.history = null;
   if (!masterFormData) {
@@ -1035,20 +1035,33 @@ module.exports.UAList = catchAsync(async (req, res) => {
 
 module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   let user = req.decoded;
+  let { state_id } = req.query
+  let state = req.decoded.state ?? state_id
   let { ua_id } = req.query;
-  if (!ua_id) {
+  if (!ua_id || !state) {
     return res.status(400).json({
       success: false,
-      message: "UA ID NOT FOUND"
+      message: !ua_id ? "UA ID NOT FOUND" : !state ? "STATE ID NOT FOUND" : "State/UA ID Not Found"
     })
   }
+
   let { design_year } = req.params
-  let countQuery = [
-    {
+  let match;
+  if (ua_id == 'all') {
+    match = {
+      $match: {
+        state: ObjectId(state)
+      }
+    }
+  } else {
+    match = {
       $match: {
         _id: ObjectId(ua_id)
       }
-    },
+    }
+  }
+  let countQuery = [
+    match,
     {
       $lookup: {
         from: "ulbs",
@@ -1060,18 +1073,15 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     { $unwind: "$ulb" },
     {
       $group: {
-        _id: "$ulb.isMillionPlus",
+        _id: null,
         totalULBsinUA: { $sum: 1 }
       }
     }
 
   ]
+
   let queryNotStarted = [
-    {
-      $match: {
-        _id: ObjectId(ua_id)
-      }
-    },
+    match,
     {
       $lookup: {
         from: "ulbs",
@@ -1083,7 +1093,7 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     { $unwind: "$ulb" },
     {
       $group: {
-        _id: "$ulb.isMillionPlus",
+        _id: null,
         totalULBsinUA: { $sum: 1 },
         ulb: { $addToSet: "$ulb" }
       }
@@ -1105,19 +1115,15 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     },
     {
       $group: {
-        _id: "$_id",
+        _id: null,
         totalULBsInUA: { $first: "$totalULBsinUA" },
         notStarted: { $sum: 1 }
       }
     }
 
   ]
-  let queryNonMillion = [
-    {
-      $match: {
-        _id: ObjectId(ua_id)
-      }
-    },
+  let queryUA = [
+    match,
     {
       $lookup: {
         from: "ulbs",
@@ -1129,7 +1135,7 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     { $unwind: "$ulb" },
     {
       $match: {
-        "ulb.isMillionPlus": "No"
+        "ulb.isUA": "Yes"
       }
     },
 
@@ -1161,33 +1167,60 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     }
 
   ]
-  let queryMillion = [
+
+  let queryNonMillionNonUA_NotStarted = [
     {
       $match: {
-        _id: ObjectId(ua_id)
+        state: ObjectId(state),
+        isMillionPlus: "No",
+        isUA: "No"
       }
+
     },
     {
-      $lookup: {
-        from: "ulbs",
-        localField: "ulb",
-        foreignField: "_id",
-        as: "ulb"
+      $group: {
+        _id: null,
+        totalULBsinUA: { $sum: 1 },
+        ulb_id: { $addToSet: "$_id" }
       }
     },
-    { $unwind: "$ulb" },
-    {
-      $match: {
-        "ulb.isMillionPlus": "Yes"
-      }
-    },
-
-
-
+    { $unwind: "$ulb_id" },
     {
       $lookup: {
         from: "masterforms",
-        localField: "ulb._id",
+        localField: "ulb_id",
+        foreignField: "ulb",
+        as: "masterFormData"
+
+      }
+    },
+    {
+      $match: {
+        "masterFormData._id": { $exists: false }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalULBsInUA: { $first: "$totalULBsinUA" },
+        notStarted: { $sum: 1 }
+      }
+    }
+
+  ]
+  let queryNonMillionNonUA = [
+
+    {
+      $match: {
+        state: ObjectId(state),
+        "isMillionPlus": "No",
+        "isUA": "No"
+      }
+    },
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "_id",
         foreignField: "ulb",
         as: "masterFormData"
       }
@@ -1211,7 +1244,9 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     }
 
   ]
-  let { output1, output2, output3, output4 } =
+
+
+  let { output1, output2, output3, output4, output5 } =
     await new Promise(async (resolve, reject) => {
       let prms1 = new Promise(async (rslv, rjct) => {
         let output = await UA.aggregate(countQuery);
@@ -1223,32 +1258,39 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
         rslv(output);
       });
       let prms3 = new Promise(async (rslv, rjct) => {
-        let output = await UA.aggregate(queryNonMillion);
+        let output = await UA.aggregate(queryUA);
         rslv(output);
       });
       let prms4 = new Promise(async (rslv, rjct) => {
-        let output = await UA.aggregate(queryMillion);
+        let output = await Ulb.aggregate(queryNonMillionNonUA_NotStarted);
+        rslv(output);
+      });
+      let prms5 = new Promise(async (rslv, rjct) => {
+        let output = await Ulb.aggregate(queryNonMillionNonUA);
         rslv(output);
       });
 
 
-      Promise.all([prms1, prms2, prms3, prms4]).then(
+      Promise.all([prms1, prms2, prms3, prms4, prms5]).then(
         (outputs) => {
           let output1 = outputs[0];
           let output2 = outputs[1];
           let output3 = outputs[2];
           let output4 = outputs[3];
+          let output5 = outputs[4];
           if (
             output1 &&
             output2 &&
             output3 &&
-            output4
+            output4 &&
+            output5
           ) {
             resolve({
               output1,
               output2,
               output3,
               output4,
+              output5
             });
           } else {
             reject({ message: "No Data Found" });
@@ -1260,7 +1302,7 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
       );
     });
 
-  let finalData = processSLBData(output1, output2, output3, output4)
+  let finalData = processSLBData(output1, output2, output3, output4, output5)
 
 
   return res.status(200).json({
@@ -1268,8 +1310,8 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     data: finalData
   })
 })
-processSLBData = (output1, output2, output3, output4) => {
-  console.log("outputs", output1, output2, output3, output4)
+processSLBData = (output1, output2, output3, output4, output5) => {
+  console.log("outputs", output1, output2, output3, output4, output5)
   let million_pendingCompletion = 0,
     million_completedAndPendingSubmission = 0,
     million_underReviewByState = 0,
@@ -1280,14 +1322,13 @@ processSLBData = (output1, output2, output3, output4) => {
     nonMillion_approvedByState = 0;
 
   //not started ulbs (pending completion)
-  output2.forEach(el => {
-    if (el['_id'] == 'No') {
-      nonMillion_pendingCompletion = el['notStarted'] + nonMillion_pendingCompletion;
-    } else if (el['_id'] == 'Yes') {
-      million_pendingCompletion = el['notStarted'] + million_pendingCompletion;
-    }
-  })
-  //nonMillion
+
+
+  nonMillion_pendingCompletion = output2[0]['notStarted'] + nonMillion_pendingCompletion;
+  million_pendingCompletion = output4[0]['notStarted'] + million_pendingCompletion;
+
+
+  //isUA
   output3.forEach(el => {
     let newEl = el['_id']
     //pendingCompletion
@@ -1342,8 +1383,8 @@ processSLBData = (output1, output2, output3, output4) => {
 
   })
 
-  //MillionPlus
-  output4.forEach(el => {
+  // NOn UA, NOn Million
+  output5.forEach(el => {
     let newEl = el['_id']
     //pendingCompletion
     if ((newEl['isSubmit'] &&
@@ -1398,14 +1439,14 @@ processSLBData = (output1, output2, output3, output4) => {
   })
   let finalOutput = [
     {
-      category: "MillionPlus",
+      category: "NonMillionNonUA",
       pendingCompletion: million_pendingCompletion,
       completedAndPendingSubmission: million_completedAndPendingSubmission,
       underReviewByState: million_underReviewByState,
       approvedByState: million_approvedByState
     },
     {
-      category: "NonMillion",
+      category: "UA",
       pendingCompletion: nonMillion_pendingCompletion,
       completedAndPendingSubmission: nonMillion_completedAndPendingSubmission,
       underReviewByState: nonMillion_underReviewByState,
