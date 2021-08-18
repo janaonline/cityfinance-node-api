@@ -147,8 +147,9 @@ exports.readById = async (req, res) => {
       designYear,
       isActive: true,
     }).select({ history: 0 }).lean();
-    if (!report) {
-      return res.status(400).json({ msg: "No UtilizationReport Found" });
+
+    if (report == null) {
+      report = {}
     }
     report['analytics'] = (arr)
     if (
