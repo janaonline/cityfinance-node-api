@@ -1026,7 +1026,9 @@ module.exports.plansData = catchAsync(async (req, res) => {
 
 module.exports.UAList = catchAsync(async (req, res) => {
   let user = req.decoded;
-  let uaData = await UA.find({ state: ObjectId(user.state) })
+  let { state_id } = req.query;
+  let state = user.state ?? state_id
+  let uaData = await UA.find({ state: ObjectId(state) })
   return res.status(200).json({
     success: true,
     data: uaData
