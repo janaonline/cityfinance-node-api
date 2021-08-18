@@ -84,7 +84,7 @@ const projectDetails3 = () => {
     name: {
       type: String,
     },
-    components: {
+    component: {
       type: String,
     },
     indicator: {
