@@ -10,11 +10,12 @@ const time = () => {
 };
 exports.createUpdate = async (req, res) => {
   try {
-    let { design_year, isDraft } = req.body;
+    let { design_year, isDraft } = req.body; 
     req.body.actionTakenBy = req?.decoded._id;
+    req.body.actionTakenByRole = req?.decoded.role;
     req.body.ulb = req?.decoded.ulb;
     const ulb = req?.decoded.ulb;
-    req.body.modifiedAt = time();
+    req.body.modifiedAt = new Date();
 
     let currentAnnualAccounts;
     if (req.body?.status == "REJECTED") {
@@ -130,7 +131,7 @@ exports.action = async (req, res) => {
   try {
     let { ulb, design_year, isDraft } = req.body;
     req.body.actionTakenBy = req.decoded._id;
-    req.body.modifiedAt = time();
+    req.body.modifiedAt = new Date();
     req.body.actionTakenByRole = req.decoded.role;
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
