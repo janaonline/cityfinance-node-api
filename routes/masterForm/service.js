@@ -1608,51 +1608,6 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         },
       ];
 
-      // let query2 = [
-      //   {
-      //     $lookup: {
-      //       from: "ulbs",
-      //       localField: "ulb",
-      //       foreignField: "_id",
-      //       as: "ulbData",
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$ulbData",
-      //   },
-      //   {
-      //     $project: {
-      //       steps: 1,
-      //       actionTakenByRole: 1,
-      //       status: 1,
-      //       isSubmit: 1,
-      //       ulb: 1,
-      //       state: 1,
-      //       design_year: 1,
-      //       isUA: "$ulbData.isUA",
-      //       isMillionPlus: "$ulbData.isMillionPlus",
-      //     },
-      //   },
-      //   match,
-      //   {
-      //     $lookup: {
-      //       from: "pfmsaccounts",
-      //       localField: "ulb",
-      //       foreignField: "ulb",
-      //       as: "pfms",
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$pfms",
-      //   },
-
-      //   {
-      //     $group: {
-      //       _id: "$pfms.linked",
-      //       count: { $sum: 1 },
-      //     },
-      //   },
-      // ];
 
       let query3 = [
         {
@@ -1690,21 +1645,26 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         },
         { $unwind: "$annualaccount" },
         {
-          $project: {
-            _id: 0,
-            audit_status: "$annualaccount.audit_status",
-            annualaccount: 1,
-          },
+          $group: {
+            _id: "$annualaccount.audited.submit_annual_accounts",
+            audited: { $sum: 1 },
+            annualaccount: { $first: "$annualaccount" }
+          }
+        },
+        {
+          $match: {
+            _id: true
+          }
         },
         {
           $group: {
-            _id: {
-              audit_status: "$audit_status",
-              answer: "$annualaccount.submit_annual_accounts.answer",
-            },
-            count: { $sum: 1 },
-          },
-        },
+            _id: "$annualaccount.unAudited.submit_annual_accounts",
+            unAudited: { $sum: 1 },
+            audited: { $first: "$audited" }
+
+          }
+        }
+
       ];
 
       let query4 = [
@@ -1743,16 +1703,16 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         },
         { $unwind: "$utilReportForm" },
         {
-          $group: {
+          '$group': {
             _id: {
-              isSubmit: "$isSubmit",
-              actionTakenByRole: "$actionTakenByRole",
-              isDraft: "$utilReportForm.isDraft",
-              status: "$utilReportForm.status",
+              isSubmit: '$steps.utilReport.isSubmit',
+              actionTakenByRole: '$actionTakenByRole',
+              isDraft: '$utilReportForm.isDraft',
+              status: '$steps.utilReport.status'
             },
-            count: { $sum: 1 },
-          },
-        },
+            count: { '$sum': 1 }
+          }
+        }
       ];
 
       // let query5 = [
@@ -1860,11 +1820,13 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           });
 
           let prms3 = new Promise(async (rslv, rjct) => {
+            // console.log(util.inspect(query3, { showHidden: false, depth: null }))
             let output = await MasterFormData.aggregate(query3);
 
             rslv(output);
           });
           let prms4 = new Promise(async (rslv, rjct) => {
+            console.log(util.inspect(query4, { showHidden: false, depth: null }))
             let output = await MasterFormData.aggregate(query4);
 
             rslv(output);
@@ -3095,21 +3057,21 @@ const formatOutput = (
   i,
   numbers
 ) => {
-  console.log(
-    util.inspect(
-      {
-        overall: output1,
+  // console.log(
+  //   util.inspect(
+  //     {
+  //       overall: output1,
 
-        annualaccounts: output3,
-        utilreport: output4,
+  //       annualaccounts: output3,
+  //       utilreport: output4,
 
 
-        numbers: numbers,
-        i: i
-      },
-      { showHidden: false, depth: null }
-    )
-  );
+  //       numbers: numbers,
+  //       i: i
+  //     },
+  //     { showHidden: false, depth: null }
+  //   )
+  // );
   let underReviewByState = 0,
     pendingForSubmission = 0,
     overall_approvedByState = 0,
@@ -3154,20 +3116,17 @@ const formatOutput = (
 
 
   //annualaccounts
+  console.log(output3)
+  if (output3.length > 0) {
+    // console.log(output3[0]?.unAudited, '/', numbers[i])
+    // console.log(output3[0]?.audited, '/', numbers[i])
+    provisional = (output3[0]?.unAudited / numbers[i]) * 100;
+    audited = (output3[0]?.audited / numbers[i]) * 100;
+  } else {
+    provisional = 0;
+    audited = 0;
+  }
 
-  output3.forEach((el) => {
-    if (el._id.audit_status === "Unaudited" && el._id.answer === "yes") {
-      provisional_yes = el.count;
-    } else if (el._id.audit_status === "Audited" && el._id.answer === "yes") {
-      audited_yes = el.count;
-    } else if (el._id.audit_status === "Audited" && el._id.answer === "no") {
-      audited_no = el.count;
-    } else if (el._id.audit_status === "Unaudited" && el._id.answer === "no") {
-      provisional_no = el.count;
-    }
-  });
-  provisional = (provisional_yes / numbers[i]) * 100;
-  audited = (audited_yes / numbers[i]) * 100;
 
   //detailed utilization report
   if (output4.length == 0) {
