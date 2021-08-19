@@ -814,14 +814,14 @@ function matchHeaders(data) {
 }
 
 const headers = [
-  "amountAssigned",
-  "amountReleased",
-  "GrantType",
-  "installment",
-  "name",
-  "noOfUlb",
-  "recommendationDate",
-  "releaseDate",
-  "submissionDate",
+  "grant amount assigned (in cr)",
+  "state name",
   "year",
+  "installment number",
+  "grant type",
+  "no of ulbs",
+  "grant transfer certificate submission date",
+  "grant recommendation date",
+  "grant release date",
+  "grant amount released (in cr)",
 ];
