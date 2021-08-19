@@ -102,7 +102,7 @@ exports.get = async (req, res) => {
             amount: 0,
             ulbSubmittedForm: 0,
             totalUlb: 0,
-            amountReleased:0
+            amountReleased: 0,
           },
           NonMillTied = {
             recommendationDate: 0,
@@ -111,7 +111,7 @@ exports.get = async (req, res) => {
             amount: 0,
             ulbSubmittedForm: 0,
             totalUlb: 0,
-            amountReleased:0
+            amountReleased: 0,
           },
           NonMillUntied = {
             recommendationDate: 0,
@@ -120,7 +120,7 @@ exports.get = async (req, res) => {
             amount: 0,
             ulbSubmittedForm: 0,
             totalUlb: 0,
-            amountReleased:0
+            amountReleased: 0,
           },
           statesWithMillPlusUlbs = {},
           statesCount = 0,
@@ -158,8 +158,8 @@ exports.get = async (req, res) => {
                   if (innerElement.recommendationDate)
                     mill.recommendationDate = innerElement.recommendationDate;
                   if (innerElement.releaseDate)
-                    mill.amountReleased = innerElement.amountReleased
-                    mill.releaseDate = innerElement.releaseDate;
+                    mill.amountReleased = innerElement.amountReleased;
+                  mill.releaseDate = innerElement.releaseDate;
                 } else {
                   if (innerElement.recommendationDate)
                     mill.recommendationDate++;
@@ -183,8 +183,8 @@ exports.get = async (req, res) => {
                     NonMillTied.recommendationDate =
                       innerElement.recommendationDate;
                   if (innerElement.releaseDate)
-                    NonMillTied.amountReleased = innerElement.amountReleased
-                    NonMillTied.releaseDate = innerElement.releaseDate;
+                    NonMillTied.amountReleased = innerElement.amountReleased;
+                  NonMillTied.releaseDate = innerElement.releaseDate;
                 } else {
                   if (innerElement.recommendationDate)
                     NonMillTied.recommendationDate++;
@@ -208,8 +208,8 @@ exports.get = async (req, res) => {
                     NonMillUntied.recommendationDate =
                       innerElement.recommendationDate;
                   if (innerElement.releaseDate)
-                    NonMillUntied.amountReleased = innerElement.amountReleased
-                    NonMillUntied.releaseDate = innerElement.releaseDate;
+                    NonMillUntied.amountReleased = innerElement.amountReleased;
+                  NonMillUntied.releaseDate = innerElement.releaseDate;
                 } else {
                   if (innerElement.recommendationDate)
                     NonMillUntied.recommendationDate++;
@@ -277,36 +277,58 @@ exports.get = async (req, res) => {
         if (state_id) {
           ExcelData.push({
             "Million Plus for Water Supply and SWM": {
-              recommendationDate: mill.recommendationDate ? `Sent to MoF on ${moment(mill.recommendationDate).format('dd-MM-YYYY')}` : "Not Sent",
-              releaseDate: mill.releaseDate ? `${mill.amountReleased}Cr Released on ${moment(mill.releaseDate).format('dd-MM-YYYY')}` : "Not Released",
+              recommendationDate: mill.recommendationDate
+                ? `Sent to MoF on ${moment(mill.recommendationDate).format(
+                    "dd-MM-YYYY"
+                  )}`
+                : "Not Sent",
+              releaseDate: mill.releaseDate
+                ? `${mill.amountReleased}Cr Released on ${moment(
+                    mill.releaseDate
+                  ).format("dd-MM-YYYY")}`
+                : "Not Released",
               submissionDate: mill.submissionDate
-                ? `Submitted on ${moment(mill.submissionDate).format('DD-MM-YYYY')}`
+                ? `Submitted on ${moment(mill.submissionDate).format(
+                    "DD-MM-YYYY"
+                  )}`
                 : "Not Submitted",
               amount: mill.amount,
               ulb: `${mill.ulbSubmittedForm}/${mill.totalUlb}`,
             },
             "Non-Million Tied": {
               recommendationDate: NonMillTied.recommendationDate
-                ? `Sent to MoF on ${moment(NonMillTied.recommendationDate).format('DD-MM-YYYY')}`
+                ? `Sent to MoF on ${moment(
+                    NonMillTied.recommendationDate
+                  ).format("DD-MM-YYYY")}`
                 : "Not Sent",
               releaseDate: NonMillTied.releaseDate
-                ? `${NonMillTied.amountReleased}Cr Released on ${moment(NonMillTied.releaseDate).format('DD-MM-YYYY')}`
+                ? `${NonMillTied.amountReleased}Cr Released on ${moment(
+                    NonMillTied.releaseDate
+                  ).format("DD-MM-YYYY")}`
                 : "Not Released",
               submissionDate: NonMillTied.submissionDate
-                ? `Submitted on ${moment(NonMillTied.submissionDate).format('DD-MM-YYYY')}`
+                ? `Submitted on ${moment(NonMillTied.submissionDate).format(
+                    "DD-MM-YYYY"
+                  )}`
                 : "Not Submitted",
               amount: NonMillTied.amount,
               ulb: `${NonMillTied.ulbSubmittedForm}/${NonMillTied.totalUlb}`,
             },
             "Non-Million Untied": {
               recommendationDate: NonMillUntied.recommendationDate
-                ? `Sent to MoF on ${moment(NonMillUntied.recommendationDate).format('DD-MM-YYYY')}`
+                ? `Sent to MoF on ${moment(
+                    NonMillUntied.recommendationDate
+                  ).format("DD-MM-YYYY")}`
                 : "Not Sent",
               releaseDate: NonMillUntied.releaseDate
-                ? `${NonMillUntied.amountReleased}Cr Released on ${moment(NonMillUntied.releaseDate).format('DD-MM-YYYY')}`
+                ? `${NonMillUntied.amountReleased}Cr Released on ${moment(
+                    NonMillUntied.releaseDate
+                  ).format("DD-MM-YYYY")}`
                 : "Not Released",
               submissionDate: NonMillUntied.submissionDate
-                ? `Submitted on ${moment(NonMillUntied.submissionDate).format('DD-MM-YYYY')}`
+                ? `Submitted on ${moment(NonMillUntied.submissionDate).format(
+                    "DD-MM-YYYY"
+                  )}`
                 : "Not Submitted",
               amount: NonMillUntied.amount,
               ulb: `${NonMillUntied.ulbSubmittedForm}/${NonMillUntied.totalUlb}`,
@@ -536,6 +558,12 @@ exports.uploadTemplate = async (req, res) => {
         ["grant amount assigned (in cr)"]: "amountAssigned",
       };
 
+      if (!matchHeaders(XslData[0])) {
+        return res
+          .status(400)
+          .xls("error_sheet.xlsx", { error: "Invalid Format" });
+      }
+
       let xlsData = await Service.dataFormating(XslData, field);
       // validate data
       const result = await validate(xlsData);
@@ -671,14 +699,14 @@ async function validate(data) {
         valid = false;
         element.error += "Installment should be a number, ";
       }
-      if (grantTypeMap[element.GrantType]._id) {
+      if (grantTypeMap[element.GrantType]?._id) {
         element.GrantType = grantTypeMap[element.GrantType]._id;
       } else if (element.GrantType != "") {
         valid = false;
         element.error += "wrong grant type, ";
       }
       if (yearsMap[element.year]._id) {
-        element.year = yearsMap[element.year]._id;
+        element.year = yearsMap[element.year]?._id;
       } else if (element.year != "") {
         valid = false;
         element.error += "wrong year value, ";
@@ -769,6 +797,31 @@ async function validate(data) {
     }
     return { data, valid };
   } catch (error) {
-    console.log(error);
+    return res.status(500).JSON(error.message);
   }
 }
+
+function matchHeaders(data) {
+  let incomingHeaders = Object.keys(data);
+  if (incomingHeaders.length != headers.length) return false;
+  for (let index = 0; index < incomingHeaders.length; index++) {
+    const element = incomingHeaders[index];
+    if (!headers.includes(element)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+const headers = [
+  "grant amount assigned (in cr)",
+  "state name",
+  "year",
+  "installment number",
+  "grant type",
+  "no of ulbs",
+  "grant transfer certificate submission date",
+  "grant recommendation date",
+  "grant release date",
+  "grant amount released (in cr)",
+];

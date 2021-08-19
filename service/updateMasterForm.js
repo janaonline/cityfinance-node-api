@@ -5,6 +5,8 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
     body: req?.body,
     user: req?.decoded,
   };
+  req.body.modifiedAt = new Date();
+
   if (!data.body?.status) data.body.status = "PENDING";
 
   try {

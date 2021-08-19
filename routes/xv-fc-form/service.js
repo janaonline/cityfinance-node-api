@@ -696,8 +696,8 @@ module.exports.create = catchAsync(async (req, res) => {
     // }
 
     data.ulb = user.ulb;
-    req.body["createdAt"] = time();
-    data.modifiedAt = time();
+    // req.body["createdAt"] = time();
+    data.modifiedAt = new Date();
     data.actionTakenBy = ObjectId(user._id);
     let ulbUpdateRequest = new XVFCGrantULBData(data);
     /**Now**/
@@ -711,6 +711,7 @@ module.exports.create = catchAsync(async (req, res) => {
     }
     let ulbData = await XVFCGrantULBData.findOne(query);
     if (ulbData && !data.isOldForm) {
+      req.body.actionTakenByRole = user.role
       req.body["history"] = [...ulbData.history];
       ulbData.history = undefined;
       req.body["history"].push(ulbData);
@@ -735,12 +736,14 @@ module.exports.create = catchAsync(async (req, res) => {
           if (!ulbData?.isOldForm) {
             await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
           }
-          if (ulbData.isCompleted) {
-            let email =
-              await Service.emailTemplate.sendFinancialDataStatusEmail(
-                ulbData._id,
-                "UPLOAD"
-              );
+          if(ulbData.isOldForm){
+            if (ulbData.isCompleted) {
+              let email =
+                await Service.emailTemplate.sendFinancialDataStatusEmail(
+                  ulbData._id,
+                  "UPLOAD"
+                );
+            }
           }
           return res.status(response ? 200 : 400).send(value);
         } else {

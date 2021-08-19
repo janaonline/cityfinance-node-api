@@ -21,7 +21,8 @@ module.exports.createOrUpdate = async (req, res) => {
     const ulb = req.decoded?.ulb;
     req.body.ulb = ulb;
     req.body.actionTakenBy = req.decoded?._id;
-    req.body.modifiedAt = time();
+    req.body.actionTakenByRole = req.decoded?.role;
+    req.body.modifiedAt = new Date();
     // 
     let currentSavedUtilRep;
     if (req.body?.status == "REJECTED") {
@@ -224,7 +225,7 @@ exports.action = async (req, res) => {
       status: data?.status,
       actionTakenBy: user?._id,
       rejectReason: data?.rejectReason,
-      modifiedAt: time(),
+      modifiedAt: new Date(),
       actionTakenByRole: user.role,
     };
     if (!currentState) {
