@@ -106,6 +106,7 @@ module.exports.get = catchAsync(async (req, res) => {
         masterFormData.status == "APPROVED"
       ) {
         for (const key in masterFormData.steps) {
+          if(masterFormData.steps[key].status == "N/A") continue;
           masterFormData.steps[key].status = "PENDING";
         }
         try {
