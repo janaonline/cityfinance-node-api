@@ -816,7 +816,7 @@ module.exports.eligibleULBForms = async function (req, res) {
     "gtc": 1,
     "utilReport": 1,
     "annualAccounts": 1,
-    "slbs": 0,
+    "slbs": 1,
     "slbWaterSupplySanitation": 1,
     "plansWaterSupplySanitation": 0
   }

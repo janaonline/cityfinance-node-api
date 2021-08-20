@@ -1645,26 +1645,24 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         },
         { $unwind: "$annualaccount" },
         {
-          $group: {
-            _id: "$annualaccount.audited.submit_annual_accounts",
-            audited: { $sum: 1 },
-            annualaccount: { $first: "$annualaccount" }
+          '$group': {
+            _id: '$annualaccount.audited.submit_annual_accounts',
+            audited: { '$sum': 1 },
+            annualaccount: { '$addToSet': '$annualaccount' }
           }
         },
+        { '$match': { _id: true } },
         {
-          $match: {
-            _id: true
-          }
+          $unwind: "$annualaccount"
         },
         {
-          $group: {
-            _id: "$annualaccount.unAudited.submit_annual_accounts",
-            unAudited: { $sum: 1 },
-            audited: { $first: "$audited" }
-
+          '$group': {
+            _id: '$annualaccount.unAudited.submit_annual_accounts',
+            unAudited: { '$sum': 1 },
+            audited: { '$first': '$audited' }
           }
-        }
-
+        },
+        { '$match': { _id: true } },
       ];
 
       let query4 = [
@@ -1820,13 +1818,13 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           });
 
           let prms3 = new Promise(async (rslv, rjct) => {
-            // console.log(util.inspect(query3, { showHidden: false, depth: null }))
+            console.log(util.inspect(query3, { showHidden: false, depth: null }))
             let output = await MasterFormData.aggregate(query3);
 
             rslv(output);
           });
           let prms4 = new Promise(async (rslv, rjct) => {
-            console.log(util.inspect(query4, { showHidden: false, depth: null }))
+            // console.log(util.inspect(query4, { showHidden: false, depth: null }))
             let output = await MasterFormData.aggregate(query4);
 
             rslv(output);
