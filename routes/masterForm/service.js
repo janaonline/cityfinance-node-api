@@ -106,7 +106,7 @@ module.exports.get = catchAsync(async (req, res) => {
         masterFormData.status == "APPROVED"
       ) {
         for (const key in masterFormData.steps) {
-          if(masterFormData.steps[key].status == "N/A") continue;
+          if (masterFormData.steps[key].status == "N/A") continue;
           masterFormData.steps[key].status = "PENDING";
         }
         try {
@@ -1706,8 +1706,8 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
             _id: {
               isSubmit: '$steps.utilReport.isSubmit',
               actionTakenByRole: '$actionTakenByRole',
-              isDraft: '$utilReportForm.isDraft',
-              status: '$steps.utilReport.status'
+              masterformSubmit: "$isSubmit",
+              status: '$status'
             },
             count: { '$sum': 1 }
           }
@@ -1819,7 +1819,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           });
 
           let prms3 = new Promise(async (rslv, rjct) => {
-            console.log(util.inspect(query3, { showHidden: false, depth: null }))
+            // console.log(util.inspect(query3, { showHidden: false, depth: null }))
             let output = await MasterFormData.aggregate(query3);
 
             rslv(output);
@@ -3056,21 +3056,7 @@ const formatOutput = (
   i,
   numbers
 ) => {
-  // console.log(
-  //   util.inspect(
-  //     {
-  //       overall: output1,
 
-  //       annualaccounts: output3,
-  //       utilreport: output4,
-
-
-  //       numbers: numbers,
-  //       i: i
-  //     },
-  //     { showHidden: false, depth: null }
-  //   )
-  // );
   let underReviewByState = 0,
     pendingForSubmission = 0,
     overall_approvedByState = 0,
@@ -3113,7 +3099,7 @@ const formatOutput = (
     });
   }
 
-
+  let total = 0;
   //annualaccounts
   console.log(output3)
   if (output3.length > 0) {
@@ -3132,24 +3118,30 @@ const formatOutput = (
     util_pendingCompletion =
       numbers[i]
   } else {
+
+
     output4.forEach((el) => {
       if (
         el._id.status == "PENDING" && el._id.actionTakenByRole == "ULB" && el._id.isSubmit == true
         || el._id.status == "PENDING" && el._id.actionTakenByRole == "STATE" && el._id.isSubmit == false
+
       ) {
         util_underStateReview = el.count;
       } else if (
         el._id.status === "APPROVED" &&
-        el._id.actionTakenByRole === "STATE"
+        el._id.actionTakenByRole === "STATE" &&
+        el._id.masterformSubmit === true
         ||
         (el._id.status === "APPROVED" || el._id.status === "PENDING") &&
         el._id.actionTakenByRole === "MoHUA"
       ) {
         util_approvedbyState = el.count;
       } else if (
-        !el._id.isSubmit &&
+        el._id.isSubmit &&
         el._id.actionTakenByRole === "ULB" &&
-        !el._id.isDraft
+        el._id.status === 'PENDING' &&
+        el._id.masterformSubmit === false
+
       ) {
         util_completedAndPendingSubmission = el.count;
       }
