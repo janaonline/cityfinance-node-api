@@ -14,7 +14,8 @@ const Redis = require("../../service/redis");
 const { promisify } = require("util");
 const { toUnicode } = require("punycode");
 const MasterForm = require("../../models/MasterForm");
-
+const UtilizationReport = require('../../models/UtilizationReport')
+const Category = require('../../models/Category')
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
 
@@ -798,44 +799,6 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
     },
     {
       $lookup: {
-        from: "pfmsaccounts",
-        pipeline: [
-          {
-            $match: {
-              ulb: ObjectId(ulb),
-              design_year: ObjectId(design_year),
-            },
-          },
-          {
-            $project: {
-              history: 0,
-            },
-          },
-        ],
-        as: "pfmsAccounts",
-      },
-    },
-    {
-      $lookup: {
-        from: "xvfcgrantplans",
-        pipeline: [
-          {
-            $match: {
-              ulb: ObjectId(ulb),
-              designYear: ObjectId(design_year),
-            },
-          },
-          {
-            $project: {
-              history: 0,
-            },
-          },
-        ],
-        as: "plansData",
-      },
-    },
-    {
-      $lookup: {
         from: "xvfcgrantulbforms",
         pipeline: [
           {
@@ -860,6 +823,63 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
     },
   ];
   const data = await Ulb.aggregate(query);
+
+  let queryUtilReportAnalytics = [
+    {
+      $match: {
+        ulb: ObjectId(ulb),
+        designYear: ObjectId(design_year),
+        financialYear: ObjectId(financialYear)
+      }
+    },
+    {
+      $unwind: "$projects"
+    },
+    {
+      $group: {
+        _id: "$projects.category",
+        count: { "$sum": 1 },
+        amount: { "$sum": { "$toDouble": "$projects.expenditure" } },
+        totalProjectCost: { "$sum": { "$toDouble": "$projects.cost" } }
+      }
+    }
+  ]
+  let arr = await UtilizationReport.aggregate(queryUtilReportAnalytics)
+  let catData = await Category.find().lean().exec()
+  let flag = 0;
+  let filteredCat = [];
+
+
+  for (let el of catData) {
+    for (let el2 of arr) {
+      console.log(el['_id'], el2['_id'])
+      if (String(el['_id']) === String(el2['_id'])) {
+        // console.log(ObjectId(el._id), ObjectId(el2._id))
+        flag = 1;
+        break;
+      }
+    }
+    if (!flag) {
+      filteredCat.push(el)
+    } else {
+      flag = 0;
+    }
+  }
+
+  console.log(filteredCat)
+  filteredCat.forEach(el => {
+    arr.push({
+      _id: el._id,
+      count: 0,
+      amount: 0,
+      totalProjectCost: 0
+
+    })
+  })
+  data[0]['utilizationReport'][0]['analytics'] = arr
+
+  console.log(util.inspect(data, { showHidden: false, depth: null, colors: true }))
+
   return res.json(data);
 });
 
@@ -2917,6 +2937,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
         if (Object.entries(el?.utilizationreport).length === 0) {
           el["utilizationreportStatus"] = "Not Started";
         } else if (el?.utilizationreport.isDraft == false) {
+          console.log(el)
           el["utilizationreportStatus"] = "Completed";
         } else if (el?.utilizationreport.isDraft == true) {
           el["utilizationreportStatus"] = "In Progress";
