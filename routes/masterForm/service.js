@@ -651,7 +651,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       queryNotStarted.push({ $skip: skip });
       // queryFilled.push({ $limit: limit });
       // queryNotStarted.push({ $limit: limit });
-      console.log(util.inspect(queryFilled, { showHidden: false, depth: null }))
+      // console.log(util.inspect(queryFilled, { showHidden: false, depth: null }))
       let masterFormData = await MasterFormData.aggregate(queryFilled).exec();
       let p1 = [];
       let p2 = [];
@@ -878,7 +878,7 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
   })
   data[0]['utilizationReport'][0]['analytics'] = arr
 
-  console.log(util.inspect(data, { showHidden: false, depth: null, colors: true }))
+  // console.log(util.inspect(data, { showHidden: false, depth: null, colors: true }))
 
   return res.json(data);
 });
@@ -1058,33 +1058,20 @@ module.exports.UAList = catchAsync(async (req, res) => {
 
 module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   let user = req.decoded;
-  let { state_id } = req.query
+  let { state_id } = (req.query)
+  if (state_id == 'undefined') {
+    state_id = undefined
+  }
   let state = req.decoded.state ?? state_id
   let { ua_id } = req.query;
-  if (!ua_id || !state) {
-    return res.status(400).json({
-      success: false,
-      message: !ua_id ? "UA ID NOT FOUND" : !state ? "STATE ID NOT FOUND" : "State/UA ID Not Found"
-    })
-  }
+
 
   let { design_year } = req.params
-  let match;
-  if (ua_id == 'all') {
-    match = {
-      $match: {
-        state: ObjectId(state)
-      }
-    }
-  } else {
-    match = {
-      $match: {
-        _id: ObjectId(ua_id)
-      }
-    }
-  }
+  let match = {};
+
+
   let countQuery = [
-    match,
+
     {
       $lookup: {
         from: "ulbs",
@@ -1104,7 +1091,7 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   ]
 
   let queryNotStarted = [
-    match,
+
     {
       $lookup: {
         from: "ulbs",
@@ -1146,7 +1133,7 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
 
   ]
   let queryUA = [
-    match,
+
     {
       $lookup: {
         from: "ulbs",
@@ -1192,13 +1179,13 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   ]
 
   let queryNonMillionNonUA_NotStarted = [
+
+
     {
       $match: {
-        state: ObjectId(state),
         isMillionPlus: "No",
         isUA: "No"
       }
-
     },
     {
       $group: {
@@ -1232,10 +1219,9 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
 
   ]
   let queryNonMillionNonUA = [
-
     {
       $match: {
-        state: ObjectId(state),
+
         "isMillionPlus": "No",
         "isUA": "No"
       }
@@ -1267,11 +1253,65 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     }
 
   ]
+  if (state) {
+    if (ua_id == 'all') {
+      match = {
+        $match: {
+          state: ObjectId(state)
+        }
+      }
+    } else {
+      match = {
+        $match: {
+          _id: ObjectId(ua_id)
+        }
+      }
+    }
+
+    countQuery.unshift(match);
+    queryNotStarted.unshift(match);
+    queryUA.unshift(match);
+    queryNonMillionNonUA_NotStarted.unshift({
+      $match: {
+        state: ObjectId(state)
+
+      }
+    });
+    queryNonMillionNonUA.unshift({
+      $match: {
+        state: ObjectId(state)
+
+      }
+    });
+
+  } else {
+    let UT_Filter = [{
+      $lookup: {
+        from: "states",
+        localField: "state",
+        foreignField: "_id",
+        as: "state"
+      }
+    },
+    { $unwind: "$state" },
+    {
+      $match: {
+        "state.accessToXVFC": true
+      }
+    }]
+
+    queryNonMillionNonUA_NotStarted.unshift(...UT_Filter);
+    queryNonMillionNonUA.unshift(...UT_Filter);
+
+  }
+
+
 
 
   let { output1, output2, output3, output4, output5 } =
     await new Promise(async (resolve, reject) => {
       let prms1 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(countQuery, { showHidden: true, depth: null }))
         let output = await UA.aggregate(countQuery);
         rslv(output);
       });
@@ -1282,14 +1322,17 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
         rslv(output);
       });
       let prms3 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(queryUA, { showHidden: true, depth: null }))
         let output = await UA.aggregate(queryUA);
         rslv(output);
       });
       let prms4 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(queryNonMillionNonUA_NotStarted, { showHidden: true, depth: null }))
         let output = await Ulb.aggregate(queryNonMillionNonUA_NotStarted);
         rslv(output);
       });
       let prms5 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(queryNonMillionNonUA, { showHidden: true, depth: null }))
         let output = await Ulb.aggregate(queryNonMillionNonUA);
         rslv(output);
       });
@@ -3140,7 +3183,7 @@ const formatOutput = (
       numbers[i]
   } else {
 
-
+    console.log(util.inspect(output4, { showHidden: false, depth: null }))
     output4.forEach((el) => {
       if (
         el._id.status == "PENDING" && el._id.actionTakenByRole == "ULB" && el._id.isSubmit == true
