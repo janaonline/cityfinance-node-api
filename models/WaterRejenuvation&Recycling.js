@@ -51,6 +51,21 @@ const projectDetails = () => {
     turbidity: {
       type: Number,
     },
+    bod_expected: {
+      type: Number,
+    },
+    cod_expected: {
+      type: Number,
+    },
+    do_expected: {
+      type: Number,
+    },
+    tds_expected: {
+      type: Number,
+    },
+    turbidity_expected: {
+      type: Number,
+    },
     details: {
       type: String,
     },
