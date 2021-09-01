@@ -9,6 +9,7 @@ const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
 } = require("../../service");
+const { ElasticBeanstalk } = require("aws-sdk");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -116,8 +117,8 @@ exports.readById = async (req, res) => {
 
   for (let el of catData) {
     for (let el2 of arr) {
-      console.log(el['_id'], el2['_id'])
-      if (String(el['_id']) === String(el2['_id'])) {
+
+      if (el2['_id'] != null && (String(el['_id']) === String(el2['_id']))) {
         // console.log(ObjectId(el._id), ObjectId(el2._id))
         flag = 1;
         break;
@@ -132,6 +133,7 @@ exports.readById = async (req, res) => {
 
   console.log(filteredCat)
   filteredCat.forEach(el => {
+
     arr.push({
       _id: el._id,
       count: 0,
@@ -139,7 +141,11 @@ exports.readById = async (req, res) => {
       totalProjectCost: 0
 
     })
+
+
   })
+
+  let arrNew = arr.filter(el => el['_id'] != null)
 
   try {
     let report = await UtilizationReport.findOne({
@@ -152,7 +158,7 @@ exports.readById = async (req, res) => {
     if (report == null) {
       report = {}
     }
-    report['analytics'] = (arr)
+    report['analytics'] = (arrNew)
     if (
       req.decoded.role === "MoHUA" &&
       report.actionTakenByRole === "STATE" &&

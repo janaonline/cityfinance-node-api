@@ -19,8 +19,8 @@ const UtilizationReportProjectSchema = new Schema({
     lat: { type: String },
     long: { type: String },
   },
-  cost: { type: String },
-  expenditure: { type: String },
+  cost: { type: String, default: "0" },
+  expenditure: { type: String, default: "0" },
   modifiedAt: { type: Date, default: Date.now() },
   createdAt: { type: Date, default: Date.now() },
   isActive: { type: Boolean, default: 1 },
@@ -33,8 +33,8 @@ const UtilizationReportSchema = new Schema(
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
     grantType: { type: String, required: true, enum: ["Tied", "Untied"] },
     grantPosition: {
-      unUtilizedPrevYr: { type: Number },
-      receivedDuringYr: { type: Number },
+      unUtilizedPrevYr: { type: Number, default: 0 },
+      receivedDuringYr: { type: Number, default: 0 },
       expDuringYr: {
         type: Number,
       },
