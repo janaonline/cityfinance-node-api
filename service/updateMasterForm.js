@@ -1,11 +1,12 @@
 const MasterForm = require("../models/MasterForm");
 const ObjectId = require("mongoose").Types.ObjectId;
+
 exports.UpdateMasterSubmitForm = async (req, formName) => {
   let data = {
     body: req?.body,
     user: req?.decoded,
   };
-  req.body.modifiedAt = new Date();
+
 
   if (!data.body?.status) data.body.status = "PENDING";
 
@@ -24,6 +25,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
       newForm.steps[formName].status = data.body?.status
         ? data.body?.status
         : "PENDING";
+      newForm['modifiedAt'] = new Date();
       newForm.steps[formName].isSubmit = data.body.hasOwnProperty("isDraft")
         ? !data.body.isDraft
         : data.body?.isCompleted;
@@ -46,6 +48,7 @@ exports.UpdateMasterSubmitForm = async (req, formName) => {
             actionTakenByRole: data.user.role,
             isSubmit: false,
             status: "PENDING",
+            modifiedAt: data?.body?.modifiedAt
           },
         }
       );
