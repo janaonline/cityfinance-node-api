@@ -6,6 +6,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const requiredKeys = ["ULBCODE", "LAT", "LNG"];
 const UAData = require('../../models/UA')
 const State = require('../../models/State')
+const Response = require("../../service").response;
 module.exports = async (req, res) => {
     try {
         const jsonArray = req.body.jsonArray;
@@ -125,29 +126,35 @@ module.exports.deleteNullNamedUA = async (req, res) => {
     })
 }
 module.exports.updateUlb = async (req, res) => {
+    try {
+        let x = 0;
+        const jsonArray = req.body.jsonArray;
 
-    let x = 0;
-    const jsonArray = req.body.jsonArray;
+        let errors = []
+        for (let eachRow of jsonArray) {
+            console.log(x)
+            x = x + 1;
+            //console.log(eachRow.code,eachRow.name)
+            if (eachRow['UA Name'] === 'Not a U.A' || eachRow['UA Name'] === '#N/A') {
+                let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
+                await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'No', UA: null } })
 
-    let errors = []
-    for (let eachRow of jsonArray) {
-        console.log(x)
-        x = x + 1;
-        //console.log(eachRow.code,eachRow.name)
-        if (eachRow['UA Name'] === 'Not a U.A' || eachRow['UA Name'] === '#N/A') {
-            let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
-            await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'No', UA: null } })
+            } else if (eachRow['UA Name'] != 'Not a U.A' || eachRow['UA Name'] != '#N/A') {
+                let uaData = await UAData.findOne({ "name": eachRow['UA Name'] })
+                let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
+                await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'Yes', UA: ObjectId(uaData._id) } })
 
-        } else if (eachRow['UA Name'] != 'Not a U.A' || eachRow['UA Name'] != '#N/A') {
-            let uaData = await UAData.findOne({ "name": eachRow['UA Name'] })
-            let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
-            await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'Yes', UA: ObjectId(uaData._id) } })
-
+            }
         }
+
+        console.log('Task Completed')
+        res.send('Task Completed')
+    } catch (e) {
+        return Response.BadRequest(res, {}, err.message);
+
     }
 
-    console.log('Task Completed')
-    res.send('Task Completed')
+
 }
 
 module.exports.deleteNullNamedUA = async (req, res) => {
