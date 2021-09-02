@@ -71,7 +71,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 role: user.role
             })
             await Otp.save();
-            if (user.mobile) {
+            if (user.accountantConatactNumber) {
                 sendOtp.send(`${countryCode}${user.accountantConatactNumber}`, process.env.SENDER_ID, otp, function (error, data) {
                     if (error) {
                         res.status(500).json({
