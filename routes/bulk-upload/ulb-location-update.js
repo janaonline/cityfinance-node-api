@@ -137,6 +137,19 @@ module.exports.updateUlb = async (req, res) => {
     console.log('Task Completed')
     res.send('Task Completed')
 }
+
+module.exports.deleteNullNamedUA = async (req, res) => {
+    await UAData.findOneAndDelete({ name: null }, function (err, docs) {
+        if (err) {
+            res.send(err)
+        } else {
+            res.json({
+                success: true,
+                docs: docs
+            })
+        }
+    })
+}
 module.exports.createUA = async (req, res) => {
 
 
