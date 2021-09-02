@@ -62,7 +62,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             let Otp = new OTP({
                 censusCode: user.censusCode,
                 sbCode: user.sbCode,
-                contactNumber: user.mobile,
+                contactNumber: user.accountantConatactNumber,
                 emailId: user.email,
                 otp: otp,
                 createdAt: Date.now(),
@@ -72,7 +72,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             })
             await Otp.save();
             if (user.mobile) {
-                sendOtp.send(`${countryCode}${user.mobile}`, process.env.SENDER_ID, otp, function (error, data) {
+                sendOtp.send(`${countryCode}${user.accountantConatactNumber}`, process.env.SENDER_ID, otp, function (error, data) {
                     if (error) {
                         res.status(500).json({
                             success: false,
