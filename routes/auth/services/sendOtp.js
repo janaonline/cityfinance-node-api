@@ -87,7 +87,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             return res.status(200).json({
                 success: true,
                 message: "OTP SENT SUCCESSFULLY",
-                mobile: user.mobile,
+                mobile: user.accountantConatactNumber,
                 email: user.email,
                 name: entity.name,
                 requestId: Otp._id,
@@ -97,7 +97,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             res.status(400).json({
                 success: false,
                 message: 'Invalid Contact Details',
-                mobile: user.mobile,
+                mobile: user.accountantConatactNumber,
                 email: user.email
             })
         }
