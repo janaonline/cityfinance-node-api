@@ -52,7 +52,9 @@ router.post("/bulk/ulb-location-update", multerUpload.single('csv'), BulkUpload.
 router.post("/bulk/state-ulb-count-update", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.stateUlbCountUpdate);
 router.post("/bulk/ulb-name-update", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate.nameUpdate);
 router.post("/bulk/ulb-signup", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate.signup);
+
 router.post("/bulk/UA-create", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate.createUA);
+router.delete("/bulk/deleteNullUA", BulkUpload.ulbLocationUpdate.deleteNullNamedUA)
 router.post("/bulk/ulbUpdate", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate.updateUlb);
 router.post("/bulk/updateUA", BulkUpload.ulbLocationUpdate.updateUA);
 
