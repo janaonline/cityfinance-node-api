@@ -57,7 +57,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             }
         }
         let msg = `Otp for your login request is ${otp}, Please do not share it with anybody.`;
-        if (OtpMethods.validatePhoneNumber(user.mobile) || OtpMethods.ValidateEmail(user.email)) {
+        if (OtpMethods.validatePhoneNumber(user.accountantConatactNumber) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
                 censusCode: user.censusCode,
