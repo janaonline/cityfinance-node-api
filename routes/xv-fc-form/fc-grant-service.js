@@ -61,6 +61,7 @@ module.exports = (req, res) => {
                 (obj, item) => Object.assign(obj, { [item.name]: item.count }),
                 {}
             );
+
             rslv(ulbType(object));
         } catch (err) {
             rjct(err);
@@ -903,6 +904,9 @@ module.exports.ulbList = async (req, res) => {
     let q = [
         { $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] } },
         {
+            $match: { $and: [{ isActive: true }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] }
+        },
+        {
             $lookup: {
                 from: 'users',
                 localField: '_id',
@@ -985,6 +989,7 @@ module.exports.ulbList = async (req, res) => {
     if (user.role == 'STATE') {
         q.push({ $match: { state: ObjectId(user.state) } });
     }
+
     let newFilter = await Service.mapFilter(filter);
     if (newFilter && Object.keys(newFilter).length) {
         q.push({ $match: newFilter });
@@ -1015,12 +1020,14 @@ module.exports.ulbList = async (req, res) => {
         if (user.role == 'STATE') {
             delete field.stateName;
         }
+
         let arr = await Ulb.aggregate(q).exec();
         let xlsData = await Service.dataFormating(arr, field);
         let filename =
             'ULB List ' + moment().format('DD-MMM-YY HH:MM:SS') + '.xlsx';
         return res.xls(filename, xlsData);
     }
+
 
     if (!skip) {
         let qrr = [...q, { $count: 'count' }];
@@ -1030,7 +1037,6 @@ module.exports.ulbList = async (req, res) => {
     q.push({ $skip: skip });
     q.push({ $limit: limit });
     let arr = await Ulb.aggregate(q).collation({ locale: 'en' }).exec();
-
     return res.status(200).json({
         timestamp: moment().unix(),
         success: true,

@@ -83,21 +83,21 @@ module.exports.getAll = async (req, res) => {
             filter = req.query.filter
                 ? JSON.parse(req.query.filter)
                 : req.body.filter
-                ? req.body.filter
-                : {},
+                    ? req.body.filter
+                    : {},
             sort = req.query.sort
                 ? JSON.parse(req.query.sort)
                 : req.body.sort
-                ? req.body.sort
-                : {},
+                    ? req.body.sort
+                    : {},
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
-            csv = req.query.csv,
+            csv = req.query.csv == 'true',
             role = req.query.role
                 ? req.query.role
                 : req.body.role
-                ? req.body.role
-                : 'USER';
+                    ? req.body.role
+                    : 'USER';
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         let access = Constants.USER.LEVEL_ACCESS;
         if (!role) {
@@ -112,7 +112,8 @@ module.exports.getAll = async (req, res) => {
             );
         } else {
             try {
-                let query = { role: role, isDeleted: false };
+                let query = { $and: [{ role: role }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] };
+
                 let q = [
                     { $match: query },
                     {
@@ -231,10 +232,14 @@ module.exports.getAll = async (req, res) => {
                             },
                             rejectReason: 1,
                             modifiedAt: 1,
-                            createdAt: 1
+                            createdAt: 1,
+                            accountantConatactNumber: 1,
+                            accountantEmail: 1,
+                            accountantName: 1
                         }
                     }
                 ];
+
                 let newFilter = await Service.mapFilter(filter);
                 let total = undefined;
                 if (user.role == 'STATE') {
@@ -251,14 +256,18 @@ module.exports.getAll = async (req, res) => {
                 if (csv) {
                     let arr = await User.aggregate(q).exec();
                     let field = {};
+                    Object.assign(field, {
+                        ulbName: 'ULB Name'
+                    });
                     if (['STATE'].indexOf(role) > -1) {
                         Object.assign(field, {
                             stateName: 'State'
                         });
                     }
                     Object.assign(field, {
-                        name: 'Username',
-                        email: 'Email ID'
+                        accountantName: 'ULB Nodal Officer Name',
+                        accountantEmail: 'ULB Nodal Officer Email ID',
+                        accountantConatactNumber: 'ULB Nodal Officer Phone Number'
                     });
                     if (
                         ['MoHUA', 'PARTNER', 'STATE', 'USER'].indexOf(role) > -1
@@ -278,7 +287,10 @@ module.exports.getAll = async (req, res) => {
                             ulbName: 'ULB Name',
                             ulbCode: 'ULB Code',
                             sbCode: 'Swatch Bharat Code',
-                            censusCode: 'Census Code'
+                            censusCode: 'Census Code',
+                            accountantName: 'ULB Nodal Officer Name',
+                            accountantEmail: 'ULB Nodal Officer Email ID',
+                            accountantConatactNumber: 'ULB Nodal Officer Phone Number'
                         };
                     }
                     if (['USER'].indexOf(role) > -1) {
@@ -286,12 +298,13 @@ module.exports.getAll = async (req, res) => {
                             organization: 'Organisation'
                         });
                     }
+                    console.log(field)
                     let xlsData = await Service.dataFormating(arr, field);
                     return res.xls('user.xlsx', xlsData);
                 } else {
-                    if (Object.keys(sort).length) {
-                        q.push({ $sort: sort });
-                    }
+                    // if (Object.keys(sort).length) {
+                    //     q.push({ $sort: sort });
+                    // }
                     // if(req.query.role=="ULB"){
                     //     q.push({ $sort: { priority: -1 } });
                     // }
@@ -302,6 +315,7 @@ module.exports.getAll = async (req, res) => {
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
                     }
+
                     let users = await User.aggregate(q)
                         .collation({ locale: 'en' })
                         .exec();
@@ -523,10 +537,9 @@ module.exports.create = async (req, res) => {
                 ? (newUser.email = newUser.commissionerEmail)
                 : '';
             newUser.createdBy = user._id;
-            newUser.isEmailVerified = false;
-            console.log(newUser);
-            let u = await User.findOne({email:data['email'],role:{$in:['MoHUA','USER','PARTNER','STATE']}}).exec()
-            if(u){
+            newUser.isEmailVerified = true;
+            let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE'] } }).exec()
+            if (u) {
                 return Response.BadRequest(
                     res,
                     {},
@@ -661,7 +674,7 @@ module.exports.ulbSignupAction = async (req, res) => {
             if (access[user.role].indexOf(userData.role) > -1) {
                 try {
 
-                    if(userData.status!='PENDING' ){
+                    if (userData.status != 'PENDING') {
                         return Response.BadRequest(
                             res,
                             req.body,
@@ -674,7 +687,7 @@ module.exports.ulbSignupAction = async (req, res) => {
                         status: data.status,
                         rejectReason: data.rejectReason
                     };
-                    let forgotPassword =  userData.role=="ULB" ? true :false;  
+                    let forgotPassword = userData.role == "ULB" ? true : false;
                     let u = await User.update(condition, { $set: d });
                     let link = await Service.emailVerificationLink(
                         userData._id,
@@ -704,3 +717,36 @@ module.exports.ulbSignupAction = async (req, res) => {
         Response.BadRequest(res, e, `Something went wrong.`);
     }
 };
+
+module.exports.getNodalOfficers = async (req, res) => {
+
+    try {
+        if (!req.params._id) {
+            return res.status(400).json({
+                success: false,
+                message: 'State ID Not Found'
+            })
+        }
+        let user = await User.findOne({ "state": ObjectId(req.params._id), isNodalOfficer: true })
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'User Not Found in DB'
+            })
+        } else {
+            return res.status(200).json({
+                success: true,
+                message: 'User Found Successfully',
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile
+            })
+        }
+
+    } catch (e) {
+        console.log(e)
+        res.json({
+            message: 'Exception Caught -' + e.message
+        })
+    }
+}

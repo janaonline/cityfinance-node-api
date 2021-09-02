@@ -306,7 +306,8 @@ module.exports.getAllUlbLegders = async function(req,res){
             },
             state: { "$first": "$state"},
             code:{ "$first": "$code"},
-            ulbType:{"$first":"$ulbType.name"}
+            ulbType:{"$first":"$ulbType.name"},
+            population:{ "$first": "$population"}
             }
         },
         {$group:{
@@ -324,6 +325,8 @@ module.exports.getAllUlbLegders = async function(req,res){
                 state: { "$first": "$state"},
                 code:{ "$first": "$code"},
                 ulbType:{ "$first": "$ulbType"},
+                population:{ "$first": "$population"}
+
             }
         },
         {$group:{
@@ -331,7 +334,7 @@ module.exports.getAllUlbLegders = async function(req,res){
                 state : "$state._id",
                 name :"$state.name"
             },    
-            ulbList :{$push: {ulbType:"$ulbType",code:"$code",financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
+            ulbList :{$push: {population:"$population",ulbType:"$ulbType",code:"$code",financialYear:"$financialYear",ulb:"$_id.ulb",name:"$_id.name"}}
             }
         }
         ]).exec((err, out) => {
@@ -411,13 +414,15 @@ module.exports.getAllLedgersCsv = function(req,res){
                 population:1
             }
         }
-    ]).cursor({batchSize:50}).exec()
+    ]).cursor({batchSize:500}).exec()
         cursor.on("data",function(el){
-            let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
-            el.code = el.line_item ? el.line_item.code : "";
-            el.head_of_account =  el.line_item ? el.line_item.headOfAccount : "";
-            el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ')  : "";
-            res.write(el.ulb.name+","+el.ulb.code+","+el.ulb.amrut+","+el.head_of_account+","+el.code+","+line_item+","+el.financialYear+","+el.amount+"\r\n");
+            if(el.ulb!='NA'){
+                let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
+                el.code = el.line_item ? el.line_item.code : "";
+                el.head_of_account =  el.line_item ? el.line_item.headOfAccount : "";
+                el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ')  : "";
+                res.write(el.ulb.name+","+el.ulb.code+","+el.ulb.amrut+","+el.head_of_account+","+el.code+","+line_item+","+el.financialYear+","+el.amount+"\r\n");
+            }
         }) 
         cursor.on("end",function(el){
             res.end()

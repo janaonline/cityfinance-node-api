@@ -294,7 +294,7 @@ module.exports.create = async (req, res) => {
              * For ULB, accountat email id is primary and mandatory.
              */
             pObj['email'] = pObj['accountantEmail'];
-            pObj['isEmailVerified'] = false;
+            pObj['isEmailVerified'] = true;
             if (pObj.email != userData.email) {
                 let link = await Service.emailVerificationLink(
                     userData._id,
@@ -461,14 +461,14 @@ module.exports.getAll = async (req, res) => {
                 req.query.filter && !req.query.filter != 'null'
                     ? JSON.parse(req.query.filter)
                     : req.body.filter
-                    ? req.body.filter
-                    : {},
+                        ? req.body.filter
+                        : {},
             sort =
                 req.query.sort && !req.query.sort != 'null'
                     ? JSON.parse(req.query.sort)
                     : req.body.sort
-                    ? req.body.sort
-                    : {},
+                        ? req.body.sort
+                        : {},
             skip = req.query.skip ? parseInt(req.query.skip) : 0,
             limit = req.query.limit ? parseInt(req.query.limit) : 50,
             csv = req.query.csv,
@@ -564,15 +564,15 @@ module.exports.getAll = async (req, res) => {
                 let field =
                     user.role == 'ULB'
                         ? {
-                              createdAt: 'Request Created On',
-                              status: 'Status',
-                          }
+                            createdAt: 'Request Created On',
+                            status: 'Status',
+                        }
                         : {
-                              stateName: 'State',
-                              ulbName: 'ULB Name',
-                              ulbCode: 'ULB Code',
-                              status: 'Status',
-                          };
+                            stateName: 'State',
+                            ulbName: 'ULB Name',
+                            ulbCode: 'ULB Code',
+                            status: 'Status',
+                        };
                 let arr = await UlbUpdateRequest.aggregate(q).exec();
                 let xlsData = await Service.dataFormating(arr, field);
                 return res.xls('ulb-update-request.xlsx', xlsData);
@@ -674,12 +674,12 @@ module.exports.action = async (req, res) => {
             );
             let ulb = prevState
                 ? await Ulb.findOne(
-                      { _id: prevState.ulb },
-                      '_id name code state'
-                  ).populate({
-                      path: 'state',
-                      select: '_id name code',
-                  })
+                    { _id: prevState.ulb },
+                    '_id name code state'
+                ).populate({
+                    path: 'state',
+                    select: '_id name code',
+                })
                 : null;
             let oldState = await UlbQuery(prevState.ulb); // Fetch all prevState value of a ULB
             if (user.role == 'STATE') {
@@ -799,7 +799,7 @@ module.exports.action = async (req, res) => {
                                 }
                             }
                             pObj['email'] = pObj['commissionerEmail'];
-                            pObj['isEmailVerified'] = false;
+                            pObj['isEmailVerified'] = true;
                             if (pObj.email != userData.email) {
                                 let du = await User.update(
                                     {
