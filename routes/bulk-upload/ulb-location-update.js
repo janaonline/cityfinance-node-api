@@ -112,6 +112,18 @@ module.exports.signup = async (req, res) => {
         return res.status(500).json({ message: e.message, success: false })
     }
 };
+module.exports.deleteNullNamedUA = async (req, res) => {
+    await UAData.findOneAndDelete({ name: null }, function (err, docs) {
+        if (err) {
+            res.send(err)
+        } else {
+            res.json({
+                success: true,
+                docs: docs
+            })
+        }
+    })
+}
 module.exports.updateUlb = async (req, res) => {
 
     let x = 0;
