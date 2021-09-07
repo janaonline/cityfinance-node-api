@@ -10,7 +10,7 @@ const time = () => {
 };
 exports.createUpdate = async (req, res) => {
   try {
-    let { design_year, isDraft } = req.body; 
+    let { design_year, isDraft } = req.body;
     req.body.actionTakenBy = req?.decoded._id;
     req.body.actionTakenByRole = req?.decoded.role;
     req.body.ulb = req?.decoded.ulb;
@@ -49,6 +49,12 @@ exports.createUpdate = async (req, res) => {
     }
 
     let annualAccountData;
+    if (
+      !req.body.unAudited.submit_annual_accounts &&
+      !req.body.audited.submit_annual_accounts
+    ) {
+      req.body.status = "N/A";
+    }
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true },
@@ -65,12 +71,7 @@ exports.createUpdate = async (req, res) => {
         }
       );
     }
-    if (
-      !req.body.unAudited.submit_annual_accounts &&
-      !req.body.audited.submit_annual_accounts
-    ) {
-      req.body.status = "N/A";
-    }
+
     await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
