@@ -198,6 +198,10 @@ module.exports.updateState = async (req, res) => {
         await State.findOneAndUpdate({ name: el }, { $set: { accessToXVFC: false } })
     }
     )
+    res.status(200).json({
+        success: true,
+        message: "States Updated"
+    })
 }
 
 module.exports.updateUA = async (req, res) => {
