@@ -209,10 +209,15 @@ module.exports.updateState = async (req, res) => {
         'Puducherry',
         'Ladakh',
         'Chandigarh']
-    UTs.forEach(async (el) => {
-        await State.findOneAndUpdate({ name: el }, { $set: { accessToXVFC: false } })
+    let states = []
+    for (let ut of UTs) {
+        console.log(ut)
+        let state = await State.findOneAndUpdate({ name: ut }, { accesstoXVFC: false }, { new: true })
+        states.push(state)
     }
-    )
+
+
+    console.log(states)
     res.status(200).json({
         success: true,
         message: "States Updated"
