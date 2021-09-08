@@ -199,6 +199,22 @@ module.exports.createUA = async (req, res) => {
     res.send('Task Completed')
 }
 
+module.exports.updateState = async (req, res) => {
+    let UTs = ['Andaman and Nicobar Islands',
+        'Dadra and Nagar Haveli',
+        'Daman and Diu',
+        'Delhi',
+        'Jammu and Kashmir',
+        'Lakshadweep',
+        'Puducherry',
+        'Ladakh',
+        'Chandigarh']
+    UTs.forEach((el) => {
+        await State.findOneAndUpdate({ name: el }, { $set: { accessToXVFC: false } })
+    }
+    )
+}
+
 module.exports.updateUA = async (req, res) => {
     let arr = await UAData.find({});
 
