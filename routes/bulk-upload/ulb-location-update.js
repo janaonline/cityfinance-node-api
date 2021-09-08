@@ -209,7 +209,7 @@ module.exports.updateState = async (req, res) => {
         'Puducherry',
         'Ladakh',
         'Chandigarh']
-    UTs.forEach((el) => {
+    UTs.forEach(async (el) => {
         await State.findOneAndUpdate({ name: el }, { $set: { accessToXVFC: false } })
     }
     )
