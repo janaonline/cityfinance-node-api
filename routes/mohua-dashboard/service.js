@@ -67,7 +67,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
             },
             {
-                $unwind: "$state"
+                $unwind: {
+                    path: "$state"
+                }
             },
 
             {
@@ -153,7 +155,11 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     state_id: { $addToSet: "$_id" }
                 }
             },
-            { $unwind: "$state_id" },
+            {
+                $unwind: {
+                    path: "$state_id"
+                }
+            },
             {
                 $lookup: {
                     from: "uas",
@@ -163,7 +169,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
             },
             {
-                $unwind: "$uas"
+                $unwind: {
+                    path: "$uas"
+                }
             },
 
             {
@@ -175,7 +183,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
             },
             {
-                $unwind: "$masterformData"
+                $unwind: {
+                    path: "$masterformData"
+                }
             },
             {
                 $group: {
@@ -268,7 +278,11 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     as: "masterformData"
                 }
             },
-            { $unwind: "$masterformData" },
+            {
+                $unwind: {
+                    path: "$masterformData"
+                }
+            },
 
             {
                 $match: {
@@ -298,13 +312,13 @@ module.exports.getCards = catchAsync(async (req, res) => {
 
         let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
             let prms1 = new Promise(async (rslv, rjct) => {
-
+                // console.log(Util.inspect(basequery, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
 
                 rslv(output);
             });
             let prms2 = new Promise(async (rslv, rjct) => {
-
+                console.log(Util.inspect(query1, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(query1);
 
                 rslv(output);
