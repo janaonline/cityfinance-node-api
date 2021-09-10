@@ -137,7 +137,22 @@ let createSheetForUa = (workbook, uaData, sheetName) => {
   for (const key in uaData.projectExecute[0]) {
     const element = uaData.projectExecute[0][key];
     col = String.fromCharCode(colIndex++ + 65);
-    worksheet.getCell(col + 2).value = key;
+    switch (key) {
+      case 'Cost':
+        worksheet.getCell(col + 2).value = 'Project_Cost'
+        break;
+      case 'Details':
+        worksheet.getCell(col + 2).value = 'Project_Details'
+        break;
+      case 'Type':
+        worksheet.getCell(col + 2).value = 'Project_Type'
+        break;
+
+      default:
+        worksheet.getCell(col + 2).value = key;
+        break;
+    }
+
   }
 
   uaData.projectExecute.forEach((object) => {
@@ -154,7 +169,16 @@ let createSheetForUa = (workbook, uaData, sheetName) => {
   for (const key in uaData.sourceFund[0]) {
     const element = uaData.sourceFund[0][key];
     col = String.fromCharCode(colIndex++ + 65);
-    worksheet.getCell(col + rowIndex).value = key;
+    switch (key) {
+      case 'Cost':
+        worksheet.getCell(col + rowIndex).value = 'Project_Cost'
+        break;
+
+      default:
+        worksheet.getCell(col + rowIndex).value = key
+        break;
+    }
+
   }
   uaData.sourceFund.forEach((object) => {
     (col = ""), (colIndex = 0), rowIndex++;
@@ -175,7 +199,16 @@ let createSheetForUa = (workbook, uaData, sheetName) => {
   for (const key in uaData.yearOutlay[0]) {
     const element = uaData.yearOutlay[0][key];
     col = String.fromCharCode(colIndex++ + 65);
-    worksheet.getCell(col + rowIndex).value = key;
+    switch (key) {
+      case 'Cost':
+        worksheet.getCell(col + rowIndex).value = 'Project_Cost'
+        break;
+
+      default:
+        worksheet.getCell(col + rowIndex).value = key
+        break;
+    }
+
   }
   uaData.yearOutlay.forEach((object) => {
     (col = ""), (colIndex = 0), rowIndex++;

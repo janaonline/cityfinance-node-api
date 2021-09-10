@@ -298,7 +298,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
 
         let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
             let prms1 = new Promise(async (rslv, rjct) => {
-
+                console.log(util.inspect(BaseQuery, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
 
                 rslv(output);
