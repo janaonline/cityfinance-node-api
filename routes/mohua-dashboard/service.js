@@ -18,6 +18,12 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 "isMillionPlus": "No"
             }
         }
+        let match3 = {
+            $match:
+            {
+                "isUA": "Yes"
+            }
+        }
         let match2 = {
             $match:
             {
@@ -37,6 +43,13 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 $match:
                 {
                     "isMillionPlus": "Yes",
+                    "state": ObjectId(state_id)
+                }
+            }
+            match3 = {
+                $match:
+                {
+                    "isUA": "Yes",
                     "state": ObjectId(state_id)
                 }
             }
@@ -307,11 +320,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             }
         ]
         let query3 = [
-            {
-                $match: {
-                    'isUA': "Yes"
-                }
-            },
+            match3,
             ...basequery
         ]
 
