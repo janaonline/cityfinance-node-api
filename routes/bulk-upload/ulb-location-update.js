@@ -132,16 +132,22 @@ module.exports.updateUlb = async (req, res) => {
 
         let errors = []
         for (let eachRow of jsonArray) {
-            console.log(x)
+            console.log(eachRow['City Finance Code'])
             x = x + 1;
             //console.log(eachRow.code,eachRow.name)
             if (eachRow['UA Name'] === 'Not a U.A' || eachRow['UA Name'] === '#N/A') {
                 let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
+                if (!ulb) {
+                    continue;
+                }
                 await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'No', UA: null } })
 
             } else if (eachRow['UA Name'] != 'Not a U.A' || eachRow['UA Name'] != '#N/A') {
                 let uaData = await UAData.findOne({ "name": eachRow['UA Name'] })
                 let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
+                if (!ulb) {
+                    continue;
+                }
                 await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'Yes', UA: ObjectId(uaData._id) } })
 
             }
@@ -150,7 +156,7 @@ module.exports.updateUlb = async (req, res) => {
         console.log('Task Completed')
         res.send('Task Completed')
     } catch (e) {
-        return Response.BadRequest(res, {}, err.message);
+        return Response.BadRequest(res, {}, e.message);
 
     }
 

@@ -184,7 +184,8 @@ module.exports.getCards = catchAsync(async (req, res) => {
             },
             {
                 $unwind: {
-                    path: "$masterformData"
+                    path: "$masterformData",
+                    preserveNullAndEmptyArrays: true
                 }
             },
             {
@@ -208,46 +209,46 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
 
             },
-            {
-                $match: {
-                    $or: [
+            // {
+            //     $match: {
+            //         $or: [
 
-                        {
-                            $and: [
-                                { "isSubmit": true },
-                                { "actionTakenByRole": "STATE" },
-                                { "status": "PENDING" }]
-                        },
+            //             {
+            //                 $and: [
+            //                     { "isSubmit": true },
+            //                     { "actionTakenByRole": "STATE" },
+            //                     { "status": "PENDING" }]
+            //             },
 
-                        {
-                            $and: [
-                                {
-                                    $or: [
-                                        { "status": "APPROVED" }
-                                        , { "status": "PENDING" }]
-                                },
+            //             {
+            //                 $and: [
+            //                     {
+            //                         $or: [
+            //                             { "status": "APPROVED" }
+            //                             , { "status": "PENDING" }]
+            //                     },
 
-                                { "actionTakenByRole": "MoHUA" }
-                            ]
+            //                     { "actionTakenByRole": "MoHUA" }
+            //                 ]
 
-                        }
-                    ]
-                }
-            },
+            //             }
+            //         ]
+            //     }
+            // },
 
-            {
-                $group: {
-                    _id: null,
-                    uas_submitted: { $sum: "$numberOfUas" },
-                    totalUAs: { $addToSet: "$totalUAs" }
-                }
-            },
-            {
-                $project: {
-                    "uas_submitted": 1,
-                    totalUAs: { $arrayElemAt: ["$totalUAs", 0] }
-                }
-            }
+            // {
+            //     $group: {
+            //         _id: null,
+            //         uas_submitted: { $sum: "$numberOfUas" },
+            //         totalUAs: { $addToSet: "$totalUAs" }
+            //     }
+            // },
+            // {
+            //     $project: {
+            //         "uas_submitted": 1,
+            //         totalUAs: { $arrayElemAt: ["$totalUAs", 0] }
+            //     }
+            // }
 
         ]
         let query2_totalUAs = [
@@ -306,7 +307,11 @@ module.exports.getCards = catchAsync(async (req, res) => {
             }
         ]
         let query3 = [
-            match2,
+            {
+                $match: {
+                    'isUA': "Yes"
+                }
+            },
             ...basequery
         ]
 
@@ -318,7 +323,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 rslv(output);
             });
             let prms2 = new Promise(async (rslv, rjct) => {
-                console.log(Util.inspect(query1, { showHidden: false, depth: null }))
+                // console.log(Util.inspect(query1, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(query1);
 
                 rslv(output);
@@ -331,7 +336,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 if (state_id) {
                     let output1 = await UA.aggregate(query2_totalUAs);
                     let output2 = await State.aggregate(query2_stateVersion);
-                    console.log(output1, output2)
+                    // console.log(output1, output2)
                     if (output1.length == 0) {
                         console.log('1')
                         output[0].totalUAs = 0;
@@ -350,7 +355,45 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     }
 
                 } else {
-                    output = await UA.aggregate(query2);
+                    console.log(Util.inspect(query2, { showHidden: false, depth: null }))
+                    let tempOutput = []
+                    tempOutput = await UA.aggregate(query2);
+                    console.log('*************', tempOutput)
+                    output[0]['totalUAs'] = tempOutput[0]['totalUAs']
+                    query2.push(
+                        {
+                            $match: {
+                                $or: [
+
+                                    {
+                                        $and: [
+                                            { "isSubmit": true },
+                                            { "actionTakenByRole": "STATE" },
+                                            { "status": "PENDING" }]
+                                    },
+
+                                    {
+                                        $and: [
+                                            {
+                                                $or: [
+                                                    { "status": "APPROVED" }
+                                                    , { "status": "PENDING" }]
+                                            },
+
+                                            { "actionTakenByRole": "MoHUA" }
+                                        ]
+
+                                    }
+                                ]
+                            }
+                        }
+                    )
+                    let tempOutput2 = await UA.aggregate(query2);
+                    if (tempOutput2.length == 0) {
+                        output[0]['uas_submitted'] = 0;
+                    } else {
+                        output[0]['uas_submitted'] = tempOutput2.length
+                    }
                 }
 
 
@@ -390,7 +433,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
         let ulbsInMillionPlusUlbs = 0;
         let submitted_millionPlusUA = 0;
         let millionPlusUA = 0;
-        console.log(output1, output2, output3, output4)
+        console.log('output1', output1, 'output2', output2, 'output3', output3, 'output4', output4)
         output1.forEach(el => {
             if (
                 ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
@@ -400,7 +443,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             ) {
                 submitted_totalUlbs = submitted_totalUlbs + el.count
                 totalUlbs = el.totalUlbs[0]
-            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+            } else {
                 submitted_totalUlbs = 0;
                 totalUlbs = el.totalUlbs[0]
             }
@@ -417,7 +460,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             ) {
                 submitted_nonMillion = submitted_nonMillion + el.count;
                 nonMillion = el.totalUlbs[0]
-            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+            } else {
                 submitted_nonMillion = 0;
                 nonMillion = el.totalUlbs[0]
             }
@@ -433,7 +476,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             ) {
                 submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs + el.count
                 ulbsInMillionPlusUlbs = el.totalUlbs[0]
-            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+            } else {
                 submitted_ulbsInMillionPlusUlbs = 0;
                 ulbsInMillionPlusUlbs = el.totalUlbs[0]
             }
