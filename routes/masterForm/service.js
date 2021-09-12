@@ -1572,7 +1572,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
     let k;
     if (user.role == 'STATE') {
       k = 3
-    } else if (user.role == 'MoHUA') {
+    } else if (user.role != 'ULB' || user.role != 'STATE') {
       k = 1
     }
     for (let i = 0; i < k; i++) {
@@ -1644,7 +1644,9 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           },
         },
         {
-          $unwind: "$ulbData",
+          $unwind: {
+            path: "$ulbData"
+          },
         },
         {
           $project: {
@@ -1683,7 +1685,9 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           },
         },
         {
-          $unwind: "$ulbData",
+          $unwind: {
+            path: "$ulbData"
+          },
         },
         {
           $project: {
@@ -1707,7 +1711,11 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
             as: "annualaccount",
           },
         },
-        { $unwind: "$annualaccount" },
+        {
+          $unwind: {
+            path: "$annualaccount"
+          }
+        },
         {
           '$group': {
             _id: '$annualaccount.audited.submit_annual_accounts',
@@ -1717,7 +1725,9 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         },
         { '$match': { _id: true } },
         {
-          $unwind: "$annualaccount"
+          $unwind: {
+            path: "$annualaccount"
+          }
         },
         {
           '$group': {
@@ -1739,7 +1749,9 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           },
         },
         {
-          $unwind: "$ulbData",
+          $unwind: {
+            path: "$ulbData"
+          },
         },
         {
           $project: {
@@ -1763,7 +1775,11 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
             as: "utilReportForm",
           },
         },
-        { $unwind: "$utilReportForm" },
+        {
+          $unwind: {
+            path: "$utilReportForm"
+          }
+        },
         {
           '$group': {
             _id: {
@@ -1777,101 +1793,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         }
       ];
 
-      // let query5 = [
-      //   {
-      //     $lookup: {
-      //       from: "ulbs",
-      //       localField: "ulb",
-      //       foreignField: "_id",
-      //       as: "ulbData",
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$ulbData",
-      //   },
-      //   {
-      //     $project: {
-      //       steps: 1,
-      //       actionTakenByRole: 1,
-      //       status: 1,
-      //       isSubmit: 1,
-      //       ulb: 1,
-      //       state: 1,
-      //       design_year: 1,
-      //       isUA: "$ulbData.isUA",
-      //       isMillionPlus: "$ulbData.isMillionPlus",
-      //     },
-      //   },
-      //   match2,
-      //   {
-      //     $lookup: {
-      //       from: "xvfcgrantulbforms",
-      //       localField: "ulb",
-      //       foreignField: "ulb",
-      //       as: "slbForm",
-      //     },
-      //   },
-      //   { $unwind: "$slbForm" },
-      //   {
-      //     $group: {
-      //       _id: {
-      //         isSubmit: "$isSubmit",
-      //         actionTakenByRole: "$actionTakenByRole",
-      //         status: "$slbForm.status",
-      //         isCompleted: "$slbForm.isCompleted",
-      //         isMillionPlus:"$isMillionPlus"
-      //       },
-      //       count: { $sum: 1 },
-      //     },
-      //   },
-      // ];
-      // let query6 = [
-      //   {
-      //     $lookup: {
-      //       from: "ulbs",
-      //       localField: "ulb",
-      //       foreignField: "_id",
-      //       as: "ulbData",
-      //     },
-      //   },
-      //   {
-      //     $unwind: "$ulbData",
-      //   },
-      //   {
-      //     $project: {
-      //       steps: 1,
-      //       actionTakenByRole: 1,
-      //       status: 1,
-      //       isSubmit: 1,
-      //       ulb: 1,
-      //       state: 1,
-      //       design_year: 1,
-      //       isUA: "$ulbData.isUA",
-      //       isMillionPlus: "$ulbData.isMillionPlus",
-      //     },
-      //   },
-      //   match2,
-      //   {
-      //     $lookup: {
-      //       from: "xvfcgrantplans",
-      //       localField: "ulb",
-      //       foreignField: "ulb",
-      //       as: "plans",
-      //     },
-      //   },
-      //   { $unwind: "$plans" },
-      //   {
-      //     $group: {
-      //       _id: {
-      //         isSubmit: "$isSubmit",
-      //         actionTakenByRole: "$actionTakenByRole",
-      //         status: "$plans.status",
-      //         isDraft: "$plans.isDraft",
-      //       },
-      //       count: { $sum: 1 },
-      //     },
-      //   },
-      // ];
+
       let { output1, output3, output4 } =
         await new Promise(async (resolve, reject) => {
           let prms1 = new Promise(async (rslv, rjct) => {
@@ -1939,14 +1861,8 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
       );
       finalOutput.push(data);
     }
-    // console.log(util.inspect({
-    //   "overall": output1,
-    //   "pfms": output2,
-    //   "annualaccounts": output3,
-    //   "utilreport": output4,
-    //   "slb": output5
-    // }, { showHidden: false, depth: null }))
 
+    console.log(finalOutput)
     res.status(200).json({
       success: true,
       data: finalOutput,

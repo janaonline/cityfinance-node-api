@@ -560,7 +560,8 @@ module.exports.getForm = catchAsync(async (req, res) => {
         let ulbData = await Ulb.aggregate(baseQuery);
 
         let numbers = calculateTotalNumbers(ulbData);
-        console.log(numbers);
+        console.log('Hi')
+        console.log('printing numbers', numbers);
 
         let query1 = [
             {
