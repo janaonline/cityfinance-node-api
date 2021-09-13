@@ -58,5 +58,6 @@ router.delete("/bulk/deleteNullUA", BulkUpload.ulbLocationUpdate.deleteNullNamed
 router.post("/bulk/ulbUpdate", multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.ulbLocationUpdate.updateUlb);
 router.post("/bulk/updateUA", BulkUpload.ulbLocationUpdate.updateUA);
 router.post("/bulk/updateState", BulkUpload.ulbLocationUpdate.updateState);
+router.post("/bulk/createGrantType", BulkUpload.ulbLocationUpdate.createGrantType);
 
 module.exports = router;
