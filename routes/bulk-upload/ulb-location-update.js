@@ -281,3 +281,32 @@ module.exports.updateUA = async (req, res) => {
 
 
 }
+
+module.exports.updateUser = async (req, res) => {
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+    let sum = 0;
+    console.log(state_id)
+    for (let el of state_id) {
+        let userData = await User.findOneAndUpdate({ state: ObjectId(el) }, { isNodalOfficer: true }, null, function (err, docs) {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Original Doc : ", docs);
+            }
+        });
+        // console.log(userData.length)
+        if (userData) {
+            sum++;
+        }
+
+    }
+    res.send('Task Completed')
+    console.log(sum)
+
+    // await User.findOneAndUpdate({state: ObjectId(id)}, {isNodalOfficer: true})
+}
