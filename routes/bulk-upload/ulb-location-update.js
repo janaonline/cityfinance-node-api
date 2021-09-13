@@ -168,24 +168,24 @@ module.exports.createGrantType = async (req, res) => {
     await GrantType.insertMany([
         {
             "_id": ObjectId("60f6cdb368e143a9b134c335"),
-            "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
-            "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
             "isActive": true,
             "name": "Million Plus for Water Supply and SWM",
 
         },
         {
             "_id": ObjectId("60f6cdb468e143a9b134c337"),
-            "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
-            "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
             "isActive": true,
             "name": "Non-Million Untied",
 
         },
         {
             "_id": ObjectId("60f6cdb468e143a9b134c339"),
-            "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
-            "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
             "isActive": true,
             "name": "Non-Million Tied",
 
