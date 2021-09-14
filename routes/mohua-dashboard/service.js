@@ -18,6 +18,12 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 "isMillionPlus": "No"
             }
         }
+        let match3 = {
+            $match:
+            {
+                "isUA": "Yes"
+            }
+        }
         let match2 = {
             $match:
             {
@@ -37,6 +43,13 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 $match:
                 {
                     "isMillionPlus": "Yes",
+                    "state": ObjectId(state_id)
+                }
+            }
+            match3 = {
+                $match:
+                {
+                    "isUA": "Yes",
                     "state": ObjectId(state_id)
                 }
             }
@@ -67,7 +80,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
             },
             {
-                $unwind: "$state"
+                $unwind: {
+                    path: "$state"
+                }
             },
 
             {
@@ -153,7 +168,11 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     state_id: { $addToSet: "$_id" }
                 }
             },
-            { $unwind: "$state_id" },
+            {
+                $unwind: {
+                    path: "$state_id"
+                }
+            },
             {
                 $lookup: {
                     from: "uas",
@@ -163,7 +182,9 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
             },
             {
-                $unwind: "$uas"
+                $unwind: {
+                    path: "$uas"
+                }
             },
 
             {
@@ -175,7 +196,10 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
             },
             {
-                $unwind: "$masterformData"
+                $unwind: {
+                    path: "$masterformData",
+                    preserveNullAndEmptyArrays: true
+                }
             },
             {
                 $group: {
@@ -198,46 +222,46 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 }
 
             },
-            {
-                $match: {
-                    $or: [
+            // {
+            //     $match: {
+            //         $or: [
 
-                        {
-                            $and: [
-                                { "isSubmit": true },
-                                { "actionTakenByRole": "STATE" },
-                                { "status": "PENDING" }]
-                        },
+            //             {
+            //                 $and: [
+            //                     { "isSubmit": true },
+            //                     { "actionTakenByRole": "STATE" },
+            //                     { "status": "PENDING" }]
+            //             },
 
-                        {
-                            $and: [
-                                {
-                                    $or: [
-                                        { "status": "APPROVED" }
-                                        , { "status": "PENDING" }]
-                                },
+            //             {
+            //                 $and: [
+            //                     {
+            //                         $or: [
+            //                             { "status": "APPROVED" }
+            //                             , { "status": "PENDING" }]
+            //                     },
 
-                                { "actionTakenByRole": "MoHUA" }
-                            ]
+            //                     { "actionTakenByRole": "MoHUA" }
+            //                 ]
 
-                        }
-                    ]
-                }
-            },
+            //             }
+            //         ]
+            //     }
+            // },
 
-            {
-                $group: {
-                    _id: null,
-                    uas_submitted: { $sum: "$numberOfUas" },
-                    totalUAs: { $addToSet: "$totalUAs" }
-                }
-            },
-            {
-                $project: {
-                    "uas_submitted": 1,
-                    totalUAs: { $arrayElemAt: ["$totalUAs", 0] }
-                }
-            }
+            // {
+            //     $group: {
+            //         _id: null,
+            //         uas_submitted: { $sum: "$numberOfUas" },
+            //         totalUAs: { $addToSet: "$totalUAs" }
+            //     }
+            // },
+            // {
+            //     $project: {
+            //         "uas_submitted": 1,
+            //         totalUAs: { $arrayElemAt: ["$totalUAs", 0] }
+            //     }
+            // }
 
         ]
         let query2_totalUAs = [
@@ -268,7 +292,11 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     as: "masterformData"
                 }
             },
-            { $unwind: "$masterformData" },
+            {
+                $unwind: {
+                    path: "$masterformData"
+                }
+            },
 
             {
                 $match: {
@@ -292,19 +320,19 @@ module.exports.getCards = catchAsync(async (req, res) => {
             }
         ]
         let query3 = [
-            match2,
+            match3,
             ...basequery
         ]
 
         let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
             let prms1 = new Promise(async (rslv, rjct) => {
-
+                // console.log(Util.inspect(basequery, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
 
                 rslv(output);
             });
             let prms2 = new Promise(async (rslv, rjct) => {
-
+                // console.log(Util.inspect(query1, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(query1);
 
                 rslv(output);
@@ -317,7 +345,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 if (state_id) {
                     let output1 = await UA.aggregate(query2_totalUAs);
                     let output2 = await State.aggregate(query2_stateVersion);
-                    console.log(output1, output2)
+                    // console.log(output1, output2)
                     if (output1.length == 0) {
                         console.log('1')
                         output[0].totalUAs = 0;
@@ -336,7 +364,45 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     }
 
                 } else {
-                    output = await UA.aggregate(query2);
+                    console.log(Util.inspect(query2, { showHidden: false, depth: null }))
+                    let tempOutput = []
+                    tempOutput = await UA.aggregate(query2);
+                    console.log('*************', tempOutput)
+                    output[0]['totalUAs'] = tempOutput[0]['totalUAs']
+                    query2.push(
+                        {
+                            $match: {
+                                $or: [
+
+                                    {
+                                        $and: [
+                                            { "isSubmit": true },
+                                            { "actionTakenByRole": "STATE" },
+                                            { "status": "PENDING" }]
+                                    },
+
+                                    {
+                                        $and: [
+                                            {
+                                                $or: [
+                                                    { "status": "APPROVED" }
+                                                    , { "status": "PENDING" }]
+                                            },
+
+                                            { "actionTakenByRole": "MoHUA" }
+                                        ]
+
+                                    }
+                                ]
+                            }
+                        }
+                    )
+                    let tempOutput2 = await UA.aggregate(query2);
+                    if (tempOutput2.length == 0) {
+                        output[0]['uas_submitted'] = 0;
+                    } else {
+                        output[0]['uas_submitted'] = tempOutput2.length
+                    }
                 }
 
 
@@ -376,7 +442,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
         let ulbsInMillionPlusUlbs = 0;
         let submitted_millionPlusUA = 0;
         let millionPlusUA = 0;
-        console.log(output1, output2, output3, output4)
+        console.log('output1', output1, 'output2', output2, 'output3', output3, 'output4', output4)
         output1.forEach(el => {
             if (
                 ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
@@ -386,7 +452,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             ) {
                 submitted_totalUlbs = submitted_totalUlbs + el.count
                 totalUlbs = el.totalUlbs[0]
-            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+            } else {
                 submitted_totalUlbs = 0;
                 totalUlbs = el.totalUlbs[0]
             }
@@ -403,7 +469,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             ) {
                 submitted_nonMillion = submitted_nonMillion + el.count;
                 nonMillion = el.totalUlbs[0]
-            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+            } else {
                 submitted_nonMillion = 0;
                 nonMillion = el.totalUlbs[0]
             }
@@ -419,7 +485,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
             ) {
                 submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs + el.count
                 ulbsInMillionPlusUlbs = el.totalUlbs[0]
-            } else if (Object.entries(el._id).length === 0 && el._id.constructor === Object) {
+            } else {
                 submitted_ulbsInMillionPlusUlbs = 0;
                 ulbsInMillionPlusUlbs = el.totalUlbs[0]
             }
@@ -494,7 +560,8 @@ module.exports.getForm = catchAsync(async (req, res) => {
         let ulbData = await Ulb.aggregate(baseQuery);
 
         let numbers = calculateTotalNumbers(ulbData);
-        console.log(numbers);
+        console.log('Hi')
+        console.log('printing numbers', numbers);
 
         let query1 = [
             {
