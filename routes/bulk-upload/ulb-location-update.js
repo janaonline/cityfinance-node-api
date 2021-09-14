@@ -291,7 +291,7 @@ module.exports.updateUser = async (req, res) => {
     let sum = 0;
     console.log(state_id)
     for (let el of state_id) {
-        let userData = await User.findOneAndUpdate({ state: ObjectId(el) }, { isNodalOfficer: true }, null, function (err, docs) {
+        let userData = await User.findOneAndUpdate({ state: ObjectId(el) }, { isNodalOfficer: false }, null, function (err, docs) {
             if (err) {
                 console.log(err)
             }
@@ -309,4 +309,48 @@ module.exports.updateUser = async (req, res) => {
     console.log(sum)
 
     // await User.findOneAndUpdate({state: ObjectId(id)}, {isNodalOfficer: true})
+}
+module.exports.updateUserFinal = async (req, res) => {
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+    let sum = 0;
+    console.log(state_id)
+    for (let el of state_id) {
+        let userData = await User.findOneAndUpdate({ state: ObjectId(el), role: "STATE" }, { isNodalOfficer: true }, null, function (err, docs) {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Original Doc : ", docs);
+            }
+        });
+        // console.log(userData.length)
+        if (userData) {
+            sum++;
+        }
+
+    }
+    res.send('Task Completed')
+    console.log(sum)
+
+    // await User.findOneAndUpdate({state: ObjectId(id)}, {isNodalOfficer: true})
+}
+
+module.exports.getNodalOfficers = async (req, res) => {
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+
+    let userData = [];
+    for (let el of state_id) {
+        let user = await User.find({ isNodalOfficer: true, state: ObjectId(el) }).lean();
+        userData.push(user)
+    }
+    console.log('Total Users=', userData.length);
+    console.log('UserData', userData)
 }
