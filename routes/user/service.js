@@ -235,7 +235,8 @@ module.exports.getAll = async (req, res) => {
                             createdAt: 1,
                             accountantConatactNumber: 1,
                             accountantEmail: 1,
-                            accountantName: 1
+                            accountantName: 1,
+                            mobile: 1
                         }
                     }
                 ];
@@ -265,9 +266,9 @@ module.exports.getAll = async (req, res) => {
                         });
                     }
                     Object.assign(field, {
-                        accountantName: 'ULB Nodal Officer Name',
-                        accountantEmail: 'ULB Nodal Officer Email ID',
-                        accountantConatactNumber: 'ULB Nodal Officer Phone Number'
+                        name: 'ULB Nodal Officer Name',
+                        email: 'ULB Nodal Officer Email ID',
+                        mobile: 'ULB Nodal Officer Phone Number'
                     });
                     if (
                         ['MoHUA', 'PARTNER', 'STATE', 'USER'].indexOf(role) > -1
