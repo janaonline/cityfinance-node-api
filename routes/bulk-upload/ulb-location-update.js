@@ -240,28 +240,28 @@ module.exports.createUA = async (req, res) => {
 }
 
 module.exports.updateState = async (req, res) => {
-    let UTs = ['Andaman and Nicobar Islands',
-        'Dadra and Nagar Haveli',
-        'Daman and Diu',
-        'Delhi',
-        'Jammu and Kashmir',
-        'Lakshadweep',
-        'Puducherry',
-        'Ladakh',
-        'Chandigarh']
+    let UTs = ['5dcf9d7216a06aed41c748dc',
+        '5dcf9d7216a06aed41c748e3',
+        '5dcf9d7316a06aed41c748e4',
+        '5dcf9d7316a06aed41c748e5',
+        '5dcf9d7316a06aed41c748ea',
+        '5dcf9d7316a06aed41c748ee',
+        '5dcf9d7416a06aed41c748f6',
+        '5efd6a2fb5cd039b5c0cfed2',
+        '5fa25a6e0fb1d349c0fdfbc7']
     let states = []
-    for (let ut of UTs) {
-        console.log(ut)
-        let state = await State.findOneAndUpdate({ name: ut }, { accessToXVFC: false }, { new: true })
-
-        states.push(state)
-    }
 
 
-    console.log(states)
+    await State.updateOne({ "_id": ObjectId('5dcf9d7216a06aed41c748dc') }, { $set: { "accessToXVFC": false } })
+
+
+
+
+
     res.status(200).json({
         success: true,
-        message: "States Updated"
+        message: "States Updated",
+
     })
 }
 
@@ -359,4 +359,38 @@ module.exports.getNodalOfficers = async (req, res) => {
     console.log('UserData', userData)
     console.log('Total Users=', userData.length);
     res.send(userData.length)
+}
+module.exports.updateUserData_Final = async (req, res) => {
+
+    await User.updateMany({ isNodalOfficer: true }, { isNodalOfficer: false }, null, function (err, docs) {
+        if (err) {
+            console.log(err)
+        }
+        else {
+            console.log("Original Doc : ", docs);
+        }
+    })
+
+
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+
+    let userData = [];
+    for (let el of state_id) {
+        let user = await User.findOneAndUpdate({ state: ObjectId(el), role: "STATE", isDeleted: false }, { isNodalOfficer: true }).lean();
+        if (!user) {
+            continue;
+        }
+        userData.push(user)
+    }
+
+    console.log('UserData', userData)
+    console.log('Total Users=', userData.length);
+    res.status(200).json({
+        success: true,
+        updatedDocuments: userData.length
+    })
 }

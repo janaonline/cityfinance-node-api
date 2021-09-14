@@ -112,7 +112,7 @@ module.exports.getAll = async (req, res) => {
             );
         } else {
             try {
-                let query = { $and: [{ role: role }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] };
+                let query = { role: role, isDeleted: false };
 
                 let q = [
                     { $match: query },
@@ -727,7 +727,7 @@ module.exports.getNodalOfficers = async (req, res) => {
                 message: 'State ID Not Found'
             })
         }
-        let user = await User.findOne({ "state": ObjectId(req.params._id), isNodalOfficer: true })
+        let user = await User.findOne({ "state": ObjectId(req.params._id), isNodalOfficer: true, isDeleted: false, role: "STATE" })
         if (!user) {
             return res.status(400).json({
                 success: false,
