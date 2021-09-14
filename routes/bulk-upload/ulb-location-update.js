@@ -252,7 +252,8 @@ module.exports.updateState = async (req, res) => {
     let states = []
     for (let ut of UTs) {
         console.log(ut)
-        let state = await State.findOneAndUpdate({ name: ut }, { accesstoXVFC: false }, { new: true })
+        let state = await State.findOneAndUpdate({ name: ut }, { accessToXVFC: false }, { new: true })
+
         states.push(state)
     }
 
@@ -348,9 +349,14 @@ module.exports.getNodalOfficers = async (req, res) => {
 
     let userData = [];
     for (let el of state_id) {
-        let user = await User.find({ isNodalOfficer: true, state: ObjectId(el) }).lean();
+        let user = await User.find({ isNodalOfficer: true, state: ObjectId(el), role: "STATE" }).lean();
+        if (user.length == 0 || !user) {
+            continue;
+        }
         userData.push(user)
     }
-    console.log('Total Users=', userData.length);
+
     console.log('UserData', userData)
+    console.log('Total Users=', userData.length);
+    res.send(userData.length)
 }
