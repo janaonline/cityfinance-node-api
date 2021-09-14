@@ -527,6 +527,23 @@ module.exports.eligibleStateForms = async function (req, res) {
         data: output
     })
 }
+module.exports.isMillionState = async (req, res) => {
+    let user = req.decoded;
+    let state_id = req.query;
+    let state = user.state ?? state_id;
+    let output = false;
+    let data = await Ulb.find({ state: ObjectId(state), isMillionPlus: "Yes" })
+    if (data.length >= 0) {
+        output = true
+    } else if (data.length == 0) {
+        output = false
+    }
+    res.status(200).json({
+        success: true,
+        data: output
+    })
+}
+
 const getBackYears = (num = 3, before = '') => {
     let yr = before ? `${before}-01-01` : moment().format("YYYY-MM-DD");
     let years = [];
