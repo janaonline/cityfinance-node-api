@@ -197,12 +197,19 @@ module.exports.updateState = async (req, res) => {
     let states = []
     for (let ut of UTs) {
         console.log(ut)
-        let state = await State.findOneAndUpdate({ name: ut }, { accesstoXVFC: false }, { new: true })
-        states.push(state)
+        let state = await State.updateOne({ "name": ut }, { "accessToXVFC": true }, function (err, docs) {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Updated Docs : ", docs);
+            }
+        })
+
     }
 
 
-    console.log(states)
+
     res.status(200).json({
         success: true,
         message: "States Updated"
