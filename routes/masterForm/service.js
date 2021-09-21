@@ -94,6 +94,7 @@ module.exports.get = catchAsync(async (req, res) => {
       });
     } else {
       masterFormData = JSON.parse(JSON.stringify(masterFormData[0]));
+      let percentage = calculatePercentage(masterFormData, user.role);
       if (masterFormData.actionTakenByRole != user.role) {
         if (masterFormData.history.length != 0)
           masterFormData =
@@ -122,11 +123,13 @@ module.exports.get = catchAsync(async (req, res) => {
         success: true,
         message: "Data Found Successfully!",
         response: masterFormData,
+        percentage: percentage
       });
     }
   }
-
+  console.log('before percentage function')
   let masterFormData = await MasterFormData.findOne(query);
+  let percentage = calculatePercentage(masterFormData, user.role);
   if (masterFormData['actionTakenByRole'] != user.role) {
     masterFormData = masterFormData.history[masterFormData.history.length - 1];
     masterFormData['stateName'] = masterFormData.stateName
@@ -143,6 +146,7 @@ module.exports.get = catchAsync(async (req, res) => {
       success: true,
       message: "Data Found Successfully!",
       response: masterFormData,
+      percentage: percentage
     });
   }
 });
@@ -2119,6 +2123,25 @@ module.exports.viewList = catchAsync(async (req, res) => {
     31: {
       xvfcgrantplans: "Not Applicable",
     },
+    32: {
+      slbMillion: {}
+    },
+    33: {
+      "slbMillion.isCompleted": false
+    },
+    34: {
+      "slbMillion.isCompleted": true
+    },
+    35: {
+      slbNonMillion: {}
+    },
+    36: {
+      "slbNonMillion.isCompleted": false
+    },
+    37: {
+      "slbNonMillion.isCompleted": true
+    },
+
   };
   let filter =
     req.query.filter && !req.query.filter != "null"
@@ -2471,21 +2494,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
             preserveNullAndEmptyArrays: true,
           },
         },
-
-        {
-          $lookup: {
-            from: "pfmsaccounts",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "pfmsaccounts",
-          },
-        },
-        {
-          $unwind: {
-            path: "$pfmsaccounts",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
         {
           $lookup: {
             from: "utilizationreports",
@@ -2497,20 +2505,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $unwind: {
             path: "$utilizationreports",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "xvfcgrantplans",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "xvfcgrantplans",
-          },
-        },
-        {
-          $unwind: {
-            path: "$xvfcgrantplans",
             preserveNullAndEmptyArrays: true,
           },
         },
@@ -2553,21 +2547,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $unwind: {
             path: "$ulbtypes",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-
-        {
-          $lookup: {
-            from: "users",
-            localField: "xvfcgrantplans.actionTakenBy",
-            foreignField: "_id",
-            as: "xvfcgrantplans.actionTakenBy",
-          },
-        },
-        {
-          $unwind: {
-            path: "$xvfcgrantplans.actionTakenBy",
             preserveNullAndEmptyArrays: true,
           },
         },
@@ -2652,30 +2631,26 @@ module.exports.viewList = catchAsync(async (req, res) => {
               status: "$masterforms.status",
             },
 
-            pfmsaccount: {
-              isDraft: "$pfmsaccounts.isDraft",
-              registered: "$pfmsaccounts.linked",
-            },
-
             utilizationreport: {
               isDraft: "$utilizationreports.isDraft",
               status: "$utilizationreports.status",
               actionTakenBy: "$utilizationreports.actionTakenBy.role",
             },
-            xvfcgrantplans: {
+
+            slbMillion: {
               $cond: {
-                if: { $eq: ["$isMillionPlus", "Yes"] },
+                if: { $eq: ["$isMillionPlus", "No"] },
                 then: "Not Applicable",
                 else: {
-                  isDraft: "$xvfcgrantplans.isDraft",
-                  status: "$xvfcgrantplans.status",
-                  actionTakenBy: "$xvfcgrantplans.actionTakenBy.role",
+                  isCompleted: "$xvfcgrantulbforms.isCompleted",
+                  status: "$xvfcgrantulbforms.status",
+                  actionTakenBy: "$xvfcgrantulbforms.actionTakenBy.role",
                 },
               },
             },
-            xvfcgrantulbforms: {
+            slbNonMillion: {
               $cond: {
-                if: { $eq: ["$isUA", "No"] },
+                if: { $eq: ["$isMillionPlus", "Yes"] },
                 then: "Not Applicable",
                 else: {
                   isCompleted: "$xvfcgrantulbforms.isCompleted",
@@ -2693,27 +2668,25 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
     if (
       newFilter["status"] ||
-      newFilter["pfmsStatus"] ||
       newFilter["auditedStatus"] ||
       newFilter["unauditedStatus"] ||
       newFilter["utilStatus"] ||
-      newFilter["slbStatus"] ||
-      newFilter["plansStatus"]
+      newFilter["slbMillionStatus"] ||
+      newFilter["slbNonMillionStatus"]
+
     ) {
       Object.assign(newFilter, statusFilter[newFilter["status"]]);
-      Object.assign(newFilter, statusFilter[newFilter["pfmsStatus"]]);
       Object.assign(newFilter, statusFilter[newFilter["auditedStatus"]]);
       Object.assign(newFilter, statusFilter[newFilter["unauditedStatus"]]);
       Object.assign(newFilter, statusFilter[newFilter["utilStatus"]]);
-      Object.assign(newFilter, statusFilter[newFilter["slbStatus"]]);
-      Object.assign(newFilter, statusFilter[newFilter["plansStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["slbMillionStatus"]]);
+      Object.assign(newFilter, statusFilter[newFilter["slbNonMillionStatus"]]);
       delete newFilter["status"];
-      delete newFilter["pfmsStatus"];
       delete newFilter["auditedStatus"];
       delete newFilter["unauditedStatus"];
       delete newFilter["utilStatus"];
-      delete newFilter["slbStatus"];
-      delete newFilter["plansStatus"];
+      delete newFilter["slbMillionStatus"];
+      delete newFilter["slbNonMillionStatus"];
     }
     if (newFilter && Object.keys(newFilter).length) {
       query.push({ $match: newFilter });
@@ -2769,26 +2742,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el["masterformStatus"] = "Under Review by MoHUA";
         }
 
-        if (Object.entries(el?.pfmsaccount).length === 0) {
-          el["pfmsaccountStatus"] = "Not Started";
-        } else if (
-          el?.pfmsaccount.isDraft == false &&
-          el?.pfmsaccount.registered == "no"
-        ) {
-          el["pfmsaccountStatus"] = "Not Registered";
-        } else if (
-          el?.pfmsaccount.isDraft == false &&
-          el?.pfmsaccount.registered == "yes"
-        ) {
-          el["pfmsaccountStatus"] = "Registered";
-        } else if (
-          el?.pfmsaccount.isDraft == false &&
-          el?.pfmsaccount.registered == ""
-        ) {
-          el["pfmsaccountStatus"] = "Not Registered";
-        } else if (el?.pfmsaccount.isDraft == "true") {
-          el["pfmsaccountStatus"] = "In Progress";
-        }
 
         if (Object.entries(el?.utilizationreport).length === 0) {
           el["utilizationreportStatus"] = "Not Started";
@@ -2828,27 +2781,32 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el["unaudited_annualaccountsStatus"] = "In Progress";
         }
 
-        if (Object.entries(el?.xvfcgrantplans).length === 0) {
-          el["xvfcgrantplansStatus"] = "Not Started";
-        } else if (el?.xvfcgrantplans.isDraft == false) {
-          el["xvfcgrantplansStatus"] = "Completed";
-        } else if (el?.xvfcgrantplans.isDraft == true) {
-          el["xvfcgrantplansStatus"] = "In Progress";
-        } else if (el?.xvfcgrantplans == "Not Applicable") {
-          el["xvfcgrantplansStatus"] = "Not Applicable";
-        } else {
+
+
+        if (Object.entries(el?.slbMillion).length === 0) {
+          el["slbMillionStatus"] = "Not Started";
+        } else if (el?.slbMillion.isCompleted == true) {
+          el["slbMillionStatus"] = "Completed";
+        } else if (el?.slbMillion.isCompleted == false) {
+          el["slbMillionStatus"] = "In Progress";
+        } else if (el?.slbMillion == "Not Applicable") {
+          el["slbMillionStatus"] = "Not Applicable";
         }
 
-        if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
-          el["xvfcgrantulbformsStatus"] = "Not Started";
-        } else if (el?.xvfcgrantulbforms.isCompleted == true) {
-          el["xvfcgrantulbformsStatus"] = "Completed";
-        } else if (el?.xvfcgrantulbforms.isCompleted == false) {
-          el["xvfcgrantulbformsStatus"] = "In Progress";
-        } else if (el?.xvfcgrantulbforms == "Not Applicable") {
-          el["xvfcgrantulbformsStatus"] = "Not Applicable";
+        if (Object.entries(el?.slbNonMillion).length === 0) {
+          el["slbNonMillionStatus"] = "Not Started";
+        } else if (el?.slbNonMillion.isCompleted == true) {
+          el["slbNonMillionStatus"] = "Completed";
+        } else if (el?.slbNonMillion.isCompleted == false) {
+          el["slbNonMillionStatus"] = "In Progress";
+        } else if (el?.slbNonMillion == "Not Applicable") {
+          el["slbNonMillionStatus"] = "Not Applicable";
         }
+
       });
+
+
+
 
       console.log(data)
       let field = csvData();
@@ -2857,40 +2815,29 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
       if (formName == "utilReport") {
         delete field.masterformStatus;
-        delete field.pfmsaccountStatus;
         delete field.audited_annualaccountsStatus;
         delete field.unaudited_annualaccountsStatus;
-        delete field.xvfcgrantplansStatus;
-        delete field.xvfcgrantulbformsStatus;
+        delete field.slbMillionStatus;
+        delete field.slbNonMillionStatus;
 
-      } else if (formName == "pfms") {
+      } else if (formName == "slbMillion") {
         delete field.masterformStatus;
-        delete field.xvfcgrantulbformsStatus;
+        delete field.slbNonMillionStatus;
         delete field.audited_annualaccountsStatus;
         delete field.unaudited_annualaccountsStatus;
-        delete field.xvfcgrantplansStatus;
         delete field.utilizationreportStatus;
 
-      } else if (formName == "plans") {
+      } else if (formName == "slbNonMillion") {
         delete field.masterformStatus;
-        delete field.xvfcgrantulbformsStatus;
+        delete field.slbMillionStatus;
         delete field.audited_annualaccountsStatus;
         delete field.unaudited_annualaccountsStatus;
-        delete field.pfmsaccountStatus;
-        delete field.utilizationreportStatus;
-      } else if (formName == "slb") {
-        delete field.masterformStatus;
-        delete field.xvfcgrantplansStatus;
-        delete field.audited_annualaccountsStatus;
-        delete field.unaudited_annualaccountsStatus;
-        delete field.pfmsaccountStatus;
         delete field.utilizationreportStatus;
       } else if (formName == "annualaccount") {
         delete field.masterformStatus;
-        delete field.xvfcgrantplansStatus;
-        delete field.pfmsaccountStatus;
+        delete field.slbMillionStatus;
+        delete field.slbNonMillionStatus;
         delete field.utilizationreportStatus;
-        delete field.xvfcgrantulbformsStatus;
 
       }
       let xlsData = await Service.dataFormating(data, field);
@@ -2956,26 +2903,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el["masterformStatus"] = "Under Review by MoHUA";
         }
 
-        if (Object.entries(el?.pfmsaccount).length === 0) {
-          el["pfmsaccountStatus"] = "Not Started";
-        } else if (
-          el?.pfmsaccount.isDraft == false &&
-          el?.pfmsaccount.registered == "no"
-        ) {
-          el["pfmsaccountStatus"] = "Not Registered";
-        } else if (
-          el?.pfmsaccount.isDraft == false &&
-          el?.pfmsaccount.registered == "yes"
-        ) {
-          el["pfmsaccountStatus"] = "Registered";
-        } else if (
-          el?.pfmsaccount.isDraft == false &&
-          el?.pfmsaccount.registered == ""
-        ) {
-          el["pfmsaccountStatus"] = "Not Registered";
-        } else if (el?.pfmsaccount.isDraft == "true") {
-          el["pfmsaccountStatus"] = "In Progress";
-        }
 
         if (Object.entries(el?.utilizationreport).length === 0) {
           el["utilizationreportStatus"] = "Not Started";
@@ -3016,25 +2943,25 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el["unaudited_annualaccountsStatus"] = "In Progress";
         }
 
-        if (Object.entries(el?.xvfcgrantplans).length === 0) {
-          el["xvfcgrantplansStatus"] = "Not Started";
-        } else if (el?.xvfcgrantplans.isDraft == false) {
-          el["xvfcgrantplansStatus"] = "Completed";
-        } else if (el?.xvfcgrantplans.isDraft == true) {
-          el["xvfcgrantplansStatus"] = "In Progress";
-        } else if (el?.xvfcgrantplans == "Not Applicable") {
-          el["xvfcgrantplansStatus"] = "Not Applicable";
+        if (Object.entries(el?.slbMillion).length === 0) {
+          el["slbMillionStatus"] = "Not Started";
+        } else if (el?.slbMillion.isDraft == false) {
+          el["slbMillionStatus"] = "Completed";
+        } else if (el?.slbMillion.isDraft == true) {
+          el["slbMillionStatus"] = "In Progress";
+        } else if (el?.slbMillion == "Not Applicable") {
+          el["slbMillionStatus"] = "Not Applicable";
         } else {
         }
 
-        if (Object.entries(el?.xvfcgrantulbforms).length === 0) {
-          el["xvfcgrantulbformsStatus"] = "Not Started";
-        } else if (el?.xvfcgrantulbforms.isCompleted == true) {
-          el["xvfcgrantulbformsStatus"] = "Completed";
-        } else if (el?.xvfcgrantulbforms.isCompleted == false) {
-          el["xvfcgrantulbformsStatus"] = "In Progress";
-        } else if (el?.xvfcgrantulbforms == "Not Applicable") {
-          el["xvfcgrantulbformsStatus"] = "Not Applicable";
+        if (Object.entries(el?.slbNonMillion).length === 0) {
+          el["slbNonMillionStatus"] = "Not Started";
+        } else if (el?.slbNonMillion.isCompleted == true) {
+          el["slbNonMillionStatus"] = "Completed";
+        } else if (el?.slbNonMillion.isCompleted == false) {
+          el["slbNonMillionStatus"] = "In Progress";
+        } else if (el?.slbNonMillion == "Not Applicable") {
+          el["slbNonMillionStatus"] = "Not Applicable";
         }
       });
 
@@ -3042,39 +2969,28 @@ module.exports.viewList = catchAsync(async (req, res) => {
         data.forEach((el) => {
           delete el.masterform;
           delete el?.annualaccount;
-          delete el.pfmsaccount;
-          delete el.xvfcgrantplans;
-          delete el.xvfcgrantulbforms;
+          delete el.slbMillion;
+          delete el.slbNonMillion;
         });
-      } else if (formName == "pfms") {
+      } else if (formName == "slbMillion") {
         data.forEach((el) => {
           delete el.masterform;
           delete el?.annualaccount;
           delete el.utilizationreport;
-          delete el.xvfcgrantplans;
-          delete el.xvfcgrantulbforms;
+          delete el.slbNonMillion;
         });
-      } else if (formName == "plans") {
+      } else if (formName == "slbNonMillion") {
         data.forEach((el) => {
           delete el.masterform;
           delete el?.annualaccount;
           delete el.utilizationreport;
-          delete el.pfmsaccount;
-          delete el.xvfcgrantulbforms;
-        });
-      } else if (formName == "slb") {
-        data.forEach((el) => {
-          delete el.masterform;
-          delete el?.annualaccount;
-          delete el.utilizationreport;
-          delete el.pfmsaccount;
-          delete el.xvfcgrantplans;
+          delete el.slbMillion;
         });
       } else if (formName == "annualaccount") {
         data.forEach((el) => {
           delete el.masterform;
-          delete el.xvfcgrantulbforms;
-          delete el.utilizationreport;
+          delete el.slbMillion;
+          delete el.slbNonMillion;
           delete el.pfmsaccount;
           delete el.xvfcgrantplans;
         });
@@ -3830,3 +3746,82 @@ const stateAgg = (design_year, state) => {
     res({ submittedForm, approvedByState, withState });
   });
 };
+
+let calculatePercentage = (masterformData, loggedInUserRole) => {
+  console.log(masterformData)
+  if (masterformData == null) {
+    return 0;
+  }
+  if (loggedInUserRole == 'ULB') {
+
+    if (masterformData?.history.length == 0) {
+      console.log('1')
+      let count = 0;
+      for (let key in masterformData?.steps) {
+        if (masterformData?.steps[key]['isSubmit']) {
+          count++;
+        }
+      }
+      return count * 33;
+    } else if (masterformData?.history.length >= 0) {
+      console.log('2')
+      if (masterformData?.actionTakenByRole == 'ULB') {
+        console.log('3')
+        let count = 0;
+        for (let key in masterformData?.steps) {
+          if (masterformData?.steps[key]['isSubmit']) {
+            count = count + 1;
+          }
+        }
+        if (count == 3) return 100;
+        return count * 33;
+      } else {
+        if (masterformData?.status == 'PENDING' || masterformData?.status == 'APPROVED') {
+          console.log('4')
+          return 100;
+        } else {
+          console.log('5')
+          let count = 0;
+          if (masterformData?.status == 'REJECTED') {
+            for (let key in masterformData?.steps) {
+              if (masterformData?.steps[key]['status'] == 'APPROVED' || masterformData?.steps[key]['status'] == 'N/A') {
+                count = count + 1;
+              }
+            }
+            if (count == 3) return 100;
+            return count * 33;
+          }
+
+        }
+
+      }
+    }
+
+  } else if (loggedInUserRole != 'ULB') {
+    console.log('6')
+    if (masterformData?.history.length == 0) {
+      console.log('7')
+      return 0;
+    } else if (masterformData?.history.length >= 0) {
+      console.log('8')
+      if (masterformData?.actionTakenByRole == 'ULB') {
+        console.log('9')
+        let count = 0;
+        for (let key in masterformData?.steps) {
+          if (masterformData?.steps[key]['isSubmit']) {
+            count = count + 1;
+          }
+        }
+        if (count == 3) return 100;
+        return count * 33;
+
+      } else {
+        console.log('10')
+        return 100;
+      }
+    }
+
+
+
+  }
+}
