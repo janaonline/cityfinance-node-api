@@ -4,7 +4,7 @@ const UA = require('../../models/UA');
 const ObjectId = require("mongoose").Types.ObjectId;
 const MasterFormData = require('../../models/MasterForm')
 const State = require('../../models/State')
-const Util = require('util')
+const util = require('util')
 module.exports.getCards = catchAsync(async (req, res) => {
 
     let user = req.decoded;
@@ -256,7 +256,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
         let query2_stateVersion = [
             {
                 $match: {
-                    _id: ObjectId("5dcf9d7316a06aed41c748ec")
+                    _id: ObjectId(state_id)
                 }
             },
             {
