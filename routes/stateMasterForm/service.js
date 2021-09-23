@@ -11,6 +11,7 @@ const GTCertificate = require('../../models/StateGTCertificate')
 const Response = require("../../service").response;
 const Service = require("../../service");
 const moment = require("moment");
+const statusTypes = require('../../util/statusTypes')
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -147,7 +148,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                     p5.push(el)
                 } else {
                     if (el['stateMasterFormData'].actionTakenByRole == "STATE" && el['stateMasterFormData'].isSubmit == true) {
-                        el['formStatus'] = "Under Review by MoHUA"
+                        el['formStatus'] = statusTypes.Under_Review_By_MoHUA
                         p1.push(el)
                     } else if (el['stateMasterFormData'].actionTakenByRole == "STATE" && el['stateMasterFormData'].isSubmit == false) {
                         el['formStatus'] = "In Progress"
@@ -160,7 +161,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                         p3.push(el)
                     } else if (el['stateMasterFormData'].actionTakenByRole == "MoHUA" && el['stateMasterFormData'].status == "PENDING") {
 
-                        el['formStatus'] = "Under Review by MoHUA"
+                        el['formStatus'] = statusTypes.Under_Review_By_MoHUA
                         p1.push(el)
                     }
                 }

@@ -38,9 +38,6 @@ exports.reportCreateValidator = [
     .isNumeric()
     .withMessage("closingBal is required as number"),
   check("projects")
-    .not()
-    .isEmpty()
-    .withMessage("projects are required")
     .isArray()
     .withMessage("projects are required as array max 10"),
   check("projects.*.name")

@@ -16,6 +16,7 @@ const { toUnicode } = require("punycode");
 const MasterForm = require("../../models/MasterForm");
 const UtilizationReport = require('../../models/UtilizationReport')
 const Category = require('../../models/Category')
+const statusTypes = require('../../util/statusTypes')
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
 
@@ -598,43 +599,43 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.isSubmit == false &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d["printStatus"] = "In Progress";
+          d["printStatus"] = statusTypes.In_Progress;
         }
         if (
           d.status == "PENDING" &&
           d.isSubmit == true &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d["printStatus"] = "Under Review by State";
+          d["printStatus"] = statusTypes.Under_Review_By_State;
         }
         if (
           d.status == "PENDING" &&
           d.isSubmit == false &&
           d.actionTakenByUserRole == "STATE"
         ) {
-          d["printStatus"] = "Under Review by State";
+          d["printStatus"] = statusTypes.Under_Review_By_State;
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
-          d["printStatus"] = "Under Review by MoHUA";
+          d["printStatus"] = statusTypes.Approved_By_State;
         }
         if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = "Under Review by MoHUA";
+          d["printStatus"] = statusTypes.Approved_By_State;
         }
         if (
           d.status == "PENDING" &&
           d.actionTakenByUserRole == "STATE" &&
           d.isSubmit == false
         ) {
-          d["printStatus"] = "Under Review by State";
+          d["printStatus"] = statusTypes.Under_Review_By_State;
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
-          d["printStatus"] = "Rejected by STATE";
+          d["printStatus"] = statusTypes.Rejected_By_State;
         }
         if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = "Rejected by MoHUA";
+          d["printStatus"] = statusTypes.Rejected_By_MoHUA;
         }
         if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = "Approval Completed";
+          d["printStatus"] = statusTypes.Approval_Completed;
         }
       }
       let field = csvULBReviewData();
@@ -671,51 +672,36 @@ module.exports.getAll = catchAsync(async (req, res) => {
           d.isSubmit == false &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d["printStatus"] = "In Progress";
+          d["printStatus"] = statusTypes.In_Progress;
           p6.push(d)
-        }
-        if (
+        } else if (
           d.status == "PENDING" &&
           d.isSubmit == true &&
           d.actionTakenByUserRole == "ULB"
         ) {
-          d["printStatus"] = "Under Review by State";
+          d["printStatus"] = statusTypes.Under_Review_By_State;
           p2.push(d)
-        }
-        if (
+        } else if (
           d.status == "PENDING" &&
           d.isSubmit == false &&
           d.actionTakenByUserRole == "STATE"
         ) {
-          d["printStatus"] = "Under Review by State";
+          d["printStatus"] = statusTypes.Under_Review_By_State;
           p2.push(d)
-        }
-        if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
-          d["printStatus"] = "Under Review by MoHUA";
+        } else if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
+          d["printStatus"] = statusTypes.Approved_By_State;
           p1.push(d)
-        }
-        if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = "Under Review by MoHUA";
+        } else if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
+          d["printStatus"] = statusTypes.Approved_By_State;
           p1.push(d)
-        }
-        if (
-          d.status == "PENDING" &&
-          d.actionTakenByUserRole == "STATE" &&
-          d.isSubmit == false
-        ) {
-          d["printStatus"] = "Under Review by State";
-          p2.push(d)
-        }
-        if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
-          d["printStatus"] = "Rejected by STATE";
+        } else if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
+          d["printStatus"] = statusTypes.Rejected_By_State;
           p5.push(d)
-        }
-        if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = "Rejected by MoHUA";
+        } else if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
+          d["printStatus"] = statusTypes.Rejected_By_MoHUA;
           p4.push(d)
-        }
-        if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = "Approval Completed";
+        } else if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
+          d["printStatus"] = statusTypes.Approval_Completed;
           p3.push(d)
         }
       }
@@ -2523,6 +2509,15 @@ module.exports.viewList = catchAsync(async (req, res) => {
           },
         },
         {
+          $match: {
+            $or: [
+              { "xvfcgrantulbforms.design_year": ObjectId(design_year) },
+              { "xvfcgrantulbforms": { $exists: false } }
+            ]
+
+          }
+        },
+        {
           $lookup: {
             from: "states",
             localField: "state",
@@ -2661,7 +2656,27 @@ module.exports.viewList = catchAsync(async (req, res) => {
             },
           },
         },
+
+
       ];
+    }
+    let redactMillion = {
+      $redact: {
+        $cond: {
+          if: { $eq: ["$slbMillion", 'Not Applicable'] },
+          then: '$$PRUNE',
+          else: '$$DESCEND'
+        }
+      }
+    }
+    let redactNonMillion = {
+      $redact: {
+        $cond: {
+          if: { $eq: ["$slbNonMillion", 'Not Applicable'] },
+          then: '$$PRUNE',
+          else: '$$DESCEND'
+        }
+      }
     }
 
     let newFilter = await Service.mapFilter(filter);
@@ -2692,99 +2707,105 @@ module.exports.viewList = catchAsync(async (req, res) => {
       query.push({ $match: newFilter });
     }
 
+    if (formName == 'slbMillion') {
+      query.push(redactMillion)
+    } else if (formName == 'slbNonMillion') {
+      query.push(redactNonMillion)
+    }
+
     if (csv) {
       let data = await Ulb.aggregate(query).exec();
       data.forEach((el) => {
         if (Object.entries(el?.masterform).length === 0) {
-          el["masterformStatus"] = "Not Started";
+          el["masterformStatus"] = statusTypes.Not_Started;
         } else if (
           el?.masterform.isSubmit == true &&
           el?.masterform.actionTakenByRole === "ULB" &&
           (el.masterform.status === "PENDING" || el.masterform.status === "NA")
         ) {
-          el["masterformStatus"] = "Under Review by State";
+          el["masterformStatus"] = statusTypes.Under_Review_By_State;
         } else if (
           el?.masterform.isSubmit == false &&
           el?.masterform.actionTakenByRole === "STATE"
         ) {
-          el["masterformStatus"] = "Under Review by State";
+          el["masterformStatus"] = statusTypes.Under_Review_By_State;
         } else if (
           el?.masterform.isSubmit == false &&
           el?.masterform.actionTakenByRole === "ULB" &&
           (el.masterform.status === "PENDING" || el.masterform.status === "NA")
         ) {
-          el["masterformStatus"] = "In Progress";
+          el["masterformStatus"] = statusTypes.In_Progress;
         } else if (
           el?.masterform.actionTakenByRole === "STATE" &&
           el?.masterform.status === "REJECTED"
         ) {
-          el["masterformStatus"] = "Rejected by State";
+          el["masterformStatus"] = statusTypes.Rejected_By_State;
         } else if (
           el?.masterform.actionTakenByRole === "MoHUA" &&
           el?.masterform.status === "REJECTED"
         ) {
-          el["masterformStatus"] = "Rejected by MoHUA";
+          el["masterformStatus"] = statusTypes.Rejected_By_MoHUA;
         } else if (
           el?.masterform.actionTakenByRole === "MoHUA" &&
           el?.masterform.status === "APPROVED"
         ) {
-          el["masterformStatus"] = "Approval Completed";
+          el["masterformStatus"] = statusTypes.Approval_Completed;
         } else if (
           el?.masterform.actionTakenByRole === "MoHUA" &&
           el?.masterform.isSubmit === false
         ) {
-          el["masterformStatus"] = "Under Review by MoHUA";
+          el["masterformStatus"] = statusTypes.Approved_By_State;
         } else if (
           el?.masterform.isSubmit == true &&
           el?.masterform.actionTakenByRole === "STATE" &&
           el?.masterform.status === "PENDING"
         ) {
-          el["masterformStatus"] = "Under Review by MoHUA";
+          el["masterformStatus"] = statusTypes.Approved_By_State;
         }
 
 
         if (Object.entries(el?.utilizationreport).length === 0) {
-          el["utilizationreportStatus"] = "Not Started";
+          el["utilizationreportStatus"] = statusTypes.Not_Started;
         } else if (el?.utilizationreport.isDraft == false) {
           el["utilizationreportStatus"] = "Completed";
         } else if (el?.utilizationreport.isDraft == true) {
-          el["utilizationreportStatus"] = "In Progress";
+          el["utilizationreportStatus"] = statusTypes.In_Progress;
         }
         if (Object.entries(el?.audited_annualaccounts).length === 0) {
-          el["audited_annualaccountsStatus"] = "Not Started";
+          el["audited_annualaccountsStatus"] = statusTypes.Not_Started;
         } else if (
           el?.audited_annualaccounts.isDraft == false &&
           el?.audited_annualaccounts.auditedSubmitted == false
         ) {
-          el["audited_annualaccountsStatus"] = "Accounts Not Submitted";
+          el["audited_annualaccountsStatus"] = statusTypes.Accounts_Not_Submitted;
         } else if (
           el?.audited_annualaccounts.isDraft == false &&
           el?.audited_annualaccounts.auditedSubmitted == true
         ) {
-          el["audited_annualaccountsStatus"] = "Accounts Submitted";
+          el["audited_annualaccountsStatus"] = statusTypes.Accounts_Submitted;
         } else if (el?.audited_annualaccounts.isDraft == true) {
-          el["audited_annualaccountsStatus"] = "In Progress";
+          el["audited_annualaccountsStatus"] = statusTypes.In_Progress;
         }
         if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
-          el["unaudited_annualaccountsStatus"] = "Not Started";
+          el["unaudited_annualaccountsStatus"] = statusTypes.Not_Started;
         } else if (
           el?.unaudited_annualaccounts.isDraft == false &&
           el?.unaudited_annualaccounts.unAuditedSubmitted == false
         ) {
-          el["unaudited_annualaccountsStatus"] = "Accounts Not Submitted";
+          el["unaudited_annualaccountsStatus"] = statusTypes.Accounts_Not_Submitted;
         } else if (
           el?.unaudited_annualaccounts.isDraft == false &&
           el?.unaudited_annualaccounts.unAuditedSubmitted == true
         ) {
-          el["unaudited_annualaccountsStatus"] = "Accounts Submitted";
+          el["unaudited_annualaccountsStatus"] = statusTypes.Accounts_Submitted;
         } else if (el?.unaudited_annualaccounts.isDraft == true) {
-          el["unaudited_annualaccountsStatus"] = "In Progress";
+          el["unaudited_annualaccountsStatus"] = statusTypes.In_Progress;
         }
 
 
 
         if (Object.entries(el?.slbMillion).length === 0) {
-          el["slbMillionStatus"] = "Not Started";
+          el["slbMillionStatus"] = statusTypes.Not_Started;
         } else if (el?.slbMillion.isCompleted == true) {
           el["slbMillionStatus"] = "Completed";
         } else if (el?.slbMillion.isCompleted == false) {
@@ -2854,53 +2875,53 @@ module.exports.viewList = catchAsync(async (req, res) => {
       console.log(util.inspect(query, false, null));
       let data = await Ulb.aggregate(query).exec();
 
-      console.log(data);
+      // console.log(data);
       data.forEach((el) => {
         if (Object.entries(el?.masterform).length === 0) {
-          el["masterformStatus"] = "Not Started";
+          el["masterformStatus"] = statusTypes.Not_Started;
         } else if (
           el?.masterform.isSubmit == true &&
           el?.masterform.actionTakenByRole === "ULB" &&
           (el.masterform.status === "PENDING" || el.masterform.status === "NA")
         ) {
-          el["masterformStatus"] = "Under Review by State";
+          el["masterformStatus"] = statusTypes.Under_Review_By_State;
         } else if (
           el?.masterform.isSubmit == false &&
           el?.masterform.actionTakenByRole === "STATE"
         ) {
-          el["masterformStatus"] = "Under Review by State";
+          el["masterformStatus"] = statusTypes.Under_Review_By_State;
         } else if (
           el?.masterform.isSubmit == false &&
           el?.masterform.actionTakenByRole === "ULB" &&
           (el.masterform.status === "PENDING" || el.masterform.status === "NA")
         ) {
-          el["masterformStatus"] = "In Progress";
+          el["masterformStatus"] = statusTypes.In_Progress;
         } else if (
           el?.masterform.actionTakenByRole === "STATE" &&
           el?.masterform.status === "REJECTED"
         ) {
-          el["masterformStatus"] = "Rejected by State";
+          el["masterformStatus"] = statusTypes.Rejected_By_State;
         } else if (
           el?.masterform.actionTakenByRole === "MoHUA" &&
           el?.masterform.status === "REJECTED"
         ) {
-          el["masterformStatus"] = "Rejected by MoHUA";
+          el["masterformStatus"] = statusTypes.Rejected_By_MoHUA;
         } else if (
           el?.masterform.actionTakenByRole === "MoHUA" &&
           el?.masterform.status === "APPROVED"
         ) {
-          el["masterformStatus"] = "Approval Completed";
+          el["masterformStatus"] = statusTypes.Approval_Completed;
         } else if (
           el?.masterform.actionTakenByRole === "MoHUA" &&
           el?.masterform.isSubmit === false
         ) {
-          el["masterformStatus"] = "Under Review by MoHUA";
+          el["masterformStatus"] = statusTypes.Approved_By_State;
         } else if (
           el?.masterform.isSubmit == true &&
           el?.masterform.actionTakenByRole === "STATE" &&
           el?.masterform.status === "PENDING"
         ) {
-          el["masterformStatus"] = "Under Review by MoHUA";
+          el["masterformStatus"] = statusTypes.Approved_By_State;
         }
 
 
@@ -3762,6 +3783,7 @@ let calculatePercentage = (masterformData, loggedInUserRole) => {
           count++;
         }
       }
+      if (count == 3) return 100;
       return count * 33;
     } else if (masterformData?.history.length >= 0) {
       console.log('2')
