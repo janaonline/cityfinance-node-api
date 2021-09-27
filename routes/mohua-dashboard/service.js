@@ -75,6 +75,17 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     "state.accessToXVFC": true
                 }
             },
+            {
+                $match: {
+
+                    '$or': [
+                        { censusCode: { '$exists': true, '$ne': '' } },
+                        { sbCode: { '$exists': true, '$ne': '' } }
+                    ]
+
+                }
+
+            },
 
             {
                 $group:
@@ -298,7 +309,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
 
         let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
             let prms1 = new Promise(async (rslv, rjct) => {
-                console.log(util.inspect(BaseQuery, { showHidden: false, depth: null }))
+                console.log(util.inspect(basequery, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
 
                 rslv(output);
@@ -317,7 +328,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 if (state_id) {
                     let output1 = await UA.aggregate(query2_totalUAs);
                     let output2 = await State.aggregate(query2_stateVersion);
-                    console.log(output1, output2)
+                    // console.log(output1, output2)
                     if (output1.length == 0) {
                         console.log('1')
                         output[0].totalUAs = 0;
@@ -912,6 +923,17 @@ module.exports.plansData = catchAsync(async (req, res) => {
         },
 
         { $unwind: "$ulbData" },
+        {
+            $match: {
+
+                '$or': [
+                    { "ulbData.censusCode": { '$exists': true, '$ne': '' } },
+                    { "ulbData.sbCode": { '$exists': true, '$ne': '' } }
+                ]
+
+            }
+
+        },
         {
             $lookup: {
                 from: "uas",

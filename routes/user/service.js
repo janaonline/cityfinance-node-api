@@ -9,6 +9,7 @@ const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
 const moment = require('moment');
+const util = require('util')
 module.exports.get = async (req, res) => {
     let user = req.decoded;
     (role = req.body.role), (filter = req.body.filter), (sort = req.body.sort);
@@ -112,10 +113,51 @@ module.exports.getAll = async (req, res) => {
             );
         } else {
             try {
-                let query = { $and: [{ role: role }, { $or: [{ censusCode: { $exists: true, "$ne": null, "$ne": "" } }, { sbCode: { $exists: true, "$ne": null, "$ne": "" } }] }] };
+                let query = { role: role };
+                let roleQuery = [{
+                    $match: {
+                        "role": role
+                    }
+                }]
+                let codeFilter = {
+                    $match: {
+                        $or: [{ "censusCode": { $exists: true, $ne: null, $ne: "" } },
+                        { "sbCode": { $exists: true, $ne: null, $ne: "" } }]
 
+                    }
+                }
+                let countQuery = [
+                    {
+                        $lookup: {
+                            from: 'ulbs',
+                            localField: 'ulb',
+                            foreignField: '_id',
+                            as: 'ulb'
+                        }
+                    },
+                    {
+                        $unwind: {
+                            path: '$ulb',
+                            preserveNullAndEmptyArrays: true
+                        }
+                    },
+                    {
+                        $match: {
+
+                            $and: [{ role: role },
+                            {
+                                $or: [
+                                    { "ulb.censusCode": { $exists: true, $ne: null, $ne: "" } },
+                                    { "ulb.sbCode": { $exists: true, $ne: null, $ne: "" } }]
+                            }]
+                        }
+                    },
+                    { $count: "total" }
+
+                ]
                 let q = [
                     { $match: query },
+
                     {
                         $lookup: {
                             from: 'ulbs',
@@ -154,6 +196,7 @@ module.exports.getAll = async (req, res) => {
                             preserveNullAndEmptyArrays: true
                         }
                     },
+
                     {
                         $unwind: {
                             path: '$ulbType',
@@ -237,9 +280,12 @@ module.exports.getAll = async (req, res) => {
                             accountantEmail: 1,
                             accountantName: 1
                         }
-                    }
-                ];
+                    },
 
+                ];
+                if (role == 'ULB') {
+                    q.push(codeFilter)
+                }
                 let newFilter = await Service.mapFilter(filter);
                 let total = undefined;
                 if (user.role == 'STATE') {
@@ -310,12 +356,19 @@ module.exports.getAll = async (req, res) => {
                     // }
                     q.push({ $skip: skip });
                     q.push({ $limit: limit });
+                    let totalUsers;
                     if (!skip) {
+                        // query.push(codeFilter)
                         let nQ = Object.assign({}, query);
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
-                    }
 
+
+                    }
+                    let finalQuery = role == 'ULB' ? countQuery : roleQuery;
+                    // totalUsers = await User.aggregate({ role: "ULB" })
+                    totalUsers = await User.aggregate(finalQuery)
+                    // console.log(util.inspect(q, { showHidden: false, depth: null }))
                     let users = await User.aggregate(q)
                         .collation({ locale: 'en' })
                         .exec();
@@ -325,7 +378,7 @@ module.exports.getAll = async (req, res) => {
                         success: true,
                         message: 'User list',
                         data: users,
-                        total: total
+                        total: role == 'ULB' ? totalUsers[0]['total'] : totalUsers.length
                     });
                 }
             } catch (e) {
