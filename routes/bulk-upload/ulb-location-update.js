@@ -184,6 +184,36 @@ module.exports.createUA = async (req, res) => {
     res.send('Task Completed')
 }
 
+module.exports.addULBsToUA = async (req, res) => {
+    let newULBs = [
+        ObjectId("5dd24729437ba31f7eb42ef8"),
+        ObjectId("5fd2249984bf593ae2ee5f9d"),
+        ObjectId("5dd24729437ba31f7eb42f39"),
+        ObjectId("5dd2472a437ba31f7eb42f85"),
+        ObjectId("5dd24729437ba31f7eb42ef2"),
+        ObjectId("5dd2472a437ba31f7eb42f9e")
+    ]
+    let data = await UAData.findOne({ name: "Bhilainagar U.A." })
+    console.log(data)
+    for (let el of newULBs) {
+        data['ulb'].push(el)
+    }
+    await data.save();
+    console.log(data);
+    //  await data.save();
+    for (let el of newULBs) {
+        await Ulb.findOneAndUpdate({ _id: el }, {
+            isUA: true,
+            UA: data['_id']
+        })
+    }
+
+    res.status(200).json({
+        success: true,
+        message: "ULBs added to UA"
+    })
+}
+
 module.exports.updateState = async (req, res) => {
     let UTs = ['Andaman and Nicobar Islands',
         'Dadra and Nagar Haveli',
