@@ -2119,13 +2119,20 @@ module.exports.viewList = catchAsync(async (req, res) => {
       "slbMillion.isCompleted": true
     },
     35: {
+      "slbMillion": "Not Applicable"
+    },
+
+    36: {
       slbNonMillion: {}
     },
-    36: {
+    37: {
       "slbNonMillion.isCompleted": false
     },
-    37: {
+    38: {
       "slbNonMillion.isCompleted": true
+    },
+    39: {
+      "slbNonMillion": "Not Applicable"
     },
 
   };
@@ -2966,13 +2973,12 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
         if (Object.entries(el?.slbMillion).length === 0) {
           el["slbMillionStatus"] = "Not Started";
-        } else if (el?.slbMillion.isDraft == false) {
+        } else if (el?.slbMillion.isCompleted == true) {
           el["slbMillionStatus"] = "Completed";
-        } else if (el?.slbMillion.isDraft == true) {
+        } else if (el?.slbMillion.isCompleted == false) {
           el["slbMillionStatus"] = "In Progress";
         } else if (el?.slbMillion == "Not Applicable") {
           el["slbMillionStatus"] = "Not Applicable";
-        } else {
         }
 
         if (Object.entries(el?.slbNonMillion).length === 0) {
@@ -3216,12 +3222,11 @@ function csvData() {
     UA: "Name of UA",
 
     masterformStatus: "Overall Form Status",
-    pfmsaccountStatus: "PFMS Status",
     audited_annualaccountsStatus: "Audited Accounts 2019-2020 Status",
     unaudited_annualaccountsStatus: "Provisional Accounts 2020-2021 Status",
     utilizationreportStatus: "Utilisation Report Status",
-    xvfcgrantulbformsStatus: "SLB for Water Supply and Sanitation Status",
-    xvfcgrantplansStatus: "Plans for Water Supply and Sanitation Status"
+    slbMillionStatus: "SLB Million Plus Status",
+    slbNonMillionStatus: "SLB Non Million Status"
 
   });
 }
