@@ -279,13 +279,13 @@ exports.get = async (req, res) => {
             "Million Plus for Water Supply and SWM": {
               recommendationDate: mill.recommendationDate
                 ? `Sent to MoF on ${moment(mill.recommendationDate).format(
-                  "dd-MM-YYYY"
+                  "DD-MM-YYYY"
                 )}`
                 : "Not Sent",
               releaseDate: mill.releaseDate
                 ? `${mill.amountReleased}Cr Released on ${moment(
                   mill.releaseDate
-                ).format("dd-MM-YYYY")}`
+                ).format("DD-MM-YYYY")}`
                 : "Not Released",
               submissionDate: mill.submissionDate
                 ? `Submitted on ${moment(mill.submissionDate).format(

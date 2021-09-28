@@ -250,11 +250,18 @@ module.exports.updateState = async (req, res) => {
         '5efd6a2fb5cd039b5c0cfed2',
         '5fa25a6e0fb1d349c0fdfbc7']
     let states = []
+    for (let ut of UTs) {
+        console.log(ut)
+        let state = await State.updateOne({ "name": ut }, { "accessToXVFC": true }, function (err, docs) {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Updated Docs : ", docs);
+            }
+        })
 
-
-    await State.updateOne({ "_id": ObjectId('5dcf9d7216a06aed41c748dc') }, { $set: { "accessToXVFC": false } })
-
-
+    }
 
 
 

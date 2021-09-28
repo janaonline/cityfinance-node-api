@@ -4,7 +4,7 @@ const UA = require('../../models/UA');
 const ObjectId = require("mongoose").Types.ObjectId;
 const MasterFormData = require('../../models/MasterForm')
 const State = require('../../models/State')
-const Util = require('util')
+const util = require('util')
 module.exports.getCards = catchAsync(async (req, res) => {
 
     let user = req.decoded;
@@ -89,6 +89,17 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 $match: {
                     "state.accessToXVFC": true
                 }
+            },
+            {
+                $match: {
+
+                    '$or': [
+                        { censusCode: { '$exists': true, '$ne': '' } },
+                        { sbCode: { '$exists': true, '$ne': '' } }
+                    ]
+
+                }
+
             },
 
             {
@@ -280,7 +291,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
         let query2_stateVersion = [
             {
                 $match: {
-                    _id: ObjectId("5dcf9d7316a06aed41c748ec")
+                    _id: ObjectId(state_id)
                 }
             },
             {
@@ -326,7 +337,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
 
         let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
             let prms1 = new Promise(async (rslv, rjct) => {
-                // console.log(Util.inspect(basequery, { showHidden: false, depth: null }))
+                console.log(util.inspect(basequery, { showHidden: false, depth: null }))
                 let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
 
                 rslv(output);
@@ -979,6 +990,17 @@ module.exports.plansData = catchAsync(async (req, res) => {
         },
 
         { $unwind: "$ulbData" },
+        {
+            $match: {
+
+                '$or': [
+                    { "ulbData.censusCode": { '$exists': true, '$ne': '' } },
+                    { "ulbData.sbCode": { '$exists': true, '$ne': '' } }
+                ]
+
+            }
+
+        },
         {
             $lookup: {
                 from: "uas",

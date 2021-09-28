@@ -533,17 +533,17 @@ module.exports.isMillionState = async (req, res) => {
     let state = user.state ?? state_id;
     let output = false;
     let data = await Ulb.find({ state: ObjectId(state), isMillionPlus: "Yes" })
-    if (data.length >= 0) {
+    console.log(data)
+    if (data.length > 0) {
         output = true
     } else if (data.length == 0) {
         output = false
     }
     res.status(200).json({
         success: true,
-        data: output
+        data: output //true  means state has atleast one million plus city and false means the state has no million plus city
     })
 }
-
 const getBackYears = (num = 3, before = '') => {
     let yr = before ? `${before}-01-01` : moment().format("YYYY-MM-DD");
     let years = [];
