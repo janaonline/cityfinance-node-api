@@ -377,7 +377,7 @@ module.exports.getAll = async (req, res) => {
                 ]
 
                 let newFilter = await Service.mapFilter(filter);
-                console.log(util.inspect(newFilter, { showHidden: false, depth: null }))
+
                 let total = undefined;
                 if (user.role == 'STATE') {
                     let ulbs = await Ulb.distinct('_id', {
@@ -441,6 +441,8 @@ module.exports.getAll = async (req, res) => {
                 } else {
 
                     q.push({ $skip: skip });
+                    let q_copy = [];
+                    q_copy = q.slice()
                     q.push({ $limit: limit });
                     let totalUsers;
                     if (!skip) {
@@ -455,14 +457,16 @@ module.exports.getAll = async (req, res) => {
                     // totalUsers = await User.aggregate({ role: "ULB" })
                     let users;
                     if (role == 'ULB') {
-                        let nQ = [];
-                        if (Object.entries(newFilter).length > 0 && newFilter.constructor === Object) {
-                            nQ.push({ $match: newFilter })
+                        if (!skip) {
+                            if (Object.entries(newFilter).length > 0 && newFilter.constructor === Object) {
+                                q_copy.push({ $match: newFilter })
+                            }
+                            q_copy.push(...countQuery)
                         }
-                        console.log(nQ)
-                        nQ.push(countQuery)
-                        console.log(nQ)
-                        totalUsers = await Ulb.aggregate(nQ);
+
+
+                        console.log(util.inspect(q_copy, { showHidden: false, depth: null }))
+                        totalUsers = await Ulb.aggregate(q_copy);
                         // totalUsers = await Ulb.aggregate(countQuery)
                         users = await Ulb.aggregate(q)
                             .collation({ locale: 'en' })
