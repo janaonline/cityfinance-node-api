@@ -43,6 +43,11 @@ module.exports.dashboard = async (req, res) => {
                 state: ObjectId(state),
               },
             },
+            {
+              $match: {
+                $or: [{ censCode: { $exists: true, $ne: null, $ne: "" } }, { sbCode: { $exists: true, $ne: null, $ne: "" } }]
+              }
+            }
           ],
           as: "totalUlb",
         },
@@ -57,6 +62,11 @@ module.exports.dashboard = async (req, res) => {
                 isMillionPlus: "No",
               },
             },
+            {
+              $match: {
+                $or: [{ censCode: { $exists: true, $ne: null, $ne: "" } }, { sbCode: { $exists: true, $ne: null, $ne: "" } }]
+              }
+            }
           ],
           as: "totalUlbNonMil",
         },
