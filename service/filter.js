@@ -18,6 +18,9 @@ module.exports = async (obj) => {
                         filter[key] = false;
                     }
                     else if (key == "user") {
+                        if (obj[key] == "All Users") {
+                            continue;
+                        }
                         filter[key] = obj[key];
                     }
                     else if (key == "status") {
