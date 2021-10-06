@@ -38,9 +38,6 @@ exports.reportCreateValidator = [
     .isNumeric()
     .withMessage("closingBal is required as number"),
   check("projects")
-    .not()
-    .isEmpty()
-    .withMessage("projects are required")
     .isArray()
     .withMessage("projects are required as array max 10"),
   check("projects.*.name")
@@ -51,6 +48,14 @@ exports.reportCreateValidator = [
     .not()
     .isEmpty()
     .withMessage("category is required "),
+  // check("projects.*.engineerName")
+  //   .not()
+  //   .isEmpty()
+  //   .withMessage("Engineer Name is required "),
+  // check("projects.*.engineerContact")
+  //   .not()
+  //   .isEmpty()
+  //   .withMessage("Engineer COntact Number is required "),
   // check("projects.*.description")
   //   .not()
   //   .isEmpty()
