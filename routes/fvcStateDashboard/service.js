@@ -3,7 +3,7 @@ const State = require("../../models/State");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const util = require('util')
 module.exports.dashboard = async (req, res) => {
   let { state_id } = req.query
   let state = req.decoded.state ?? state_id
@@ -44,9 +44,15 @@ module.exports.dashboard = async (req, res) => {
               },
             },
             {
-              $match: {
-                $or: [{ censCode: { $exists: true, $ne: null, $ne: "" } }, { sbCode: { $exists: true, $ne: null, $ne: "" } }]
+              '$lookup': {
+                from: "users",
+                localField: "_id",
+                foreignField: "ulb",
+                as: "users"
               }
+            },
+            {
+              $unwind: "$users"
             }
           ],
           as: "totalUlb",
@@ -63,9 +69,15 @@ module.exports.dashboard = async (req, res) => {
               },
             },
             {
-              $match: {
-                $or: [{ censCode: { $exists: true, $ne: null, $ne: "" } }, { sbCode: { $exists: true, $ne: null, $ne: "" } }]
+              '$lookup': {
+                from: "users",
+                localField: "_id",
+                foreignField: "ulb",
+                as: "users"
               }
+            },
+            {
+              $unwind: "$users"
             }
           ],
           as: "totalUlbNonMil",
@@ -80,7 +92,7 @@ module.exports.dashboard = async (req, res) => {
         },
       },
     ];
-
+    console.log(util.inspect(query, { showHidden: false, depth: null }))
     const data = await State.aggregate(query);
     if (data[0]) {
       data[0].totalUlbInUas = 0
