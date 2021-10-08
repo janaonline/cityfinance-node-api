@@ -138,9 +138,11 @@ exports.action = async (req, res) => {
       user = req.decoded;
     const { design_year } = req.body;
     data["actionTakenBy"] = user._id;
+    let { state_id } = req.query;
+    let state = data.state ?? state_id
     let currentState = await StateGTCertificate.findOne(
       {
-        state: ObjectId(data.state),
+        state: ObjectId(state),
         design_year: ObjectId(design_year),
       },
       { history: 0 }
@@ -177,7 +179,7 @@ exports.action = async (req, res) => {
     } else {
       let updatedRecord = await StateGTCertificate.findOneAndUpdate(
         {
-          state: ObjectId(data.state),
+          state: ObjectId(state),
           design_year: ObjectId(design_year),
         },
         { $set: req.body, $push: { history: currentState } }

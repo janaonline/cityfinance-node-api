@@ -6,6 +6,8 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const requiredKeys = ["ULBCODE", "LAT", "LNG"];
 const UAData = require('../../models/UA')
 const State = require('../../models/State')
+const Response = require("../../service").response;
+const GrantType = require('../../models/GrantType')
 module.exports = async (req, res) => {
     try {
         const jsonArray = req.body.jsonArray;
@@ -72,39 +74,34 @@ module.exports.signup = async (req, res) => {
             //console.log(eachRow.code,eachRow.name)
             let message = "";
             let ulb = await Ulb.findOne({ code: eachRow.ulbCode, isActive: true }).exec();
-            let user = await User.findOne({ ulb: ObjectId(ulb._id), role: 'ULB' }).exec();
-            if (user) {
-                message = "Ulb user already exists for:" + eachRow.ulbCode;
+            //let user = await User.findOne({ulb : ObjectId(ulb._id),role:'ULB'}).exec();
+            ulb ? eachRow.ulbCode == ulb.code : message += "Ulb " + eachRow.ulbcode + " don't exists";
+            if (message != "") {
+                // if any state or ulb type not exists, then return message
                 errors.push(message);
-            }
-            else {
-                ulb ? eachRow.ulbCode == ulb.code : message += "Ulb " + eachRow.ulbcode + " don't exists";
-                if (message != "") {
-                    // if any state or ulb type not exists, then return message
-                    errors.push(message);
-                } else {
+            } else {
 
-                    eachRow["state"] = ObjectId(ulb.state)
-                    eachRow["ulb"] = ObjectId(ulb._id)
-                    eachRow["name"] = ulb.name
-                    eachRow["sbCode"] = ulb.sbCode
-                    eachRow["censusCode"] = ulb.censusCode
-                    eachRow["role"] = 'ULB'
-                    eachRow["status"] = 'APPROVED'
-                    eachRow["isEmailVerified"] = true
-                    eachRow["isRegistered"] = false
-                    eachRow["password"] = await service.getHash(eachRow.password);
-                    //res.json(eachRow);return;
-                    service.put({ ulb: eachRow["ulb"], role: 'ULB' }, eachRow, User, function (response, value) {
-                        if (!response) {
-                            errors.push("Not able to create ulb => ", eachRow.code + "" + response);
-                        }
-                        console.log(value.message);
-                    });
-
-                }
+                eachRow["state"] = ObjectId(ulb.state)
+                eachRow["ulb"] = ObjectId(ulb._id)
+                eachRow["name"] = ulb.name
+                eachRow["sbCode"] = ulb.sbCode
+                eachRow["censusCode"] = ulb.censusCode
+                eachRow["role"] = 'ULB'
+                eachRow["status"] = 'APPROVED'
+                eachRow["isEmailVerified"] = true
+                eachRow["isRegistered"] = false
+                eachRow["password"] = await service.getHash(eachRow.password);
+                //res.json(eachRow);return;
+                service.put({ ulb: eachRow["ulb"], role: 'ULB' }, eachRow, User, function (response, value) {
+                    if (!response) {
+                        errors.push("Not able to create ulb => ", eachRow.code + "" + response);
+                    }
+                    console.log(value.message);
+                });
 
             }
+
+
 
         }
         return res.status(200).json({
@@ -238,29 +235,87 @@ module.exports.deleteNullNamedUA = async (req, res) => {
     })
 }
 module.exports.updateUlb = async (req, res) => {
+    try {
+        let x = 0;
+        const jsonArray = req.body.jsonArray;
 
-    let x = 0;
-    const jsonArray = req.body.jsonArray;
+        let errors = []
+        for (let eachRow of jsonArray) {
+            console.log(eachRow['City Finance Code'])
+            x = x + 1;
+            //console.log(eachRow.code,eachRow.name)
+            if (eachRow['UA Name'] === 'Not a U.A' || eachRow['UA Name'] === '#N/A') {
+                let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
+                if (!ulb) {
+                    continue;
+                }
+                await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'No', UA: null } })
 
-    let errors = []
-    for (let eachRow of jsonArray) {
-        console.log(x)
-        x = x + 1;
-        //console.log(eachRow.code,eachRow.name)
-        if (eachRow['UA Name'] === 'Not a U.A' || eachRow['UA Name'] === '#N/A') {
-            let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
-            await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'No', UA: null } })
+            } else if (eachRow['UA Name'] != 'Not a U.A' || eachRow['UA Name'] != '#N/A') {
+                let uaData = await UAData.findOne({ "name": eachRow['UA Name'] })
+                let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
+                if (!ulb) {
+                    continue;
+                }
+                await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'Yes', UA: ObjectId(uaData._id) } })
 
-        } else if (eachRow['UA Name'] != 'Not a U.A' || eachRow['UA Name'] != '#N/A') {
-            let uaData = await UAData.findOne({ "name": eachRow['UA Name'] })
-            let ulb = await Ulb.findOne({ code: eachRow['City Finance Code'] }).exec();
-            await Ulb.updateOne({ _id: ObjectId(ulb._id) }, { $set: { isUA: 'Yes', UA: ObjectId(uaData._id) } })
-
+            }
         }
+
+        console.log('Task Completed')
+        res.send('Task Completed')
+    } catch (e) {
+        return Response.BadRequest(res, {}, e.message);
+
     }
 
-    console.log('Task Completed')
-    res.send('Task Completed')
+
+}
+
+module.exports.createGrantType = async (req, res) => {
+    await GrantType.insertMany([
+        {
+            "_id": ObjectId("60f6cdb368e143a9b134c335"),
+            // "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
+            "isActive": true,
+            "name": "Million Plus for Water Supply and SWM",
+
+        },
+        {
+            "_id": ObjectId("60f6cdb468e143a9b134c337"),
+            // "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
+            "isActive": true,
+            "name": "Non-Million Untied",
+
+        },
+        {
+            "_id": ObjectId("60f6cdb468e143a9b134c339"),
+            // "modifiedAt": ISODate("2021-07-20T13:20:14.976Z"),
+            // "createdAt": ISODate("2021-07-20T13:20:14.976Z"),
+            "isActive": true,
+            "name": "Non-Million Tied",
+
+        }
+    ]).then(function () {
+        console.log("Data inserted")  // Success
+    }).catch(function (error) {
+        console.log(error)      // Failure
+    })
+}
+
+module.exports.deleteNullNamedUA = async (req, res) => {
+    await UAData.findOneAndDelete({ name: null }, function (err, docs) {
+        if (err) {
+            res.send(err)
+        } else {
+            res.json({
+                success: true,
+                docs: docs
+            })
+        }
+    })
 }
 module.exports.createUA = async (req, res) => {
 
@@ -323,15 +378,15 @@ module.exports.addULBsToUA = async (req, res) => {
 }
 
 module.exports.updateState = async (req, res) => {
-    let UTs = ['Andaman and Nicobar Islands',
-        'Dadra and Nagar Haveli',
-        'Daman and Diu',
-        'Delhi',
-        'Jammu and Kashmir',
-        'Lakshadweep',
-        'Puducherry',
-        'Ladakh',
-        'Chandigarh']
+    let UTs = ['5dcf9d7216a06aed41c748dc',
+        '5dcf9d7216a06aed41c748e3',
+        '5dcf9d7316a06aed41c748e4',
+        '5dcf9d7316a06aed41c748e5',
+        '5dcf9d7316a06aed41c748ea',
+        '5dcf9d7316a06aed41c748ee',
+        '5dcf9d7416a06aed41c748f6',
+        '5efd6a2fb5cd039b5c0cfed2',
+        '5fa25a6e0fb1d349c0fdfbc7']
     let states = []
     for (let ut of UTs) {
         console.log(ut)
@@ -350,7 +405,8 @@ module.exports.updateState = async (req, res) => {
 
     res.status(200).json({
         success: true,
-        message: "States Updated"
+        message: "States Updated",
+
     })
 }
 
@@ -370,4 +426,116 @@ module.exports.updateUA = async (req, res) => {
     })
 
 
+}
+
+module.exports.updateUser = async (req, res) => {
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+    let sum = 0;
+    console.log(state_id)
+    for (let el of state_id) {
+        let userData = await User.findOneAndUpdate({ state: ObjectId(el) }, { isNodalOfficer: false }, null, function (err, docs) {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Original Doc : ", docs);
+            }
+        });
+        // console.log(userData.length)
+        if (userData) {
+            sum++;
+        }
+
+    }
+    res.send('Task Completed')
+    console.log(sum)
+
+    // await User.findOneAndUpdate({state: ObjectId(id)}, {isNodalOfficer: true})
+}
+module.exports.updateUserFinal = async (req, res) => {
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+    let sum = 0;
+    console.log(state_id)
+    for (let el of state_id) {
+        let userData = await User.findOneAndUpdate({ state: ObjectId(el), role: "STATE" }, { isNodalOfficer: true }, null, function (err, docs) {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Original Doc : ", docs);
+            }
+        });
+        // console.log(userData.length)
+        if (userData) {
+            sum++;
+        }
+
+    }
+    res.send('Task Completed')
+    console.log(sum)
+
+    // await User.findOneAndUpdate({state: ObjectId(id)}, {isNodalOfficer: true})
+}
+
+module.exports.getNodalOfficers = async (req, res) => {
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+
+    let userData = [];
+    for (let el of state_id) {
+        let user = await User.find({ isNodalOfficer: true, state: ObjectId(el), role: "STATE" }).lean();
+        if (user.length == 0 || !user) {
+            continue;
+        }
+        userData.push(user)
+    }
+
+    console.log('UserData', userData)
+    console.log('Total Users=', userData.length);
+    res.send(userData.length)
+}
+module.exports.updateUserData_Final = async (req, res) => {
+
+    await User.updateMany({ isNodalOfficer: true }, { isNodalOfficer: false }, null, function (err, docs) {
+        if (err) {
+            console.log(err)
+        }
+        else {
+            console.log("Original Doc : ", docs);
+        }
+    })
+
+
+    let stateData = await State.find().lean();
+    let state_id = [];
+    stateData.forEach(el => {
+        state_id.push(el._id)
+    })
+
+    let userData = [];
+    for (let el of state_id) {
+        let user = await User.findOneAndUpdate({ state: ObjectId(el), role: "STATE", isDeleted: false }, { isNodalOfficer: true }).lean();
+        if (!user) {
+            continue;
+        }
+        userData.push(user)
+    }
+
+    console.log('UserData', userData)
+    console.log('Total Users=', userData.length);
+    res.status(200).json({
+        success: true,
+        updatedDocuments: userData.length
+    })
 }
