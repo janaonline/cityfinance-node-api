@@ -64,5 +64,6 @@ router.post("/bulk/updateUserFinal", BulkUpload.ulbLocationUpdate.updateUserFina
 router.post("/bulk/getNodal", BulkUpload.ulbLocationUpdate.getNodalOfficers);
 router.post("/bulk/updateNodalFinal", BulkUpload.ulbLocationUpdate.updateUserData_Final);
 router.post("/bulk/addULBToUA", BulkUpload.ulbLocationUpdate.addULBsToUA);
+router.post("/bulk/signUpNew", verifyToken, BulkUpload.ulbLocationUpdate.signupNew);
 
 module.exports = router;
