@@ -375,7 +375,7 @@ module.exports.getCards = catchAsync(async (req, res) => {
                     }
 
                 } else {
-                    console.log(Util.inspect(query2, { showHidden: false, depth: null }))
+                    console.log(util.inspect(query2, { showHidden: false, depth: null }))
                     let tempOutput = []
                     tempOutput = await UA.aggregate(query2);
                     console.log('*************', tempOutput)
