@@ -82,15 +82,15 @@ exports.get = async (req, res) => {
             if (innerElement.submissionDate)
               innerElement.submissionDate = moment(
                 innerElement.submissionDate
-              ).format("DD-MM-YYYY");
+              ).format("L");
             if (innerElement.releaseDate)
               innerElement.releaseDate = moment(
                 innerElement.releaseDate
-              ).format("DD-MM-YYYY");
+              ).format("L");
             if (innerElement.recommendationDate)
               innerElement.recommendationDate = moment(
                 innerElement.recommendationDate
-              ).format("DD-MM-YYYY");
+              ).format("L");
             ExcelData.push(innerElement);
           });
         });
@@ -279,17 +279,17 @@ exports.get = async (req, res) => {
             "Million Plus for Water Supply and SWM": {
               recommendationDate: mill.recommendationDate
                 ? `Sent to MoF on ${moment(mill.recommendationDate).format(
-                  "DD-MM-YYYY"
+                  "L"
                 )}`
                 : "Not Sent",
               releaseDate: mill.releaseDate
                 ? `${mill.amountReleased}Cr Released on ${moment(
                   mill.releaseDate
-                ).format("DD-MM-YYYY")}`
+                ).format("L")}`
                 : "Not Released",
               submissionDate: mill.submissionDate
                 ? `Submitted on ${moment(mill.submissionDate).format(
-                  "DD-MM-YYYY"
+                  "L"
                 )}`
                 : "Not Submitted",
               amount: mill.amount,
@@ -299,16 +299,16 @@ exports.get = async (req, res) => {
               recommendationDate: NonMillTied.recommendationDate
                 ? `Sent to MoF on ${moment(
                   NonMillTied.recommendationDate
-                ).format("DD-MM-YYYY")}`
+                ).format("L")}`
                 : "Not Sent",
               releaseDate: NonMillTied.releaseDate
                 ? `${NonMillTied.amountReleased}Cr Released on ${moment(
                   NonMillTied.releaseDate
-                ).format("DD-MM-YYYY")}`
+                ).format("L")}`
                 : "Not Released",
               submissionDate: NonMillTied.submissionDate
                 ? `Submitted on ${moment(NonMillTied.submissionDate).format(
-                  "DD-MM-YYYY"
+                  "L"
                 )}`
                 : "Not Submitted",
               amount: NonMillTied.amount,
@@ -318,16 +318,16 @@ exports.get = async (req, res) => {
               recommendationDate: NonMillUntied.recommendationDate
                 ? `Sent to MoF on ${moment(
                   NonMillUntied.recommendationDate
-                ).format("DD-MM-YYYY")}`
+                ).format("L")}`
                 : "Not Sent",
               releaseDate: NonMillUntied.releaseDate
                 ? `${NonMillUntied.amountReleased}Cr Released on ${moment(
                   NonMillUntied.releaseDate
-                ).format("DD-MM-YYYY")}`
+                ).format("L")}`
                 : "Not Released",
               submissionDate: NonMillUntied.submissionDate
                 ? `Submitted on ${moment(NonMillUntied.submissionDate).format(
-                  "DD-MM-YYYY"
+                  "L"
                 )}`
                 : "Not Submitted",
               amount: NonMillUntied.amount,
@@ -744,7 +744,7 @@ async function validate(data) {
         valid = false;
         element.error += "Installment should be a number,";
       }
-      let date = moment(element.submissionDate, "DD-MM-YYYY");
+      let date = moment(element.submissionDate, "L");
       console.log(date._isValid);
       if (date._isValid) {
         element.submissionDate = date._d;
@@ -752,14 +752,14 @@ async function validate(data) {
         valid = false;
         element.error += "wrong submission date, ";
       }
-      date = moment(element.recommendationDate, "DD-MM-YYYY");
+      date = moment(element.recommendationDate, "L");
       if (date._isValid) {
         element.recommendationDate = date._d;
       } else if (element.recommendationDate) {
         valid = false;
         element.error += "wrong recommendation date, ";
       }
-      date = moment(element.releaseDate, "DD-MM-YYYY");
+      date = moment(element.releaseDate, "L");
       if (date._isValid) {
         element.releaseDate = date._d;
       } else if (element.releaseDate) {

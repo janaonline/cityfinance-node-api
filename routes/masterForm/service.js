@@ -812,6 +812,83 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
       },
     },
   ];
+  let fetchMasterQuery = [
+    {
+      $match: {
+        ulb: ObjectId(ulb),
+        design_year: ObjectId(design_year)
+      }
+    }
+  ]
+  const masterData = await MasterFormData.aggregate(fetchMasterQuery)
+  let submissionByUlb = '';
+  let actionInfo = ''
+  if (masterData.length > 0) {
+    masterFormData = masterData[0]
+    if (masterFormData['status'] == 'PENDING') {
+      if (masterFormData['history'].length == 0) {
+        submissionByUlb = 'Not Submitted by ULB';
+        actionInfo = 'No Action Taken by State/MoHUA'
+      } else {
+        if (masterFormData['isSubmit']) {
+          submissionByUlb = 'Submitted by ULB on ' + masterFormData['modifiedAt'].toString().replace('GMT+0530 (India Standard Time)', '')
+          if (masterFormData['history'].length > 1) {
+            let len = masterFormData['history'].length;
+            let historicalData = masterFormData['history'][len - 2];
+            let role = historicalData['actionTakenByRole'];
+            let status = historicalData['status'];
+            let date = historicalData['modifiedAt'];
+            actionInfo = status + ' by ' + role + ' on ' + date.toString().replace('GMT+0530 (India Standard Time)', '')
+          } else {
+            actionInfo = 'No Action Taken by State/MoHUA'
+          }
+        } else {
+          if (masterFormData['actionTakenByRole'] == 'ULB') {
+            submissionByUlb = 'Not Submitted by ULB';
+            let len = masterFormData['history'].length;
+            let historicalData = masterFormData['history'][len - 1];
+            let role = historicalData['actionTakenByRole'];
+            let status = historicalData['status'];
+            let date = historicalData['modifiedAt'];
+            actionInfo = status + ' by ' + role + ' on ' + date.toString().replace('GMT+0530 (India Standard Time)', '')
+          } else if (masterFormData['actionTakenByRole'] == 'STATE') {
+            let len = masterFormData['history'].length;
+            let historicalData = masterFormData['history'][len - 1];
+            let role = historicalData['actionTakenByRole'];
+            let status = historicalData['status'];
+            let date = historicalData['modifiedAt'];
+            submissionByUlb = 'Submitted by ' + role + ' on ' + date.toString().replace('GMT+0530 (India Standard Time)', '')
+            actionInfo = "Under Review by State"
+
+          } else if (masterFormData['actionTakenByRole'] == 'MoHUA') {
+            let len = masterFormData['history'].length;
+            let historicalDataULB = masterFormData['history'][len - 2];
+            let historicalDataSTATE = masterFormData['history'][len - 1];
+            let roleULB = historicalDataULB['actionTakenByRole'];
+            let statusULB = historicalDataULB['status'];
+            let dateULB = historicalDataULB['modifiedAt'];
+            let roleSTATE = historicalDataSTATE['actionTakenByRole'];
+            let statusSTATE = historicalDataSTATE['status'];
+            let dateSTATE = historicalDataSTATE['modifiedAt'];
+            submissionByUlb = 'Submitted by ' + roleULB + ' on ' + dateULB.toString().replace('GMT+0530 (India Standard Time)', '')
+            actionInfo = statusSTATE + ' by ' + roleSTATE + ' on ' + dateSTATE.toString().replace('GMT+0530 (India Standard Time)', '')
+          }
+
+        }
+      }
+
+    } else if (masterFormData['status'] == 'APPROVED' || masterFormData['status'] == 'REJECTED') {
+      let len = masterFormData['history'].length;
+      let historicalData
+      if (masterFormData['actionTakenByRole'] == 'MoHUA') {
+        historicalData = masterFormData['history'][len - 2];
+      } else if (masterFormData['actionTakenByRole'] == 'STATE') {
+        historicalData = masterFormData['history'][len - 1];
+      }
+      submissionByUlb = 'Submitted by ULB on ' + historicalData['modifiedAt'].toString().replace('GMT+0530 (India Standard Time)', '')
+      actionInfo = masterFormData['status'] + ' by ' + masterFormData['actionTakenByRole'] + ' on ' + masterFormData['modifiedAt'].toString().replace('GMT+0530 (India Standard Time)', '')
+    }
+  }
   const data = await Ulb.aggregate(query);
 
   let queryUtilReportAnalytics = [
@@ -867,7 +944,8 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
     })
   })
   data[0]['utilizationReport'][0]['analytics'] = arr
-
+  data[0]['submissionByUlb'] = submissionByUlb
+  data[0]['actionInfo'] = actionInfo
   // console.log(util.inspect(data, { showHidden: false, depth: null, colors: true }))
 
   return res.json(data);
