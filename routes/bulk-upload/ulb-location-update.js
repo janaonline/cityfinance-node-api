@@ -437,7 +437,7 @@ module.exports.updateUser = async (req, res) => {
     let sum = 0;
     console.log(state_id)
     for (let el of state_id) {
-        let userData = await User.findOneAndUpdate({ state: ObjectId(el) }, { isNodalOfficer: false }, null, function (err, docs) {
+        let userData = await User.findOneAndUpdate({ state: ObjectId(el) }, { isNodalOfficer: true }, null, function (err, docs) {
             if (err) {
                 console.log(err)
             }
