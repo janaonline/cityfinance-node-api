@@ -90,16 +90,30 @@ module.exports.getCards = catchAsync(async (req, res) => {
                         "state.accessToXVFC": true
                     }
                 },
+                // {
+                //     $match: {
+
+                //         '$or': [
+                //             { censusCode: { '$exists': true, '$ne': '' } },
+                //             { sbCode: { '$exists': true, '$ne': '' } }
+                //         ]
+
+                //     }
+
+                // },
                 {
-                    $match: {
-
-                        '$or': [
-                            { censusCode: { '$exists': true, '$ne': '' } },
-                            { sbCode: { '$exists': true, '$ne': '' } }
-                        ]
-
+                    $lookup: {
+                        from: "users",
+                        localField: "_id",
+                        foreignField: "ulb",
+                        as: "user"
                     }
 
+                },
+                {
+                    $unwind: {
+                        path: "$user"
+                    }
                 },
 
                 {

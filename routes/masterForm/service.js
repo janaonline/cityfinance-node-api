@@ -3650,6 +3650,7 @@ const oneStatePromise = (element, design_year) => {
       stateULB(element._id),
       stateAgg(design_year, element._id),
     ]);
+    // console.log('check this', data[0])
     let temp = {
       id: element._id,
       name: element.name,
@@ -3664,8 +3665,33 @@ const oneStatePromise = (element, design_year) => {
 
 const stateULB = (state) => {
   return new Promise(async (res, rej) => {
-    let stateULB = await Ulb.find({ state }).count();
-    res(stateULB);
+    let query = [
+      {
+        $match: {
+          state: ObjectId(state)
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "user"
+        }
+      },
+      {
+        $unwind: {
+          path: "$user"
+        }
+      },
+      { $count: "count" }
+    ]
+    // console.log(util.inspect(query, { showHidden: false, depth: null }))
+    let stateULB = await Ulb.aggregate(query);
+    // console.log(stateULB)
+    // let stateULB = await Ulb.find({ state }).count();
+    // console.log(stateULB)
+    res(stateULB[0].count);
   });
 };
 
