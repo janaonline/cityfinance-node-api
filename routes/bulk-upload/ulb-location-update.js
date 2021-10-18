@@ -623,9 +623,9 @@ module.exports.getULBCount = async (req, res) => {
         query.unshift(matchObject)
     }
 
-    let responseData = await Ulbs.aggregate(query);
+    let responseData = await Ulb.aggregate(query);
 
-    res.json({
+    return res.json({
         data: responseData ? responseData : 'Not Found',
         success: responseData ? true : false
     })
