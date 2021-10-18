@@ -25,6 +25,7 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const UA = require("../../models/UA");
 const util = require("util");
 const { isNull } = require("util");
+const statusTypes = require('../../util/statusTypes')
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -736,7 +737,7 @@ module.exports.create = catchAsync(async (req, res) => {
           if (!ulbData?.isOldForm) {
             await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
           }
-          if(ulbData.isOldForm){
+          if (ulbData.isOldForm) {
             if (ulbData.isCompleted) {
               let email =
                 await Service.emailTemplate.sendFinancialDataStatusEmail(
@@ -1319,14 +1320,14 @@ module.exports.getAll = catchAsync(async (req, res) => {
             d.status = "Under Review by State";
           }
           if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
-            d.status = "Under Review by MoHUA";
+            d.status = statusTypes.Approved_By_State;
           }
           if (
             d.status == "PENDING" &&
             d.actionTakenByUserRole == "STATE" &&
             d.isCompleted == false
           ) {
-            d.status = "Under Review by MoHUA";
+            d.status = statusTypes.Approved_By_State;
           }
           if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
             d.status = "Rejected by STATE";

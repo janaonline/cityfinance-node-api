@@ -130,14 +130,29 @@ let createSheetForUa = (workbook, uaData, sheetName) => {
   workbook.addWorksheet(sheetName);
   const worksheet = workbook.getWorksheet(sheetName);
 
-  worksheet.getCell("A1").value = "Projects";
+  worksheet.getCell("A1").value = "List of Projects to be Executed with 15th FC Grants*";
   let col = "",
     colIndex = 0,
     rowIndex = 2;
   for (const key in uaData.projectExecute[0]) {
     const element = uaData.projectExecute[0][key];
     col = String.fromCharCode(colIndex++ + 65);
-    worksheet.getCell(col + 2).value = key;
+    switch (key) {
+      case 'Cost':
+        worksheet.getCell(col + 2).value = 'Project_Cost'
+        break;
+      case 'Details':
+        worksheet.getCell(col + 2).value = 'Project_Details'
+        break;
+      case 'Type':
+        worksheet.getCell(col + 2).value = 'Project_Type'
+        break;
+      default:
+        worksheet.getCell(col + 2).value = key;
+        break;
+
+    }
+
   }
 
   uaData.projectExecute.forEach((object) => {
@@ -149,16 +164,28 @@ let createSheetForUa = (workbook, uaData, sheetName) => {
     }
   });
 
+
+
+
   (col = ""), (colIndex = 0), (rowIndex += 4);
-  worksheet.getCell("A" + rowIndex++).value = "Source Funds";
+  worksheet.getCell("A" + rowIndex++).value = "Project List and Source of Funds* ( Amount in INR Lakhs)";
   for (const key in uaData.sourceFund[0]) {
     const element = uaData.sourceFund[0][key];
     col = String.fromCharCode(colIndex++ + 65);
-    worksheet.getCell(col + rowIndex).value = key;
+    switch (key) {
+      case 'Cost':
+        worksheet.getCell(col + rowIndex).value = 'Project_Cost'
+        break;
+      default:
+        worksheet.getCell(col + rowIndex).value = key;
+        break;
+
+    }
+
   }
   uaData.sourceFund.forEach((object) => {
     (col = ""), (colIndex = 0), rowIndex++;
-    console.log(uaData);
+
     for (const key in object) {
       if (key == "ulb") {
         console.log("Ss");
@@ -170,12 +197,19 @@ let createSheetForUa = (workbook, uaData, sheetName) => {
   });
 
   (col = ""), (colIndex = 0), (rowIndex += 4);
-  worksheet.getCell("A" + rowIndex++).value = "Years Outlay";
+  worksheet.getCell("A" + rowIndex++).value = "Year-wise Outlay for 15th FC Grants* (Amount in INR Lakhs)";
 
   for (const key in uaData.yearOutlay[0]) {
     const element = uaData.yearOutlay[0][key];
     col = String.fromCharCode(colIndex++ + 65);
-    worksheet.getCell(col + rowIndex).value = key;
+    switch (key) {
+      case 'Cost':
+        worksheet.getCell(col + rowIndex).value = 'Project_Cost'
+        break;
+      default:
+        worksheet.getCell(col + rowIndex).value = key;
+        break;
+    }
   }
   uaData.yearOutlay.forEach((object) => {
     (col = ""), (colIndex = 0), rowIndex++;

@@ -452,7 +452,7 @@ module.exports.getAllULBSCSV = function (req, res) {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus \r\n"
+    "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus, UA \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -475,10 +475,20 @@ module.exports.getAllULBSCSV = function (req, res) {
       },
     },
     {
+      $lookup: {
+        from: "uas",
+        as: "UA_Data",
+        foreignField: "_id",
+        localField: "UA",
+      },
+    },
+
+    {
       $project: {
         ulbs: { $arrayElemAt: ["$ulbs", 0] },
         states: { $arrayElemAt: ["$states", 0] },
         ulbtypes: { $arrayElemAt: ["$ulbtypes", 0] },
+        UA: { $arrayElemAt: ["$UA_Data", 0] },
         natureOfUlb: 1,
         lineitems: { $arrayElemAt: ["$lineitems", 0] },
         financialYear: "$financialYear",
@@ -512,8 +522,9 @@ module.exports.getAllULBSCSV = function (req, res) {
         isMillionPlus: 1,
         censusCode: { $cond: ["$censusCode", "$censusCode", "NA"] },
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
+        UA: { $cond: ["$UA", "$UA.name", "NA"] }
       },
-    },
+    }
   ]).exec((err, data) => {
     if (err) {
       res.json({
@@ -556,6 +567,8 @@ module.exports.getAllULBSCSV = function (req, res) {
           el.location.lng +
           "," +
           el.isMillionPlus +
+          "," +
+          el.UA +
           "\r\n"
         );
       }
