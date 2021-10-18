@@ -617,7 +617,7 @@ module.exports.getULBCount = async (req, res) => {
         $match: {
             state: ObjectId(state_id)
         }
-    },
+    }
 
     if (state_id) {
         query.unshift(matchObject)
