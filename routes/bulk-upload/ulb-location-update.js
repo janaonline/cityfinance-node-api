@@ -569,3 +569,65 @@ module.exports.addULBsToUA = async (req, res) => {
         message: "ULBs added to UA"
     })
 }
+
+
+module.exports.getULBCount = async (req, res) => {
+    let { state_id } = req.query
+    let query = [
+        {
+            $lookup: {
+
+                from: "states",
+                localField: "state",
+                foreignField: "_id",
+                as: "state"
+            }
+        },
+        {
+            $unwind: "$state"
+        },
+        {
+            $group: {
+                _id: null,
+                totalULBs: { $sum: 1 },
+                id: { $addToSet: "$_id" }
+            }
+        },
+
+        {
+            $lookup: {
+
+                from: "users",
+                localField: "id",
+                foreignField: "ulb",
+                as: "user"
+            }
+        },
+        {
+            $group: {
+                _id: null,
+
+                totalULBs: { $first: "$totalULBs" },
+                ulbsWithUser: { $first: { $size: "$user" } }
+            }
+        }
+
+    ]
+    let matchObject = {
+        $match: {
+            state: ObjectId(state_id)
+        }
+    },
+
+    if (state_id) {
+        query.unshift(matchObject)
+    }
+
+    let responseData = await Ulbs.aggregate(query);
+
+    res.json({
+        data: responseData ? responseData : 'Not Found',
+        success: responseData ? true : false
+    })
+
+}
