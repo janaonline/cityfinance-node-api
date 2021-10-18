@@ -9,6 +9,7 @@ const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
 const moment = require('moment');
+const util = require('util')
 module.exports.get = async (req, res) => {
     let user = req.decoded;
     (role = req.body.role), (filter = req.body.filter), (sort = req.body.sort);
@@ -112,10 +113,143 @@ module.exports.getAll = async (req, res) => {
             );
         } else {
             try {
-                let query = { role: role, isDeleted: false };
+                let query = { role: role };
+                let roleQuery = [{
+                    $match: {
+                        "role": role
+                    }
+                },
+                { $count: "total" }
+                ]
 
+                let countQuery = [
+
+                    // {
+                    //     $match: {
+
+                    //         $or: [{ "censusCode": { $exists: true, $ne: null, $ne: "" } },
+                    //         { "sbCode": { $exists: true, $ne: null, $ne: "" } }
+                    //         ]
+                    //     }
+                    // },
+                    { $count: "total" }
+
+                ]
                 let q = [
+                    // {
+                    //     $match: {
+                    //         $or: [
+                    //             { censusCode: { $exists: true, $ne: null, $ne: "" } },
+                    //             { sbCode: { $exists: true, $ne: null, $ne: "" } }
+                    //         ]
+                    //     }
+                    // },
+
+                    {
+
+                        $lookup: {
+                            from: "users",
+                            localField: "_id",
+                            foreignField: "ulb",
+                            as: "user"
+                        }
+                    },
+                    {
+
+                        $lookup: {
+                            from: "ulbType",
+                            localField: "ulbType",
+                            foreignField: "_id",
+                            as: "ulbType"
+                        }
+                    },
+                    {
+
+                        $lookup: {
+                            from: "states",
+                            localField: "state",
+                            foreignField: "_id",
+                            as: "state"
+                        }
+                    },
+                    {
+                        $unwind: {
+                            path: "$user",
+                            preserveNullAndEmptyArrays: true
+                        }
+                    },
+                    {
+                        $unwind: {
+                            path: "$state",
+                            preserveNullAndEmptyArrays: true
+                        }
+                    },
+                    {
+                        $unwind: {
+                            path: "$ulbType",
+                            preserveNullAndEmptyArrays: true
+                        }
+                    },
+
+                    {
+                        $addFields: {
+                            priority: {
+                                $cond: {
+                                    if: { $eq: ['$user.status', 'PENDING'] },
+                                    then: 2,
+                                    else: 1
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $project: {
+                            _id: "$user._id",
+                            role: "$user.role",
+                            name: "$user.name",
+                            email: "$user.email",
+                            priority: 1,
+                            designation: "$user.designation",
+                            organization: "$user.organization",
+                            departmentName: "$user.departmentName",
+                            departmentContactNumber: "$user.departmentContactNumber",
+                            departmentEmail: "$user.departmentEmail",
+                            address: "$user.address",
+                            state: "$state._id",
+                            stateName: "$state.name",
+                            stateCode: "$state.code",
+                            ulb: '$_id',
+                            ulbName: '$name',
+                            ulbCode: '$code',
+                            sbCode: '$sbCode',
+                            censusCode: '$censusCode',
+                            ulbType: '$ulbType.name',
+                            status: {
+                                $cond: [
+                                    { $ifNull: ['$user.status', false] },
+                                    '$status',
+                                    'NA'
+                                ]
+                            },
+                            rejectReason: "$user.rejectReason",
+                            modifiedAt: "$user.modifiedAt",
+                            createdAt: "$user.createdAt",
+                            accountantConatactNumber: "$user.accountantConatactNumber",
+                            accountantEmail: "$user.accountantEmail",
+                            accountantName: "$user.accountantName",
+                            user: { $ifNull: ["$user._id", "false"] }
+                        }
+                    },
+                    // {
+                    //     $match: {
+                    //         user: "false"
+                    //     }
+                    // }
+
+                ];
+                let q2 = [
                     { $match: query },
+
                     {
                         $lookup: {
                             from: 'ulbs',
@@ -154,6 +288,7 @@ module.exports.getAll = async (req, res) => {
                             preserveNullAndEmptyArrays: true
                         }
                     },
+
                     {
                         $unwind: {
                             path: '$ulbType',
@@ -238,10 +373,12 @@ module.exports.getAll = async (req, res) => {
                             accountantName: 1,
                             mobile: 1
                         }
-                    }
-                ];
+                    },
+
+                ]
 
                 let newFilter = await Service.mapFilter(filter);
+
                 let total = undefined;
                 if (user.role == 'STATE') {
                     let ulbs = await Ulb.distinct('_id', {
@@ -255,7 +392,7 @@ module.exports.getAll = async (req, res) => {
                     q.push({ $match: newFilter });
                 }
                 if (csv) {
-                    let arr = await User.aggregate(q).exec();
+                    let arr = await Ulb.aggregate(q).exec();
                     let field = {};
                     Object.assign(field, {
                         ulbName: 'ULB Name'
@@ -303,30 +440,55 @@ module.exports.getAll = async (req, res) => {
                     let xlsData = await Service.dataFormating(arr, field);
                     return res.xls('user.xlsx', xlsData);
                 } else {
-                    // if (Object.keys(sort).length) {
-                    //     q.push({ $sort: sort });
-                    // }
-                    // if(req.query.role=="ULB"){
-                    //     q.push({ $sort: { priority: -1 } });
-                    // }
+
                     q.push({ $skip: skip });
+                    let q_copy = [];
+                    q_copy = q.slice()
                     q.push({ $limit: limit });
+                    let totalUsers;
                     if (!skip) {
+
                         let nQ = Object.assign({}, query);
                         Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
+
+
                     }
 
-                    let users = await User.aggregate(q)
-                        .collation({ locale: 'en' })
-                        .exec();
+                    // totalUsers = await User.aggregate({ role: "ULB" })
+                    let users;
+                    if (role == 'ULB') {
+                        if (!skip) {
+                            if (Object.entries(newFilter).length > 0 && newFilter.constructor === Object) {
+                                q_copy.push({ $match: newFilter })
+                            }
+                            q_copy.push(...countQuery)
+                        }
+
+
+                        console.log(util.inspect(q_copy, { showHidden: false, depth: null }))
+                        totalUsers = await Ulb.aggregate(q_copy);
+                        // totalUsers = await Ulb.aggregate(countQuery)
+                        users = await Ulb.aggregate(q)
+                            .collation({ locale: 'en' })
+                            .exec();
+
+                    } else {
+                        totalUsers = await User.aggregate(roleQuery)
+                        users = await User.aggregate(q2)
+                            .collation({ locale: 'en' })
+                            .exec();
+                    }
+                    console.log(totalUsers)
+                    // console.log(util.inspect(q, { showHidden: false, depth: null }))
 
                     return res.status(200).json({
                         timestamp: moment().unix(),
                         success: true,
                         message: 'User list',
                         data: users,
-                        total: total
+                        count: users.length,
+                        total: totalUsers[0]['total']
                     });
                 }
             } catch (e) {

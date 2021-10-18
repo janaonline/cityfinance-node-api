@@ -48,14 +48,14 @@ exports.reportCreateValidator = [
     .not()
     .isEmpty()
     .withMessage("category is required "),
-  // check("projects.*.engineerName")
-  //   .not()
-  //   .isEmpty()
-  //   .withMessage("Engineer Name is required "),
-  // check("projects.*.engineerContact")
-  //   .not()
-  //   .isEmpty()
-  //   .withMessage("Engineer COntact Number is required "),
+  check("projects.*.engineerName")
+    .not()
+    .isEmpty()
+    .withMessage("Engineer Name is required "),
+  check("projects.*.engineerContact")
+    .not()
+    .isEmpty()
+    .withMessage("Engineer COntact Number is required "),
   // check("projects.*.description")
   //   .not()
   //   .isEmpty()

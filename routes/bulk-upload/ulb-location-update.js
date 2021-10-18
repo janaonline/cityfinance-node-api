@@ -114,6 +114,114 @@ module.exports.signup = async (req, res) => {
         return res.status(500).json({ message: e.message, success: false })
     }
 };
+module.exports.signupNew = async (req, res) => {
+    try {
+        let userData = req.decoded
+        console.log(userData.role)
+        if (userData.role == 'ADMIN' || userData.role == 'MoHUA' || userData.role == 'PARTNER') {
+            const data = req.body
+            const code = data.ulbCode;
+            const censusCode = data.censusCode;
+            const sbCode = data.sbCode;
+            console.log(censusCode, sbCode)
+            if (!censusCode && !sbCode) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Either Census Code or SB Code must be provided"
+                })
+            }
+            let ulb = await Ulb.findOne({ code: code })
+            if (!ulb.censusCode && !ulb.sbCode) {
+                if (censusCode) {
+                    ulb['censusCode'] = censusCode
+                    await ulb.save()
+                } else if (sbCode) {
+                    ulb['sbCode'] = sbCode
+                    await ulb.save()
+                }
+                console.log('here', ulb)
+                let passwordSuffix = ulb.censusCode ?? ulb.sbCode
+                let password = code.substring(0, 2) + '@' + passwordSuffix
+                data["state"] = ObjectId(ulb.state)
+                data["ulb"] = ObjectId(ulb._id)
+                data["name"] = ulb.name
+                data["sbCode"] = ulb.sbCode
+                data["censusCode"] = ulb.censusCode
+                data["role"] = 'ULB'
+                data["status"] = 'APPROVED'
+                data["isEmailVerified"] = true
+                data["isRegistered"] = false
+                data["password"] = await service.getHash(password);
+                console.log(data)
+                //res.json(eachRow);return;
+                service.put({ ulb: data["ulb"], role: 'ULB' }, data, User, function (response, value) {
+                    if (!response) {
+                        errors.push("Not able to create ulb => ", code + "" + response);
+                    }
+                    console.log(value.message);
+                });
+                return res.status(200).json({
+                    // message: errors,
+                    success: true,
+                    username: passwordSuffix,
+                    password: password
+
+                })
+
+
+
+            } else if (!ulb.censusCode && ulb.sbCode || ulb.censusCode && !ulb.sbCode || ulb.censusCode && ulb.sbCode) {
+                let passwordSuffix = ulb.censusCode ?? ulb.sbCode
+                let password = code.substring(0, 2) + '@' + passwordSuffix
+                let userData = await User.findOne({ ulb: ulb['_id'] })
+                if (userData) {
+                    return res.status(409).json({
+                        success: false,
+                        message: "User Already Exist for Given ULB Code"
+                    })
+                } else {
+                    data["state"] = ObjectId(ulb.state)
+                    data["ulb"] = ObjectId(ulb._id)
+                    data["name"] = ulb.name
+                    data["sbCode"] = ulb.sbCode
+                    data["censusCode"] = ulb.censusCode
+                    data["role"] = 'ULB'
+                    data["status"] = 'APPROVED'
+                    data["isEmailVerified"] = true
+                    data["isRegistered"] = false
+                    data["password"] = await service.getHash(password);
+                    console.log(data)
+                    //res.json(eachRow);return;
+                    service.put({ ulb: data["ulb"], role: 'ULB' }, data, User, function (response, value) {
+                        if (!response) {
+                            errors.push("Not able to create ulb => ", code + "" + response);
+                        }
+                        console.log(value.message);
+                    });
+                    return res.status(200).json({
+                        // message: errors,
+                        success: true,
+                        username: passwordSuffix,
+                        password: password
+
+                    })
+
+                }
+            }
+        } else {
+            return res.status(403).json({
+                success: false,
+                message: userData.role + " is Not Authenticated to Perform this Action"
+            })
+
+        }
+
+
+    } catch (e) {
+        console.log("Exception:", e);
+        return res.status(500).json({ message: e.message, success: false })
+    }
+};
 module.exports.deleteNullNamedUA = async (req, res) => {
     await UAData.findOneAndDelete({ name: null }, function (err, docs) {
         if (err) {
@@ -239,6 +347,36 @@ module.exports.createUA = async (req, res) => {
     res.send('Task Completed')
 }
 
+module.exports.addULBsToUA = async (req, res) => {
+    let newULBs = [
+        ObjectId("5dd24729437ba31f7eb42ef8"),
+        ObjectId("5fd2249984bf593ae2ee5f9d"),
+        ObjectId("5dd24729437ba31f7eb42f39"),
+        ObjectId("5dd2472a437ba31f7eb42f85"),
+        ObjectId("5dd24729437ba31f7eb42ef2"),
+        ObjectId("5dd2472a437ba31f7eb42f9e")
+    ]
+    let data = await UAData.findOne({ name: "Bhilainagar U.A." })
+    console.log(data)
+    for (let el of newULBs) {
+        data['ulb'].push(el)
+    }
+    await data.save();
+    console.log(data);
+    //  await data.save();
+    for (let el of newULBs) {
+        await Ulb.findOneAndUpdate({ _id: el }, {
+            isUA: true,
+            UA: data['_id']
+        })
+    }
+
+    res.status(200).json({
+        success: true,
+        message: "ULBs added to UA"
+    })
+}
+
 module.exports.updateState = async (req, res) => {
     let UTs = ['5dcf9d7216a06aed41c748dc',
         '5dcf9d7216a06aed41c748e3',
@@ -250,11 +388,18 @@ module.exports.updateState = async (req, res) => {
         '5efd6a2fb5cd039b5c0cfed2',
         '5fa25a6e0fb1d349c0fdfbc7']
     let states = []
+    for (let ut of UTs) {
+        console.log(ut)
+        let state = await State.updateOne({ "name": ut }, { "accessToXVFC": true }, function (err, docs) {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Updated Docs : ", docs);
+            }
+        })
 
-
-    await State.updateOne({ "_id": ObjectId('5dcf9d7216a06aed41c748dc') }, { $set: { "accessToXVFC": false } })
-
-
+    }
 
 
 
