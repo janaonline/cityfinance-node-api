@@ -573,7 +573,17 @@ module.exports.getForm = catchAsync(async (req, res) => {
             }
         }
         let baseQuery = [
-
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "_id",
+                    foreignField: "ulb",
+                    as: "user"
+                }
+            },
+            {
+                $unwind: "$user"
+            },
             {
                 $group: {
                     _id: {
@@ -1078,19 +1088,7 @@ const formatOutput = (
     i,
     numbers
 ) => {
-    // console.log(
-    //     util.inspect(
-    //         {
-    //             overall: output1,
-    //             pfms: output2,
-    //             annualaccounts: output3,
-    //             utilreport: output4,
-    //             slb: output5,
-    //             plans: output6,
-    //         },
-    //         { showHidden: false, depth: null }
-    //     )
-    // );
+
     let underReviewByState = 0,
         pendingForSubmission = 0,
         overall_approvedByState = 0,
