@@ -613,6 +613,32 @@ module.exports.getULBCount = async (req, res) => {
         }
 
     ]
+    let query2 = [
+        {
+            $lookup: {
+
+                from: "states",
+                localField: "state",
+                foreignField: "_id",
+                as: "state"
+            }
+        },
+        {
+            $unwind: "$state"
+        },
+        {
+            $match: {
+                "state.accessToXVFC": true
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                validULBs: { $sum: 1 }
+            }
+        }
+
+    ]
     let matchObject = {
         $match: {
             state: ObjectId(state_id)
@@ -620,10 +646,14 @@ module.exports.getULBCount = async (req, res) => {
     }
 
     if (state_id) {
-        query.unshift(matchObject)
+        query.unshift(matchObject);
+        query2.unshift(matchObject);
+
     }
 
     let responseData = await Ulb.aggregate(query);
+    let responseData2 = await Ulb.aggregate(query2);
+    responseData.push(responseData2)
 
     return res.json({
         data: responseData ? responseData : 'Not Found',
