@@ -185,6 +185,11 @@ module.exports.getAll = async (req, res) => {
                         }
                     },
                     {
+                        $match: {
+                            "state.accessToXVFC": true
+                        }
+                    },
+                    {
                         $unwind: {
                             path: "$ulbType",
                             preserveNullAndEmptyArrays: true
