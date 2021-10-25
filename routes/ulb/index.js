@@ -7,6 +7,7 @@ const verifyToken = require('../auth/services/verifyToken').verifyToken;
 router.get('/ulb/filtered', Ulb.getFilteredUlb);  // ulb have no questionnaire
 
 router.get('/ulb', Ulb.get);
+router.get('/ulbName', Ulb.getName);
 router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
 router.put('/ulb/:_id', verifyToken, Ulb.put);
 router.post('/Ulb', verifyToken, Ulb.post);

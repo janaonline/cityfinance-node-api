@@ -83,6 +83,23 @@ module.exports.getUlbById = function (req, res) {
   });
 };
 
+module.exports.getName = async (req, res) => {
+  let data = req.body
+  let ulbName = null;
+  let ulbData = await Ulb.findOne({ censusCode: data?.code })
+  if (ulbData) {
+    ulbName = ulbData.name
+  } else {
+    ulbData = await Ulb.findOne({ sbCode: data?.code })
+    if (ulbData)
+      ulbName = ulbData.name
+  }
+
+  return res.status(200).json({
+    name: ulbName
+  })
+}
+
 module.exports.get = async function (req, res) {
   let query = {};
   query["isActive"] = true;

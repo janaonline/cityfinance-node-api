@@ -2164,23 +2164,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
     let { state_id } = req.query
     let state = user.state ?? state_id
     let query;
-    if (user.role == 'MoHUA' && !state) {
+    if ((user.role != 'STATE' || user.role != 'ULB') && !state) {
       query = [
-
-        // {
-        //   $lookup: {
-        //     from: "uas",
-        //     localField: "_id",
-        //     foreignField: "ulb",
-        //     as: "uas",
-        //   },
-        // },
-        // {
-        //   $unwind: {
-        //     path: "$uas",
-        //     preserveNullAndEmptyArrays: true,
-        //   },
-        // },
 
         {
           $lookup: {
@@ -2210,21 +2195,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
             preserveNullAndEmptyArrays: true,
           },
         },
-
-        {
-          $lookup: {
-            from: "pfmsaccounts",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "pfmsaccounts",
-          },
-        },
-        {
-          $unwind: {
-            path: "$pfmsaccounts",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
         {
           $lookup: {
             from: "utilizationreports",
@@ -2236,20 +2206,6 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $unwind: {
             path: "$utilizationreports",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: "xvfcgrantplans",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "xvfcgrantplans",
-          },
-        },
-        {
-          $unwind: {
-            path: "$xvfcgrantplans",
             preserveNullAndEmptyArrays: true,
           },
         },
@@ -2301,20 +2257,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
           },
         },
 
-        {
-          $lookup: {
-            from: "users",
-            localField: "xvfcgrantplans.actionTakenBy",
-            foreignField: "_id",
-            as: "xvfcgrantplans.actionTakenBy",
-          },
-        },
-        {
-          $unwind: {
-            path: "$xvfcgrantplans.actionTakenBy",
-            preserveNullAndEmptyArrays: true,
-          },
-        },
+
         {
           $lookup: {
             from: "users",
@@ -2396,30 +2339,28 @@ module.exports.viewList = catchAsync(async (req, res) => {
               status: "$masterforms.status",
             },
 
-            pfmsaccount: {
-              isDraft: "$pfmsaccounts.isDraft",
-              registered: "$pfmsaccounts.linked",
-            },
+
 
             utilizationreport: {
               isDraft: "$utilizationreports.isDraft",
               status: "$utilizationreports.status",
               actionTakenBy: "$utilizationreports.actionTakenBy.role",
             },
-            xvfcgrantplans: {
+
+            slbMillion: {
               $cond: {
-                if: { $eq: ["$isMillionPlus", "Yes"] },
+                if: { $eq: ["$isMillionPlus", "No"] },
                 then: "Not Applicable",
                 else: {
-                  isDraft: "$xvfcgrantplans.isDraft",
-                  status: "$xvfcgrantplans.status",
-                  actionTakenBy: "$xvfcgrantplans.actionTakenBy.role",
+                  isCompleted: "$xvfcgrantulbforms.isCompleted",
+                  status: "$xvfcgrantulbforms.status",
+                  actionTakenBy: "$xvfcgrantulbforms.actionTakenBy.role",
                 },
               },
             },
-            xvfcgrantulbforms: {
+            slbNonMillion: {
               $cond: {
-                if: { $eq: ["$isUA", "No"] },
+                if: { $eq: ["$isMillionPlus", "Yes"] },
                 then: "Not Applicable",
                 else: {
                   isCompleted: "$xvfcgrantulbforms.isCompleted",
@@ -3709,6 +3650,7 @@ const oneStatePromise = (element, design_year) => {
       stateULB(element._id),
       stateAgg(design_year, element._id),
     ]);
+    // console.log('check this', data[0])
     let temp = {
       id: element._id,
       name: element.name,
@@ -3723,8 +3665,33 @@ const oneStatePromise = (element, design_year) => {
 
 const stateULB = (state) => {
   return new Promise(async (res, rej) => {
-    let stateULB = await Ulb.find({ state }).count();
-    res(stateULB);
+    let query = [
+      {
+        $match: {
+          state: ObjectId(state)
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "user"
+        }
+      },
+      {
+        $unwind: {
+          path: "$user"
+        }
+      },
+      { $count: "count" }
+    ]
+    // console.log(util.inspect(query, { showHidden: false, depth: null }))
+    let stateULB = await Ulb.aggregate(query);
+    // console.log(stateULB)
+    // let stateULB = await Ulb.find({ state }).count();
+    // console.log(stateULB)
+    res(stateULB[0].count);
   });
 };
 
