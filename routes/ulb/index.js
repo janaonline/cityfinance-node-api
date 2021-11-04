@@ -29,4 +29,5 @@ router.get('/state/uas-ulb', verifyToken, Ulb.getUlbInUas);
 
 //ulbs forms to display
 router.get('/eligibleULBForms', verifyToken, Ulb.eligibleULBForms)
+router.get('/getUlbDatafromGeoUrban', Ulb.getUlbDatafromGeoUrban)
 module.exports = router;

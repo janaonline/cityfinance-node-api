@@ -9,6 +9,7 @@ const service = require("../../service");
 const Response = require("../../service").response;
 const moment = require("moment");
 const ObjectId = require("mongoose").Types.ObjectId;
+const axios = require('axios')
 
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
@@ -828,7 +829,45 @@ module.exports.getUlbInUas = async function (req, res) {
     });
   }
 };
+module.exports.getUlbDatafromGeoUrban = async (req, res) => {
+  const params = new URLSearchParams()
+  params.append('UserName', 'SBM')
+  params.append('Password', '123456')
+  params.append('StateCode', '0')
 
+  const config = {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  }
+
+  axios.post('http://swachhbharaturban.gov.in/sbmgis/api/CensusULBCode', params, config)
+    .then(async (result) => {
+      console.log((result.data.length))
+
+      let field = csvTableData();
+
+      let xlsData = await service.dataFormating(result.data, field);
+      let filename =
+        "ULB List.xlsx";
+      return res.xls(filename, xlsData);
+      // Do somthing
+    })
+    .catch((err) => {
+      console.log(err.message)
+    })
+
+
+}
+function csvTableData() {
+  return (field = {
+    UlbName: "ULB Name",
+    UlbCode: "ULB Code",
+    Lat: "Latitude",
+    Lng: "Longitude",
+    StateName: "State"
+  });
+}
 module.exports.eligibleULBForms = async function (req, res) {
   let user = req.decoded;
   let { ulb_id } = req.query
