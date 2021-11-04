@@ -539,3 +539,125 @@ module.exports.updateUserData_Final = async (req, res) => {
         updatedDocuments: userData.length
     })
 }
+
+module.exports.addULBsToUA = async (req, res) => {
+    let newULBs = [
+        ObjectId("5dd24729437ba31f7eb42ef8"),
+        ObjectId("5fd2249984bf593ae2ee5f9d"),
+        ObjectId("5dd24729437ba31f7eb42f39"),
+        ObjectId("5dd2472a437ba31f7eb42f85"),
+        ObjectId("5dd24729437ba31f7eb42ef2"),
+        ObjectId("5dd2472a437ba31f7eb42f9e")
+    ]
+    let data = await UAData.findOne({ name: "Bhilainagar U.A." })
+    console.log(data)
+    for (let el of newULBs) {
+        data['ulb'].push(el)
+    }
+    await data.save();
+    console.log(data);
+    //  await data.save();
+    for (let el of newULBs) {
+        await Ulb.findOneAndUpdate({ _id: el }, {
+            isUA: true,
+            UA: data['_id']
+        })
+    }
+
+    res.status(200).json({
+        success: true,
+        message: "ULBs added to UA"
+    })
+}
+
+
+module.exports.getULBCount = async (req, res) => {
+    let { state_id } = req.query
+    let query = [
+        {
+            $lookup: {
+
+                from: "states",
+                localField: "state",
+                foreignField: "_id",
+                as: "state"
+            }
+        },
+        {
+            $unwind: "$state"
+        },
+        {
+            $group: {
+                _id: null,
+                totalULBs: { $sum: 1 },
+                id: { $addToSet: "$_id" }
+            }
+        },
+
+        {
+            $lookup: {
+
+                from: "users",
+                localField: "id",
+                foreignField: "ulb",
+                as: "user"
+            }
+        },
+        {
+            $group: {
+                _id: null,
+
+                totalULBs: { $first: "$totalULBs" },
+                ulbsWithUser: { $first: { $size: "$user" } }
+            }
+        }
+
+    ]
+    let query2 = [
+        {
+            $lookup: {
+
+                from: "states",
+                localField: "state",
+                foreignField: "_id",
+                as: "state"
+            }
+        },
+        {
+            $unwind: "$state"
+        },
+        {
+            $match: {
+                "state.accessToXVFC": true
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                validULBs: { $sum: 1 }
+            }
+        }
+
+    ]
+    let matchObject = {
+        $match: {
+            state: ObjectId(state_id)
+        }
+    }
+
+    if (state_id) {
+        query.unshift(matchObject);
+        query2.unshift(matchObject);
+
+    }
+
+    let responseData = await Ulb.aggregate(query);
+    let responseData2 = await Ulb.aggregate(query2);
+    responseData.push(responseData2)
+
+    return res.json({
+        data: responseData ? responseData : 'Not Found',
+        success: responseData ? true : false
+    })
+
+}
