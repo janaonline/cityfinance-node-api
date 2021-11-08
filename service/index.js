@@ -52,7 +52,6 @@ const post = function (schema, body, callback) {
 
 const put = function (condition = {}, update, schema, callback) {
   // PUT Function where find condition, update condition and schema name would be received and accordingly response will be returned
-
   schema
     .updateOne(condition, update, {
       upsert: true,
@@ -74,6 +73,7 @@ const put = function (condition = {}, update, schema, callback) {
           timestamp: moment().unix(),
           success: true,
           message: 'Successfully updated',
+          isCompleted: data.nModified || (data.upserted && data.upserted.length) ? update.isCompleted : false,
           data: data
         };
         return callback(true, obj);

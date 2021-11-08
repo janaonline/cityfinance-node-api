@@ -3,37 +3,74 @@ require("./dbConnect");
 const statusType = () => {
   return {
     type: String,
-    enum: ["APPROVED", "REJECTED", "NA"],
-    default: "NA",
+    enum: ["APPROVED", "REJECTED", "PENDING","N/A"],
+    default: "PENDING",
   };
 };
 
 const MasterFormSchema = new Schema(
   {
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
+    design_year: { type: Schema.Types.ObjectId, ref: "Year" },
     actionTakenBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
       index: true,
     },
+    actionTakenByRole: {
+      type: String,
+      default: null
+    },
     steps: {
       utilReport: {
-        remarks: {},
+        rejectReason: {},
         // individual status of sub form
         status: statusType(),
         isSubmit: {
           type: Boolean,
-          default: false,
+          default: null,
         },
+
       },
-      plans: {
-        remarks: {},
+      // plans: {
+      //   rejectReason: {},
+      //   // individual status of sub form
+      //   status: statusType(),
+      //   isSubmit: {
+      //     type: Boolean,
+      //     default: null,
+      //   },
+
+      // },
+      // pfmsAccount: {
+      //   rejectReason: {},
+      //   // individual status of sub form
+      //   status: statusType(),
+      //   isSubmit: {
+      //     type: Boolean,
+      //     default: null,
+      //   },
+
+      // },
+      slbForWaterSupplyAndSanitation: {
+        rejectReason: {},
         // individual status of sub form
         status: statusType(),
         isSubmit: {
           type: Boolean,
-          default: false,
+          default: null,
         },
+
+      },
+      annualAccounts: {
+        rejectReason: {},
+        // individual status of sub form
+        status: statusType(),
+        isSubmit: {
+          type: Boolean,
+          default: null,
+        },
+
       },
     },
     //over all status of form
@@ -45,6 +82,10 @@ const MasterFormSchema = new Schema(
     },
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
+    state: {
+      type: Schema.Types.ObjectId,
+      ref: "State",
+    },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
   },
@@ -53,7 +94,7 @@ const MasterFormSchema = new Schema(
 
 MasterFormSchema.index(
   {
-    ulb: 1,
+    ulb: 1, design_year: 1
   },
   {
     unique: true,

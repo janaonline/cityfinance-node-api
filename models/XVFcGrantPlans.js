@@ -3,8 +3,33 @@ require("./dbConnect");
 const statusType = () => {
   return {
     type: String,
-    enum: ["APPROVED", "REJECTED", "NA"],
-    default: "NA",
+    enum: ["APPROVED", "REJECTED", "PENDING"],
+    default: "PENDING",
+  };
+};
+
+const projectDetails = () => {
+  return {
+    name: {
+      type: String,
+    },
+    component: {
+      type: String,
+    },
+    serviceLevel: {
+      indicator: {
+        type: String,
+      },
+      existing: {
+        type: Number,
+      },
+      after: {
+        type: Number,
+      },
+    },
+    cost: {
+      type: Number,
+    },
   };
 };
 
@@ -12,28 +37,8 @@ const XVFcGrantPlansSchema = mongoose.Schema({
   ulb: { type: Schema.Types.ObjectId, ref: "Ulb", index: true, required: true },
   designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
   plans: {
-    water: {
-      url: {
-        type: String,
-        default: null,
-      },
-      remarks: {
-        type: String,
-        default: null,
-      },
-      status: statusType(),
-    },
-    sanitation: {
-      url: {
-        type: String,
-        default: null,
-      },
-      remarks: {
-        type: String,
-        default: null,
-      },
-      status: statusType(),
-    },
+    water: projectDetails(),
+    sanitation: projectDetails(),
   },
   status: statusType(),
   isDraft: { type: Boolean, default: 0 },
@@ -41,6 +46,13 @@ const XVFcGrantPlansSchema = mongoose.Schema({
   actionTakenBy: {
     type: Schema.Types.ObjectId,
     ref: "User",
+  },
+  actionTakenByRole: {
+    type: String,
+    default: null,
+  },
+  rejectReason: {
+    type: String,
   },
   modifiedAt: { type: Date, default: Date.now() },
   createdAt: { type: Date, default: Date.now() },

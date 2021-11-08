@@ -3,7 +3,7 @@ exports.userAuth = (req, res, next) => {
   let actionAllowed = ["MoHUA", "STATE"];
   if (actionAllowed.indexOf(role) <= -1 || role === undefined) {
     return res.status(400).json({
-      msg: `This action is only not allowed by ${req.body?.decoded?.user?.role}`,
+      msg: `This action is only not allowed by ${role}`,
     });
   }
   next();

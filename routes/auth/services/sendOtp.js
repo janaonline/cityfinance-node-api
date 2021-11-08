@@ -57,12 +57,13 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             }
         }
         let msg = `Otp for your login request is ${otp}, Please do not share it with anybody.`;
-        if (OtpMethods.validatePhoneNumber(user.mobile) || OtpMethods.ValidateEmail(user.email)) {
+        let mobile = user.accountantConatactNumber
+        if (OtpMethods.validatePhoneNumber(mobile) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
                 censusCode: user.censusCode,
                 sbCode: user.sbCode,
-                contactNumber: user.mobile,
+                contactNumber: mobile,
                 emailId: user.email,
                 otp: otp,
                 createdAt: Date.now(),
@@ -71,8 +72,8 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 role: user.role
             })
             await Otp.save();
-            if (user.mobile) {
-                sendOtp.send(`${countryCode}${user.mobile}`, process.env.SENDER_ID, otp, function (error, data) {
+            if (mobile) {
+                sendOtp.send(`${countryCode}${mobile}`, process.env.SENDER_ID, otp, function (error, data) {
                     if (error) {
                         res.status(500).json({
                             success: false,
@@ -87,7 +88,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             return res.status(200).json({
                 success: true,
                 message: "OTP SENT SUCCESSFULLY",
-                mobile: user.mobile,
+                mobile: mobile,
                 email: user.email,
                 name: entity.name,
                 requestId: Otp._id,
@@ -97,7 +98,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             res.status(400).json({
                 success: false,
                 message: 'Invalid Contact Details',
-                mobile: user.mobile,
+                mobile: mobile,
                 email: user.email
             })
         }

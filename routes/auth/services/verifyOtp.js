@@ -54,32 +54,20 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
                 let sessionId = req.headers.sessionid;
                 let token = await createToken(user, sessionId);
-                let UserData = {};
-                if (user.role === 'ULB') {
-                    UserData = {
+                const allYears = await getYears()
+                return res.status(200).json({
+                    token: token,
+                    success: true,
+                    message: 'OTP VERIFIED',
+                    user: {
                         name: user.name,
                         email: user.email,
                         isActive: user.isActive,
                         role: user.role,
                         state: user.state,
                         ulb: user.ulb,
-                    }
-                }
-                else if (user.role === 'ADMIN' || 'MoHUA' || 'PARTNER' || 'STATE') {
-                    UserData = {
-                        name: user.name,
-                        email: user.email,
-                        isActive: user.isActive,
-                        role: user.role,
-                    }
-                }
-
-                return res.status(200).json({
-                    token: token,
-                    success: true,
-                    message: 'OTP VERIFIED',
-                    user: UserData
-
+                    },
+                    allYears
                 })
             } else {
                 return res.status(400).json({
@@ -95,3 +83,12 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         }
     }
 });
+
+getYears = async () => {
+    let allYears = await Years.find({ isActive: true }).select({ isActive: 0 })
+    newObj = {}
+    allYears.forEach(element => {
+        newObj[element.year] = element._id
+    });
+    return newObj
+}

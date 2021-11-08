@@ -6,6 +6,28 @@ const Response = require("../../service").response;
 const Service = require("../../service");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
+const {
+  UpdateStateMasterForm,
+} = require("../../service/updateStateMasterForm");
+exports.getGrantDistribution = async (req, res) => {
+  const { state_id } = req.query;
+  let state = req.decoded.state ?? state_id;
+  const { design_year } = req.params;
+  try {
+    const grantDistribution = await GrantDistribution.findOne({
+      state: ObjectId(state),
+      design_year,
+      isActive: true,
+    }).select({ history: 0 });
+    if (!grantDistribution) {
+      return Response.BadRequest(res, null, "No GrantDistribution found");
+    }
+    return Response.OK(res, grantDistribution, "Success");
+  } catch (err) {
+    console.error(err.message);
+    return Response.BadRequest(res, {}, err.message);
+  }
+};
 
 exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
@@ -25,7 +47,7 @@ exports.getTemplate = async (req, res) => {
         name: element?.name,
         code: element?.censusCode ? element?.censusCode : element?.sbCode,
       };
-      if (obj.code !== "" && obj.code !== undefined && obj.code !== null) {
+      if (obj.code) {
         data.push(obj);
       }
     });
@@ -43,8 +65,8 @@ exports.getTemplate = async (req, res) => {
 };
 
 exports.uploadTemplate = async (req, res) => {
-  let { url, designYear } = req.body;
-  let state = req?.decoded;
+  let { url, design_year } = req.query;
+  let state = req.decoded?.state;
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
@@ -56,28 +78,50 @@ exports.uploadTemplate = async (req, res) => {
       //read file
       const XslData = await readXlsxFile(file);
 
+      if (XslData.length == 0)
+        return Response.BadRequest(res, "No File Found/Data");
       // validate data
       const notValid = await validate(XslData);
       if (notValid) {
-        return res.xls("error_sheet.xlsx", notValid);
+        let field = {
+          ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
+          ["ulb name"]: "ULB Name",
+          ["grant amount"]: "Grant Amount",
+          Errors: "Errors",
+        };
+        let xlsDatas = await Service.dataFormating(notValid, field);
+        return res.status(400).xls("error_sheet.xlsx", xlsDatas);
       }
-
-      //save data
-      await GrantDistribution.findOneAndUpdate(
-        {
-          state: ObjectId(state),
-          isActive: true,
-          designYear,
-        },
-        req.body,
-        {
-          upsert: true,
-          setDefaultsOnInsert: true,
-          new: true,
-        }
-      );
-      return Response.OK(res, [], "file submitted");
+      return Response.OK(res, null, "file submitted");
     });
+  } catch (err) {
+    console.error(err.message);
+    return Response.DbError(res, err.message, "server error");
+  }
+};
+
+exports.saveData = async (req, res) => {
+  try {
+    let { design_year } = req.body;
+    let state = req.decoded?.state;
+    req.body.actionTakenBy = req.decoded._id;
+    req.body.modifiedAt = new Date();
+
+    let data = await GrantDistribution.findOneAndUpdate(
+      {
+        state: ObjectId(state),
+        isActive: true,
+        design_year,
+      },
+      req.body,
+      {
+        upsert: true,
+        setDefaultsOnInsert: true,
+        new: true,
+      }
+    );
+    await UpdateStateMasterForm(req, "grantAllocation");
+    return Response.OK(res, data, "file submitted");
   } catch (err) {
     console.error(err.message);
     return Response.DbError(res, err.message, "server error");
@@ -133,22 +177,17 @@ async function validate(data) {
     keys.length !== 3
   ) {
     data.forEach((element) => {
-      element.errorFormat = "Incorrect Format";
+      element.Errors = "Incorrect Format,";
     });
     return data;
   }
   for (let index = 0; index < data.length; index++) {
     const keys = Object.keys(data[index]).length;
     if (keys !== 3) {
-      data[index].errorFormat = "Incorrect Format";
-    } else {
-      data[index].errorFormat = null;
+      data[index].Errors = "Incorrect Format,";
     }
     if (data[index][code]) ulbCodes.push(data[index][code]);
     if (data[index][name]) ulbNames.push(data[index][name]);
-    data[index].errorAmount = null;
-    data[index].errorCode = null;
-    data[index].errorName = null;
   }
   // get ulb data
   const compareData = await getUlbData(ulbCodes, ulbNames);
@@ -156,7 +195,8 @@ async function validate(data) {
   for (let index = 0; index < data.length; index++) {
     if (!compareData[data[index][code]]) {
       errorFlag = true;
-      data[index].errorCode = "Code Not Valid";
+      if (data[index].Errors) data[index].Errors += "Code Not Valid,";
+      else data[index].Errors = "Code Not Valid,";
     }
     if (
       data[index][code] === "" ||
@@ -164,14 +204,29 @@ async function validate(data) {
       data[index][name] === ""
     ) {
       errorFlag = true;
-      data[index].errorName = "Name Not Valid";
+      if (data[index].Errors) data[index].Errors += "Name Not Valid,";
+      else data[index].Errors = "Name Not Valid,";
     }
     if (!Number(data[index][amount]) || data[index][amount] === "") {
       errorFlag = true;
-      data[index].errorAmount = "Amount Not valid";
+      if (data[index].Errors) data[index].Errors += "Amount Not valid,";
+      else data[index].Errors = "Amount Not valid,";
     }
   }
   if (errorFlag) {
+    data.forEach((object) => {
+      let findKey = "Errors";
+      for (const key in object) {
+        const element = object[key];
+        if (key == findKey) {
+          findKey = true;
+          break;
+        }
+      }
+      if (findKey === "Errors") {
+        object.Errors = "";
+      }
+    });
     return data;
   }
 }

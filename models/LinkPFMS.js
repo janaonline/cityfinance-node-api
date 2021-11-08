@@ -7,10 +7,10 @@ const YesNoSchema = new Schema({
         type: String,
         lowercase: true,
         enum: {
-            values: ['yes', 'no'],
+            values: ['yes', 'no', null],
             message: 'ERROR: ANSWER CAN BE EITHER YES / NO.'
         },
-        required: [true, 'ERROR: ANSWER IS MANDATORY']
+
     }
 
 });
@@ -20,19 +20,20 @@ const PFMSAccountSchema = new Schema(
         design_year: { type: Schema.Types.ObjectId, ref: 'Year', required: true },
         account: {
             type: String, enum: {
-                values: ['yes', 'no'],
+                values: ['yes', 'no', null, ""],
                 message: 'ERROR: ANSWER CAN BE EITHER YES / NO.'
-            }, required: [true, 'ERROR: ANSWER IS MANDATORY']
+            }
         },
         linked: {
             type: String, enum: {
-                values: ['yes', 'no'],
+                values: ['yes', 'no', null, ""],
                 message: 'ERROR: ANSWER CAN BE EITHER YES / NO.'
-            }, required: [true, 'ERROR: ANSWER IS MANDATORY']
+            }
         },
         history: { type: Array, default: [] },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
+        isDraft: { type: Boolean, default: true }
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );

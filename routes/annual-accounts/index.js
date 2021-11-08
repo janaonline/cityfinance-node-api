@@ -1,13 +1,13 @@
-const express = require('express');
-const { verify } = require('jsonwebtoken');
+const express = require("express");
+const { verify } = require("jsonwebtoken");
 const router = express.Router();
-const { verifyToken } = require('../auth/services/verifyToken')
-const { createOrUpdate } = require('./service');
-const { action } = require('./service');
-const { get } = require('./service')
+const { verifyToken } = require("../auth/services/verifyToken");
+const { getAccounts, action, createUpdate } = require("./service");
+const { userAuth } = require("../../middlewares/actionUserAuth");
 
-router.get('/get', verifyToken, get);
-router.post('/create', verifyToken, createOrUpdate);
-router.post('/action/:_id', verifyToken, action);
+// router.get('/get/:ulb', verifyToken, get);
+router.get("/get", verifyToken, getAccounts);
+router.post("/create", verifyToken, createUpdate);
+router.post("/action", verifyToken, userAuth, action);
 
 module.exports = router;

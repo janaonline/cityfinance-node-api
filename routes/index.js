@@ -10,12 +10,18 @@ const Auth = require("./auth");
 router.use(Auth);
 
 // @Annual accounts
-const AnnualAccountData = require('./annual-accounts');
+const AnnualAccountData = require("./annual-accounts");
 router.use("/annual-accounts", AnnualAccountData);
 
 //@PFMS Account
-const PFMSAccountData = require('./pfmsAccount');
+const PFMSAccountData = require("./pfmsAccount");
 router.use("/pfmsAccount", PFMSAccountData);
+
+const MasterFormData = require("./masterForm");
+router.use("/masterForm", MasterFormData);
+
+const UAData = require("./UA");
+router.use("/UA", UAData);
 
 // @FinancialYear
 const FinancialYear = require("./financial-year");
@@ -104,6 +110,35 @@ router.use(submit);
 
 //@Grant Distribution
 const grantDistribution = require("./grant-distribution");
-router.use(grantDistribution);
+router.use("/grantDistribution", grantDistribution);
+
+//STATE FORMS
+const StateGTCertificate = require("./State-Forms");
+router.use(StateGTCertificate);
+
+//state dashboard
+const dashboard = require("./fvcStateDashboard");
+router.use("/dashboard", dashboard);
+
+//WaterRejenuvation
+const WaterRejenuvation = require("./waterRejenuvation");
+router.use(WaterRejenuvation);
+
+//ActionPlans
+const ActionPlans = require("./ActionPlans");
+router.use(ActionPlans);
+
+//LinkPfmsState
+const LinkPfmsState = require("./LinkPfmsState");
+router.use(LinkPfmsState);
+
+const StateMasterForm = require("./stateMasterForm");
+router.use('/stateMasterForm', StateMasterForm);
+
+const MoHUADashboard = require("./mohua-dashboard");
+router.use('/mohua', MoHUADashboard);
+
+const GrantTransferMohua = require("./grantTransferMohua");
+router.use(GrantTransferMohua);
 
 module.exports = router;

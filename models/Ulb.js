@@ -5,8 +5,6 @@ const UlbSchema = new Schema({
     name: { type: String, required: true },
     regionalName: { type: String, default: "" },
     code: { type: String, required: true, index: { unique: true } },
-    isUA: { type: Boolean, required: true },
-    UA: { type: Schema.Types.ObjectId, ref: 'UA' },
     state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
     ulbType: { type: Schema.Types.ObjectId, ref: 'UlbType', required: true },
     natureOfUlb: { type: String, default: null },
@@ -26,6 +24,8 @@ const UlbSchema = new Schema({
     sbCode: { type: String, default: null }, /*Swatch Bharat Code*/
     censusCode: { type: String, default: null },
     isMillionPlus: { type: String, enum: ["YES", "No"], default: "No" },
+    isUA: { type: String, enum: ["YES", "No"], default: "No" },
+    UA: { type: Schema.Types.ObjectId, ref: 'UA' },
     amrut: { type: String, default: "" },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },

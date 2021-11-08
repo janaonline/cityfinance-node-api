@@ -8,6 +8,13 @@ router.get(
     '/state',
     State.get
 );
+
+router.get(
+    '/eligibleStateForms',
+    verifyToken,
+    State.eligibleStateForms
+)
+router.get('/nonMillionState', verifyToken, State.isMillionState);
 router.post('/states-with-ulb-count', State.getStateListWithCoveredUlb);
 router.put(
     '/state/:_id',

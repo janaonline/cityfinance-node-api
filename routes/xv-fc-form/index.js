@@ -15,16 +15,19 @@ const storage1 = multer.diskStorage({
     },
 });
 const multerUpload = multer({ storage: storage1 });
-router.post('/', verifyToken, ufdService.get);
+router.get('/', verifyToken, ufdService.get);
+router.get('/state/:design_year', verifyToken, ufdService.getSLBDataUAWise);
+router.get('/admin/:ulb', verifyToken, ufdService.get);
 router.post('/list', verifyToken, ufdService.get);
 router.post('/all', verifyToken, ufdService.getAll);
-router.get('/all', verifyToken, ufdService.getAll);
+router.get('/all/:design_year', verifyToken, ufdService.getAll);
 router.post('/history/:_id', verifyToken, ufdService.getHistories);
 router.get('/history/:_id', verifyToken, ufdService.getHistories);
 router.get('/details/:_id', verifyToken, ufdService.getDetails);
 router.post('/', verifyToken, ufdService.create);
 router.put('/:_id', verifyToken, ufdService.update);
 router.post('/action/:_id', verifyToken, ufdService.action);
+router.post('/newAction', verifyToken, ufdService.newFormAction);
 
 router.get(
     '/approved-records',

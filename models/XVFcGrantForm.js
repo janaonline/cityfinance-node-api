@@ -188,7 +188,6 @@ const millionPlusCitiesSchema = new Schema({
 const XVFcGrantULBFormSchema = new Schema(
     {
         ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', required: true },
-        // year: { type: Schema.Types.ObjectId, ref: 'Year', required: true, default: null },
         design_year: {
             type: Schema.Types.ObjectId,
             ref: 'Year',
@@ -201,6 +200,10 @@ const XVFcGrantULBFormSchema = new Schema(
             ref: 'User',
             required: true,
         },
+        actionTakenByRole: {
+            type: String,
+            default: null
+          },
         history: { type: Array, default: [] },
         modifiedAt: { type: Date, default: Date.now },
         createdAt: { type: Date, default: Date.now },
@@ -217,6 +220,7 @@ const XVFcGrantULBFormSchema = new Schema(
         },
         millionPlusCities: { type: millionPlusCitiesSchema, default: null },
         isCompleted: { type: Boolean, default: 0 },
+        isOldForm: { type: Boolean },
         document: { type: ContentPDFSchema, required: true, default: null },
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }

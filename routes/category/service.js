@@ -14,7 +14,7 @@ module.exports.create = async (req, res) => {
 
 exports.read = async (req, res) => {
   try {
-    const categories = await Category.find();
+    const categories = await Category.find().sort({name:1});
     return res.json(categories);
   } catch (err) {
     console.error(err);
