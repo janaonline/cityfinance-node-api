@@ -89,8 +89,8 @@ const Form = require("./form");
 router.use(Form);
 
 // @category
-const Category = require("./category");
-router.use(Category);
+// const Category = require("./category");
+// router.use(Category);
 
 // // @report
 const UtilizationReport = require("./utilization-report");

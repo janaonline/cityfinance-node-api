@@ -1,19 +1,12 @@
 const OTP = require('../../../models/Otp')
 const catchAsync = require('../../../util/catchAsync')
-const ExpressError = require('../../../util/ExpressError')
 const OtpMethods = require('../../../util/otp_generator')
 const { getUSer } = require('./getUser')
 const { createToken } = require('./createToken')
 const ObjectId = require('mongoose').Types.ObjectId;
+
 module.exports.verifyOtp = catchAsync(async (req, res, next) => {
     let { otp, requestId } = req.body;
-    if (!OtpMethods.validateUserOtp(otp)) {
-        res.status(400).json({
-            success: false,
-            message: 'OTP must be 4 digit number'
-        })
-
-    }
     if (!otp) {
         res.status(400).json({
             success: false,
@@ -21,6 +14,14 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         })
 
     }
+    if (!OtpMethods.validateUserOtp(otp)) {
+        res.status(400).json({
+            success: false,
+            message: 'OTP must be 4 digit number'
+        })
+
+    }
+
 
 
     const verification = await OTP.findOne({ _id: ObjectId(requestId) });

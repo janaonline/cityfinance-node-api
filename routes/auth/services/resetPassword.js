@@ -3,7 +3,6 @@ const Response = require("../../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require("../../../service/index");
 const Helper = require("../../../_helper/constants");
-
 module.exports.resetPassword = async (req, res) => {
   try {
     if (req.body.password) {
