@@ -39,9 +39,10 @@ module.exports.post = function(req, res){
 
 module.exports.HtmlToPdf = async function(req, res){
   try{
-    let {url,html,options} = req.body;
+    let {url,html,option} = req.body;
     if(url){
-        html = await axios.get(`${url}`);
+        let tempData = await axios.get(`${url}`);
+        html = tempData.data
     }
 
     if (!html){
