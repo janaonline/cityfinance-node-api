@@ -10,8 +10,10 @@ router.get('/ulb', Ulb.get);
 router.get('/ulbName', Ulb.getName);
 router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
 router.put('/ulb/:_id', verifyToken, Ulb.put);
+router.put('/ulb', Ulb.renameUlb);
 router.post('/Ulb', verifyToken, Ulb.post);
 router.delete('/Ulb/:_id', verifyToken, Ulb.delete);
+router.delete('/Ulb', Ulb.delete_permanent);
 router.get('/ulblist', Ulb.getPopulate);
 router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 // Get ULBs by state
