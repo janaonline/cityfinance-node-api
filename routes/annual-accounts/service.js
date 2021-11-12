@@ -1,6 +1,7 @@
 const AnnualAccountData = require("../../models/AnnualAccounts");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
+const catchAsync = require('../../util/catchAsync')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const time = () => {
   var dt = new Date();
@@ -127,6 +128,14 @@ exports.getAccounts = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+exports.getCSV = catchAsync(async (req, res) => {
+  let data = await AnnualAccountData.find()
+  return res.status(200).json({
+    success: true,
+    data: data
+  })
+})
 
 exports.action = async (req, res) => {
   try {
