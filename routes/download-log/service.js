@@ -1,6 +1,8 @@
 const DownloadLog = require('../../models/DownloadLog');
 const fs = require('fs');
 const pdf = require('html-pdf');
+const axios = require('axios')
+
 const options = {
     format: 'A4',
     orientation: 'portrait',
@@ -35,20 +37,27 @@ module.exports.post = function(req, res){
 }
 
 
-module.exports.HtmlToPdf = function(req, res){
+module.exports.HtmlToPdf = async function(req, res){
+  try{
+    let {url,html,option} = req.body;
+    if(url){
+        let tempData = await axios.get(`${url}`);
+        html = tempData.data
+    }
 
-    if (!req.body.html){
+    if (!html){
         res.status(400).json({success:false, message:"html Missing"});
         return;
     }
-    pdf.create(req.body.html,options).toStream(function(err, stream) {
-
+    pdf.create(html,options).toStream(function(err, stream) {
         if(err){
             return res.status(400).json({success:false, message:"Something went wrong"})
         }else {
             stream.pipe(res);
         }
-
     });
+  }catch(error){
+      return res.status(400).json({msg:error.message})
+  }
 
 }
