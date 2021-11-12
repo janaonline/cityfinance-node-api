@@ -181,6 +181,122 @@ module.exports.put = async function (req, res) {
     return Response.BadRequest(res, e);
   }
 };
+module.exports.renameUlb = async function (req, res) {
+  let censusCode = [
+    801086,
+    800981,
+    800889,
+    800954,
+    801118,
+    801109,
+    801127,
+    800700,
+    800941,
+    800953,
+    801110,
+    801170,
+    800649,
+    800662,
+    800994,
+
+    800679,
+    800891,
+    900491,
+    800886,
+    801135,
+    800727,
+    900441,
+    800924,
+    800933,
+    801171,
+    800824,
+    801077,
+    800799,
+    801227,
+    801117,
+    800871,
+    800939,
+    801137,
+    800917,
+    801036,
+    801085,
+    801192,
+    800884,
+    800837,
+    801220,
+    800974,
+    801203,
+    801154,
+    800692,
+    801113,
+    801146,
+    900446,
+  ]
+  let newNames = [
+    'Prayagraj Municipal Corporation',
+    'Etawah Municipality',
+    'Shahjahanpur Municipal Corporation',
+    'Amethi (Lucknow) Town Panchayat',
+    'Amethi (Amethi) Town Panchayat',
+    'Ayodhya Municipal Corporation',
+    'Bhinga Municipality',
+    'Gajraula Municipality',
+    'Gangaghat Municipality',
+    'Gosainganj (Ayodhya) Town Panchayat',
+    'Gosainganj (Lucknow) Town Panchayat',
+    'Hata Municipality',
+    'Jalalabad (Shamli) Town Panchayat',
+    'Jalalabad (Bijnor) Town Panchayat',
+    'Jhinjhak Municipality',
+    'Kanth (Moradabad) Town Panchayat',
+    'Kanth (Shahjahanpur) Town Panchayat',
+    'Kasba Sangrampur Town Panchayat',
+    'Katra (Shahjahanpur) Town Panchayat',
+    'Katra (Gonda) Town Panchayat',
+    'Khekra Municipality',
+    'Khoda Makanpur Municipality',
+    'Kursath (Hardoi) Town Panchayat',
+    'Kursath (Unnao) Town Panchayat',
+    'Kushinagar Municipality',
+    'Mainpuri Municipality',
+    'Manjhanpur Municipality',
+    'Mathura-Vrindavan Municipal Corporation',
+    'Pt. Deen Dayal Upadhyaya Municipality',
+    'Musafirkhana Town Panchayat',
+    'Nawabganj (Gonda) Municipality',
+    'Nawabganj (Unnao) Town Panchayat',
+    'Nawabganj (Bareilly) Municipality',
+    'Pali (Hardoi) Town Panchayat',
+    'Pali (Lalitpur) Town Panchayat',
+    'Phulpur (Prayagraj) Town Panchayat',
+    'Phulpur (Azamgarh) Town Panchayat',
+    'Powayan Municipality',
+    'Saidpur (Budaun) Town Panchayat',
+    'Saidpur (Ghazipur) Town Panchayat',
+    'Sikanderpur (Kannauj) Town Panchayat',
+    'Sikanderpur (Ballia) Town Panchayat',
+    'Siswa Bazar Municipality',
+    'Tanda (Rampur) Municipality',
+    'Tanda (Ambedkar Nagar) Municipality',
+    'Babhnan Bazar Town Panchayat',
+    'Shahjahanpur_M Town Panchayat'
+  ]
+  let i = 0;
+  for (let el of censusCode) {
+    var digit = el.toString()[0];
+    if (digit == '8') {
+      await Ulb.updateOne({ censusCode: String(el) }, { name: newNames[i] })
+    } else if (digit == '9') {
+      await Ulb.updateOne({ sbCode: String(el) }, { name: newNames[i] })
+    }
+
+    i++;
+  }
+
+  return res.json({
+    success: true
+  })
+}
 module.exports.post = async function (req, res) {
   let obj = req.body;
   // state and ulb type is compulsory
@@ -238,6 +354,19 @@ module.exports.delete = async function (req, res) {
     return res.status(response ? 200 : 400).send(value);
   });
 };
+module.exports.delete_permanent = async function (req, res) {
+  // Delete ulb based
+  let data = req.body;
+  let ulbCodes = data.ulbCode;
+  for (let el of ulbCodes) {
+    await Ulb.deleteOne({ censusCode: el })
+  }
+  return res.json({
+    success: true
+  })
+};
+
+
 module.exports.getByState = async function (req, res) {
   try {
     // Get ulb list by state code

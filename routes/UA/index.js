@@ -4,9 +4,11 @@ const { verifyToken } = require('../auth/services/verifyToken')
 
 const { getAll } = require('./service')
 const { create } = require('./service')
+const { update } = require('./service')
 
 
 router.get('/getAll', verifyToken, getAll)
+router.put('/update', update)
 router.post('/create', verifyToken, create)
 
 
