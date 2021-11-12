@@ -1,7 +1,9 @@
 const AnnualAccountData = require("../../models/AnnualAccounts");
+const Ulb = require("../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const catchAsync = require('../../util/catchAsync')
+const moment = require("moment");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const time = () => {
   var dt = new Date();
@@ -129,12 +131,156 @@ exports.getAccounts = async (req, res) => {
   }
 };
 
-exports.getCSV = catchAsync(async (req, res) => {
-  let data = await AnnualAccountData.find()
-  return res.status(200).json({
-    success: true,
-    data: data
-  })
+exports.getCSVAudited = catchAsync(async (req, res) => {
+  let filename = "Annual_Accounts-Audited.csv";
+
+
+  res.setHeader("Content-disposition", "attachment; filename=" + filename);
+  res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+  res.write(
+    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report  \r\n"
+  );
+  // Flush the headers before we start pushing the CSV content
+  res.flushHeaders();
+
+  let Audited_data = await AnnualAccountData.aggregate([
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb"
+      }
+    },
+    {
+      $unwind: "$ulb"
+    },
+    {
+
+      $project: {
+        ulbName: "$ulb.name",
+        censusCode: "$ulb.censusCode",
+        sbCode: "$ulb.sbCode",
+        submittedOn: "$createdAt",
+        bal_sheet: "$audited.provisional_data.bal_sheet.pdf.url",
+        bal_sheet_schedules: "$audited.provisional_data.bal_sheet_schedules.pdf.url",
+        inc_exp: "$audited.provisional_data.inc_exp.pdf.url",
+        inc_exp_schedules: "$audited.provisional_data.inc_exp_schedules.pdf.url",
+        cash_flow: "$audited.provisional_data.cash_flow.pdf.url",
+        auditor_report: "$audited.provisional_data.auditor_report.pdf.url"
+      }
+    }]).exec((err, data) => {
+      if (err) {
+        res.json({
+          success: false,
+          msg: "Invalid Payload",
+          data: err.toString(),
+        });
+      } else {
+        for (el of data) {
+          res.write(
+            el.ulbName +
+            "," +
+            el.censusCode +
+            "," +
+            el.sbCode +
+            "," +
+            el.submittedOn +
+            "," +
+            el.bal_sheet +
+            "," +
+            el.bal_sheet_schedules +
+            "," +
+            el.inc_exp +
+            "," +
+            el.inc_exp_schedules +
+            "," +
+            el.cash_flow +
+            "," +
+            el.auditor_report +
+            "," +
+            "\r\n"
+          );
+        }
+        res.end();
+
+      }
+    })
+
+})
+exports.getCSVUnaudited = catchAsync(async (req, res) => {
+  let filename = "Annual_Accounts-Provisional.csv";
+
+
+  res.setHeader("Content-disposition", "attachment; filename=" + filename);
+  res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+  res.write(
+    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow \r\n"
+  );
+  // Flush the headers before we start pushing the CSV content
+  res.flushHeaders();
+
+  let Unaudited_data = await AnnualAccountData.aggregate([
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb"
+      }
+    },
+    {
+      $unwind: "$ulb"
+    },
+    {
+
+      $project: {
+        ulbName: "$ulb.name",
+        censusCode: "$ulb.censusCode",
+        sbCode: "$ulb.sbCode",
+        submittedOn: "$createdAt",
+        bal_sheet: "$unAudited.provisional_data.bal_sheet.pdf.url",
+        bal_sheet_schedules: "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
+        inc_exp: "$unAudited.provisional_data.inc_exp.pdf.url",
+        inc_exp_schedules: "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
+        cash_flow: "$unAudited.provisional_data.cash_flow.pdf.url"
+      }
+    }]).exec((err, data) => {
+      if (err) {
+        res.json({
+          success: false,
+          msg: "Invalid Payload",
+          data: err.toString(),
+        });
+      } else {
+        for (el of data) {
+          res.write(
+            el.ulbName +
+            "," +
+            el.censusCode +
+            "," +
+            el.sbCode +
+            "," +
+            el.submittedOn +
+            "," +
+            el.bal_sheet +
+            "," +
+            el.bal_sheet_schedules +
+            "," +
+            el.inc_exp +
+            "," +
+            el.inc_exp_schedules +
+            "," +
+            el.cash_flow +
+            "," +
+            "\r\n"
+          );
+        }
+        res.end();
+
+      }
+    })
+
 })
 
 exports.action = async (req, res) => {
@@ -201,3 +347,34 @@ exports.action = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+function csvData_Provisional() {
+  return (field = {
+    ulbName: "ULB name",
+    censusCode: "Census Code",
+    sbCode: "ULB Code",
+    submittedOn: "Submission Date",
+    bal_sheet: "Balance Sheet",
+    bal_sheet_schedules: "Balance Sheet Schedules",
+    inc_exp: "Income Expenditure",
+    inc_exp_schedules: "Income Expenditure Schedules",
+    cash_flow: "Cash Flow",
+
+  });
+}
+function csvData_Audited() {
+  return (field = {
+    ulbName: "ULB name",
+    censusCode: "Census Code",
+    sbCode: "ULB Code",
+    submittedOn: "Submission Date",
+    bal_sheet: "Balance Sheet",
+    bal_sheet_schedules: "Balance Sheet Schedules",
+    inc_exp: "Income Expenditure",
+    inc_exp_schedules: "Income Expenditure Schedules",
+    cash_flow: "Cash Flow",
+    auditor_report: "Auditor Report"
+
+  });
+}
+
