@@ -19,33 +19,34 @@ module.exports.get = catchAsync(async (req, res) => {
         utilReport: 100,
         slb: 100
     }
-    const conditions_nmpc = [{
-        installment: "1",
-        statements: [{
-            achieved: null,
-            text: "Submit Grant Transfer Certificate for 2nd installment of FY 2020-21"
-        }]
-    }, {
-        installment: "2",
-        statements: [
-            {
+    const conditions_nmpc = [
+        {
+            installment: "1",
+            statements: [{
                 achieved: null,
-                text: `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`
-            },
-            {
-                achieved: null,
-                text: `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`
-            }, {
-                achieved: null,
-                text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
+                text: "Submit Grant Transfer Certificate for 2nd installment of FY 2020-21"
+            }]
+        }, {
+            installment: "2",
+            statements: [
+                {
+                    achieved: null,
+                    text: `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`
+                },
+                {
+                    achieved: null,
+                    text: `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`
+                }, {
+                    achieved: null,
+                    text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
 
-            }, {
-                tied: null,
-                untied: null,
-                text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
-            }
-        ]
-    }]
+                }, {
+                    tied: null,
+                    untied: null,
+                    text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
+                }
+            ]
+        }]
     const conditions_mpc = {
         statements: [{
             achieved: null,
@@ -58,10 +59,6 @@ module.exports.get = catchAsync(async (req, res) => {
         {
             achieved: null,
             text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
-        }, {
-            achieved: null,
-            text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
-
         }, {
             achieved: null,
             text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
@@ -89,9 +86,10 @@ module.exports.get = catchAsync(async (req, res) => {
         conditions_nmpc[1].statements[2].achieved = eligiblityData.slbActual
         conditions_nmpc[1].statements[3].tied = eligiblityData.nmpc_tied
         conditions_nmpc[1].statements[3].untied = eligiblityData.nmpc_untied
-        conditions_mpc[1].statements[0].achieved = eligiblityData.annualAccountsActual
-        conditions_mpc[1].statements[1].achieved = eligiblityData.utilReportActual
-        conditions_mpc[1].statements[2].achieved = eligiblityData.slbActual
+        conditions_mpc.statements[0].achieved = eligiblityData.annualAccountsActual
+        conditions_mpc.statements[1].achieved = eligiblityData.utilReportActual
+        conditions_mpc.statements[2].achieved = eligiblityData.slbActual
+        conditions_mpc.statements[3].achieved = eligiblityData.mpc
         eligiblityData['conditions_nmpc'] = conditions_nmpc
         eligiblityData['conditions_mpc'] = conditions_mpc
         eligiblityData['claimsData'] = claimsData
