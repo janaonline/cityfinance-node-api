@@ -42,6 +42,7 @@ module.exports.login = async (req, res) => {
           role: user.role,
           state: user.state,
           stateName: state?.name,
+          designation: user?.designation,
           ulb: user.ulb,
           isUA: role === "ULB" ? ulb.isUA : null,
           isMillionPlus: role === "ULB" ? ulb.isMillionPlus : null,
