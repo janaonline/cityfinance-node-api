@@ -5,13 +5,19 @@ const Year = require("../../models/Year")
 const GrantsClaimed = require('../../models/GrantsClaimed')
 const Masterform = require("../../models/MasterForm")
 const GTCertificate = require('../../models/StateGTCertificate')
+const GrantClaim = require('../../models/GrantClaim')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require("../../service");
 const UA = require("../../models/UA");
 const moment = require("moment");
 const util = require("util");
 
-
+const time = () => {
+    var dt = new Date();
+    dt.setHours(dt.getHours() + 5);
+    dt.setMinutes(dt.getMinutes() + 30);
+    return dt;
+};
 
 module.exports.get = catchAsync(async (req, res) => {
     let expectedValues = {
@@ -106,7 +112,112 @@ module.exports.get = catchAsync(async (req, res) => {
 
 })
 module.exports.CreateorUpdate = catchAsync(async (req, res) => {
+    const user = req.decoded
+    const financialYear = req.body?.financialYear;
+    const state = req.body?.state;
+    const installment = req.body?.installment
+    const amountClaimed = req.body?.amountClaimed
+    const type = req.body?.type
+    let obj = {
+        financialYear: null,
+        state: null,
+        modifiedAt: null,
+        nmpc_tied: {
+            data: {
+                installment: null,
+                submitStatus: null,
+                actionTakenBy: null,
+                applicationStatus: null,
+                amountClaimed: null,
+                dates: {
+                    submittedOn: null
+                }
+            }
+        },
+        nmpc_untied: {
+            data: {
+                installment: null,
+                submitStatus: null,
+                actionTakenBy: null,
+                applicationStatus: null,
+                amountClaimed: null,
+                dates: {
+                    submittedOn: null
+                }
+            }
+        },
+        mpc: {
+            data: {
+                installment: null,
+                submitStatus: null,
+                actionTakenBy: null,
+                applicationStatus: null,
+                amountClaimed: null,
+                dates: {
+                    submittedOn: null
+                }
+            }
+        }
 
+    };
+    if (!financialYear || !state || !amountClaimed || !type) {
+        return res.status(400).json({
+            success: false,
+            message: "Data MIssing"
+        })
+    }
+    if (type == 'nmpc_tied') {
+        delete obj.mpc;
+        delete obj.nmpc_untied;
+    } else if (type == 'nmpc_untied') {
+        delete obj.mpc;
+        delete obj.nmpc_tied;
+    } else if (type == 'mpc') {
+        delete obj.nmpc_untied;
+        delete obj.nmpc_tied;
+    }
+
+    if (user.role == 'STATE') {
+        obj['financialYear'] = ObjectId(financialYear);
+        obj['state'] = ObjectId(state);
+        obj['modifiedAt'] = time();
+        obj[type]["data"]['installment'] = type != 'mpc' ? installment : null;
+        obj[type]["data"]['submitStatus'] = true;
+        obj[type]["data"]['actionTakenBy'] = user.role;
+        obj[type]["data"]['applicationStatus'] = 'PENDING';
+        obj[type]["data"]['amountClaimed'] = amountClaimed;
+        obj[type]["data"]['dates']['submittedOn'] = time();
+
+
+        console.log(util.inspect(obj, { showHidden: false, depth: null }))
+        let grantClaimData = await GrantClaim.findOne({
+            financialYear: ObjectId(financialYear),
+            state: ObjectId(state)
+        })
+        if (!grantClaimData) {
+            await GrantClaim.create(obj)
+            return res.status(200).json({
+                success: true,
+                message: "Form Saved Successfully. The grant application is now under MoHUA for review"
+            })
+        } else {
+            await GrantClaim.findOneAndUpdate({
+                financialYear: ObjectId(financialYear),
+                state: ObjectId(state)
+            }, obj)
+            return res.status(200).json({
+                success: true,
+                message: "Form Updated Successfully. The grant application is now under MoHUA for review"
+            })
+        }
+
+    } else {
+        return res.status(403).json({
+            success: false,
+            messsage: "Forbidden"
+        })
+
+    }
 
 })
 

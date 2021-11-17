@@ -3,9 +3,9 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const StatusSchema = new Schema({
-    submittedOn: { type: String, default: null },
-    approvedOn: { type: String, default: null },
-    returnedOn: { type: String, default: null }
+    submittedOn: { type: Date, default: null },
+    approvedOn: { type: Date, default: null },
+    returnedOn: { type: Date, default: null }
 })
 
 const FileSchema = new Schema({
@@ -13,16 +13,10 @@ const FileSchema = new Schema({
     url: { type: String, default: null }
 })
 
-const ConditionSchema = new Schema({
-    id: { type: String, default: null },
-    name: { type: String, default: null },
-    achieved: { type: String, default: null }
-})
+
 
 const DataSchema = new Schema({
     installment: { type: String, default: null },
-    conditions: { type: ConditionSchema, default: [] },
-    eligible: { type: Boolean, default: false },
     submitStatus: { type: Boolean, default: false },
     actionTakenBy: {
         type: String,
@@ -40,8 +34,6 @@ const DataSchema = new Schema({
 })
 
 const ClaimDataSchema = new Schema({
-
-    display: { type: Boolean, default: false },
     data: { type: [DataSchema], default: [] }
 });
 
@@ -49,7 +41,6 @@ const GrantClaimSchema = new Schema(
     {
         financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         state: { type: Schema.Types.ObjectId, ref: "State", required: true },
-        history: { type: Array, default: [] },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
         nmpc_tied: { type: ClaimDataSchema, default: null },
