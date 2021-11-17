@@ -21,20 +21,49 @@ module.exports.get = catchAsync(async (req, res) => {
     }
     const conditions_nmpc = [{
         installment: "1",
-        statements: ["Submit Grant Transfer Certificate for 2nd installment of FY 2020-21"]
+        statements: [{
+            achieved: null,
+            text: "Submit Grant Transfer Certificate for 2nd installment of FY 2020-21"
+        }]
     }, {
         installment: "2",
-        statements: [`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
-        `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`,
-        `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`,
-            `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
+        statements: [
+            {
+                achieved: null,
+                text: `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`
+            },
+            {
+                achieved: null,
+                text: `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`
+            }, {
+                achieved: null,
+                text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
 
+            }, {
+                achieved: null,
+                text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
+            }
         ]
     }]
     const conditions_mpc = {
-        statements: [`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
-        `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`,
-        `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`,
+        statements: [{
+            achieved: null,
+            text: `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`
+        },
+        {
+            achieved: null,
+            text: `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`
+        },
+        {
+            achieved: null,
+            text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
+        }, {
+            achieved: null,
+            text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
+
+        }, {}, {},
+            ,
+            ,
             `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`,
             `Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`,
             `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`
