@@ -40,7 +40,8 @@ module.exports.get = catchAsync(async (req, res) => {
                 text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
 
             }, {
-                achieved: null,
+                tied: null,
+                untied: null,
                 text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
             }
         ]
@@ -61,12 +62,19 @@ module.exports.get = catchAsync(async (req, res) => {
             achieved: null,
             text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
 
-        }, {}, {},
-            ,
-            ,
-            `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`,
-            `Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`,
-            `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`
+        }, {
+            achieved: null,
+            text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
+
+        }, {
+            achieved: null,
+            text: `Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`
+
+        },
+        {
+            achieved: null,
+            text: `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`
+        }
 
         ]
     }
@@ -76,6 +84,14 @@ module.exports.get = catchAsync(async (req, res) => {
     console.log(eligiblityData)
     const claimsData = await GrantsClaimed.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) })
     if (eligiblityData) {
+        conditions_nmpc[1].statements[0].achieved = eligiblityData.annualAccountsActual
+        conditions_nmpc[1].statements[1].achieved = eligiblityData.utilReportActual
+        conditions_nmpc[1].statements[2].achieved = eligiblityData.slbActual
+        conditions_nmpc[1].statements[3].tied = eligiblityData.nmpc_tied
+        conditions_nmpc[1].statements[3].untied = eligiblityData.nmpc_untied
+        conditions_mpc[1].statements[0].achieved = eligiblityData.annualAccountsActual
+        conditions_mpc[1].statements[1].achieved = eligiblityData.utilReportActual
+        conditions_mpc[1].statements[2].achieved = eligiblityData.slbActual
         eligiblityData['conditions_nmpc'] = conditions_nmpc
         eligiblityData['conditions_mpc'] = conditions_mpc
         eligiblityData['claimsData'] = claimsData
@@ -178,8 +194,24 @@ function calculateEligibility(financialYear, stateId, expectedValues) {
     return new Promise(async (rslv, rjct) => {
         try {
             let eligibility = {
-                nmpc_tied: false,
-                nmpc_untied: false,
+                nmpc_tied: [{
+                    installment: 1,
+                    eligible: false
+                },
+                {
+                    installment: 2,
+                    eligible: false
+                }
+                ],
+                nmpc_untied: [{
+                    installment: 1,
+                    eligible: false
+                },
+                {
+                    installment: 2,
+                    eligible: false
+                }
+                ],
                 mpc: false
             }
             let query_totalULBs = [
@@ -261,7 +293,7 @@ function calculateEligibility(financialYear, stateId, expectedValues) {
                 slbPercent >= expectedValues.slb &&
                 nonMillionTied
             ) {
-                eligibility.nmpc_tied = true
+                eligibility.nmpc_tied[1].eligible = true
             }
             //eligiblity for non Million Untied
             if (annualAccountsPercent >= expectedValues.annualAccounts &&
@@ -269,7 +301,7 @@ function calculateEligibility(financialYear, stateId, expectedValues) {
                 slbPercent >= expectedValues.slb &&
                 nonMillionUntied
             ) {
-                eligibility.nmpc_untied = true
+                eligibility.nmpc_untied[1].eligible = true
             }
             //eligiblity for Service Level Becnhmarks
             if (annualAccountsPercent >= expectedValues.annualAccounts &&
