@@ -13,7 +13,7 @@ const BulkUpload = {
     getResource: require('./resource-upload').getResource
 
 }
-
+const { readCSV } = require('../grant-claim/service')
 const express = require('express');
 const multer = require('multer');
 const storage1 = multer.diskStorage({
@@ -66,5 +66,5 @@ router.post("/bulk/updateNodalFinal", BulkUpload.ulbLocationUpdate.updateUserDat
 router.post("/bulk/addULBToUA", BulkUpload.ulbLocationUpdate.addULBsToUA);
 router.post("/bulk/signUpNew", verifyToken, BulkUpload.ulbLocationUpdate.signupNew);
 router.get("/bulk/ulbCount", BulkUpload.ulbLocationUpdate.getULBCount);
-
+router.post('/grant-claim/readCSV', multerUpload.single('csv'), BulkUpload.csvToJSON, readCSV)
 module.exports = router;

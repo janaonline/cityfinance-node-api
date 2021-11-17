@@ -104,6 +104,10 @@ router.use(SaveLogs);
 const plans = require("./xvfc-grant-plans");
 router.use(plans);
 
+// // @Grant Claims
+const grantClaim = require("./grant-claim");
+router.use(grantClaim);
+
 // // @xvfc form submit
 const submit = require("./xvfc-form-submit");
 router.use(submit);
