@@ -7,7 +7,7 @@ const { get, CreateorUpdate, readCSV } = require('./service')
 
 
 
-router.get('/grant-claim/get', get)
-router.post('/grant-claim/create', CreateorUpdate)
+router.get('/grant-claim/get', verifyToken, get)
+router.post('/grant-claim/create', verifyToken, CreateorUpdate)
 // router.post('/grant-claim/readCSV', multerUpload.single('csv'), csvToJSON, readCSV)
 module.exports = router;
