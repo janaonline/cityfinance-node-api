@@ -25,6 +25,11 @@ module.exports.get = catchAsync(async (req, res) => {
         utilReport: 100,
         slb: 100
     }
+    let claimsInformation = {
+        npmc_tied: null,
+        nmpc_untied: null,
+        mpc: null
+    }
     const conditions_nmpc = [
         {
             installment: "1",
@@ -85,7 +90,16 @@ module.exports.get = catchAsync(async (req, res) => {
     const { financialYear, stateId } = req.query
     const eligiblityData = await calculateEligibility(financialYear, stateId, expectedValues)
     console.log(eligiblityData)
+
     const claimsData = await GrantsClaimed.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) })
+    const grantClaimsSavedData = await GrantClaim.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) })
+    if (grantClaimsSavedData) {
+        claimsInformation.nmpc_untied = grantClaimsSavedData?.nmpc_untied,
+            claimsInformation.nmpc_tied = grantClaimsSavedData?.nmpc_tied
+        claimsInformation.mpc = grantClaimsSavedData?.mpc
+
+    }
+
     if (eligiblityData) {
         conditions_nmpc[1].statements[0].achieved = eligiblityData.annualAccountsActual
         conditions_nmpc[1].statements[1].achieved = eligiblityData.utilReportActual
@@ -99,6 +113,7 @@ module.exports.get = catchAsync(async (req, res) => {
         eligiblityData['conditions_nmpc'] = conditions_nmpc
         eligiblityData['conditions_mpc'] = conditions_mpc
         eligiblityData['claimsData'] = claimsData
+        eligiblityData['claimsInformation'] = claimsInformation
         return res.status(200).json({
             success: true,
             data: eligiblityData
@@ -198,7 +213,7 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
             await GrantClaim.create(obj)
             return res.status(200).json({
                 success: true,
-                message: "Form Saved Successfully. The grant application is now under MoHUA for review"
+                message: "Form Submitted Successfully. The grant application is now under MoHUA for review"
             })
         } else {
             await GrantClaim.findOneAndUpdate({
@@ -207,7 +222,7 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
             }, obj)
             return res.status(200).json({
                 success: true,
-                message: "Form Updated Successfully. The grant application is now under MoHUA for review"
+                message: "Form Submitted Successfully. The grant application is now under MoHUA for review"
             })
         }
 
