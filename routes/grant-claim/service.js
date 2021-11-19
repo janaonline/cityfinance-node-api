@@ -362,7 +362,7 @@ function calculateEligibility(financialYear, stateId, expectedValues) {
             let eligibility = {
                 nmpc_tied: [{
                     installment: 1,
-                    eligible: false
+                    eligible: true
                 },
                 {
                     installment: 2,
@@ -467,6 +467,8 @@ function calculateEligibility(financialYear, stateId, expectedValues) {
                 slbPercent >= expectedValues.slb &&
                 nonMillionUntied
             ) {
+                eligibility.nmpc_untied[1].eligible = true
+            } else {
                 eligibility.nmpc_untied[1].eligible = true
             }
             //eligiblity for Service Level Becnhmarks
