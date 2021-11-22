@@ -143,33 +143,9 @@ module.exports.put = async function (req, res) {
       let condition = { _id: _id };
       obj["modifiedAt"] = new Date();
       try {
-        if (obj.state) {
-          let state = await State.findOne(
-            { name: ObjectId(obj.state), isActive: true },
-            { _id: 1 }
-          ).exec();
-          if (!state) {
-            return Response.BadRequest(
-              res,
-              {},
-              `requested state does not exists.`
-            );
-          }
-        }
-        if (obj.ulbType) {
-          let ulbType = await UlbType.findOne(
-            { name: ObjectId(obj.ulbType), isActive: true },
-            { _id: 1 }
-          ).exec();
-          if (!ulbType) {
-            return Response.BadRequest(
-              res,
-              {},
-              `requested ulb type does not exists.`
-            );
-          }
-        }
+
         let du = await Ulb.update(condition, { $set: obj });
+
         return Response.OK(res, du, `updated successfully.`);
       } catch (err) {
         console.log("Error caught", err);
