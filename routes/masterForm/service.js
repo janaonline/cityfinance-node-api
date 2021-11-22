@@ -2224,6 +2224,15 @@ module.exports.viewList = catchAsync(async (req, res) => {
           },
         },
         {
+          $match: {
+            $or: [
+              { "xvfcgrantulbforms.design_year": ObjectId(design_year) },
+              { "xvfcgrantulbforms": { $exists: false } }
+            ]
+
+          }
+        },
+        {
           $lookup: {
             from: "states",
             localField: "state",
