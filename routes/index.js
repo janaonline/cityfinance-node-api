@@ -145,4 +145,11 @@ router.use('/mohua', MoHUADashboard);
 const GrantTransferMohua = require("./grantTransferMohua");
 router.use(GrantTransferMohua);
 
+const dashboardMaster = require("./DashboardMaster");
+router.use(dashboardMaster);
+
+const dashboardHeaders = require("./DashboardHeaders");
+router.use(dashboardHeaders);
+
+
 module.exports = router;
