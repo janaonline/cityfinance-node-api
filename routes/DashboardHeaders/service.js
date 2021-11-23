@@ -1,9 +1,9 @@
 const DashboardHeaders = require("../../models/Headers");
 
 module.exports.create = async (req, res) => {
-  const { name } = req.body;
+  const data = req.body;
   try {
-    let dashboardHeaders = new DashboardHeaders({ name });
+    let dashboardHeaders = new DashboardHeaders({ data });
     dashboardHeaders = await dashboardHeaders.save();
     return res.json({ msg: "DashboardHeaders created!", dashboardHeaders });
   } catch (err) {
@@ -14,7 +14,7 @@ module.exports.create = async (req, res) => {
 
 exports.read = async (req, res) => {
   try {
-    const categories = await DashboardHeaders.find().sort({name:1});
+    const categories = await DashboardHeaders.find().sort({ name: 1 });
     return res.json(categories);
   } catch (err) {
     console.error(err);

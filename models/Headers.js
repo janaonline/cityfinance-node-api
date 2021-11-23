@@ -1,4 +1,6 @@
 require("./dbConnect");
+const { Schema } = mongoose;
+
 const HeadersSchema = new Schema(
   {
     name: { type: String, required: true },
