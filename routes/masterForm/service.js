@@ -2166,6 +2166,20 @@ module.exports.viewList = catchAsync(async (req, res) => {
     let query;
     if ((user.role != 'STATE' || user.role != 'ULB') && !state) {
       query = [
+        {
+          $lookup: {
+            from: "uas",
+            localField: "_id",
+            foreignField: "ulb",
+            as: "uas",
+          },
+        },
+        {
+          $unwind: {
+            path: "$uas",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
 
         {
           $lookup: {
