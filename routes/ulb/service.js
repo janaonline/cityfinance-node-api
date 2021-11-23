@@ -335,7 +335,13 @@ module.exports.delete_permanent = async function (req, res) {
   let data = req.body;
   let ulbCodes = data.ulbCode;
   for (let el of ulbCodes) {
-    await Ulb.deleteOne({ censusCode: el })
+    var digit = el.toString()[0];
+    if (digit == '8') {
+      await Ulb.deleteOne({ censusCode: String(el) })
+    } else if (digit == '9') {
+      await Ulb.deleteOne({ sbCode: String(el) })
+    }
+    // await Ulb.deleteOne({ censusCode: el })
   }
   return res.json({
     success: true
