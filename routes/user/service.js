@@ -211,7 +211,7 @@ module.exports.getAll = async (req, res) => {
                         $project: {
                             _id: "$user._id",
                             role: "$user.role",
-                            name: "$user.name",
+                            name: "$name",
                             email: "$user.email",
                             priority: 1,
                             designation: "$user.designation",
