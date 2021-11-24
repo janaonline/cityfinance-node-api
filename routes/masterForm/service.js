@@ -3674,6 +3674,41 @@ module.exports.update = catchAsync(async (req, res) => {
   await MasterForm.findOneAndUpdate({ _id: ObjectId(formId) }, data)
   return res.json({ success: true })
 })
+//script to check how many ulbs are under review by state even when they have not submitted complete forms.
+module.exports.check = catchAsync(async (req, res) => {
+  let query = [
+    {
+      $match: {
+        $or: [{
+          $and: [
+            { "steps.utilReport.isSubmit": false },
+            { "isSubmit": true },
+            { "actionTakenByRole": "ULB" },
+            { "actionTakenByRole": "PENDING" }]
+        },
+        {
+          $and: [
+            { "steps.slbForWaterSupplyAndSanitation.isSubmit": false },
+            { "isSubmit": true },
+            { "actionTakenByRole": "ULB" },
+            { "actionTakenByRole": "PENDING" }]
+        },
+        {
+          $and: [
+            { "steps.annualAccounts.isSubmit": false },
+            { "isSubmit": true },
+            { "actionTakenByRole": "ULB" },
+            { "actionTakenByRole": "PENDING" }]
+        }]
+      }
+
+    }
+  ];
+  let data = await MasterForm.aggregate(query)
+  return res.json({
+    data: data
+  })
+})
 
 const oneStatePromise = (element, design_year) => {
   return new Promise(async (res, rej) => {
