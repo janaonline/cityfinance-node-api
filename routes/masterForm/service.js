@@ -3667,6 +3667,13 @@ module.exports.stateUlbData = catchAsync(async (req, res) => {
   }
 });
 
+module.exports.update = catchAsync(async (req, res) => {
+  let { formId } = req.params;
+  let data = req.body
+  await MasterForm.findOneAndUpdate({ _id: ObjectId(formId) }, data)
+  return res.json({ success: true })
+})
+
 const oneStatePromise = (element, design_year) => {
   return new Promise(async (res, rej) => {
     let data = await Promise.all([
