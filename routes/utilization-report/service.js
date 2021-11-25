@@ -76,6 +76,8 @@ exports.read = async (req, res) => {
       { isActive: true },
       { history: 0 }
     );
+
+
     return res.status(200).json(reports);
   } catch (err) {
     console.error(err.message);
@@ -110,6 +112,7 @@ exports.readById = async (req, res) => {
     }
   ]
   let arr = await UtilizationReport.aggregate(query)
+
   let catData = await Category.find().lean().exec()
   let flag = 0;
   let filteredCat = [];
@@ -158,6 +161,7 @@ exports.readById = async (req, res) => {
     if (report == null) {
       report = {}
     }
+
     report['analytics'] = (arrNew)
     if (
       req.decoded.role === "MoHUA" &&
