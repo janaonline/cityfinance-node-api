@@ -486,7 +486,7 @@ module.exports.report = function (req, res) {
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
     res.write(
-        "ULB_Name, Code, Excel_Uploaded  \r\n"
+        "ULB_Name, Code, Standardized_Excel_Uploaded, PDF_NAME, PDF_URL, EXCEL_NAME, EXCEL_URL  \r\n"
     );
     // Flush the headers before we start pushing the CSV content
     res.flushHeaders();
@@ -513,34 +513,37 @@ module.exports.report = function (req, res) {
 
         {
             $project: {
-                "15-16": "$15-16.pdf",
-                "16-17": "$16-17.pdf",
-                "17-18": "$17-18.pdf",
-                "18-19": "$18-19.pdf",
+                "15-16_pdf": "$15-16.pdf",
+                "16-17_pdf": "$16-17.pdf",
+                "17-18_pdf": "$17-18.pdf",
+                "18-19_pdf": "$18-19.pdf",
+                "15-16_excel": "$15-16.excel",
+                "16-17_excel": "$16-17.excel",
+                "17-18_excel": "$17-18.excel",
+                "18-19_excel": "$18-19.excel",
                 "ulb": 1,
                 "code": 1
             }
         },
         {
-            $unwind: `$${fy}`
+            $unwind: `$${fy}_pdf`
+        },
+        {
+            $unwind: {
+                path: `$${fy}_excel`,
+                preserveNullAndEmptyArrays: true
+            }
         },
 
 
         {
             $group: {
                 "_id": "$ulb",
-                fileUrl: { $addToSet: `$${fy}.url` },
-                fileName: { $addToSet: `$${fy}.name` },
+                fileUrlpdf: { $last: `$${fy}_pdf.url` },
+                fileNamepdf: { $last: `$${fy}_pdf.name` },
+                fileUrlexcel: { $last: `$${fy}_excel.url` },
+                fileNameexcel: { $last: `$${fy}_excel.name` },
                 code: { $first: "$code" }
-            }
-        },
-
-        {
-            $project: {
-                fileUrl: 1,
-                fileName: 1,
-                code: 1,
-                numberOfFiles: { $size: "$fileName" }
             }
         },
         {
@@ -572,8 +575,10 @@ module.exports.report = function (req, res) {
         },
         {
             $project: {
-                fileUrl: 1,
-                fileName: 1,
+                fileUrlpdf: 1,
+                fileNamepdf: 1,
+                fileUrlexcel: 1,
+                fileNameexcel: 1,
                 code: 1,
                 logCreated: { $ifNull: ["$ledgerLog", "No"] }
             }
@@ -581,8 +586,10 @@ module.exports.report = function (req, res) {
 
         {
             $project: {
-                fileUrl: 1,
-                fileName: 1,
+                fileUrlpdf: 1,
+                fileNamepdf: 1,
+                fileUrlexcel: 1,
+                fileNameexcel: 1,
                 code: 1,
                 logcreated: {
                     $cond: {
@@ -611,6 +618,14 @@ module.exports.report = function (req, res) {
                     el.code +
                     "," +
                     el.logcreated +
+                    "," +
+                    el.fileNamepdf +
+                    "," +
+                    el.fileUrlpdf +
+                    "," +
+                    el.fileNameexcel +
+                    "," +
+                    el.fileUrlexcel +
                     "\r\n"
                 );
             }

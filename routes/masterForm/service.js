@@ -3821,7 +3821,13 @@ let calculatePercentage = (masterformData, loggedInUserRole) => {
     console.log('6')
     if (masterformData?.history.length == 0) {
       console.log('7')
-      return 0;
+      let count = 0;
+      for (let key in masterformData?.steps) {
+        if (masterformData?.steps[key]['isSubmit']) {
+          count++;
+        }
+      }
+      if (count == 3) return 100;
     } else if (masterformData?.history.length >= 0) {
       console.log('8')
       if (masterformData?.actionTakenByRole == 'ULB') {
