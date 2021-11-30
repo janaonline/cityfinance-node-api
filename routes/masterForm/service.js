@@ -2577,6 +2577,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
               actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
               auditedSubmitted:
                 "$annualaccountdatas.audited.submit_annual_accounts",
+              submittedon: "$annualaccountdatas.createdAt"
             },
             unaudited_annualaccounts: {
               isDraft: "$annualaccountdatas.isDraft",
@@ -2584,6 +2585,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
               actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
               unAuditedSubmitted:
                 "$annualaccountdatas.unAudited.submit_annual_accounts",
+              submittedon: "$annualaccountdatas.createdAt"
             },
             masterform: {
               isSubmit: "$masterforms.isSubmit",
