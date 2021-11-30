@@ -333,16 +333,23 @@ module.exports.delete = async function (req, res) {
 module.exports.delete_permanent = async function (req, res) {
   // Delete ulb based
   let data = req.body;
+
+  let viaCensusCode = data.viaCensusCode;
   let ulbCodes = data.ulbCode;
-  for (let el of ulbCodes) {
-    var digit = el.toString()[0];
-    if (digit == '8') {
-      await Ulb.deleteOne({ censusCode: String(el) })
-    } else if (digit == '9') {
-      await Ulb.deleteOne({ sbCode: String(el) })
+  if (viaCensusCode) {
+    for (let el of ulbCodes) {
+      var digit = el.toString()[0];
+      if (digit == '8') {
+        await Ulb.deleteOne({ censusCode: String(el) })
+      } else if (digit == '9') {
+        await Ulb.deleteOne({ sbCode: String(el) })
+      }
+      // await Ulb.deleteOne({ censusCode: el })
     }
-    // await Ulb.deleteOne({ censusCode: el })
+  } else {
+    await Ulb.deleteOne(ulbCodes)
   }
+
   return res.json({
     success: true
   })
