@@ -316,6 +316,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
     5: { status: "REJECTED", actionTakenByUserRole: "MoHUA" },
     6: { status: "APPROVED", actionTakenByUserRole: "MoHUA" },
   };
+
+
   let user = req.decoded,
     filter =
       req.query.filter && !req.query.filter != "null"
@@ -332,6 +334,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv === 'true',
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
+
+  if (filter['censusCode']) {
+    let code = filter['censusCode']
+    var digit = code.toString()[0];
+    if (digit == '9') {
+      delete filter['censusCode']
+      filter['sbCode'] = code
+    }
+  }
 
   if (!user) {
     return res.status(400).json({
