@@ -73,32 +73,37 @@ const getFilesizeInBytes = function (filename) {
     return fileSizeInBytes
 }
 const downloadFileToDisk = function (url, _cb) {
-    let fileName = url ? (url.split("/").length ? url.split("/")[(url.split("/").length - 1)] : url.split("/")[0]) : null;
-    let dest = "/tmp/" + fileName;
-    var file = fs.createWriteStream(dest);
-    var h = http;
-    console.log("url", url)
-    let isHttps = url.includes("https");
-    console.log("isHttps", isHttps)
-    if (isHttps) {
-        const req = https.get(url, function (response) {
-            response.pipe(file);
-            file.on('finish', function () {
-                file.close(function () {
-                    _cb(null, file)
-                });  // close() is async, call cb after close completes.
+    try {
+        let fileName = url ? (url.split("/").length ? url.split("/")[(url.split("/").length - 1)] : url.split("/")[0]) : null;
+        let dest = "/tmp/" + fileName;
+        var file = fs.createWriteStream(dest);
+        var h = http;
+        console.log("url", url)
+        let isHttps = url.includes("https");
+        console.log("isHttps", isHttps)
+        if (isHttps) {
+            const req = https.get(url, function (response) {
+                response.pipe(file);
+                file.on('finish', function () {
+                    file.close(function () {
+                        _cb(null, file)
+                    });  // close() is async, call cb after close completes.
+                });
             });
-        });
-    } else {
-        const req = http.get(url, function (response) {
-            response.pipe(file);
-            file.on('finish', function () {
-                file.close(function () {
-                    _cb(null, file)
-                });  // close() is async, call cb after close completes.
+        } else {
+            const req = http.get(url, function (response) {
+                response.pipe(file);
+                file.on('finish', function () {
+                    file.close(function () {
+                        _cb(null, file)
+                    });  // close() is async, call cb after close completes.
+                });
             });
-        });
+        }
+    } catch (e) {
+        console.log(e.message)
     }
+
 
 }
 module.exports = {
