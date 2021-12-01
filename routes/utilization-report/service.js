@@ -76,6 +76,8 @@ exports.read = async (req, res) => {
       { isActive: true },
       { history: 0 }
     );
+
+
     return res.status(200).json(reports);
   } catch (err) {
     console.error(err.message);
@@ -110,6 +112,7 @@ exports.readById = async (req, res) => {
     }
   ]
   let arr = await UtilizationReport.aggregate(query)
+
   let catData = await Category.find().lean().exec()
   let flag = 0;
   let filteredCat = [];
@@ -156,13 +159,47 @@ exports.readById = async (req, res) => {
     }).select({ history: 0 }).lean();
 
     if (report == null) {
-      report = {}
+      report = {
+        categoryWiseData_wm: [],
+        categoryWiseData_swm: []
+      }
+      const swm_category = [
+        'Sanitation',
+        'Solid Waste Management'
+      ]
+      const wm_category = [
+        'Rejuvenation of Water Bodies',
+        'Drinking Water',
+        'Rainwater Harvesting',
+        'Water Recycling'
+      ]
+      let i = 0;
+      for (let el of wm_category) {
+        report['categoryWiseData_wm'].push({
+          category_name: el,
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null
+        })
+        i++;
+      }
+      i = 0;
+      for (let el of swm_category) {
+        report['categoryWiseData_swm'].push({
+          category_name: el,
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null
+        })
+        i++;
+      }
     }
+
     report['analytics'] = (arrNew)
     if (
       req.decoded.role === "MoHUA" &&
-      report.actionTakenByRole === "STATE" &&
-      report.status == "APPROVED"
+      report?.actionTakenByRole === "STATE" &&
+      report?.status == "APPROVED"
     ) {
       report.status = "PENDING";
       report.rejectReason = null;

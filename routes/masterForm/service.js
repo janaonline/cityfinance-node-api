@@ -316,6 +316,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
     5: { status: "REJECTED", actionTakenByUserRole: "MoHUA" },
     6: { status: "APPROVED", actionTakenByUserRole: "MoHUA" },
   };
+
+
   let user = req.decoded,
     filter =
       req.query.filter && !req.query.filter != "null"
@@ -332,6 +334,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv === 'true',
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
+
+  if (filter['censusCode']) {
+    let code = filter['censusCode']
+    var digit = code.toString()[0];
+    if (digit == '9') {
+      delete filter['censusCode']
+      filter['sbCode'] = code
+    }
+  }
 
   if (!user) {
     return res.status(400).json({
@@ -2577,6 +2588,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
               actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
               auditedSubmitted:
                 "$annualaccountdatas.audited.submit_annual_accounts",
+              submittedon: "$annualaccountdatas.createdAt"
             },
             unaudited_annualaccounts: {
               isDraft: "$annualaccountdatas.isDraft",
@@ -2584,6 +2596,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
               actionTakenBy: "$annualaccountdatas.actionTakenBy.role",
               unAuditedSubmitted:
                 "$annualaccountdatas.unAudited.submit_annual_accounts",
+              submittedon: "$annualaccountdatas.createdAt"
             },
             masterform: {
               isSubmit: "$masterforms.isSubmit",
@@ -3667,7 +3680,6 @@ module.exports.stateUlbData = catchAsync(async (req, res) => {
   }
 });
 
-
 module.exports.update = catchAsync(async (req, res) => {
   let { formId } = req.params;
   let data = req.body
@@ -3855,7 +3867,13 @@ let calculatePercentage = (masterformData, loggedInUserRole) => {
     console.log('6')
     if (masterformData?.history.length == 0) {
       console.log('7')
-      return 0;
+      let count = 0;
+      for (let key in masterformData?.steps) {
+        if (masterformData?.steps[key]['isSubmit']) {
+          count++;
+        }
+      }
+      if (count == 3) return 100;
     } else if (masterformData?.history.length >= 0) {
       console.log('8')
       if (masterformData?.actionTakenByRole == 'ULB') {

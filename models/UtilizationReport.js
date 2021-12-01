@@ -27,6 +27,12 @@ const UtilizationReportProjectSchema = new Schema({
   createdAt: { type: Date, default: Date.now() },
   isActive: { type: Boolean, default: 1 },
 });
+const CategoryWiseDataSchema = new Schema({
+  category_name: { type: String },
+  grantUtilised: { type: String },
+  numberOfProjects: { type: String },
+  totalProjectCost: { type: String }
+});
 
 const UtilizationReportSchema = new Schema(
   {
@@ -43,6 +49,8 @@ const UtilizationReportSchema = new Schema(
       closingBal: { type: String },
     },
     projects: { type: [UtilizationReportProjectSchema], default: [] },
+    categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [] },
+    categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [] },
     // asked year from ulb
     financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
