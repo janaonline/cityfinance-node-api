@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const moment = require("moment");
 const ObjectId = require('mongoose').Types.ObjectId;
 const Ulb = require('../../models/Ulb');
+const RequestLog = require('../../models/RequestLog')
 const DataCollectionForms = require('../../models/DataCollectionForm')
 
 // Get Income expenditure report
@@ -635,6 +636,22 @@ module.exports.report = function (req, res) {
 
 
 
+}
+
+module.exports.getRequestLog = function (req, res) {
+    let req_Id = req.query.reqId
+    let data;
+    if (req_Id) {
+        data = await RequestLog.findOne({ _id: ObjectId(req_Id) })
+    } else {
+        data = await RequestLog.find({})
+    }
+
+    return res.json({
+        success: true,
+        data: data,
+        total: req_Id ? 1 : data.length
+    })
 }
 
 function condition(ulbs) {
