@@ -638,7 +638,7 @@ module.exports.report = function (req, res) {
 
 }
 
-module.exports.getRequestLog = function (req, res) {
+module.exports.getRequestLog = async function (req, res) {
     let req_Id = req.query.reqId
     let data;
     if (req_Id) {
