@@ -704,7 +704,12 @@ module.exports.create = catchAsync(async (req, res) => {
     /**Now**/
     let query = {};
     req.body["overallReport"] = null;
-    req.body["status"] = "PENDING";
+    if (!req.body["blank"]) {
+      req.body["status"] = "PENDING";
+    } else {
+      req.body["status"] = "NA";
+    }
+
     query["ulb"] = ObjectId(data.ulb);
 
     if (design_year && design_year != "") {
