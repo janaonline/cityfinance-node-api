@@ -151,5 +151,10 @@ router.use(dashboardMaster);
 const dashboardHeaders = require("./DashboardHeaders");
 router.use(dashboardHeaders);
 
+const searchKeyword = require("./search-keyword");
+router.use(searchKeyword);
+
+const recentSearch = require("./recent-search-keyword");
+router.use(recentSearch);
 
 module.exports = router;
