@@ -25,6 +25,7 @@ router.post('/history/:_id', verifyToken, ufdService.getHistories);
 router.get('/history/:_id', verifyToken, ufdService.getHistories);
 router.get('/details/:_id', verifyToken, ufdService.getDetails);
 router.post('/', verifyToken, ufdService.create);
+router.post('/addFlag', verifyToken, ufdService.addFlag);
 router.put('/:_id', verifyToken, ufdService.update);
 router.post('/action/:_id', verifyToken, ufdService.action);
 router.post('/newAction', verifyToken, ufdService.newFormAction);

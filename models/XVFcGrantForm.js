@@ -203,7 +203,7 @@ const XVFcGrantULBFormSchema = new Schema(
         actionTakenByRole: {
             type: String,
             default: null
-          },
+        },
         history: { type: Array, default: [] },
         modifiedAt: { type: Date, default: Date.now },
         createdAt: { type: Date, default: Date.now },
@@ -222,6 +222,7 @@ const XVFcGrantULBFormSchema = new Schema(
         isCompleted: { type: Boolean, default: 0 },
         isOldForm: { type: Boolean },
         document: { type: ContentPDFSchema, required: true, default: null },
+        blank: { type: Boolean, default: false }
     },
     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
