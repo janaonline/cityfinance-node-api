@@ -157,4 +157,7 @@ router.use(searchKeyword);
 const recentSearch = require("./recent-search-keyword");
 router.use(recentSearch);
 
+const newDashboards = require("./newDashboards");
+router.use(newDashboards);
+
 module.exports = router;
