@@ -3,7 +3,7 @@ require("./dbConnect");
 const statusType = () => {
   return {
     type: String,
-    enum: ["APPROVED", "REJECTED", "PENDING","N/A"],
+    enum: ["APPROVED", "REJECTED", "PENDING", "N/A", 'NA'],
     default: "PENDING",
   };
 };
