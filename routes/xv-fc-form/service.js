@@ -761,6 +761,8 @@ module.exports.create = catchAsync(async (req, res) => {
     return Response.BadRequest(res, {}, "This action is only allowed by ULB");
   }
 });
+
+
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded,
     filter = req.body.filter,
@@ -3702,6 +3704,18 @@ module.exports.state = async (req, res) => {
     data: arr,
   });
 };
+
+module.exports.addFlag = async (req, res) => {
+  await XVFCGrantULBData.aggregate([{
+    $match: {
+      design_year: ObjectId("606aaf854dff55e6c075d219")
+    }
+  },
+  {
+    $addFields: { blank: false }
+  }
+  ])
+}
 
 exports.newFormAction = async (req, res) => {
   try {
