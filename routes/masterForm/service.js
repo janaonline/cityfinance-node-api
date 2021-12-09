@@ -1756,6 +1756,19 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
       let query3 = [
         {
+$match:{
+  
+    '$or': [
+              { isSubmit: true, actionTakenByRole: "ULB", status: "PENDING" },
+              {
+                $and:
+                  [
+                    { $or: [{ actionTakenByRole: "MoHUA" }, { actionTakenByRole: "STATE" }] },
+                    { $or: [{ status: "PENDING" }, { status: "APPROVED" }] }
+                  ]
+              }]}
+},
+        {
           $lookup: {
             from: "ulbs",
             localField: "ulb",
@@ -2498,12 +2511,36 @@ module.exports.viewList = catchAsync(async (req, res) => {
         },
         {
           $lookup: {
-            from: "xvfcgrantulbforms",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "xvfcgrantulbforms",
-          },
-        },
+             from: "xvfcgrantulbforms",
+             let: {
+                firstUser: ObjectId(design_year),
+                secondUser: "$_id"
+             },
+             pipeline: [
+                {
+                   $match: {
+                      $expr: {
+                         $and: [
+                            {
+                               $eq: [
+                                  "$design_year",
+                                  "$$firstUser"
+                               ]
+                            },
+                            {
+                               $eq: [
+                                  "$ulb",
+                                  "$$secondUser"
+                               ]
+                            }
+                         ]
+                      }
+                   }
+                }
+             ],
+             as: "xvfcgrantulbforms"
+          }
+       },
         {
           $unwind: {
             path: "$xvfcgrantulbforms",
@@ -2876,7 +2913,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
       }
       query.push({ $skip: skip });
       // query.push({ $limit: limit });
-      // console.log(util.inspect(query, false, null));
+      console.log(util.inspect(query, false, null));
       let data = await Ulb.aggregate(query).exec();
 
       // console.log(data);
@@ -2945,8 +2982,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
         ) {
           el["audited_annualaccountsStatus"] = "Accounts Not Submitted";
         } else if (
-          el?.audited_annualaccounts.isDraft == false &&
-          el?.audited_annualaccounts.auditedSubmitted == true
+          (el?.audited_annualaccounts.isDraft == false &&
+          el?.audited_annualaccounts.auditedSubmitted == true) &&
+          (
+            (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole == 'ULB') ||
+            ((el?.masterform.actionTakenByRole == 'STATE' || el?.masterform.actionTakenByRole == 'MoHUA') &&
+            (el?.masterform.status == 'PENDING' || el?.masterform.status == 'APPROVED'))
+            )
         ) {
           el["audited_annualaccountsStatus"] = "Accounts Submitted";
         } else if (el?.audited_annualaccounts.isDraft == true) {
@@ -2961,7 +3003,12 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el["unaudited_annualaccountsStatus"] = "Accounts Not Submitted";
         } else if (
           el?.unaudited_annualaccounts.isDraft == false &&
-          el?.unaudited_annualaccounts.unAuditedSubmitted == true
+          el?.unaudited_annualaccounts.unAuditedSubmitted == true &&
+          (
+            (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole == 'ULB') ||
+            ((el?.masterform.actionTakenByRole == 'STATE' || el?.masterform.actionTakenByRole == 'MoHUA') &&
+            (el?.masterform.status == 'PENDING' || el?.masterform.status == 'APPROVED'))
+            )
         ) {
           el["unaudited_annualaccountsStatus"] = "Accounts Submitted";
         } else if (el?.unaudited_annualaccounts.isDraft == true) {
