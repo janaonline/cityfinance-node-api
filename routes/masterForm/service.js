@@ -2991,7 +2991,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
             )
         ) {
           el["audited_annualaccountsStatus"] = "Accounts Submitted";
-        } else if (el?.audited_annualaccounts.isDraft == true) {
+        } else if (el?.audited_annualaccounts.isDraft == true || !(
+          (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole == 'ULB') ||
+          ((el?.masterform.actionTakenByRole == 'STATE' || el?.masterform.actionTakenByRole == 'MoHUA') &&
+          (el?.masterform.status == 'PENDING' || el?.masterform.status == 'APPROVED'))
+          )) {
           el["audited_annualaccountsStatus"] = "In Progress";
         }
         if (Object.entries(el?.unaudited_annualaccounts).length === 0) {
