@@ -930,7 +930,7 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
 
   for (let el of catData) {
     for (let el2 of arr) {
-      console.log(el['_id'], el2['_id'])
+      // console.log(el['_id'], el2['_id'])
       if (String(el['_id']) === String(el2['_id'])) {
         // console.log(ObjectId(el._id), ObjectId(el2._id))
         flag = 1;
@@ -944,7 +944,7 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
     }
   }
 
-  console.log(filteredCat)
+  // console.log(filteredCat)
   filteredCat.forEach(el => {
     arr.push({
       _id: el._id,
@@ -1000,7 +1000,7 @@ module.exports.plansData = catchAsync(async (req, res) => {
   }
 
   let count = await UA.aggregate(baseQuery);
-  console.log(count);
+  // console.log(count);
   let query = [
     {
       $match: {
@@ -1112,7 +1112,7 @@ module.exports.plansData = catchAsync(async (req, res) => {
     ]
   }
   let data = await UA.aggregate(query);
-  console.log(data[0]?.filledULBs, count[0]?.totalULBs)
+  // console.log(data[0]?.filledULBs, count[0]?.totalULBs)
 
   let finalData = {
     filledULBs: data[0]?.filledULBs ? data[0]?.filledULBs : 0,
@@ -1390,28 +1390,28 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   let { output1, output2, output3, output4, output5 } =
     await new Promise(async (resolve, reject) => {
       let prms1 = new Promise(async (rslv, rjct) => {
-        console.log(util.inspect(countQuery, { showHidden: true, depth: null }))
+        // console.log(util.inspect(countQuery, { showHidden: true, depth: null }))
         let output = await UA.aggregate(countQuery);
         rslv(output);
       });
 
       let prms2 = new Promise(async (rslv, rjct) => {
-        console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
+        // console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
         let output = await UA.aggregate(queryNotStarted);
         rslv(output);
       });
       let prms3 = new Promise(async (rslv, rjct) => {
-        console.log(util.inspect(queryUA, { showHidden: true, depth: null }))
+        // console.log(util.inspect(queryUA, { showHidden: true, depth: null }))
         let output = await UA.aggregate(queryUA);
         rslv(output);
       });
       let prms4 = new Promise(async (rslv, rjct) => {
-        console.log(util.inspect(queryNonMillionNonUA_NotStarted, { showHidden: true, depth: null }))
+        // console.log(util.inspect(queryNonMillionNonUA_NotStarted, { showHidden: true, depth: null }))
         let output = await Ulb.aggregate(queryNonMillionNonUA_NotStarted);
         rslv(output);
       });
       let prms5 = new Promise(async (rslv, rjct) => {
-        console.log(util.inspect(queryNonMillionNonUA, { showHidden: true, depth: null }))
+        // console.log(util.inspect(queryNonMillionNonUA, { showHidden: true, depth: null }))
         let output = await Ulb.aggregate(queryNonMillionNonUA);
         rslv(output);
       });
@@ -1457,7 +1457,7 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   })
 })
 processSLBData = (output1, output2, output3, output4, output5) => {
-  console.log("outputs", output1, output2, output3, output4, output5)
+  // console.log("outputs", output1, output2, output3, output4, output5)
   let million_pendingCompletion = 0,
     million_completedAndPendingSubmission = 0,
     million_underReviewByState = 0,
@@ -1600,7 +1600,7 @@ processSLBData = (output1, output2, output3, output4, output5) => {
     }
   ]
 
-  console.log(finalOutput)
+  // console.log(finalOutput)
 
   return finalOutput;
 }
@@ -1755,6 +1755,19 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
 
 
       let query3 = [
+        {
+$match:{
+  
+    '$or': [
+              { isSubmit: true, actionTakenByRole: "ULB", status: "PENDING" },
+              {
+                $and:
+                  [
+                    { $or: [{ actionTakenByRole: "MoHUA" }, { actionTakenByRole: "STATE" }] },
+                    { $or: [{ status: "PENDING" }, { status: "APPROVED" }] }
+                  ]
+              }]}
+},
         {
           $lookup: {
             from: "ulbs",
@@ -2236,12 +2249,37 @@ module.exports.viewList = catchAsync(async (req, res) => {
         },
         {
           $lookup: {
-            from: "xvfcgrantulbforms",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "xvfcgrantulbforms",
-          },
-        },
+             from: "xvfcgrantulbforms",
+             let: {
+                firstUser: ObjectId(design_year),
+                secondUser: "$_id"
+             },
+             pipeline: [
+                {
+                   $match: {
+                      $expr: {
+                         $and: [
+                            {
+                               $eq: [
+                                  "$design_year",
+                                  "$$firstUser"
+                               ]
+                            },
+                            {
+                               $eq: [
+                                  "$ulb",
+                                  "$$secondUser"
+                               ]
+                            }
+                         ]
+                      }
+                   }
+                }
+             ],
+             as: "xvfcgrantulbforms"
+          }
+       },
+       
         {
           $unwind: {
             path: "$xvfcgrantulbforms",
@@ -2251,8 +2289,9 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $match: {
             $or: [
-              { "xvfcgrantulbforms.design_year": ObjectId(design_year) },
-              { "xvfcgrantulbforms": { $exists: false } }
+              { "xvfcgrantulbforms": { $exists: false } },
+              { "xvfcgrantulbforms.design_year": ObjectId(design_year) }
+          
             ]
 
           }
@@ -2472,12 +2511,36 @@ module.exports.viewList = catchAsync(async (req, res) => {
         },
         {
           $lookup: {
-            from: "xvfcgrantulbforms",
-            localField: "_id",
-            foreignField: "ulb",
-            as: "xvfcgrantulbforms",
-          },
-        },
+             from: "xvfcgrantulbforms",
+             let: {
+                firstUser: ObjectId(design_year),
+                secondUser: "$_id"
+             },
+             pipeline: [
+                {
+                   $match: {
+                      $expr: {
+                         $and: [
+                            {
+                               $eq: [
+                                  "$design_year",
+                                  "$$firstUser"
+                               ]
+                            },
+                            {
+                               $eq: [
+                                  "$ulb",
+                                  "$$secondUser"
+                               ]
+                            }
+                         ]
+                      }
+                   }
+                }
+             ],
+             as: "xvfcgrantulbforms"
+          }
+       },
         {
           $unwind: {
             path: "$xvfcgrantulbforms",
@@ -2807,7 +2870,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
 
 
 
-      console.log(data)
+      // console.log(data)
       let field = csvData();
       if (user.role == "STATE") {
         delete field.stateName;
@@ -2906,7 +2969,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
         if (Object.entries(el?.utilizationreport).length === 0) {
           el["utilizationreportStatus"] = "Not Started";
         } else if (el?.utilizationreport.isDraft == false) {
-          console.log(el)
+          // console.log(el)
           el["utilizationreportStatus"] = "Completed";
         } else if (el?.utilizationreport.isDraft == true) {
           el["utilizationreportStatus"] = "In Progress";
@@ -2919,8 +2982,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
         ) {
           el["audited_annualaccountsStatus"] = "Accounts Not Submitted";
         } else if (
-          el?.audited_annualaccounts.isDraft == false &&
-          el?.audited_annualaccounts.auditedSubmitted == true
+          (el?.audited_annualaccounts.isDraft == false &&
+          el?.audited_annualaccounts.auditedSubmitted == true) &&
+          (
+            (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole == 'ULB') ||
+            ((el?.masterform.actionTakenByRole == 'STATE' || el?.masterform.actionTakenByRole == 'MoHUA') &&
+            (el?.masterform.status == 'PENDING' || el?.masterform.status == 'APPROVED'))
+            )
         ) {
           el["audited_annualaccountsStatus"] = "Accounts Submitted";
         } else if (el?.audited_annualaccounts.isDraft == true) {
@@ -2935,7 +3003,12 @@ module.exports.viewList = catchAsync(async (req, res) => {
           el["unaudited_annualaccountsStatus"] = "Accounts Not Submitted";
         } else if (
           el?.unaudited_annualaccounts.isDraft == false &&
-          el?.unaudited_annualaccounts.unAuditedSubmitted == true
+          el?.unaudited_annualaccounts.unAuditedSubmitted == true &&
+          (
+            (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole == 'ULB') ||
+            ((el?.masterform.actionTakenByRole == 'STATE' || el?.masterform.actionTakenByRole == 'MoHUA') &&
+            (el?.masterform.status == 'PENDING' || el?.masterform.status == 'APPROVED'))
+            )
         ) {
           el["unaudited_annualaccountsStatus"] = "Accounts Submitted";
         } else if (el?.unaudited_annualaccounts.isDraft == true) {
@@ -3079,7 +3152,7 @@ const formatOutput = (
 
   let total = 0;
   //annualaccounts
-  console.log(output3)
+  // console.log(output3)
   if (output3.length > 0) {
     // console.log(output3[0]?.unAudited, '/', numbers[i])
     // console.log(output3[0]?.audited, '/', numbers[i])
@@ -3097,7 +3170,7 @@ const formatOutput = (
       numbers[i]
   } else {
 
-    console.log(util.inspect(output4, { showHidden: false, depth: null }))
+    // console.log(util.inspect(output4, { showHidden: false, depth: null }))
     output4.forEach((el) => {
       if (
         el._id.status == "PENDING" && el._id.actionTakenByRole == "ULB" && el._id.isSubmit == true
@@ -3686,6 +3759,41 @@ module.exports.update = catchAsync(async (req, res) => {
   await MasterForm.findOneAndUpdate({ _id: ObjectId(formId) }, data)
   return res.json({ success: true })
 })
+//script to check how many ulbs are under review by state even when they have not submitted complete forms.
+module.exports.check = catchAsync(async (req, res) => {
+  let query = [
+    {
+      $match: {
+        $or: [{
+          $and: [
+            { "steps.utilReport.isSubmit": false },
+            { "isSubmit": true },
+            { "actionTakenByRole": "ULB" },
+            { "actionTakenByRole": "PENDING" }]
+        },
+        {
+          $and: [
+            { "steps.slbForWaterSupplyAndSanitation.isSubmit": false },
+            { "isSubmit": true },
+            { "actionTakenByRole": "ULB" },
+            { "actionTakenByRole": "PENDING" }]
+        },
+        {
+          $and: [
+            { "steps.annualAccounts.isSubmit": false },
+            { "isSubmit": true },
+            { "actionTakenByRole": "ULB" },
+            { "actionTakenByRole": "PENDING" }]
+        }]
+      }
+
+    }
+  ];
+  let data = await MasterForm.aggregate(query)
+  return res.json({
+    data: data
+  })
+})
 
 const oneStatePromise = (element, design_year) => {
   return new Promise(async (res, rej) => {
@@ -3778,7 +3886,7 @@ const stateAgg = (design_year, state) => {
 };
 
 let calculatePercentage = (masterformData, loggedInUserRole) => {
-  console.log(masterformData)
+  // console.log(masterformData)
   if (masterformData == null) {
     return 0;
   }
