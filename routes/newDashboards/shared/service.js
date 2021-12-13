@@ -1,8 +1,15 @@
 const Ulb = require("../../../models/Ulb");
+const UlbLedger = require("../../../models/UlbLedger");
 const Sate = require("../../../models/State");
 const Response = require("../../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require("../../../models/State");
+
+let filterType = [
+  "Town Panchayat",
+  "Municipal Council",
+  "Municipal Corporation",
+];
 
 const peopleInformation = async (req, res) => {
   try {
@@ -11,14 +18,16 @@ const peopleInformation = async (req, res) => {
     let data;
     switch (type) {
       case "ulb":
-        data = await Ulb.findOne({ _id: ObjectId(req.query.ulb) || null })
-          .select({ area: 1, population: 1, wards: 1 })
+        data = await Ulb.findOne({
+          _id: ObjectId(req.query.ulb) || null,
+        })
+          .populate("ulbType")
+          .populate("state")
           .lean();
         if (!data) return Response.BadRequest(res, null, "No Data Found");
         Object.assign(data, {
           density: parseFloat((data.population / data.area).toFixed(2)),
         });
-        return Response.OK(res, data);
         break;
       case "state":
         data = await Ulb.aggregate([
@@ -48,16 +57,44 @@ const peopleInformation = async (req, res) => {
                   },
                 },
               },
+              Town_Panchayat: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ["$ulbType.name", filterType[0]] },
+                    then: 1,
+                    else: 0,
+                  },
+                },
+              },
+              Municipal_Council: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ["$ulbType.name", filterType[1]] },
+                    then: 1,
+                    else: 0,
+                  },
+                },
+              },
+              Municipal_Corporation: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ["$ulbType.name", filterType[2]] },
+                    then: 1,
+                    else: 0,
+                  },
+                },
+              },
             },
           },
         ]);
-        if (!data) return Response.BadRequest(res, null, "No Data Found");
-        Object.assign(data, {
-          density: parseFloat((data.population / data.area).toFixed(2)),
+        if (data.length == 0)
+          return Response.BadRequest(res, null, "No Data Found");
+        Object.assign(data[0], {
+          density: parseFloat((data[0].population / data[0].area).toFixed(2)),
         });
-        return Response.OK(res, data);
         break;
     }
+    return Response.OK(res, data || data[0]);
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
@@ -66,52 +103,43 @@ const peopleInformation = async (req, res) => {
 
 const moneyInformation = async (req, res) => {
   try {
-    const { financialYear, isDraft, designYear } = req.body;
-    const ulb = req.decoded?.ulb;
-    req.body.ulb = ulb;
-    req.body.actionTakenBy = req.decoded?._id;
-    req.body.actionTakenByRole = req.decoded?.role;
-    req.body.modifiedAt = new Date();
-    //
-    let currentSavedUtilRep;
-    if (req.body?.status == "REJECTED") {
-      req.body.status = "PENDING";
-      req.body.rejectReason = null;
-      currentSavedUtilRep = await UtilizationReport.findOne(
-        { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { history: 0 }
-      );
+    const type = (req.query.type || req.headers.type).toLowerCase();
+    if (!type) return Response.BadRequest(res, {}, "No Type Provided");
+    let data, ulbId;
+    switch (type) {
+      case "ulb":
+        ulbId = [ObjectId(req.query.ulb)];
+        break;
+      case "state":
+        ulbId = await Ulb.find({ state: ObjectId(req.query.state) })
+          .select({ _id: 1 })
+          .lean();
+        ulbId = ulbId.map((value) => value._id);
+        break;
+      default:
+        return Response.BadRequest(res, null, "wrong type selected");
     }
-
-    let savedData;
-    if (currentSavedUtilRep) {
-      savedData = await UtilizationReport.findOneAndUpdate(
-        { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep } }
-      );
-    } else {
-      savedData = await UtilizationReport.findOneAndUpdate(
-        { ulb: ObjectId(ulb), financialYear, designYear },
-        { $set: req.body },
-        {
-          upsert: true,
-          new: true,
-          setDefaultsOnInsert: true,
-        }
-      );
-    }
-
-    if (savedData) {
-      await UpdateMasterSubmitForm(req, "utilReport");
-      return res.status(200).json({
-        msg: "Utilization Report Submitted Successfully!",
-        isCompleted: savedData.isDraft ? !savedData.isDraft : true,
-      });
-    } else {
-      return res.status(400).json({
-        msg: "Failed to Submit Data",
-      });
-    }
+    data = await UlbLedger.aggregate([
+      { $match: { ulb: { $in: ulbId } } },
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineitems",
+        },
+      },
+      { $unwind: "$lineitems" },
+      {
+        $group: {
+          _id: "$lineitems.headOfAccount",
+          amount: { $sum: "$amount" },
+        },
+      },
+    ]);
+    if (!data || data.length == 0)
+      return Response.BadRequest(res, null, "No Data Found");
+    return Response.OK(res, data);
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
