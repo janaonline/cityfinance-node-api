@@ -42,6 +42,15 @@ const peopleInformation = async (req, res) => {
           },
           { $unwind: "$ulbType" },
           {
+            $lookup: {
+              from: "states",
+              localField: "state",
+              foreignField: "_id",
+              as: "state",
+            },
+          },
+          { $unwind: "$state" },
+          {
             $group: {
               _id: "$state",
               population: { $sum: "$population" },
