@@ -2062,7 +2062,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
     14: {
       //In Progress
 
-      "audited_annualaccounts.isDraft": true,
+     
+      $and:[{ "audited_annualaccounts.isDraft": true},{$or:[
+        {$and:[{"masterform.isSubmit": {$ne:true} },{"masterform.actionTakenByRole" : {$ne:'ULB'}}]},
+        {$and:[
+          {$or:[{"masterform.actionTakenByRole":{$ne:'STATE'}},{"masterform.actionTakenByRole" : {$ne:'MoHUA'}}]},
+          {$or:[{"masterform.status" : {$ne:'PENDING'}},{"masterform.status" :  {$ne:'APPROVED'}}]}]
+      }]}] 
     },
     15: {
       // Not Submitted Accounts
@@ -2071,9 +2077,16 @@ module.exports.viewList = catchAsync(async (req, res) => {
       "audited_annualaccounts.auditedSubmitted": false,
     },
     16: {
-      "audited_annualaccounts.isDraft": false,
-      "audited_annualaccounts.auditedSubmitted": true,
-    },
+      $and:[
+        {"audited_annualaccounts.isDraft": false},
+        {"audited_annualaccounts.auditedSubmitted": true},
+        {$or:[
+          {$and:[{"masterform.isSubmit" : true},{"masterform.actionTakenByRole" : 'ULB'}]},
+          {$and:[
+            {$or:[{"masterform.actionTakenByRole": 'STATE'},{"masterform.actionTakenByRole" : 'MoHUA'}]},
+            {$or:[{"masterform.status" : 'PENDING'},{"masterform.status" : 'APPROVED'}]}]
+        }]
+    }]},
     17: {
       unaudited_annualaccounts: {
         //Not Started
@@ -2082,7 +2095,13 @@ module.exports.viewList = catchAsync(async (req, res) => {
     18: {
       //In Progress
 
-      "unaudited_annualaccounts.isDraft": true,
+      
+      $and:[{"unaudited_annualaccounts.isDraft": true},{$or:[
+        {$and:[{"masterform.isSubmit": {$ne:true} },{"masterform.actionTakenByRole" : {$ne:'ULB'}}]},
+        {$and:[
+          {$or:[{"masterform.actionTakenByRole":{$ne:'STATE'}},{"masterform.actionTakenByRole" : {$ne:'MoHUA'}}]},
+          {$or:[{"masterform.status" : {$ne:'PENDING'}},{"masterform.status" :  {$ne:'APPROVED'}}]}]
+      }]}]
     },
     19: {
       //Not Submitted Accounts
@@ -2092,8 +2111,18 @@ module.exports.viewList = catchAsync(async (req, res) => {
     20: {
       // Submitted Accounts
 
-      "unaudited_annualaccounts.isDraft": false,
-      "unaudited_annualaccounts.unAuditedSubmitted": true,
+    
+      
+      $and:[
+        {  "unaudited_annualaccounts.isDraft": false},
+        {"unaudited_annualaccounts.unAuditedSubmitted": true},
+        {$or:[
+          {$and:[{"masterform.isSubmit" : true},{"masterform.actionTakenByRole" : 'ULB'}]},
+          {$and:[
+            {$or:[{"masterform.actionTakenByRole": 'STATE'},{"masterform.actionTakenByRole" : 'MoHUA'}]},
+            {$or:[{"masterform.status" : 'PENDING'},{"masterform.status" : 'APPROVED'}]}]
+        }]
+    }]
     },
 
     21: {
