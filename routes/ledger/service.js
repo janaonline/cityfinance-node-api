@@ -581,7 +581,7 @@ module.exports.report = function (req, res) {
          },
         {
             $unwind: {
-                path: "$ledgerLogs",
+                path: "$ledgerlogs",
                 preserveNullAndEmptyArrays: true
             },
 
@@ -594,7 +594,7 @@ module.exports.report = function (req, res) {
                 fileUrlexcel: 1,
                 fileNameexcel: 1,
                 code: 1,
-                logCreated: { $ifNull: ["$ledgerLogs", "No"] }
+                logCreated: { $ifNull: ["$ledgerlogs", "No"] }
             }
         },
 
