@@ -3015,7 +3015,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
             )
         ) {
           el["unaudited_annualaccountsStatus"] = "Accounts Submitted";
-        } else if (el?.unaudited_annualaccounts.isDraft == true) {
+        } else if (el?.unaudited_annualaccounts.isDraft == true || !(
+          (el?.masterform.isSubmit == true && el?.masterform.actionTakenByRole == 'ULB') ||
+          ((el?.masterform.actionTakenByRole == 'STATE' || el?.masterform.actionTakenByRole == 'MoHUA') &&
+          (el?.masterform.status == 'PENDING' || el?.masterform.status == 'APPROVED'))
+          )) {
           el["unaudited_annualaccountsStatus"] = "In Progress";
         }
 
