@@ -583,7 +583,12 @@ module.exports.getAll = catchAsync(async (req, res) => {
     //   newFilter['printStatus'] = newFilter['status']
     //   delete newFilter['status']
     // }
-    if (newFilter && !newFilter['status'] && Object.keys(newFilter).length) {
+let statusFil
+    if(newFilter['status']){
+      statusFil = newFilter['status'];
+      delete newFilter['status']
+    }
+    if (newFilter && Object.keys(newFilter).length) {
       queryFilled.push({ $match: newFilter });
       queryNotStarted.push({ $match: newFilter });
     }
@@ -720,11 +725,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
       finalOutput.push(...p1, ...p2, ...p3, ...p4, ...p5, ...p6, ...noMasterFormData)
       let tryData = []
-      if (newFilter["status"]) {
+      if (statusFil) {
 
         finalOutput = finalOutput.filter(data => {
           // console.log(data.printStatus.toLowerCase() == newFilter["status"].toLowerCase())
-          return data.printStatus.toLowerCase() == newFilter["status"].toLowerCase()
+          return data.printStatus.toLowerCase() == statusFil.toLowerCase()
         });
       }
       console.log(finalOutput)
