@@ -6,7 +6,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Ulb = require('../../models/Ulb');
 const RequestLog = require('../../models/RequestLog')
 const DataCollectionForms = require('../../models/DataCollectionForm')
-
+const util = require('util')
 // Get Income expenditure report
 module.exports.getIE = function (req, res) {
 
@@ -549,31 +549,44 @@ module.exports.report = function (req, res) {
         },
         {
             $lookup: {
-                from: "ledgerlogs",
-                localField: "code",
-                foreignField: "ulb_code",
-                as: "ledgerLog"
+               from: "ledgerlogs",
+               let: {
+                  firstUser: `20${fy}`,
+                  secondUser: "$code"
+               },
+               pipeline: [
+                  {
+                     $match: {
+                        $expr: {
+                           $and: [
+                              {
+                                 $eq: [
+                                    "$year",
+                                    "$$firstUser"
+                                 ]
+                              },
+                              {
+                                 $eq: [
+                                    "$ulb_code",
+                                    "$$secondUser"
+                                 ]
+                              }
+                           ]
+                        }
+                     }
+                  }
+               ],
+               as: "ledgerlogs"
             }
-
-        },
+         },
         {
             $unwind: {
-                path: "$ledgerLog",
+                path: "$ledgerLogs",
                 preserveNullAndEmptyArrays: true
             },
 
         },
 
-        {
-            $match: {
-                $or: [
-                    { "ledgerLog.year": `20${fy}` },
-                    { "ledgerLog.year": { $exists: false } },
-
-                ]
-
-            }
-        },
         {
             $project: {
                 fileUrlpdf: 1,
@@ -581,7 +594,7 @@ module.exports.report = function (req, res) {
                 fileUrlexcel: 1,
                 fileNameexcel: 1,
                 code: 1,
-                logCreated: { $ifNull: ["$ledgerLog", "No"] }
+                logCreated: { $ifNull: ["$ledgerLogs", "No"] }
             }
         },
 
@@ -604,6 +617,7 @@ module.exports.report = function (req, res) {
         },
 
     ]
+    // console.log(util.inspect(query, {showHidden: false, depth:  null}))
     DataCollectionForms.aggregate(query).exec((err, data) => {
         if (err) {
             res.json({
