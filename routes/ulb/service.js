@@ -10,6 +10,7 @@ const Response = require("../../service").response;
 const moment = require("moment");
 const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require('axios')
+const Redis = require("../../service/redis");
 
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
@@ -85,21 +86,20 @@ module.exports.getUlbById = function (req, res) {
 };
 
 module.exports.getName = async (req, res) => {
-  let data = req.body
+  let data = req.body;
   let ulbName = null;
-  let ulbData = await Ulb.findOne({ censusCode: data?.code })
+  let ulbData = await Ulb.findOne({ censusCode: data?.code });
   if (ulbData) {
-    ulbName = ulbData.name
+    ulbName = ulbData.name;
   } else {
-    ulbData = await Ulb.findOne({ sbCode: data?.code })
-    if (ulbData)
-      ulbName = ulbData.name
+    ulbData = await Ulb.findOne({ sbCode: data?.code });
+    if (ulbData) ulbName = ulbData.name;
   }
 
   return res.status(200).json({
-    name: ulbName
-  })
-}
+    name: ulbName,
+  });
+};
 
 module.exports.get = async function (req, res) {
   let query = {};
@@ -143,7 +143,6 @@ module.exports.put = async function (req, res) {
       let condition = { _id: _id };
       obj["modifiedAt"] = new Date();
       try {
-
         let du = await Ulb.update(condition, { $set: obj });
 
         return Response.OK(res, du, `updated successfully.`);
@@ -159,120 +158,79 @@ module.exports.put = async function (req, res) {
 };
 module.exports.renameUlb = async function (req, res) {
   let censusCode = [
-    801086,
-    800981,
-    800889,
-    800954,
-    801118,
-    801109,
-    801127,
-    800700,
-    800941,
-    800953,
-    801110,
-    801170,
-    800649,
-    800662,
-    800994,
+    801086, 800981, 800889, 800954, 801118, 801109, 801127, 800700, 800941,
+    800953, 801110, 801170, 800649, 800662, 800994,
 
-    800679,
-    800891,
-    900491,
-    800886,
-    801135,
-    800727,
-    900441,
-    800924,
-    800933,
-    801171,
-    800824,
-    801077,
-    800799,
-    801227,
-    801117,
-    800871,
-    800939,
-    801137,
-    800917,
-    801036,
-    801085,
-    801192,
-    800884,
-    800837,
-    801220,
-    800974,
-    801203,
-    801154,
-    800692,
-    801113,
-    801146,
-    900446,
-  ]
+    800679, 800891, 900491, 800886, 801135, 800727, 900441, 800924, 800933,
+    801171, 800824, 801077, 800799, 801227, 801117, 800871, 800939, 801137,
+    800917, 801036, 801085, 801192, 800884, 800837, 801220, 800974, 801203,
+    801154, 800692, 801113, 801146, 900446,
+  ];
   let newNames = [
-    'Prayagraj Municipal Corporation',
-    'Etawah Municipality',
-    'Shahjahanpur Municipal Corporation',
-    'Amethi (Lucknow) Town Panchayat',
-    'Amethi (Amethi) Town Panchayat',
-    'Ayodhya Municipal Corporation',
-    'Bhinga Municipality',
-    'Gajraula Municipality',
-    'Gangaghat Municipality',
-    'Gosainganj (Ayodhya) Town Panchayat',
-    'Gosainganj (Lucknow) Town Panchayat',
-    'Hata Municipality',
-    'Jalalabad (Shamli) Town Panchayat',
-    'Jalalabad (Bijnor) Town Panchayat',
-    'Jhinjhak Municipality',
-    'Kanth (Moradabad) Town Panchayat',
-    'Kanth (Shahjahanpur) Town Panchayat',
-    'Kasba Sangrampur Town Panchayat',
-    'Katra (Shahjahanpur) Town Panchayat',
-    'Katra (Gonda) Town Panchayat',
-    'Khekra Municipality',
-    'Khoda Makanpur Municipality',
-    'Kursath (Hardoi) Town Panchayat',
-    'Kursath (Unnao) Town Panchayat',
-    'Kushinagar Municipality',
-    'Mainpuri Municipality',
-    'Manjhanpur Municipality',
-    'Mathura-Vrindavan Municipal Corporation',
-    'Pt. Deen Dayal Upadhyaya Municipality',
-    'Musafirkhana Town Panchayat',
-    'Nawabganj (Gonda) Municipality',
-    'Nawabganj (Unnao) Town Panchayat',
-    'Nawabganj (Bareilly) Municipality',
-    'Pali (Hardoi) Town Panchayat',
-    'Pali (Lalitpur) Town Panchayat',
-    'Phulpur (Prayagraj) Town Panchayat',
-    'Phulpur (Azamgarh) Town Panchayat',
-    'Powayan Municipality',
-    'Saidpur (Budaun) Town Panchayat',
-    'Saidpur (Ghazipur) Town Panchayat',
-    'Sikanderpur (Kannauj) Town Panchayat',
-    'Sikanderpur (Ballia) Town Panchayat',
-    'Siswa Bazar Municipality',
-    'Tanda (Rampur) Municipality',
-    'Tanda (Ambedkar Nagar) Municipality',
-    'Babhnan Bazar Town Panchayat',
-    'Shahjahanpur_M Town Panchayat'
-  ]
+    "Prayagraj Municipal Corporation",
+    "Etawah Municipality",
+    "Shahjahanpur Municipal Corporation",
+    "Amethi (Lucknow) Town Panchayat",
+    "Amethi (Amethi) Town Panchayat",
+    "Ayodhya Municipal Corporation",
+    "Bhinga Municipality",
+    "Gajraula Municipality",
+    "Gangaghat Municipality",
+    "Gosainganj (Ayodhya) Town Panchayat",
+    "Gosainganj (Lucknow) Town Panchayat",
+    "Hata Municipality",
+    "Jalalabad (Shamli) Town Panchayat",
+    "Jalalabad (Bijnor) Town Panchayat",
+    "Jhinjhak Municipality",
+    "Kanth (Moradabad) Town Panchayat",
+    "Kanth (Shahjahanpur) Town Panchayat",
+    "Kasba Sangrampur Town Panchayat",
+    "Katra (Shahjahanpur) Town Panchayat",
+    "Katra (Gonda) Town Panchayat",
+    "Khekra Municipality",
+    "Khoda Makanpur Municipality",
+    "Kursath (Hardoi) Town Panchayat",
+    "Kursath (Unnao) Town Panchayat",
+    "Kushinagar Municipality",
+    "Mainpuri Municipality",
+    "Manjhanpur Municipality",
+    "Mathura-Vrindavan Municipal Corporation",
+    "Pt. Deen Dayal Upadhyaya Municipality",
+    "Musafirkhana Town Panchayat",
+    "Nawabganj (Gonda) Municipality",
+    "Nawabganj (Unnao) Town Panchayat",
+    "Nawabganj (Bareilly) Municipality",
+    "Pali (Hardoi) Town Panchayat",
+    "Pali (Lalitpur) Town Panchayat",
+    "Phulpur (Prayagraj) Town Panchayat",
+    "Phulpur (Azamgarh) Town Panchayat",
+    "Powayan Municipality",
+    "Saidpur (Budaun) Town Panchayat",
+    "Saidpur (Ghazipur) Town Panchayat",
+    "Sikanderpur (Kannauj) Town Panchayat",
+    "Sikanderpur (Ballia) Town Panchayat",
+    "Siswa Bazar Municipality",
+    "Tanda (Rampur) Municipality",
+    "Tanda (Ambedkar Nagar) Municipality",
+    "Babhnan Bazar Town Panchayat",
+    "Shahjahanpur_M Town Panchayat",
+  ];
   let i = 0;
   for (let el of censusCode) {
     var digit = el.toString()[0];
-    if (digit == '8') {
-      await Ulb.updateOne({ censusCode: String(el) }, { name: newNames[i] })
-    } else if (digit == '9') {
-      await Ulb.updateOne({ sbCode: String(el) }, { name: newNames[i] })
+    if (digit == "8") {
+      await Ulb.updateOne({ censusCode: String(el) }, { name: newNames[i] });
+    } else if (digit == "9") {
+      await Ulb.updateOne({ sbCode: String(el) }, { name: newNames[i] });
     }
 
     i++;
   }
 
   return res.json({
-    success: true
-  })
-}
+    success: true,
+  });
+};
 module.exports.post = async function (req, res) {
   let obj = req.body;
   // state and ulb type is compulsory
@@ -321,8 +279,8 @@ module.exports.post = async function (req, res) {
 module.exports.delete = async function (req, res) {
   // Delete ulb based
   let condition = {
-    _id: req.params._id,
-  },
+      _id: req.params._id,
+    },
     update = {
       isActive: false,
     };
@@ -339,22 +297,21 @@ module.exports.delete_permanent = async function (req, res) {
   if (viaCensusCode) {
     for (let el of ulbCodes) {
       var digit = el.toString()[0];
-      if (digit == '8') {
-        await Ulb.deleteOne({ censusCode: String(el) })
-      } else if (digit == '9') {
-        await Ulb.deleteOne({ sbCode: String(el) })
+      if (digit == "8") {
+        await Ulb.deleteOne({ censusCode: String(el) });
+      } else if (digit == "9") {
+        await Ulb.deleteOne({ sbCode: String(el) });
       }
       // await Ulb.deleteOne({ censusCode: el })
     }
   } else {
-    await Ulb.deleteOne(ulbCodes)
+    await Ulb.deleteOne(ulbCodes);
   }
 
   return res.json({
-    success: true
-  })
+    success: true,
+  });
 };
-
 
 module.exports.getByState = async function (req, res) {
   try {
@@ -510,70 +467,83 @@ module.exports.getUlbByCode = async function (req, res) {
 module.exports.getAllUlbs = async function (req, res) {
   try {
     // Get all ulbs list in older format, so that everything works fine
-    let data = await Ulb.aggregate([
-      {
-        $lookup: {
-          from: "states",
-          localField: "state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      { $unwind: "$state" },
-      {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulbType",
-          foreignField: "_id",
-          as: "ulbType",
-        },
-      },
-      { $unwind: "$ulbType" },
-      {
-        $group: {
-          _id: "$state.code",
-          state: { $first: "$state.name" },
-          ulbs: {
-            $push: {
-              _id: "$_id",
-              state: "$state.name",
-              code: "$code",
-              name: "$name",
-              natureOfUlb: "$natureOfUlb",
-              type: "$ulbType.name",
-              ward: "$ward",
-              area: "$area",
-              population: "$population",
-              amrut: "$amrut",
+    let data;
+    Redis.get("ulbList", async (err, value) => {
+      console.log(err, value);
+      if (!value) {
+        data = await Ulb.aggregate([
+          {
+            $lookup: {
+              from: "states",
+              localField: "state",
+              foreignField: "_id",
+              as: "state",
             },
           },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          stateCode: "$_id",
-          ulbs: 1,
-          state: 1,
-        },
-      },
-    ]).exec();
-    if (data.length) {
-      let obj = {};
-      for (let el of data) {
-        obj[el.stateCode] = {
-          state: el.state,
-          ulbs: el.ulbs,
-        };
+          { $unwind: "$state" },
+          {
+            $lookup: {
+              from: "ulbtypes",
+              localField: "ulbType",
+              foreignField: "_id",
+              as: "ulbType",
+            },
+          },
+          { $unwind: "$ulbType" },
+          {
+            $group: {
+              _id: "$state.code",
+              state: { $first: "$state.name" },
+              state_id: { $first: "$state._id" },
+              ulbs: {
+                $push: {
+                  _id: "$_id",
+                  state: "$state.name",
+                  code: "$code",
+                  name: "$name",
+                  natureOfUlb: "$natureOfUlb",
+                  type: "$ulbType.name",
+                  ward: "$ward",
+                  area: "$area",
+                  population: "$population",
+                  amrut: "$amrut",
+                  location: "$location",
+                },
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              stateCode: "$_id",
+              ulbs: 1,
+              state: 1,
+              state_id: 1,
+            },
+          },
+        ]).exec();
+        Redis.set("ulbList", JSON.stringify(data));
+      } else {
+        data = JSON.parse(value);
       }
-      return res
-        .status(200)
-        .send({ success: true, data: obj, msg: "ULBS Found" });
-    } else {
-      return res
-        .status(200)
-        .send({ success: true, data: {}, msg: "No ULBS Found" });
-    }
+      if (data.length) {
+        let obj = {};
+        for (let el of data) {
+          obj[el.stateCode] = {
+            state: el.state,
+            ulbs: el.ulbs,
+            _id: el.state_id,
+          };
+        }
+        return res
+          .status(200)
+          .send({ success: true, data: obj, msg: "ULBS Found" });
+      } else {
+        return res
+          .status(200)
+          .send({ success: true, data: {}, msg: "No ULBS Found" });
+      }
+    });
   } catch (e) {
     console.log("Erro", e);
     return {};
