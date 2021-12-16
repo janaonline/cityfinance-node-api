@@ -27,8 +27,8 @@ module.exports.get = function(key,cb){
 module.exports.del = function(key,cb){
     Client.del(key,cb);
 };
-module.exports.set = function(key,data){
-    Client.set(key,data);
+module.exports.set = function (key, data, expTime = 1592000) {
+  Client.set(key, data, "EX", expTime);
 };
 module.exports.resetDashboard = ()=>{
     let key = 'dashboard|*';
