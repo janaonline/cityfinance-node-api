@@ -601,7 +601,7 @@ module.exports.getForm = catchAsync(async (req, res) => {
         let numbers = calculateTotalNumbers(ulbData);
         console.log('Hi')
         console.log('printing numbers', numbers);
-
+//masterform
         let query1 = [
             {
                 $lookup: {
@@ -638,7 +638,7 @@ module.exports.getForm = catchAsync(async (req, res) => {
                 },
             },
         ];
-
+//pfms
         let query2 = [
             {
                 $lookup: {
@@ -684,60 +684,85 @@ module.exports.getForm = catchAsync(async (req, res) => {
                 },
             },
         ];
+//annualaccounts
 
         let query3 = [
             {
-                $lookup: {
-                    from: "ulbs",
-                    localField: "ulb",
-                    foreignField: "_id",
-                    as: "ulbData",
-                },
+    $match:{
+      
+        '$or': [
+                  { isSubmit: true, actionTakenByRole: "ULB", status: "PENDING" },
+                  {
+                    $and:
+                      [
+                        { $or: [{ actionTakenByRole: "MoHUA" }, { actionTakenByRole: "STATE" }] },
+                        { $or: [{ status: "PENDING" }, { status: "APPROVED" }] }
+                      ]
+                  }]}
+    },
+            {
+              $lookup: {
+                from: "ulbs",
+                localField: "ulb",
+                foreignField: "_id",
+                as: "ulbData",
+              },
             },
             {
-                $unwind: "$ulbData",
+              $unwind: {
+                path: "$ulbData"
+              },
             },
             {
-                $project: {
-                    steps: 1,
-                    actionTakenByRole: 1,
-                    status: 1,
-                    isSubmit: 1,
-                    ulb: 1,
-                    state: 1,
-                    design_year: 1,
-                    isUA: "$ulbData.isUA",
-                    isMillionPlus: "$ulbData.isMillionPlus",
-                },
+              $project: {
+                steps: 1,
+                actionTakenByRole: 1,
+                status: 1,
+                isSubmit: 1,
+                ulb: 1,
+                state: 1,
+                design_year: 1,
+                isUA: "$ulbData.isUA",
+                isMillionPlus: "$ulbData.isMillionPlus",
+              },
             },
             match,
             {
-                $lookup: {
-                    from: "annualaccountdatas",
-                    localField: "ulb",
-                    foreignField: "ulb",
-                    as: "annualaccount",
-                },
-            },
-            { $unwind: "$annualaccount" },
-            {
-                $project: {
-                    _id: 0,
-                    audit_status: "$annualaccount.audit_status",
-                    annualaccount: 1,
-                },
+              $lookup: {
+                from: "annualaccountdatas",
+                localField: "ulb",
+                foreignField: "ulb",
+                as: "annualaccount",
+              },
             },
             {
-                $group: {
-                    _id: {
-                        audit_status: "$audit_status",
-                        answer: "$annualaccount.submit_annual_accounts.answer",
-                    },
-                    count: { $sum: 1 },
-                },
+              $unwind: {
+                path: "$annualaccount"
+              }
             },
-        ];
-
+            {
+              '$group': {
+                _id: '$annualaccount.audited.submit_annual_accounts',
+                audited: { '$sum': 1 },
+                annualaccount: { '$addToSet': '$annualaccount' }
+              }
+            },
+            { '$match': { _id: true } },
+            {
+              $unwind: {
+                path: "$annualaccount"
+              }
+            },
+            {
+              '$group': {
+                _id: '$annualaccount.unAudited.submit_annual_accounts',
+                unAudited: { '$sum': 1 },
+                audited: { '$first': '$audited' }
+              }
+            },
+            { '$match': { _id: true } },
+          ];
+//util report
         let query4 = [
             {
                 $lookup: {
@@ -785,7 +810,7 @@ module.exports.getForm = catchAsync(async (req, res) => {
                 },
             },
         ];
-
+//xv fc grant ulb form
         let query5 = [
             {
                 $lookup: {
@@ -833,6 +858,8 @@ module.exports.getForm = catchAsync(async (req, res) => {
                 },
             },
         ];
+
+//plans
         let query6 = [
             {
                 $lookup: {
@@ -1141,19 +1168,13 @@ const formatOutput = (
     });
 
     //annualaccounts
-    output3.forEach((el) => {
-        if (el._id.audit_status === "Unaudited" && el._id.answer === "yes") {
-            provisional_yes = el.count;
-        } else if (el._id.audit_status === "Audited" && el._id.answer === "yes") {
-            audited_yes = el.count;
-        } else if (el._id.audit_status === "Audited" && el._id.answer === "no") {
-            audited_no = el.count;
-        } else if (el._id.audit_status === "Unaudited" && el._id.answer === "no") {
-            provisional_no = el.count;
-        }
-    });
-    provisional = (provisional_yes / numbers[i]) * 100;
-    audited = (audited_yes / numbers[i]) * 100;
+    if (output3.length > 0) {
+        provisional = (output3[0]?.unAudited / numbers[i]) * 100;
+        audited = (output3[0]?.audited / numbers[i]) * 100;
+      } else {
+        provisional = 0;
+        audited = 0;
+      }
 
     //detailed utilization report
     output4.forEach((el) => {
