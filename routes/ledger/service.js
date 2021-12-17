@@ -481,7 +481,7 @@ module.exports.addLog = function (req, res) {
 
 module.exports.report =  async (req, res) => {
     let { fy } = req.query
-    let FY = fy;
+    // let FY = fy;
     let filename = "Report_20" + `${fy}` + ".csv";
 
     // Set approrpiate download headers
@@ -618,7 +618,7 @@ module.exports.report =  async (req, res) => {
         },
 
     ]
-    FY.replace('-', '_')
+    let FY = fy.replace('-', '_')
     let ledgerData;
     let query_ledgerLog = [
 
@@ -686,14 +686,31 @@ module.exports.report =  async (req, res) => {
                                     $project:{
 ulbName:1,
 standardized_excelStatus: 1,
-rawExcel:{$arrayElemAt:["$rawExcel",0],
-rawPDF:{$arrayElemAt:["$rawPDF",0]
+rawExcel:{$ifNull:[{$arrayElemAt:["$rawExcel",0]}, ""]},
+rawPDF:{$ifNull:[{$arrayElemAt:["$rawPDF",0]}, ""]}
 
                                     }
-                                }
+                                },
+                                {
+                                    $project:{
+                                
+ulbName:1,
+standardized_excelStatus: 1,
+rawExcel_name:{$ifNull:["$rawExcel.name",  null]},
+rawExcel_url:{$ifNull:["$rawExcel.url",null]},
+rawPDF_name:{$ifNull:["$rawPDF.name",null]},
+rawPDF_url:{$ifNull:["$rawPDF.url",null]}
+
+                                    
+                                    
+                                    }
+                        
+                                    }
+                                
+                        
         ]
     ledgerData =  await  LedgerLogModel.aggregate(query_ledgerLog)
-    // console.log(util.inspect(query, {showHidden: false, depth:  null}))
+    console.log(util.inspect(query_ledgerLog, {showHidden: false, depth:  null}))
     DataCollectionForms.aggregate(query_datacollectionform).exec((err, data) => {
         if (err) {
             res.json({
@@ -725,7 +742,7 @@ rawPDF:{$arrayElemAt:["$rawPDF",0]
            
             }
             // res.flushHeaders();
-            // console.log(ledgerData[0])
+            console.log(ledgerData[0])
             for(let el of ledgerData){
 // console.log(el?.ulbName,el?._id?.ulb_code,el?.standardized_excelStatus )
                        res.write(
@@ -735,13 +752,13 @@ rawPDF:{$arrayElemAt:["$rawPDF",0]
                     "," +
                     el?.standardized_excelStatus +
                     "," +
-                    el.rawPDF[0]?.name +
+                    el.rawPDF_name +
                     "," +
-                     el.rawPDF[0]?.url  +
+                     el.rawPDF_url  +
                     "," +
-                    el.rawExcel[0]?.name +
+                    el.rawExcel_name +
                     "," +
-                    el.rawExcel[0]?.url +
+                    el.rawExcel_url +
                     "\r\n"
                 );
             }
