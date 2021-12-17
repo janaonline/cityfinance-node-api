@@ -479,8 +479,9 @@ module.exports.addLog = function (req, res) {
     });
 };
 
-module.exports.report = function (req, res) {
+module.exports.report =  async (req, res) => {
     let { fy } = req.query
+    let FY = fy;
     let filename = "Report_20" + `${fy}` + ".csv";
 
     // Set approrpiate download headers
@@ -490,8 +491,8 @@ module.exports.report = function (req, res) {
         "ULB_Name, Code, Standardized_Excel_Uploaded, PDF_NAME, PDF_URL, EXCEL_NAME, EXCEL_URL  \r\n"
     );
     // Flush the headers before we start pushing the CSV content
-    res.flushHeaders();
-    let query = [
+
+    let query_datacollectionform = [
         {
             $lookup: {
                 from: "ulbs",
@@ -617,8 +618,74 @@ module.exports.report = function (req, res) {
         },
 
     ]
+    FY.replace('-', '_')
+    let ledgerData;
+    let query_ledgerLog = [
+
+        {
+            $match:{
+                year:`20${fy}`
+                }
+            }
+        ,
+        {
+            $lookup:{
+                from:"ulbs",
+                localField:"ulb_code",
+                foreignField:"code",
+                as:"ulb"
+                }
+            },
+            {
+                $unwind:"$ulb"
+                },
+                
+                
+                {
+                    $lookup:{
+                        from:"datacollectionforms",
+                        localField:"ulb._id",
+                        foreignField:"ulb",
+                        as:"datacollectionform"
+                        }
+                    },
+                    {
+                        $unwind:{
+                            path:"$datacollectionform",
+                            preserveNullAndEmptyArrays: true
+                            }
+                        },
+                        
+                        {
+                            $project:{
+                                year:1,
+                                ulb_code:1,
+                                audit_status:1,
+                                ulbName:"$ulb.name",
+                                standardized_excel:"$excel_url",
+                                rawPDF: {$ifNull:[`$datacollectionform.documents.financial_year_20${FY}.pdf`,[]]},
+                                rawExcel:{$ifNull:[`$datacollectionform.documents.financial_year_20${FY}.excel`,[]]},
+                             
+                                }
+                            },
+             
+                            
+                            {
+                                $group:{
+                                    _id:{
+                                        year:"$year",
+                                        ulb_code:"$ulb_code"
+                                        },
+                                rawPDF: {$last:"$rawPDF"},
+                                rawExcel: {$last:"$rawExcel"},
+                                standardized_excelStatus: {$first:"Yes"},
+                                ulbName: {$first:"$ulbName"},           
+                                    }
+                                }
+        ]
+    ledgerData =  await  LedgerLogModel.aggregate(query_ledgerLog)
     // console.log(util.inspect(query, {showHidden: false, depth:  null}))
-    DataCollectionForms.aggregate(query).exec((err, data) => {
+    DataCollectionForms.aggregate(query_datacollectionform).exec((err, data) => {
         if (err) {
             res.json({
                 success: false,
@@ -626,24 +693,50 @@ module.exports.report = function (req, res) {
                 data: err.toString(),
             });
         } else {
+            res.flushHeaders();
             for (let el of data) {
-                res.write(
-                    el._id +
+                if(el.logcreated == 'No'){
+                    res.write(
+                        el._id +
+                        "," +
+                        el.code +
+                        "," +
+                        el.logcreated +
+                        "," +
+                        el.fileNamepdf +
+                        "," +
+                        el.fileUrlpdf +
+                        "," +
+                        el.fileNameexcel +
+                        "," +
+                        el.fileUrlexcel +
+                        "\r\n"
+                    );
+                }
+           
+            }
+            // res.flushHeaders();
+            // console.log(ledgerData[0])
+            for(let el of ledgerData){
+// console.log(el?.ulbName,el?._id?.ulb_code,el?.standardized_excelStatus )
+                       res.write(
+                    el?.ulbName +
                     "," +
-                    el.code +
+                    el?._id?.ulb_code +
                     "," +
-                    el.logcreated +
+                    el?.standardized_excelStatus +
                     "," +
-                    el.fileNamepdf +
+                    el.rawPDF[0]?.name +
                     "," +
-                    el.fileUrlpdf +
+                     el.rawPDF[0]?.url  +
                     "," +
-                    el.fileNameexcel +
+                    el.rawExcel[0]?.name +
                     "," +
-                    el.fileUrlexcel +
+                    el.rawExcel[0]?.url +
                     "\r\n"
                 );
             }
+            console.log(ledgerData.length, '+', data.length )
             res.end();
         }
     });
