@@ -488,10 +488,10 @@ module.exports.report =  async (req, res) => {
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
     res.write(
-        "ULB_Name, Code, Standardized_Excel_Uploaded, PDF_NAME, PDF_URL, EXCEL_NAME, EXCEL_URL  \r\n"
+        "ULB_Name, Code, Year, Standardized_Excel_Uploaded, PDF_NAME, PDF_URL, EXCEL_NAME, EXCEL_URL  \r\n"
     );
     // Flush the headers before we start pushing the CSV content
-
+if(fy == '15-16' || fy == '16-17'|| fy == '17-18'|| fy == '18-19' ){
     let query_datacollectionform = [
         {
             $lookup: {
@@ -594,6 +594,7 @@ module.exports.report =  async (req, res) => {
                 fileNamepdf: 1,
                 fileUrlexcel: 1,
                 fileNameexcel: 1,
+                year:`20${fy}`,
                 code: 1,
                 logCreated: { $ifNull: ["$ledgerlogs", "No"] }
             }
@@ -605,6 +606,7 @@ module.exports.report =  async (req, res) => {
                 fileNamepdf: 1,
                 fileUrlexcel: 1,
                 fileNameexcel: 1,
+                year:1,
                 code: 1,
                 logcreated: {
                     $cond: {
@@ -696,6 +698,7 @@ rawPDF:{$ifNull:[{$arrayElemAt:["$rawPDF",0]}, ""]}
                                 
 ulbName:1,
 standardized_excelStatus: 1,
+year:`20${fy}`,
 rawExcel_name:{$ifNull:["$rawExcel.name",  null]},
 rawExcel_url:{$ifNull:["$rawExcel.url",null]},
 rawPDF_name:{$ifNull:["$rawPDF.name",null]},
@@ -727,6 +730,8 @@ rawPDF_url:{$ifNull:["$rawPDF.url",null]}
                         "," +
                         el.code +
                         "," +
+                        el.year +
+                        "," +
                         el.logcreated +
                         "," +
                         el.fileNamepdf +
@@ -750,6 +755,8 @@ rawPDF_url:{$ifNull:["$rawPDF.url",null]}
                     "," +
                     el?._id?.ulb_code +
                     "," +
+                    el?.year +
+                    "," +
                     el?.standardized_excelStatus +
                     "," +
                     el.rawPDF_name +
@@ -767,7 +774,82 @@ rawPDF_url:{$ifNull:["$rawPDF.url",null]}
         }
     });
 
+}else {
 
+let query = [
+    { '$match': {$or:[{ year: '2019-20'},{ year: '2020-21'}] }},
+    {
+      '$lookup': {
+        from: 'ulbs',
+        localField: 'ulb_code',
+        foreignField: 'code',
+        as: 'ulb'
+      }
+    },
+    { '$unwind': '$ulb' },
+    
+    {
+      '$project': {
+        year: 1,
+        ulb_code: 1,
+        audit_status: 1,
+        ulbName: '$ulb.name',
+        standardized_excel: '$excel_url',
+        
+      }
+    },
+    {
+      '$group': {
+        _id: { year: '$year', ulb_code: '$ulb_code' },
+        standardized_excelStatus: { '$first': 'Yes' },
+        ulbName: { '$first': '$ulbName' }
+      }
+    },
+  
+    ]
+
+    LedgerLogModel.aggregate(query).exec((err, data) => {
+        if (err) {
+            res.json({
+                success: false,
+                msg: "Invalid Payload",
+                data: err.toString(),
+            });
+        } else {
+            console.log(data.length)
+            res.flushHeaders();
+            for (let el of data) {
+             
+                    res.write(
+                        el.ulbName +
+                        "," +
+                        el._id.ulb_code +
+                        "," +
+                        el._id.year +
+                        "," +
+                        el.standardized_excelStatus +
+                        "," +
+                        '15thFC' +
+                        "," +
+                        "15thFC" +
+                        "," +
+                        "15thFC" +
+                        "," +
+                        "15thFC" +
+                        "\r\n"
+                    );
+                
+           
+            }
+
+            res.end();
+        }
+    });
+
+}
+
+
+  
 
 }
 
