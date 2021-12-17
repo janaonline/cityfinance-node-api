@@ -681,6 +681,15 @@ module.exports.report =  async (req, res) => {
                                 standardized_excelStatus: {$first:"Yes"},
                                 ulbName: {$first:"$ulbName"},           
                                     }
+                                },
+                                {
+                                    $project:{
+ulbName:1,
+standardized_excelStatus: 1,
+rawExcel:{$arrayElemAt:["$rawExcel",0],
+rawPDF:{$arrayElemAt:["$rawPDF",0]
+
+                                    }
                                 }
         ]
     ledgerData =  await  LedgerLogModel.aggregate(query_ledgerLog)
