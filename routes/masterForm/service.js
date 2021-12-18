@@ -2340,6 +2340,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
     if ((user.role != "STATE" || user.role != "ULB") && !state) {
       query = [
         {
+          $match:{
+              $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+          }
+        },
+        {
           $lookup: {
             from: "uas",
             localField: "_id",
