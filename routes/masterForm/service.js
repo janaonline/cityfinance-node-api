@@ -166,6 +166,11 @@ const updateDataInMaster = async (data, user) => {
   delete newData._id;
   let query = [
     {
+      $match:{
+          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+      }
+    },
+    {
       $match: {
         _id: ObjectId(ulb),
       },
@@ -485,6 +490,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
     };
     let queryNotStarted = [
       {
+        $match:{
+            $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+        }
+      },
+      {
         $lookup: {
           from: "states",
           localField: "state",
@@ -771,6 +781,11 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
   const { design_year, ulb, financialYear } = req.query;
 
   let query = [
+    {
+      $match:{
+          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+      }
+    },
     {
       $match: {
         _id: ObjectId(ulb),
@@ -1314,6 +1329,11 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
 
   let queryNonMillionNonUA_NotStarted = [
     {
+      $match:{
+          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+      }
+    },
+    {
       $match: {
         isMillionPlus: "No",
         isUA: "No",
@@ -1349,6 +1369,11 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
     },
   ];
   let queryNonMillionNonUA = [
+    {
+      $match:{
+          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+      }
+    },
     {
       $match: {
         isMillionPlus: "No",
@@ -1665,6 +1690,11 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
       });
     }
     let baseQuery = [
+      {
+        $match:{
+            $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+        }
+      },
       {
         $match: {
           state: ObjectId(state),
@@ -2340,6 +2370,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
     if ((user.role != "STATE" || user.role != "ULB") && !state) {
       query = [
         {
+          $match:{
+              $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+          }
+        },
+        {
           $lookup: {
             from: "uas",
             localField: "_id",
@@ -2585,6 +2620,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
       ];
     } else {
       query = [
+        {
+          $match:{
+              $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+          }
+        },
         {
           $match: {
             state: ObjectId(state),
@@ -3940,6 +3980,11 @@ const oneStatePromise = (element, design_year) => {
 const stateULB = (state) => {
   return new Promise(async (res, rej) => {
     let query = [
+      {
+        $match:{
+            $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+        }
+      },
       {
         $match: {
           state: ObjectId(state),
