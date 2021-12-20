@@ -74,3 +74,11 @@ function doGetRequest(url) {
     });
 }
 
+module.exports.getDataPromise = function (key) {
+  return new Promise((resolve, reject) => {
+    Client.get(key, (err, value) => {
+      if (err) reject(err);
+      resolve(value);
+    });
+  });
+};
