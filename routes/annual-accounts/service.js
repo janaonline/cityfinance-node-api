@@ -138,7 +138,7 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report  \r\n"
+    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel  \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -167,7 +167,8 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         inc_exp: "$audited.provisional_data.inc_exp.pdf.url",
         inc_exp_schedules: "$audited.provisional_data.inc_exp_schedules.pdf.url",
         cash_flow: "$audited.provisional_data.cash_flow.pdf.url",
-        auditor_report: "$audited.provisional_data.auditor_report.pdf.url"
+        auditor_report: "$audited.provisional_data.auditor_report.pdf.url",
+        standardized_excel: "$audited.standardized_data.excel.url"
       }
     }]).exec((err, data) => {
       if (err) {
@@ -215,7 +216,7 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow \r\n"
+    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -243,7 +244,8 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         bal_sheet_schedules: "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
         inc_exp: "$unAudited.provisional_data.inc_exp.pdf.url",
         inc_exp_schedules: "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
-        cash_flow: "$unAudited.provisional_data.cash_flow.pdf.url"
+        cash_flow: "$unAudited.provisional_data.cash_flow.pdf.url",
+        standardized_excel: "$unAudited.standardized_data.excel.url"
       }
     }]).exec((err, data) => {
       if (err) {
