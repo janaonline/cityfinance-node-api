@@ -12,7 +12,7 @@ const UlbSchema = new Schema({
     area: { type: Number, default: 0 },
     population: { type: Number, default: 0 },
     location: {
-        type: {
+        type: { 
             lat: { type: String },
             lng: { type: String },
         },
