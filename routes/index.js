@@ -158,6 +158,9 @@ const recentSearch = require("./recent-search-keyword");
 router.use(recentSearch);
 
 const newDashboards = require("./newDashboards");
-router.use(newDashboards);
+router.use( newDashboards );
+
+const scorePerformance = require( "./score-performance" );
+router.use(scorePerformance)
 
 module.exports = router;

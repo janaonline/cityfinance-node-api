@@ -30,6 +30,7 @@ const redisCheck = (req, res, next)=>{
         }
     });
 }
+
 // Redis.resetDashboard();
 const express = require('express');
 const app = express();
@@ -37,10 +38,11 @@ app.use(compression())
 const router = express.Router();
 router.get("/cash-and-bank", redisCheck,dashboard.filterUlbs, dashboard.cashAndBank);
 router.get("/outstanding-debt", redisCheck,dashboard.filterUlbs, dashboard.outstandingDebt);
-router.get("/own-revenue-dependency",redisCheck, dashboard.filterUlbs, dashboard.ownRevenueDependency);
+router.get("/own-revenue-dependency",redisCheck, dashboard.filterUlbs, dashboard.ownRevenueDependency.old);
 router.get("/revenue-expenditure", redisCheck,dashboard.filterUlbs, dashboard.revenueExpenditure);
 router.get("/source-financial-revenue-expenditure", redisCheck,dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
 router.get("/source-revenue", redisCheck,dashboard.filterUlbs, dashboard.sourceRevenue);
 router.get("/ulb-coverage", redisCheck,dashboard.ulbCoverage);
-router.get("/home-page-data",dashboard.homePageData);
+router.get( "/home-page-data", dashboard.homePageData );
+router.get("/ulb-ledgerCount", redisCheck, dashboard.ownRevenueDependency.ulbRevenueCount)
 module.exports = router;
