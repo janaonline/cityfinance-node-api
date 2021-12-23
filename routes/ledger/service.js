@@ -488,7 +488,7 @@ module.exports.report =  async (req, res) => {
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
     res.write(
-        "ULB_Name, Code, Year, Standardized_Excel_Uploaded, PDF_NAME, PDF_URL, EXCEL_NAME, EXCEL_URL  \r\n"
+        "ULB_Name, Code, State, Year, Standardized_Excel_Uploaded, PDF_NAME, PDF_URL, EXCEL_NAME, EXCEL_URL  \r\n"
     );
     // Flush the headers before we start pushing the CSV content
 if(fy == '15-16' || fy == '16-17'|| fy == '17-18'|| fy == '18-19' ){
@@ -730,6 +730,8 @@ rawPDF_url:{$ifNull:["$rawPDF.url",null]}
                         "," +
                         el.code +
                         "," +
+                        "-" +
+                        "," +
                         el.year +
                         "," +
                         el.logcreated +
@@ -787,12 +789,22 @@ let query = [
       }
     },
     { '$unwind': '$ulb' },
+    {
+        '$lookup': {
+          from: 'states',
+          localField: 'ulb.state',
+          foreignField: '_id',
+          as: 'state'
+        }
+      },
+      { '$unwind': '$state' },
     
     {
       '$project': {
         year: 1,
         ulb_code: 1,
         audit_status: 1,
+        state:"$state.name",
         ulbName: '$ulb.name',
         standardized_excel: '$excel_url',
         
@@ -802,7 +814,9 @@ let query = [
       '$group': {
         _id: { year: '$year', ulb_code: '$ulb_code' },
         standardized_excelStatus: { '$first': 'Yes' },
-        ulbName: { '$first': '$ulbName' }
+        ulbName: { '$first': '$ulbName' },
+        ulb_code:{'$first':'$ulb_code'},
+        state:{'$first':"$state"}
       }
     },
   
@@ -824,6 +838,8 @@ let query = [
                         el.ulbName +
                         "," +
                         el._id.ulb_code +
+                        "," +
+                        el.state +
                         "," +
                         el._id.year +
                         "," +
