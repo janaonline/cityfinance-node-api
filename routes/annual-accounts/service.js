@@ -138,7 +138,7 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel  \r\n"
+    "ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel  \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -156,11 +156,24 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
       $unwind: "$ulb"
     },
     {
+      $lookup: {
+        from: "states",
+        localField: "ulb.state",
+        foreignField: "_id",
+        as: "state"
+      }
+    },
+    {
+      $unwind: "$state"
+    },
+    {
 
       $project: {
         ulbName: "$ulb.name",
         censusCode: "$ulb.censusCode",
         sbCode: "$ulb.sbCode",
+        ulbCode:"$ulb.code",
+        state:"$state.name",
         submittedOn: "$createdAt",
         bal_sheet: "$audited.provisional_data.bal_sheet.pdf.url",
         bal_sheet_schedules: "$audited.provisional_data.bal_sheet_schedules.pdf.url",
@@ -185,6 +198,10 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
             el.censusCode +
             "," +
             el.sbCode +
+            "," +
+            el.ulbCode +
+            "," +
+            el.state +
             "," +
             el.submittedOn +
             "," +
@@ -216,7 +233,7 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, ULB Code, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel \r\n"
+    "ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -234,11 +251,24 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
       $unwind: "$ulb"
     },
     {
+      $lookup: {
+        from: "states",
+        localField: "ulb.state",
+        foreignField: "_id",
+        as: "state"
+      }
+    },
+    {
+      $unwind: "$state"
+    },
+    {
 
       $project: {
         ulbName: "$ulb.name",
         censusCode: "$ulb.censusCode",
         sbCode: "$ulb.sbCode",
+        ulbCode:"$ulb.code",
+        state:"$state.name",
         submittedOn: "$createdAt",
         bal_sheet: "$unAudited.provisional_data.bal_sheet.pdf.url",
         bal_sheet_schedules: "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
@@ -262,6 +292,10 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
             el.censusCode +
             "," +
             el.sbCode +
+            "," +
+            el.ulbCode +
+            "," +
+            el.state +
             "," +
             el.submittedOn +
             "," +
