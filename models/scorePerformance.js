@@ -2,49 +2,38 @@ require("./dbConnect");
 // const { Schema } = require( "mongoose" );
 
 const scorePerformanceSchema = new Schema( {
+    ulb:{ type: Schema.Types.ObjectId, ref: 'Ulb' },
+    total: {
+     type: String  
+   },
     enumeration: [
         {
-        "question": {
-            _id: mongoose.Schema.Types.ObjectId,
-            type: Boolean,
-            required: true
-        }
+        "question": {  type:  String },
+        "answer": {  type: Boolean },
         }
     ],
     valuation: [
         {
-            "question": {
-                _id: mongoose.Schema.Types.ObjectId,
-                type: Boolean,
-                required: true
-            }
-            }
+            "question": {  type:  String },
+            "answer": { type: Boolean  },
+        }
     ],
-    assesment: [
+    assessment: [
         {
-            "question": {
-                _id: mongoose.Schema.Types.ObjectId,
-                type: Boolean,
-                required: true
-            }
+            "question": {  type: String  },
+            "answer": { type: Boolean   },
             }
     ],
     billing_collection: [
         {
-            "question": {
-                _id: mongoose.Schema.Types.ObjectId,
-                type: Boolean,
-                required: true
-            }
+            "question": { type: String},
+            "answer": { type: Boolean },
             }
     ],
     reporting: [
         {
-            "question": {
-                _id: mongoose.Schema.Types.ObjectId,
-                type: Boolean,
-                required: true
-            }
+            "question": { type: String },
+            "answer": { type: Boolean},
             }
     ],
 },

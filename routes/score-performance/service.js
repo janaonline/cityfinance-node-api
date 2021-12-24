@@ -1,73 +1,26 @@
 const scorePerformanceQuestions = require( "../../models/scorePerformanceQuestions" );
-// const scorePerformance = require( "../../models/scorePerformance" );
+const scorePerformance = require( "../../models/scorePerformance" );
+const ObjectId = require('mongoose').Types.ObjectId;
 
 async function addScoreQuestion( req, res ) {
 
-    const questionsText = new scorePerformanceQuestions( {
-        enumeration: req.body.enumeration.map( ( question ) => {
-            return {
-                question: {
-                    text: question.question,
-                    number: question.number
-                }
+    const returnQuestion = (question) => {
+        return {
+            question: {
+                text: question.question,
+                number: question.number
             }
-        } ),
-        valuation: req.body.valuation.map(( question ) => {
-            return {
-                question: {
-                    text: question.question,
-                    number: question.number
-                }
-            }
-        } ),
-        assesment: req.body.assesment.map(( question ) => {
-            return {
-                question: {
-                    text: question.question,
-                    number: question.number
-                }
-            }
-        } ),
-        billing_collection: req.body.billing_collection.map(( question ) => {
-            return {
-                question: {
-                    text: question.question,
-                    number: question.number
-                }
-            }
-        } ),
-        reporting: req.body.reporting.map(( question ) => {
-            return {
-                question: {
-                    text: question.question,
-                    number: question.number
-                }
-            }
-        } )
-        
-    } )
+        }   
+    }
 
-    // const questionsList = new scorePerformanceQuestions( {
-    //     enumeration: [ {
-    //         question: {
-    //             text: req.body.enumeration[0].question
-    //         }
-    //     }],
-    //     valuation: [ {
-    //         question: req.body.valuation.question
-    //     }],
-    //     assesment: [ {
-    //         question: req.body.assesment.question
-    //     }],
-    //     billing_collection: [ {
-    //         question: req.body.billing_collection.question
-    //     }],
-    //     reporting: [ {
-    //         question: req.body.reporting.question
-            
-    //     }]
-    // })
-    // console.log("questionsText",questionsList)
+    let newData={};
+    for (const key in req.body) {
+        const element = req.body[ key ];
+        Object.assign(newData,{[key]: element.map(returnQuestion)})
+    }
+
+    const questionsText = new scorePerformanceQuestions(newData)
+
     try {
         await questionsText.save()
         res.status( 201 ).json( questionsText );
@@ -79,13 +32,63 @@ async function addScoreQuestion( req, res ) {
 async function getAddScoreQuestion(req, res) {
     try {
         let getQuestion = await scorePerformanceQuestions.find( {} ).lean()
-        console.log(getQuestion)
         res.status( 201 ).json( getQuestion );
     } catch (err) {
         res.status( 400 ).json(err)
     }
 } 
 
+async function postQuestionAnswer( req, res ) {
+
+    const data = req.body;
+    let totalCount = 0;
+    let totalval = 0
+
+    for ( const key in data ) {
+        const element = data[ key ];
+        totalCount += element.length;
+        element.map( value => {
+            if ( value.answer )
+                totalval++;
+        } );
+    }
+
+    let total =   (totalval / totalCount * 10).toFixed(1) ;
+
+    let finalAnswers = Object.assign( data, { total } )
+
+    const answers = new scorePerformance(finalAnswers)
+
+    try {
+      await answers.save()
+        res.status( 201 ).json(answers );
+    } catch (err) {
+        res.status( 400 ).json(err)
+    }
+}
+
+async function getPostedAnswer(req, res) {
+    try {
+        let getQuestionAnswer = await scorePerformance.find( {} ).lean()
+
+        res.status( 201 ).json( getQuestionAnswer );
+    } catch (err) {
+        res.status( 400 ).json(err)
+    }
+}
+
+async function getAnswerByUlb( req, res ) {
+    let ulb = req.body.ulb;
+    
+    if ( ulb ) {
+        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId(ulb) } );
+        res.status( 201 ).json( findAnswerByUlb );
+        } else {
+        res.status( 400 ).json({
+            success: false,
+        });
+    }
+}
 
 
-module.exports = {addScoreQuestion, getAddScoreQuestion}
+module.exports = {addScoreQuestion, getAddScoreQuestion, postQuestionAnswer, getPostedAnswer, getAnswerByUlb }
