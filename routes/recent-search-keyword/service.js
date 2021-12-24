@@ -109,7 +109,7 @@ async function getAllKeyword(req, res) {
 
 async function search(req, res) {
   try {
-    const { matchingWord } = req.body;
+    const { matchingWord, onlyUlb } = req.body;
     if (!matchingWord)
       return Response.BadRequest(res, null, "Provide word to match");
     let query = { name: { $regex: matchingWord, $options: "im" } };
@@ -130,20 +130,30 @@ async function search(req, res) {
       statePromise,
       searchKeywordPromise,
     ]);
-    data = [
-      ...data[0].map((value) => {
-        value.type = "ulb";
-        return value;
-      }),
-      ...data[1].map((value) => {
-        value.type = "state";
-        return value;
-      }),
-      ...data[2].map((value) => {
-        value.type = "keyWord";
-        return value;
-      }),
-    ];
+    if (onlyUlb) {
+      data = [
+        ...data[0].map((value) => {
+          value.type = "ulb";
+          return value;
+        }),
+      ];
+    } else {
+      data = [
+        ...data[0].map((value) => {
+          value.type = "ulb";
+          return value;
+        }),
+        ...data[1].map((value) => {
+          value.type = "state";
+          return value;
+        }),
+        ...data[2].map((value) => {
+          value.type = "keyWord";
+          return value;
+        }),
+      ];
+    }
+    // if (data.length == 0) return Response.BadRequest(res, null, "No ULB Found");
     return Response.OK(res, data);
   } catch (error) {
     return Response.InternalError(res, error);
