@@ -2,6 +2,13 @@ require("./dbConnect");
 var recentSearchKeyword = new Schema(
   {
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb" },
+    type: {
+      type: String,
+      enum: {
+        values: ["STATE", "ULB", "SEARCHKEYWORD"],
+      },
+    },
+    name: { type: String },
     state: { type: Schema.Types.ObjectId, ref: "state" },
     searchKeyword: { type: Schema.Types.ObjectId, ref: "searchKeyword" },
     count: { type: Number, required: true, default: 1 },
