@@ -13,13 +13,13 @@ const HeadersSchema = new Schema(
     subHeaders: [
       {
         name: { type: String },
-        filter: [
+        mainContent: [
           {
             about: {
               type: String,
             },
             btnLabels: [{ type: String }],
-            name: { type: String },
+            aggregateInfo: { type: String },
             static: {
               indicators: [
                 {
