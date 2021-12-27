@@ -6,13 +6,19 @@ const GrantsClaimed = require('../../models/GrantsClaimed')
 const Masterform = require("../../models/MasterForm")
 const GTCertificate = require('../../models/StateGTCertificate')
 const GrantClaim = require('../../models/GrantClaim')
+const GrantClaimed = require('../../models/GrantsClaimed')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require("../../service");
 const UA = require("../../models/UA");
 const moment = require("moment");
 const util = require("util");
+const axios = require('axios');
+const express = require('express');
+const putDataService = require("../file-upload/service").putData;
 const { findOneAndUpdate } = require("../../models/StateGTCertificate");
-
+var http = require('http');
+const https = require('https');
+var fs = require('fs');
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -355,6 +361,83 @@ module.exports.readCSV = catchAsync(async (req, res) => {
 
 
 })
+
+module.exports.uploadGrantData = catchAsync(async(req,res)=>{
+    const jsonArray = req.body.jsonArray;
+   let claimInfo = {
+        MPC: {
+            claimed:false,
+            url:''
+        },
+        NMPC_Tied:{
+            claimed:false,
+            url:''
+        },
+        NMPC_Untied:{
+            claimed:false,
+            url:''
+        }
+    }
+    let year = await Year.findOne({year: jsonArray[0]['Year']})
+    jsonArray.forEach(el=>{
+        let type = el['Type']
+        claimInfo[type]['claimed'] = true;
+        claimInfo[type]['url'] = el['Link'];
+for(let key in claimInfo){
+    if(key != type){
+        delete claimInfo[key]
+    }
+}
+console.log(claimInfo)
+
+        // let state = await State.findOne({name: el['State']})
+        // if(!state){
+        //     console.log(el['State'], ' not found ')
+        // }else{
+            // await GrantClaimed.findOneAndUpdate(
+            //     {state:state._id, financialYear:year._id},
+                
+            //     )
+        // }
+    })
+
+
+  
+
+
+    
+})
+
+
+var download = function(data, _cb) {
+    let url = data['Link'];
+    let fileName = data['State'] + '_' + data['Year'] + '_' + data['Type'] + '_' + data['Installment'] + '.pdf' ;
+   console.log(fileName);
+ 
+    let dest = "/tmp/" + fileName;
+  var file = fs.createWriteStream(dest);
+  let isHttps = url.includes("https");
+  if (isHttps) {
+      const req = https.get(url, function (response) {
+          response.pipe(file);
+          file.on('finish', function () {
+              file.close(function () {
+                  _cb(null, file)
+              });  // close() is async, call cb after close completes.
+          });
+      });
+  } else {
+      const req = http.get(url, function (response) {
+          response.pipe(file);
+          file.on('finish', function () {
+              file.close(function () {
+                  _cb(null, file)
+              });  // close() is async, call cb after close completes.
+          });
+      });
+  }
+}
+
 
 function calculateEligibility(financialYear, stateId, expectedValues) {
     return new Promise(async (rslv, rjct) => {
