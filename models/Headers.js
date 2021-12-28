@@ -7,8 +7,7 @@ const HeadersSchema = new Schema(
     dashboard: {
       type: Schema.Types.ObjectId,
       ref: "DashboardMaster",
-      required: true,
-      unique: true,
+      required: true
     },
     subHeaders: [
       {
