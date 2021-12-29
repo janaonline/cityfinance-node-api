@@ -364,44 +364,96 @@ module.exports.readCSV = catchAsync(async (req, res) => {
 
 module.exports.uploadGrantData = catchAsync(async(req,res)=>{
     const jsonArray = req.body.jsonArray;
-   let claimInfo = {
-        MPC: {
-            claimed:false,
-            url:''
-        },
-        NMPC_Tied:{
-            claimed:false,
-            url:''
-        },
-        NMPC_Untied:{
-            claimed:false,
-            url:''
+let x=0;
+    let year = await Year.findOne({year: jsonArray[0]['Year']}).lean()
+    jsonArray.map(async (el)=>{
+        let state = await State.findOne({name:el['State']}).lean()
+        if(!state){
+            console.log('*****NOT FOUND****',el['State'] )
+        return res.json({
+            message:`State not found ${el['State']}`
+        })
         }
-    }
-    let year = await Year.findOne({year: jsonArray[0]['Year']})
-    jsonArray.forEach(el=>{
-        let type = el['Type']
-        claimInfo[type]['claimed'] = true;
-        claimInfo[type]['url'] = el['Link'];
-for(let key in claimInfo){
-    if(key != type){
-        delete claimInfo[key]
-    }
-}
-console.log(claimInfo)
+        let claimInfo  = {
+            MPC: {
+                claimed:false,
+                url:''
+            },
+            NMPC_Tied:{
+               firstInstallment:{
+                claimed:false,
+                url:''
+               },
+               secondInstallment:{
+                claimed:false,
+                url:''
+               }
+            },
+            NMPC_Untied:{
+                firstInstallment:{
+                    claimed:false,
+                    url:''
+                   },
+                   secondInstallment:{
+                    claimed:false,
+                    url:''
+                   }
+            }
+        }
+        let type = el['Type'].includes('-') ? el['Type'].replace('-','_') : el['Type']
+        let installment = el['Installment']
+        if(type == 'MPC'){
+            delete claimInfo['NMPC_Tied']
+            delete claimInfo['NMPC_Untied']
+            claimInfo[type]['claimed']=true;
+            claimInfo[type]['url']=el['Link'];
+        }else if(type == 'NMPC_Untied'){
+            delete claimInfo['NMPC_Tied']
+            delete claimInfo['MPC']
+            if(installment == '1'){
+                delete claimInfo[type]['secondInstallment']
+                claimInfo[type]['firstInstallment']['claimed']=true;
+                claimInfo[type]['firstInstallment']['url']=el['Link'];
+            }else if(installment == '2') {
+                delete claimInfo[type]['firstInstallment']
+                claimInfo[type]['secondInstallment']['claimed']=true;
+                claimInfo[type]['secondInstallment']['url']=el['Link'];
+            }
 
-        // let state = await State.findOne({name: el['State']})
-        // if(!state){
-        //     console.log(el['State'], ' not found ')
-        // }else{
-            // await GrantClaimed.findOneAndUpdate(
-            //     {state:state._id, financialYear:year._id},
-                
-            //     )
-        // }
+        }else if(type == 'NMPC_Tied'){
+            delete claimInfo['NMPC_Untied']
+            delete claimInfo['MPC']
+ if(installment == '1'){
+    delete claimInfo[type]['secondInstallment']
+    claimInfo[type]['firstInstallment']['claimed']=true;
+    claimInfo[type]['firstInstallment']['url']=el['Link'];
+            }else if(installment == '2') {
+                delete claimInfo[type]['firstInstallment']
+                claimInfo[type]['secondInstallment']['claimed']=true;
+                claimInfo[type]['secondInstallment']['url']=el['Link']; 
+            }
+        }
+ let pushData = {
+     claimInfo : claimInfo
+ }
+console.log(util.inspect(pushData, {showHidden: false, depth: null}))
+console.log(state._id, year._id )
+  let grantData =   await GrantClaimed.findOne({'state':state._id, 'financialYear':year._id} ).lean()
+
+  if(grantData){
+      if(grantData.hasOwnProperty('claimInfo')){
+          Object.assign(grantData['claimInfo'],claimInfo)
+        await GrantClaimed.updateOne({'state':state._id, 'financialYear':year._id},grantData  )
+      }else{
+        await GrantClaimed.updateOne({'state':state._id, 'financialYear':year._id}, pushData )
+      }
+  }
     })
 
-
+return res.json({
+    success: true,
+    message:"Updated"
+})
   
 
 

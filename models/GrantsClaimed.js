@@ -18,12 +18,24 @@ const GrantsClaimedSchema = new Schema(
                 url:{type: String}
             },
             NMPC_Tied:{
+               firstInstallment:{
                 claimed:{type: Boolean},
                 url:{type: String}
+               },
+               secondInstallment:{
+                claimed:{type: Boolean},
+                url:{type: String}
+               }
             },
             NMPC_Untied:{
-                claimed:{type: Boolean},
-                url:{type: String}
+                firstInstallment:{
+                    claimed:{type: Boolean},
+                    url:{type: String}
+                   },
+                   secondInstallment:{
+                    claimed:{type: Boolean},
+                    url:{type: String}
+                   }
             }
         }
     },
