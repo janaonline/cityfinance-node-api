@@ -185,6 +185,11 @@ let query_ulbsInUA = [...query_totalULBs,    {
         ]
 
     if(state_id){
+        query_fourthCard.unshift({
+            $match:{
+                state:ObjectId(state_id)
+            }
+        })
         query_totalULBs = [...query_totalULBs, {
             $match:{
                 "state._id":ObjectId(state_id)
