@@ -107,8 +107,89 @@ let query_ulbsInUA = [...query_totalULBs,    {
             "ulb.isUA":"Yes"
         }
     }]
+    let query_fourthCard = [
+        {
+            $lookup:{
+                from:"states",
+                localField:"state",
+                foreignField:"_id",
+                as:"state"
+                }
+            },
+            {
+                $unwind:"$state"
+                },
+                {
+                    $match:{
+                        "state.accessToXVFC": true
+                        }
+                    },
+        
+        
+        {
+           
+            $match:{
+                $or:[{censusCode:{$exists :true, $ne: '', $ne: null}},{sbCode:{$exists :true, $ne: '', $ne: null}}]
+                }
+            },
+            {
+                $lookup:{
+                       from:"users",
+                localField:"_id",
+                foreignField:"ulb",
+                as:"user"
+                    }
+                },
+                {
+                    $unwind:"$user"
+                    },
+                    {
+                        $match:{
+                            isUA:"Yes"
+                            }
+                        },
+                        {
+                            $group:{
+                                _id:"$UA",
+                                ulbs:{$addToSet:"$_id"},
+                                
+                                }
+                            },
+                            {
+                                $lookup:{
+                                    from:"masterforms",
+                                    localField:"ulbs",
+                                    foreignField:"ulb",
+                                    as:"masterform"
+                                    }
+                                },
+                                {
+                                    $unwind:{
+                                        path:"$masterform",
+                                        preserveNullAndEmptyArrays: true
+                                        }
+                                    },
+                                    {
+                                        $match:{
+                                            $or:[{"masterform.design_year":ObjectId(design_year)},{masterform:{$exists:false}}]
+                                            
+                                            }
+                                        },
+                                        {
+                                            $group:{
+                                                _id:"$_id",
+                                                masterform:{$addToSet:"$masterform"},
+                                                ulbs:{$first:"$ulbs"}
+                                                }
+                                            }
+        ]
 
     if(state_id){
+        query_fourthCard.unshift({
+            $match:{
+                state:ObjectId(state_id)
+            }
+        })
         query_totalULBs = [...query_totalULBs, {
             $match:{
                 "state._id":ObjectId(state_id)
@@ -161,7 +242,7 @@ let query_ulbsInUA = [...query_totalULBs,    {
         $count:"totalULBsInUAApproved"
     })
 
-             let { output1, output2, output3, output4, output5, output6 } = await new Promise(async (resolve, reject) => {
+             let { output1, output2, output3, output4, output5, output6, output7 } = await new Promise(async (resolve, reject) => {
                 let prms1 = new Promise(async (rslv, rjct) => {
                     // console.log(util.inspect(query_totalULBs, { showHidden: false, depth: null }))
                     let output = await Ulb.aggregate(query_totalULBs);
@@ -189,7 +270,11 @@ let query_ulbsInUA = [...query_totalULBs,    {
                     let output = await MasterFormData.aggregate(query_ulbsInUAApproved);
                     rslv(output);
                 });
-                Promise.all([prms1, prms2, prms3, prms4, prms5,prms6]).then(
+                let prms7 = new Promise(async (rslv, rjct) => {
+                    let output = await Ulb.aggregate(query_fourthCard);
+                    rslv(output);
+                });
+                Promise.all([prms1, prms2, prms3, prms4, prms5,prms6, prms7]).then(
                     (outputs) => {
                         let output1 = outputs[0];
                         let output2 = outputs[1];
@@ -197,9 +282,10 @@ let query_ulbsInUA = [...query_totalULBs,    {
                         let output4 = outputs[3];
                         let output5 = outputs[4];
                         let output6 = outputs[5];
+                        let output7 = outputs[6];
 
-                        if (output1 && output2 && output3 && output4 && output5 && output6) {
-                            resolve({ output1, output2, output3, output4 , output5, output6});
+                        if (output1 && output2 && output3 && output4 && output5 && output6 && output7) {
+                            resolve({ output1, output2, output3, output4 , output5, output6, output7});
                         } else {
                             reject({ message: "No Data Found" });
                         }
@@ -209,6 +295,7 @@ let query_ulbsInUA = [...query_totalULBs,    {
                     }
                 );
             });
+
 
 console.log(output1,output2,output3,output4,output5,output6)
             // let match1 = {
@@ -253,6 +340,24 @@ console.log(output1,output2,output3,output4,output5,output6)
             //         }
             //     }
             // }
+            let output7_numerator = 0;
+            output7.forEach(el=>{
+              let totalULBsInUA =  el['ulbs'].length;
+              let totalMasterFormsInUA = el['masterform'].length
+              if(totalULBsInUA == totalMasterFormsInUA && totalULBsInUA != 0){
+                 let counter=0;
+el['masterform'].forEach((el2)=>{
+    if((el2['status'] == 'APPROVED' && el2['actionTakenByRole'] == 'STATE') ||
+    (el2['status'] == 'PENDING' && el2['actionTakenByRole'] == 'MoHUA') ){
+        counter++;
+    }
+})
+if(counter == totalMasterFormsInUA ){
+    output7_numerator++;
+    console.log('Hii',el['_id'])
+}
+              }
+            })
             let outputData = {
                 "submitted_totalUlbs": output2.length > 0 ? output2[0]?.totalULBsApproved : 0 ,
                 "totalUlbs": output1.length > 0 ? output1[0]?.totalULBs : 0,
@@ -260,9 +365,9 @@ console.log(output1,output2,output3,output4,output5,output6)
                 "submitted_nonMillion": output4.length > 0 ? output4[0]?.totalNonMillionULBsApproved : 0,
                 "nonMillion": output3.length > 0 ? output3[0]?.totalNonMillionULBs : 0,
 
-                "submitted_millionPlusUA": 0,
-                "millionPlusUA": 0,
-
+                "submitted_millionPlusUA": output7_numerator ? output7_numerator : 0,
+                "millionPlusUA": output7.length,
+ 
                 "submitted_ulbsInMillionPlusUlbs": output6.length > 0 ? output6[0]?.totalULBsInUAApproved : 0,
                 "ulbsInMillionPlusUlbs": output5.length > 0 ? output5[0]?.totalULBsInUA : 0,
             }

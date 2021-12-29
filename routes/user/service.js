@@ -100,7 +100,16 @@ module.exports.getAll = async (req, res) => {
                     ? req.body.role
                     : 'USER';
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
+        if (filter["sbCode"]) {
+            let code = filter["sbCode"];
+            var digit = code.toString()[0];
+            if (digit == "8") {
+              delete filter["sbCode"];
+              filter["censusCode"] = code;
+            }
+          }
         let access = Constants.USER.LEVEL_ACCESS;
+
         if (!role) {
             Response.BadRequest(res, req.body, 'Role is required field.');
         } else if (
@@ -123,28 +132,9 @@ module.exports.getAll = async (req, res) => {
                 ]
 
                 let countQuery = [
-
-                    // {
-                    //     $match: {
-
-                    //         $or: [{ "censusCode": { $exists: true, $ne: null, $ne: "" } },
-                    //         { "sbCode": { $exists: true, $ne: null, $ne: "" } }
-                    //         ]
-                    //     }
-                    // },
                     { $count: "total" }
-
                 ]
                 let q = [
-                    // {
-                    //     $match: {
-                    //         $or: [
-                    //             { censusCode: { $exists: true, $ne: null, $ne: "" } },
-                    //             { sbCode: { $exists: true, $ne: null, $ne: "" } }
-                    //         ]
-                    //     }
-                    // },
-
                     {
 
                         $lookup: {
@@ -245,12 +235,7 @@ module.exports.getAll = async (req, res) => {
                             user: { $ifNull: ["$user._id", "false"] }
                         }
                     },
-                    // {
-                    //     $match: {
-                    //         user: "false"
-                    //     }
-                    // }
-
+  
                 ];
                 let q2 = [
                     { $match: query },
@@ -454,7 +439,7 @@ module.exports.getAll = async (req, res) => {
                     if (!skip) {
 
                         let nQ = Object.assign({}, query);
-                        Object.assign(nQ, newFilter);
+                        // Object.assign(nQ, newFilter);
                         total = await User.count(nQ);
 
 
@@ -464,9 +449,9 @@ module.exports.getAll = async (req, res) => {
                     let users;
                     if (role == 'ULB') {
                         if (!skip) {
-                            if (Object.entries(newFilter).length > 0 && newFilter.constructor === Object) {
-                                q_copy.push({ $match: newFilter })
-                            }
+                            // if (Object.entries(newFilter).length > 0 && newFilter.constructor === Object) {
+                            //     q_copy.push({ $match: newFilter })
+                            // }
                             q_copy.push(...countQuery)
                         }
 
@@ -493,7 +478,7 @@ module.exports.getAll = async (req, res) => {
                         message: 'User list',
                         data: users,
                         count: users.length,
-                        total: totalUsers[0]['total']
+                        total: totalUsers.length > 0  ? totalUsers[0]['total'] : null 
                     });
                 }
             } catch (e) {
