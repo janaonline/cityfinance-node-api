@@ -3,7 +3,7 @@ const DashboardHeaders = require("../../models/Headers");
 module.exports.create = async (req, res) => {
   const data = req.body;
   try {
-    let dashboardHeaders = new DashboardHeaders({ data });
+    let dashboardHeaders = new DashboardHeaders(data);
     dashboardHeaders = await dashboardHeaders.save();
     return res.json({ msg: "DashboardHeaders created!", dashboardHeaders });
   } catch (err) {
