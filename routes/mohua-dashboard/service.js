@@ -58,7 +58,17 @@ let query_totalULBs = [
             },
         {
             $match:{
-                $and:[{status: "APPROVED"},{actionTakenByRole:"MoHUA"}]
+                $or:[
+                    {$and:[
+                        {status: "APPROVED"},
+                        {actionTakenByRole:"STATE"}
+                    ]},
+                {$and:[
+                    {status: "PENDING"},
+                    {actionTakenByRole:"MoHUA"}
+                ]}
+            ]
+                
                 }
             },
 
