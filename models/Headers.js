@@ -7,19 +7,18 @@ const HeadersSchema = new Schema(
     dashboard: {
       type: Schema.Types.ObjectId,
       ref: "DashboardMaster",
-      required: true,
-      unique: true,
+      required: true
     },
     subHeaders: [
       {
         name: { type: String },
-        filter: [
+        mainContent: [
           {
             about: {
               type: String,
             },
             btnLabels: [{ type: String }],
-            name: { type: String },
+            aggregateInfo: { type: String },
             static: {
               indicators: [
                 {

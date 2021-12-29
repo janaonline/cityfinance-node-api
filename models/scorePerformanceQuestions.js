@@ -18,7 +18,7 @@ const scorePerformanceQuestionSchema = new Schema( {
             }
             }
     ],
-    assesment: [
+    assessment: [
         {
             "question": {
                 text: { type: String },
