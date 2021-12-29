@@ -779,7 +779,10 @@ rawPDF_url:{$ifNull:["$rawPDF.url",null]}
 }else {
 
 let query = [
-    { '$match': {$or:[{ year: '2019-20'},{ year: '2020-21'}] }},
+    { '$match': {
+        year : `20${fy}`
+    }
+},
     {
       '$lookup': {
         from: 'ulbs',
@@ -788,7 +791,11 @@ let query = [
         as: 'ulb'
       }
     },
-    { '$unwind': '$ulb' },
+    { '$unwind': {
+        path:"$ulb",
+        preserveNullAndEmptyArrays: true
+    }  
+},
     {
         '$lookup': {
           from: 'states',
@@ -809,16 +816,7 @@ let query = [
         standardized_excel: '$excel_url',
         
       }
-    },
-    {
-      '$group': {
-        _id: { year: '$year', ulb_code: '$ulb_code' },
-        standardized_excelStatus: { '$first': 'Yes' },
-        ulbName: { '$first': '$ulbName' },
-        ulb_code:{'$first':'$ulb_code'},
-        state:{'$first':"$state"}
-      }
-    },
+    }
   
     ]
 
@@ -841,9 +839,9 @@ let query = [
                         "," +
                         el.state +
                         "," +
-                        el._id.year +
+                        el.year +
                         "," +
-                        el.standardized_excelStatus +
+                        el.standardized_excel +
                         "," +
                         '15thFC' +
                         "," +
