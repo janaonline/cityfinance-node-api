@@ -1,6 +1,8 @@
 const moment = require('moment');
 const UlbLedger = require('../../../models/UlbLedger');
-const OverallUlb = require('../../../models/OverallUlb');
+const OverallUlb = require( '../../../models/OverallUlb' );
+const ObjectId = require("mongoose").Types.ObjectId;
+
 
 const ownRevenueCode = ['110', '130', '140'];
 const revenueExpenditureCode = [
@@ -15,20 +17,51 @@ const revenueExpenditureCode = [
     '272',
     '200'
 ];
-const Redis = require('../../../service/redis');
-module.exports = async (req, res, next) => {
+const Redis = require( '../../../service/redis' );
+
+
+const ulbRevenueCount = async function ( req, res ) {
+
+    const { financialyear } = req.headers;
+    query = [{
+        $match: {
+            financialYear:  financialyear
+        }},{
+        $lookup:{
+            from:"lineitems",
+            localField:"lineItem",
+            foreignField:"_id",
+            as:"lineItem"
+            }
+        },{$unwind:"$lineItem"},{$group:{_id:"$lineItem.name",count:{$sum:1}}}]
+    
+        try {
+            let count = await UlbLedger.aggregate( query );
+            return res.status( 200 ).json( count );
+        }
+        catch ( err ) {
+            return res.status( 400 ).json( err );
+        }
+    
+}
+
+
+
+const old = async (req, res, next) => {
+
+    console.log("oldQuery", req)
 
     try {
         let query;
         let output = [];
-        for (let q of req.body.queryArr) {
+        for ( let q of req.body.queryArr ) {
             let obj = {
                 year: q.financialYear,
                 data: []
             };
             let a = [];
             for (let d of q.data) {
-                query = await getQuery(q.financialYear, d.range, d.ulb,d.totalUlb);
+                query = await getQuery( q.financialYear, d.range, d.ulb, d.totalUlb );
                 let data = await UlbLedger.aggregate(query);
                 if(data.length){
                     obj['data'].push(modifyData(data[0]));
@@ -97,6 +130,8 @@ module.exports = async (req, res, next) => {
         console.log("exception",error);
     }
 };
+
+
 
 const getQuery =async (financialYear, range, ulbs,totalUlb)=>{
     return [
@@ -381,4 +416,9 @@ const calcualteTotal = (arr, keys)=>{
         }
     }
     return arr;
+}
+
+module.exports = {
+    old,
+    ulbRevenueCount,
 }

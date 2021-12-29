@@ -11,442 +11,195 @@ module.exports.getCards = catchAsync(async (req, res) => {
         if (user.role != 'STATE' || user.role != 'ULB') {
             let { state_id } = req.query
             let { design_year } = req.query
-
-            let match1 = {
-                $match:
-                {
-                    "isMillionPlus": "No"
-                }
+            
+let query_totalULBs = [
+    {
+        $lookup:{
+            from:"states",
+            localField:"state",
+            foreignField:"_id",
+            as:"state"
             }
-            let match3 = {
-                $match:
-                {
-                    "isUA": "Yes"
-                }
+        },
+        {
+            $unwind:"$state"
+            },
+            {
+                $match:{
+                    "state.accessToXVFC": true
+                    }
+                },
+    
+    
+    {
+       
+        $match:{
+            $or:[{censusCode:{$exists :true, $ne: '', $ne: null}},{sbCode:{$exists :true, $ne: '', $ne: null}}]
             }
-            let match2 = {
-                $match:
-                {
-                    "isMillionPlus": "Yes"
+        },
+        {
+            $lookup:{
+                   from:"users",
+            localField:"_id",
+            foreignField:"ulb",
+            as:"user"
                 }
+            },
+            {
+                $unwind:"$user"
+                }
+    ]
+    let query_totalApproved = [
+        
+        {
+            $match:{
+                design_year:ObjectId(design_year)
+                }
+            },
+        {
+            $match:{
+                $or:[
+                    {$and:[
+                        {status: "APPROVED"},
+                        {actionTakenByRole:"STATE"}
+                    ]},
+                {$and:[
+                    {status: "PENDING"},
+                    {actionTakenByRole:"MoHUA"}
+                ]}
+            ]
+                
+                }
+            },
+
+        {
+            $lookup:{
+                from:"ulbs",
+                localField:"ulb",
+                foreignField:"_id",
+                as:"ulb"
             }
-
-            if (state_id) {
-                match1 = {
-                    $match:
-                    {
-                        "isMillionPlus": "No",
-                        "state": ObjectId(state_id)
-                    }
-                }
-                match2 = {
-                    $match:
-                    {
-                        "isMillionPlus": "Yes",
-                        "state": ObjectId(state_id)
-                    }
-                }
-                match3 = {
-                    $match:
-                    {
-                        "isUA": "Yes",
-                        "state": ObjectId(state_id)
-                    }
-                }
-
-            }
-            let outputData = {
-                "submitted_totalUlbs": 0,
-                "totalUlbs": 0,
-
-                "submitted_nonMillion": 0,
-                "nonMillion": 0,
-
-                "submitted_millionPlusUA": 0,
-                "millionPlusUA": 0,
-
-                "submitted_ulbsInMillionPlusUlbs": 0,
-                "ulbsInMillionPlusUlbs": 0,
-
-            }
-
-            let basequery = [
-                {
-                    $lookup: {
-                        from: "states",
-                        localField: "state",
-                        foreignField: "_id",
-                        as: "state"
-                    }
-                },
-                {
-                    $unwind: {
-                        path: "$state"
-                    }
-                },
-
-                {
-                    $match: {
-                        "state.accessToXVFC": true
-                    }
-                },
-                // {
-                //     $match: {
-
-                //         '$or': [
-                //             { censusCode: { '$exists': true, '$ne': '' } },
-                //             { sbCode: { '$exists': true, '$ne': '' } }
-                //         ]
-
-                //     }
-
-                // },
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "_id",
-                        foreignField: "ulb",
-                        as: "user"
-                    }
-
-                },
-                {
-                    $unwind: {
-                        path: "$user"
-                    }
-                },
-
-                {
-                    $group:
-
-                    {
-                        _id: null,
-                        ulb: { $addToSet: "$_id" },
-                        "totalUlbs": { $sum: 1 }
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "masterforms",
-                        localField: "ulb",
-                        foreignField: "ulb",
-                        as: "masterformData",
                     },
-                },
-
-                {
-                    '$unwind': {
-                        path: '$masterformData',
-                        preserveNullAndEmptyArrays: true
-                    }
-                },
-                {
-                    $match: {
-
-                        $or: [{ 'masterformData.design_year': ObjectId(design_year) },
-                        { masterformData: { $exists: false } }]
-                    }
-
-                },
-                {
-                    $group: {
-                        _id: {
-                            status: "$masterformData.status",
-                            isSubmit: "$masterformData.isSubmit",
-                            actionTakenByRole: "$masterformData.actionTakenByRole",
-                        },
-                        totalUlbs: { $addToSet: "$totalUlbs" },
-                        count: { $sum: 1 }
-                    }
-
-                }
-            ]
-            let BaseQuery = [
-                {
-                    $match:
                     {
+            $unwind:"$ulb",
+            },
+        
+        
+        ]
+let query_nonMillionTotal = [...query_totalULBs, {
+    $match:{
+        isMillionPlus:"No"
+    }
+}]
+let query_nonMillionApproved = [...query_totalApproved, {
+    $match:{
+        "ulb.isMillionPlus":"No"
+    }
+}]
+let query_ulbsInUA = [...query_totalULBs,    {
+    $match:{
+        isUA:"Yes"
+        }
+    
+    }]
+    let query_ulbsInUAApproved = [...query_totalApproved, {
+        $match:{
+            "ulb.isUA":"Yes"
+        }
+    }]
 
-                        "state": ObjectId(state_id)
-                    }
-                },
+    if(state_id){
+        query_totalULBs = [...query_totalULBs, {
+            $match:{
+                "state._id":ObjectId(state_id)
+            }
+        }];
+        query_nonMillionTotal = [...query_nonMillionTotal, {
+            $match:{
+                "state._id":ObjectId(state_id)
+            }
+        }];
+        query_ulbsInUA = [...query_ulbsInUA, {
+            $match:{
+                "state._id":ObjectId(state_id)
+            }
+        }];
+        query_totalApproved = [...query_totalApproved, {
+            $match:{
+                "ulb.state": ObjectId(state_id)
+            }
+        } ]
+        query_nonMillionApproved = [...query_nonMillionApproved, {
+            $match:{
+                "ulb.state": ObjectId(state_id)
+            }
+        } ]
+        query_ulbsInUAApproved = [...query_ulbsInUAApproved, {
+            $match:{
+                "ulb.state": ObjectId(state_id)
+            }
+        } ]
 
-                ...basequery
+    }
 
-            ]
-            let query1 = [
-                match1,
-                ...basequery
-            ]
+    query_totalULBs.push({
+        $count:"totalULBs"
+    })
+    query_totalApproved.push({
+        $count:"totalULBsApproved"
+    })
+    query_nonMillionTotal.push({
+        $count:"totalNonMillionULBs"
+    })
+    query_nonMillionApproved.push({
+        $count:"totalNonMillionULBsApproved"
+    })
+    query_ulbsInUA.push({
+        $count:"totalULBsInUA"
+    })
+    query_ulbsInUAApproved.push({
+        $count:"totalULBsInUAApproved"
+    })
 
-            let query2 = [
-                {
-                    $group: {
-                        _id: "$state",
-                        uaCount: { $sum: 1 }
-                    }
-                },
-
-                {
-                    $group: {
-                        _id: null,
-                        totalUAs: { $sum: "$uaCount" },
-                        state_id: { $addToSet: "$_id" }
-                    }
-                },
-                {
-                    $unwind: {
-                        path: "$state_id"
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "uas",
-                        localField: "state_id",
-                        foreignField: "state",
-                        as: "uas"
-                    }
-                },
-                {
-                    $unwind: {
-                        path: "$uas"
-                    }
-                },
-
-                {
-                    $lookup: {
-                        from: "statemasterforms",
-                        localField: "state_id",
-                        foreignField: "state",
-                        as: "masterformData"
-                    }
-                },
-                {
-                    $unwind: {
-                        path: "$masterformData",
-                        preserveNullAndEmptyArrays: true
-                    }
-                },
-                {
-                    $group: {
-
-                        _id: "$state_id",
-                        totalUAs: { $addToSet: "$totalUAs" },
-                        masterformData: { $addToSet: "$masterformData" },
-                        uas: { $addToSet: "$uas" },
-
-                    }
-                },
-
-                {
-                    $project: {
-                        totalUAs: { $arrayElemAt: ["$totalUAs", 0] },
-                        numberOfUas: { $size: "$uas" },
-                        isSubmit: { $arrayElemAt: ["$masterformData.isSubmit", 0] },
-                        status: { $arrayElemAt: ["$masterformData.status", 0] },
-                        actionTakenByRole: { $arrayElemAt: ["$masterformData.actionTakenByRole", 0] },
-                    }
-
-                },
-                // {
-                //     $match: {
-                //         $or: [
-
-                //             {
-                //                 $and: [
-                //                     { "isSubmit": true },
-                //                     { "actionTakenByRole": "STATE" },
-                //                     { "status": "PENDING" }]
-                //             },
-
-                //             {
-                //                 $and: [
-                //                     {
-                //                         $or: [
-                //                             { "status": "APPROVED" }
-                //                             , { "status": "PENDING" }]
-                //                     },
-
-                //                     { "actionTakenByRole": "MoHUA" }
-                //                 ]
-
-                //             }
-                //         ]
-                //     }
-                // },
-
-                // {
-                //     $group: {
-                //         _id: null,
-                //         uas_submitted: { $sum: "$numberOfUas" },
-                //         totalUAs: { $addToSet: "$totalUAs" }
-                //     }
-                // },
-                // {
-                //     $project: {
-                //         "uas_submitted": 1,
-                //         totalUAs: { $arrayElemAt: ["$totalUAs", 0] }
-                //     }
-                // }
-
-            ]
-            let query2_totalUAs = [
-                {
-                    $match: {
-                        state: ObjectId(state_id)
-                    }
-                },
-                {
-                    $group: {
-                        _id: "$state",
-                        totalUAs: { $sum: 1 }
-                    }
-                }
-            ]
-            let query2_stateVersion = [
-                {
-                    $match: {
-                        _id: ObjectId(state_id)
-                    }
-                },
-                {
-                    $lookup:
-                    {
-                        from: "statemasterforms",
-                        localField: "_id",
-                        foreignField: "state",
-                        as: "masterformData"
-                    }
-                },
-                {
-                    $unwind: {
-                        path: "$masterformData"
-                    }
-                },
-
-                {
-                    $match: {
-                        $or: [
-                            {
-                                $and: [
-                                    { "masterformData.status": "PENDING" },
-                                    { "masterformData.actionTakenByRole": "STATE" },
-                                    { "masterformData.isSubmit": true }]
-                            },
-                            {
-                                $and: [{ "masterformData.actionTakenByRole": "MoHUA" },
-                                {
-                                    $or: [{ "masterformData.status": "APPROVED" },
-                                    { "masterformData.status": "PENDING" }]
-                                }]
-                            }
-                        ]
-
-                    }
-                }
-            ]
-            let query3 = [
-                match3,
-                ...basequery
-            ]
-
-            let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
+             let { output1, output2, output3, output4, output5, output6 } = await new Promise(async (resolve, reject) => {
                 let prms1 = new Promise(async (rslv, rjct) => {
-                    console.log(util.inspect(basequery, { showHidden: false, depth: null }))
-                    let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
-
+                    // console.log(util.inspect(query_totalULBs, { showHidden: false, depth: null }))
+                    let output = await Ulb.aggregate(query_totalULBs);
                     rslv(output);
                 });
                 let prms2 = new Promise(async (rslv, rjct) => {
-                    // console.log(Util.inspect(query1, { showHidden: false, depth: null }))
-                    let output = await Ulb.aggregate(query1);
-
+                    // console.log(util.inspect(query_totalApproved, { showHidden: false, depth: null }))
+                    let output = await MasterFormData.aggregate(query_totalApproved);
                     rslv(output);
                 });
                 let prms3 = new Promise(async (rslv, rjct) => {
-                    let output = [{
-                        uas_submitted: 0,
-                        totalUAs: 0
-                    }]
-                    if (state_id) {
-                        let output1 = await UA.aggregate(query2_totalUAs);
-                        let output2 = await State.aggregate(query2_stateVersion);
-                        // console.log(output1, output2)
-                        if (output1.length == 0) {
-                            console.log('1')
-                            output[0].totalUAs = 0;
-                            output[0].uas_submitted = 0;
-                        }
-                        if (output2.length != 0) {
-                            console.log('2')
-                            output[0].totalUAs = output1[0]?.totalUAs;
-                            output[0].uas_submitted = output1[0]?.totalUAs;
-                        }
-                        if (output1.length != 0 && output2.length == 0) {
-                            console.log('3')
-                            output[0].totalUAs = output1[0]?.totalUAs;
-                            output[0].uas_submitted = 0;
-
-                        }
-
-                    } else {
-                        console.log(util.inspect(query2, { showHidden: false, depth: null }))
-                        let tempOutput = []
-                        tempOutput = await UA.aggregate(query2);
-                        console.log('*************', tempOutput)
-                        output[0]['totalUAs'] = tempOutput[0]['totalUAs']
-                        query2.push(
-                            {
-                                $match: {
-                                    $or: [
-
-                                        {
-                                            $and: [
-                                                { "isSubmit": true },
-                                                { "actionTakenByRole": "STATE" },
-                                                { "status": "PENDING" }]
-                                        },
-
-                                        {
-                                            $and: [
-                                                {
-                                                    $or: [
-                                                        { "status": "APPROVED" }
-                                                        , { "status": "PENDING" }]
-                                                },
-
-                                                { "actionTakenByRole": "MoHUA" }
-                                            ]
-
-                                        }
-                                    ]
-                                }
-                            }
-                        )
-                        let tempOutput2 = await UA.aggregate(query2);
-                        if (tempOutput2.length == 0) {
-                            output[0]['uas_submitted'] = 0;
-                        } else {
-                            output[0]['uas_submitted'] = tempOutput2.length
-                        }
-                    }
-
-
+                    console.log(util.inspect(query_nonMillionTotal, { showHidden: false, depth: null }))
+                    let output = await Ulb.aggregate(query_nonMillionTotal);
                     rslv(output);
                 });
                 let prms4 = new Promise(async (rslv, rjct) => {
-
-                    let output = await Ulb.aggregate(query3);
-
+                    let output = await MasterFormData.aggregate(query_nonMillionApproved);
                     rslv(output);
                 });
-                Promise.all([prms1, prms2, prms3, prms4]).then(
+                let prms5 = new Promise(async (rslv, rjct) => {
+                    let output = await Ulb.aggregate(query_ulbsInUA);
+                    rslv(output);
+                });
+                let prms6 = new Promise(async (rslv, rjct) => {
+                    let output = await MasterFormData.aggregate(query_ulbsInUAApproved);
+                    rslv(output);
+                });
+                Promise.all([prms1, prms2, prms3, prms4, prms5,prms6]).then(
                     (outputs) => {
                         let output1 = outputs[0];
                         let output2 = outputs[1];
                         let output3 = outputs[2];
                         let output4 = outputs[3];
-                        if (output1 && output2 && output3 && output4) {
-                            resolve({ output1, output2, output3, output4 });
+                        let output5 = outputs[4];
+                        let output6 = outputs[5];
+
+                        if (output1 && output2 && output3 && output4 && output5 && output6) {
+                            resolve({ output1, output2, output3, output4 , output5, output6});
                         } else {
                             reject({ message: "No Data Found" });
                         }
@@ -457,75 +210,519 @@ module.exports.getCards = catchAsync(async (req, res) => {
                 );
             });
 
+console.log(output1,output2,output3,output4,output5,output6)
+            // let match1 = {
+            //     $match:
+            //     {
+            //         "isMillionPlus": "No"
+            //     }
+            // }
+            // let match3 = {
+            //     $match:
+            //     {
+            //         "isUA": "Yes"
+            //     }
+            // }
+            // let match2 = {
+            //     $match:
+            //     {
+            //         "isMillionPlus": "Yes"
+            //     }
+            // }
+
+            // if (state_id) {
+            //     match1 = {
+            //         $match:
+            //         {
+            //             "isMillionPlus": "No",
+            //             "state": ObjectId(state_id)
+            //         }
+            //     }
+            //     match2 = {
+            //         $match:
+            //         {
+            //             "isMillionPlus": "Yes",
+            //             "state": ObjectId(state_id)
+            //         }
+            //     }
+            //     match3 = {
+            //         $match:
+            //         {
+            //             "isUA": "Yes",
+            //             "state": ObjectId(state_id)
+            //         }
+            //     }
+            // }
+            let outputData = {
+                "submitted_totalUlbs": output2.length > 0 ? output2[0]?.totalULBsApproved : 0 ,
+                "totalUlbs": output1.length > 0 ? output1[0]?.totalULBs : 0,
+
+                "submitted_nonMillion": output4.length > 0 ? output4[0]?.totalNonMillionULBsApproved : 0,
+                "nonMillion": output3.length > 0 ? output3[0]?.totalNonMillionULBs : 0,
+
+                "submitted_millionPlusUA": 0,
+                "millionPlusUA": 0,
+
+                "submitted_ulbsInMillionPlusUlbs": output6.length > 0 ? output6[0]?.totalULBsInUAApproved : 0,
+                "ulbsInMillionPlusUlbs": output5.length > 0 ? output5[0]?.totalULBsInUA : 0,
+            }
+
+            
 
 
-            let submitted_totalUlbs = 0;
-            let totalUlbs = 0;
-            let submitted_nonMillion = 0;
-            let nonMillion = 0;
-            let submitted_ulbsInMillionPlusUlbs = 0;
-            let ulbsInMillionPlusUlbs = 0;
-            let submitted_millionPlusUA = 0;
-            let millionPlusUA = 0;
-            console.log('output1', output1, 'output2', output2, 'output3', output3, 'output4', output4)
-            output1.forEach(el => {
-                if (
-                    ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
-                    ||
-                    (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
+            // let basequery = [
+            //     {
+            //         $lookup: {
+            //             from: "states",
+            //             localField: "state",
+            //             foreignField: "_id",
+            //             as: "state"
+            //         }
+            //     },
+            //     {
+            //         $unwind: {
+            //             path: "$state"
+            //         }
+            //     },
 
-                ) {
-                    submitted_totalUlbs = submitted_totalUlbs + el.count
-                    totalUlbs = el.totalUlbs[0]
-                } else {
-                    submitted_totalUlbs = 0;
-                    totalUlbs = el.totalUlbs[0]
-                }
-            })
+            //     {
+            //         $match: {
+            //             "state.accessToXVFC": true
+            //         }
+            //     },
+            //     // {
+            //     //     $match: {
+
+            //     //         '$or': [
+            //     //             { censusCode: { '$exists': true, '$ne': '' } },
+            //     //             { sbCode: { '$exists': true, '$ne': '' } }
+            //     //         ]
+
+            //     //     }
+
+            //     // },
+            //     {
+            //         $lookup: {
+            //             from: "users",
+            //             localField: "_id",
+            //             foreignField: "ulb",
+            //             as: "user"
+            //         }
+
+            //     },
+            //     {
+            //         $unwind: {
+            //             path: "$user"
+            //         }
+            //     },
+
+            //     {
+            //         $group:
+
+            //         {
+            //             _id: null,
+            //             ulb: { $addToSet: "$_id" },
+            //             "totalUlbs": { $sum: 1 }
+            //         }
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: "masterforms",
+            //             localField: "ulb",
+            //             foreignField: "ulb",
+            //             as: "masterformData",
+            //         },
+            //     },
+
+            //     {
+            //         '$unwind': {
+            //             path: '$masterformData',
+            //             preserveNullAndEmptyArrays: true
+            //         }
+            //     },
+            //     {
+            //         $match: {
+
+            //             $or: [{ 'masterformData.design_year': ObjectId(design_year) },
+            //             { masterformData: { $exists: false } }]
+            //         }
+
+            //     },
+            //     {
+            //         $group: {
+            //             _id: {
+            //                 status: "$masterformData.status",
+            //                 isSubmit: "$masterformData.isSubmit",
+            //                 actionTakenByRole: "$masterformData.actionTakenByRole",
+            //             },
+            //             totalUlbs: { $addToSet: "$totalUlbs" },
+            //             count: { $sum: 1 }
+            //         }
+
+            //     }
+            // ]
+            // let BaseQuery = [
+            //     {
+            //         $match:
+            //         {
+
+            //             "state": ObjectId(state_id)
+            //         }
+            //     },
+
+            //     ...basequery
+
+            // ]
+            // let query1 = [
+            //     match1,
+            //     ...basequery
+            // ]
+
+            // let query2 = [
+            //     {
+            //         $group: {
+            //             _id: "$state",
+            //             uaCount: { $sum: 1 }
+            //         }
+            //     },
+
+            //     {
+            //         $group: {
+            //             _id: null,
+            //             totalUAs: { $sum: "$uaCount" },
+            //             state_id: { $addToSet: "$_id" }
+            //         }
+            //     },
+            //     {
+            //         $unwind: {
+            //             path: "$state_id"
+            //         }
+            //     },
+            //     {
+            //         $lookup: {
+            //             from: "uas",
+            //             localField: "state_id",
+            //             foreignField: "state",
+            //             as: "uas"
+            //         }
+            //     },
+            //     {
+            //         $unwind: {
+            //             path: "$uas"
+            //         }
+            //     },
+
+            //     {
+            //         $lookup: {
+            //             from: "statemasterforms",
+            //             localField: "state_id",
+            //             foreignField: "state",
+            //             as: "masterformData"
+            //         }
+            //     },
+            //     {
+            //         $unwind: {
+            //             path: "$masterformData",
+            //             preserveNullAndEmptyArrays: true
+            //         }
+            //     },
+            //     {
+            //         $group: {
+
+            //             _id: "$state_id",
+            //             totalUAs: { $addToSet: "$totalUAs" },
+            //             masterformData: { $addToSet: "$masterformData" },
+            //             uas: { $addToSet: "$uas" },
+
+            //         }
+            //     },
+
+            //     {
+            //         $project: {
+            //             totalUAs: { $arrayElemAt: ["$totalUAs", 0] },
+            //             numberOfUas: { $size: "$uas" },
+            //             isSubmit: { $arrayElemAt: ["$masterformData.isSubmit", 0] },
+            //             status: { $arrayElemAt: ["$masterformData.status", 0] },
+            //             actionTakenByRole: { $arrayElemAt: ["$masterformData.actionTakenByRole", 0] },
+            //         }
+
+            //     },
+            //     // {
+            //     //     $match: {
+            //     //         $or: [
+
+            //     //             {
+            //     //                 $and: [
+            //     //                     { "isSubmit": true },
+            //     //                     { "actionTakenByRole": "STATE" },
+            //     //                     { "status": "PENDING" }]
+            //     //             },
+
+            //     //             {
+            //     //                 $and: [
+            //     //                     {
+            //     //                         $or: [
+            //     //                             { "status": "APPROVED" }
+            //     //                             , { "status": "PENDING" }]
+            //     //                     },
+
+            //     //                     { "actionTakenByRole": "MoHUA" }
+            //     //                 ]
+
+            //     //             }
+            //     //         ]
+            //     //     }
+            //     // },
+
+            //     // {
+            //     //     $group: {
+            //     //         _id: null,
+            //     //         uas_submitted: { $sum: "$numberOfUas" },
+            //     //         totalUAs: { $addToSet: "$totalUAs" }
+            //     //     }
+            //     // },
+            //     // {
+            //     //     $project: {
+            //     //         "uas_submitted": 1,
+            //     //         totalUAs: { $arrayElemAt: ["$totalUAs", 0] }
+            //     //     }
+            //     // }
+
+            // ]
+            // let query2_totalUAs = [
+            //     {
+            //         $match: {
+            //             state: ObjectId(state_id)
+            //         }
+            //     },
+            //     {
+            //         $group: {
+            //             _id: "$state",
+            //             totalUAs: { $sum: 1 }
+            //         }
+            //     }
+            // ]
+            // let query2_stateVersion = [
+            //     {
+            //         $match: {
+            //             _id: ObjectId(state_id)
+            //         }
+            //     },
+            //     {
+            //         $lookup:
+            //         {
+            //             from: "statemasterforms",
+            //             localField: "_id",
+            //             foreignField: "state",
+            //             as: "masterformData"
+            //         }
+            //     },
+            //     {
+            //         $unwind: {
+            //             path: "$masterformData"
+            //         }
+            //     },
+
+            //     {
+            //         $match: {
+            //             $or: [
+            //                 {
+            //                     $and: [
+            //                         { "masterformData.status": "PENDING" },
+            //                         { "masterformData.actionTakenByRole": "STATE" },
+            //                         { "masterformData.isSubmit": true }]
+            //                 },
+            //                 {
+            //                     $and: [{ "masterformData.actionTakenByRole": "MoHUA" },
+            //                     {
+            //                         $or: [{ "masterformData.status": "APPROVED" },
+            //                         { "masterformData.status": "PENDING" }]
+            //                     }]
+            //                 }
+            //             ]
+
+            //         }
+            //     }
+            // ]
+            // let query3 = [
+            //     match3,
+            //     ...basequery
+            // ]
+
+            // let { output1, output2, output3, output4 } = await new Promise(async (resolve, reject) => {
+            //     let prms1 = new Promise(async (rslv, rjct) => {
+            //         console.log(util.inspect(basequery, { showHidden: false, depth: null }))
+            //         let output = await Ulb.aggregate(state_id ? BaseQuery : basequery);
+
+            //         rslv(output);
+            //     });
+            //     let prms2 = new Promise(async (rslv, rjct) => {
+            //         // console.log(Util.inspect(query1, { showHidden: false, depth: null }))
+            //         let output = await Ulb.aggregate(query1);
+
+            //         rslv(output);
+            //     });
+            //     let prms3 = new Promise(async (rslv, rjct) => {
+            //         let output = [{
+            //             uas_submitted: 0,
+            //             totalUAs: 0
+            //         }]
+            //         if (state_id) {
+            //             let output1 = await UA.aggregate(query2_totalUAs);
+            //             let output2 = await State.aggregate(query2_stateVersion);
+            //             // console.log(output1, output2)
+            //             if (output1.length == 0) {
+            //                 console.log('1')
+            //                 output[0].totalUAs = 0;
+            //                 output[0].uas_submitted = 0;
+            //             }
+            //             if (output2.length != 0) {
+            //                 console.log('2')
+            //                 output[0].totalUAs = output1[0]?.totalUAs;
+            //                 output[0].uas_submitted = output1[0]?.totalUAs;
+            //             }
+            //             if (output1.length != 0 && output2.length == 0) {
+            //                 console.log('3')
+            //                 output[0].totalUAs = output1[0]?.totalUAs;
+            //                 output[0].uas_submitted = 0;
+
+            //             }
+
+            //         } else {
+            //             console.log(util.inspect(query2, { showHidden: false, depth: null }))
+            //             let tempOutput = []
+            //             tempOutput = await UA.aggregate(query2);
+            //             console.log('*************', tempOutput)
+            //             output[0]['totalUAs'] = tempOutput[0]['totalUAs']
+            //             query2.push(
+            //                 {
+            //                     $match: {
+            //                         $or: [
+
+            //                             {
+            //                                 $and: [
+            //                                     { "isSubmit": true },
+            //                                     { "actionTakenByRole": "STATE" },
+            //                                     { "status": "PENDING" }]
+            //                             },
+
+            //                             {
+            //                                 $and: [
+            //                                     {
+            //                                         $or: [
+            //                                             { "status": "APPROVED" }
+            //                                             , { "status": "PENDING" }]
+            //                                     },
+
+            //                                     { "actionTakenByRole": "MoHUA" }
+            //                                 ]
+
+            //                             }
+            //                         ]
+            //                     }
+            //                 }
+            //             )
+            //             let tempOutput2 = await UA.aggregate(query2);
+            //             if (tempOutput2.length == 0) {
+            //                 output[0]['uas_submitted'] = 0;
+            //             } else {
+            //                 output[0]['uas_submitted'] = tempOutput2.length
+            //             }
+            //         }
+
+
+            //         rslv(output);
+            //     });
+            //     let prms4 = new Promise(async (rslv, rjct) => {
+
+            //         let output = await Ulb.aggregate(query3);
+
+            //         rslv(output);
+            //     });
+            //     Promise.all([prms1, prms2, prms3, prms4]).then(
+            //         (outputs) => {
+            //             let output1 = outputs[0];
+            //             let output2 = outputs[1];
+            //             let output3 = outputs[2];
+            //             let output4 = outputs[3];
+            //             if (output1 && output2 && output3 && output4) {
+            //                 resolve({ output1, output2, output3, output4 });
+            //             } else {
+            //                 reject({ message: "No Data Found" });
+            //             }
+            //         },
+            //         (e) => {
+            //             reject(e);
+            //         }
+            //     );
+            // });
 
 
 
-            output2.forEach(el => {
-                if (
-                    ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
-                    ||
-                    (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
+            // let submitted_totalUlbs = 0;
+            // let totalUlbs = 0;
+            // let submitted_nonMillion = 0;
+            // let nonMillion = 0;
+            // let submitted_ulbsInMillionPlusUlbs = 0;
+            // let ulbsInMillionPlusUlbs = 0;
+            // let submitted_millionPlusUA = 0;
+            // let millionPlusUA = 0;
+            // console.log('output1', output1, 'output2', output2, 'output3', output3, 'output4', output4)
+            // output1.forEach(el => {
+            //     if (
+            //         ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
+            //         ||
+            //         (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
 
-                ) {
-                    submitted_nonMillion = submitted_nonMillion + el.count;
-                    nonMillion = el.totalUlbs[0]
-                } else {
-                    submitted_nonMillion = 0;
-                    nonMillion = el.totalUlbs[0]
-                }
-            })
-            submitted_millionPlusUA = output3[0]?.uas_submitted
-            millionPlusUA = output3[0]?.totalUAs
-            output4.forEach(el => {
-                if (
-                    ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
-                    ||
-                    (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
+            //     ) {
+            //         submitted_totalUlbs = submitted_totalUlbs + el.count
+            //         totalUlbs = el.totalUlbs[0]
+            //     } else {
+            //         submitted_totalUlbs = 0;
+            //         totalUlbs = el.totalUlbs[0]
+            //     }
+            // })
+            // output2.forEach(el => {
+            //     if (
+            //         ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
+            //         ||
+            //         (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
 
-                ) {
-                    submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs + el.count
-                    ulbsInMillionPlusUlbs = el.totalUlbs[0]
-                } else {
-                    submitted_ulbsInMillionPlusUlbs = 0;
-                    ulbsInMillionPlusUlbs = el.totalUlbs[0]
-                }
-            })
+            //     ) {
+            //         submitted_nonMillion = submitted_nonMillion + el.count;
+            //         nonMillion = el.totalUlbs[0]
+            //     } else {
+            //         submitted_nonMillion = 0;
+            //         nonMillion = el.totalUlbs[0]
+            //     }
+            // })
+            // submitted_millionPlusUA = output3[0]?.uas_submitted
+            // millionPlusUA = output3[0]?.totalUAs
+            // output4.forEach(el => {
+            //     if (
+            //         ((el._id.status == 'PENDING' || el._id.status == 'APPROVED') && el._id.actionTakenByRole == 'MoHUA')
+            //         ||
+            //         (el._id.status == 'APPROVED' && el._id.actionTakenByRole == 'STATE')
+
+            //     ) {
+            //         submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs + el.count
+            //         ulbsInMillionPlusUlbs = el.totalUlbs[0]
+            //     } else {
+            //         submitted_ulbsInMillionPlusUlbs = 0;
+            //         ulbsInMillionPlusUlbs = el.totalUlbs[0]
+            //     }
+            // })
 
 
-            outputData.submitted_totalUlbs = submitted_totalUlbs;
-            outputData.submitted_nonMillion = submitted_nonMillion;
-            outputData.submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs
-            outputData.totalUlbs = totalUlbs
-            outputData.nonMillion = nonMillion
-            outputData.ulbsInMillionPlusUlbs = ulbsInMillionPlusUlbs
-            outputData.submitted_millionPlusUA = submitted_millionPlusUA
-            outputData.millionPlusUA = millionPlusUA
-            console.log(outputData)
+            // outputData.submitted_totalUlbs = submitted_totalUlbs;
+            // outputData.submitted_nonMillion = submitted_nonMillion;
+            // outputData.submitted_ulbsInMillionPlusUlbs = submitted_ulbsInMillionPlusUlbs
+            // outputData.totalUlbs = totalUlbs
+            // outputData.nonMillion = nonMillion
+            // outputData.ulbsInMillionPlusUlbs = ulbsInMillionPlusUlbs
+            // outputData.submitted_millionPlusUA = submitted_millionPlusUA
+            // outputData.millionPlusUA = millionPlusUA
+            // console.log(outputData)
             res.json({
                 data: outputData
             })

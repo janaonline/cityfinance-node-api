@@ -7,22 +7,33 @@ const HeadersSchema = new Schema(
     dashboard: {
       type: Schema.Types.ObjectId,
       ref: "DashboardMaster",
-      required: true,
-      unique: true,
+      required: true
     },
     subHeaders: [
       {
         name: { type: String },
-        static: {
-          aboutIndicator: { type: {}, min: 20, max: 2000000 },
-          calculation: { type: {}, min: 20, max: 2000000 },
-          performance: { type: {}, min: 20, max: 2000000 },
-          analysis: { type: {}, min: 20, max: 2000000 },
-          nextStep: { type: {}, min: 20, max: 2000000 },
-        },
-        filter: [
+        mainContent: [
           {
-            name: { type: String },
+            about: {
+              type: String,
+            },
+            btnLabels: [{ type: String }],
+            aggregateInfo: { type: String },
+            static: {
+              indicators: [
+                {
+                  name: { type: String },
+                  desc: [
+                    {
+                      text: { type: String },
+                      links: [
+                        { label: { type: String }, url: { type: String } },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
           },
         ],
       },
