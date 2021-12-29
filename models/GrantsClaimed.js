@@ -12,6 +12,32 @@ const GrantsClaimedSchema = new Schema(
         nmpc_tied: { type: [AmountSchema], default: null },
         nmpc_untied: { type: [AmountSchema], default: null },
         mpc: { type: String, default: null },
+        claimInfo:{
+            MPC: {
+                claimed:{type: Boolean},
+                url:{type: String}
+            },
+            NMPC_Tied:{
+               firstInstallment:{
+                claimed:{type: Boolean},
+                url:{type: String}
+               },
+               secondInstallment:{
+                claimed:{type: Boolean},
+                url:{type: String}
+               }
+            },
+            NMPC_Untied:{
+                firstInstallment:{
+                    claimed:{type: Boolean},
+                    url:{type: String}
+                   },
+                   secondInstallment:{
+                    claimed:{type: Boolean},
+                    url:{type: String}
+                   }
+            }
+        }
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

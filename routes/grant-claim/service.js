@@ -6,13 +6,19 @@ const GrantsClaimed = require('../../models/GrantsClaimed')
 const Masterform = require("../../models/MasterForm")
 const GTCertificate = require('../../models/StateGTCertificate')
 const GrantClaim = require('../../models/GrantClaim')
+const GrantClaimed = require('../../models/GrantsClaimed')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require("../../service");
 const UA = require("../../models/UA");
 const moment = require("moment");
 const util = require("util");
+const axios = require('axios');
+const express = require('express');
+const putDataService = require("../file-upload/service").putData;
 const { findOneAndUpdate } = require("../../models/StateGTCertificate");
-
+var http = require('http');
+const https = require('https');
+var fs = require('fs');
 const time = () => {
     var dt = new Date();
     dt.setHours(dt.getHours() + 5);
@@ -355,6 +361,135 @@ module.exports.readCSV = catchAsync(async (req, res) => {
 
 
 })
+
+module.exports.uploadGrantData = catchAsync(async(req,res)=>{
+    const jsonArray = req.body.jsonArray;
+let x=0;
+    let year = await Year.findOne({year: jsonArray[0]['Year']}).lean()
+    jsonArray.map(async (el)=>{
+        let state = await State.findOne({name:el['State']}).lean()
+        if(!state){
+            console.log('*****NOT FOUND****',el['State'] )
+        return res.json({
+            message:`State not found ${el['State']}`
+        })
+        }
+        let claimInfo  = {
+            MPC: {
+                claimed:false,
+                url:''
+            },
+            NMPC_Tied:{
+               firstInstallment:{
+                claimed:false,
+                url:''
+               },
+               secondInstallment:{
+                claimed:false,
+                url:''
+               }
+            },
+            NMPC_Untied:{
+                firstInstallment:{
+                    claimed:false,
+                    url:''
+                   },
+                   secondInstallment:{
+                    claimed:false,
+                    url:''
+                   }
+            }
+        }
+        let type = el['Type'].includes('-') ? el['Type'].replace('-','_') : el['Type']
+        let installment = el['Installment']
+        if(type == 'MPC'){
+            delete claimInfo['NMPC_Tied']
+            delete claimInfo['NMPC_Untied']
+            claimInfo[type]['claimed']=true;
+            claimInfo[type]['url']=el['Link'];
+        }else if(type == 'NMPC_Untied'){
+            delete claimInfo['NMPC_Tied']
+            delete claimInfo['MPC']
+            if(installment == '1'){
+                delete claimInfo[type]['secondInstallment']
+                claimInfo[type]['firstInstallment']['claimed']=true;
+                claimInfo[type]['firstInstallment']['url']=el['Link'];
+            }else if(installment == '2') {
+                delete claimInfo[type]['firstInstallment']
+                claimInfo[type]['secondInstallment']['claimed']=true;
+                claimInfo[type]['secondInstallment']['url']=el['Link'];
+            }
+
+        }else if(type == 'NMPC_Tied'){
+            delete claimInfo['NMPC_Untied']
+            delete claimInfo['MPC']
+ if(installment == '1'){
+    delete claimInfo[type]['secondInstallment']
+    claimInfo[type]['firstInstallment']['claimed']=true;
+    claimInfo[type]['firstInstallment']['url']=el['Link'];
+            }else if(installment == '2') {
+                delete claimInfo[type]['firstInstallment']
+                claimInfo[type]['secondInstallment']['claimed']=true;
+                claimInfo[type]['secondInstallment']['url']=el['Link']; 
+            }
+        }
+ let pushData = {
+     claimInfo : claimInfo
+ }
+console.log(util.inspect(pushData, {showHidden: false, depth: null}))
+console.log(state._id, year._id )
+  let grantData =   await GrantClaimed.findOne({'state':state._id, 'financialYear':year._id} ).lean()
+
+  if(grantData){
+      if(grantData.hasOwnProperty('claimInfo')){
+          Object.assign(grantData['claimInfo'],claimInfo)
+        await GrantClaimed.updateOne({'state':state._id, 'financialYear':year._id},grantData  )
+      }else{
+        await GrantClaimed.updateOne({'state':state._id, 'financialYear':year._id}, pushData )
+      }
+  }
+    })
+
+return res.json({
+    success: true,
+    message:"Updated"
+})
+  
+
+
+    
+})
+
+
+var download = function(data, _cb) {
+    let url = data['Link'];
+    let fileName = data['State'] + '_' + data['Year'] + '_' + data['Type'] + '_' + data['Installment'] + '.pdf' ;
+   console.log(fileName);
+ 
+    let dest = "/tmp/" + fileName;
+  var file = fs.createWriteStream(dest);
+  let isHttps = url.includes("https");
+  if (isHttps) {
+      const req = https.get(url, function (response) {
+          response.pipe(file);
+          file.on('finish', function () {
+              file.close(function () {
+                  _cb(null, file)
+              });  // close() is async, call cb after close completes.
+          });
+      });
+  } else {
+      const req = http.get(url, function (response) {
+          response.pipe(file);
+          file.on('finish', function () {
+              file.close(function () {
+                  _cb(null, file)
+              });  // close() is async, call cb after close completes.
+          });
+      });
+  }
+}
+
 
 function calculateEligibility(financialYear, stateId, expectedValues) {
     return new Promise(async (rslv, rjct) => {
