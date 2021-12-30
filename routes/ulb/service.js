@@ -344,6 +344,7 @@ module.exports.getByState = async function (req, res) {
           state: { $first: "$state.name" },
           ulbs: {
             $push: {
+              _id:"$_id",
               state: "$state.name",
               code: "$code",
               name: "$name",
