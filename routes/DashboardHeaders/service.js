@@ -27,7 +27,7 @@ exports.read = async (req, res) => {
 exports.readById = async (req, res) => {
   const { id } = req.params;
   try {
-    const dashboardHeaders = await DashboardHeaders.findOne({
+    const dashboardHeaders = await DashboardHeaders.find({
       dashboard: ObjectId(id),
     });
     if (!dashboardHeaders) {
