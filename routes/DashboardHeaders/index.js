@@ -6,9 +6,9 @@ const verifyToken = require("../auth/services/verifyToken").verifyToken;
 // create
 router.post("/dashboardHeaders",  create);
 // read
-router.get("/dashboardHeaders", verifyToken, read);
+router.get("/dashboardHeaders", read);
 // read by id
-router.get("/dashboardHeaders/:id", verifyToken, readById);
+router.get("/dashboardHeaders/:id", readById);
 // update by id
 router.put("/dashboardHeaders/:id", verifyToken, update);
 // delete by id
