@@ -78,10 +78,10 @@ async function getPostedAnswer(req, res) {
 }
 
 async function getAnswerByUlb( req, res ) {
-    let ulb = req.body.ulb;
+    let {ulbId} = req.params;
     
-    if ( ulb ) {
-        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId(ulb) } );
+    if ( ulbId ) {
+        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId(ulbId) } );
         res.status( 201 ).json( findAnswerByUlb );
         } else {
         res.status( 400 ).json({
