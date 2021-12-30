@@ -1,4 +1,5 @@
 const DashboardHeaders = require("../../models/Headers");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.create = async (req, res) => {
   const data = req.body;
@@ -25,7 +26,9 @@ exports.read = async (req, res) => {
 exports.readById = async (req, res) => {
   const { id } = req.params;
   try {
-    const dashboardHeaders = await DashboardHeaders.findById(id);
+    const dashboardHeaders = await DashboardHeaders.findOne({
+      dashboard: ObjectId(id),
+    });
     if (!dashboardHeaders) {
       return res.status(400).json({ msg: "No DashboardHeaders Found" });
     }
