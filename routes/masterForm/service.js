@@ -2344,10 +2344,10 @@ module.exports.viewList = catchAsync(async (req, res) => {
     36: {
       slbNonMillion: {},
     },
-    37: {
+    38: {
       "slbNonMillion.isCompleted": false,
     },
-    38: {
+    37: {
       "slbNonMillion.isCompleted": true,
     },
     39: {
