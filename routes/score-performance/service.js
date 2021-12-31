@@ -40,22 +40,39 @@ async function getAddScoreQuestion(req, res) {
 
 async function postQuestionAnswer( req, res ) {
 
-    const data = req.body;
+    const ulb = req.body.ulb;
+    const data = req.body.scorePerformance;
     let totalCount = 0;
-    let totalval = 0
+    let totalval = 0;
+    let particularQuestions = 0;
+    let partcularAnswerValues = [];
 
     for ( const key in data ) {
         const element = data[ key ];
+        particularQuestions = element.length;
         totalCount += element.length;
         element.map( value => {
-            if ( value.answer )
+            if ( value.answer ) {
                 totalval++;
+            }
+           
         } );
+
+        let filterValue = element.filter( value => value.answer == true );
+
+        let answerValuesPercentage = ( filterValue.length / particularQuestions ) * 100;
+        partcularAnswerValues.push( { value: answerValuesPercentage.toFixed( 1 ) });
+
     }
 
-    let total =   (totalval / totalCount * 10).toFixed(1) ;
+    const keys = Object.keys( data )
+    keys.forEach( ( k, index ) => {
+        partcularAnswerValues[ index ].name = k;
+    })
 
-    let finalAnswers = Object.assign( data, { total } )
+    let total = ( totalval / totalCount * 10 ).toFixed( 1 );
+
+    let finalAnswers = Object.assign( {scorePerformance : data}, {ulb}, { total }, {partcularAnswerValues} )
 
     const answers = new scorePerformance(finalAnswers)
 
@@ -75,6 +92,13 @@ async function getPostedAnswer(req, res) {
     } catch (err) {
         res.status( 400 ).json(err)
     }
+    // try {
+    //     let getQuestionAnswer = await scorePerformance.find( {} ).lean()
+
+    //     res.status( 201 ).json( getQuestionAnswer );
+    // } catch (err) {
+    //     res.status( 400 ).json(err)
+    // }
 }
 
 async function getAnswerByUlb( req, res ) {
