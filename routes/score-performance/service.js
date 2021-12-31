@@ -92,25 +92,46 @@ async function getPostedAnswer(req, res) {
     } catch (err) {
         res.status( 400 ).json(err)
     }
-    // try {
-    //     let getQuestionAnswer = await scorePerformance.find( {} ).lean()
-
-    //     res.status( 201 ).json( getQuestionAnswer );
-    // } catch (err) {
-    //     res.status( 400 ).json(err)
-    // }
 }
 
 async function getAnswerByUlb( req, res ) {
     let {ulbId} = req.params;
     
     if ( ulbId ) {
-        let prescription = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
-        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } );
+        let prescription = [
+            {
+                name: "enumeration",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "valuation",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "assessment",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."  
+            },
+            {
+                name: "billing_collection",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "reporting",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            }
+        ]
+        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } ).lean();
+        findAnswerByUlb.partcularAnswerValues.forEach( elem => {
+            prescription.forEach( elem2 => {
+                if ( elem.name == elem2.name ) {
+                    Object.assign(elem,{prescription: elem2.value })
+                   
+                }
+            })
+        })
         let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
         res.status( 201 ).json( {
             currentUlb: findAnswerByUlb,
-            prescription: prescription,
             top3: topThreeData } );
         } else {
         res.status( 400 ).json({
