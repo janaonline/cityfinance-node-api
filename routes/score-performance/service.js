@@ -40,22 +40,39 @@ async function getAddScoreQuestion(req, res) {
 
 async function postQuestionAnswer( req, res ) {
 
-    const data = req.body;
+    const ulb = req.body.ulb;
+    const data = req.body.scorePerformance;
     let totalCount = 0;
-    let totalval = 0
+    let totalval = 0;
+    let particularQuestions = 0;
+    let partcularAnswerValues = [];
 
     for ( const key in data ) {
         const element = data[ key ];
+        particularQuestions = element.length;
         totalCount += element.length;
         element.map( value => {
-            if ( value.answer )
+            if ( value.answer ) {
                 totalval++;
+            }
+           
         } );
+
+        let filterValue = element.filter( value => value.answer == true );
+
+        let answerValuesPercentage = ( filterValue.length / particularQuestions ) * 100;
+        partcularAnswerValues.push( { value: answerValuesPercentage.toFixed( 1 ) });
+
     }
 
-    let total =   (totalval / totalCount * 10).toFixed(1) ;
+    const keys = Object.keys( data )
+    keys.forEach( ( k, index ) => {
+        partcularAnswerValues[ index ].name = k;
+    })
 
-    let finalAnswers = Object.assign( data, { total } )
+    let total = ( totalval / totalCount * 10 ).toFixed( 1 );
+
+    let finalAnswers = Object.assign( {scorePerformance : data}, {ulb}, { total }, {partcularAnswerValues} )
 
     const answers = new scorePerformance(finalAnswers)
 
@@ -75,14 +92,26 @@ async function getPostedAnswer(req, res) {
     } catch (err) {
         res.status( 400 ).json(err)
     }
+    // try {
+    //     let getQuestionAnswer = await scorePerformance.find( {} ).lean()
+
+    //     res.status( 201 ).json( getQuestionAnswer );
+    // } catch (err) {
+    //     res.status( 400 ).json(err)
+    // }
 }
 
 async function getAnswerByUlb( req, res ) {
     let {ulbId} = req.params;
     
     if ( ulbId ) {
-        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId(ulbId) } );
-        res.status( 201 ).json( findAnswerByUlb );
+        let prescription = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } );
+        let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
+        res.status( 201 ).json( {
+            currentUlb: findAnswerByUlb,
+            prescription: prescription,
+            top3: topThreeData } );
         } else {
         res.status( 400 ).json({
             success: false,
