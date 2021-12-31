@@ -1,5 +1,4 @@
 require("./dbConnect");
-// const { Schema } = require( "mongoose" );
 
 const scorePerformanceSchema = new Schema( {
     ulb: { type: Schema.Types.ObjectId, ref: 'Ulb' },
