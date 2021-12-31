@@ -7,6 +7,6 @@ router.post("/scorePerformance", addScoreQuestion)
 router.get("/scorePerformance", getAddScoreQuestion)
 router.get("/scorePerformanceQuestionAnswer", getPostedAnswer)
 router.post( "/scorePerformanceQuestionAnswer", postQuestionAnswer )
-router.get("/scorePerformanceByUlb", getAnswerByUlb)
+router.get("/scorePerformanceByUlb/:ulbId", getAnswerByUlb)
 
 module.exports = router;

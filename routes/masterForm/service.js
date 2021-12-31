@@ -1668,7 +1668,28 @@ processSLBData = (output1, output2, output3, output4, output5) => {
 
   return finalOutput;
 };
-
+// query for finding status of annual accounts
+// {
+//   $match:{
+//       $and:[
+//       { $or:[
+//           {"audited.submit_annual_accounts": true},
+//           {"unAudited.submit_annual_accounts": true}
+//           ]},
+//       {isDraft:false}, 
+//       {actionTakenByRole: "ULB"}]
+     
+//       }
+//   },
+// {
+//   $group:{
+//       _id:{
+//           submitAudited:"$audited.submit_annual_accounts",
+//           submitUnAudited: "$unAudited.submit_annual_accounts"
+//           },
+//           count:{$sum:1}
+//       }
+//   }
 module.exports.StateDashboard = catchAsync(async (req, res) => {
   let user = req.decoded;
   let { state_id } = req.query;
@@ -2323,10 +2344,10 @@ module.exports.viewList = catchAsync(async (req, res) => {
     36: {
       slbNonMillion: {},
     },
-    37: {
+    38: {
       "slbNonMillion.isCompleted": false,
     },
-    38: {
+    37: {
       "slbNonMillion.isCompleted": true,
     },
     39: {
