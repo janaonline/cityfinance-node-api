@@ -7,7 +7,6 @@ const scorePerformanceSchema = new Schema( {
         type: String
     },
     partcularAnswerValues: [ {name: String,value: Number } ],
-    prescription: { type: String },
     scorePerformance: {
         enumeration: [
             {

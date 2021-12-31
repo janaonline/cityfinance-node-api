@@ -105,8 +105,13 @@ async function getAnswerByUlb( req, res ) {
     let {ulbId} = req.params;
     
     if ( ulbId ) {
-        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId(ulbId) } );
-        res.status( 201 ).json( findAnswerByUlb );
+        let prescription = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } );
+        let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
+        res.status( 201 ).json( {
+            currentUlb: findAnswerByUlb,
+            prescription: prescription,
+            top3: topThreeData } );
         } else {
         res.status( 400 ).json({
             success: false,
