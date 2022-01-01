@@ -40,22 +40,39 @@ async function getAddScoreQuestion(req, res) {
 
 async function postQuestionAnswer( req, res ) {
 
-    const data = req.body;
+    const ulb = req.body.ulb;
+    const data = req.body.scorePerformance;
     let totalCount = 0;
-    let totalval = 0
+    let totalval = 0;
+    let particularQuestions = 0;
+    let partcularAnswerValues = [];
 
     for ( const key in data ) {
         const element = data[ key ];
+        particularQuestions = element.length;
         totalCount += element.length;
         element.map( value => {
-            if ( value.answer )
+            if ( value.answer ) {
                 totalval++;
+            }
+           
         } );
+
+        let filterValue = element.filter( value => value.answer == true );
+
+        let answerValuesPercentage = ( filterValue.length / particularQuestions ) * 100;
+        partcularAnswerValues.push( { value: answerValuesPercentage.toFixed( 1 ) });
+
     }
 
-    let total =   (totalval / totalCount * 10).toFixed(1) ;
+    const keys = Object.keys( data )
+    keys.forEach( ( k, index ) => {
+        partcularAnswerValues[ index ].name = k;
+    })
 
-    let finalAnswers = Object.assign( data, { total } )
+    let total = ( totalval / totalCount * 10 ).toFixed( 1 );
+
+    let finalAnswers = Object.assign( {scorePerformance : data}, {ulb}, { total }, {partcularAnswerValues} )
 
     const answers = new scorePerformance(finalAnswers)
 
@@ -78,11 +95,44 @@ async function getPostedAnswer(req, res) {
 }
 
 async function getAnswerByUlb( req, res ) {
-    let ulb = req.body.ulb;
+    let {ulbId} = req.params;
     
-    if ( ulb ) {
-        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId(ulb) } );
-        res.status( 201 ).json( findAnswerByUlb );
+    if ( ulbId ) {
+        let prescription = [
+            {
+                name: "enumeration",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "valuation",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "assessment",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."  
+            },
+            {
+                name: "billing_collection",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "reporting",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            }
+        ]
+        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } ).lean();
+        findAnswerByUlb.partcularAnswerValues.forEach( elem => {
+            prescription.forEach( elem2 => {
+                if ( elem.name == elem2.name ) {
+                    Object.assign(elem,{prescription: elem2.value })
+                   
+                }
+            })
+        })
+        let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
+        res.status( 201 ).json( {
+            currentUlb: findAnswerByUlb,
+            top3: topThreeData } );
         } else {
         res.status( 400 ).json({
             success: false,
