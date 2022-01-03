@@ -6,6 +6,7 @@ const GrantsClaimed = require('../../models/GrantsClaimed')
 const Masterform = require("../../models/MasterForm")
 const GTCertificate = require('../../models/StateGTCertificate')
 const GrantClaim = require('../../models/GrantClaim')
+const GTCModel = require('../../models/StateGTCertificate')
 const GrantClaimed = require('../../models/GrantsClaimed')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require("../../service");
@@ -365,7 +366,7 @@ module.exports.readCSV = catchAsync(async (req, res) => {
 module.exports.uploadGrantData = catchAsync(async(req,res)=>{
     const jsonArray = req.body.jsonArray;
 let x=0;
-    let year = await Year.findOne({year: jsonArray[0]['Year']}).lean()
+    let year = await Year.findOne({year: jsonArray[0]['year']}).lean()
     jsonArray.map(async (el)=>{
         let state = await State.findOne({name:el['State']}).lean()
         if(!state){
@@ -374,80 +375,51 @@ let x=0;
             message:`State not found ${el['State']}`
         })
         }
-        let claimInfo  = {
-            MPC: {
-                claimed:false,
-                url:''
-            },
-            NMPC_Tied:{
-               firstInstallment:{
-                claimed:false,
-                url:''
-               },
-               secondInstallment:{
-                claimed:false,
-                url:''
-               }
-            },
-            NMPC_Untied:{
-                firstInstallment:{
-                    claimed:false,
-                    url:''
-                   },
-                   secondInstallment:{
-                    claimed:false,
-                    url:''
-                   }
-            }
-        }
         let type = el['Type'].includes('-') ? el['Type'].replace('-','_') : el['Type']
         let installment = el['Installment']
+        let pushData = {
+            
+            isDraft: false,
+            million_tied: {
+                pdfUrl: "",
+                pdfName: "",
+                status: "APPROVED",
+                rejectReason: "",
+              },
+            nonmillion_tied:{
+                pdfUrl: "",
+                pdfName: "",
+                status: "APPROVED",
+                rejectReason: "",
+              },
+            nonmillion_untied: {
+                pdfUrl: "",
+                pdfName: "",
+                status: "APPROVED",
+                rejectReason: "",
+              },
+            status: "APPROVED",
+        
+        }
         if(type == 'MPC'){
-            delete claimInfo['NMPC_Tied']
-            delete claimInfo['NMPC_Untied']
-            claimInfo[type]['claimed']=true;
-            claimInfo[type]['url']=el['Link'];
+            delete pushData['nonmillion_tied']
+            delete pushData['nonmillion_untied']
+            pushData['million_tied']['pdfUrl']=el['Link'];
         }else if(type == 'NMPC_Untied'){
-            delete claimInfo['NMPC_Tied']
-            delete claimInfo['MPC']
-            if(installment == '1'){
-                delete claimInfo[type]['secondInstallment']
-                claimInfo[type]['firstInstallment']['claimed']=true;
-                claimInfo[type]['firstInstallment']['url']=el['Link'];
-            }else if(installment == '2') {
-                delete claimInfo[type]['firstInstallment']
-                claimInfo[type]['secondInstallment']['claimed']=true;
-                claimInfo[type]['secondInstallment']['url']=el['Link'];
-            }
+            delete pushData['nonmillion_tied']
+            delete pushData['million_tied']
+            pushData['nonmillion_untied']['pdfUrl']=el['Link'];
 
         }else if(type == 'NMPC_Tied'){
-            delete claimInfo['NMPC_Untied']
-            delete claimInfo['MPC']
- if(installment == '1'){
-    delete claimInfo[type]['secondInstallment']
-    claimInfo[type]['firstInstallment']['claimed']=true;
-    claimInfo[type]['firstInstallment']['url']=el['Link'];
-            }else if(installment == '2') {
-                delete claimInfo[type]['firstInstallment']
-                claimInfo[type]['secondInstallment']['claimed']=true;
-                claimInfo[type]['secondInstallment']['url']=el['Link']; 
-            }
+            delete pushData['nonmillion_untied']
+            delete pushData['million_tied']
+            pushData['nonmillion_tied']['pdfUrl']=el['Link'];
         }
- let pushData = {
-     claimInfo : claimInfo
- }
-console.log(util.inspect(pushData, {showHidden: false, depth: null}))
-console.log(state._id, year._id )
-  let grantData =   await GrantClaimed.findOne({'state':state._id, 'financialYear':year._id} ).lean()
 
-  if(grantData){
-      if(grantData.hasOwnProperty('claimInfo')){
-          Object.assign(grantData['claimInfo'],claimInfo)
-        await GrantClaimed.updateOne({'state':state._id, 'financialYear':year._id},grantData  )
-      }else{
-        await GrantClaimed.updateOne({'state':state._id, 'financialYear':year._id}, pushData )
-      }
-  }
+ await GTCModel.findOneAndUpdate({state: ObjectId(state._id), design_year:ObjectId(year._id), installment: installment}, pushData, {upsert: true})
+  
+ 
+ 
     })
 
 return res.json({

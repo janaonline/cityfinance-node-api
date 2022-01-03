@@ -24,6 +24,7 @@ const StateGrantTransferCertificateSchema = new Schema(
   {
     state: { type: Schema.Types.ObjectId, ref: "State", required: true },
     design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+    installment:{type: String},
     isDraft: { type: Boolean, default: true },
     history: { type: Array, default: [] },
     million_tied: { type: ContentPDFSchema },
@@ -33,17 +34,16 @@ const StateGrantTransferCertificateSchema = new Schema(
     createdAt: { type: Date, default: Date.now() },
     actionTakenBy: {
       type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
+      ref: "User"
     },
     status: statusType(),
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
-StateGrantTransferCertificateSchema.index(
-  { state: 1, design_year: 1 },
-  { unique: true }
-);
+// StateGrantTransferCertificateSchema.index(
+//   { strsate: 1, design_year: 1 },
+//   { unique: true }
+// );
 module.exports = mongoose.model(
   "StateGTCertificate",
   StateGrantTransferCertificateSchema
