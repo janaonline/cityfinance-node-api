@@ -89,6 +89,7 @@ exports.createUpdate = async (req, res) => {
 
 exports.nmpcEligibility = catchAsync(async(req,res)=>{
   let user = req.decoded
+  let cutOff = 25;
   let { state_id } = req.query;
     let state = user?.state ?? state_id;
   let totalULBs = [
@@ -181,7 +182,8 @@ return res.json({
   success: true,
   totalULBs : total,
   approvedForms:approvedForms,
-  percentage : percentage
+  percentage : percentage,
+  cutOff:cutOff
 })
 
 })
