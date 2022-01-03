@@ -87,6 +87,104 @@ exports.createUpdate = async (req, res) => {
   }
 };
 
+exports.nmpcEligibility = catchAsync(async(req,res)=>{
+  let user = req.decoded
+  let { state_id } = req.query;
+    let state = user?.state ?? state_id;
+  let totalULBs = [
+    {
+      $match:{
+        state:ObjectId(state)
+      }
+    },
+    {
+        $lookup:{
+            from:"states",
+            localField:"state",
+            foreignField:"_id",
+            as:"state"
+            }
+        },
+        {
+            $unwind:"$state"
+            },
+            {
+                $match:{
+                    "state.accessToXVFC": true
+                    }
+                },
+    {
+       
+        $match:{
+            $or:[{censusCode:{$exists :true, $ne: '', $ne: null}},{sbCode:{$exists :true, $ne: '', $ne: null}}]
+            }
+        },
+        {
+            $lookup:{
+                   from:"users",
+            localField:"_id",
+            foreignField:"ulb",
+            as:"user"
+                }
+            },
+            {
+                $unwind:"$user"
+                },
+                {
+                  $count:"totalULBCount"
+                }
+    ]
+  let query_filled = [
+    {
+      $lookup:{
+      from:"ulbs",
+      localField:"ulb",
+      foreignField:"_id",
+      as:"ulb"
+    }
+  },{
+    $unwind:"$ulb"
+  },
+  {
+    $match:{
+      "ulb.state": ObjectId(state)
+    }
+  },
+    {
+        $match:{$and:[{"audited.submit_annual_accounts":true},{"unAudited.submit_annual_accounts":true}, {isDraft: false}]}
+        },
+        {
+        $group:{
+           _id:{
+               role:"$actionTakenByRole",
+               status:"$status"
+               },
+               count:{$sum:1}
+            }
+        }
+        ]
+     let totalULBCount =   await Ulb.aggregate(totalULBs)
+  let filledData = await AnnualAccountData.aggregate(query_filled)
+  let approvedForms = 0
+  filledData.forEach(el =>{
+// let role = el._id.role;
+let status = el._id.status;
+
+if(status == 'APPROVED'){
+  approvedForms = approvedForms + el.count
+}
+
+  })
+  let total = totalULBCount[0].totalULBCount
+let percentage = parseInt(approvedForms/total * 100)
+return res.json({
+  success: true,
+  totalULBs : total,
+  approvedForms:approvedForms,
+  percentage : percentage
+})
+
+})
 exports.getAccounts = async (req, res) => {
   try {
     let { design_year, ulb } = req.query;
