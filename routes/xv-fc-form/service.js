@@ -545,11 +545,13 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
 
     let { output1, output2 } = await new Promise(async (resolve, reject) => {
       let prms1 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(query1, { showHidden: false, depth: null }))
+        
         let output = await UA.aggregate(query1);
 
         if (output.length > 0) {
           console.log('1')
-          console.log(util.inspect(output, { showHidden: false, depth: null }))
+          // console.log(util.inspect(output, { showHidden: false, depth: null }))
           rslv(output);
 
         } else {
@@ -557,6 +559,8 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
         }
       });
       let prms2 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(query2, { showHidden: false, depth: null }))
+        
         let output = await UA.aggregate(query2);
         let ulbA = []
         let ulbB = []

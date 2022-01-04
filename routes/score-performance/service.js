@@ -23,71 +23,153 @@ async function addScoreQuestion( req, res ) {
 
     try {
         await questionsText.save()
-        res.status( 201 ).json( questionsText );
+       return res.status( 201 ).json( questionsText );
     } catch (err) {
-        res.status( 400 ).json(err)
+       return res.status( 400 ).json(err)
     }
 }
 
 async function getAddScoreQuestion(req, res) {
     try {
         let getQuestion = await scorePerformanceQuestions.find( {} ).lean()
-        res.status( 201 ).json( getQuestion );
+     return   res.status( 201 ).json( getQuestion );
     } catch (err) {
-        res.status( 400 ).json(err)
+        return res.status( 400 ).json(err)
     }
 } 
 
 async function postQuestionAnswer( req, res ) {
-
-    const data = req.body;
+try{
+    const ulb = req.body.ulb;
+    const data = req.body.scorePerformance;
     let totalCount = 0;
-    let totalval = 0
+    let totalval = 0;
+    let particularQuestions = 0;
+    let partcularAnswerValues = [];
+if(!ulb){
 
+    return res.status(404).json({
+        success: false,
+        message:"ULB Missing"
+    })
+}
     for ( const key in data ) {
         const element = data[ key ];
+        particularQuestions = element.length;
         totalCount += element.length;
         element.map( value => {
-            if ( value.answer )
+            if ( value.answer ) {
                 totalval++;
+            }
+           
         } );
+
+        let filterValue = element.filter( value => value.answer == true );
+
+        let answerValuesPercentage = ( filterValue.length / particularQuestions ) * 100;
+        partcularAnswerValues.push( { value: answerValuesPercentage.toFixed( 1 ) });
+
     }
 
-    let total =   (totalval / totalCount * 10).toFixed(1) ;
+    const keys = Object.keys( data )
+    keys.forEach( ( k, index ) => {
+        partcularAnswerValues[ index ].name = k;
+    })
 
-    let finalAnswers = Object.assign( data, { total } )
+    let total = ( totalval / totalCount * 10 ).toFixed( 1 );
+
+    let finalAnswers = Object.assign( {scorePerformance : data}, {ulb}, { total }, {partcularAnswerValues} )
 
     const answers = new scorePerformance(finalAnswers)
 
     try {
       await answers.save()
-        res.status( 201 ).json(answers );
+      return  res.status( 201 ).json(answers );
     } catch (err) {
-        res.status( 400 ).json(err)
+       return res.status( 400 ).json(err)
     }
+}catch(e){
+    return res.json({
+        success: false,
+        message:e.message
+    })
+}
+  
 }
 
 async function getPostedAnswer(req, res) {
     try {
         let getQuestionAnswer = await scorePerformance.find( {} ).lean()
 
-        res.status( 201 ).json( getQuestionAnswer );
+      return  res.status( 201 ).json( getQuestionAnswer );
     } catch (err) {
-        res.status( 400 ).json(err)
+      return  res.status( 400 ).json(err)
     }
 }
 
 async function getAnswerByUlb( req, res ) {
-    let {ulbId} = req.params;
-    
+    try{
+        let {ulbId} = req.params;
+   
     if ( ulbId ) {
-        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId(ulbId) } );
-        res.status( 201 ).json( findAnswerByUlb );
+        let prescription = [
+            {
+                name: "enumeration",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "valuation",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "assessment",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."  
+            },
+            {
+                name: "billing_collection",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            },
+            {
+                name: "reporting",
+                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
+            }
+        ]
+        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } ).lean();
+        if(!findAnswerByUlb){
+            return res.status(200).json({
+                success: false,
+                data: null
+            })
+        }
+        findAnswerByUlb.partcularAnswerValues.forEach( elem => {
+            prescription.forEach( elem2 => {
+                if ( elem.name == elem2.name ) {
+                    Object.assign(elem,{prescription: elem2.value })
+                   
+                }
+            })
+        })
+        let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
+        return res.status( 201 ).json( {
+            data:{
+                currentUlb: findAnswerByUlb,
+                top3: topThreeData
+            }
+             } );
         } else {
-        res.status( 400 ).json({
+       return res.status( 400 ).json({
             success: false,
+            message:"ULB ID MIssing"
         });
     }
+
+    } catch(e){
+        return res.json({
+            success: false,
+            message:e.message
+        })
+    }
+    
 }
 
 

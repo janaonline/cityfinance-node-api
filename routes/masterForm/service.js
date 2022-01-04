@@ -2911,7 +2911,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
     };
 
     let newFilter = await Service.mapFilter(filter);
-
+let statusfilArray = []
     if (
       newFilter["status"] ||
       newFilter["auditedStatus"] ||
@@ -2920,6 +2920,12 @@ module.exports.viewList = catchAsync(async (req, res) => {
       newFilter["slbMillionStatus"] ||
       newFilter["slbNonMillionStatus"]
     ) {
+      statusfilArray.push(statusFilter[newFilter["status"]])
+      statusfilArray.push(statusFilter[newFilter["auditedStatus"]])
+      statusfilArray.push(statusFilter[newFilter["unauditedStatus"]])
+      statusfilArray.push(statusFilter[newFilter["utilStatus"]])
+      statusfilArray.push(statusFilter[newFilter["slbMillionStatus"]])
+      statusfilArray.push(statusFilter[newFilter["slbNonMillionStatus"]])
       Object.assign(newFilter, statusFilter[newFilter["status"]]);
       Object.assign(newFilter, statusFilter[newFilter["auditedStatus"]]);
       Object.assign(newFilter, statusFilter[newFilter["unauditedStatus"]]);
@@ -2934,7 +2940,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
       delete newFilter["slbNonMillionStatus"];
     }
     if (newFilter && Object.keys(newFilter).length) {
-      query.push({ $match: newFilter });
+      statusfilArray.forEach(el=>{
+        if(el)
+        query.push({ $match: el });
+      })
+
     }
 
     if (formName == "slbMillion") {
