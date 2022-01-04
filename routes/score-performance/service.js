@@ -23,30 +23,36 @@ async function addScoreQuestion( req, res ) {
 
     try {
         await questionsText.save()
-        res.status( 201 ).json( questionsText );
+       return res.status( 201 ).json( questionsText );
     } catch (err) {
-        res.status( 400 ).json(err)
+       return res.status( 400 ).json(err)
     }
 }
 
 async function getAddScoreQuestion(req, res) {
     try {
         let getQuestion = await scorePerformanceQuestions.find( {} ).lean()
-        res.status( 201 ).json( getQuestion );
+     return   res.status( 201 ).json( getQuestion );
     } catch (err) {
-        res.status( 400 ).json(err)
+        return res.status( 400 ).json(err)
     }
 } 
 
 async function postQuestionAnswer( req, res ) {
-
+try{
     const ulb = req.body.ulb;
     const data = req.body.scorePerformance;
     let totalCount = 0;
     let totalval = 0;
     let particularQuestions = 0;
     let partcularAnswerValues = [];
+if(!ulb){
 
+    return res.status(404).json({
+        success: false,
+        message:"ULB Missing"
+    })
+}
     for ( const key in data ) {
         const element = data[ key ];
         particularQuestions = element.length;
@@ -78,25 +84,33 @@ async function postQuestionAnswer( req, res ) {
 
     try {
       await answers.save()
-        res.status( 201 ).json(answers );
+      return  res.status( 201 ).json(answers );
     } catch (err) {
-        res.status( 400 ).json(err)
+       return res.status( 400 ).json(err)
     }
+}catch(e){
+    return res.json({
+        success: false,
+        message:e.message
+    })
+}
+  
 }
 
 async function getPostedAnswer(req, res) {
     try {
         let getQuestionAnswer = await scorePerformance.find( {} ).lean()
 
-        res.status( 201 ).json( getQuestionAnswer );
+      return  res.status( 201 ).json( getQuestionAnswer );
     } catch (err) {
-        res.status( 400 ).json(err)
+      return  res.status( 400 ).json(err)
     }
 }
 
 async function getAnswerByUlb( req, res ) {
-    let {ulbId} = req.params;
-    
+    try{
+        let {ulbId} = req.params;
+   
     if ( ulbId ) {
         let prescription = [
             {
@@ -130,14 +144,23 @@ async function getAnswerByUlb( req, res ) {
             })
         })
         let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
-        res.status( 201 ).json( {
+        return res.status( 201 ).json( {
             currentUlb: findAnswerByUlb,
             top3: topThreeData } );
         } else {
-        res.status( 400 ).json({
+       return res.status( 400 ).json({
             success: false,
+            message:"ULB ID MIssing"
         });
     }
+
+    } catch(e){
+        return res.json({
+            success: false,
+            message:e.message
+        })
+    }
+    
 }
 
 
