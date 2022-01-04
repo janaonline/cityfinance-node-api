@@ -136,7 +136,7 @@ async function getAnswerByUlb( req, res ) {
         ]
         let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } ).lean();
         if(!findAnswerByUlb){
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 data: null
             })
