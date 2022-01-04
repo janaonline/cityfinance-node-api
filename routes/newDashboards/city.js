@@ -67,27 +67,26 @@ const indicator = async (req, res) => {
       case "revenue":
         query.push({
           $group: {
-            _id: "",
+            _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
+            },
             amount: { $sum: "$amount" },
+            ulbName: { $first: "$ulb.name" },
             population: { $sum: "$ulb.population" },
           },
         });
-        if (isPerCapita == "true") {
-          query.push({
-            $project: {
-              _id: 1,
-              amount: { $divide: ["$amount", "$population"] },
-            },
-          });
-        }
         break;
       case "revenue_expenditure_mix":
       case "revenue_mix":
         query.push({
           $group: {
             _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
               lineItem: "$lineitems.name",
             },
+            ulbName: { $first: "$ulb.name" },
             name: { $first: "$lineitems.name" },
             amount: { $sum: "$amount" },
           },
@@ -103,7 +102,11 @@ const indicator = async (req, res) => {
         });
         query.push({
           $group: {
-            _id: "",
+            _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
+            },
+            ulbName: { $first: "$ulb.name" },
             amount: { $sum: "$amount" },
           },
         });
@@ -120,8 +123,11 @@ const indicator = async (req, res) => {
         query.push({
           $group: {
             _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
               headOfAccount: "$lineitems.headOfAccount",
             },
+            ulbName: { $first: "$ulb.name" },
             amount: { $sum: "$amount" },
           },
         });
@@ -129,7 +135,7 @@ const indicator = async (req, res) => {
         break;
     }
 
-    let newQuery = [];
+    let newQuery;
     if (compareType) newQuery = await comparator(compareType, query, ulb[0]);
 
     if (getQuery) return res.json({ query, newQuery });
@@ -140,8 +146,7 @@ const indicator = async (req, res) => {
     let data = await UlbLedger.aggregate(query);
     if (!data.length) return Response.BadRequest(res, null, "No RecordFound");
 
-    if (compData) return Response.OK(res, { ulbData: data, compData });
-    else return Response.OK(res, data);
+    return Response.OK(res, { ulbData: data, compData });
   } catch (error) {
     console.log(error);
     return Response.DbError(res, null, error.message);
