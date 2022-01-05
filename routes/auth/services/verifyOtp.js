@@ -1,10 +1,12 @@
 const OTP = require('../../../models/Otp')
+const User = require("../../../models/User");
 const catchAsync = require('../../../util/catchAsync')
 const OtpMethods = require('../../../util/otp_generator')
 const { getUSer } = require('./getUser')
 const { createToken } = require('./createToken')
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require("../../../models/State");
+const Ulb = require("../../../models/Ulb");
 
 module.exports.verifyOtp = catchAsync(async (req, res, next) => {
     let { otp, requestId } = req.body;
