@@ -47,6 +47,18 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         }
 
         let user = await getUSer({ email });
+        let state;
+    if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
+    if (state && state['accessToXVFC'] == false) {
+        return res.status(403).json({
+          success: false,
+          message: "Sorry! You are not Authorized To Access XV FC Grants Module"
+        })
+      }
+        if (user.role === "ULB") {
+            ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
+            role = user.role;
+          }
         let expirytime = verification.expireAt.getTime()
         let currentTime = Date.now();
         if (currentTime < expirytime) {
@@ -66,6 +78,10 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                         role: user.role,
                         state: user.state,
                         ulb: user.ulb,
+                        stateName: state?.name,
+                        designation: user?.designation,
+                        isUA: role === "ULB" ? ulb.isUA : null,
+                        isMillionPlus: role === "ULB" ? ulb.isMillionPlus : null,
                     },
                     allYears
                 })
