@@ -40,54 +40,63 @@ async function getAddScoreQuestion(req, res) {
 
 async function postQuestionAnswer( req, res ) {
 try{
-    const ulb = req.body.ulb;
-    const data = req.body.scorePerformance;
-    let totalCount = 0;
-    let totalval = 0;
-    let particularQuestions = 0;
-    let partcularAnswerValues = [];
-if(!ulb){
-
+  const ulb = req.body.ulb;
+  const data = req.body.scorePerformance;
+  let totalCount = 0;
+  let totalval = 0;
+  let particularQuestions = 0;
+  let partcularAnswerValues = [];
+  if (!ulb) {
     return res.status(404).json({
-        success: false,
-        message:"ULB Missing"
-    })
-}
-    for ( const key in data ) {
-        const element = data[ key ];
-        particularQuestions = element.length;
-        totalCount += element.length;
-        element.map( value => {
-            if ( value.answer ) {
-                totalval++;
-            }
-           
-        } );
+      success: false,
+      message: "ULB Missing",
+    });
+  }
+  for (const key in data) {
+    const element = data[key];
+    particularQuestions = element.length;
+    totalCount += element.length;
+    element.map((value) => {
+      if (value.answer) {
+        totalval++;
+      }
+    });
 
-        let filterValue = element.filter( value => value.answer == true );
+    let filterValue = element.filter((value) => value.answer == true);
 
-        let answerValuesPercentage = ( filterValue.length / particularQuestions ) * 100;
-        partcularAnswerValues.push( { value: answerValuesPercentage.toFixed( 1 ) });
+    let answerValuesPercentage =
+      (filterValue.length / particularQuestions) * 100;
+    partcularAnswerValues.push({ value: answerValuesPercentage.toFixed(1) });
+  }
 
-    }
+  const keys = [
+    "Enumeration",
+    "Valuation",
+    "Assesment",
+    "Billing & Collection",
+    "Reporting",
+  ];
+  keys.forEach((k, index) => {
+    partcularAnswerValues[index].name = k;
+  });
 
-    const keys = Object.keys( data )
-    keys.forEach( ( k, index ) => {
-        partcularAnswerValues[ index ].name = k;
-    })
+  let total = ((totalval / totalCount) * 10).toFixed(1);
 
-    let total = ( totalval / totalCount * 10 ).toFixed( 1 );
+  let finalAnswers = Object.assign(
+    { scorePerformance: data },
+    { ulb },
+    { total },
+    { partcularAnswerValues }
+  );
 
-    let finalAnswers = Object.assign( {scorePerformance : data}, {ulb}, { total }, {partcularAnswerValues} )
+  const answers = new scorePerformance(finalAnswers);
 
-    const answers = new scorePerformance(finalAnswers)
-
-    try {
-      await answers.save()
-      return  res.status( 201 ).json(answers );
-    } catch (err) {
-       return res.status( 400 ).json(err)
-    }
+  try {
+    await answers.save();
+    return res.status(201).json(answers);
+  } catch (err) {
+    return res.status(400).json(err);
+  }
 }catch(e){
     return res.json({
         success: false,

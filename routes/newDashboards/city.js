@@ -205,19 +205,29 @@ const comparator = async (compareFrom, query, ulb) => {
         return value;
       });
       break;
-    case "ulb":
+    case "National Average":
+      delete newData[0]?.$match?.ulb;
       newData = newData.map((value) => {
         if (value["$group"]) {
-          if (typeof value["$group"]._id === "object") {
-            Object.assign(value["$group"]._id, { ulb: "$ulb._id" });
-          } else {
-            value["$group"]._id = {
-              ulb: "$ulb._id",
-            };
-          }
+          delete value["$group"]._id?.ulb;
+          Object.assign(value["$group"]._id, { state: "$ulb.state" });
+          delete value["$group"].ulbName;
+          let old = value["$group"].amount.$sum;
+          delete value["$group"].amount.$sum;
+          value["$group"].amount.$avg = old;
         }
         return value;
       });
+
+      newData.push({
+        $group: {
+          _id: {
+            financialYear: "$_id.financialYear",
+          },
+          amount: { $avg: "$amount" },
+        },
+      });
+
       break;
 
     case "ULB Type Average":
