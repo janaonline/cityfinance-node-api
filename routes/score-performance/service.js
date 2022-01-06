@@ -144,6 +144,12 @@ async function getAnswerByUlb( req, res ) {
             }
         ]
         let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } ).lean();
+        if(!findAnswerByUlb){
+            return res.status(200).json({
+                success: false,
+                data: null
+            })
+        }
         findAnswerByUlb.partcularAnswerValues.forEach( elem => {
             prescription.forEach( elem2 => {
                 if ( elem.name == elem2.name ) {
@@ -154,8 +160,11 @@ async function getAnswerByUlb( req, res ) {
         })
         let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
         return res.status( 201 ).json( {
-            currentUlb: findAnswerByUlb,
-            top3: topThreeData } );
+            data:{
+                currentUlb: findAnswerByUlb,
+                top3: topThreeData
+            }
+             } );
         } else {
        return res.status( 400 ).json({
             success: false,

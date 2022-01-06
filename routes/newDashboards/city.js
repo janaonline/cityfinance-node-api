@@ -3,6 +3,7 @@ const UlbLedger = require("../../models/UlbLedger");
 const Sate = require("../../models/State");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
+const Redis = require("../../service/redis");
 
 const headOfAccountDeficit = ["Expense", "Revenue"];
 
@@ -65,29 +66,40 @@ const indicator = async (req, res) => {
     switch (filterName) {
       case "revenue_expenditure":
       case "revenue":
-        query.push({
-          $group: {
-            _id: "",
-            amount: { $sum: "$amount" },
-            population: { $sum: "$ulb.population" },
+        let group = {
+          _id: {
+            ulb: "$ulb._id",
+            financialYear: "$financialYear",
           },
-        });
-        if (isPerCapita == "true") {
-          query.push({
-            $project: {
-              _id: 1,
-              amount: { $divide: ["$amount", "$population"] },
+          amount: { $sum: "$amount" },
+          ulbName: { $first: "$ulb.name" },
+        };
+        if (isPerCapita) {
+          group.amount = {
+            $sum: {
+              $cond: [
+                { $eq: ["$ulb.population", 0] },
+                0,
+                { $divide: ["$amount", "$ulb.population"] },
+              ],
             },
-          });
+          };
         }
+
+        query.push({
+          $group: group,
+        });
         break;
       case "revenue_expenditure_mix":
       case "revenue_mix":
         query.push({
           $group: {
             _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
               lineItem: "$lineitems.name",
             },
+            ulbName: { $first: "$ulb.name" },
             name: { $first: "$lineitems.name" },
             amount: { $sum: "$amount" },
           },
@@ -103,7 +115,11 @@ const indicator = async (req, res) => {
         });
         query.push({
           $group: {
-            _id: "",
+            _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
+            },
+            ulbName: { $first: "$ulb.name" },
             amount: { $sum: "$amount" },
           },
         });
@@ -120,8 +136,11 @@ const indicator = async (req, res) => {
         query.push({
           $group: {
             _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
               headOfAccount: "$lineitems.headOfAccount",
             },
+            ulbName: { $first: "$ulb.name" },
             amount: { $sum: "$amount" },
           },
         });
@@ -129,19 +148,27 @@ const indicator = async (req, res) => {
         break;
     }
 
-    let newQuery = [];
+    let newQuery;
     if (compareType) newQuery = await comparator(compareType, query, ulb[0]);
 
     if (getQuery) return res.json({ query, newQuery });
 
-    let compData;
-    if (newQuery) compData = await UlbLedger.aggregate(newQuery);
+    let redisKey = JSON.stringify({ query, newQuery });
+    let redisData = await Redis.getDataPromise(redisKey);
+    let compData, data, returnData;
+    if (!redisData) {
+      if (newQuery) compData = await UlbLedger.aggregate(newQuery);
+      data = await UlbLedger.aggregate(query);
+      returnData = { ulbData: data, compData };
+      Redis.set(redisKey, JSON.stringify(returnData));
+    } else {
+      returnData = JSON.parse(redisData);
+    }
 
-    let data = await UlbLedger.aggregate(query);
-    if (!data.length) return Response.BadRequest(res, null, "No RecordFound");
+    if (!returnData.ulbData.length)
+      return Response.BadRequest(res, null, "No RecordFound");
 
-    if (compData) return Response.OK(res, { ulbData: data, compData });
-    else return Response.OK(res, data);
+    return Response.OK(res, returnData);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, null, error.message);
@@ -152,54 +179,79 @@ const comparator = async (compareFrom, query, ulb) => {
   let newData = JSON.parse(JSON.stringify(query)); //deep copy of prev query
   let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
   switch (compareFrom) {
-    case "state":
-      newData.splice(0, 1);
+    case "State Average":
+      delete newData[0]?.$match?.ulb;
       if (ulbData)
         newData.splice(2, 0, {
           $match: { "ulb.state": ObjectId(ulbData.state) },
         });
+      newData.splice(3, 0, {
+        $lookup: {
+          from: "states",
+          localField: "ulb.state",
+          foreignField: "_id",
+          as: "state",
+        },
+      });
       newData = newData.map((value) => {
         if (value["$group"]) {
-          if (typeof value["$group"]._id === "object") {
-            Object.assign(value["$group"]._id, { state: "$ulb.state" });
-          } else {
-            value["$group"]._id = {
-              state: "$ulb.state",
-            };
-          }
-
-          Object.assign(value["$group"], {
-            ulbInState: { $addToSet: "$ulb._id" },
-          });
+          delete value["$group"]._id?.ulb;
+          Object.assign(value["$group"]._id, { state: "$ulb.state" });
+          value["$group"].ulbName = { $first: "$state.name" };
+          let old = value["$group"].amount.$sum;
+          delete value["$group"].amount.$sum;
+          value["$group"].amount.$avg = old;
         }
         return value;
       });
       break;
-    case "ulb":
+    case "National Average":
+      delete newData[0]?.$match?.ulb;
       newData = newData.map((value) => {
         if (value["$group"]) {
-          if (typeof value["$group"]._id === "object") {
-            Object.assign(value["$group"]._id, { ulb: "$ulb._id" });
-          } else {
-            value["$group"]._id = {
-              ulb: "$ulb._id",
-            };
-          }
+          delete value["$group"]._id?.ulb;
+          Object.assign(value["$group"]._id, { state: "$ulb.state" });
+          delete value["$group"].ulbName;
+          let old = value["$group"].amount.$sum;
+          delete value["$group"].amount.$sum;
+          value["$group"].amount.$avg = old;
         }
         return value;
       });
+
+      newData.push({
+        $group: {
+          _id: {
+            financialYear: "$_id.financialYear",
+          },
+          amount: { $avg: "$amount" },
+        },
+      });
+
       break;
 
-    case "ulbType":
+    case "ULB Type Average":
+      delete newData[0]?.$match?.ulb;
+      if (ulbData)
+        newData.splice(3, 0, {
+          $match: { "ulb.ulbType": ObjectId(ulbData.ulbType) },
+        });
+      newData.splice(4, 0, {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulb.ulbType",
+          foreignField: "_id",
+          as: "ulbType",
+        },
+      });
       newData = newData.map((value) => {
         if (value["$group"]) {
-          if (typeof value["$group"]._id === "object") {
-            Object.assign(value["$group"]._id, { ulb: "$ulb.ulbType" });
-          } else {
-            value["$group"]._id = {
-              ulb: "$ulb.ulbType",
-            };
-          }
+          delete value["$group"]._id?.ulb;
+          value["$group"]._id.ulbType = "$ulb.ulbType";
+          value["$group"].ulbName = { $first: "$ulbType.name" };
+          let old = value["$group"].amount.$sum;
+          delete value["$group"].amount.$sum;
+          value["$group"].amount.$avg = old;
         }
         return value;
       });
@@ -215,36 +267,3 @@ const comparator = async (compareFrom, query, ulb) => {
 module.exports = {
   indicator,
 };
-
-// db.getCollection("ulbledgers").aggregate([
-//   {
-//     $lookup: {
-//       from: "ulbs",
-//       localField: "ulb",
-//       foreignField: "_id",
-//       as: "ulb",
-//     },
-//   },
-//   { $unwind: "$ulb" },
-//   {
-//     $group: {
-//       _id: "$ulb.state",
-//       ulb: { $addToSet: "$ulb.name" },
-//       amount: { $sum: "$amount" },
-//     },
-//   },
-//   {
-//     $project: {
-//       amount: 1,
-//       size: { $size: "$ulb" },
-//       totalAmount: { $divide: ["$amount", { $size: "$ulb" }] },
-//     },
-//   },
-//   {
-//     $group: {
-//       _id: "",
-//       amount: { $sum: "$amount" },
-//       ulbsize: { $sum: "$size" },
-//     },
-//   },
-// ]);
