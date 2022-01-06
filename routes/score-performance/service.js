@@ -149,7 +149,40 @@ async function getAnswerByUlb( req, res ) {
                 }
             })
         })
-        let topThreeData = await scorePerformance.find(  ).sort({total: -1}).limit(3);
+let query=[
+    [
+        {
+            $lookup:{
+                from:"ulbs",
+                localField:"ulb",
+                foreignField:"_id",
+                as:"ulb"
+                }
+            },
+            {
+                $unwind:"$ulb"
+                },
+                {
+                    $sort:{
+                        total:1
+                        }
+                    },
+                    {
+                        $limit:3
+                        },
+                        {
+                            $project:{
+                                ulb:"$ulb._id",
+                                ulbName:"$ulb.name",
+                                scorePerformance:1,
+                                total:1,
+                                partcularAnswerValues:1
+                                }
+                            }
+        ]
+]
+        let topThreeData = await scorePerformance.aggregate(query);
+
         return res.status( 201 ).json( {
             data:{
                 currentUlb: findAnswerByUlb,
