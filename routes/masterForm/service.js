@@ -2944,6 +2944,19 @@ let statusfilArray = []
         if(el)
         query.push({ $match: el });
       })
+console.log(newFilter)
+for (const [key, value] of Object.entries(newFilter)) {
+  query.push({ $match: {
+    [key]:value
+  } });
+}
+      // for(let fil in newFilter ){
+      //   let keyName = fil;
+      //   console.log(fil)
+      //   query.push({ $match: {
+      //     keyName:newFilter[fil]
+      //   } });
+      // }
 
     }
 

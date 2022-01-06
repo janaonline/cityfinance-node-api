@@ -293,3 +293,76 @@ exports.action = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+exports.report = async(req,res) =>{
+  let filename = "Detailed-Utilization-Report.csv";
+
+
+  res.setHeader("Content-disposition", "attachment; filename=" + filename);
+  res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+  res.write(
+    "ULB name, ULB Code,STATE , Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs) \r\n"
+  );
+  // Flush the headers before we start pushing the CSV content
+  res.flushHeaders();
+  let query = [
+    {
+        $lookup:{
+            from:"ulbs",
+            localField:"ulb",
+            foreignField:"_id",
+            as:"ulb"
+            }
+        },{
+            $unwind:"$ulb"
+            },
+            {
+                  $lookup:{
+            from:"states",
+            localField:"ulb.state",
+            foreignField:"_id",
+            as:"state"
+            }
+                
+                },{
+                    $unwind:"$state"
+                    },
+                   { 
+                  $project:  {
+                        ulbName: "$ulb.name",
+                        ulbCode:"$ulb.code",
+                        stateName:"$state.name",
+                        unutilisedTiedGrants:"$grantPosition.unUtilizedPrevYr",
+                        grantReceived:"$grantPosition.receivedDuringYr",
+                        expenditureIncurred:"$grantPosition.expDuringYr",
+                        closingBalance: "$grantPosition.closingBal"
+                        }
+                    }
+    ]
+
+ let data =    await UtilizationReport.aggregate(query)
+
+ if(data){
+  for (el of data) {
+    res.write(
+      el.ulbName +
+      "," +
+      el.ulbCode +
+      "," +
+      el.stateName +
+      "," +
+      el.unutilisedTiedGrants +
+      "," +
+      el.grantReceived +
+      "," +
+      el.expenditureIncurred +
+      "," +
+      el.closingBalance +
+      "," +
+      "\r\n"
+    );
+  }
+  res.end();
+
+ }
+}
