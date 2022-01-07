@@ -3,8 +3,10 @@ const Ulb = require("../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const catchAsync = require('../../util/catchAsync')
+const Year = require('../../models/Year')
 const moment = require("moment");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
+const GTC = require('../../models/StateGTCertificate')
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -88,8 +90,12 @@ exports.createUpdate = async (req, res) => {
 };
 
 exports.nmpcEligibility = catchAsync(async(req,res)=>{
+  //calculates nmpc - untied eligibility for 1st and 2nd installments
+  //1st Installments - GTC of second installment of 2020-21 should be there
+  //2nd Installments - 25% annual accounts must be fully submitted by ULB and GTC of 1st installment of 2021-22 must be submitted
   let user = req.decoded
   let cutOff = 25;
+
   let { state_id } = req.query;
     let state = user?.state ?? state_id;
   let totalULBs = [
@@ -155,35 +161,61 @@ exports.nmpcEligibility = catchAsync(async(req,res)=>{
         $match:{$and:[{"audited.submit_annual_accounts":true},{"unAudited.submit_annual_accounts":true}, {isDraft: false}]}
         },
         {
-        $group:{
-           _id:{
-               role:"$actionTakenByRole",
-               status:"$status"
-               },
-               count:{$sum:1}
-            }
+        $count:"filled"
         }
         ]
+        //finding total ULBs
      let totalULBCount =   await Ulb.aggregate(totalULBs)
+     //finding ulbs which have completely submitted the annual accounts
   let filledData = await AnnualAccountData.aggregate(query_filled)
-  let approvedForms = 0
-  filledData.forEach(el =>{
-// let role = el._id.role;
-let status = el._id.status;
+  let approvedForms = 0;
+  let yearData; 
+  
+  year2021 = await Year.findOne({year:'2020-21'}).lean();
+  year2122 = await Year.findOne({year:'2021-22'}).lean();
 
-if(status == 'APPROVED'){
-  approvedForms = approvedForms + el.count
-}
+  let gtc2021Data = await GTC.findOne({state:ObjectId(state_id), design_year:ObjectId(year2021._id)})
+  let gtc2122Data = await GTC.findOne({state:ObjectId(state_id), design_year:ObjectId(year2122._id)})
 
-  })
-  let total = totalULBCount[0].totalULBCount
+  let gtc2021 = false;
+let gtc2122 = false;
+let gtc2021Url = "";
+let gtc2122Url = "";
+
+  if(gtc2021Data){
+    if(gtc2021Data['nonmillion_untied']['pdfUrl'] != null || gtc2021Data['nonmillion_untied']['pdfUrl'] != ""  ){
+      gtc2021 = true;
+      gtc2021Url = gtc2021Data['nonmillion_untied']['pdfUrl'];
+    }
+  }
+  if(gtc2122Data){
+    if(gtc2122Data['nonmillion_untied']['pdfUrl'] != null || gtc2122Data['nonmillion_untied']['pdfUrl'] != ""  ){
+      gtc2122 = true;
+      gtc2122Url = gtc2122Data['nonmillion_untied']['pdfUrl'];
+    }
+  }
+
+
+
+  approvedForms = filledData[0].filled;
+  //calculating percentage
 let percentage = parseInt(approvedForms/total * 100)
+
 return res.json({
   success: true,
-  totalULBs : total,
-  approvedForms:approvedForms,
-  percentage : percentage,
-  cutOff:cutOff
+  secondInstallment:{
+    totalULBs : total,
+    approvedForms:approvedForms,
+    percentage : percentage,
+    cutOff:cutOff,
+    gtcSubmitted: gtc2122,
+    gtcLink:gtc2122Url
+  },
+  firstInstallment:{
+    gtcSubmitted: gtc2021,
+    gtcLink:gtc2021Url
+  }
+  
 })
 
 })
