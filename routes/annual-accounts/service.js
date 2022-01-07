@@ -174,8 +174,8 @@ exports.nmpcEligibility = catchAsync(async(req,res)=>{
   year2021 = await Year.findOne({year:'2020-21'}).lean();
   year2122 = await Year.findOne({year:'2021-22'}).lean();
 
-  let gtc2021Data = await GTC.findOne({state:ObjectId(state_id), design_year:ObjectId(year2021._id)})
-  let gtc2122Data = await GTC.findOne({state:ObjectId(state_id), design_year:ObjectId(year2122._id)})
+  let gtc2021Data = await GTC.findOne({state:ObjectId(state), design_year:ObjectId(year2021._id)})
+  let gtc2122Data = await GTC.findOne({state:ObjectId(state), design_year:ObjectId(year2122._id)})
 
   let gtc2021 = false;
 let gtc2122 = false;
@@ -196,7 +196,7 @@ let gtc2122Url = "";
   }
 
 
-
+let total = totalULBs[0].totalULBCount
   approvedForms = filledData[0].filled;
   //calculating percentage
 let percentage = parseInt(approvedForms/total * 100)
