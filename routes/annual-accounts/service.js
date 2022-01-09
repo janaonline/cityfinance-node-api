@@ -1,4 +1,6 @@
 const AnnualAccountData = require("../../models/AnnualAccounts");
+const DUR = require('../../models/UtilizationReport')
+const SLB = require('../../models/XVFcGrantForm')
 const Ulb = require("../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
@@ -90,12 +92,12 @@ exports.createUpdate = async (req, res) => {
 };
 
 exports.nmpcEligibility = catchAsync(async(req,res)=>{
-  //calculates nmpc - untied eligibility for 1st and 2nd installments
-  //1st Installments - GTC of second installment of 2020-21 should be there
-  //2nd Installments - 25% annual accounts must be fully submitted by ULB and GTC of 1st installment of 2021-22 must be submitted
-  let user = req.decoded
-  let cutOff = 25;
 
+  let user = req.decoded
+  let cutOff_annual = 25;
+  let cutOff_util_nmpc = 100;
+  let cutOff_util_mpc = 100;
+  let cutOff_slb = 100;
   let { state_id } = req.query;
     let state = user?.state ?? state_id;
   let totalULBs = [
@@ -141,8 +143,25 @@ exports.nmpcEligibility = catchAsync(async(req,res)=>{
                   $count:"totalULBCount"
                 }
     ]
-  let query_filled = [
-    {
+
+    let totalNMPCs = [
+     {
+$match:{
+  isMillionPlus: "No"
+}
+     },
+     ...totalULBs
+    ]
+    let totalMPCs = [
+      {
+ $match:{
+   isMillionPlus: "Yes"
+ }
+      },
+      ...totalULBs
+     ]
+//common stages of different forms
+    let common = [{
       $lookup:{
       from:"ulbs",
       localField:"ulb",
@@ -156,7 +175,8 @@ exports.nmpcEligibility = catchAsync(async(req,res)=>{
     $match:{
       "ulb.state": ObjectId(state)
     }
-  },
+  }]
+  let query_filled_annual = [
     {
         $match:{$and:[{"audited.submit_annual_accounts":true},{"unAudited.submit_annual_accounts":true}, {isDraft: false}]}
         },
@@ -164,57 +184,220 @@ exports.nmpcEligibility = catchAsync(async(req,res)=>{
         $count:"filled"
         }
         ]
-        //finding total ULBs
-     let totalULBCount =   await Ulb.aggregate(totalULBs)
-     //finding ulbs which have completely submitted the annual accounts
-  let filledData = await AnnualAccountData.aggregate(query_filled)
-  let approvedForms = 0;
-  let yearData; 
+        let query_filled_util_nmpc = [
+          {
+            $match:{
+              "ulb.isMillionPlus": "No"
+            }
+          },
+          {
+              $match:{status:"APPROVED"}
+              },
+              {
+              $count:"filled"
+              }
+              ]
+              let query_filled_util_mpc = [
+                {
+                  $match:{
+                    "ulb.isMillionPlus": "Yes"
+                  }
+                },
+                {
+                    $match:{status:"APPROVED"}
+                    },
+                    {
+                    $count:"filled"
+                    }
+                    ]
+                    let query_filled_slb_mpc = [  
+                      {
+                        $match:{
+                          "ulb.isMillionPlus": "Yes"
+                        }
+                      },
+                      {
+                          $match:{"waterManagement.status":"APPROVED"}
+                          },
+                          {
+                          $count:"filled"
+                          }
+                          ]
+                    query_filled_annual.unshift(...common) 
+                    query_filled_util_nmpc.unshift(...common) 
+                    query_filled_util_mpc.unshift(...common) 
+                    query_filled_slb_mpc.unshift(...common) 
+
+                    let { totalULBCount, totalNMPCCount, totalMPCCount, filledData_annual, filledData_util_nmpc, filledData_util_mpc, filledData_slb_mpc } = await new Promise(async (resolve, reject) => {
+                      let prms1 = new Promise(async (rslv, rjct) => {
+                          let output =  await Ulb.aggregate(totalULBs)
+                          rslv(output);
+                      });
+                      let prms2 = new Promise(async (rslv, rjct) => {
+                          let output =  await Ulb.aggregate(totalNMPCs)
+                          rslv(output);
+                      });
+                      let prms3 = new Promise(async (rslv, rjct) => {
+                          let output =    await Ulb.aggregate(totalMPCs);
+                          rslv(output);
+                      });
+                      let prms4 = new Promise(async (rslv, rjct) => {
+                          let output = await AnnualAccountData.aggregate(query_filled_annual);
+                          rslv(output);
+                      });
+                      let prms5 = new Promise(async (rslv, rjct) => {
+                          let output = await DUR.aggregate(query_filled_util_nmpc);
+                          rslv(output);
+                      });
+                      let prms6 = new Promise(async (rslv, rjct) => {
+                          let output = await DUR.aggregate(query_filled_util_mpc);
+                          rslv(output);
+                      });
+                      let prms7 = new Promise(async (rslv, rjct) => {
+                          let output =  await SLB.aggregate(query_filled_slb_mpc);
+                          rslv(output);
+                      });
+                      Promise.all([prms1, prms2, prms3, prms4, prms5,prms6, prms7]).then(
+                          (outputs) => {
+                              let totalULBCount = outputs[0];
+                              let totalNMPCCount = outputs[1];
+                              let totalMPCCount = outputs[2];
+                              let filledData_annual = outputs[3];
+                              let filledData_util_nmpc = outputs[4];
+                              let filledData_util_mpc = outputs[5];
+                              let filledData_slb_mpc = outputs[6];
+      
+                              if (totalULBCount && totalNMPCCount && totalMPCCount && filledData_annual && filledData_util_nmpc && filledData_util_mpc && filledData_slb_mpc) {
+                                  resolve({ totalULBCount, totalNMPCCount, totalMPCCount, filledData_annual , filledData_util_nmpc, filledData_util_mpc, filledData_slb_mpc});
+                              } else {
+                                  reject({ message: "No Data Found" });
+                              }
+                          },
+                          (e) => {
+                              reject(e);
+                          }
+                      );
+                  });
+      
+
+  let approvedForms_annual = 0;
+  let approvedForms_slb_mpc = 0;
+  let approvedForms_util_mpc = 0;
+  let approvedForms_util_nmpc = 0;
   
   year2021 = await Year.findOne({year:'2020-21'}).lean();
   year2122 = await Year.findOne({year:'2021-22'}).lean();
 
-  let gtc2021Data = await GTC.findOne({state:ObjectId(state), design_year:ObjectId(year2021._id)})
-  let gtc2122Data = await GTC.findOne({state:ObjectId(state), design_year:ObjectId(year2122._id)})
+  let gtc2021Data = await GTC.findOne({state:ObjectId(state), design_year:ObjectId(year2021._id),  installment:"2"})
+  let gtc2122Data = await GTC.findOne({state:ObjectId(state), design_year:ObjectId(year2122._id), installment:"1"})
 
-  let gtc2021 = false;
-let gtc2122 = false;
-let gtc2021Url = "";
-let gtc2122Url = "";
+let gtc2021_untied = false;
+let gtc2122_untied = false;
+let gtc2021Url_untied = "";
+let gtc2122Url_untied = "";
+
+let gtc2021_tied = false;
+let gtc2122_tied = false;
+let gtc2021Url_tied = "";
+let gtc2122Url_tied = "";
+
+
+let gtc2021_mpc = false;
+let gtc2021Url_mpc = "";
+
 
   if(gtc2021Data){
     if(gtc2021Data['nonmillion_untied']['pdfUrl'] != null || gtc2021Data['nonmillion_untied']['pdfUrl'] != ""  ){
-      gtc2021 = true;
-      gtc2021Url = gtc2021Data['nonmillion_untied']['pdfUrl'];
+      gtc2021_untied = true;
+      gtc2021Url_untied = gtc2021Data['nonmillion_untied']['pdfUrl'];
+    }
+    if(gtc2021Data['nonmillion_tied']['pdfUrl'] != null || gtc2021Data['nonmillion_tied']['pdfUrl'] != ""  ){
+      gtc2021_tied = true;
+      gtc2021Url_tied = gtc2021Data['nonmillion_tied']['pdfUrl'];
+    }
+    if(gtc2021Data['million_tied']['pdfUrl'] != null || gtc2021Data['million_tied']['pdfUrl'] != ""  ){
+      gtc2021_mpc = true;
+      gtc2021Url_mpc = gtc2021Data['million_tied']['pdfUrl'];
     }
   }
   if(gtc2122Data){
     if(gtc2122Data['nonmillion_untied']['pdfUrl'] != null || gtc2122Data['nonmillion_untied']['pdfUrl'] != ""  ){
-      gtc2122 = true;
-      gtc2122Url = gtc2122Data['nonmillion_untied']['pdfUrl'];
+      gtc2122_untied = true;
+      gtc2122Url_untied = gtc2122Data['nonmillion_untied']['pdfUrl'];
+    }
+    if(gtc2122Data['nonmillion_tied']['pdfUrl'] != null || gtc2122Data['nonmillion_tied']['pdfUrl'] != ""  ){
+      gtc2122_tied = true;
+      gtc2122Url_tied = gtc2122Data['nonmillion_tied']['pdfUrl'];
     }
   }
 
 
-let total = totalULBs[0].totalULBCount
-  approvedForms = filledData[0].filled;
+let total = totalULBCount[0]?.totalULBCount 
+let totalNMPC = totalNMPCCount[0]?.totalULBCount
+let totalMPC = totalMPCCount[0]?.totalULBCount
+  approvedForms_annual = filledData_annual[0]?.filled;
+  approvedForms_util_nmpc = filledData_util_nmpc[0]?.filled;
+  approvedForms_util_mpc = filledData_util_mpc[0]?.filled;
+  approvedForms_slb_mpc = filledData_slb_mpc[0]?.filled;
   //calculating percentage
-let percentage = parseInt(approvedForms/total * 100)
+let percentage_annual = parseInt(approvedForms_annual/total * 100) ? parseInt(approvedForms_annual/total * 100)  : 0 
+let percentage_util_nmpc = parseInt(approvedForms_util_nmpc/totalNMPC * 100) ? parseInt(approvedForms_util_nmpc/totalNMPC * 100)  :0
+let percentage_util_mpc = parseInt(approvedForms_util_mpc/totalMPC * 100)? parseInt(approvedForms_util_mpc/totalMPC * 100) : 0
+let percentage_slb_mpc = parseInt(approvedForms_slb_mpc/totalMPC * 100)? parseInt(approvedForms_slb_mpc/totalMPC * 100)  : 0
 
+let nmpc_untied_1st_inst_eligible = gtc2021_untied;
+let nmpc_tied_1st_inst_eligible = gtc2021_tied;
+
+let nmpc_untied_2nd_inst_eligible = (percentage_annual >= cutOff_annual) && gtc2122_untied ;
+let nmpc_tied_2nd_inst_eligible = (percentage_annual >= cutOff_annual)  && (percentage_util_nmpc >= cutOff_util_nmpc) && gtc2122_tied;
+
+let mpc_eligible = (percentage_annual >= cutOff_annual) && (percentage_util_mpc >= cutOff_util_mpc) && (percentage_slb_mpc>=cutOff_slb) && gtc2021_mpc ;
 return res.json({
   success: true,
-  secondInstallment:{
-    totalULBs : total,
-    approvedForms:approvedForms,
-    percentage : percentage,
-    cutOff:cutOff,
-    gtcSubmitted: gtc2122,
-    gtcLink:gtc2122Url
+  nmpc_tied:{
+    secondInstallment:{
+      totalNMPCs: totalNMPC,
+      approvedForms_util:approvedForms_util_nmpc,
+      percentage_util : percentage_util_nmpc,
+      cutOff_util:cutOff_util_nmpc,
+      eligible:nmpc_tied_2nd_inst_eligible
+    },
+    firstInstallment:{
+      eligible:nmpc_tied_1st_inst_eligible,
+      gtcSubmitted: gtc2021,
+      gtcLink:gtc2021Url,
+    }
   },
-  firstInstallment:{
-    gtcSubmitted: gtc2021,
-    gtcLink:gtc2021Url
+  nmpc_untied:{
+    secondInstallment:{
+      totalULBs : total,
+      approvedForms_annual:approvedForms_annual,
+      percentage_annual : percentage_annual,
+      cutOff_annual:cutOff_annual,
+      gtcSubmitted: gtc2122_tied,
+      gtcLink:gtc2122Url_tied,
+      eligible:nmpc_untied_2nd_inst_eligible
+    },
+    firstInstallment:{
+      gtcSubmitted: gtc2021_untied,
+      gtcLink:gtc2021Url_untied,
+      eligible:nmpc_untied_1st_inst_eligible
+    }
+  },
+  mpc:{
+eligible:mpc_eligible,
+totalMPCs : totalMPC,
+gtcSubmitted: gtc2021_mpc,
+gtcLink:gtc2021Url_mpc,
+approvedForms_util:approvedForms_util_mpc,
+percentage_util : percentage_util_mpc,
+cutOff_util:cutOff_util_mpc,
+approvedForms_slb:approvedForms_slb_mpc,
+percentage_slb : percentage_slb_mpc,
+cutOff_slb:cutOff_slb,
+
   }
+ 
   
 })
 

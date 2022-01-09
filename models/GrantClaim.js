@@ -5,10 +5,13 @@ const { Schema } = mongoose;
 const StatusSchema = new Schema({
     submittedOn: { type: Date, default: null },
     approvedOn: { type: Date, default: null },
-    returnedOn: { type: Date, default: null }
+    returnedOn: { type: Date, default: null },
+    forwardedMoF: { type: Date, default: null }
 })
 
-const DataSchema = new Schema({
+
+
+const ClaimDataSchema = new Schema({
     installment: { type: String, default: null },
     submitStatus: { type: Boolean, default: false },
     actionTakenBy: {
@@ -25,10 +28,6 @@ const DataSchema = new Schema({
     fileName: { type: String, default: null },
     fileUrl: { type: String, default: null },
     dates: { type: StatusSchema }
-})
-
-const ClaimDataSchema = new Schema({
-    data: { type: [DataSchema] }
 });
 
 const GrantClaimSchema = new Schema(
@@ -37,8 +36,8 @@ const GrantClaimSchema = new Schema(
         state: { type: Schema.Types.ObjectId, ref: "State", required: true },
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
-        nmpc_tied: { type: ClaimDataSchema },
-        nmpc_untied: { type: ClaimDataSchema },
+        nmpc_tied: { type: [ClaimDataSchema] },
+        nmpc_untied: { type: [ClaimDataSchema] },
         mpc: { type: ClaimDataSchema },
 
 
