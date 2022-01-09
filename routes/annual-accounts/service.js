@@ -307,27 +307,27 @@ let gtc2021Url_mpc = "";
 
 
   if(gtc2021Data){
-    if(gtc2021Data['nonmillion_untied']['pdfUrl'] != null || gtc2021Data['nonmillion_untied']['pdfUrl'] != ""  ){
+    if(gtc2021Data['nonmillion_untied']?.pdfUrl != null || gtc2021Data['nonmillion_untied']?.pdfUrl != ""  ){
       gtc2021_untied = true;
-      gtc2021Url_untied = gtc2021Data['nonmillion_untied']['pdfUrl'];
+      gtc2021Url_untied = gtc2021Data['nonmillion_untied']?.pdfUrl;
     }
-    if(gtc2021Data['nonmillion_tied']['pdfUrl'] != null || gtc2021Data['nonmillion_tied']['pdfUrl'] != ""  ){
+    if(gtc2021Data['nonmillion_tied']?.pdfUrl != null || gtc2021Data['nonmillion_tied']?.pdfUrl != ""  ){
       gtc2021_tied = true;
-      gtc2021Url_tied = gtc2021Data['nonmillion_tied']['pdfUrl'];
+      gtc2021Url_tied = gtc2021Data['nonmillion_tied']?.pdfUrl;
     }
-    if(gtc2021Data['million_tied']['pdfUrl'] != null || gtc2021Data['million_tied']['pdfUrl'] != ""  ){
+    if(gtc2021Data['million_tied']?.pdfUrl != null || gtc2021Data['million_tied']?.pdfUrl != ""  ){
       gtc2021_mpc = true;
-      gtc2021Url_mpc = gtc2021Data['million_tied']['pdfUrl'];
+      gtc2021Url_mpc = gtc2021Data['million_tied']?.pdfUrl;
     }
   }
   if(gtc2122Data){
-    if(gtc2122Data['nonmillion_untied']['pdfUrl'] != null || gtc2122Data['nonmillion_untied']['pdfUrl'] != ""  ){
+    if(gtc2122Data['nonmillion_untied']?.pdfUrl != null || gtc2122Data['nonmillion_untied']?.pdfUrl != ""  ){
       gtc2122_untied = true;
-      gtc2122Url_untied = gtc2122Data['nonmillion_untied']['pdfUrl'];
+      gtc2122Url_untied = gtc2122Data['nonmillion_untied']?.pdfUrl;
     }
-    if(gtc2122Data['nonmillion_tied']['pdfUrl'] != null || gtc2122Data['nonmillion_tied']['pdfUrl'] != ""  ){
+    if(gtc2122Data['nonmillion_tied']?.pdfUrl != null || gtc2122Data['nonmillion_tied']?.pdfUrl != ""  ){
       gtc2122_tied = true;
-      gtc2122Url_tied = gtc2122Data['nonmillion_tied']['pdfUrl'];
+      gtc2122Url_tied = gtc2122Data['nonmillion_tied']?.pdfUrl;
     }
   }
 
@@ -360,12 +360,14 @@ return res.json({
       approvedForms_util:approvedForms_util_nmpc,
       percentage_util : percentage_util_nmpc,
       cutOff_util:cutOff_util_nmpc,
-      eligible:nmpc_tied_2nd_inst_eligible
+      eligible:nmpc_tied_2nd_inst_eligible,
+      gtcSubmitted: gtc2122_tied,
+      gtcLink:gtc2122Url_tied,
     },
     firstInstallment:{
       eligible:nmpc_tied_1st_inst_eligible,
-      gtcSubmitted: gtc2021,
-      gtcLink:gtc2021Url,
+      gtcSubmitted: gtc2021_tied,
+      gtcLink:gtc2021Url_tied,
     }
   },
   nmpc_untied:{
@@ -374,8 +376,8 @@ return res.json({
       approvedForms_annual:approvedForms_annual,
       percentage_annual : percentage_annual,
       cutOff_annual:cutOff_annual,
-      gtcSubmitted: gtc2122_tied,
-      gtcLink:gtc2122Url_tied,
+      gtcSubmitted: gtc2122_untied,
+      gtcLink:gtc2122Url_untied,
       eligible:nmpc_untied_2nd_inst_eligible
     },
     firstInstallment:{
