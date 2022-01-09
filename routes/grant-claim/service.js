@@ -96,14 +96,14 @@ module.exports.get = catchAsync(async (req, res) => {
 
 
     claim_mpc = claimsData['mpc'];
-  claimData['nmpc_untied'].forEach(el=>{
+  claimsData['nmpc_untied'].forEach(el=>{
       if(el['installment']=="1"){
         claim_nmpc_untied_1stInst = el?.amount
       }else if(el['installment']=="2"){
         claim_nmpc_untied_2ndInst = el?.amount
       }
   })
-  claimData['nmpc_tied'].forEach(el=>{
+  claimsData['nmpc_tied'].forEach(el=>{
     if(el['installment']=="1"){
         claim_nmpc_tied_1stInst = el?.amount
     }else if(el['installment']=="2"){
