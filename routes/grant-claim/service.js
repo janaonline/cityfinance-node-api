@@ -189,35 +189,35 @@ if(gtcData_2ndInst){
     }
 
     if(!claimed_nmpc_untied_1st){
-        if(claimedData_nmpc_untied_1st){
+        if(! (claimedData_nmpc_untied_1st && Object.keys(claimedData_nmpc_untied_1st).length === 0 && Object.getPrototypeOf(claimedData_nmpc_untied_1st) === Object.prototype)){
             if(claimedData_nmpc_untied_1st?.dates?.approvedOn != null || claimedData_nmpc_untied_1st?.dates?.approvedOn != "" ){
                 claimed_nmpc_untied_1st = true;
             }
         }
     }
     if(!claimed_nmpc_untied_2nd){
-        if(claimedData_nmpc_untied_2nd){
+        if(!(claimedData_nmpc_untied_2nd && Object.keys(claimedData_nmpc_untied_2nd).length === 0 && Object.getPrototypeOf(claimedData_nmpc_untied_2nd) === Object.prototype )){
             if(claimedData_nmpc_untied_2nd?.dates?.approvedOn != null || claimedData_nmpc_untied_2nd?.dates?.approvedOn != "" ){
                 claimed_nmpc_untied_2nd = true;
             }
         }
     }
     if(!claimed_nmpc_tied_1st){
-        if(claimedData_nmpc_tied_1st){
+        if(!(claimedData_nmpc_tied_1st && Object.keys(claimedData_nmpc_tied_1st).length === 0 && Object.getPrototypeOf(claimedData_nmpc_tied_1st) === Object.prototype) ){
             if(claimedData_nmpc_tied_1st?.dates?.approvedOn != null || claimedData_nmpc_tied_1st?.dates?.approvedOn != "" ){
                 claimed_nmpc_tied_1st = true;
             }
         }
     }
     if(!claimed_nmpc_tied_2nd){
-        if(claimedData_nmpc_tied_2nd){
+        if(!(claimedData_nmpc_tied_2nd && Object.keys(claimedData_nmpc_tied_2nd).length === 0 && Object.getPrototypeOf(claimedData_nmpc_tied_2nd) === Object.prototype )){
             if(claimedData_nmpc_tied_2nd?.dates?.approvedOn != null || claimedData_nmpc_tied_2nd?.dates?.approvedOn != "" ){
                 claimed_nmpc_tied_2nd = true;
             }
         }
     }
-    if(claimed_mpc){
-        if(claimedData_mpc){
+    if(!claimed_mpc ){
+        if(!(claimedData_mpc && Object.keys(claimedData_mpc).length === 0 && Object.getPrototypeOf(claimedData_mpc) === Object.prototype )){
             if(claimedData_mpc?.dates?.approvedOn != null || claimedData_mpc?.dates?.approvedOn != "" ){
                 claimed_mpc = true
             }
