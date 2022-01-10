@@ -114,15 +114,17 @@ async function search(req, res) {
       return Response.BadRequest(res, null, "Provide word to match");
     let query = { name: { $regex: matchingWord, $options: "im" } };
     let ulbPromise = Ulb.find(query)
-      .select({ name: 1, _id: 1 })
+      .populate("state")
+      .populate("ulbType")
+      // .select({ name: 1, _id: 1 })
       .limit(2)
       .lean();
     let statePromise = State.find(query)
-      .select({ name: 1, _id: 1 })
+      // .select({ name: 1, _id: 1 })
       .limit(2)
       .lean();
     let searchKeywordPromise = SearchKeyword.find(query)
-      .select({ name: 1, _id: 1 })
+      // .select({ name: 1, _id: 1 })
       .limit(2)
       .lean();
     let data = await Promise.all([

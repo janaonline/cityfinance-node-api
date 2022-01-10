@@ -38,100 +38,255 @@ module.exports.get = catchAsync(async (req, res) => {
         nmpc_untied: null,
         mpc: null
     }
-    const conditions_nmpc = [
-        {
-            installment: "1",
-            statements: [{
-                achieved: null,
-                text: "Submit Grant Transfer Certificate for 2nd installment of FY 2020-21"
-            }]
-        }, {
-            installment: "2",
-            statements: [
-                {
-                    achieved: null,
-                    text: `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`
-                },
-                {
-                    achieved: null,
-                    text: `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`
-                }, {
-                    achieved: null,
-                    text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
+    const conditions_nmpc_untied_1st = [
+      { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."}
+    ]
+    const conditions_nmpc_untied_2nd = [
+       {"1": `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
+        {"2":  `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`}
+    ] 
+    const conditions_nmpc_tied_1st = [
+        { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."}
+     ]
+     const conditions_nmpc_tied_2nd = [
+         {"1":`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
+         {"2":`${expectedValues.utilReport}% of the Non-Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`},
+         {"3":`Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`}
+     ] 
+    const conditions_mpc =[
+        {"1":`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
+        {"2":`${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`},
+        {"3":`${expectedValues.slb}% of the Million Plus Cities submitted the service level benchmark details and the State Nodal Officer has approved the same.`},
+        {"4": `Grant Transfer Certificate for FY 2021-22 uploaded.`},
+        {"5":`Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`},
+        {"6": `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`}
+    ]
+    const { financialYear, stateId } = req.query
+    const claimsData = await GrantsClaimed.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) }).lean()
+    if(claimsData){
 
-                }, {
-                    tied: null,
-                    untied: null,
-                    text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
-                }
-            ]
-        }]
-    const conditions_mpc = {
-        statements: [{
-            achieved: null,
-            text: `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`
-        },
-        {
-            achieved: null,
-            text: `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`
-        },
-        {
-            achieved: null,
-            text: `${expectedValues.slb}% of the MPCs submitted the service level benchmark details and the State Nodal Officer has approved the same.`
-        }, {
-            achieved: null,
-            text: `Grant transfer certificate for FY 2021-22 has been uploaded on the Cityfinance website.`
+        let claim_mpc = 0, 
+        claim_nmpc_tied_1stInst = 0 , 
+        claim_nmpc_tied_2ndInst = 0 , 
+        claim_nmpc_untied_1stInst = 0, 
+        claim_nmpc_untied_2ndInst = 0,
+        gtcData_1stInst={},
+        gtcData_2ndInst={},
+        gtc_nmpc_untied_1stUrl = "",
+        gtc_nmpc_untied_1st = false,
+        gtc_nmpc_tied_1stUrl = "",
+        gtc_nmpc_tied_1st = false,
+        gtc_nmpc_untied_2ndUrl ="",
+        gtc_nmpc_untied_2nd =false,
+        gtc_nmpc_tied_2ndUrl ="",
+        gtc_nmpc_tied_2nd =false,
+        gtc_mpcUrl =""
+        gtc_mpc =false,
+        claimed_nmpc_untied_1st = false,
+        claimed_nmpc_untied_2nd = false,
+        claimed_nmpc_tied_1st = false,
+        claimed_nmpc_tied_2nd = false,
+        claimed_mpc = false,
+        claimedData_nmpc_untied_1st = {},
+        claimedData_nmpc_untied_2nd = {},
+        claimedData_nmpc_tied_1st = {},
+        claimedData_nmpc_tied_2nd = {},
+        claimedData_mpc = {},
 
-        }, {
-            achieved: null,
-            text: `Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`
 
-        },
-        {
-            achieved: null,
-            text: `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`
+
+    claim_mpc = claimsData['mpc'];
+  claimsData['nmpc_untied'].forEach(el=>{
+      if(el['installment']=="1"){
+        claim_nmpc_untied_1stInst = el?.amount
+      }else if(el['installment']=="2"){
+        claim_nmpc_untied_2ndInst = el?.amount
+      }
+  })
+  claimsData['nmpc_tied'].forEach(el=>{
+    if(el['installment']=="1"){
+        claim_nmpc_tied_1stInst = el?.amount
+    }else if(el['installment']=="2"){
+        claim_nmpc_tied_2ndInst = el?.amount
+    }
+})
+gtcData_1stInst = await GTCModel.findOne({state:ObjectId(stateId), installment:"1", design_year: ObjectId(financialYear)}).lean()
+gtcData_2ndInst = await GTCModel.findOne({state:ObjectId(stateId), installment:"2", design_year: ObjectId(financialYear)}).lean()
+
+if(gtcData_1stInst){
+    if(gtcData_1stInst.hasOwnProperty('nonmillion_untied')){
+        if(gtcData_1stInst['nonmillion_untied']['pdfUrl'] != null || gtcData_1stInst['nonmillion_untied']['pdfUrl'] != ""  ){
+            gtc_nmpc_untied_1st = true;
+            gtc_nmpc_untied_1stUrl = gtcData_1stInst['nonmillion_untied']['pdfUrl']
         }
 
-        ]
+    }
+    if(gtcData_1stInst.hasOwnProperty('nonmillion_tied')){
+        if(gtcData_1stInst['nonmillion_tied']['pdfUrl'] != null || gtcData_1stInst['nonmillion_tied']['pdfUrl'] != ""  ){
+            gtc_nmpc_tied_1st = true;
+            gtc_nmpc_tied_1stUrl = gtcData_1stInst['nonmillion_tied']['pdfUrl']
+        }
+    }
+    if(gtcData_1stInst.hasOwnProperty('million_tied')){
+        if(gtcData_1stInst['million_tied']['pdfUrl'] != null || gtcData_1stInst['million_tied']['pdfUrl'] != ""  ){
+            gtc_mpcUrl = true;
+            gtc_mpcUrl = gtcData_1stInst['million_tied']['pdfUrl']
+        }
+    }
+}
+if(gtcData_2ndInst){
+    if(gtcData_2ndInst.hasOwnProperty('nonmillion_untied')){
+        if(gtcData_2ndInst['nonmillion_untied']['pdfUrl'] != null || gtcData_2ndInst['nonmillion_untied']['pdfUrl'] != ""  ){
+            gtc_nmpc_untied_2nd = true;
+            gtc_nmpc_untied_2ndUrl = gtcData_1stInst['nonmillion_untied']['pdfUrl'];
+        }
+
+    }
+    if(gtcData_2ndInst.hasOwnProperty('nonmillion_tied')){
+        if(gtcData_2ndInst['nonmillion_tied']['pdfUrl'] != null || gtcData_2ndInst['nonmillion_tied']['pdfUrl'] != ""  ){
+            gtc_nmpc_tied_2nd = true;
+            gtc_nmpc_tied_2ndUrl = gtcData_2ndInst['nonmillion_tied']['pdfUrl'];
+        }
+    }
+    if(gtcData_2ndInst.hasOwnProperty('million_tied')){
+        if(gtcData_2ndInst['million_tied']['pdfUrl'] != null || gtcData_2ndInst['million_tied']['pdfUrl'] != ""  ){
+            if(!gtc_mpcUrl){
+                gtc_mpcUrl = true;
+                gtc_mpcUrl = gtcData_2ndInst['million_tied']['pdfUrl'];
+            }
+      
+        }
+    }
+}
+
+
+    const grantClaimsData = await GrantClaim.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) }).lean()
+
+    if(grantClaimsData){
+        if(grantClaimsData.hasOwnProperty('nmpc_untied')){
+            grantClaimsData['nmpc_untied'].forEach(el=>{
+                if(el?.installment =="1"){
+                    claimedData_nmpc_untied_1st = el
+                }
+                if(el?.installment =="2"){
+                    claimedData_nmpc_untied_2nd = el
+                }
+            })
+        }
+        if(grantClaimsData.hasOwnProperty('nmpc_tied')){
+            grantClaimsData['nmpc_tied'].forEach(el=>{
+                if(el?.installment =="1"){
+                    claimedData_nmpc_tied_1st = el
+                }
+                if(el?.installment =="2"){
+                    claimedData_nmpc_tied_2nd = el
+                }
+            })   
+        }
+        if(grantClaimsData.hasOwnProperty('mpc')){
+            claimedData_mpc = grantClaimsData['mpc']
+        }
     }
 
-    const { financialYear, stateId } = req.query
-    const eligiblityData = await calculateEligibility(financialYear, stateId, expectedValues)
-    console.log(eligiblityData)
-
-    const claimsData = await GrantsClaimed.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) })
-    const grantClaimsSavedData = await GrantClaim.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) })
-    if (grantClaimsSavedData) {
-        claimsInformation.nmpc_untied = grantClaimsSavedData?.nmpc_untied,
-            claimsInformation.nmpc_tied = grantClaimsSavedData?.nmpc_tied
-        claimsInformation.mpc = grantClaimsSavedData?.mpc
-
+    if(!claimed_nmpc_untied_1st){
+        if(claimedData_nmpc_untied_1st){
+            if(claimedData_nmpc_untied_1st?.dates?.approvedOn != null || claimedData_nmpc_untied_1st?.dates?.approvedOn != "" ){
+                claimed_nmpc_untied_1st = true;
+            }
+        }
+    }
+    if(!claimed_nmpc_untied_2nd){
+        if(claimedData_nmpc_untied_2nd){
+            if(claimedData_nmpc_untied_2nd?.dates?.approvedOn != null || claimedData_nmpc_untied_2nd?.dates?.approvedOn != "" ){
+                claimed_nmpc_untied_2nd = true;
+            }
+        }
+    }
+    if(!claimed_nmpc_tied_1st){
+        if(claimedData_nmpc_tied_1st){
+            if(claimedData_nmpc_tied_1st?.dates?.approvedOn != null || claimedData_nmpc_tied_1st?.dates?.approvedOn != "" ){
+                claimed_nmpc_tied_1st = true;
+            }
+        }
+    }
+    if(!claimed_nmpc_tied_2nd){
+        if(claimedData_nmpc_tied_2nd){
+            if(claimedData_nmpc_tied_2nd?.dates?.approvedOn != null || claimedData_nmpc_tied_2nd?.dates?.approvedOn != "" ){
+                claimed_nmpc_tied_2nd = true;
+            }
+        }
+    }
+    if(claimed_mpc){
+        if(claimedData_mpc){
+            if(claimedData_mpc?.dates?.approvedOn != null || claimedData_mpc?.dates?.approvedOn != "" ){
+                claimed_mpc = true
+            }
+        }
     }
 
-    if (eligiblityData) {
-        conditions_nmpc[1].statements[0].achieved = eligiblityData.annualAccountsActual
-        conditions_nmpc[1].statements[1].achieved = eligiblityData.utilReportActual
-        conditions_nmpc[1].statements[2].achieved = eligiblityData.slbActual
-        conditions_nmpc[1].statements[3].tied = eligiblityData.nmpc_tied
-        conditions_nmpc[1].statements[3].untied = eligiblityData.nmpc_untied
-        conditions_mpc.statements[0].achieved = eligiblityData.annualAccountsActual
-        conditions_mpc.statements[1].achieved = eligiblityData.utilReportActual
-        conditions_mpc.statements[2].achieved = eligiblityData.slbActual
-        conditions_mpc.statements[3].achieved = eligiblityData.mpc
-        eligiblityData['conditions_nmpc'] = conditions_nmpc
-        eligiblityData['conditions_mpc'] = conditions_mpc
-        eligiblityData['claimsData'] = claimsData
-        eligiblityData['claimsInformation'] = claimsInformation
-        return res.status(200).json({
-            success: true,
-            data: eligiblityData
-        })
-    } else {
-        return res.status(400).json({
+
+    
+       
+            return res.status(200).json({
+                success: true,
+                nmpc_untied:{
+                    firstInstallment:{
+conditions:conditions_nmpc_untied_1st,
+claimAmount:claim_nmpc_untied_1stInst,
+grantClaimed:claimed_nmpc_untied_1st,
+claimData:claimedData_nmpc_untied_1st,
+gtcUrl:gtc_nmpc_untied_1stUrl,
+gtcAvailable:gtc_nmpc_untied_1st
+
+                    },
+                    secondInstallment:{
+conditions:conditions_nmpc_untied_2nd,
+claimAmount:claim_nmpc_untied_2ndInst,
+grantClaimed:claimed_nmpc_untied_2nd,
+claimData:claimedData_nmpc_untied_2nd,
+gtcUrl:gtc_nmpc_untied_2ndUrl,
+gtcAvailable:gtc_nmpc_untied_2nd
+                    }
+                },
+                nmpc_tied:{
+                    firstInstallment:{
+conditions:conditions_nmpc_tied_1st,
+claimAmount:claim_nmpc_tied_1stInst,
+grantClaimed:claimed_nmpc_tied_1st,
+claimData:claimedData_nmpc_tied_1st,
+gtcUrl:gtc_nmpc_tied_1stUrl,
+gtcAvailable:gtc_nmpc_tied_1st
+                    },
+                    secondInstallment:{
+conditions: conditions_nmpc_tied_2nd,
+claimAmount:claim_nmpc_tied_2ndInst,
+grantClaimed:claimed_nmpc_tied_2nd,
+claimData:claimedData_nmpc_tied_2nd,
+gtcUrl:gtc_nmpc_tied_2ndUrl,
+gtcAvailable:gtc_nmpc_tied_2nd
+
+                    }
+                },
+                mpc:{
+conditions: conditions_mpc,
+claimAmount:claim_mpc,
+grantClaimed:claimed_mpc,
+claimData:claimedData_mpc,
+gtcUrl:gtc_mpcUrl,
+gtcAvailable:gtc_mpc
+
+                }
+
+            })
+
+    }else{
+        return res.status(404).json({
             success: false,
-            message: "Failed to get Response"
+            message:"Claim Amount Not FOUND"
         })
     }
+   
+    
 
 })
 module.exports.CreateorUpdate = catchAsync(async (req, res) => {

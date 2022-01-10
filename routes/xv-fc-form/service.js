@@ -407,7 +407,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
           },
           houseHoldCoveredWithSewerage2021: {
             $avg: {
-              $convert: { input: "$reduction.baseline.2021", to: "double" },
+              $convert: { input: "$houseHoldCoveredWithSewerage.baseline.2021", to: "double" },
             },
           },
           houseHoldCoveredWithSewerage2122: {
