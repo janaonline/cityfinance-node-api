@@ -39,27 +39,27 @@ module.exports.get = catchAsync(async (req, res) => {
         mpc: null
     }
     const conditions_nmpc_untied_1st = [
-       "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."
+      { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."}
     ]
     const conditions_nmpc_untied_2nd = [
-        `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
-        `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`
+       {"1": `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
+        {"2":  `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`}
     ] 
     const conditions_nmpc_tied_1st = [
-        "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."
+        { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."}
      ]
      const conditions_nmpc_tied_2nd = [
-         `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
-         `${expectedValues.utilReport}% of the Non-Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`,
-         `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`
+         {"1":`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
+         {"2":`${expectedValues.utilReport}% of the Non-Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`},
+         {"3":`Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`}
      ] 
     const conditions_mpc =[
-        `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
-        `${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`,
-        `${expectedValues.slb}% of the Million Plus Cities submitted the service level benchmark details and the State Nodal Officer has approved the same.`,
-        `Grant Transfer Certificate for FY 2021-22 uploaded.`,
-        `Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`,
-        `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`
+        {"1":`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
+        {"2":`${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`},
+        {"3":`${expectedValues.slb}% of the Million Plus Cities submitted the service level benchmark details and the State Nodal Officer has approved the same.`},
+        {"4": `Grant Transfer Certificate for FY 2021-22 uploaded.`},
+        {"5":`Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`},
+        {"6": `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`}
     ]
     const { financialYear, stateId } = req.query
     const claimsData = await GrantsClaimed.findOne({ state: ObjectId(stateId), financialYear: ObjectId(financialYear) }).lean()
