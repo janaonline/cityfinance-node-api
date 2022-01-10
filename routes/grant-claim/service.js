@@ -43,7 +43,7 @@ module.exports.get = catchAsync(async (req, res) => {
     ]
     const conditions_nmpc_untied_2nd = [
         `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
-        `Grant Transfer Certificate for 1st intallment of FY 2021-22 uploaded.`
+        `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`
     ] 
     const conditions_nmpc_tied_1st = [
         "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."
@@ -51,7 +51,7 @@ module.exports.get = catchAsync(async (req, res) => {
      const conditions_nmpc_tied_2nd = [
          `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
          `${expectedValues.utilReport}% of the Non-Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`,
-         `Grant Transfer Certificate for 1st intallment of FY 2021-22 uploaded.`
+         `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`
      ] 
     const conditions_mpc =[
         `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`,
@@ -230,7 +230,7 @@ if(gtcData_2ndInst){
             return res.status(200).json({
                 success: true,
                 nmpc_untied:{
-                    firstIntallment:{
+                    firstInstallment:{
 conditions:conditions_nmpc_untied_1st,
 claimAmount:claim_nmpc_untied_1stInst,
 grantClaimed:claimed_nmpc_untied_1st,
@@ -249,7 +249,7 @@ gtcAvailable:gtc_nmpc_untied_2nd
                     }
                 },
                 nmpc_tied:{
-                    firstIntallment:{
+                    firstInstallment:{
 conditions:conditions_nmpc_tied_1st,
 claimAmount:claim_nmpc_tied_1stInst,
 grantClaimed:claimed_nmpc_tied_1st,
