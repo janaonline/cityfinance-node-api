@@ -122,82 +122,88 @@ async function getAnswerByUlb( req, res ) {
    
     if ( ulbId ) {
         let prescription = [
-            {
-                name: "enumeration",
-                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
-            },
-            {
-                name: "valuation",
-                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
-            },
-            {
-                name: "assessment",
-                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."  
-            },
-            {
-                name: "billing_collection",
-                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
-            },
-            {
-                name: "reporting",
-                value: "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est."
-            }
-        ]
-        let findAnswerByUlb = await scorePerformance.findOne( { ulb: ObjectId( ulbId ) } ).lean();
-        if(!findAnswerByUlb){
-            return res.status(200).json({
-                success: false,
-                data: null
-            })
+          {
+            name: "enumeration",
+            value:
+              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+          },
+          {
+            name: "valuation",
+            value:
+              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+          },
+          {
+            name: "assessment",
+            value:
+              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+          },
+          {
+            name: "Billing & Collection",
+            value:
+              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+          },
+          {
+            name: "reporting",
+            value:
+              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+          },
+        ];
+        let findAnswerByUlb = await scorePerformance
+          .findOne({ ulb: ObjectId(ulbId) })
+          .lean();
+        if (!findAnswerByUlb) {
+          return res.status(200).json({
+            success: false,
+            data: null,
+          });
         }
-        findAnswerByUlb.partcularAnswerValues.forEach( elem => {
-            prescription.forEach( elem2 => {
-                if ( elem.name == elem2.name ) {
-                    Object.assign(elem,{prescription: elem2.value })
-                   
-                }
-            })
-        })
-let query=[
-    [
-        {
-            $lookup:{
-                from:"ulbs",
-                localField:"ulb",
-                foreignField:"_id",
-                as:"ulb"
-                }
+        findAnswerByUlb.partcularAnswerValues.map((elem) => {
+          prescription.map((elem2) => {
+            if (elem.name.toLowerCase() == elem2.name.toLowerCase()) {
+              Object.assign(elem, { prescription: elem2.value });
+            }
+          });
+        });
+        let query = [
+          [
+            {
+              $lookup: {
+                from: "ulbs",
+                localField: "ulb",
+                foreignField: "_id",
+                as: "ulb",
+              },
             },
             {
-                $unwind:"$ulb"
-                },
-                {
-                    $sort:{
-                        total:1
-                        }
-                    },
-                    {
-                        $limit:3
-                        },
-                        {
-                            $project:{
-                                ulb:"$ulb._id",
-                                ulbName:"$ulb.name",
-                                scorePerformance:1,
-                                total:1,
-                                partcularAnswerValues:1
-                                }
-                            }
-        ]
-]
+              $unwind: "$ulb",
+            },
+            {
+              $sort: {
+                total: 1,
+              },
+            },
+            {
+              $limit: 3,
+            },
+            {
+              $project: {
+                ulb: "$ulb._id",
+                ulbName: "$ulb.name",
+                scorePerformance: 1,
+                total: 1,
+                partcularAnswerValues: 1,
+              },
+            },
+          ],
+        ];
         let topThreeData = await scorePerformance.aggregate(query);
 
-        return res.status( 201 ).json( {
-            data:{
-                currentUlb: findAnswerByUlb,
-                top3: topThreeData
-            }
-             } );
+        return res.status(201).json({
+          data: {
+            currentUlb: findAnswerByUlb,
+            top3: topThreeData,
+          },
+        });
         } else {
        return res.status( 400 ).json({
             success: false,
