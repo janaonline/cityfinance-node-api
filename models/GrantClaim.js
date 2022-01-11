@@ -25,8 +25,7 @@ const ClaimDataSchema = new Schema({
         default: null,
     },
     amountClaimed: { type: String, default: null },
-    fileName: { type: String, default: null },
-    fileUrl: { type: String, default: null },
+ 
     dates: { type: StatusSchema }
 });
 

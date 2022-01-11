@@ -296,15 +296,22 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
     const installment = req.body?.installment
     const amountClaimed = req.body?.amountClaimed
     const type = req.body?.type
-    const fileName = req.body?.fileName;
-    const fileUrl = req.body?.fileUrl;
 
     let obj = {
         financialYear: null,
         state: null,
         modifiedAt: null,
-        nmpc_tied: {
-            data: [{
+        nmpc_tied:  [{
+                installment: null,
+                submitStatus: null,
+                actionTakenBy: null,
+                applicationStatus: null,
+                amountClaimed: null,
+                dates: {
+                    submittedOn: null
+                }
+            }],
+        nmpc_untied: [{
                 installment: null,
                 submitStatus: null,
                 actionTakenBy: null,
@@ -314,9 +321,8 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
                     submittedOn: null
                 }
             }]
-        },
-        nmpc_untied: {
-            data: [{
+        ,
+        mpc:  [{
                 installment: null,
                 submitStatus: null,
                 actionTakenBy: null,
@@ -326,25 +332,13 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
                     submittedOn: null
                 }
             }]
-        },
-        mpc: {
-            data: [{
-                installment: null,
-                submitStatus: null,
-                actionTakenBy: null,
-                applicationStatus: null,
-                amountClaimed: null,
-                dates: {
-                    submittedOn: null
-                }
-            }]
-        }
+        
 
     };
-    if (!financialYear || !state || !amountClaimed || !type || !fileName || !fileUrl) {
+    if (!financialYear || !state || !amountClaimed || !type) {
         return res.status(400).json({
             success: false,
-            message: "Data Missing, please check the keys: financialYear, state, amountClaimed, type, fileName,  fileUrl     "
+            message: "Data Missing, please check the keys: financialYear, state, amountClaimed, type"
         })
     }
     if (type == 'nmpc_tied') {
@@ -362,73 +356,89 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
         obj['financialYear'] = ObjectId(financialYear);
         obj['state'] = ObjectId(state);
         obj['modifiedAt'] = time();
-        obj[type]["data"][0]['installment'] = type != 'mpc' ? installment : null;
-        obj[type]["data"][0]['submitStatus'] = true;
-        obj[type]["data"][0]['actionTakenBy'] = user.role;
-        obj[type]["data"][0]['applicationStatus'] = 'PENDING';
-        obj[type]["data"][0]['amountClaimed'] = amountClaimed;
-        obj[type]["data"][0]['fileName'] = fileName;
-        obj[type]["data"][0]['fileUrl'] = fileUrl;
-        obj[type]["data"][0]['dates']['submittedOn'] = time();
+        obj[type][0]['installment'] = type != 'mpc' ? installment : null;
+        obj[type][0]['submitStatus'] = true;
+        obj[type][0]['actionTakenBy'] = 'STATE';
+        obj[type][0]['applicationStatus'] = 'PENDING';
+        obj[type][0]['amountClaimed'] = amountClaimed;
+        obj[type][0]['dates']['submittedOn'] = time();
 
-
+let stateData = await State.findOne({_id:ObjectId(state)}).lean()
         console.log(util.inspect(obj, { showHidden: false, depth: null }))
         let grantClaimData = await GrantClaim.findOne({
             financialYear: ObjectId(financialYear),
             state: ObjectId(state)
         }).lean()
+        let template = Service.emailTemplate.grantClaimAcknowledgement(
+            type,
+            installment,
+stateData.name,
+'2021-22',
+user?.name ?? 'User'
+        )
+        let mailOptions = {
+            to: "vishu.gupta@dhwaniris.com",
+            subject: template.subject,
+            html: template.body,
+        };
+        Service.sendEmail(mailOptions);
 
-        if (!grantClaimData) {
-            await GrantClaim.create(obj)
-            return res.status(200).json({
-                success: true,
-                message: "Form Submitted Successfully. The grant application is now under MoHUA for review"
-            })
-        } else {
-            // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+        return res.status(200).json({
+            success: true,
+            message: "Data Saved"
+        })
 
-            if (type != 'mpc') {
-                if (grantClaimData.hasOwnProperty(type)) {
-                    if (grantClaimData[type]['data'].length == 1) {
-                        if (grantClaimData[type]['data'][0]?.installment == String(installment)) {
-                            grantClaimData[type]['data'][0] = obj[type]['data'][0]
-                        } else {
-                            grantClaimData[type]['data'].push(obj[type]['data'][0])
-                        }
-                    } else if (grantClaimData[type]['data'].length == 2) {
-                        let c = 0
-                        for (el of grantClaimData[type]['data']) {
+        // if (!grantClaimData) {
+        //     await GrantClaim.create(obj)
+        //     return res.status(200).json({
+        //         success: true,
+        //         message: "Form Submitted Successfully. The grant application is now under MoHUA for review"
+        //     })
+        // } else {
+        //     // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
 
-                            if (el.installment == String(installment)) {
-                                // el = null;
-                                grantClaimData[type]['data'][c] = obj[type]['data'][0]
-                                console.log('check this', obj[type]['data'][0])
-                            }
-                            c++;
-                        }
-                        console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+        //     if (type != 'mpc') {
+        //         if (grantClaimData.hasOwnProperty(type)) {
+        //             if (grantClaimData[type]['data'].length == 1) {
+        //                 if (grantClaimData[type]['data'][0]?.installment == String(installment)) {
+        //                     grantClaimData[type]['data'][0] = obj[type]['data'][0]
+        //                 } else {
+        //                     grantClaimData[type]['data'].push(obj[type]['data'][0])
+        //                 }
+        //             } else if (grantClaimData[type]['data'].length == 2) {
+        //                 let c = 0
+        //                 for (el of grantClaimData[type]['data']) {
 
-                    }
-                } else {
-                    grantClaimData[type] = obj[type];
-                }
-            } else if (type == 'mpc') {
-                grantClaimData[type] = obj[type]
-            }
+        //                     if (el.installment == String(installment)) {
+        //                         // el = null;
+        //                         grantClaimData[type]['data'][c] = obj[type]['data'][0]
+        //                         console.log('check this', obj[type]['data'][0])
+        //                     }
+        //                     c++;
+        //                 }
+        //                 console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
 
-            // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
-            // res.send(grantClaimData)
-            // return
+        //             }
+        //         } else {
+        //             grantClaimData[type] = obj[type];
+        //         }
+        //     } else if (type == 'mpc') {
+        //         grantClaimData[type] = obj[type]
+        //     }
 
-            await GrantClaim.findOneAndUpdate({
-                financialYear: ObjectId(financialYear),
-                state: ObjectId(state)
-            }, grantClaimData)
-            return res.status(200).json({
-                success: true,
-                message: "Form Updated Successfully. The grant application is now under MoHUA for review"
-            })
-        }
+        //     // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+        //     // res.send(grantClaimData)
+        //     // return
+
+        //     await GrantClaim.findOneAndUpdate({
+        //         financialYear: ObjectId(financialYear),
+        //         state: ObjectId(state)
+        //     }, grantClaimData)
+        //     return res.status(200).json({
+        //         success: true,
+        //         message: "Form Updated Successfully. The grant application is now under MoHUA for review"
+        //     })
+        // }
 
     } else {
         return res.status(403).json({

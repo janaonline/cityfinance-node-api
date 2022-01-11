@@ -1347,6 +1347,20 @@ Your profile update request has been successfully cancelled`;
   };
 };
 
+const grantClaimAcknowledgement = (type, installment, state, financialYear,name) =>{
+  return {
+    subject: `Grant Claim Request Created Successfully`,
+    body: `Dear ${name},<br>
+                        <br>
+                        <p>
+                        A ${type.toUpperCase()} Grant Claim request for FY-${financialYear} has been generated successfully.   
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`,
+  };
+}
+
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -1382,4 +1396,5 @@ module.exports = {
   stateFormSubmission,
   sendAccountReActivationEmail,
   utilizationRequestAction,
+  grantClaimAcknowledgement
 };
