@@ -383,62 +383,59 @@ user?.name ?? 'User'
         };
         Service.sendEmail(mailOptions);
 
-        return res.status(200).json({
-            success: true,
-            message: "Data Saved"
-        })
+       
 
-        // if (!grantClaimData) {
-        //     await GrantClaim.create(obj)
-        //     return res.status(200).json({
-        //         success: true,
-        //         message: "Form Submitted Successfully. The grant application is now under MoHUA for review"
-        //     })
-        // } else {
-        //     // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+        if (!grantClaimData) {
+            await GrantClaim.create(obj)
+            return res.status(200).json({
+                success: true,
+                message: "Form Submitted Successfully. The grant application is now under MoHUA for review"
+            })
+        } else {
+            // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
 
-        //     if (type != 'mpc') {
-        //         if (grantClaimData.hasOwnProperty(type)) {
-        //             if (grantClaimData[type]['data'].length == 1) {
-        //                 if (grantClaimData[type]['data'][0]?.installment == String(installment)) {
-        //                     grantClaimData[type]['data'][0] = obj[type]['data'][0]
-        //                 } else {
-        //                     grantClaimData[type]['data'].push(obj[type]['data'][0])
-        //                 }
-        //             } else if (grantClaimData[type]['data'].length == 2) {
-        //                 let c = 0
-        //                 for (el of grantClaimData[type]['data']) {
+            if (type != 'mpc') {
+                if (grantClaimData.hasOwnProperty(type)) {
+                    if (grantClaimData[type]['data'].length == 1) {
+                        if (grantClaimData[type]['data'][0]?.installment == String(installment)) {
+                            grantClaimData[type]['data'][0] = obj[type]['data'][0]
+                        } else {
+                            grantClaimData[type]['data'].push(obj[type]['data'][0])
+                        }
+                    } else if (grantClaimData[type]['data'].length == 2) {
+                        let c = 0
+                        for (el of grantClaimData[type]['data']) {
 
-        //                     if (el.installment == String(installment)) {
-        //                         // el = null;
-        //                         grantClaimData[type]['data'][c] = obj[type]['data'][0]
-        //                         console.log('check this', obj[type]['data'][0])
-        //                     }
-        //                     c++;
-        //                 }
-        //                 console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+                            if (el.installment == String(installment)) {
+                                // el = null;
+                                grantClaimData[type]['data'][c] = obj[type]['data'][0]
+                                console.log('check this', obj[type]['data'][0])
+                            }
+                            c++;
+                        }
+                        console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
 
-        //             }
-        //         } else {
-        //             grantClaimData[type] = obj[type];
-        //         }
-        //     } else if (type == 'mpc') {
-        //         grantClaimData[type] = obj[type]
-        //     }
+                    }
+                } else {
+                    grantClaimData[type] = obj[type];
+                }
+            } else if (type == 'mpc') {
+                grantClaimData[type] = obj[type]
+            }
 
-        //     // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
-        //     // res.send(grantClaimData)
-        //     // return
+            // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+            // res.send(grantClaimData)
+            // return
 
-        //     await GrantClaim.findOneAndUpdate({
-        //         financialYear: ObjectId(financialYear),
-        //         state: ObjectId(state)
-        //     }, grantClaimData)
-        //     return res.status(200).json({
-        //         success: true,
-        //         message: "Form Updated Successfully. The grant application is now under MoHUA for review"
-        //     })
-        // }
+            await GrantClaim.findOneAndUpdate({
+                financialYear: ObjectId(financialYear),
+                state: ObjectId(state)
+            }, grantClaimData)
+            return res.status(200).json({
+                success: true,
+                message: "Form Updated Successfully. The grant application is now under MoHUA for review"
+            })
+        }
 
     } else {
         return res.status(403).json({
