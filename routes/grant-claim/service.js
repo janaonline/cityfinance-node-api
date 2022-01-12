@@ -115,20 +115,20 @@ gtcData_2ndInst = await GTCModel.findOne({state:ObjectId(stateId), installment:"
 
 if(gtcData_1stInst){
     if(gtcData_1stInst.hasOwnProperty('nonmillion_untied')){
-        if(gtcData_1stInst['nonmillion_untied']['pdfUrl'] != null || gtcData_1stInst['nonmillion_untied']['pdfUrl'] != ""  ){
+        if(gtcData_1stInst['nonmillion_untied']['pdfUrl'] != null && gtcData_1stInst['nonmillion_untied']['pdfUrl'] != ""  ){
             gtc_nmpc_untied_1st = true;
             gtc_nmpc_untied_1stUrl = gtcData_1stInst['nonmillion_untied']['pdfUrl']
         }
 
     }
     if(gtcData_1stInst.hasOwnProperty('nonmillion_tied')){
-        if(gtcData_1stInst['nonmillion_tied']['pdfUrl'] != null || gtcData_1stInst['nonmillion_tied']['pdfUrl'] != ""  ){
+        if(gtcData_1stInst['nonmillion_tied']['pdfUrl'] != null && gtcData_1stInst['nonmillion_tied']['pdfUrl'] != ""  ){
             gtc_nmpc_tied_1st = true;
             gtc_nmpc_tied_1stUrl = gtcData_1stInst['nonmillion_tied']['pdfUrl']
         }
     }
     if(gtcData_1stInst.hasOwnProperty('million_tied')){
-        if(gtcData_1stInst['million_tied']['pdfUrl'] != null || gtcData_1stInst['million_tied']['pdfUrl'] != ""  ){
+        if(gtcData_1stInst['million_tied']['pdfUrl'] != null && gtcData_1stInst['million_tied']['pdfUrl'] != ""  ){
             gtc_mpcUrl = true;
             gtc_mpcUrl = gtcData_1stInst['million_tied']['pdfUrl']
         }
@@ -204,21 +204,21 @@ if(gtcData_2ndInst){
     }
     if(!claimed_nmpc_tied_1st){
         if(!(claimedData_nmpc_tied_1st && Object.keys(claimedData_nmpc_tied_1st).length === 0 && Object.getPrototypeOf(claimedData_nmpc_tied_1st) === Object.prototype) ){
-            if(claimedData_nmpc_tied_1st?.dates?.approvedOn != null || claimedData_nmpc_tied_1st?.dates?.approvedOn != "" ){
+            if(claimedData_nmpc_tied_1st?.dates?.approvedOn != null && claimedData_nmpc_tied_1st?.dates?.approvedOn != "" ){
                 claimed_nmpc_tied_1st = true;
             }
         }
     }
     if(!claimed_nmpc_tied_2nd){
         if(!(claimedData_nmpc_tied_2nd && Object.keys(claimedData_nmpc_tied_2nd).length === 0 && Object.getPrototypeOf(claimedData_nmpc_tied_2nd) === Object.prototype )){
-            if(claimedData_nmpc_tied_2nd?.dates?.approvedOn != null || claimedData_nmpc_tied_2nd?.dates?.approvedOn != "" ){
+            if(claimedData_nmpc_tied_2nd?.dates?.approvedOn != null && claimedData_nmpc_tied_2nd?.dates?.approvedOn != "" ){
                 claimed_nmpc_tied_2nd = true;
             }
         }
     }
     if(!claimed_mpc ){
         if(!(claimedData_mpc && Object.keys(claimedData_mpc).length === 0 && Object.getPrototypeOf(claimedData_mpc) === Object.prototype )){
-            if(claimedData_mpc?.dates?.approvedOn != null || claimedData_mpc?.dates?.approvedOn != "" ){
+            if(claimedData_mpc?.dates?.approvedOn != null && claimedData_mpc?.dates?.approvedOn != "" ){
                 claimed_mpc = true
             }
         }
@@ -369,12 +369,15 @@ let stateData = await State.findOne({_id:ObjectId(state)}).lean()
             financialYear: ObjectId(financialYear),
             state: ObjectId(state)
         }).lean()
+
+        //email trigger
         let template = Service.emailTemplate.grantClaimAcknowledgement(
             type,
             installment,
 stateData.name,
 '2021-22',
-user?.name ?? 'User'
+user?.name ?? 'User',
+amountClaimed
         )
         let mailOptions = {
             to: "vishu.gupta@dhwaniris.com",
@@ -396,25 +399,28 @@ user?.name ?? 'User'
 
             if (type != 'mpc') {
                 if (grantClaimData.hasOwnProperty(type)) {
-                    if (grantClaimData[type]['data'].length == 1) {
-                        if (grantClaimData[type]['data'][0]?.installment == String(installment)) {
-                            grantClaimData[type]['data'][0] = obj[type]['data'][0]
+                    if (grantClaimData[type].length == 1) {
+                        if (grantClaimData[type][0]?.installment == String(installment)) {
+                            grantClaimData[type][0] = obj[type][0]
                         } else {
-                            grantClaimData[type]['data'].push(obj[type]['data'][0])
+                            grantClaimData[type].push(obj[type][0])
                         }
-                    } else if (grantClaimData[type]['data'].length == 2) {
+                    } else if (grantClaimData[type].length == 2) {
                         let c = 0
-                        for (el of grantClaimData[type]['data']) {
+                        for (el of grantClaimData[type]) {
 
                             if (el.installment == String(installment)) {
                                 // el = null;
-                                grantClaimData[type]['data'][c] = obj[type]['data'][0]
-                                console.log('check this', obj[type]['data'][0])
+                                grantClaimData[type][c] = obj[type][0]
+                                console.log('check this', obj[type][0])
                             }
                             c++;
                         }
                         console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
 
+                    }else{
+
+ grantClaimData[type] = obj[type];
                     }
                 } else {
                     grantClaimData[type] = obj[type];
