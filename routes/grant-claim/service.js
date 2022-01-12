@@ -380,7 +380,7 @@ user?.name ?? 'User',
 amountClaimed
         )
         let mailOptions = {
-            to: "vishu.gupta@dhwaniris.com",
+            to: "shobana.subbu@janaagraha.org",
             subject: template.subject,
             html: template.body,
         };
