@@ -368,7 +368,12 @@ let nmpc_tied_1st_inst_eligible = gtc2021_tied;
 let nmpc_untied_2nd_inst_eligible = (percentage_annual >= cutOff_annual) && gtc2122_untied ;
 let nmpc_tied_2nd_inst_eligible = (percentage_annual >= cutOff_annual)  && (percentage_util_nmpc >= cutOff_util_nmpc) && gtc2122_tied;
 
-let mpc_eligible = (percentage_annual >= cutOff_annual) && (percentage_util_mpc >= cutOff_util_mpc) && (percentage_slb_mpc>=cutOff_slb) && gtc2021_mpc ;
+let mpc_eligible = (percentage_annual >= cutOff_annual) &&
+                   (percentage_util_mpc >= cutOff_util_mpc) && 
+                   (percentage_slb_mpc>=cutOff_slb) && 
+                   gtc2021_mpc && 
+                   waterRejSubmit && 
+                   actionPlanSubmit ;
 return res.json({
   success: true,
   nmpc_tied:{
