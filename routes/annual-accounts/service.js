@@ -1,4 +1,6 @@
 const AnnualAccountData = require("../../models/AnnualAccounts");
+const ActionPlan = require('../../models/ActionPlans')
+const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const DUR = require('../../models/UtilizationReport')
 const SLB = require('../../models/XVFcGrantForm')
 const Ulb = require("../../models/Ulb");
@@ -223,6 +225,21 @@ $match:{
                           $count:"filled"
                           }
                           ]
+
+let actionPlanSubmit = false, waterRejSubmit = false;
+                       let actionPlanData =    await ActionPlan.findOne({state:ObjectId(state)}).lean()
+                       let waterRejData =    await WaterRejuvenation.findOne({state:ObjectId(state)}).lean()
+if(actionPlanData){
+if((actionPlanData['status'] == 'PENDING' && actionPlanData['isDraft'] == false)|| (actionPlanData['status'] == null && actionPlanData['isDraft'] == false) || actionPlanData['status'] == 'APPROVED' ){
+actionPlanSubmit = true
+}
+}
+if(waterRejData){
+  if((waterRejData['status'] == 'PENDING' && waterRejData['isDraft'] == false) || waterRejData['status'] == 'APPROVED' ){
+    waterRejSubmit = true
+  }
+  }
+
                     query_filled_annual.unshift(...common) 
                     query_filled_util_nmpc.unshift(...common) 
                     query_filled_util_mpc.unshift(...common) 
@@ -397,6 +414,8 @@ cutOff_util:cutOff_util_mpc,
 approvedForms_slb:approvedForms_slb_mpc,
 percentage_slb : percentage_slb_mpc,
 cutOff_slb:cutOff_slb,
+actionPlan:actionPlanSubmit,
+waterRej: waterRejSubmit
 
   }
  
