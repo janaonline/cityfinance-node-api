@@ -6,10 +6,18 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 
 const revenueList = ["11001", "130", "140", "150", "180", "110"];
+const ObjectIdOfRevenueList = [
+  "5dd10c2485c951b54ec1d74b",
+  "5dd10c2285c951b54ec1d737",
+  "5dd10c2685c951b54ec1d762",
+  "5dd10c2485c951b54ec1d74a",
+  "5dd10c2885c951b54ec1d77e",
+  "5dd10c2385c951b54ec1d748",
+];
 
 const dataAvailability = async (req, res) => {
   try {
-    const { financialYear } = req.body;
+    const { financialYear, propertyTax, getQuery } = req.body;
 
     if (!Array.isArray(financialYear)) {
       return Response.BadRequest(
@@ -19,13 +27,26 @@ const dataAvailability = async (req, res) => {
       );
     }
 
-    let data = await UlbLedger.distinct("ulb", {
+    let matchQuery = {
       financialYear: { $in: financialYear },
-    });
-    let ulbCount = await Ulb.find().count();
+    };
 
-    if (data.length == 0) data = 0;
-    else data = (data.length / ulbCount) * 100;
+    if (propertyTax) {
+      Object.assign(matchQuery, {
+        lineItem: ObjectId("5dd10c2285c951b54ec1d737"),
+      });
+    }
+
+    if (getQuery) return Response.OK(res, matchQuery);
+
+    let data = UlbLedger.distinct("ulb", matchQuery).count();
+    let ulbCount = Ulb.find().count();
+
+    let temp = await Promise.all([data, ulbCount]);
+    data = temp[0];
+    ulbCount = temp[1];
+
+    data = ((ulbCount - data) / ulbCount) * 100;
 
     return Response.OK(res, { percent: data });
   } catch (error) {
@@ -179,7 +200,62 @@ function getUlbMatchQuery(stateIds, ulbTypeIds) {
   return ulbMatch;
 }
 
+const topPerForming = async (req, res) => {
+  try {
+    const { revenueId, stateIds, getQuery } = req.body;
+
+    if (!revenueId || !stateIds || !Array.isArray(stateIds))
+      return Response.BadRequest(res, null, "wrong revenueIds or stateIds");
+
+    let query = [
+      {
+        $match: {
+          lineItem: ObjectId(revenueId),
+        },
+      },
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      {
+        $unwind: "$ulb",
+      },
+      {
+        $match: {
+          $expr: {
+            $in: ["$ulb.state", stateIds.map((value) => ObjectId(value))],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$ulb.state",
+          amount: { $sum: "$amount" },
+        },
+      },
+      { $sort: { amount: -1 } },
+      { $limit: 10 },
+    ];
+
+    if (getQuery) return Response.OK(res, query);
+
+    let data = await UlbLedger.aggregate(query);
+    if (data.length == 0)
+      return Response.BadRequest(res, null, "No data Found");
+
+    return Response.OK(res, data);
+  } catch (error) {
+    console.log(error);
+    return Response.DbError(res, error, error.message);
+  }
+};
+
 module.exports = {
   dataAvailability,
   chartData,
+  topPerForming,
 };
