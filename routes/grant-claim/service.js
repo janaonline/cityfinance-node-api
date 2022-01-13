@@ -534,7 +534,7 @@ module.exports.readCSV = catchAsync(async (req, res) => {
 module.exports.uploadGrantData = catchAsync(async(req,res)=>{
     const jsonArray = req.body.jsonArray;
 let x=0;
-    let year = await Year.findOne({year: jsonArray[0]['year']}).lean()
+    let year = await Year.findOne({year: jsonArray[0]['Year']}).lean()
     jsonArray.map(async (el)=>{
         let state = await State.findOne({name:el['State']}).lean()
         if(!state){

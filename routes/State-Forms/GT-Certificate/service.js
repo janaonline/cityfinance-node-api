@@ -11,6 +11,7 @@ const Response = require("../../../service").response;
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
   const { state_id } = req.query;
+  const {installment} = req.query
   let state = req.decoded.state ?? state_id;
   let { design_year } = req.params;
   if (!design_year) {
@@ -22,10 +23,11 @@ module.exports.get = catchAsync(async (req, res) => {
   let query = {
     design_year: ObjectId(design_year),
     state: ObjectId(state),
+    installment:installment
   };
-  let fetchedData = await StateGTCertificate.findOne(query, "-history").lean();
-  let userData = await User.findOne({ _id: ObjectId(fetchedData['actionTakenBy']) });
-  fetchedData['actionTakenByRole'] = userData['role']
+  let fetchedData = await StateGTCertificate.find(query, "-history").lean();
+  // let userData = await User.findOne({ _id: ObjectId(fetchedData['actionTakenBy']) });
+  // fetchedData['actionTakenByRole'] = userData['role']
   if (fetchedData) {
     return res.status(200).json({
       success: true,
@@ -50,6 +52,7 @@ module.exports.create = catchAsync(async (req, res) => {
     let query = {
       state: ObjectId(user.state),
       design_year: ObjectId(design_year),
+      installment: req.body.installment
     };
     let existingData = await StateGTCertificate.findOne(query);
     if (existingData) {
