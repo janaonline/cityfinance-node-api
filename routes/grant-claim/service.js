@@ -19,6 +19,7 @@ const putDataService = require("../file-upload/service").putData;
 const { findOneAndUpdate } = require("../../models/StateGTCertificate");
 var http = require('http');
 const https = require('https');
+
 var fs = require('fs');
 const time = () => {
     var dt = new Date();
@@ -184,7 +185,7 @@ if(gtcData_2ndInst){
             })   
         }
         if(grantClaimsData.hasOwnProperty('mpc')){
-            claimedData_mpc = grantClaimsData['mpc']
+            claimedData_mpc = grantClaimsData['mpc'][0]
         }
     }
 
@@ -296,7 +297,7 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
     const installment = req.body?.installment
     const amountClaimed = req.body?.amountClaimed
     const type = req.body?.type
-
+const releaseStatus = false
     let obj = {
         financialYear: null,
         state: null,
@@ -358,6 +359,7 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
         obj['modifiedAt'] = time();
         obj[type][0]['installment'] = type != 'mpc' ? installment : null;
         obj[type][0]['submitStatus'] = true;
+        obj[type][0]['releaseStatus'] = releaseStatus;
         obj[type][0]['actionTakenBy'] = 'STATE';
         obj[type][0]['applicationStatus'] = 'PENDING';
         obj[type][0]['amountClaimed'] = amountClaimed;
@@ -371,20 +373,20 @@ let stateData = await State.findOne({_id:ObjectId(state)}).lean()
         }).lean()
 
         //email trigger
-        let template = Service.emailTemplate.grantClaimAcknowledgement(
-            type,
-            installment,
-stateData.name,
-'2021-22',
-user?.name ?? 'User',
-amountClaimed
-        )
-        let mailOptions = {
-            to: "shobana.subbu@janaagraha.org",
-            subject: template.subject,
-            html: template.body,
-        };
-        Service.sendEmail(mailOptions);
+//         let template = Service.emailTemplate.grantClaimAcknowledgement(
+//             type,
+//             installment,
+// stateData.name,
+// '2021-22',
+// user?.name ?? 'User',
+// amountClaimed
+//         )
+//         let mailOptions = {
+//             to: "shobana.subbu@janaagraha.org",
+//             subject: template.subject,
+//             html: template.body,
+//         };
+//         Service.sendEmail(mailOptions);
 
        
 
@@ -600,6 +602,150 @@ return res.json({
     
 })
 
+module.exports.grantStatusCSV = catchAsync(async(req,res)=>{
+    const jsonArray = req.body.jsonArray;
+    for (let el of jsonArray ){
+    
+            let inst = el.installment ?? null;
+            let year = el.year;
+            let type = el.type;
+            let state = el.state;
+            let amount = el.amount;
+            let date = el.date;
+            let status = el.status;
+    
+            let obj = {
+                financialYear: null,
+                state: null,
+                modifiedAt: null,
+                nmpc_tied:  [{
+                        installment: null,
+                        submitStatus: null,
+                        actionTakenBy: null,
+                        applicationStatus: null,
+                        amountClaimed: null,
+                        dates: {
+                            submittedOn: null
+                        }
+                    }],
+                nmpc_untied: [{
+                        installment: null,
+                        submitStatus: null,
+                        actionTakenBy: null,
+                        applicationStatus: null,
+                        amountClaimed: null,
+                        dates: {
+                            submittedOn: null
+                        }
+                    }]
+                ,
+                mpc:  [{
+                        installment: null,
+                        submitStatus: null,
+                        actionTakenBy: null,
+                        applicationStatus: null,
+                        amountClaimed: null,
+                        dates: {
+                            submittedOn: null
+                        }
+                    }]
+                
+        
+            };
+            if (type == 'nmpc_tied') {
+                delete obj.mpc;
+                delete obj.nmpc_untied;
+            } else if (type == 'nmpc_untied') {
+                delete obj.mpc;
+                delete obj.nmpc_tied;
+            } else if (type == 'mpc') {
+                delete obj.nmpc_untied;
+                delete obj.nmpc_tied;
+            }
+    let stateData =        await State.findOne({name:state}).lean()
+    if(!stateData){
+        console.log(`State Not Found -${state}`)
+        return res.json({
+            message:`State Not Found -${state}`
+        })
+    }
+    if(date){
+       date = moment(date, 'DD-MM-YYYY')
+    }
+    
+    let financialYear = await Year.findOne({year:year}).lean()
+    
+    let grantClaimData = await GrantClaim.findOne({financialYear: ObjectId(financialYear._id), state: ObjectId(stateData._id)}).lean()
+    obj['financialYear'] = ObjectId(financialYear._id);
+    obj['state'] = ObjectId(stateData._id);
+    obj['modifiedAt'] = time();
+    obj[type][0]['installment'] = type != 'mpc' ? inst : null;
+    
+    
+    obj[type][0]['submitStatus'] = true;
+    obj[type][0]['releaseStatus'] = status == '1' ? true : false
+    obj[type][0]['actionTakenBy'] = status == '1' ||  status == '2' ? 'MoHUA' :  'STATE';
+    obj[type][0]['applicationStatus'] = status == '1' ||  status == '2' ? 'APPROVED' :  'PENDING';
+    obj[type][0]['amountClaimed'] = amount ?? null;
+    obj[type][0]['dates']['submittedOn'] = date ?? null;
+    
+    
+    
+    if (!grantClaimData) {
+      const doc = new GrantClaim(obj);
+      await doc.save() ;
+      
+    } else {
+        // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+    
+        if (type != 'mpc') {
+            if (grantClaimData.hasOwnProperty(type)) {
+                if (grantClaimData[type].length == 1) {
+                    if (grantClaimData[type][0]?.installment == String(inst)) {
+                        grantClaimData[type][0] = obj[type][0]
+                    } else {
+                        grantClaimData[type].push(obj[type][0])
+                    }
+                } else if (grantClaimData[type].length == 2) {
+                    let c = 0
+                    for (el of grantClaimData[type]) {
+    
+                        if (el.installment == String(inst)) {
+                            // el = null;
+                            grantClaimData[type][c] = obj[type][0]
+                            console.log('check this', obj[type][0])
+                        }
+                        c++;
+                    }
+                    // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+    
+                }else{
+    
+    grantClaimData[type] = obj[type];
+                }
+            } else {
+                grantClaimData[type] = obj[type];
+            }
+        } else if (type == 'mpc') {
+            grantClaimData[type] = obj[type]
+        }
+    
+        // console.log(util.inspect(grantClaimData, { showHidden: false, depth: null }))
+        // res.send(grantClaimData)
+        // return
+    
+        await GrantClaim.findOneAndUpdate({ financialYear: ObjectId(financialYear._id), state: ObjectId(stateData._id) }, grantClaimData)
+    
+    }
+    
+       
+    }
+   
+    return res.json({
+        message:"Task Done"
+    });
+
+})
 
 var download = function(data, _cb) {
     let url = data['Link'];
