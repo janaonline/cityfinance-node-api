@@ -18,6 +18,7 @@ const ContentPDFSchema = new Schema({
   pdfName: { type: String },
   status: statusType(),
   rejectReason: { type: String },
+  isDraft:{type: Boolean}
 });
 
 const StateGrantTransferCertificateSchema = new Schema(

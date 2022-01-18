@@ -34,15 +34,15 @@ module.exports = function(mailOptions, cb){
             host: 'smtp.office365.com',
             port: '587',
             auth: {
-                user: "vishu.gupta@dhwaniris.com",
-                pass: "ritzzxi1."
+                user: mail,
+                pass: password
             },
             secureConnection: false,
             tls: {
                 ciphers: 'SSLv3'
             }
         };
-    let transporter = nodemailer.createTransport("smtps://vishu.gupta%40dhwaniris.com:ritzzxi1.@smtp.gmail.com");
+    let transporter = nodemailer.createTransport(smtpConnectionString);
     transporter.sendMail(mailOptions, cb ? cb : (error, info) => {
         if (error) {
             return console.log(error);

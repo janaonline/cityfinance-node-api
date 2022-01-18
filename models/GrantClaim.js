@@ -14,6 +14,7 @@ const StatusSchema = new Schema({
 const ClaimDataSchema = new Schema({
     installment: { type: String},
     submitStatus: { type: Boolean},
+    releaseStatus:{type: Boolean},
     actionTakenBy: {
         type: String,
         enum: ["STATE", "MoHUA"],
@@ -25,7 +26,6 @@ const ClaimDataSchema = new Schema({
       
     },
     amountClaimed: { type: String },
- 
     dates: { type: StatusSchema }
 });
 
@@ -37,7 +37,7 @@ const GrantClaimSchema = new Schema(
         createdAt: { type: Date, default: Date.now() },
         nmpc_tied: { type: [ClaimDataSchema]  },
         nmpc_untied: { type: [ClaimDataSchema]},
-        mpc: { type: ClaimDataSchema},
+        mpc: { type: [ClaimDataSchema]},
 
 
     },
