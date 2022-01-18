@@ -40,25 +40,25 @@ module.exports.get = catchAsync(async (req, res) => {
         mpc: null
     }
     const conditions_nmpc_untied_1st = [
-      { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."}
+      { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded and approved by MoHUA."}
     ]
     const conditions_nmpc_untied_2nd = [
        {"1": `${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
-        {"2":  `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`}
+        {"2":  `Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded and approved by MoHUA.`}
     ] 
     const conditions_nmpc_tied_1st = [
-        { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded."}
+        { "1": "Grant Transfer Certificate for 2nd installment of FY 2020-21 uploaded and approved by MoHUA."}
      ]
      const conditions_nmpc_tied_2nd = [
          {"1":`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
          {"2":`${expectedValues.utilReport}% of the Non-Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`},
-         {"3":`Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded.`}
+         {"3":`Grant Transfer Certificate for 1st Installment of FY 2021-22 uploaded and approved by MoHUA.`}
      ] 
     const conditions_mpc =[
         {"1":`${expectedValues.annualAccounts}% of ULBs have submitted Audited and Provisional Financial Statements and the State Nodal Officer has approved the same.`},
         {"2":`${expectedValues.utilReport}% of the Million Plus Cities have uploaded the detailed utilization reports and the State Nodal Officer has approved the same.`},
         {"3":`${expectedValues.slb}% of the Million Plus Cities submitted the service level benchmark details and the State Nodal Officer has approved the same.`},
-        {"4": `Grant Transfer Certificate for FY 2021-22 uploaded.`},
+        {"4": `Grant Transfer Certificate for FY 2021-22 uploaded and approved by MoHUA.`},
         {"5":`Projects selected for rejuvenation of water bodies, recycling and reuse of waste water and water supply for each Million Plus City/ UA`},
         {"6": `Year-wise action plan for projects to be undertaken by each Million Plus City/ UA from 15th FC grants completed`}
     ]
@@ -373,20 +373,23 @@ let stateData = await State.findOne({_id:ObjectId(state)}).lean()
         }).lean()
 
         //email trigger
-//         let template = Service.emailTemplate.grantClaimAcknowledgement(
-//             type,
-//             installment,
-// stateData.name,
-// '2021-22',
-// user?.name ?? 'User',
-// amountClaimed
-//         )
-//         let mailOptions = {
-//             to: "shobana.subbu@janaagraha.org",
-//             subject: template.subject,
-//             html: template.body,
-//         };
-//         Service.sendEmail(mailOptions);
+        if(req.header.host == 'cityfinance.in'){
+            let template = Service.emailTemplate.grantClaimAcknowledgement(
+                type,
+                installment,
+    stateData.name,
+    '2021-22',
+    user?.name ?? 'User',
+    amountClaimed
+            )
+            let mailOptions = {
+                to: [user.email, "ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org"] ,
+                subject: template.subject,
+                html: template.body,
+            };
+            Service.sendEmail(mailOptions);
+        }
+     
 
        
 
