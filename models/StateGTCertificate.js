@@ -18,6 +18,7 @@ const ContentPDFSchema = new Schema({
   pdfName: { type: String },
   status: statusType(),
   rejectReason: { type: String },
+  isDraft:{type: Boolean}
 });
 
 const StateGrantTransferCertificateSchema = new Schema(
@@ -40,10 +41,10 @@ const StateGrantTransferCertificateSchema = new Schema(
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
-// StateGrantTransferCertificateSchema.index(
-//   { strsate: 1, design_year: 1 },
-//   { unique: true }
-// );
+StateGrantTransferCertificateSchema.index(
+  { state: 1, design_year: 1, installment:1 },
+  { unique: true }
+);
 module.exports = mongoose.model(
   "StateGTCertificate",
   StateGrantTransferCertificateSchema

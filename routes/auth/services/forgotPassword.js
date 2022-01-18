@@ -104,6 +104,14 @@ module.exports.forgotPassword = async (req, res) => {
     }
 };
 
+module.exports.gettingHash = async(req,res)=>{
+    let str = req.body.input
+   let output = await Service.getHash(str)
+   res.json({
+       hash: output
+   })
+}
+
 function setPasswordHistory(user, passwordHash) {
     if (
         Array.isArray(user.passwordHistory) &&

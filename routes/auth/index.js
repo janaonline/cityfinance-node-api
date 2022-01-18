@@ -10,7 +10,7 @@ const {
   resendAccountVerificationLink,
 } = require("./services/resendAccountVerificationLink");
 const { emailVerification } = require("./services/emailVerification");
-const { forgotPassword } = require("./services/forgotPassword");
+const { forgotPassword, gettingHash } = require("./services/forgotPassword");
 const { resetPassword } = require("./services/resetPassword");
 const { captcha } = require("./services/captcha");
 const { totalVisit } = require("./services/totalVisit");
@@ -19,6 +19,7 @@ const { endSession } = require("./services/endSession");
 const { changePassword } = require("./services/changePassword");
 
 router.get("/start_session", startSession);
+router.post("/getHash", gettingHash);
 router.get("/end_session/:_id", endSession);
 router.post("/register", register);
 router.post("/login", login);

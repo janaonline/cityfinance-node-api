@@ -1,4 +1,6 @@
 const AnnualAccountData = require("../../models/AnnualAccounts");
+const ActionPlan = require('../../models/ActionPlans')
+const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const DUR = require('../../models/UtilizationReport')
 const SLB = require('../../models/XVFcGrantForm')
 const Ulb = require("../../models/Ulb");
@@ -223,6 +225,21 @@ $match:{
                           $count:"filled"
                           }
                           ]
+
+let actionPlanSubmit = false, waterRejSubmit = false;
+                       let actionPlanData =    await ActionPlan.findOne({state:ObjectId(state)}).lean()
+                       let waterRejData =    await WaterRejuvenation.findOne({state:ObjectId(state)}).lean()
+if(actionPlanData){
+if((actionPlanData['status'] == 'PENDING' && actionPlanData['isDraft'] == false)|| (actionPlanData['status'] == null && actionPlanData['isDraft'] == false) || actionPlanData['status'] == 'APPROVED' ){
+actionPlanSubmit = true
+}
+}
+if(waterRejData){
+  if((waterRejData['status'] == 'PENDING' && waterRejData['isDraft'] == false) || waterRejData['status'] == 'APPROVED' ){
+    waterRejSubmit = true
+  }
+  }
+
                     query_filled_annual.unshift(...common) 
                     query_filled_util_nmpc.unshift(...common) 
                     query_filled_util_mpc.unshift(...common) 
@@ -351,7 +368,12 @@ let nmpc_tied_1st_inst_eligible = gtc2021_tied;
 let nmpc_untied_2nd_inst_eligible = (percentage_annual >= cutOff_annual) && gtc2122_untied ;
 let nmpc_tied_2nd_inst_eligible = (percentage_annual >= cutOff_annual)  && (percentage_util_nmpc >= cutOff_util_nmpc) && gtc2122_tied;
 
-let mpc_eligible = (percentage_annual >= cutOff_annual) && (percentage_util_mpc >= cutOff_util_mpc) && (percentage_slb_mpc>=cutOff_slb) && gtc2021_mpc ;
+let mpc_eligible = (percentage_annual >= cutOff_annual) &&
+                   (percentage_util_mpc >= cutOff_util_mpc) && 
+                   (percentage_slb_mpc>=cutOff_slb) && 
+                   gtc2021_mpc && 
+                   waterRejSubmit && 
+                   actionPlanSubmit ;
 return res.json({
   success: true,
   nmpc_tied:{
@@ -397,6 +419,8 @@ cutOff_util:cutOff_util_mpc,
 approvedForms_slb:approvedForms_slb_mpc,
 percentage_slb : percentage_slb_mpc,
 cutOff_slb:cutOff_slb,
+actionPlan:actionPlanSubmit,
+waterRej: waterRejSubmit
 
   }
  
