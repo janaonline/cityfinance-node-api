@@ -3,11 +3,17 @@ const router = express.Router();
 const { verifyToken } = require("../auth/services/verifyToken");
 const shared = require("./shared/index");
 const { indicator } = require("./city");
-const { dataAvailability, chartData, topPerForming } = require("./ownRevenue");
+const {
+  dataAvailability,
+  chartData,
+  topPerForming,
+  chartData2,
+} = require("./ownRevenue");
 // router.use(verifyToken);
 router.use("/all-dashboard", shared);
 router.post("/indicator", indicator);
 router.post("/data-available", dataAvailability);
-router.post("/chart-data", chartData);
+router.post("/chart-data", chartData2);
+// router.post("/chart-data2", chartData2);
 router.post("/topPerformance", topPerForming);
 module.exports = router;
