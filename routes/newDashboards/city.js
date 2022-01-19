@@ -9,7 +9,7 @@ const headOfAccountDeficit = ["Expense", "Revenue"];
 
 const indicator = async (req, res) => {
   try {
-    const {
+    let {
       ulb,
       financialYear,
       headOfAccount,
@@ -17,22 +17,25 @@ const indicator = async (req, res) => {
       isPerCapita,
       compareType,
       getQuery,
+      stateId,
     } = req.body;
     if (
       !headOfAccount ||
-      !ulb ||
+      (!ulb && !stateId) ||
       !financialYear ||
-      !filterName
-      // ||
-      // !Array.isArray(financialYear) ||
-      // !Array.isArray(ulb)
+      !filterName ||
+      !Array.isArray(financialYear) ||
+      !Array.isArray(ulb)
     )
       return Response.BadRequest(
         res,
         null,
-        "check ulb, financialYear, headOfAccount, filterName"
+        "check ulb as array, financialYear as array, headOfAccount, filterName, stateId or ulb should be there"
       );
-
+    if (stateId) {
+      ulb = await Ulb.find({ state: ObjectId(stateId) }, { _id: 1 }).lean();
+      ulb = ulb.map((value) => value._id);
+    }
     let query = [
       {
         $match: {

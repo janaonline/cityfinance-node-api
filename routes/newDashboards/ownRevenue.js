@@ -108,6 +108,79 @@ const chartData = async (req, res) => {
   }
 };
 
+const chartData2 = async (req, res) => {
+  try {
+    const { ulbTypeId, ulbId, stateId, financialYear, getQuery } = req.body;
+
+    if (!financialYear || !Array.isArray(financialYear))
+      return Response.BadRequest(res, null, "financialYear as array required");
+
+    let query = [
+      {
+        $match: {
+          lineItem: {
+            $in: ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+          },
+          financialYear: {
+            $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      {
+        $unwind: "$ulb",
+      },
+    ];
+
+    let matchObj = {};
+    if (stateId) Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
+    if (ulbTypeId)
+      Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbTypeId) });
+    if (ulbId) Object.assign(matchObj, { "ulb._id": ObjectId(ulbId) });
+
+    query.push(
+      {
+        $match: matchObj,
+      },
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineItem",
+        },
+      },
+      {
+        $unwind: "$lineItem",
+      },
+      {
+        $group: {
+          _id: {
+            revenueName: "$lineItem.name",
+          },
+          population: { $sum: "$ulb.population" },
+          amount: { $sum: "$amount" },
+        },
+      }
+    );
+
+    if (getQuery) return Response.OK(res, query);
+
+    let data = await UlbLedger.aggregate(query);
+    return Response.OK(res, data);
+  } catch (error) {
+    console.log(error);
+    return Response.DbError(res, null);
+  }
+};
+
 function parseData(data) {
   let ulbCategory = data.reduce(
     (ulbCategoryMap, value) => {
@@ -257,5 +330,6 @@ const topPerForming = async (req, res) => {
 module.exports = {
   dataAvailability,
   chartData,
+  chartData2,
   topPerForming,
 };
