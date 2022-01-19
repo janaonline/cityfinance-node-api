@@ -511,10 +511,29 @@ module.exports.getAll = catchAsync(async (req, res) => {
       {
         $lookup: {
           from: "masterforms",
-          localField: "_id",
-          foreignField: "ulb",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
           as: "masterformData",
         },
+       
       },
       {
         $unwind: {
@@ -666,6 +685,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
     } else {
       if (!skip) {
         let qrr = [...queryFilled, { $count: "count" }];
+        // console.log(util.inspect(qrr, {showHidden: false, depth : null}))
         let d = await MasterFormData.aggregate(qrr);
         total = d.length ? d[0].count : 0;
       }
@@ -734,7 +754,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           p3.push(d);
         }
       }
-
+console.log(util.inspect(queryNotStarted, {showHidden: false, depth: null}))
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
       finalOutput.push(
         ...p1,
