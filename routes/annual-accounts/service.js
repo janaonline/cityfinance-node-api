@@ -532,6 +532,29 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
           data: err.toString(),
         });
       } else {
+        for(el of data){
+          if(!el.submittedOn){
+            el.submittedOn = 'Not Submitted'
+          }
+          if(!el.bal_sheet){
+            el.bal_sheet = 'Not Submitted'
+          }
+          if(!el.bal_sheet_schedules){
+            el.bal_sheet_schedules = 'Not Submitted'
+          }
+          if(!el.inc_exp){
+            el.inc_exp = 'Not Submitted'
+          }
+          if(!el.inc_exp_schedules){
+            el.inc_exp_schedules = 'Not Submitted'
+          }
+          if(!el.cash_flow){
+            el.cash_flow = 'Not Submitted'
+          }
+          if(!el.auditor_report){
+            el.auditor_report = 'Not Submitted'
+          }
+        }
         for (el of data) {
           res.write(
             el.ulbName +
@@ -626,6 +649,27 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
           data: err.toString(),
         });
       } else {
+        for(el of data){
+          if(!el.submittedOn){
+            el.submittedOn = 'Not Submitted'
+          }
+          if(!el.bal_sheet){
+            el.bal_sheet = 'Not Submitted'
+          }
+          if(!el.bal_sheet_schedules){
+            el.bal_sheet_schedules = 'Not Submitted'
+          }
+          if(!el.inc_exp){
+            el.inc_exp = 'Not Submitted'
+          }
+          if(!el.inc_exp_schedules){
+            el.inc_exp_schedules = 'Not Submitted'
+          }
+          if(!el.cash_flow){
+            el.cash_flow = 'Not Submitted'
+          }
+         
+        }
         for (el of data) {
           res.write(
             el.ulbName +
