@@ -47,7 +47,7 @@ exports.createUpdate = async (req, res) => {
           }
         }
       }
-      req.body.status = "PENDING";
+      
       currentAnnualAccounts = await AnnualAccountData.findOne({
         ulb: ObjectId(ulb),
         design_year: ObjectId(design_year),
@@ -56,7 +56,7 @@ exports.createUpdate = async (req, res) => {
         history: 0,
       });
     }
-
+    req.body.status = "PENDING";
     let annualAccountData;
     if (
       !req.body.unAudited.submit_annual_accounts &&
@@ -65,9 +65,13 @@ exports.createUpdate = async (req, res) => {
       req.body.status = "N/A";
     }
     if (currentAnnualAccounts) {
+      let update = { $set: req.body }
+      if(currentAnnualAccounts['actionTakenByRole'] != req.decoded.role){
+        Object.assign(update, {$push: { history: currentAnnualAccounts }})
+      }
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true },
-        { $set: req.body, $push: { history: currentAnnualAccounts } }
+       update
       );
     } else {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
@@ -701,10 +705,14 @@ exports.action = async (req, res) => {
     }
     req.body.status = finalStatus;
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
+let update =  { $set: req.body}
 
+if(currentAnnualAccountData && currentAnnualAccountData['actionTakenByRole'] != req.decoded.role){
+  Object.assign(update,{ $push: { history: currentAnnualAccountData } })
+}
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), isActive: true },
-      { $set: req.body, $push: { history: currentAnnualAccountData } }
+     update
     );
 
     if (!newAnnualAccountData) {

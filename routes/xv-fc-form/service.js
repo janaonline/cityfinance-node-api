@@ -704,14 +704,15 @@ module.exports.create = catchAsync(async (req, res) => {
     // req.body["createdAt"] = time();
     data.modifiedAt = new Date();
     data.actionTakenBy = ObjectId(user._id);
+    data.actionTakenByRole = ObjectId(user.role);
     let ulbUpdateRequest = new XVFCGrantULBData(data);
     /**Now**/
     let query = {};
     req.body["overallReport"] = null;
     if (!req.body["blank"]) {
-      req.body["status"] = "PENDING";
+      req.body['waterManagement']["status"] = "PENDING";
     } else {
-      req.body["status"] = "NA";
+      req.body['waterManagement']["status"] = "NA";
     }
 
     query["ulb"] = ObjectId(data.ulb);
@@ -722,9 +723,12 @@ module.exports.create = catchAsync(async (req, res) => {
     let ulbData = await XVFCGrantULBData.findOne(query);
     if (ulbData && !data.isOldForm) {
       req.body.actionTakenByRole = user.role
-      req.body["history"] = [...ulbData.history];
-      ulbData.history = undefined;
-      req.body["history"].push(ulbData);
+      if(ulbData['actionTakenByRole'] != user.role){
+        req.body["history"] = [...ulbData.history];
+        ulbData.history = undefined;
+        req.body["history"].push(ulbData);
+      }
+     
     }
     if (ulbData && ulbData.status == "PENDING" && data.isOldForm) {
       if (ulbData.isCompleted) {
@@ -3738,9 +3742,13 @@ exports.newFormAction = async (req, res) => {
     if (!currentState) {
       return res.status(400).json({ msg: "Requested record not found." });
     } else {
+      let update = { $set: req.body }
+      if(currentState['actionTakenByRole'] != user.role){
+Object.assign(update, {$push: { history: currentState }})
+      }
       let updatedRecord = await XVFCGrantULBData.findOneAndUpdate(
         { ulb: ObjectId(data.ulb), isActive: true, design_year },
-        { $set: req.body, $push: { history: currentState } }
+       update
       );
       if (!updatedRecord) {
         return res.status(400).json({ msg: "No Record Found" });

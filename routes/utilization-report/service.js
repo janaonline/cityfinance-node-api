@@ -27,19 +27,23 @@ module.exports.createOrUpdate = async (req, res) => {
     // 
     let currentSavedUtilRep;
     if (req.body?.status == "REJECTED") {
-      req.body.status = "PENDING";
+      
       req.body.rejectReason = null;
       currentSavedUtilRep = await UtilizationReport.findOne(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
         { history: 0 }
       );
     }
-
+    req.body.status = "PENDING";
     let savedData;
     if (currentSavedUtilRep) {
+      let update =   { $set: req.body}
+      if(currentSavedUtilRep['actionTakenByRole'] != req.body.actionTakenByRole ){
+        Object.assign(update,{$push: { history: currentSavedUtilRep } })
+      }
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep } }
+      update
       );
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(
@@ -274,9 +278,13 @@ exports.action = async (req, res) => {
     if (!currentState) {
       return res.status(400).json({ msg: "Requested record not found." });
     } else {
+      let update =   { $set: updateData}
+      if(currentState['actionTakenByRole'] != user.role ){
+        Object.assign(update,{ $push: { history: currentState } })
+      }
       let updatedRecord = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(data.ulb), isActive: true, financialYear, designYear },
-        { $set: updateData, $push: { history: currentState } }
+      update
       );
       if (!updatedRecord) {
         return res.status(400).json({ msg: "No Record Found" });
