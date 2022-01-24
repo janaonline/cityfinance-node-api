@@ -1,0 +1,296 @@
+use("perfect_demo_new")
+
+// db.ulbledgers.aggregate([
+//   {
+//       "$match": {
+//           "financialYear": {
+//               "$in": [
+//                   "2015-16",
+//                   "2016-17",
+//                   "2017-18",
+//                   "2018-19",
+//                   "2019-20",
+//                   "2020-21"
+//               ]
+//           }
+//       }
+//   },
+//   {
+//       "$lookup": {
+//           "from": "ulbs",
+//           let: { id: "$ulb" },
+//           "pipeline": [
+//               {
+//                   "$match": {
+//                       $expr :{
+//                           $and:[
+//                                {"_id": "$$id" },
+//                         {"state": ObjectId("5dcf9d7316a06aed41c748e7")}]
+//                              }
+//                             }
+//               },{$project:{name:1,population:1}}
+//           ],
+//           "as": "ulb"
+//       }
+//   },
+//   {
+//       "$unwind": "$ulb"
+//   },
+//   {
+//       "$lookup": {
+//           "from": "lineitems",
+//           let: { id: "$lineItem" },
+//           "pipeline": [
+//               {
+//                   "$match": {
+//                        $expr: { $eq: ["$_id", "$$id"] },
+//                         "code": {
+//                         "$in": [
+//                         "11001",
+//                         "130",
+//                         "140",
+//                         "150",
+//                         "180",
+//                         "110"
+//                         ]}  
+//                   }
+//               },
+//               {$project:{name:1}}
+//           ],
+//           "as": "lineItem"
+//       }
+//   },
+//   {
+//       "$unwind": "$lineItem"
+//   },
+// ])
+
+// db.ulbledgers.aggregate([
+//   {
+//       "$match": {
+//           "financialYear": {
+//               "$in": [
+//                   "2015-16",
+//                   "2016-17",
+//                   "2017-18",
+//                   "2018-19",
+//                   "2019-20",
+//                   "2020-21"
+//               ]
+//           }
+//       }
+//   },
+  
+//   {
+//       "$lookup": {
+//           "from": "ulbs",
+//           let: { id: "$ulb" },
+//           "pipeline": [
+//               {
+//                   "$match": {
+//                       $expr :{
+//                           $and:[
+//                                {"_id": "$$id" },
+//                         {"state": ObjectId("5dcf9d7316a06aed41c748e7")}]
+//                              }
+//                             }
+//               },{$project:{name:1,population:1}}
+//           ],
+//           "as": "ulb"
+//       }
+//   },
+//   {
+//       "$unwind": "$ulb"
+//   },
+//   {
+//       "$lookup": {
+//           "from": "lineitems",
+//           let: { id: "$lineItem" },
+//           "pipeline": [
+//               {
+//                   "$match": {
+//                        $expr: { 
+//                            $and:[
+//                            {"code": {
+//                         "$in": [
+//                         "11001",
+//                         "130",
+//                         "140",
+//                         "150",
+//                         "180",
+//                         "110"
+//                         ]}  },
+//                         {_id: "$$id"} 
+//                            ]
+//                            },
+//                   }
+//               },
+//               {$project:{name:1}}
+//           ],
+//           "as": "lineItem"
+//       }
+//   },
+//   {
+//       "$unwind": "$lineItem"
+//   }
+// ])
+
+
+// db.ulbledgers.aggregate([
+  // {
+  //     "$lookup": {
+  //         "from": "ulbs",
+  //         let: { id: "$ulb",year:"$financialYear" },
+  //         "pipeline": [
+  //             {
+  //                 "$match": {
+  //                     $expr :{
+  //                         $and:[
+  //                         {
+  //                             $in:[
+  //                             "$$year",[
+  //                             "2015-16",
+  //                             "2016-17",
+  //                             "2017-18",
+  //                             "2018-19",
+  //                             "2019-20",
+  //                             "2020-21"
+  //                             ]
+  //                             ]
+  //                             },
+  //                              {"_id": "$$id" },
+  //                       {"state": ObjectId("5dcf9d7316a06aed41c748e7")}]
+  //                            }
+  //                           }
+  //             },{$project:{name:1,population:1}}
+  //         ],
+  //         "as": "ulb"
+  //     }
+  // },
+//   {
+//       "$unwind": "$ulb"
+//   },
+//   {
+//       "$lookup": {
+//           "from": "lineitems",
+//           let: { id: "$lineItem" },
+//           "pipeline": [
+//               {
+//                   "$match": {
+//                        $expr: { 
+//                            $and:[
+//                            { 
+//                         "$in": [
+//                          "$code",[
+//                         "11001",
+//                         "130",
+//                         "140",
+//                         "150",
+//                         "180",
+//                         "110"]
+//                         ]  },
+//                         {_id: "$$id"} 
+//                            ]
+//                            },
+//                   }
+//               },
+//               {$project:{name:1}}
+//           ],
+//           "as": "lineItem"
+//       }
+//   },
+//   {
+//       "$unwind": "$lineItem"
+//   }
+// ])
+
+
+// db.getCollection('ulbledgers').aggregate([
+// {
+//       $lookup: {
+//         from: "lineitems",
+//         localField: "lineItem",
+//         foreignField: "_id",
+//         as: "lineItem"
+//       }
+//     },
+//     {
+//       $unwind: "$lineItem"
+//     },
+//     {
+//         $match:{
+//             $expr:{$eq:["$lineItem.code","11001"]}
+//             }
+//         },
+// {
+//       $lookup: {
+//         from: "ulbs",
+//         localField: "ulb",
+//         foreignField: "_id",
+//         as: "ulb"
+//       }
+//     },
+//     {
+//       $unwind: "$ulb"
+//     },
+//     {$match:{
+//         $expr:{$in:["$ulb.state",[ObjectId("5dcf9d7216a06aed41c748df"),]]}
+//         }},
+//         {
+//             $group:{
+//                 _id:"$ulb.state",
+//                 amount:{$sum:"$amount"}
+//                 }
+//             },
+//             {$sort:{amount:-1}},{$limit:10}
+//     ])
+
+
+db.ulbledgers.aggregate([
+  {
+      "$match": {
+          "lineItem":{
+                  "$in":[
+                      ObjectId("5dd10c2485c951b54ec1d74b"),
+                      ObjectId("5dd10c2285c951b54ec1d737"),
+                      ObjectId("5dd10c2685c951b54ec1d762"),
+                      ObjectId("5dd10c2485c951b54ec1d74a"),
+                      ObjectId("5dd10c2885c951b54ec1d77e"),
+                      ObjectId("5dd10c2385c951b54ec1d748"),
+                  ]
+              },
+          "financialYear": {
+              "$in": [
+                  "2015-16",
+                  "2016-17",
+                  "2017-18",
+                  "2018-19",
+                  "2019-20",
+                  "2020-21"
+                ]
+            }
+      }
+  },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb"
+      }
+    },
+  {
+      "$unwind": "$ulb"
+  },
+  {
+      "$lookup": {
+          "from": "lineitems",
+          localField: "lineItem",
+        foreignField: "_id",
+          "as": "lineItem"
+      }
+  },
+  {
+      "$unwind": "$lineItem"
+  }
+])

@@ -3,11 +3,7 @@ const router = express.Router();
 const LineItem = require('./service');
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 
-router.get(
-    '/LineItem',
-    verifyToken,
-    LineItem.get
-);
+router.get("/LineItem", LineItem.get);
 router.put(
     '/LineItem/:_id',
     verifyToken,
