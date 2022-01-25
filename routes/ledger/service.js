@@ -831,6 +831,7 @@ if(fy == '19-20'){
             let: {
               firstUser: "2019-20",
               secondUser: "$ulb.code",
+              thirdUser: "Audited",
             },
             pipeline: [
               {
@@ -842,6 +843,9 @@ if(fy == '19-20'){
                       },
                       {
                         $eq: ["$ulb_code", "$$secondUser"],
+                      },
+                      {
+                        $eq: ["$audit_status", "$$thirdUser"],
                       },
                     ],
                   },
@@ -907,6 +911,7 @@ if(fy == '19-20'){
                 let: {
                   firstUser: "2020-21",
                   secondUser: "$ulb.code",
+                  thirdUser: "Unaudited",
                 },
                 pipeline: [
                   {
@@ -918,6 +923,9 @@ if(fy == '19-20'){
                           },
                           {
                             $eq: ["$ulb_code", "$$secondUser"],
+                          },
+                          {
+                            $eq: ["$audit_status", "$$thirdUser"],
                           },
                         ],
                       },
