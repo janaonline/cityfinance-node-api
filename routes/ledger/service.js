@@ -491,6 +491,7 @@ module.exports.report =  async (req, res) => {
     res.write(
         "ULB_Name, Code, State, Year, Standardized_Excel_Uploaded  \r\n"
     );
+    
     // Flush the headers before we start pushing the CSV content
 if(fy == '15-16' || fy == '16-17'|| fy == '17-18'|| fy == '18-19' ){
     let query_datacollectionform = [
