@@ -491,7 +491,7 @@ module.exports.report =  async (req, res) => {
     res.write(
         "ULB_Name, Code, State, Year, Standardized_Excel_Uploaded  \r\n"
     );
-    
+
     // Flush the headers before we start pushing the CSV content
 if(fy == '15-16' || fy == '16-17'|| fy == '17-18'|| fy == '18-19' ){
     let query_datacollectionform = [
@@ -797,12 +797,23 @@ el.state +
 }else {
     let query;
 if(fy == '19-20'){
- query = [{
-    $match:{
-        $and:[{"audited.submit_annual_accounts": true},{"audited.provisional_data": {$exists: true}}]
-
-        }
-    },
+ query = [
+    {
+        $match:{
+            $and:[
+            {"audited.provisional_data":{$exists: true}},
+            
+               {"audited.provisional_data.bal_sheet.pdf.url":{$ne: null}},
+                   {"audited.provisional_data.bal_sheet_schedules.pdf.url":{$ne: null}},
+                    {"audited.provisional_data.inc_exp.pdf.url":{$ne: null}},
+                       {"audited.provisional_data.inc_exp_schedules.pdf.url":{$ne: null}},
+      {"audited.provisional_data.cash_flow.pdf.url":{$ne: null}},
+      
+    
+            ]
+    
+            }
+        },
     
     {
         $lookup:{
@@ -832,7 +843,7 @@ if(fy == '19-20'){
             let: {
               firstUser: "2019-20",
               secondUser: "$ulb.code",
-              thirdUser: "Audited",
+            
             },
             pipeline: [
               {
@@ -845,9 +856,7 @@ if(fy == '19-20'){
                       {
                         $eq: ["$ulb_code", "$$secondUser"],
                       },
-                      {
-                        $eq: ["$audit_status", "$$thirdUser"],
-                      },
+                     
                     ],
                   },
                 },
@@ -877,12 +886,23 @@ if(fy == '19-20'){
                         }
     ]
 }else if(fy == '20-21'){
-    query = [{
-        $match:{
-            $and:[{"unAudited.submit_annual_accounts": true},{"unAudited.provisional_data": {$exists: true}}]
-    
-            }
-        },
+    query = [
+        {
+            $match:{
+                $and:[
+                {"unAudited.provisional_data":{$exists: true}},
+                
+                   {"unAudited.provisional_data.bal_sheet.pdf.url":{$ne: null}},
+                       {"unAudited.provisional_data.bal_sheet_schedules.pdf.url":{$ne: null}},
+                        {"unAudited.provisional_data.inc_exp.pdf.url":{$ne: null}},
+                           {"unAudited.provisional_data.inc_exp_schedules.pdf.url":{$ne: null}},
+          {"unAudited.provisional_data.cash_flow.pdf.url":{$ne: null}},
+          
+        
+                ]
+        
+                }
+            },
         
         {
             $lookup:{
@@ -912,7 +932,7 @@ if(fy == '19-20'){
                 let: {
                   firstUser: "2020-21",
                   secondUser: "$ulb.code",
-                  thirdUser: "Unaudited",
+                
                 },
                 pipeline: [
                   {
@@ -925,9 +945,7 @@ if(fy == '19-20'){
                           {
                             $eq: ["$ulb_code", "$$secondUser"],
                           },
-                          {
-                            $eq: ["$audit_status", "$$thirdUser"],
-                          },
+                         
                         ],
                       },
                     },
