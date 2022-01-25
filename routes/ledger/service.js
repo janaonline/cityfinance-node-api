@@ -808,7 +808,7 @@ if(fy == '19-20'){
                     {"audited.provisional_data.inc_exp.pdf.url":{$ne: null}},
                        {"audited.provisional_data.inc_exp_schedules.pdf.url":{$ne: null}},
       {"audited.provisional_data.cash_flow.pdf.url":{$ne: null}},
-      
+      {"audited.provisional_data.auditor_report.pdf.url":{$ne: null}},
     
             ]
     
