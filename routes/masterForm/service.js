@@ -376,16 +376,16 @@ let {state_id} = req.query
         design_year: ObjectId(design_year),
       },
     };
-let stateMatch = {
+
+
+if(state_id){
+match = {
 
   $match:{
     state: ObjectId(state_id),
     design_year: ObjectId(design_year)
   }
 }
-
-if(state_id){
-match = stateMatch
 }
 let state = user.state ?? state_id
     if (user.role === "STATE") {
@@ -494,11 +494,11 @@ let state = user.state ?? state_id
         },
       },
     ];
-    let match2 = {
-      $match: {
-        state: ObjectId(state),
-      },
-    };
+    // let match2 =  {
+    //   $match: {
+    //     state: ObjectId(state),
+    //   },
+    // };
     let queryNotStarted = [
       {
         $match:{
@@ -606,7 +606,14 @@ let state = user.state ?? state_id
       },
     ];
     if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
-      queryNotStarted.unshift(match2);
+      if(state){
+        queryNotStarted.unshift({
+          $match: {
+            state: ObjectId(state),
+          },
+        });
+      }
+      
     }
 
     let newFilter = await Service.mapFilter(filter);
