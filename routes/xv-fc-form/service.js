@@ -2223,11 +2223,7 @@ module.exports.action = async (req, res) => {
               .exec();
 
             if (data["status"] == "APPROVED" && user.role == "MoHUA") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              let mailOptions
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate =
@@ -2236,9 +2232,32 @@ module.exports.action = async (req, res) => {
               ulbUser.accountantEmail
                 ? ulbEmails.push(ulbUser.accountantEmail)
                 : "";
-              (mailOptions.to = ulbEmails.join()),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbEmails.join()),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                   mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: ulbEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
               /** STATE TRIGGER */
               let stateEmails = [];
@@ -2256,26 +2275,72 @@ module.exports.action = async (req, res) => {
                     ulbUser.name,
                     d.name
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
             }
             if (data["status"] == "APPROVED" && user.role == "STATE") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              // let mailOptions = {
+              //   to: "",
+              //   subject: "",
+              //   html: "",
+              // };
 
               let UlbTemplate =
                 await Service.emailTemplate.xvUploadApprovalByStateToUlb(
                   ulbUser.name
                 );
-              (mailOptions.to = ulbUser.email),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbUser.email),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: [ulbUser.email]
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
               /** STATE TRIGGER */
               let MohuaUser = await User.find({
@@ -2290,9 +2355,32 @@ module.exports.action = async (req, res) => {
                     ulbUser.name,
                     ulbUser.state.name
                   );
-                (mailOptions.to = d.email),
-                  (mailOptions.subject = MohuaTemplate.subject),
-                  (mailOptions.html = MohuaTemplate.body);
+                // (mailOptions.to = d.email),
+                //   (mailOptions.subject = MohuaTemplate.subject),
+                //   (mailOptions.html = MohuaTemplate.body);
+                  mailOptions =     {
+                    Destination: {
+                      /* required */
+                      ToAddresses: [d.email]
+                    },
+                    Message: {
+                      /* required */
+                      Body: {
+                        /* required */
+                        Html: {
+                          Charset: "UTF-8",
+                          Data: MohuaTemplate.body
+                        },
+                      },
+                      Subject: {
+                        Charset: 'UTF-8',
+                        Data: MohuaTemplate.subject
+                      }
+                    },
+                    Source: process.env.EMAIL,
+                    /* required */
+                    ReplyToAddresses: [process.env.EMAIL],
+                  }
                 Service.sendEmail(mailOptions);
               }
 
@@ -2312,9 +2400,32 @@ module.exports.action = async (req, res) => {
                     ulbUser.name,
                     d.name
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
 
@@ -2333,11 +2444,7 @@ module.exports.action = async (req, res) => {
               }
             }
             if (data["status"] == "REJECTED" && user.role == "MoHUA") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              let mailOptions 
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
@@ -2349,9 +2456,32 @@ module.exports.action = async (req, res) => {
               ulbUser.accountantEmail
                 ? ulbEmails.push(ulbUser.accountantEmail)
                 : "";
-              (mailOptions.to = ulbEmails.join()),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbEmails.join()),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: ulbEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
 
               /** STATE TRIGGER */
@@ -2371,18 +2501,37 @@ module.exports.action = async (req, res) => {
                     d.name,
                     value.reason
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
             }
             if (data["status"] == "REJECTED" && user.role == "STATE") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              let mailOptions 
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
@@ -2394,9 +2543,32 @@ module.exports.action = async (req, res) => {
               ulbUser.accountantEmail
                 ? ulbEmails.push(ulbUser.accountantEmail)
                 : "";
-              (mailOptions.to = ulbEmails.join()),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbEmails.join()),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: ulbEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
 
               /** STATE TRIGGER */
@@ -2416,9 +2588,32 @@ module.exports.action = async (req, res) => {
                     d.name,
                     value.reason
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
             }
@@ -2496,11 +2691,7 @@ module.exports.multipleApprove = async (req, res) => {
         { _id: ObjectId(prevState._id) },
         { $set: data, $push: { history: history } }
       );
-      let mailOptions = {
-        to: "",
-        subject: "",
-        html: "",
-      };
+      let mailOptions 
       /** ULB TRIGGER */
       let ulbEmails = [];
       let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
@@ -2508,9 +2699,32 @@ module.exports.multipleApprove = async (req, res) => {
       );
       ulbUser.email ? ulbEmails.push(ulbUser.email) : "";
       ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail) : "";
-      (mailOptions.to = ulbEmails.join()),
-        (mailOptions.subject = UlbTemplate.subject),
-        (mailOptions.html = UlbTemplate.body);
+      // (mailOptions.to = ulbEmails.join()),
+      //   (mailOptions.subject = UlbTemplate.subject),
+      //   (mailOptions.html = UlbTemplate.body);
+        mailOptions =     {
+          Destination: {
+            /* required */
+            ToAddresses: ulbEmails.join()
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: UlbTemplate.body
+              },
+            },
+            Subject: {
+              Charset: 'UTF-8',
+              Data: UlbTemplate.subject
+            }
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        }
       Service.sendEmail(mailOptions);
       /** STATE TRIGGER */
       let stateEmails = [];
@@ -2528,9 +2742,32 @@ module.exports.multipleApprove = async (req, res) => {
             ulbUser.name,
             d.name
           );
-        mailOptions.to = stateEmails.join();
-        mailOptions.subject = stateTemplate.subject;
-        mailOptions.html = stateTemplate.body;
+        // mailOptions.to = stateEmails.join();
+        // mailOptions.subject = stateTemplate.subject;
+        // mailOptions.html = stateTemplate.body;
+        mailOptions =     {
+          Destination: {
+            /* required */
+            ToAddresses: stateEmails.join()
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: stateTemplate.body
+              },
+            },
+            Subject: {
+              Charset: 'UTF-8',
+              Data: stateTemplate.subject
+            }
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        }
         Service.sendEmail(mailOptions);
       }
       return Response.OK(res, {}, ``);
@@ -2591,11 +2828,7 @@ module.exports.multipleReject = async (req, res) => {
         { _id: ObjectId(prevState._id) },
         { $set: data, $push: { history: history } }
       );
-      let mailOptions = {
-        to: "",
-        subject: "",
-        html: "",
-      };
+      let mailOptions
       /** ULB TRIGGER */
       let ulbEmails = [];
       let UlbTemplate = await Service.emailTemplate.xvUploadMultiRejectUlb(
@@ -2605,10 +2838,33 @@ module.exports.multipleReject = async (req, res) => {
       );
       ulbUser.email ? ulbEmails.push(ulbUser.email) : "";
       ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail) : "";
-      (mailOptions.to = ulbEmails.join()),
-        (mailOptions.subject = UlbTemplate.subject),
-        (mailOptions.html = UlbTemplate.body);
-      console.log(mailOptions);
+      // (mailOptions.to = ulbEmails.join()),
+      //   (mailOptions.subject = UlbTemplate.subject),
+      //   (mailOptions.html = UlbTemplate.body);
+      // console.log(mailOptions);
+      mailOptions =     {
+        Destination: {
+          /* required */
+          ToAddresses: ulbEmails.join()
+        },
+        Message: {
+          /* required */
+          Body: {
+            /* required */
+            Html: {
+              Charset: "UTF-8",
+              Data: UlbTemplate.body
+            },
+          },
+          Subject: {
+            Charset: 'UTF-8',
+            Data: UlbTemplate.subject
+          }
+        },
+        Source: process.env.EMAIL,
+        /* required */
+        ReplyToAddresses: [process.env.EMAIL],
+      }
       Service.sendEmail(mailOptions);
       /** STATE TRIGGER */
       let stateEmails = [];
@@ -2627,9 +2883,32 @@ module.exports.multipleReject = async (req, res) => {
             d.name,
             `<b>Reason for Rejection:</b> ${req.body.rejectReason}`
           );
-        mailOptions.to = stateEmails.join();
-        mailOptions.subject = stateTemplate.subject;
-        mailOptions.html = stateTemplate.body;
+        // mailOptions.to = stateEmails.join();
+        // mailOptions.subject = stateTemplate.subject;
+        // mailOptions.html = stateTemplate.body;
+        mailOptions =     {
+          Destination: {
+            /* required */
+            ToAddresses: stateEmails.join()
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: stateTemplate.body
+              },
+            },
+            Subject: {
+              Charset: 'UTF-8',
+              Data: stateTemplate.subject
+            }
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        }
         Service.sendEmail(mailOptions);
       }
       return Response.OK(res, {}, ``);
