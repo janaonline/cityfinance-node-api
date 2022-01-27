@@ -323,7 +323,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
     5: { status: "REJECTED", actionTakenByUserRole: "MoHUA" },
     6: { status: "APPROVED", actionTakenByUserRole: "MoHUA" },
   };
-
+let {state_id} = req.query
   let user = req.decoded,
     filter =
       req.query.filter && !req.query.filter != "null"
@@ -376,7 +376,18 @@ module.exports.getAll = catchAsync(async (req, res) => {
         design_year: ObjectId(design_year),
       },
     };
+let stateMatch = {
 
+  $match:{
+    state: ObjectId(state_id),
+    design_year: ObjectId(design_year)
+  }
+}
+
+if(state_id){
+match = stateMatch
+}
+let state = user.state ?? state_id
     if (user.role === "STATE") {
       match = {
         $match: {
@@ -485,7 +496,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
     ];
     let match2 = {
       $match: {
-        state: ObjectId(user.state),
+        state: ObjectId(state),
       },
     };
     let queryNotStarted = [
@@ -594,7 +605,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
         },
       },
     ];
-    if (user.role == "STATE") {
+    if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
       queryNotStarted.unshift(match2);
     }
 
