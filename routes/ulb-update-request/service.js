@@ -121,11 +121,7 @@ module.exports.create = async (req, res) => {
             { isDeleted: false, ulb: ObjectId(ulb), role: 'ULB' },
             '_id email role name'
         ).lean();
-        let mailOptions = {
-            to: userData.email,
-            subject: '',
-            html: '',
-        };
+        let mailOptions
 
         if (obj['censusCode']) {
             obj['censusCode'] = obj['censusCode'].trim();
@@ -305,16 +301,62 @@ module.exports.create = async (req, res) => {
                     userData.name,
                     link
                 );
-                mailOptions.to = pObj.email;
-                mailOptions.subject = template.subject;
-                mailOptions.html = template.body;
+                // mailOptions.to = pObj.email;
+                // mailOptions.subject = template.subject;
+                // mailOptions.html = template.body;
+               mailOptions =     {
+                    Destination: {
+                      /* required */
+                      ToAddresses: [pObj.email]
+                    },
+                    Message: {
+                      /* required */
+                      Body: {
+                        /* required */
+                        Html: {
+                          Charset: "UTF-8",
+                          Data:  template.body
+                        },
+                      },
+                      Subject: {
+                        Charset: 'UTF-8',
+                        Data:template.subject
+                      }
+                    },
+                    Source: process.env.EMAIL,
+                    /* required */
+                    ReplyToAddresses: [process.env.EMAIL],
+                  }
+                
             } else {
                 let template = Service.emailTemplate.userProfileEdit(
                     userData.name
                 );
-                mailOptions.subject = template.subject;
-                mailOptions.html = template.body;
+                mailOptions =     {
+                    Destination: {
+                      /* required */
+                      ToAddresses: [pObj.email]
+                    },
+                    Message: {
+                      /* required */
+                      Body: {
+                        /* required */
+                        Html: {
+                          Charset: "UTF-8",
+                          Data:  template.body
+                        },
+                      },
+                      Subject: {
+                        Charset: 'UTF-8',
+                        Data:template.subject
+                      }
+                    },
+                    Source: process.env.EMAIL,
+                    /* required */
+                    ReplyToAddresses: [process.env.EMAIL],
+                  }
             }
+            
             SendEmail(mailOptions);
         }
         try {
@@ -331,8 +373,31 @@ module.exports.create = async (req, res) => {
                 );
             }
             let template = Service.emailTemplate.userProfileEdit(userData.name);
-            mailOptions.subject = template.subject;
-            mailOptions.html = template.body;
+            mailOptions =     {
+                Destination: {
+                  /* required */
+                  ToAddresses: [pObj.email]
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data:  template.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data:template.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
+            // mailOptions.subject = template.subject;
+            // mailOptions.html = template.body;
             if (!pObj['accountantEmail']) SendEmail(mailOptions);
             return Response.OK(
                 res,
@@ -737,11 +802,7 @@ module.exports.action = async (req, res) => {
                         { ulb: prevState.ulb, role: 'ULB' },
                         '_id email role name'
                     ).lean();
-                    let mailOptions = {
-                        to: userData.email,
-                        subject: '',
-                        html: '',
-                    };
+                    let mailOptions
                     if (updateData.status == 'APPROVED') {
                         updateData.isActive = false;
                         let keys = [
@@ -818,9 +879,32 @@ module.exports.action = async (req, res) => {
                                     userData.name,
                                     link
                                 );
-                                mailOptions.to = pObj['email'];
-                                mailOptions.subject = template.subject;
-                                mailOptions.html = template.body;
+                                // mailOptions.to = pObj['email'];
+                                // mailOptions.subject = template.subject;
+                                // mailOptions.html = template.body;
+                                mailOptions =     {
+                                    Destination: {
+                                      /* required */
+                                      ToAddresses: [pObj.email]
+                                    },
+                                    Message: {
+                                      /* required */
+                                      Body: {
+                                        /* required */
+                                        Html: {
+                                          Charset: "UTF-8",
+                                          Data:  template.body
+                                        },
+                                      },
+                                      Subject: {
+                                        Charset: 'UTF-8',
+                                        Data:template.subject
+                                      }
+                                    },
+                                    Source: process.env.EMAIL,
+                                    /* required */
+                                    ReplyToAddresses: [process.env.EMAIL],
+                                  }
                                 SendEmail(mailOptions);
                             } else {
                                 // let template = Service.emailTemplate.userProfileEdit(userData.name)
@@ -843,8 +927,31 @@ module.exports.action = async (req, res) => {
                             let template = Service.emailTemplate.userProfileEdit(
                                 userData.name
                             );
-                            mailOptions.subject = template.subject;
-                            mailOptions.html = template.body;
+                            mailOptions =     {
+                                Destination: {
+                                  /* required */
+                                  ToAddresses: [pObj.email]
+                                },
+                                Message: {
+                                  /* required */
+                                  Body: {
+                                    /* required */
+                                    Html: {
+                                      Charset: "UTF-8",
+                                      Data:  template.body
+                                    },
+                                  },
+                                  Subject: {
+                                    Charset: 'UTF-8',
+                                    Data:template.subject
+                                  }
+                                },
+                                Source: process.env.EMAIL,
+                                /* required */
+                                ReplyToAddresses: [process.env.EMAIL],
+                              }
+                            // mailOptions.subject = template.subject;
+                            // mailOptions.html = template.body;
                             SendEmail(mailOptions);
                         }
                     } else {
@@ -853,8 +960,31 @@ module.exports.action = async (req, res) => {
                             updateData.status,
                             user.role
                         );
-                        mailOptions.subject = template.subject;
-                        mailOptions.html = template.body;
+                        mailOptions =     {
+                            Destination: {
+                              /* required */
+                              ToAddresses: [pObj.email]
+                            },
+                            Message: {
+                              /* required */
+                              Body: {
+                                /* required */
+                                Html: {
+                                  Charset: "UTF-8",
+                                  Data:  template.body
+                                },
+                              },
+                              Subject: {
+                                Charset: 'UTF-8',
+                                Data:template.subject
+                              }
+                            },
+                            Source: process.env.EMAIL,
+                            /* required */
+                            ReplyToAddresses: [process.env.EMAIL],
+                          }
+                        // mailOptions.subject = template.subject;
+                        // mailOptions.html = template.body;
                         SendEmail(mailOptions);
                     }
                     let oldStateObj = Object.assign(
@@ -904,11 +1034,34 @@ async function emailNotificationToStateANDPartner(user, state, partner) {
                 user.name,
                 s.name
             );
-            let mailOptions = {
-                to: s.email,
-                subject: template.subject,
-                html: template.body,
-            };
+            // let mailOptions = {
+            //     to: s.email,
+            //     subject: template.subject,
+            //     html: template.body,
+            // };
+         let    mailOptions =     {
+                Destination: {
+                  /* required */
+                  ToAddresses: [s.email]
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data:  template.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data:template.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
             SendEmail(mailOptions);
         }
     }
@@ -919,11 +1072,30 @@ async function emailNotificationToStateANDPartner(user, state, partner) {
                 user.name,
                 p.name
             );
-            let mailOptions = {
-                to: p.email,
-                subject: template.subject,
-                html: template.body,
-            };
+            let mailOptions =  {
+                Destination: {
+                  /* required */
+                  ToAddresses: [p.email]
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data:  template.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data:template.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
+            
             SendEmail(mailOptions);
         }
     }

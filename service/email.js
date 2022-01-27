@@ -1,5 +1,13 @@
 const nodemailer = require('nodemailer');
 const { email } = require('./check-unique');
+const AWS = require('aws-sdk')
+
+const SESConfig = {
+    apiVersion: '2010-12-01',
+    accessKeyId: process.env.SES_ACCESS_KEYID,
+    secretAccessKey: process.env.SES_SECRET_ACCESS_KEY,
+    region: process.env.SES_REGION
+}
 function isValid(date, h1, m1, h2, m2) {
     var h = date.getHours();
     var m = date.getMinutes();
@@ -29,27 +37,31 @@ module.exports = function(mailOptions, cb){
         mail= process.env.EMAIL // reachus
         password = process.env.PASS
     }
-    const smtpConnectionString = process.env.EMAILSERVICE == 'gmail' ?
-        `smtps://${encodeURIComponent(mail)}:${encodeURIComponent(password)}@smtp.gmail.com`: {
-            host: 'smtp.office365.com',
-            port: '587',
-            auth: {
-                user: mail,
-                pass: password
-            },
-            secureConnection: false,
-            tls: {
-                ciphers: 'SSLv3'
-            }
-        };
-    let transporter = nodemailer.createTransport(smtpConnectionString);
-    transporter.sendMail(mailOptions, cb ? cb : (error, info) => {
-        if (error) {
-            return console.log(error);
-        }
-        console.log('Message sent: %s', info.messageId);
-        return info.messageId;
-    });
+
+new AWS.SES(SESConfig).sendEmail(mailOptions).promise().then((res)=>{
+    console.log(res)
+})
+    // const smtpConnectionString = process.env.EMAILSERVICE == 'gmail' ?
+    //     `smtps://${encodeURIComponent(mail)}:${encodeURIComponent(password)}@smtp.gmail.com`: {
+    //         host: 'smtp.office365.com',
+    //         port: '587',
+    //         auth: {
+    //             user: mail,
+    //             pass: password
+    //         },
+    //         secureConnection: false,
+    //         tls: {
+    //             ciphers: 'SSLv3'
+    //         }
+    //     };
+    // let transporter = nodemailer.createTransport(smtpConnectionString);
+    // transporter.sendMail(mailOptions, cb ? cb : (error, info) => {
+    //     if (error) {
+    //         return console.log(error);
+    //     }
+    //     console.log('Message sent: %s', info.messageId);
+    //     return info.messageId;
+    // });
     // setup email data with unicode symbols
     /*let mailOptions = {
         to: emails, // list of receivers

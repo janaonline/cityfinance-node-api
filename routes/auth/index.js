@@ -17,7 +17,7 @@ const { totalVisit } = require("./services/totalVisit");
 const { startSession } = require("./services/startSession");
 const { endSession } = require("./services/endSession");
 const { changePassword } = require("./services/changePassword");
-
+const {sendMail} = require('./services/sendTestMail')
 router.get("/start_session", startSession);
 router.post("/getHash", gettingHash);
 router.get("/end_session/:_id", endSession);
@@ -34,4 +34,5 @@ router.post("/captcha_validate", captcha);
 router.get("/visit_count", totalVisit);
 router.get("/change_password", verifyToken, changePassword);
 
+router.get('/sendTestMail', sendMail)
 module.exports = router;
