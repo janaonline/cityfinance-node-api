@@ -378,7 +378,7 @@ let {state_id} = req.query
     };
 
 
-if(state_id){
+if(state_id && state_id != 'null'){
 match = {
 
   $match:{
