@@ -378,7 +378,7 @@ let {state_id} = req.query
     };
 
 
-if(state_id){
+if(state_id && state_id != 'null'){
 match = {
 
   $match:{
@@ -630,6 +630,7 @@ let state = user.state ?? state_id
       queryFilled.push({ $match: newFilter });
       queryNotStarted.push({ $match: newFilter });
     }
+    
     if (sort && Object.keys(sort).length) {
       queryFilled.push({ $sort: sort });
       queryNotStarted.push({ $sort: sort });
