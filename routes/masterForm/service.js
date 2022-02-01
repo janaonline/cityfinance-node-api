@@ -2338,17 +2338,17 @@ module.exports.viewList = catchAsync(async (req, res) => {
     22: {
       $and:[
         {"utilizationreport.isDraft": true},
-      {"utilizationreport.actionTakenByRole":"ULB"}
+      {"utilizationreport.actionTakenBy":"ULB"}
     ] 
     },
     23: {
       $or:[{
         $and:[
         {"utilizationreport.isDraft": false},
-        {"utilizationreport.actionTakenByRole":"ULB"}]
+        {"utilizationreport.actionTakenBy":"ULB"}]
       },
       {
-          $or:[{"utilizationreport.actionTakenByRole":"STATE"},{"utilizationreport.actionTakenByRole":"MoHUA"}]
+          $or:[{"utilizationreport.actionTakenBy":"STATE"},{"utilizationreport.actionTakenBy":"MoHUA"}]
 
       }]
       ,
@@ -3231,12 +3231,12 @@ for (const [key, value] of Object.entries(newFilter)) {
 
           if (Object.entries(el?.utilizationreport).length === 0) {
             el["utilizationreportStatus"] = "Not Started";
-          } else if ((el?.utilizationreport.isDraft == false && el?.utilizationreport.actionTakenByRole == "ULB")||
-          (el?.utilizationreport.actionTakenByRole == "STATE" || el?.utilizationreport.actionTakenByRole == "MoHUA" )
+          } else if ((el?.utilizationreport.isDraft == false && el?.utilizationreport.actionTakenBy == "ULB")||
+          (el?.utilizationreport.actionTakenBy == "STATE" || el?.utilizationreport.actionTakenBy == "MoHUA" )
           ) {
             // console.log(el)
             el["utilizationreportStatus"] = "Completed";
-          } else if ( (el?.utilizationreport.isDraft == true && el?.utilizationreport.actionTakenByRole == "ULB" )) {
+          } else if ( (el?.utilizationreport.isDraft == true && el?.utilizationreport.actionTakenBy == "ULB" )) {
             el["utilizationreportStatus"] = "In Progress";
           }
           if (Object.entries(el?.audited_annualaccounts).length === 0) {
