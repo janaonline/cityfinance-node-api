@@ -2337,7 +2337,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
     },
     22: {
       "utilizationreport.isDraft": true,
-      "actionTakenByRole":"ULB"
+      "utilizationreport.actionTakenByRole":"ULB"
     },
     23: {
       "utilizationreport.isDraft": false,
