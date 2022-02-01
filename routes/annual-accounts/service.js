@@ -820,7 +820,7 @@ data.audited.notSubmitted = data.audited.notSubmitted + el.count
             data.audited.inProgress = data.audited.inProgress + el.count 
         }else if(el._id.role == 'ULB' && !el._id.isDraft){
           data.audited.submitted = data.audited.submitted + el.count 
-        }else if()
+        }
   }
 }
 }else if (user.role == 'MoHUA' || 'ADMIN' || 'PARTNER' ){
