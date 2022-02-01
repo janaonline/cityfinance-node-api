@@ -2336,11 +2336,22 @@ module.exports.viewList = catchAsync(async (req, res) => {
       utilizationreport: {},
     },
     22: {
-      "utilizationreport.isDraft": true,
-      "utilizationreport.actionTakenByRole":"ULB"
+      $and:[
+        {"utilizationreport.isDraft": true},
+      {"utilizationreport.actionTakenByRole":"ULB"}
+    ] 
     },
     23: {
-      "utilizationreport.isDraft": false,
+      $or:[{
+        $and:[
+        {"utilizationreport.isDraft": false},
+        {"utilizationreport.actionTakenByRole":"ULB"}]
+      },
+      {
+          $or:[{"utilizationreport.actionTakenByRole":"STATE"},{"utilizationreport.actionTakenByRole":"MoHUA"}]
+
+      }]
+      ,
     },
     24: {
       //not started
