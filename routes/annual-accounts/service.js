@@ -58,12 +58,7 @@ exports.createUpdate = async (req, res) => {
     }
     req.body.status = "PENDING";
     let annualAccountData;
-    if (
-      !req.body.unAudited.submit_annual_accounts &&
-      !req.body.audited.submit_annual_accounts
-    ) {
-      req.body.status = "N/A";
-    }
+   
     if (currentAnnualAccounts) {
       let update = { $set: req.body }
       if(currentAnnualAccounts['actionTakenByRole'] != req.decoded.role){
