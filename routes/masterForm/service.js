@@ -323,7 +323,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
     5: { status: "REJECTED", actionTakenByUserRole: "MoHUA" },
     6: { status: "APPROVED", actionTakenByUserRole: "MoHUA" },
   };
-
+let {state_id} = req.query
   let user = req.decoded,
     filter =
       req.query.filter && !req.query.filter != "null"
@@ -377,6 +377,17 @@ module.exports.getAll = catchAsync(async (req, res) => {
       },
     };
 
+
+if(state_id && state_id != 'null'){
+match = {
+
+  $match:{
+    state: ObjectId(state_id),
+    design_year: ObjectId(design_year)
+  }
+}
+}
+let state = user.state ?? state_id
     if (user.role === "STATE") {
       match = {
         $match: {
@@ -483,11 +494,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
         },
       },
     ];
-    let match2 = {
-      $match: {
-        state: ObjectId(user.state),
-      },
-    };
+    // let match2 =  {
+    //   $match: {
+    //     state: ObjectId(state),
+    //   },
+    // };
     let queryNotStarted = [
       {
         $match:{
@@ -594,8 +605,15 @@ module.exports.getAll = catchAsync(async (req, res) => {
         },
       },
     ];
-    if (user.role == "STATE") {
-      queryNotStarted.unshift(match2);
+    if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
+      if(state){
+        queryNotStarted.unshift({
+          $match: {
+            state: ObjectId(state),
+          },
+        });
+      }
+      
     }
 
     let newFilter = await Service.mapFilter(filter);
@@ -612,6 +630,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
       queryFilled.push({ $match: newFilter });
       queryNotStarted.push({ $match: newFilter });
     }
+    
     if (sort && Object.keys(sort).length) {
       queryFilled.push({ $sort: sort });
       queryNotStarted.push({ $sort: sort });
@@ -2317,10 +2336,22 @@ module.exports.viewList = catchAsync(async (req, res) => {
       utilizationreport: {},
     },
     22: {
-      "utilizationreport.isDraft": true,
+      $and:[
+        {"utilizationreport.isDraft": true},
+      {"utilizationreport.actionTakenByRole":"ULB"}
+    ] 
     },
     23: {
-      "utilizationreport.isDraft": false,
+      $or:[{
+        $and:[
+        {"utilizationreport.isDraft": false},
+        {"utilizationreport.actionTakenByRole":"ULB"}]
+      },
+      {
+          $or:[{"utilizationreport.actionTakenByRole":"STATE"},{"utilizationreport.actionTakenByRole":"MoHUA"}]
+
+      }]
+      ,
     },
     24: {
       //not started

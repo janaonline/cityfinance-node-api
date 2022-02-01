@@ -9,6 +9,7 @@ const Response = require("../../service").response;
 const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year')
 const moment = require("moment");
+
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const time = () => {
@@ -702,6 +703,134 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
       }
     })
 
+})
+exports.dashboard = catchAsync(async (req,res)=>{
+let user = req.decoded;
+let {state_id} = req.query
+if(state_id == 'null'){
+  state_id = null
+}
+
+let data = {
+  audited:{
+notStarted:0,
+inProgress:0,
+submitted:0,
+notSubmitted:0,
+approvedbyState:0,
+approvedByMoHUA:0
+  },
+  provisional:{
+    notStarted:0,
+inProgress:0,
+submitted:0,
+notSubmitted:0,
+approvedbyState:0,
+approvedByMoHUA:0
+
+  }
+}
+let state = user.state ?? state_id
+if(user.role == 'STATE'){
+let query_audited = [
+  {
+      $project:{
+         "answer": "$audited.submit_annual_accounts",
+          data:"$audited.provisional_data",
+          actionTakenByRole:1,
+          isDraft:1,
+          status:1,
+          ulb:1
+          }
+      },
+    {
+        $group:{
+            _id:{
+                role:"$actionTakenByRole",
+                isDraft:"$isDraft",
+                status:"$status",
+                answer:"$answer"
+                },
+                count:{$sum:1},
+                ulb:{$addToSet:"$ulb"}
+            }
+        } ,
+  ]
+  let query_unAudited = [
+    {
+        $project:{
+           "answer": "$unAudited.submit_annual_accounts",
+            data:"$unAudited.provisional_data",
+            actionTakenByRole:1,
+            isDraft:1,
+            status:1,
+            ulb:1
+            }
+        },
+      {
+          $group:{
+              _id:{
+                  role:"$actionTakenByRole",
+                  isDraft:"$isDraft",
+                  status:"$status",
+                  answer:"$answer"
+                  },
+                  count:{$sum:1},
+                  ulb:{$addToSet:"$ulb"}
+              }
+          } ,
+    ]
+
+    let { audited, unAudited} = await new Promise(async (resolve, reject) => {
+      let prms1 = new Promise(async (rslv, rjct) => {
+          // console.log(util.inspect(query_totalULBs, { showHidden: false, depth: null }))
+          let output = await AnnualAccountData.aggregate(query_audited);
+          rslv(output);
+      });
+      let prms2 = new Promise(async (rslv, rjct) => {
+          // console.log(util.inspect(query_totalApproved, { showHidden: false, depth: null }))
+          let output = await AnnualAccountData.aggregate(query_unAudited);
+          rslv(output);
+      });
+    
+      Promise.all([prms1, prms2]).then(
+          (outputs) => {
+              let audited = outputs[0];
+              let unAudited = outputs[1];
+      
+
+              if (audited && unAudited ) {
+                  resolve({ audited, unAudited});
+              } else {
+                  reject({ message: "No Data Found" });
+              }
+          },
+          (e) => {
+              reject(e);
+          }
+      );
+  });
+for(let el of audited){
+  // clicked No
+  if(!el._id.answer){
+data.audited.notSubmitted = data.audited.notSubmitted + el.count 
+  }else{
+    // clicked Yes
+        if(el._id.role == 'ULB' && el._id.isDraft){
+            data.audited.inProgress = data.audited.inProgress + el.count 
+        }else if(el._id.role == 'ULB' && !el._id.isDraft){
+          data.audited.submitted = data.audited.submitted + el.count 
+        }
+  }
+}
+}else if (user.role == 'MoHUA' || 'ADMIN' || 'PARTNER' ){
+
+}else{
+  return res.status(403).json({
+    success: false,
+    message:"Not Authenticated to Access this Data"
+  })
+}
 })
 
 exports.action = async (req, res) => {

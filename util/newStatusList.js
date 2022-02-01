@@ -1,0 +1,12 @@
+module.exports = {
+    'Not_Started': 'Not Started',
+    'In_Progress': 'In Progress',
+    'Under_Review_By_State': 'Under Review By State',
+    'Approved_By_State': 'Approved By State',
+    'Under_Review_By_MoHUA': 'Under Review By MoHUA',
+    'Rejected_By_State': 'Rejected By State',
+    'Approved_By_MoHUA': 'Approved By MoHUA',
+    'Rejected_By_MoHUA': 'Rejected By MoHUA',
+    'Submitted': 'Submitted',
+    'Not_Submitted': 'Not Submitted'
+}
