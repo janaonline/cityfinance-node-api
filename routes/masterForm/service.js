@@ -3231,10 +3231,12 @@ for (const [key, value] of Object.entries(newFilter)) {
 
           if (Object.entries(el?.utilizationreport).length === 0) {
             el["utilizationreportStatus"] = "Not Started";
-          } else if (el?.utilizationreport.isDraft == false) {
+          } else if ((el?.utilizationreport.isDraft == false && el?.utilizationreport.actionTakenByRole == "ULB")||
+          (el?.utilizationreport.actionTakenByRole == "STATE" || el?.utilizationreport.actionTakenByRole == "MoHUA" )
+          ) {
             // console.log(el)
             el["utilizationreportStatus"] = "Completed";
-          } else if (el?.utilizationreport.isDraft == true) {
+          } else if ( (el?.utilizationreport.isDraft == true && el?.utilizationreport.actionTakenByRole == "ULB" )) {
             el["utilizationreportStatus"] = "In Progress";
           }
           if (Object.entries(el?.audited_annualaccounts).length === 0) {
