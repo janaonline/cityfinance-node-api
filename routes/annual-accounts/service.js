@@ -480,11 +480,21 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel  \r\n"
+    "ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel, Form Status  \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
-
+  let statusList=[
+    'In Progress',
+    'Submitted',
+    'Not Submitted',
+    'Approved By State',
+    'Under Review By State',
+    'Rejected By State',
+    'Approved By MoHUA',
+    'Under Review By MoHUA',
+    'Rejected By MoHUA'
+  ]
   let Audited_data = await AnnualAccountData.aggregate([
     {
       $lookup: {
@@ -523,7 +533,12 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         inc_exp_schedules: "$audited.provisional_data.inc_exp_schedules.pdf.url",
         cash_flow: "$audited.provisional_data.cash_flow.pdf.url",
         auditor_report: "$audited.provisional_data.auditor_report.pdf.url",
-        standardized_excel: "$audited.standardized_data.excel.url"
+        standardized_excel: "$audited.standardized_data.excel.url",
+        audited_answer:"$audited.submit_annual_accounts",
+        unaudited_answer: "$unAudited.submit_annual_accounts",
+        isDraft:"$isDraft",
+        status:"$status",
+        role:"$actionTakenByRole"
       }
     }]).exec((err, data) => {
       if (err) {
@@ -555,6 +570,37 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
           if(!el.auditor_report){
             el.auditor_report = 'Not Submitted'
           }
+  
+          if(el.role == 'ULB' && el.isDraft){
+el['formStatus'] = statusList[0]
+          }else if(el.role == 'ULB' && !el.isDraft){
+            if(el.audited_answer && el.unaudited_answer){
+              el['formStatus'] = statusList[1]
+            }else{
+              el['formStatus'] = statusList[2]
+            }
+
+          }else if(el.role == 'STATE' && el.isDraft){
+            el['formStatus'] = statusList[4]
+          }else if(el.role == 'STATE' && !el.isDraft){
+            if(el.status =='APPROVED'){
+              el['formStatus'] = statusList[3]
+            }else if(el.status =='REJECTED'){
+              el['formStatus'] = statusList[5]
+            }
+
+          }else if(el.role == 'MoHUA' && el.isDraft){
+            el['formStatus'] = statusList[8]
+          }else if(el.role == 'MoHUA' && !el.isDraft){
+            if(el.status =='APPROVED'){
+              el['formStatus'] = statusList[7]
+            }else if(el.status =='REJECTED'){
+              el['formStatus'] = statusList[9]
+
+            }
+
+          }
+
         }
         for (el of data) {
           res.write(
@@ -582,6 +628,10 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
             "," +
             el.auditor_report +
             "," +
+            el.standardized_excel +
+            "," +
+            el.formStatus +
+            "," +
             "\r\n"
           );
         }
@@ -598,11 +648,21 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel \r\n"
+    "ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel, Form Status \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
-
+  let statusList=[
+    'In Progress',
+    'Submitted',
+    'Not Submitted',
+    'Approved By State',
+    'Under Review By State',
+    'Rejected By State',
+    'Approved By MoHUA',
+    'Under Review By MoHUA',
+    'Rejected By MoHUA'
+  ]
   let Unaudited_data = await AnnualAccountData.aggregate([
     {
       $lookup: {
@@ -640,7 +700,12 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         inc_exp: "$unAudited.provisional_data.inc_exp.pdf.url",
         inc_exp_schedules: "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
         cash_flow: "$unAudited.provisional_data.cash_flow.pdf.url",
-        standardized_excel: "$unAudited.standardized_data.excel.url"
+        standardized_excel: "$unAudited.standardized_data.excel.url",
+        audited_answer:"$audited.submit_annual_accounts",
+        unaudited_answer: "$unAudited.submit_annual_accounts",
+        isDraft:"$isDraft",
+        status:"$status",
+        role:"$actionTakenByRole"
       }
     }]).exec((err, data) => {
       if (err) {
@@ -669,6 +734,36 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
           if(!el.cash_flow){
             el.cash_flow = 'Not Submitted'
           }
+
+          if(el.role == 'ULB' && el.isDraft){
+            el['formStatus'] = statusList[0]
+                      }else if(el.role == 'ULB' && !el.isDraft){
+                        if(el.audited_answer && el.unaudited_answer){
+                          el['formStatus'] = statusList[1]
+                        }else{
+                          el['formStatus'] = statusList[2]
+                        }
+            
+                      }else if(el.role == 'STATE' && el.isDraft){
+                        el['formStatus'] = statusList[4]
+                      }else if(el.role == 'STATE' && !el.isDraft){
+                        if(el.status =='APPROVED'){
+                          el['formStatus'] = statusList[3]
+                        }else if(el.status =='REJECTED'){
+                          el['formStatus'] = statusList[5]
+                        }
+            
+                      }else if(el.role == 'MoHUA' && el.isDraft){
+                        el['formStatus'] = statusList[8]
+                      }else if(el.role == 'MoHUA' && !el.isDraft){
+                        if(el.status =='APPROVED'){
+                          el['formStatus'] = statusList[7]
+                        }else if(el.status =='REJECTED'){
+                          el['formStatus'] = statusList[9]
+            
+                        }
+            
+                      }
          
         }
         for (el of data) {
@@ -694,6 +789,10 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
             el.inc_exp_schedules +
             "," +
             el.cash_flow +
+            "," +
+            el.standardized_excel +
+            "," +
+            el.formStatus +
             "," +
             "\r\n"
           );

@@ -4,6 +4,7 @@ const Sate = require("../../models/State");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
+const ExcelJS = require("exceljs");
 
 const revenueList = ["11001", "130", "140", "150", "180", "110"];
 const ObjectIdOfRevenueList = [
@@ -23,7 +24,7 @@ const expenseCode = [
 
 const dataAvailability = async (req, res) => {
   try {
-    const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType } =
+    const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType, csv } =
       req.body;
 
     if (!financialYear) {
@@ -70,16 +71,19 @@ const dataAvailability = async (req, res) => {
       });
     }
 
-    query.push(
-      {
-        $group: {
-          _id: "$ulb._id",
-        },
+    query.push({
+      $group: {
+        _id: "$ulb._id",
       },
-      {
+    });
+
+    if (csv) {
+      return getExcelForAvailability(res, query);
+    } else {
+      query.push({
         $count: "ulb",
-      }
-    );
+      });
+    }
 
     if (getQuery) return Response.OK(res, query);
 
@@ -96,6 +100,50 @@ const dataAvailability = async (req, res) => {
     return Response.DbError(res, error, error.message);
   }
 };
+
+async function getExcelForAvailability(res, query) {
+  let ulbCount = await Ulb.find()
+    .populate("state")
+    .select({ _id: 1, name: 1, code: 1, censusCode: 1, state: 1 })
+    .lean();
+  let data = await UlbLedger.aggregate(query);
+  data = JSON.parse(JSON.stringify(data));
+  let ulbMap = data.map((value) => value._id);
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Data Availability");
+  worksheet.columns = [
+    { header: "ULB name", key: "ulb" },
+    { header: "ULB Code", key: "code" },
+    { header: "Census/SB Code", key: "censusCode" },
+    { header: "State Name", key: "state" },
+    { header: "Data Availability", key: "status" },
+  ];
+  ulbCount.map((value) => {
+    value = JSON.parse(JSON.stringify(value));
+    if (value._id == "5fa281a3c7ffa964f0cfa9fb") {
+      console.log("Ss");
+    }
+    let obj = {
+      ulb: value.name,
+      code: value.code,
+      censusCode: value.censusCode,
+      state: value.state.name,
+      status: ulbMap.includes(value._id) ? "True" : "False",
+    };
+    worksheet.addRow(obj);
+  });
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  );
+  res.setHeader(
+    "Content-Disposition",
+    "attachment; filename=" + "Data_Availability.xlsx"
+  );
+  return workbook.xlsx.write(res).then(function () {
+    res.status(200).end();
+  });
+}
 
 const chartData = async (req, res) => {
   try {
@@ -262,7 +310,7 @@ const cardsData = async (req, res) => {
     if (Array.isArray(financialYear)) financialYear = financialYear[0];
     let tempYear = financialYear
       .split("-")
-      .map((value) => Number(value) + 1)
+      .map((value) => Number(value) - 1)
       .join("-");
     financialYear = [financialYear, tempYear];
 
@@ -473,7 +521,7 @@ const cardsData = async (req, res) => {
       });
       return { [value._id.financialYear]: { ...value } };
     });
-    return Response.OK(res, ...newData);
+    return Response.OK(res, { ...newData[0], ...newData[1] });
   } catch (error) {
     console.log(error);
     return Response.DbError(res, null);
@@ -790,7 +838,7 @@ function getUlbMatchQuery(stateIds, ulbTypeIds) {
 
 const topPerForming = async (req, res) => {
   try {
-    const { revenueId, stateIds, getQuery } = req.body;
+    const { revenueId, stateIds, getQuery, csv, revenueName } = req.body;
 
     if (!revenueId)
       return Response.BadRequest(res, null, "wrong revenueIds or stateIds");
@@ -813,9 +861,21 @@ const topPerForming = async (req, res) => {
         $unwind: "$ulb",
       },
       {
+        $lookup: {
+          from: "states",
+          localField: "ulb.state",
+          foreignField: "_id",
+          as: "state",
+        },
+      },
+      {
+        $unwind: "$state",
+      },
+      {
         $group: {
           _id: "$ulb.state",
           amount: { $sum: "$amount" },
+          name: { $first: "$state.name" },
         },
       },
       { $sort: { amount: -1 } },
@@ -846,6 +906,28 @@ const topPerForming = async (req, res) => {
     if (data.length == 0)
       return Response.BadRequest(res, null, "No data Found");
 
+    if (csv) {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Top Performing");
+      worksheet.columns = [
+        { header: "Name", key: "name" },
+        { header: revenueName, key: "amount" },
+      ];
+      data.map((value) => {
+        worksheet.addRow(value);
+      });
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=" + "Data_Availability.xlsx"
+      );
+      return workbook.xlsx.write(res).then(function () {
+        res.status(200).end();
+      });
+    }
     return Response.OK(res, data);
   } catch (error) {
     console.log(error);
