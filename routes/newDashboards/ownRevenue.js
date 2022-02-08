@@ -5,11 +5,10 @@ const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
-
-const revenueList = ["11001", "130", "140", "150", "180", "110"];
+const util = require('util')
+const revenueList = [ "130", "140", "150", "180", "110"];
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
-  "5dd10c2285c951b54ec1d737",
   "5dd10c2685c951b54ec1d762",
   "5dd10c2485c951b54ec1d74a",
   "5dd10c2885c951b54ec1d77e",
@@ -86,15 +85,62 @@ const dataAvailability = async (req, res) => {
     }
 
     if (getQuery) return Response.OK(res, query);
+let query_noData = [
+  {
+    $lookup: {
+      from: "ulbledgers",
+      let: {
+        firstUser: financialYear,
+        secondUser: "$_id",
+      },
+      pipeline: [
+        {
+          $match: {
+            $expr: {
+              $and: [
+                {
+                  $eq: ["$financialYear", "$$firstUser"],
+                },
+                {
+                  $eq: ["$ulb", "$$secondUser"],
+                },
+              ],
+            },
+          },
+        },
+      ],
+      as: "ledgerData",
+    },
+   
+  },
+{
+  $match:
 
+ {
+   ledgerData: {$size: 0},
+population:{$gte:4000000}
+},
+  
+}
+
+
+]
+
+let noData = await Ulb.aggregate(query_noData)
     let data = await UlbLedger.aggregate(query);
     let ulbCount = await Ulb.find().count();
 
     data = data[0]?.ulb ?? 0;
-
+let names =[]
+if(noData){
+  noData.forEach(el=>{
+names.push(el.name)
+  })
+}
     data = (data / ulbCount) * 100;
 
-    return Response.OK(res, { percent: data });
+    return Response.OK(res, { percent: data,
+    names: names });
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);
@@ -508,7 +554,8 @@ const cardsData = async (req, res) => {
     );
 
     if (getQuery) return Response.OK(res, { query, query2 });
-
+console.log(util.inspect(query, {showHidden : false, depth : null}))
+console.log(util.inspect(query2, {showHidden : false, depth : null}))
     let data = UlbLedger.aggregate(query);
     let ulbCountExpense = UlbLedger.aggregate(query2);
     data = await Promise.all([data, ulbCountExpense]);
@@ -645,7 +692,7 @@ const tableData = async (req, res) => {
     );
 
     if (getQuery) return Response.OK(res, query);
-
+console.log(util.inspect(query,{showHidden: false, depth: null}))
     let data = await UlbLedger.aggregate(query);
 
     let newData = {
