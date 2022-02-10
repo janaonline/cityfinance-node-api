@@ -8,6 +8,7 @@ const ExcelJS = require("exceljs");
 const util = require('util')
 const revenueList = [ "130", "140", "150", "180", "110"];
 const ObjectIdOfRevenueList = [
+  "5dd10c2285c951b54ec1d737",
   "5dd10c2485c951b54ec1d74b",
   "5dd10c2685c951b54ec1d762",
   "5dd10c2485c951b54ec1d74a",
