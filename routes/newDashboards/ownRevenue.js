@@ -557,19 +557,26 @@ const cardsData = async (req, res) => {
     if (getQuery) return Response.OK(res, { query, query2 });
 console.log(util.inspect(query, {showHidden : false, depth : null}))
 console.log(util.inspect(query2, {showHidden : false, depth : null}))
-    let data = UlbLedger.aggregate(query);
-    let ulbCountExpense = UlbLedger.aggregate(query2);
-    data = await Promise.all([data, ulbCountExpense]);
-    let newData = data[0].map((value) => {
-      let expense = data[1].find(
-        (innerValue) => innerValue._id.financialYear == value._id.financialYear
-      );
-      Object.assign(value, {
-        totalUlbMeetExpense: expense.totalUlbMeetExpense,
-      });
-      return { [value._id.financialYear]: { ...value } };
+let redisKey =  "OwnRevenueCards";
+
+  // let dataCard = await Redis.getDataPromise(redisKey); 
+
+  let data = UlbLedger.aggregate(query);
+  let ulbCountExpense = UlbLedger.aggregate(query2);
+  data = await Promise.all([data, ulbCountExpense]);
+   dataCard = data[0].map((value) => {
+    let expense = data[1].find(
+      (innerValue) => innerValue._id.financialYear == value._id.financialYear
+    );
+    Object.assign(value, {
+      totalUlbMeetExpense: expense.totalUlbMeetExpense,
     });
-    return Response.OK(res, { ...newData[0], ...newData[1] });
+    return { [value._id.financialYear]: { ...value } };
+  });
+  // dataCard = parseData(dataCard);
+  // Redis.set(redisKey, JSON.stringify(dataCard));
+
+    return Response.OK(res, { ...dataCard[0], ...dataCard[1] });
   } catch (error) {
     console.log(error);
     return Response.DbError(res, null);
