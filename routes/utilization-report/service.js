@@ -5,6 +5,7 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Category = require('../../models/Category')
+const FORM_STATUS = require('../../util/newStatusList')
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -301,7 +302,7 @@ exports.report = async(req,res) =>{
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, ULB Code,STATE , Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs) \r\n"
+    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs) \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -335,7 +336,10 @@ exports.report = async(req,res) =>{
                         unutilisedTiedGrants:"$grantPosition.unUtilizedPrevYr",
                         grantReceived:"$grantPosition.receivedDuringYr",
                         expenditureIncurred:"$grantPosition.expDuringYr",
-                        closingBalance: "$grantPosition.closingBal"
+                        closingBalance: "$grantPosition.closingBal",
+                        isDraft:"$isDraft",
+                        status:"$status",
+                        role:"$actionTakenByRole"
                         }
                     }
     ]
@@ -343,6 +347,32 @@ exports.report = async(req,res) =>{
  let data =    await UtilizationReport.aggregate(query)
 
  if(data){
+   for(el of data){
+    if(el.role == 'ULB' && el.isDraft){
+      el['formStatus'] = FORM_STATUS.In_Progress
+                }else if(el.role == 'ULB' && !el.isDraft){
+                  el['formStatus'] = FORM_STATUS.Submitted
+                }else if(el.role == 'STATE' && el.isDraft){
+                  el['formStatus'] = FORM_STATUS.Under_Review_By_State
+                }else if(el.role == 'STATE' && !el.isDraft){
+                  if(el.status =='APPROVED'){
+                    el['formStatus'] = FORM_STATUS.Approved_By_State
+                  }else if(el.status =='REJECTED'){
+                    el['formStatus'] = FORM_STATUS.Rejected_By_State
+                  }
+      
+                }else if(el.role == 'MoHUA' && el.isDraft){
+                  el['formStatus'] = FORM_STATUS.Under_Review_By_MoHUA
+                }else if(el.role == 'MoHUA' && !el.isDraft){
+                  if(el.status =='APPROVED'){
+                    el['formStatus'] = FORM_STATUS.Approved_By_MoHUA
+                  }else if(el.status =='REJECTED'){
+                    el['formStatus'] = FORM_STATUS.Rejected_By_MoHUA
+      
+                  }
+      
+                }
+   }
   for (el of data) {
     res.write(
       el.ulbName +
@@ -350,6 +380,8 @@ exports.report = async(req,res) =>{
       el.ulbCode +
       "," +
       el.stateName +
+      "," +
+      el.formStatus +
       "," +
       el.unutilisedTiedGrants +
       "," +
