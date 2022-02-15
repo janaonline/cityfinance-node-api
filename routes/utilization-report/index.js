@@ -8,7 +8,8 @@ const {
   remove,
   readById,
   action,
-  report
+  report,
+  dashboard
 } = require("./service");
 
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
@@ -30,6 +31,7 @@ router.post(
 );
 //read all
 router.get("/utilization-report", verifyToken, read);
+router.get("/utilization-report/dashboard", verifyToken, dashboard);
 //read by id
 router.get("/utilization-report/:financialYear/:designYear", verifyToken, readById);
 router.get("/utilization-report/:financialYear/:designYear/:ulb_id", verifyToken, readById);

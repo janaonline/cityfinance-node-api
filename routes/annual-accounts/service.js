@@ -841,8 +841,20 @@ let state = user?.state ?? state_id
 if(user.role == 'STATE'){
 let query_audited = [
   {
+    $lookup:{
+from:"ulbs",
+localField:"ulb",
+foreignField:"_id",
+as:"ulb"
+    }
+  },
+  {
+    $unwind:"$ulb"
+  },
+  {
 $match:{
-  design_year: ObjectId(design_year)
+  design_year: ObjectId(design_year),
+  "ulb.state": ObjectId(state)
 }
   },
   {
@@ -870,8 +882,20 @@ $match:{
   ]
   let query_unAudited = [
     {
+      $lookup:{
+  from:"ulbs",
+  localField:"ulb",
+  foreignField:"_id",
+  as:"ulb"
+      }
+    },
+    {
+      $unwind:"$ulb"
+    },
+    {
       $match:{
-        design_year: ObjectId(design_year)
+        design_year: ObjectId(design_year),
+        "ulb.state": ObjectId(state)
       }
         },
     {
@@ -897,6 +921,48 @@ $match:{
                   ulb:{$addToSet:"$ulb"}
               }
           } ,
+    ]
+    let queryNotStarted=[
+      {
+        $match:{
+          state: ObjectId(state)
+        }
+      },
+      {
+        $lookup: {
+          from: "annualaccountdatas",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "annAccData",
+        },
+      },
+      {
+        $match:{
+          annAccData:{
+            $size:0
+          }
+        }
+      }
+
+
     ]
 
     let { audited, unAudited} = await new Promise(async (resolve, reject) => {
@@ -994,7 +1060,9 @@ data.unAudited.approvedbyState = data.unAudited.approvedbyState + el.count
 }
 
 }
-
+let notStartedData = await Ulb.aggregate(queryNotStarted)
+data.audited.notStarted = notStartedData.length
+data.unAudited.notStarted = notStartedData.length
 return res.status(200).json({
   success: true,
   data: data

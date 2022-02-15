@@ -5,6 +5,7 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Category = require('../../models/Category')
+const catchAsync = require('../../util/catchAsync.js')
 const FORM_STATUS = require('../../util/newStatusList')
 const {
   emailTemplate: { utilizationRequestAction },
@@ -406,3 +407,150 @@ exports.report = async(req,res) =>{
 
  }
 }
+
+exports.dashboard = catchAsync( async(req,res)=>{
+  let data = {
+    notStarted:0,
+    inProgress:0,
+    submitted:0,
+    approvedByState:0,
+    approvedByMoHUA:0,
+    uncertain:0
+  }
+  let user = req.decoded;
+  let {state_id, design_year} = req.query
+  if(state_id == 'null'){
+    state_id = null
+  }
+  let state = user?.state ?? state_id
+  
+  if(!user){
+    return res.status(400).json({
+      success: false,
+      message:"User not Found"
+    })
+  }
+
+  if(user.role == 'STATE'){
+    let query = [
+      {
+        $lookup:{
+    from:"ulbs",
+    localField:"ulb",
+    foreignField:"_id",
+    as:"ulb"
+        }
+      },
+      {
+        $unwind:"$ulb"
+      },
+{
+  $match:{
+
+    "ulb.state": ObjectId(state),
+    designYear : ObjectId(design_year) 
+  }
+},
+{
+  $group:{
+    _id:{
+      role:"$actionTakenByRole",
+      state:"$status",
+      isDraft:"$isDraft",
+    },
+count:{$sum:1},
+    ulb:{$addToSet:"$ulb._id"}
+  }
+}
+
+    ]
+    let queryNotStarted=[
+      {
+        $match:{
+
+          state: ObjectId(state)
+        }
+      },
+      {
+        $lookup: {
+          from: "utilizationreports",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$designYear", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "utilData",
+        },
+      },
+      
+      {
+        $match:{
+          utilData:{
+            $size:0
+          }
+        }
+      }
+
+
+    ]
+
+    let utilData = await UtilizationReport.aggregate(query);
+   let notStartedData =  await Ulb.aggregate(queryNotStarted)
+    if(utilData.length>0){
+      for(let el of utilData){
+        let elem = el._id;
+        if(elem.role == 'ULB' && elem.isDraft){
+data.inProgress = data.inProgress + el.count 
+        }else if(elem.role == 'ULB' && !elem.isDraft){
+data.submitted = data.submitted + el.count 
+        }else if(elem.role == 'STATE' && elem.isDraft){
+          data.submitted = data.submitted + el.count 
+        }else if(elem.role == 'STATE' && !elem.isDraft){
+          if(elem.status == 'APPROVED'){
+data.approvedByState = data.approvedByState  + el.count  
+          }else if(elem.status == 'REJECTED'){
+data.inProgress = data.inProgress + el.count 
+          }
+        } else if(elem.role == 'MoHUA' && elem.isDraft){
+          data.approvedByState = data.approvedByState + el.count 
+        }else if(elem.role == 'MoHUA' && !elem.isDraft){
+          if(elem.status == 'APPROVED'){
+data.approvedByMoHUA = data.approvedByMoHUA  + el.count  
+          }else if(elem.status == 'REJECTED'){
+data.inProgress = data.inProgress + el.count 
+          }
+        }else{
+data.uncertain = data.uncertain + el.count 
+        }
+      }
+
+    }
+data.notStarted = notStartedData.length
+    return res.status(200).json({
+      success: true,
+      data: data
+    })
+  }else if(user.role == 'MoHUA' || 'ADMIN' || 'PARTNER'){
+
+  }else{
+    return res.status(403).json({
+      success: false,
+      message:"Not Authorized to Access this API"
+    })
+  }
+})
