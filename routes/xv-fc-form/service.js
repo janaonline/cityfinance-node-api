@@ -332,162 +332,309 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
             "$xvfcformDataApproved.waterManagement.houseHoldCoveredWithSewerage",
           houseHoldCoveredPipedSupply:
             "$xvfcformDataApproved.waterManagement.houseHoldCoveredPipedSupply",
-          ulb: "$approvedULBs"
-
+          ulb: "$approvedULBs",
+population:"$approvedULBs.population"
         },
       },
       {
-        $group: {
-          _id: '',
-          ulbData: { $addToSet: "$ulb" },
+        $project: {
+    
+          ulbData:  "$ulb" ,
+            population:"$population",
           waterSuppliedPerDay2021: {
-            $avg: {
+        
               $convert: {
                 input: "$waterSuppliedPerDay.baseline.2021",
                 to: "double",
               },
-            },
+            
           },
           waterSuppliedPerDay2122: {
-            $avg: {
+
               $convert: {
                 input: "$waterSuppliedPerDay.target.2122",
                 to: "double",
               },
-            },
+           
           },
           waterSuppliedPerDay2223: {
-            $avg: {
+        
               $convert: {
                 input: "$waterSuppliedPerDay.target.2223",
                 to: "double",
               },
-            },
+          
           },
           waterSuppliedPerDay2324: {
-            $avg: {
+    
               $convert: {
                 input: "$waterSuppliedPerDay.target.2324",
                 to: "double",
               },
-            },
+       
           },
           waterSuppliedPerDay2425: {
-            $avg: {
+        
               $convert: {
                 input: "$waterSuppliedPerDay.target.2425",
                 to: "double",
               },
-            },
+         
           },
           reduction2021: {
-            $avg: {
+     
               $convert: { input: "$reduction.baseline.2021", to: "double" },
-            },
+           
           },
           reduction2122: {
-            $avg: {
+     
               $convert: { input: "$reduction.target.2122", to: "double" },
-            },
+        
           },
           reduction2223: {
-            $avg: {
+    
               $convert: { input: "$reduction.target.2223", to: "double" },
-            },
+            
           },
           reduction2324: {
-            $avg: {
+     
               $convert: { input: "$reduction.target.2324", to: "double" },
-            },
+            
           },
           reduction2425: {
-            $avg: {
+     
               $convert: { input: "$reduction.target.2425", to: "double" },
-            },
+            
           },
           houseHoldCoveredWithSewerage2021: {
-            $avg: {
+           
               $convert: { input: "$houseHoldCoveredWithSewerage.baseline.2021", to: "double" },
-            },
+            
           },
           houseHoldCoveredWithSewerage2122: {
-            $avg: {
+      
               $convert: {
                 input: "$houseHoldCoveredWithSewerage.target.2122",
                 to: "double",
               },
-            },
+        
           },
           houseHoldCoveredWithSewerage2223: {
-            $avg: {
+
               $convert: {
                 input: "$houseHoldCoveredWithSewerage.target.2223",
                 to: "double",
               },
-            },
+          
           },
           houseHoldCoveredWithSewerage2324: {
-            $avg: {
+      
               $convert: {
                 input: "$houseHoldCoveredWithSewerage.target.2324",
                 to: "double",
               },
-            },
+            
           },
           houseHoldCoveredWithSewerage2425: {
-            $avg: {
+      
               $convert: {
                 input: "$houseHoldCoveredWithSewerage.target.2425",
                 to: "double",
               },
-            },
+            
           },
           houseHoldCoveredPipedSupply2021: {
-            $avg: {
+      
               $convert: {
                 input: "$houseHoldCoveredPipedSupply.baseline.2021",
                 to: "double",
               },
-            },
+       
           },
           houseHoldCoveredPipedSupply2122: {
-            $avg: {
+       
               $convert: {
                 input: "$houseHoldCoveredPipedSupply.target.2122",
                 to: "double",
               },
-            },
+            
           },
           houseHoldCoveredPipedSupply2223: {
-            $avg: {
+         
               $convert: {
                 input: "$houseHoldCoveredPipedSupply.target.2223",
                 to: "double",
               },
-            },
+            
           },
           houseHoldCoveredPipedSupply2324: {
-            $avg: {
+
               $convert: {
                 input: "$houseHoldCoveredPipedSupply.target.2324",
                 to: "double",
               },
-            },
+         
           },
           houseHoldCoveredPipedSupply2425: {
-            $avg: {
+       
               $convert: {
                 input: "$houseHoldCoveredPipedSupply.target.2425",
                 to: "double",
               },
-            },
+       
           },
 
-          total: { $sum: 1 },
         },
 
 
-      }
+      },
+      
+      {
+          $group:{
+         _id:"",
+         ulbData:{$addToSet:"$ulbData._id"},
+         total:{$sum:1},
+                  "waterSuppliedPerDay2021n":{
+                      $sum:{$multiply:["$waterSuppliedPerDay2021","$population"]}
+                      },
+                      "waterSuppliedPerDay2021d":{$sum:"$population"},
+                      
+                            "waterSuppliedPerDay2122n":{
+                      $sum:{$multiply:["$waterSuppliedPerDay2122","$population"]}
+                      },
+                      "waterSuppliedPerDay2122d":{$sum:"$population"},
+                      
+                          "waterSuppliedPerDay2223n":{
+                      $sum:{$multiply:["$waterSuppliedPerDay2223","$population"]}
+                      },
+                      "waterSuppliedPerDay2223d":{$sum:"$population"},
+                      
+                          "waterSuppliedPerDay2324n":{
+                      $sum:{$multiply:["$waterSuppliedPerDay2324","$population"]}
+                      },
+                      "waterSuppliedPerDay2324d":{$sum:"$population"},
+                      
+                          "waterSuppliedPerDay2425n":{
+                      $sum:{$multiply:["$waterSuppliedPerDay2425","$population"]}
+                      },
+                      "waterSuppliedPerDay2425d":{$sum:"$population"},
+                      
+                          "reduction2021n":{
+                      $sum:{$multiply:["$reduction2021","$population"]}
+                      },
+                      "reduction2021d":{$sum:"$population"},
+                      
+                             "reduction2122n":{
+                      $sum:{$multiply:["$reduction2122","$population"]}
+                      },
+                      "reduction2122d":{$sum:"$population"},
+                      
+                             "reduction2223n":{
+                      $sum:{$multiply:["$reduction2223","$population"]}
+                      },
+                      "reduction2223d":{$sum:"$population"},
+                      
+                             "reduction2324n":{
+                      $sum:{$multiply:["$reduction2324","$population"]}
+                      },
+                      "reduction2324d":{$sum:"$population"},
+                      
+                             "reduction2425n":{
+                      $sum:{$multiply:["$reduction2425","$population"]}
+                      },
+                      "reduction2425d":{$sum:"$population"},
+                      
+                             "houseHoldCoveredWithSewerage2021n":{
+                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2021","$population"]}
+                      },
+                      "houseHoldCoveredWithSewerage2021d":{$sum:"$population"},
+                      
+                       "houseHoldCoveredWithSewerage2122n":{
+                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2122","$population"]}
+                      },
+                      "houseHoldCoveredWithSewerage2122d":{$sum:"$population"},
+                      
+                       "houseHoldCoveredWithSewerage2223n":{
+                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2223","$population"]}
+                      },
+                      "houseHoldCoveredWithSewerage2223d":{$sum:"$population"},
+                      
+                       "houseHoldCoveredWithSewerage2324n":{
+                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2324","$population"]}
+                      },
+                      "houseHoldCoveredWithSewerage2324d":{$sum:"$population"},
+                      
+                       "houseHoldCoveredWithSewerage2425n":{
+                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2425","$population"]}
+                      },
+                      "houseHoldCoveredWithSewerage2425d":{$sum:"$population"},
+                      
+                      
+                           "houseHoldCoveredPipedSupply2021n":{
+                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2021","$population"]}
+                      },
+                      "houseHoldCoveredPipedSupply2021d":{$sum:"$population"},
+                      
+                                  "houseHoldCoveredPipedSupply2122n":{
+                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2122","$population"]}
+                      },
+                      "houseHoldCoveredPipedSupply2122d":{$sum:"$population"},
+                      
+                                  "houseHoldCoveredPipedSupply2223n":{
+                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2223","$population"]}
+                      },
+                      "houseHoldCoveredPipedSupply2223d":{$sum:"$population"},
+                      
+                                  "houseHoldCoveredPipedSupply2324n":{
+                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2324","$population"]}
+                      },
+                      "houseHoldCoveredPipedSupply2324d":{$sum:"$population"},
+                      
+                      
+                                  "houseHoldCoveredPipedSupply2425n":{
+                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2425","$population"]}
+                      },
+                      "houseHoldCoveredPipedSupply2425d":{$sum:"$population"},
+
+                      
+                  }
+              
+          },
+          
+          {
+              $project:{
+                total:1,
+                ulbData:1,
+                  waterSuppliedPerDay2021: {$divide:["$waterSuppliedPerDay2021n", "$waterSuppliedPerDay2021d"]},
+                    waterSuppliedPerDay2122: {$divide:["$waterSuppliedPerDay2122n", "$waterSuppliedPerDay2122d"]},
+                      waterSuppliedPerDay2223: {$divide:["$waterSuppliedPerDay2223n", "$waterSuppliedPerDay2223d"]},
+                        waterSuppliedPerDay2324: {$divide:["$waterSuppliedPerDay2324n", "$waterSuppliedPerDay2324d"]},
+                          waterSuppliedPerDay2425: {$divide:["$waterSuppliedPerDay2425n", "$waterSuppliedPerDay2425d"]},
+                          
+                           reduction2021: {$divide:["$reduction2021n", "$reduction2021d"]},
+                    reduction2122: {$divide:["$reduction2122n", "$reduction2122d"]},
+                      reduction2223: {$divide:["$reduction2223n", "$reduction2223d"]},
+                        reduction2324: {$divide:["$reduction2324n", "$reduction2324d"]},
+                          reduction2425: {$divide:["$reduction2425n", "$reduction2425d"]},
+                          
+                          
+                          houseHoldCoveredWithSewerage2021: {$divide:["$houseHoldCoveredWithSewerage2021n", "$houseHoldCoveredWithSewerage2021d"]},
+                    houseHoldCoveredWithSewerage2122: {$divide:["$houseHoldCoveredWithSewerage2122n", "$houseHoldCoveredWithSewerage2122d"]},
+                     houseHoldCoveredWithSewerage2223: {$divide:["$houseHoldCoveredWithSewerage2223n", "$houseHoldCoveredWithSewerage2223d"]},
+                       houseHoldCoveredWithSewerage2324: {$divide:["$houseHoldCoveredWithSewerage2324n", "$houseHoldCoveredWithSewerage2324d"]},
+                         houseHoldCoveredWithSewerage2425: {$divide:["$houseHoldCoveredWithSewerage2425n", "$houseHoldCoveredWithSewerage2425d"]},
+                         
+houseHoldCoveredPipedSupply2021: {$divide:["$houseHoldCoveredPipedSupply2021n", "$houseHoldCoveredPipedSupply2021d"]},
+houseHoldCoveredPipedSupply2122: {$divide:["$houseHoldCoveredPipedSupply2122n", "$houseHoldCoveredPipedSupply2122d"]},
+houseHoldCoveredPipedSupply2223: {$divide:["$houseHoldCoveredPipedSupply2223n", "$houseHoldCoveredPipedSupply2223d"]},
+houseHoldCoveredPipedSupply2324: {$divide:["$houseHoldCoveredPipedSupply2324n", "$houseHoldCoveredPipedSupply2324d"]},
+houseHoldCoveredPipedSupply2425: {$divide:["$houseHoldCoveredPipedSupply2425n", "$houseHoldCoveredPipedSupply2425d"]},
+                          
+                          
+                          
+                  
+                  }
+              }
 
     ]
 
@@ -2227,11 +2374,7 @@ module.exports.action = async (req, res) => {
               .exec();
 
             if (data["status"] == "APPROVED" && user.role == "MoHUA") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              let mailOptions
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate =
@@ -2240,9 +2383,32 @@ module.exports.action = async (req, res) => {
               ulbUser.accountantEmail
                 ? ulbEmails.push(ulbUser.accountantEmail)
                 : "";
-              (mailOptions.to = ulbEmails.join()),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbEmails.join()),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                   mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: ulbEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
               /** STATE TRIGGER */
               let stateEmails = [];
@@ -2260,26 +2426,72 @@ module.exports.action = async (req, res) => {
                     ulbUser.name,
                     d.name
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
             }
             if (data["status"] == "APPROVED" && user.role == "STATE") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              // let mailOptions = {
+              //   to: "",
+              //   subject: "",
+              //   html: "",
+              // };
 
               let UlbTemplate =
                 await Service.emailTemplate.xvUploadApprovalByStateToUlb(
                   ulbUser.name
                 );
-              (mailOptions.to = ulbUser.email),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbUser.email),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: [ulbUser.email]
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
               /** STATE TRIGGER */
               let MohuaUser = await User.find({
@@ -2294,9 +2506,32 @@ module.exports.action = async (req, res) => {
                     ulbUser.name,
                     ulbUser.state.name
                   );
-                (mailOptions.to = d.email),
-                  (mailOptions.subject = MohuaTemplate.subject),
-                  (mailOptions.html = MohuaTemplate.body);
+                // (mailOptions.to = d.email),
+                //   (mailOptions.subject = MohuaTemplate.subject),
+                //   (mailOptions.html = MohuaTemplate.body);
+                  mailOptions =     {
+                    Destination: {
+                      /* required */
+                      ToAddresses: [d.email]
+                    },
+                    Message: {
+                      /* required */
+                      Body: {
+                        /* required */
+                        Html: {
+                          Charset: "UTF-8",
+                          Data: MohuaTemplate.body
+                        },
+                      },
+                      Subject: {
+                        Charset: 'UTF-8',
+                        Data: MohuaTemplate.subject
+                      }
+                    },
+                    Source: process.env.EMAIL,
+                    /* required */
+                    ReplyToAddresses: [process.env.EMAIL],
+                  }
                 Service.sendEmail(mailOptions);
               }
 
@@ -2316,9 +2551,32 @@ module.exports.action = async (req, res) => {
                     ulbUser.name,
                     d.name
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
 
@@ -2337,11 +2595,7 @@ module.exports.action = async (req, res) => {
               }
             }
             if (data["status"] == "REJECTED" && user.role == "MoHUA") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              let mailOptions 
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
@@ -2353,9 +2607,32 @@ module.exports.action = async (req, res) => {
               ulbUser.accountantEmail
                 ? ulbEmails.push(ulbUser.accountantEmail)
                 : "";
-              (mailOptions.to = ulbEmails.join()),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbEmails.join()),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: ulbEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
 
               /** STATE TRIGGER */
@@ -2375,18 +2652,37 @@ module.exports.action = async (req, res) => {
                     d.name,
                     value.reason
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
             }
             if (data["status"] == "REJECTED" && user.role == "STATE") {
-              let mailOptions = {
-                to: "",
-                subject: "",
-                html: "",
-              };
+              let mailOptions 
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
@@ -2398,9 +2694,32 @@ module.exports.action = async (req, res) => {
               ulbUser.accountantEmail
                 ? ulbEmails.push(ulbUser.accountantEmail)
                 : "";
-              (mailOptions.to = ulbEmails.join()),
-                (mailOptions.subject = UlbTemplate.subject),
-                (mailOptions.html = UlbTemplate.body);
+              // (mailOptions.to = ulbEmails.join()),
+              //   (mailOptions.subject = UlbTemplate.subject),
+              //   (mailOptions.html = UlbTemplate.body);
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: ulbEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: UlbTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: UlbTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
               Service.sendEmail(mailOptions);
 
               /** STATE TRIGGER */
@@ -2420,9 +2739,32 @@ module.exports.action = async (req, res) => {
                     d.name,
                     value.reason
                   );
-                mailOptions.to = stateEmails.join();
-                mailOptions.subject = stateTemplate.subject;
-                mailOptions.html = stateTemplate.body;
+                // mailOptions.to = stateEmails.join();
+                // mailOptions.subject = stateTemplate.subject;
+                // mailOptions.html = stateTemplate.body;
+                mailOptions =     {
+                  Destination: {
+                    /* required */
+                    ToAddresses: stateEmails.join()
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: stateTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: stateTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
             }
@@ -2500,11 +2842,7 @@ module.exports.multipleApprove = async (req, res) => {
         { _id: ObjectId(prevState._id) },
         { $set: data, $push: { history: history } }
       );
-      let mailOptions = {
-        to: "",
-        subject: "",
-        html: "",
-      };
+      let mailOptions 
       /** ULB TRIGGER */
       let ulbEmails = [];
       let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
@@ -2512,9 +2850,32 @@ module.exports.multipleApprove = async (req, res) => {
       );
       ulbUser.email ? ulbEmails.push(ulbUser.email) : "";
       ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail) : "";
-      (mailOptions.to = ulbEmails.join()),
-        (mailOptions.subject = UlbTemplate.subject),
-        (mailOptions.html = UlbTemplate.body);
+      // (mailOptions.to = ulbEmails.join()),
+      //   (mailOptions.subject = UlbTemplate.subject),
+      //   (mailOptions.html = UlbTemplate.body);
+        mailOptions =     {
+          Destination: {
+            /* required */
+            ToAddresses: ulbEmails.join()
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: UlbTemplate.body
+              },
+            },
+            Subject: {
+              Charset: 'UTF-8',
+              Data: UlbTemplate.subject
+            }
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        }
       Service.sendEmail(mailOptions);
       /** STATE TRIGGER */
       let stateEmails = [];
@@ -2532,9 +2893,32 @@ module.exports.multipleApprove = async (req, res) => {
             ulbUser.name,
             d.name
           );
-        mailOptions.to = stateEmails.join();
-        mailOptions.subject = stateTemplate.subject;
-        mailOptions.html = stateTemplate.body;
+        // mailOptions.to = stateEmails.join();
+        // mailOptions.subject = stateTemplate.subject;
+        // mailOptions.html = stateTemplate.body;
+        mailOptions =     {
+          Destination: {
+            /* required */
+            ToAddresses: stateEmails.join()
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: stateTemplate.body
+              },
+            },
+            Subject: {
+              Charset: 'UTF-8',
+              Data: stateTemplate.subject
+            }
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        }
         Service.sendEmail(mailOptions);
       }
       return Response.OK(res, {}, ``);
@@ -2595,11 +2979,7 @@ module.exports.multipleReject = async (req, res) => {
         { _id: ObjectId(prevState._id) },
         { $set: data, $push: { history: history } }
       );
-      let mailOptions = {
-        to: "",
-        subject: "",
-        html: "",
-      };
+      let mailOptions
       /** ULB TRIGGER */
       let ulbEmails = [];
       let UlbTemplate = await Service.emailTemplate.xvUploadMultiRejectUlb(
@@ -2609,10 +2989,33 @@ module.exports.multipleReject = async (req, res) => {
       );
       ulbUser.email ? ulbEmails.push(ulbUser.email) : "";
       ulbUser.accountantEmail ? ulbEmails.push(ulbUser.accountantEmail) : "";
-      (mailOptions.to = ulbEmails.join()),
-        (mailOptions.subject = UlbTemplate.subject),
-        (mailOptions.html = UlbTemplate.body);
-      console.log(mailOptions);
+      // (mailOptions.to = ulbEmails.join()),
+      //   (mailOptions.subject = UlbTemplate.subject),
+      //   (mailOptions.html = UlbTemplate.body);
+      // console.log(mailOptions);
+      mailOptions =     {
+        Destination: {
+          /* required */
+          ToAddresses: ulbEmails.join()
+        },
+        Message: {
+          /* required */
+          Body: {
+            /* required */
+            Html: {
+              Charset: "UTF-8",
+              Data: UlbTemplate.body
+            },
+          },
+          Subject: {
+            Charset: 'UTF-8',
+            Data: UlbTemplate.subject
+          }
+        },
+        Source: process.env.EMAIL,
+        /* required */
+        ReplyToAddresses: [process.env.EMAIL],
+      }
       Service.sendEmail(mailOptions);
       /** STATE TRIGGER */
       let stateEmails = [];
@@ -2631,9 +3034,32 @@ module.exports.multipleReject = async (req, res) => {
             d.name,
             `<b>Reason for Rejection:</b> ${req.body.rejectReason}`
           );
-        mailOptions.to = stateEmails.join();
-        mailOptions.subject = stateTemplate.subject;
-        mailOptions.html = stateTemplate.body;
+        // mailOptions.to = stateEmails.join();
+        // mailOptions.subject = stateTemplate.subject;
+        // mailOptions.html = stateTemplate.body;
+        mailOptions =     {
+          Destination: {
+            /* required */
+            ToAddresses: stateEmails.join()
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: stateTemplate.body
+              },
+            },
+            Subject: {
+              Charset: 'UTF-8',
+              Data: stateTemplate.subject
+            }
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        }
         Service.sendEmail(mailOptions);
       }
       return Response.OK(res, {}, ``);

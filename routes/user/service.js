@@ -721,11 +721,34 @@ module.exports.create = async (req, res) => {
                         user.name,
                         link
                     );
-                    let mailOptions = {
-                        to: user.email,
-                        subject: template.subject,
-                        html: template.body
-                    };
+                    // let mailOptions = {
+                    //     to: user.email,
+                    //     subject: template.subject,
+                    //     html: template.body
+                    // };
+                    let    mailOptions =     {
+                        Destination: {
+                          /* required */
+                          ToAddresses: [user.email]
+                        },
+                        Message: {
+                          /* required */
+                          Body: {
+                            /* required */
+                            Html: {
+                              Charset: "UTF-8",
+                              Data:  template.body
+                            },
+                          },
+                          Subject: {
+                            Charset: 'UTF-8',
+                            Data:template.subject
+                          }
+                        },
+                        Source: process.env.EMAIL,
+                        /* required */
+                        ReplyToAddresses: [process.env.EMAIL],
+                      }
                     Service.sendEmail(mailOptions);
                     return Response.OK(res, user, 'User registered');
                 }

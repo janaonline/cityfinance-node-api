@@ -382,11 +382,34 @@ let stateData = await State.findOne({_id:ObjectId(state)}).lean()
     user?.name ?? 'User',
     amountClaimed
             )
-            let mailOptions = {
-                to: [user.email, "ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org"] ,
-                subject: template.subject,
-                html: template.body,
-            };
+            // let mailOptions = {
+            //     to: [user.email, "ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org"] ,
+            //     subject: template.subject,
+            //     html: template.body,
+            // };
+            let mailOptions =     {
+                Destination: {
+                  /* required */
+                  ToAddresses: [user.email,"ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org"]
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data:  template.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data:template.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
             Service.sendEmail(mailOptions);
         }
      

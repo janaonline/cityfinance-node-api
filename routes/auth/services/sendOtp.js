@@ -83,7 +83,30 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 });
             }
             if (user.email) {
-                sendEmail({ to: user.email, html: msg, subject: Subject })
+                let mailOptions =     {
+                    Destination: {
+                      /* required */
+                      ToAddresses: [user.email]
+                    },
+                    Message: {
+                      /* required */
+                      Body: {
+                        /* required */
+                        Html: {
+                          Charset: "UTF-8",
+                          Data: msg
+                        },
+                      },
+                      Subject: {
+                        Charset: 'UTF-8',
+                        Data: Subject
+                      }
+                    },
+                    Source: process.env.EMAIL,
+                    /* required */
+                    ReplyToAddresses: [process.env.EMAIL],
+                  }
+                sendEmail(mailOptions)
             }
             return res.status(200).json({
                 success: true,

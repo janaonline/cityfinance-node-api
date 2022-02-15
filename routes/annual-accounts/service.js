@@ -9,6 +9,7 @@ const Response = require("../../service").response;
 const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year')
 const moment = require("moment");
+
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const time = () => {
@@ -478,11 +479,21 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel  \r\n"
+    "ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel, Form Status  \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
-
+  let statusList=[
+    'In Progress',
+    'Submitted',
+    'Not Submitted',
+    'Approved By State',
+    'Under Review By State',
+    'Rejected By State',
+    'Approved By MoHUA',
+    'Under Review By MoHUA',
+    'Rejected By MoHUA'
+  ]
   let Audited_data = await AnnualAccountData.aggregate([
     {
       $lookup: {
@@ -521,7 +532,12 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         inc_exp_schedules: "$audited.provisional_data.inc_exp_schedules.pdf.url",
         cash_flow: "$audited.provisional_data.cash_flow.pdf.url",
         auditor_report: "$audited.provisional_data.auditor_report.pdf.url",
-        standardized_excel: "$audited.standardized_data.excel.url"
+        standardized_excel: "$audited.standardized_data.excel.url",
+        audited_answer:"$audited.submit_annual_accounts",
+        unaudited_answer: "$unAudited.submit_annual_accounts",
+        isDraft:"$isDraft",
+        status:"$status",
+        role:"$actionTakenByRole"
       }
     }]).exec((err, data) => {
       if (err) {
@@ -531,6 +547,60 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
           data: err.toString(),
         });
       } else {
+        for(el of data){
+          if(!el.submittedOn){
+            el.submittedOn = 'Not Submitted'
+          }
+          if(!el.bal_sheet){
+            el.bal_sheet = 'Not Submitted'
+          }
+          if(!el.bal_sheet_schedules){
+            el.bal_sheet_schedules = 'Not Submitted'
+          }
+          if(!el.inc_exp){
+            el.inc_exp = 'Not Submitted'
+          }
+          if(!el.inc_exp_schedules){
+            el.inc_exp_schedules = 'Not Submitted'
+          }
+          if(!el.cash_flow){
+            el.cash_flow = 'Not Submitted'
+          }
+          if(!el.auditor_report){
+            el.auditor_report = 'Not Submitted'
+          }
+  
+          if(el.role == 'ULB' && el.isDraft){
+el['formStatus'] = statusList[0]
+          }else if(el.role == 'ULB' && !el.isDraft){
+            if(el.audited_answer && el.unaudited_answer){
+              el['formStatus'] = statusList[1]
+            }else{
+              el['formStatus'] = statusList[2]
+            }
+
+          }else if(el.role == 'STATE' && el.isDraft){
+            el['formStatus'] = statusList[4]
+          }else if(el.role == 'STATE' && !el.isDraft){
+            if(el.status =='APPROVED'){
+              el['formStatus'] = statusList[3]
+            }else if(el.status =='REJECTED'){
+              el['formStatus'] = statusList[5]
+            }
+
+          }else if(el.role == 'MoHUA' && el.isDraft){
+            el['formStatus'] = statusList[8]
+          }else if(el.role == 'MoHUA' && !el.isDraft){
+            if(el.status =='APPROVED'){
+              el['formStatus'] = statusList[7]
+            }else if(el.status =='REJECTED'){
+              el['formStatus'] = statusList[9]
+
+            }
+
+          }
+
+        }
         for (el of data) {
           res.write(
             el.ulbName +
@@ -557,6 +627,10 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
             "," +
             el.auditor_report +
             "," +
+            el.standardized_excel +
+            "," +
+            el.formStatus +
+            "," +
             "\r\n"
           );
         }
@@ -573,11 +647,21 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel \r\n"
+    "ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel, Form Status \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
-
+  let statusList=[
+    'In Progress',
+    'Submitted',
+    'Not Submitted',
+    'Approved By State',
+    'Under Review By State',
+    'Rejected By State',
+    'Approved By MoHUA',
+    'Under Review By MoHUA',
+    'Rejected By MoHUA'
+  ]
   let Unaudited_data = await AnnualAccountData.aggregate([
     {
       $lookup: {
@@ -615,7 +699,12 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         inc_exp: "$unAudited.provisional_data.inc_exp.pdf.url",
         inc_exp_schedules: "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
         cash_flow: "$unAudited.provisional_data.cash_flow.pdf.url",
-        standardized_excel: "$unAudited.standardized_data.excel.url"
+        standardized_excel: "$unAudited.standardized_data.excel.url",
+        audited_answer:"$audited.submit_annual_accounts",
+        unaudited_answer: "$unAudited.submit_annual_accounts",
+        isDraft:"$isDraft",
+        status:"$status",
+        role:"$actionTakenByRole"
       }
     }]).exec((err, data) => {
       if (err) {
@@ -625,6 +714,57 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
           data: err.toString(),
         });
       } else {
+        for(el of data){
+          if(!el.submittedOn){
+            el.submittedOn = 'Not Submitted'
+          }
+          if(!el.bal_sheet){
+            el.bal_sheet = 'Not Submitted'
+          }
+          if(!el.bal_sheet_schedules){
+            el.bal_sheet_schedules = 'Not Submitted'
+          }
+          if(!el.inc_exp){
+            el.inc_exp = 'Not Submitted'
+          }
+          if(!el.inc_exp_schedules){
+            el.inc_exp_schedules = 'Not Submitted'
+          }
+          if(!el.cash_flow){
+            el.cash_flow = 'Not Submitted'
+          }
+
+          if(el.role == 'ULB' && el.isDraft){
+            el['formStatus'] = statusList[0]
+                      }else if(el.role == 'ULB' && !el.isDraft){
+                        if(el.audited_answer && el.unaudited_answer){
+                          el['formStatus'] = statusList[1]
+                        }else{
+                          el['formStatus'] = statusList[2]
+                        }
+            
+                      }else if(el.role == 'STATE' && el.isDraft){
+                        el['formStatus'] = statusList[4]
+                      }else if(el.role == 'STATE' && !el.isDraft){
+                        if(el.status =='APPROVED'){
+                          el['formStatus'] = statusList[3]
+                        }else if(el.status =='REJECTED'){
+                          el['formStatus'] = statusList[5]
+                        }
+            
+                      }else if(el.role == 'MoHUA' && el.isDraft){
+                        el['formStatus'] = statusList[8]
+                      }else if(el.role == 'MoHUA' && !el.isDraft){
+                        if(el.status =='APPROVED'){
+                          el['formStatus'] = statusList[7]
+                        }else if(el.status =='REJECTED'){
+                          el['formStatus'] = statusList[9]
+            
+                        }
+            
+                      }
+         
+        }
         for (el of data) {
           res.write(
             el.ulbName +
@@ -649,6 +789,10 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
             "," +
             el.cash_flow +
             "," +
+            el.standardized_excel +
+            "," +
+            el.formStatus +
+            "," +
             "\r\n"
           );
         }
@@ -657,6 +801,134 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
       }
     })
 
+})
+exports.dashboard = catchAsync(async (req,res)=>{
+let user = req.decoded;
+let {state_id} = req.query
+if(state_id == 'null'){
+  state_id = null
+}
+
+let data = {
+  audited:{
+notStarted:0,
+inProgress:0,
+submitted:0,
+notSubmitted:0,
+approvedbyState:0,
+approvedByMoHUA:0
+  },
+  provisional:{
+    notStarted:0,
+inProgress:0,
+submitted:0,
+notSubmitted:0,
+approvedbyState:0,
+approvedByMoHUA:0
+
+  }
+}
+let state = user.state ?? state_id
+if(user.role == 'STATE'){
+let query_audited = [
+  {
+      $project:{
+         "answer": "$audited.submit_annual_accounts",
+          data:"$audited.provisional_data",
+          actionTakenByRole:1,
+          isDraft:1,
+          status:1,
+          ulb:1
+          }
+      },
+    {
+        $group:{
+            _id:{
+                role:"$actionTakenByRole",
+                isDraft:"$isDraft",
+                status:"$status",
+                answer:"$answer"
+                },
+                count:{$sum:1},
+                ulb:{$addToSet:"$ulb"}
+            }
+        } ,
+  ]
+  let query_unAudited = [
+    {
+        $project:{
+           "answer": "$unAudited.submit_annual_accounts",
+            data:"$unAudited.provisional_data",
+            actionTakenByRole:1,
+            isDraft:1,
+            status:1,
+            ulb:1
+            }
+        },
+      {
+          $group:{
+              _id:{
+                  role:"$actionTakenByRole",
+                  isDraft:"$isDraft",
+                  status:"$status",
+                  answer:"$answer"
+                  },
+                  count:{$sum:1},
+                  ulb:{$addToSet:"$ulb"}
+              }
+          } ,
+    ]
+
+    let { audited, unAudited} = await new Promise(async (resolve, reject) => {
+      let prms1 = new Promise(async (rslv, rjct) => {
+          // console.log(util.inspect(query_totalULBs, { showHidden: false, depth: null }))
+          let output = await AnnualAccountData.aggregate(query_audited);
+          rslv(output);
+      });
+      let prms2 = new Promise(async (rslv, rjct) => {
+          // console.log(util.inspect(query_totalApproved, { showHidden: false, depth: null }))
+          let output = await AnnualAccountData.aggregate(query_unAudited);
+          rslv(output);
+      });
+    
+      Promise.all([prms1, prms2]).then(
+          (outputs) => {
+              let audited = outputs[0];
+              let unAudited = outputs[1];
+      
+
+              if (audited && unAudited ) {
+                  resolve({ audited, unAudited});
+              } else {
+                  reject({ message: "No Data Found" });
+              }
+          },
+          (e) => {
+              reject(e);
+          }
+      );
+  });
+for(let el of audited){
+  // clicked No
+  if(!el._id.answer){
+data.audited.notSubmitted = data.audited.notSubmitted + el.count 
+  }else{
+    // clicked Yes
+        if(el._id.role == 'ULB' && el._id.isDraft){
+            data.audited.inProgress = data.audited.inProgress + el.count 
+        }else if(el._id.role == 'ULB' && !el._id.isDraft){
+          data.audited.submitted = data.audited.submitted + el.count 
+        }
+  }
+}
+}else if (user.role == 'MoHUA' || 'ADMIN' || 'PARTNER' ){
+
+}else{
+  return res.status(403).json({
+    success: false,
+    message:"Not Authenticated to Access this Data"
+  })
+}
 })
 
 exports.action = async (req, res) => {

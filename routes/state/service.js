@@ -245,11 +245,34 @@ module.exports.form = async function (req, res) {
                         if (user.role == "STATE") {
                             if (state) {
                                 let template = service.emailTemplate.stateFormSubmission(state.name, null, 'STATE');
-                                let mailOptions = {
-                                    to: state.email,
-                                    subject: template.subject,
-                                    html: template.body
-                                };
+                                // let mailOptions = {
+                                //     to: state.email,
+                                //     subject: template.subject,
+                                //     html: template.body
+                                // };
+                                let mailOptions =     {
+                                    Destination: {
+                                      /* required */
+                                      ToAddresses: [user.email]
+                                    },
+                                    Message: {
+                                      /* required */
+                                      Body: {
+                                        /* required */
+                                        Html: {
+                                          Charset: "UTF-8",
+                                          Data:  template.body
+                                        },
+                                      },
+                                      Subject: {
+                                        Charset: 'UTF-8',
+                                        Data:template.subject
+                                      }
+                                    },
+                                    Source: process.env.EMAIL,
+                                    /* required */
+                                    ReplyToAddresses: [process.env.EMAIL],
+                                  }
                                 service.sendEmail(mailOptions);
                                 let c = 0;
                                 if (mohua.length > 0) {
@@ -257,11 +280,34 @@ module.exports.form = async function (req, res) {
                                     for (mo of mohua) {
 
                                         let template = service.emailTemplate.stateFormSubmission(mo.name, state.name, 'MoHUA');
-                                        let mailOptions = {
-                                            to: mo.email,
-                                            subject: template.subject,
-                                            html: template.body
-                                        };
+                                        // let mailOptions = {
+                                        //     to: mo.email,
+                                        //     subject: template.subject,
+                                        //     html: template.body
+                                        // };
+                                        let mailOptions =     {
+                                            Destination: {
+                                              /* required */
+                                              ToAddresses: [mo.email]
+                                            },
+                                            Message: {
+                                              /* required */
+                                              Body: {
+                                                /* required */
+                                                Html: {
+                                                  Charset: "UTF-8",
+                                                  Data:  template.body
+                                                },
+                                              },
+                                              Subject: {
+                                                Charset: 'UTF-8',
+                                                Data:template.subject
+                                              }
+                                            },
+                                            Source: process.env.EMAIL,
+                                            /* required */
+                                            ReplyToAddresses: [process.env.EMAIL],
+                                          }
                                         service.sendEmail(mailOptions);
                                         c++;
                                         console.log(c)
