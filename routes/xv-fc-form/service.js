@@ -492,7 +492,8 @@ population:"$approvedULBs.population"
       {
           $group:{
          _id:"",
-     
+         ulbData:{$addToSet:"$ulbData._id"},
+         total:{$sum:1},
                   "waterSuppliedPerDay2021n":{
                       $sum:{$multiply:["$waterSuppliedPerDay2021","$population"]}
                       },
@@ -602,6 +603,7 @@ population:"$approvedULBs.population"
           
           {
               $project:{
+                total:1,
                   waterSuppliedPerDay2021: {$divide:["$waterSuppliedPerDay2021n", "$waterSuppliedPerDay2021d"]},
                     waterSuppliedPerDay2122: {$divide:["$waterSuppliedPerDay2122n", "$waterSuppliedPerDay2122d"]},
                       waterSuppliedPerDay2223: {$divide:["$waterSuppliedPerDay2223n", "$waterSuppliedPerDay2223d"]},
