@@ -804,7 +804,14 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
 })
 exports.dashboard = catchAsync(async (req,res)=>{
 let user = req.decoded;
-let {state_id} = req.query
+if(!user){
+  return res.status(400).json({
+    success: false,
+    message:"User Not Found"
+  })
+}
+let {state_id} = req.query;
+let {design_year} = req.query;
 if(state_id == 'null'){
   state_id = null
 }
@@ -816,24 +823,31 @@ inProgress:0,
 submitted:0,
 notSubmitted:0,
 approvedbyState:0,
-approvedByMoHUA:0
+approvedByMoHUA:0,
+uncertain:0
   },
-  provisional:{
+  unAudited:{
     notStarted:0,
 inProgress:0,
 submitted:0,
 notSubmitted:0,
 approvedbyState:0,
-approvedByMoHUA:0
+approvedByMoHUA:0,
+uncertain:0
 
   }
 }
-let state = user.state ?? state_id
+let state = user?.state ?? state_id
 if(user.role == 'STATE'){
 let query_audited = [
   {
+$match:{
+  design_year: ObjectId(design_year)
+}
+  },
+  {
       $project:{
-         "answer": "$audited.submit_annual_accounts",
+         "audited_answer": "$audited.submit_annual_accounts",
           data:"$audited.provisional_data",
           actionTakenByRole:1,
           isDraft:1,
@@ -847,7 +861,7 @@ let query_audited = [
                 role:"$actionTakenByRole",
                 isDraft:"$isDraft",
                 status:"$status",
-                answer:"$answer"
+                audited_answer:"$audited_answer",
                 },
                 count:{$sum:1},
                 ulb:{$addToSet:"$ulb"}
@@ -856,8 +870,14 @@ let query_audited = [
   ]
   let query_unAudited = [
     {
+      $match:{
+        design_year: ObjectId(design_year)
+      }
+        },
+    {
         $project:{
-           "answer": "$unAudited.submit_annual_accounts",
+        
+           "unAudited_answer": "$unAudited.submit_annual_accounts",
             data:"$unAudited.provisional_data",
             actionTakenByRole:1,
             isDraft:1,
@@ -871,7 +891,7 @@ let query_audited = [
                   role:"$actionTakenByRole",
                   isDraft:"$isDraft",
                   status:"$status",
-                  answer:"$answer"
+                  unAudited_answer:"$unAudited_answer",
                   },
                   count:{$sum:1},
                   ulb:{$addToSet:"$ulb"}
@@ -909,18 +929,76 @@ let query_audited = [
       );
   });
 for(let el of audited){
-  // clicked No
-  if(!el._id.answer){
-data.audited.notSubmitted = data.audited.notSubmitted + el.count 
-  }else{
-    // clicked Yes
-        if(el._id.role == 'ULB' && el._id.isDraft){
-            data.audited.inProgress = data.audited.inProgress + el.count 
-        }else if(el._id.role == 'ULB' && !el._id.isDraft){
-          data.audited.submitted = data.audited.submitted + el.count 
-        }
+  let elem = el._id;
+if(elem.role == 'ULB' && elem.isDraft){
+data.audited.inProgress = data.audited.inProgress + el.count
+}else if(elem.role == 'ULB' && !elem.isDraft){
+  if(elem.audited_answer){
+    data.audited.submitted = data.audited.submitted + el.count 
+  }else if(!elem.audited_answer){
+    data.audited.notSubmitted = data.audited.notSubmitted  + el.count 
   }
+}else if(elem.role == 'STATE' && elem.isDraft){
+  data.audited.submitted = data.audited.submitted + el.count
+
+}else if(elem.role == 'STATE' && !elem.isDraft){
+  if(elem?.status == 'APPROVED'){
+data.audited.approvedbyState = data.audited.approvedbyState + el.count 
+  }else if(elem?.status == 'REJECTED'){
+    data.audited.inProgress = data.audited.inProgress + el.count
+  }
+}else if(elem.role == 'MoHUA' && elem.isDraft){
+  data.audited.approvedbyState = data.audited.approvedbyState + el.count
+
+}else if(elem.role == 'MoHUA' && !elem.isDraft){
+  if(elem?.status == 'APPROVED'){
+    data.audited.approvedByMoHUA = data.audited.approvedByMoHUA + el.count 
+      }else if(elem?.status == 'REJECTED'){
+        data.audited.inProgress = data.audited.inProgress + el.count
+      }
+}else{
+  data.audited.uncertain = data.audited.uncertain + el.count 
 }
+
+}
+for(let el of unAudited){
+  let elem = el._id;
+if(elem.role == 'ULB' && elem.isDraft){
+data.unAudited.inProgress = data.unAudited.inProgress + el.count
+}else if(elem.role == 'ULB' && !elem.isDraft){
+  if(elem.unAudited_answer){
+    data.unAudited.submitted = data.unAudited.submitted + el.count 
+  }else if(!elem.unAudited_answer){
+    data.unAudited.notSubmitted = data.unAudited.notSubmitted  + el.count 
+  }
+}else if(elem.role == 'STATE' && elem.isDraft){
+  data.unAudited.submitted = data.unAudited.submitted + el.count
+
+}else if(elem.role == 'STATE' && !elem.isDraft){
+  if(elem?.status == 'APPROVED'){
+data.unAudited.approvedbyState = data.unAudited.approvedbyState + el.count 
+  }else if(elem?.status == 'REJECTED'){
+    data.unAudited.inProgress = data.unAudited.inProgress + el.count
+  }
+}else if(elem.role == 'MoHUA' && elem.isDraft){
+  data.unAudited.approvedbyState = data.unAudited.approvedbyState + el.count
+
+}else if(elem.role == 'MoHUA' && !elem.isDraft){
+  if(elem?.status == 'APPROVED'){
+    data.unAudited.approvedByMoHUA = data.unAudited.approvedByMoHUA + el.count 
+      }else if(elem?.status == 'REJECTED'){
+        data.unAudited.inProgress = data.unAudited.inProgress + el.count
+      }
+}else{
+  data.unAudited.uncertain = data.unAudited.uncertain + el.count 
+}
+
+}
+
+return res.status(200).json({
+  success: true,
+  data: data
+})
 }else if (user.role == 'MoHUA' || 'ADMIN' || 'PARTNER' ){
 
 }else{

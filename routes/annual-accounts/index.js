@@ -10,7 +10,7 @@ router.get("/get", verifyToken, getAccounts);
 router.get("/nmpcUntiedEligibility", verifyToken, nmpcEligibility);
 router.get("/getCSV-Audited", getCSVAudited);
 router.get("/getCSV-Unaudited", getCSVUnaudited);
-router.get("/dashboard", dashboard);
+router.get("/dashboard", verifyToken ,dashboard);
 router.post("/create", verifyToken, createUpdate);
 router.post("/action", verifyToken, userAuth, action);
 
