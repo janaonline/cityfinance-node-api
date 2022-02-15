@@ -492,7 +492,7 @@ population:"$approvedULBs.population"
       {
           $group:{
          _id:"",
-     
+         ulbData:{$addToSet:"$ulbData._id"},
                   "waterSuppliedPerDay2021n":{
                       $sum:{$multiply:["$waterSuppliedPerDay2021","$population"]}
                       },
