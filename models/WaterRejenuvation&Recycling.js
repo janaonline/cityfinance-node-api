@@ -90,6 +90,9 @@ const projectDetails2 = () => {
     stp: {
       type: Number,
     },
+    targetCust: {
+      type: Number,
+    },
     _id: false,
   };
 };
