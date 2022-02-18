@@ -18,6 +18,7 @@ const multerUpload = multer({ storage: storage1 });
 router.get('/', verifyToken, ufdService.get);
 router.get('/state/:design_year', verifyToken, ufdService.getSLBDataUAWise);
 router.get('/admin/:ulb', verifyToken, ufdService.get);
+router.get('/dashboard',verifyToken,ufdService.dashboard )
 router.post('/list', verifyToken, ufdService.get);
 router.post('/all', verifyToken, ufdService.getAll);
 router.get('/all/:design_year', verifyToken, ufdService.getAll);

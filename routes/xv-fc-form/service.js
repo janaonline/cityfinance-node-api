@@ -819,7 +819,233 @@ extractUlbData = (arr2) => {
   // console.log(output);
 };
 
+exports.dashboard = catchAsync( async(req,res)=>{
+  let data = {
+    millionPlus:{
+      notStarted:0,
+      inProgress:0,
+      submitted:0,
+      notSubmitted:0,
+      approvedByState:0,
+      approvedByMoHUA:0,
+      uncertain:0,
+      uncertainULBs:[]
+    },
+    nonMillion :{
+      notStarted:0,
+      inProgress:0,
+      submitted:0,
+      notSubmitted:0,
+      approvedByState:0,
+      approvedByMoHUA:0,
+      uncertain:0,
+      uncertainULBs:[]
+    }
+  
+  }
+  let user = req.decoded;
+  let {state_id, design_year} = req.query
+  if(state_id == 'null'){
+    state_id = null
+  }
+  let state = user?.state ?? state_id
+  
+  if(!user){
+    return res.status(400).json({
+      success: false,
+      message:"User not Found"
+    })
+  }
 
+  if(user.role == 'STATE'){
+    let query = [
+      {
+        $lookup:{
+    from:"ulbs",
+    localField:"ulb",
+    foreignField:"_id",
+    as:"ulb"
+        }
+      },
+      {
+        $unwind:"$ulb"
+      },
+{
+  $match:{
+
+    "ulb.state": ObjectId(state),
+    design_year : ObjectId(design_year) 
+  }
+},
+{
+  $group:{
+    _id:{
+      role:"$actionTakenByRole",
+      status:"$waterManagement.status",
+      isCompleted:"$isCompleted",
+      blank: "$blank",
+      isMillionPlus:"$ulb.isMillionPlus"
+
+    },
+count:{$sum:1},
+    ulb:{$addToSet:"$ulb._id"},
+  }
+}
+
+    ]
+    let queryNotStarted=[
+      {
+        $match:{
+
+          state: ObjectId(state)
+        }
+      },
+      {
+        $lookup: {
+          from: "xvfcgrantulbforms",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "xvfcData",
+        },
+      },
+      
+      {
+        $match:{
+          xvfcData:{
+            $size:0
+          }
+        }
+      },
+      {
+        $group:{
+            _id:"$isMillionPlus",
+            count:{$sum:1}
+            }
+        }
+
+
+    ]
+
+    let slbData = await XVFCGrantULBData.aggregate(query);
+   let notStartedData =  await Ulb.aggregate(queryNotStarted)
+    if(slbData.length>0){
+      for(let el of slbData){
+        let elem = el._id;
+if(elem.isMillionPlus == 'Yes'){
+  if(elem.blank){
+    data.millionPlus.notSubmitted = data.millionPlus.notSubmitted  + el.count
+  }else{
+    
+    if(elem.role == 'ULB' && !elem.isCompleted){
+      data.millionPlus.inProgress = data.millionPlus.inProgress + el.count 
+              }else if(elem.role == 'ULB' && elem.isCompleted){
+                 if(!elem.blank){
+                  data.millionPlus.submitted = data.millionPlus.submitted + el.count 
+                }
+      
+              }else if(elem.role == 'STATE' && !elem.isCompleted){
+                data.millionPlus.submitted = data.millionPlus.submitted + el.count 
+              }else if(elem.role == 'STATE' && elem.isCompleted){
+                if(elem.status == 'APPROVED'){
+      data.millionPlus.approvedByState = data.millionPlus.approvedByState  + el.count  
+                }else if(elem.status == 'REJECTED'){
+      data.millionPlus.inProgress = data.millionPlus.inProgress + el.count 
+                }
+              } else if(elem.role == 'MoHUA' && !elem.isCompleted){
+                data.millionPlus.approvedByState = data.millionPlus.approvedByState + el.count 
+              }else if(elem.role == 'MoHUA' && elem.isCompleted){
+                if(elem.status == 'APPROVED'){
+      data.millionPlus.approvedByMoHUA = data.millionPlus.approvedByMoHUA  + el.count  
+                }else if(elem.status == 'REJECTED'){
+      data.millionPlus.inProgress = data.millionPlus.inProgress + el.count 
+                }
+              }else{
+      data.millionPlus.uncertain = data.millionPlus.uncertain + el.count 
+      data.millionPlus.uncertainULBs.push(el.ulb)
+              }
+  }
+
+}else if(elem.isMillionPlus == 'No'){
+  if(elem.blank){
+    data.nonMillion.notSubmitted = data.nonMillion.notSubmitted  + el.count
+  }else{
+    
+    if(elem.role == 'ULB' && !elem.isCompleted){
+      data.nonMillion.inProgress = data.nonMillion.inProgress + el.count 
+              }else if(elem.role == 'ULB' && elem.isCompleted){
+                 if(!elem.blank){
+                  data.nonMillion.submitted = data.nonMillion.submitted + el.count 
+                }
+      
+              }else if(elem.role == 'STATE' && !elem.isCompleted){
+                data.nonMillion.submitted = data.nonMillion.submitted + el.count 
+              }else if(elem.role == 'STATE' && elem.isCompleted){
+                if(elem.status == 'APPROVED'){
+      data.nonMillion.approvedByState = data.nonMillion.approvedByState  + el.count  
+                }else if(elem.status == 'REJECTED'){
+      data.nonMillion.inProgress = data.nonMillion.inProgress + el.count 
+                }
+              } else if(elem.role == 'MoHUA' && !elem.isCompleted){
+                data.nonMillion.approvedByState = data.nonMillion.approvedByState + el.count 
+              }else if(elem.role == 'MoHUA' && elem.isCompleted){
+                if(elem.status == 'APPROVED'){
+      data.nonMillion.approvedByMoHUA = data.nonMillion.approvedByMoHUA  + el.count  
+                }else if(elem.status == 'REJECTED'){
+      data.nonMillion.inProgress = data.nonMillion.inProgress + el.count 
+                }
+              }else{
+      data.nonMillion.uncertain = data.nonMillion.uncertain + el.count 
+      data.nonMillion.uncertainULBs.push(el.ulb)
+              }
+  }
+
+}
+
+     
+   
+      }
+
+    }
+    for(let el of notStartedData){
+      if(el._id == 'Yes'){
+        data.millionPlus.notStarted = el.count
+      }else if(el._id == 'No'){
+        data.nonMillion.notStarted = el.count
+      }
+    }
+
+
+    return res.status(200).json({
+      success: true,
+      data: data
+    })
+  }else if(user.role == 'MoHUA' || 'ADMIN' || 'PARTNER'){
+
+  }else{
+    return res.status(403).json({
+      success: false,
+      message:"Not Authorized to Access this API"
+    })
+  }
+})
 module.exports.create = catchAsync(async (req, res) => {
   let user = req.decoded;
   let data = req.body;
