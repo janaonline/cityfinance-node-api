@@ -174,6 +174,16 @@ exports.getIndicatorData = async (req, res) => {
   }
 };
 
+exports.deleteALlData = async (req, res) => {
+  try {
+    let data = await Indicator.remove();
+    return Response.OK(res, data);
+  } catch (error) {
+    console.log(error);
+    return Response.DbError(res, error, error.message);
+  }
+};
+
 async function readXlsxFile(file) {
   return new Promise(async (resolve, reject) => {
     let exceltojson;
