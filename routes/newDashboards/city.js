@@ -173,6 +173,7 @@ const indicator = async (req, res) => {
           _id: {
             ulb: "$ulb._id",
             financialYear: "$financialYear",
+            lineItemName: "$lineitems.name",
           },
           amount: { $sum: "$amount" },
           ulbName: { $first: "$ulb.name" },
@@ -188,10 +189,24 @@ const indicator = async (req, res) => {
             },
           };
         }
+        let group3 = {
+          "$group":{
+              _id:"$_id.financialYear",
+              yearData:{
+                  $push:{
+                      name:"$_id.lineItemName",
+                      amount:"$amount",
+                      ulbName:"$ulbName"
+                      }
+                  }
+          }
+          }
 
         query.push({
           $group: group2,
         });
+
+        query.push(group3);
       default:
         break;
     }
