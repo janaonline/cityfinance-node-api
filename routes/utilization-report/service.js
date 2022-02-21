@@ -302,7 +302,7 @@ exports.report = async(req,res) =>{
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs) \r\n"
+    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs), Closing balance at the end of year (INR in lakhs), Rejuvenation of Water Bodies/Total Tied Grant Utilised on WM, Rejuvenation of Water Bodies/Total Project Cost Involved, Drinking Water/Total Tied Grant Utilised on WM, Drinking Water/Total Project Cost Involved, Rainwater Harvesting/Total Tied Grant Utilised on WM, Rainwater Harvesting/Total Project Cost Involved, Water Recycling/Total Tied Grant Utilised on WM, Water Recycling/Total Project Cost Involved, Sanitation/Total Tied Grant Utilised on WM, Sanitation/Total Project Cost Involved, Solid Waste Management/Total Tied Grant Utilised on WM, Solid Waste Management/Total Project Cost Involved \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -337,6 +337,8 @@ exports.report = async(req,res) =>{
                         grantReceived:"$grantPosition.receivedDuringYr",
                         expenditureIncurred:"$grantPosition.expDuringYr",
                         closingBalance: "$grantPosition.closingBal",
+                        waterManagement:"$categoryWiseData_wm", 
+                        solidWasteMgt: "$categoryWiseData_swm",
                         isDraft:"$isDraft",
                         status:"$status",
                         role:"$actionTakenByRole"
@@ -348,6 +350,36 @@ exports.report = async(req,res) =>{
 
  if(data){
    for(el of data){
+     for(el2 of el.waterManagement){
+       if(el2.category_name == 'Rejuvenation of Water Bodies'){
+         el['rej_grantUtilised'] = el2.grantUtilised;
+         el['rej_projectCost'] = el2.totalProjectCost;
+
+       }else if(el2.category_name == 'Water Recycling'){
+        el['waterRec_grantUtilised'] = el2.grantUtilised;
+        el['waterRec_projectCost'] = el2.totalProjectCost;
+
+       }else if(el2.category_name == 'Drinking Water'){
+        el['drinking_grantUtilised'] = el2.grantUtilised;
+        el['drinking_projectCost'] = el2.totalProjectCost;
+
+       }else if(el2.category_name == 'Rainwater Harvesting'){
+        el['rainWater_grantUtilised'] = el2.grantUtilised;
+        el['rainWater_projectCost'] = el2.totalProjectCost;
+         
+       }
+     }
+     for(el2 of el.solidWasteMgt){
+      if(el2.category_name == 'Solid Waste Management'){
+        el['swm_grantUtilised'] = el2.grantUtilised;
+        el['swm_projectCost'] = el2.totalProjectCost;
+
+      }else if(el2.category_name == 'Sanitation'){
+       el['sanitation_grantUtilised'] = el2.grantUtilised;
+       el['sanitation_projectCost'] = el2.totalProjectCost;
+
+      }
+    }
     if(el.role == 'ULB' && el.isDraft){
       el['formStatus'] = FORM_STATUS.In_Progress
                 }else if(el.role == 'ULB' && !el.isDraft){
@@ -390,6 +422,30 @@ exports.report = async(req,res) =>{
       el.expenditureIncurred +
       "," +
       el.closingBalance +
+      "," +
+      el.rej_grantUtilised +
+      "," +
+      el.rej_projectCost +
+      "," +
+      el.waterRec_grantUtilised +
+      "," +
+      el.waterRec_projectCost +
+      "," +
+      el.drinking_grantUtilised +
+      "," +
+      el.drinking_projectCost +
+      "," +
+      el.rainWater_grantUtilised +
+      "," +
+      el.rainWater_projectCost +
+      "," +
+      el.swm_grantUtilised +
+      "," +
+      el.swm_projectCost +
+      "," +
+      el.sanitation_grantUtilised +
+      "," +
+      el.sanitation_projectCost +
       "," +
       "\r\n"
     );
