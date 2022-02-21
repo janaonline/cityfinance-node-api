@@ -366,9 +366,117 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
 
     ]
-    let query_annual_notStarted = []
+    let query_annual_notStarted = [
+      {
+        $match:{
+          state: ObjectId(state)
+        }
+      },
+      {
+        $lookup:{
+          from:"uas",
+          localField:"ua",
+          foreignField:"_id",
+          as:"ua"
+        }
+      },{
+        $unwind:{
+          path:"$ua",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "annualaccountdatas",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "annAccData",
+        },
+      },
+      {
+        $match:{
+          annAccData:{
+            $size:0
+          }
+        }
+      }
+
+
+    ]
     let query_util = []
-    let query_utl_notStarted = []
+    let query_util_notStarted = [
+      {
+        $match:{
+          state: ObjectId(state)
+        }
+      },
+      {
+        $lookup:{
+          from:"uas",
+          localField:"ua",
+          foreignField:"_id",
+          as:"ua"
+        }
+      },{
+        $unwind:{
+          path:"$ua",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "utilizationreports",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$designYear", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "utilData",
+        },
+      },
+      {
+        $match:{
+          utilData:{
+            $size:0
+          }
+        }
+      }
+
+
+    ]
     let query_slb = []
   let query_slb_notStarted = []
 
@@ -382,6 +490,7 @@ UA:"",
 auditedStatus:"",
 provisionalStatus:"",
     }
+    let data=[]
 let {annualData,annualData_notStarted } = await new Promise(async (resolve, reject)=>{
   let prms1 = await new Promise(async (rslv, rjct)=>{
 let output = await AnnualAccount.aggregate(query_annual)
@@ -472,10 +581,30 @@ obj.ulbId = el.ulbId;
     }
   }
 
+data.push(obj)
+
+})
+annualData_notStarted.forEach(el=>{
+  obj.ulbName = el.name;
+  obj.censusCode = el.censusCode ?? el.sbCode;
+  obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
+  obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
+obj.ulbId = el._id;
+obj.auditedStatus = STATUS_LIST.Not_Started;
+obj.provisionalStatus = STATUS_LIST.Not_Started
+data.push(obj)
+})
+
+
+return res.status(200).json({
+  success: true,
+  message:"Annual Accounts Form List",
+  data:data
 })
 
 
   } else if(formName == 'slb'){
+    let data =[]
     let {slbData,slbData_notStarted } = await new Promise(async (resolve, reject)=>{
       let prms1 = await new Promise(async (rslv, rjct)=>{
     let output = await Slb.aggregate(query_slb)
@@ -501,6 +630,91 @@ obj.ulbId = el.ulbId;
           reject({ message: "No Data Found" });
       })
     })
+    slbData.forEach(el=>{
+      obj.ulbName = el.ulbName;
+      obj.censusCode = el.censusCode;
+      obj.UA = el.ua;
+      obj.populationType = el.populationType;
+    obj.ulbId = el.ulbId;
+    
+      if(el.role == 'ULB' && el.isDraft){
+        obj.auditedStatus = STATUS_LIST.In_Progress
+        obj.provisionalStatus = STATUS_LIST.In_Progress
+    
+      }else if(el.role == 'ULB' && !el.isDraft){
+        if(el.audited_answer){
+          obj.auditedStatus = STATUS_LIST.Submitted
+        }else if(!el.audited_answer){
+          obj.auditedStatus = STATUS_LIST.Not_Submitted
+        }
+        if(el.unAudited_answer){
+          obj.provisionalStatus = STATUS_LIST.Submitted
+        }else if(!el.unAudited_answer){
+          obj.provisionalStatus = STATUS_LIST.Not_Submitted
+        }
+      } else if(el.role == 'STATE' && el.isDraft){
+        if(el.audited_answer){
+          obj.auditedStatus = STATUS_LIST.Submitted
+        }else if(!el.audited_answer){
+          obj.auditedStatus = STATUS_LIST.Not_Submitted
+        }
+        if(el.unAudited_answer){
+          obj.provisionalStatus = STATUS_LIST.Submitted
+        }else if(!el.unAudited_answer){
+          obj.provisionalStatus = STATUS_LIST.Not_Submitted
+        }
+    
+      }else if(el.role == 'STATE' && !el.isDraft){
+        if(el.status == 'APPROVED'){
+          obj.auditedStatus = STATUS_LIST.Approved_By_State
+          obj.provisionalStatus = STATUS_LIST.Approved_By_State
+        }else if(el.status == 'REJECTED'){
+          obj.auditedStatus = STATUS_LIST.In_Progress
+          obj.provisionalStatus = STATUS_LIST.In_Progress
+        }
+      }else if(el.role == 'MoHUA' && el.isDraft){
+        if(el.audited_answer){
+          obj.auditedStatus = STATUS_LIST.Approved_By_State
+        }else if(!el.audited_answer){
+          obj.auditedStatus = STATUS_LIST.Not_Submitted
+        }
+        if(el.unAudited_answer){
+          obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
+        }else if(!el.unAudited_answer){
+          obj.provisionalStatus = STATUS_LIST.Not_Submitted
+        }
+    
+      }else if(el.role == 'MoHUA' && !el.isDraft){
+        if(el.status == 'APPROVED'){
+          obj.auditedStatus = STATUS_LIST.Approved_By_MoHUA
+          obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
+        }else if(el.status == 'REJECTED'){
+          obj.auditedStatus = STATUS_LIST.Rejected_By_MoHUA
+          obj.provisionalStatus = STATUS_LIST.Rejected_By_MoHUA
+        }
+      }
+    
+    data.push(obj)
+    
+    })
+    slbData_notStarted.forEach(el=>{
+      obj.ulbName = el.name;
+      obj.censusCode = el.censusCode ?? el.sbCode;
+      obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
+      obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
+    obj.ulbId = el._id;
+    obj.auditedStatus = STATUS_LIST.Not_Started;
+    obj.provisionalStatus = STATUS_LIST.Not_Started
+    data.push(obj)
+    })
+    
+    
+    return res.status(200).json({
+      success: true,
+      message:"Annual Accounts Form List",
+      data:data
+    })
+
 
   }else if(formName == 'util'){
     let {utilData,utilData_notStarted } = await new Promise(async (resolve, reject)=>{
