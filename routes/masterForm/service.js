@@ -17,6 +17,9 @@ const MasterForm = require("../../models/MasterForm");
 const UtilizationReport = require("../../models/UtilizationReport");
 const Category = require("../../models/Category");
 const statusTypes = require("../../util/statusTypes");
+const STATUS_LIST = require('../../util/newStatusList')
+const AnnualAccount = require('../../models/AnnualAccounts')
+const Slb = require('../../models/XVFcGrantForm')
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
 
@@ -295,526 +298,768 @@ const updateDataInMaster = async (data, user) => {
   );
   return newData;
 };
-
 module.exports.getAll = catchAsync(async (req, res) => {
-  let statusFilter = {
-    1: {
-      status: "PENDING",
-      isCompleted: false,
-      actionTakenByUserRole: "ULB",
-    },
-    2: {
-      $or: [
-        {
-          status: "PENDING",
-          isCompleted: true,
-          actionTakenByUserRole: "ULB",
-        },
-        { isCompleted: false, actionTakenByUserRole: "STATE" },
-      ],
-    },
-    3: {
-      $or: [
-        { status: "APPROVED", actionTakenByUserRole: "STATE" },
-        { isCompleted: false, actionTakenByUserRole: "MoHUA" },
-      ],
-    },
-    4: { status: "REJECTED", actionTakenByUserRole: "STATE" },
-    5: { status: "REJECTED", actionTakenByUserRole: "MoHUA" },
-    6: { status: "APPROVED", actionTakenByUserRole: "MoHUA" },
-  };
-let {state_id} = req.query
-  let user = req.decoded,
-    filter =
-      req.query.filter && !req.query.filter != "null"
-        ? JSON.parse(req.query.filter)
-        : req.body.filter
-        ? req.body.filter
-        : {},
-    sort =
-      req.query.sort && !req.query.sort != "null"
-        ? JSON.parse(req.query.sort)
-        : req.body.sort
-        ? req.body.sort
-        : {},
-    skip = req.query.skip ? parseInt(req.query.skip) : 0,
-    csv = req.query.csv === "true",
-    limit = req.query.limit ? parseInt(req.query.limit) : 50;
-
-  if (filter["censusCode"]) {
-    let code = filter["censusCode"];
-    var digit = code.toString()[0];
-    if (digit == "9") {
-      delete filter["censusCode"];
-      filter["sbCode"] = code;
-    }
-  }
-
-  if (!user) {
+  let user = req.decoded;
+  let {design_year,formName} = req.params
+  let {state_id} = req.query;
+  let state = state_id ?? user.state
+  if(!design_year || !formName){
     return res.status(400).json({
       success: false,
-      message: "User Not Found!",
-    });
+      message:"Missing Design Year or Form Name"
+    })
   }
-  if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
-    let { design_year } = req.params;
-    if (!design_year) {
-      return res.status(400).json({
-        success: false,
-        message: "Design Year Not Found",
-      });
-    }
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "User Not Found",
-      });
-    }
-
-    let match = {
-      $match: {
-        design_year: ObjectId(design_year),
-      },
-    };
-
-
-if(state_id && state_id != 'null'){
-match = {
-
+  if(user.role == 'STATE'){
+    let query_annual = [
+{
   $match:{
-    state: ObjectId(state_id),
     design_year: ObjectId(design_year)
   }
-}
-}
-let state = user.state ?? state_id
-    if (user.role === "STATE") {
-      match = {
-        $match: {
-          design_year: ObjectId(design_year),
-          state: ObjectId(user.state),
-        },
-      };
-    }
-
-    let queryFilled = [
-      match,
+},
       {
         $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
-      },
-      { $unwind: "$ulb" },
-      {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulb.ulbType",
-          foreignField: "_id",
-          as: "ulb.ulbType",
-        },
-      },
-      { $unwind: "$ulb.ulbType" },
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      { $unwind: "$state" },
-      {
-        $match: {
-          "state.accessToXVFC": true,
-        },
+          from:"ulbs",
+          localField:"ulb",
+          foreignField:"_id",
+          as:"ulb"
+        }
       },
       {
-        $lookup: {
-          from: "users",
-          localField: "actionTakenBy",
-          foreignField: "_id",
-          as: "actionTakenBy",
-        },
+        $unwind:"$ulb"
       },
-      { $unwind: "$actionTakenBy" },
-
-      {
-        $lookup: {
-          from: "uas",
-          localField: "ulb.UA",
-          foreignField: "_id",
-          as: "ulb.UA",
-        },
-      },
-      // { $unwind: '$ulb.UA' },
-      {
-        $project: {
-          state: "$state.name",
-          ulbName: "$ulb.name",
-          ulb: "$ulb._id",
-          censusCode: "$ulb.censusCode",
-          sbCode: "$ulb.sbCode",
-          populationType: {
-            $cond: {
-              if: { $eq: ["$ulb.isMillionPlus", "Yes"] },
-              then: "Million Plus",
-              else: "Non Million",
-            },
-          },
-          isUA: "$ulb.isUA",
-          isMillionPlus: "$ulb.isMillionPlus",
-          UA: {
-            $cond: {
-              if: { $eq: ["$ulb.isUA", "Yes"] },
-              then: { $arrayElemAt: ["$ulb.UA.name", 0] },
-              else: "NA",
-            },
-          },
-          ulbType: "$ulb.ulbType.name",
-          actionTakenByUserRole: "$actionTakenBy.role",
-          status: {
-            $cond: {
-              if: { $eq: ["$status", "NA"] },
-              then: "Not Started",
-              else: "$status",
-            },
-          },
-          createdAt: "$createdAt",
-          isSubmit: 1,
-          modifiedAt: "$modifiedAt",
-          utilReport: "$steps.utilReport",
-          pfmsAccount: "$steps.pfmsAccount",
-          plans: "$steps.plans",
-          slbForWaterSupplyAndSanitation:
-            "$steps.slbForWaterSupplyAndSanitation",
-          annualAccounts: "$steps.annualAccounts",
-        },
-      },
-    ];
-    // let match2 =  {
-    //   $match: {
-    //     state: ObjectId(state),
-    //   },
-    // };
-    let queryNotStarted = [
       {
         $match:{
-            $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+          "ulb.state": ObjectId(state)
         }
       },
       {
-        $lookup: {
-          from: "states",
-          localField: "state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      { $unwind: "$state" },
-      {
-        $match: {
-          "state.accessToXVFC": true,
-        },
-      },
-      {
-        $lookup: {
-          from: "masterforms",
-          let: {
-            firstUser: ObjectId(design_year),
-            secondUser: "$_id",
-          },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    {
-                      $eq: ["$design_year", "$$firstUser"],
-                    },
-                    {
-                      $eq: ["$ulb", "$$secondUser"],
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-          as: "masterformData",
-        },
-       
+        $lookup:{
+          from:"uas",
+          localField:"ulb._id",
+          foreignField:"ulb",
+          as:"ua"
+        }
+      },{
+        $unwind:{
+          path:"$ua",
+          preserveNullAndEmptyArrays:true
+        }
       },
       {
-        $unwind: {
-          path: "$masterformData",
-          preserveNullAndEmptyArrays: true,
-        },
+
+        $project:{
+          audited_answer:"$audited.submit_annual_accounts",
+          unAudited_answer:"$unAudited.submit_annual_accounts",
+          role:"$actionTakenByRole",
+          status:"$status",
+          isDraft:"$isDraft",
+          ulbName:"$ulb.name",
+          ulbId: "$ulb._id",
+          censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
+          ua:{$ifNull:["$ua.name","NA"]},
+          populationType:{
+              $cond : {$if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+          }
+        }
       },
 
-      {
-        $match: {
-          masterformData: { $exists: false },
-        },
-      },
-      {
-        $lookup: {
-          from: "uas",
-          localField: "UA",
-          foreignField: "_id",
-          as: "UA",
-        },
-      },
 
-      {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulbType",
-          foreignField: "_id",
-          as: "ulbType",
-        },
-      },
-      { $unwind: "$ulbType" },
-      { $addFields: { printStatus: "Not Started" } },
-      {
-        $project: {
-          state: "$state.name",
-          ulbName: "$name",
-          ulb: "$_id",
-          censusCode: "$censusCode",
-          sbCode: "$sbCode",
-          populationType: {
-            $cond: {
-              if: { $eq: ["$isMillionPlus", "Yes"] },
-              then: "Million Plus",
-              else: "Non Million",
-            },
-          },
-          isUA: "$isUA",
-          isMillionPlus: "$isMillionPlus",
-          UA: {
-            $cond: {
-              if: { $eq: ["$isUA", "Yes"] },
-              then: { $arrayElemAt: ["$UA.name", 0] },
-              else: "NA",
-            },
-          },
-          ulbType: "$ulbType.name",
-          printStatus: 1,
-        },
-      },
-    ];
-    if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
-      if(state){
-        queryNotStarted.unshift({
-          $match: {
-            state: ObjectId(state),
-          },
-        });
-      }
-      
+
+    ]
+    let query_annual_notStarted = []
+    let query_util = []
+    let query_utl_notStarted = []
+    let query_slb = []
+  let query_slb_notStarted = []
+
+  if(formName == 'annual'){
+    let obj={
+ulbName:"",
+censusCode:"",
+ulbId:null,
+populationType:"",
+UA:"",
+auditedStatus:"",
+provisionalStatus:"",
+    }
+let {annualData,annualData_notStarted } = await new Promise(async (resolve, reject)=>{
+  let prms1 = await new Promise(async (rslv, rjct)=>{
+let output = await AnnualAccount.aggregate(query_annual)
+rslv(output)
+  })
+  let prms2 = await new Promise(async (rslv, rjct)=>{
+    let output = await Ulb.aggregate(query_annual_notStarted)
+rslv(output)
+  })
+  Promise.all([prms1,prms2]).then(
+    (outputs)=>{
+    let annualData = outputs[0]
+    let annualData_notStarted = outputs[1]
+    if(annualData && annualData_notStarted ){
+      resolve({
+        annualData,
+        annualData_notStarted
+      })
+    }else {
+      reject({ message: "No Data Found" });
+    }
+  },(e)=>{
+      reject({ message: "No Data Found" });
+  })
+})
+
+annualData.forEach(el=>{
+  obj.ulbName = el.ulbName;
+  obj.censusCode = el.censusCode;
+  obj.UA = el.ua;
+  obj.populationType = el.populationType;
+obj.ulbId = el.ulbId;
+
+  if(el.role == 'ULB' && el.isDraft){
+    obj.auditedStatus = STATUS_LIST.In_Progress
+    obj.provisionalStatus = STATUS_LIST.In_Progress
+
+  }else if(el.role == 'ULB' && !el.isDraft){
+    if(el.audited_answer){
+      obj.auditedStatus = STATUS_LIST.Submitted
+    }else if(!el.audited_answer){
+      obj.auditedStatus = STATUS_LIST.Not_Submitted
+    }
+    if(el.unAudited_answer){
+      obj.provisionalStatus = STATUS_LIST.Submitted
+    }else if(!el.unAudited_answer){
+      obj.provisionalStatus = STATUS_LIST.Not_Submitted
+    }
+  } else if(el.role == 'STATE' && el.isDraft){
+    if(el.audited_answer){
+      obj.auditedStatus = STATUS_LIST.Submitted
+    }else if(!el.audited_answer){
+      obj.auditedStatus = STATUS_LIST.Not_Submitted
+    }
+    if(el.unAudited_answer){
+      obj.provisionalStatus = STATUS_LIST.Submitted
+    }else if(!el.unAudited_answer){
+      obj.provisionalStatus = STATUS_LIST.Not_Submitted
     }
 
-    let newFilter = await Service.mapFilter(filter);
-    let total = undefined;
-    let priority = false;
-
-    // if (newFilter["status"]) {
-
-    //   Object.assign(newFilter, statusFilter[newFilter["status"]]);
-    //   newFilter['printStatus'] = newFilter['status']
-    //   delete newFilter['status']
-    // }
-    if (newFilter && !newFilter["status"] && Object.keys(newFilter).length) {
-      queryFilled.push({ $match: newFilter });
-      queryNotStarted.push({ $match: newFilter });
+  }else if(el.role == 'STATE' && !el.isDraft){
+    if(el.status == 'APPROVED'){
+      obj.auditedStatus = STATUS_LIST.Approved_By_State
+      obj.provisionalStatus = STATUS_LIST.Approved_By_State
+    }else if(el.status == 'REJECTED'){
+      obj.auditedStatus = STATUS_LIST.In_Progress
+      obj.provisionalStatus = STATUS_LIST.In_Progress
     }
-    
-    if (sort && Object.keys(sort).length) {
-      queryFilled.push({ $sort: sort });
-      queryNotStarted.push({ $sort: sort });
-    } else {
-      if (priority) {
-        sort = {
-          $sort: { priority: -1, priority_1: -1, modifiedAt: -1 },
-        };
-      } else {
-        sort = { $sort: { createdAt: -1 } };
-      }
-      queryFilled.push(sort);
-      queryNotStarted.push(sort);
+  }else if(el.role == 'MoHUA' && el.isDraft){
+    if(el.audited_answer){
+      obj.auditedStatus = STATUS_LIST.Approved_By_State
+    }else if(!el.audited_answer){
+      obj.auditedStatus = STATUS_LIST.Not_Submitted
+    }
+    if(el.unAudited_answer){
+      obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
+    }else if(!el.unAudited_answer){
+      obj.provisionalStatus = STATUS_LIST.Not_Submitted
     }
 
-    if (csv) {
-      let arr = await MasterFormData.aggregate(queryFilled).exec();
-      for (d of arr) {
-        if (
-          d.status == "PENDING" &&
-          d.isSubmit == false &&
-          d.actionTakenByUserRole == "ULB"
-        ) {
-          d["printStatus"] = statusTypes.In_Progress;
-        }
-        if (
-          d.status == "PENDING" &&
-          d.isSubmit == true &&
-          d.actionTakenByUserRole == "ULB"
-        ) {
-          d["printStatus"] = statusTypes.Under_Review_By_State;
-        }
-        if (
-          d.status == "PENDING" &&
-          d.isSubmit == false &&
-          d.actionTakenByUserRole == "STATE"
-        ) {
-          d["printStatus"] = statusTypes.Under_Review_By_State;
-        }
-        if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
-          d["printStatus"] = statusTypes.Approved_By_State;
-        }
-        if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = statusTypes.Approved_By_State;
-        }
-        if (
-          d.status == "PENDING" &&
-          d.actionTakenByUserRole == "STATE" &&
-          d.isSubmit == false
-        ) {
-          d["printStatus"] = statusTypes.Under_Review_By_State;
-        }
-        if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
-          d["printStatus"] = statusTypes.Rejected_By_State;
-        }
-        if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = statusTypes.Rejected_By_MoHUA;
-        }
-        if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = statusTypes.Approval_Completed;
-        }
-      }
-      let field = csvULBReviewData();
-      if (user.role == "STATE") {
-        delete field.state;
-      }
-      let xlsData = await Service.dataFormating(arr, field);
-      let date = moment().format("DD-MMM-YY").toString();
-      let filename = `15th-FC-Form${date}.xlsx`;
-      return res.xls(filename, xlsData);
-    } else {
-      if (!skip) {
-        let qrr = [...queryFilled, { $count: "count" }];
-        // console.log(util.inspect(qrr, {showHidden: false, depth : null}))
-        let d = await MasterFormData.aggregate(qrr);
-        total = d.length ? d[0].count : 0;
-      }
-      queryFilled.push({ $skip: skip });
-      queryNotStarted.push({ $skip: skip });
-      // queryFilled.push({ $limit: limit });
-      // queryNotStarted.push({ $limit: limit });
-      // console.log(util.inspect(queryFilled, { showHidden: false, depth: null }))
-      let masterFormData = await MasterFormData.aggregate(queryFilled).exec();
-      let p1 = [];
-      let p2 = [];
-      let p3 = [];
-      let p4 = [];
-      let p5 = [];
-      let p6 = [];
-      let finalOutput = [];
-
-      for (d of masterFormData) {
-        if (
-          d.status == "PENDING" &&
-          d.isSubmit == false &&
-          d.actionTakenByUserRole == "ULB"
-        ) {
-          d["printStatus"] = statusTypes.In_Progress;
-          p6.push(d);
-        } else if (
-          d.status == "PENDING" &&
-          d.isSubmit == true &&
-          d.actionTakenByUserRole == "ULB"
-        ) {
-          d["printStatus"] = statusTypes.Under_Review_By_State;
-          p2.push(d);
-        } else if (
-          d.status == "PENDING" &&
-          d.isSubmit == false &&
-          d.actionTakenByUserRole == "STATE"
-        ) {
-          d["printStatus"] = statusTypes.Under_Review_By_State;
-          p2.push(d);
-        } else if (
-          d.status == "APPROVED" &&
-          d.actionTakenByUserRole == "STATE"
-        ) {
-          d["printStatus"] = statusTypes.Approved_By_State;
-          p1.push(d);
-        } else if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
-          d["printStatus"] = statusTypes.Approved_By_State;
-          p1.push(d);
-        } else if (
-          d.status == "REJECTED" &&
-          d.actionTakenByUserRole == "STATE"
-        ) {
-          d["printStatus"] = statusTypes.Rejected_By_State;
-          p5.push(d);
-        } else if (
-          d.status == "REJECTED" &&
-          d.actionTakenByUserRole == "MoHUA"
-        ) {
-          d["printStatus"] = statusTypes.Rejected_By_MoHUA;
-          p4.push(d);
-        } else if (
-          d.status == "APPROVED" &&
-          d.actionTakenByUserRole == "MoHUA"
-        ) {
-          d["printStatus"] = statusTypes.Approval_Completed;
-          p3.push(d);
-        }
-      }
-console.log(util.inspect(queryNotStarted, {showHidden: false, depth: null}))
-      let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
-      finalOutput.push(
-        ...p1,
-        ...p2,
-        ...p3,
-        ...p4,
-        ...p5,
-        ...p6,
-        ...noMasterFormData
-      );
-      let tryData = [];
-      if (newFilter["status"]) {
-        finalOutput = finalOutput.filter((data) => {
-          // console.log(data.printStatus.toLowerCase() == newFilter["status"].toLowerCase())
-          return (
-            data.printStatus.toLowerCase() == newFilter["status"].toLowerCase()
-          );
-        });
-      }
-      console.log(finalOutput);
-      if (finalOutput) {
-        return res.status(200).json({
-          success: true,
-          message: "ULB Master Form Data Found Successfully!",
-          data: finalOutput,
-          total: finalOutput.length,
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: "No Data Found",
-        });
-      }
+  }else if(el.role == 'MoHUA' && !el.isDraft){
+    if(el.status == 'APPROVED'){
+      obj.auditedStatus = STATUS_LIST.Approved_By_MoHUA
+      obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
+    }else if(el.status == 'REJECTED'){
+      obj.auditedStatus = STATUS_LIST.Rejected_By_MoHUA
+      obj.provisionalStatus = STATUS_LIST.Rejected_By_MoHUA
     }
-  } else {
+  }
+
+})
+
+
+  } else if(formName == 'slb'){
+    let {slbData,slbData_notStarted } = await new Promise(async (resolve, reject)=>{
+      let prms1 = await new Promise(async (rslv, rjct)=>{
+    let output = await Slb.aggregate(query_slb)
+    rslv(output)
+      })
+      let prms2 = await new Promise(async (rslv, rjct)=>{
+        let output = await Ulb.aggregate(query_slb_notStarted)
+    rslv(output)
+      })
+      Promise.all([prms1,prms2]).then(
+        (outputs)=>{
+        let slbData = outputs[0]
+        let slbData_notStarted = outputs[1]
+        if(slbData && slbData_notStarted ){
+          resolve({
+            slbData,
+            slbData_notStarted
+          })
+        }else {
+          reject({ message: "No Data Found" });
+        }
+      },(e)=>{
+          reject({ message: "No Data Found" });
+      })
+    })
+
+  }else if(formName == 'util'){
+    let {utilData,utilData_notStarted } = await new Promise(async (resolve, reject)=>{
+      let prms1 = await new Promise(async (rslv, rjct)=>{
+    let output = await UtilizationReport.aggregate(query_util)
+    rslv(output)
+      })
+      let prms2 = await new Promise(async (rslv, rjct)=>{
+        let output = await Ulb.aggregate(query_util_notStarted)
+    rslv(output)
+      })
+      Promise.all([prms1,prms2]).then(
+        (outputs)=>{
+        let utilData = outputs[0]
+        let utilData_notStarted = outputs[1]
+        if(utilData && utilData_notStarted ){
+          resolve({
+            utilData,
+            utilData_notStarted
+          })
+        }else {
+          reject({ message: "No Data Found" });
+        }
+      },(e)=>{
+          reject({ message: "No Data Found" });
+      })
+    })
+  }
+
+
+  }else if(user.role == 'ADMIN' || 'MoHUA' || 'PARTNER'){
+
+  }else{
     return res.status(403).json({
       success: false,
-      message: user.role + " is Not Authenticated to Perform this Action",
-    });
+      message:"Not Authorized to Access this API"
+    })
   }
-});
+
+})
+// module.exports.getAll = catchAsync(async (req, res) => {
+//   let statusFilter = {
+//     1: {
+//       status: "PENDING",
+//       isCompleted: false,
+//       actionTakenByUserRole: "ULB",
+//     },
+//     2: {
+//       $or: [
+//         {
+//           status: "PENDING",
+//           isCompleted: true,
+//           actionTakenByUserRole: "ULB",
+//         },
+//         { isCompleted: false, actionTakenByUserRole: "STATE" },
+//       ],
+//     },
+//     3: {
+//       $or: [
+//         { status: "APPROVED", actionTakenByUserRole: "STATE" },
+//         { isCompleted: false, actionTakenByUserRole: "MoHUA" },
+//       ],
+//     },
+//     4: { status: "REJECTED", actionTakenByUserRole: "STATE" },
+//     5: { status: "REJECTED", actionTakenByUserRole: "MoHUA" },
+//     6: { status: "APPROVED", actionTakenByUserRole: "MoHUA" },
+//   };
+// let {state_id} = req.query
+//   let user = req.decoded,
+//     filter =
+//       req.query.filter && !req.query.filter != "null"
+//         ? JSON.parse(req.query.filter)
+//         : req.body.filter
+//         ? req.body.filter
+//         : {},
+//     sort =
+//       req.query.sort && !req.query.sort != "null"
+//         ? JSON.parse(req.query.sort)
+//         : req.body.sort
+//         ? req.body.sort
+//         : {},
+//     skip = req.query.skip ? parseInt(req.query.skip) : 0,
+//     csv = req.query.csv === "true",
+//     limit = req.query.limit ? parseInt(req.query.limit) : 50;
+
+//   if (filter["censusCode"]) {
+//     let code = filter["censusCode"];
+//     var digit = code.toString()[0];
+//     if (digit == "9") {
+//       delete filter["censusCode"];
+//       filter["sbCode"] = code;
+//     }
+//   }
+
+//   if (!user) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "User Not Found!",
+//     });
+//   }
+//   if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
+//     let { design_year } = req.params;
+//     if (!design_year) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Design Year Not Found",
+//       });
+//     }
+//     if (!user) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "User Not Found",
+//       });
+//     }
+
+//     let match = {
+//       $match: {
+//         design_year: ObjectId(design_year),
+//       },
+//     };
+
+
+// if(state_id && state_id != 'null'){
+// match = {
+
+//   $match:{
+//     state: ObjectId(state_id),
+//     design_year: ObjectId(design_year)
+//   }
+// }
+// }
+// let state = user.state ?? state_id
+//     if (user.role === "STATE") {
+//       match = {
+//         $match: {
+//           design_year: ObjectId(design_year),
+//           state: ObjectId(user.state),
+//         },
+//       };
+//     }
+
+//     let queryFilled = [
+//       match,
+//       {
+//         $lookup: {
+//           from: "ulbs",
+//           localField: "ulb",
+//           foreignField: "_id",
+//           as: "ulb",
+//         },
+//       },
+//       { $unwind: "$ulb" },
+//       {
+//         $lookup: {
+//           from: "ulbtypes",
+//           localField: "ulb.ulbType",
+//           foreignField: "_id",
+//           as: "ulb.ulbType",
+//         },
+//       },
+//       { $unwind: "$ulb.ulbType" },
+//       {
+//         $lookup: {
+//           from: "states",
+//           localField: "ulb.state",
+//           foreignField: "_id",
+//           as: "state",
+//         },
+//       },
+//       { $unwind: "$state" },
+//       {
+//         $match: {
+//           "state.accessToXVFC": true,
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "users",
+//           localField: "actionTakenBy",
+//           foreignField: "_id",
+//           as: "actionTakenBy",
+//         },
+//       },
+//       { $unwind: "$actionTakenBy" },
+
+//       {
+//         $lookup: {
+//           from: "uas",
+//           localField: "ulb.UA",
+//           foreignField: "_id",
+//           as: "ulb.UA",
+//         },
+//       },
+//       // { $unwind: '$ulb.UA' },
+//       {
+//         $project: {
+//           state: "$state.name",
+//           ulbName: "$ulb.name",
+//           ulb: "$ulb._id",
+//           censusCode: "$ulb.censusCode",
+//           sbCode: "$ulb.sbCode",
+//           populationType: {
+//             $cond: {
+//               if: { $eq: ["$ulb.isMillionPlus", "Yes"] },
+//               then: "Million Plus",
+//               else: "Non Million",
+//             },
+//           },
+//           isUA: "$ulb.isUA",
+//           isMillionPlus: "$ulb.isMillionPlus",
+//           UA: {
+//             $cond: {
+//               if: { $eq: ["$ulb.isUA", "Yes"] },
+//               then: { $arrayElemAt: ["$ulb.UA.name", 0] },
+//               else: "NA",
+//             },
+//           },
+//           ulbType: "$ulb.ulbType.name",
+//           actionTakenByUserRole: "$actionTakenBy.role",
+//           status: {
+//             $cond: {
+//               if: { $eq: ["$status", "NA"] },
+//               then: "Not Started",
+//               else: "$status",
+//             },
+//           },
+//           createdAt: "$createdAt",
+//           isSubmit: 1,
+//           modifiedAt: "$modifiedAt",
+//           utilReport: "$steps.utilReport",
+//           pfmsAccount: "$steps.pfmsAccount",
+//           plans: "$steps.plans",
+//           slbForWaterSupplyAndSanitation:
+//             "$steps.slbForWaterSupplyAndSanitation",
+//           annualAccounts: "$steps.annualAccounts",
+//         },
+//       },
+//     ];
+//     // let match2 =  {
+//     //   $match: {
+//     //     state: ObjectId(state),
+//     //   },
+//     // };
+//     let queryNotStarted = [
+//       {
+//         $match:{
+//             $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+//         }
+//       },
+//       {
+//         $lookup: {
+//           from: "states",
+//           localField: "state",
+//           foreignField: "_id",
+//           as: "state",
+//         },
+//       },
+//       { $unwind: "$state" },
+//       {
+//         $match: {
+//           "state.accessToXVFC": true,
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "masterforms",
+//           let: {
+//             firstUser: ObjectId(design_year),
+//             secondUser: "$_id",
+//           },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     {
+//                       $eq: ["$design_year", "$$firstUser"],
+//                     },
+//                     {
+//                       $eq: ["$ulb", "$$secondUser"],
+//                     },
+//                   ],
+//                 },
+//               },
+//             },
+//           ],
+//           as: "masterformData",
+//         },
+       
+//       },
+//       {
+//         $unwind: {
+//           path: "$masterformData",
+//           preserveNullAndEmptyArrays: true,
+//         },
+//       },
+
+//       {
+//         $match: {
+//           masterformData: { $exists: false },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "uas",
+//           localField: "UA",
+//           foreignField: "_id",
+//           as: "UA",
+//         },
+//       },
+
+//       {
+//         $lookup: {
+//           from: "ulbtypes",
+//           localField: "ulbType",
+//           foreignField: "_id",
+//           as: "ulbType",
+//         },
+//       },
+//       { $unwind: "$ulbType" },
+//       { $addFields: { printStatus: "Not Started" } },
+//       {
+//         $project: {
+//           state: "$state.name",
+//           ulbName: "$name",
+//           ulb: "$_id",
+//           censusCode: "$censusCode",
+//           sbCode: "$sbCode",
+//           populationType: {
+//             $cond: {
+//               if: { $eq: ["$isMillionPlus", "Yes"] },
+//               then: "Million Plus",
+//               else: "Non Million",
+//             },
+//           },
+//           isUA: "$isUA",
+//           isMillionPlus: "$isMillionPlus",
+//           UA: {
+//             $cond: {
+//               if: { $eq: ["$isUA", "Yes"] },
+//               then: { $arrayElemAt: ["$UA.name", 0] },
+//               else: "NA",
+//             },
+//           },
+//           ulbType: "$ulbType.name",
+//           printStatus: 1,
+//         },
+//       },
+//     ];
+//     if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
+//       if(state){
+//         queryNotStarted.unshift({
+//           $match: {
+//             state: ObjectId(state),
+//           },
+//         });
+//       }
+      
+//     }
+
+//     let newFilter = await Service.mapFilter(filter);
+//     let total = undefined;
+//     let priority = false;
+
+//     // if (newFilter["status"]) {
+
+//     //   Object.assign(newFilter, statusFilter[newFilter["status"]]);
+//     //   newFilter['printStatus'] = newFilter['status']
+//     //   delete newFilter['status']
+//     // }
+//     if (newFilter && !newFilter["status"] && Object.keys(newFilter).length) {
+//       queryFilled.push({ $match: newFilter });
+//       queryNotStarted.push({ $match: newFilter });
+//     }
+    
+//     if (sort && Object.keys(sort).length) {
+//       queryFilled.push({ $sort: sort });
+//       queryNotStarted.push({ $sort: sort });
+//     } else {
+//       if (priority) {
+//         sort = {
+//           $sort: { priority: -1, priority_1: -1, modifiedAt: -1 },
+//         };
+//       } else {
+//         sort = { $sort: { createdAt: -1 } };
+//       }
+//       queryFilled.push(sort);
+//       queryNotStarted.push(sort);
+//     }
+
+//     if (csv) {
+//       let arr = await MasterFormData.aggregate(queryFilled).exec();
+//       for (d of arr) {
+//         if (
+//           d.status == "PENDING" &&
+//           d.isSubmit == false &&
+//           d.actionTakenByUserRole == "ULB"
+//         ) {
+//           d["printStatus"] = statusTypes.In_Progress;
+//         }
+//         if (
+//           d.status == "PENDING" &&
+//           d.isSubmit == true &&
+//           d.actionTakenByUserRole == "ULB"
+//         ) {
+//           d["printStatus"] = statusTypes.Under_Review_By_State;
+//         }
+//         if (
+//           d.status == "PENDING" &&
+//           d.isSubmit == false &&
+//           d.actionTakenByUserRole == "STATE"
+//         ) {
+//           d["printStatus"] = statusTypes.Under_Review_By_State;
+//         }
+//         if (d.status == "APPROVED" && d.actionTakenByUserRole == "STATE") {
+//           d["printStatus"] = statusTypes.Approved_By_State;
+//         }
+//         if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
+//           d["printStatus"] = statusTypes.Approved_By_State;
+//         }
+//         if (
+//           d.status == "PENDING" &&
+//           d.actionTakenByUserRole == "STATE" &&
+//           d.isSubmit == false
+//         ) {
+//           d["printStatus"] = statusTypes.Under_Review_By_State;
+//         }
+//         if (d.status == "REJECTED" && d.actionTakenByUserRole == "STATE") {
+//           d["printStatus"] = statusTypes.Rejected_By_State;
+//         }
+//         if (d.status == "REJECTED" && d.actionTakenByUserRole == "MoHUA") {
+//           d["printStatus"] = statusTypes.Rejected_By_MoHUA;
+//         }
+//         if (d.status == "APPROVED" && d.actionTakenByUserRole == "MoHUA") {
+//           d["printStatus"] = statusTypes.Approval_Completed;
+//         }
+//       }
+//       let field = csvULBReviewData();
+//       if (user.role == "STATE") {
+//         delete field.state;
+//       }
+//       let xlsData = await Service.dataFormating(arr, field);
+//       let date = moment().format("DD-MMM-YY").toString();
+//       let filename = `15th-FC-Form${date}.xlsx`;
+//       return res.xls(filename, xlsData);
+//     } else {
+//       if (!skip) {
+//         let qrr = [...queryFilled, { $count: "count" }];
+//         // console.log(util.inspect(qrr, {showHidden: false, depth : null}))
+//         let d = await MasterFormData.aggregate(qrr);
+//         total = d.length ? d[0].count : 0;
+//       }
+//       queryFilled.push({ $skip: skip });
+//       queryNotStarted.push({ $skip: skip });
+//       // queryFilled.push({ $limit: limit });
+//       // queryNotStarted.push({ $limit: limit });
+//       // console.log(util.inspect(queryFilled, { showHidden: false, depth: null }))
+//       let masterFormData = await MasterFormData.aggregate(queryFilled).exec();
+//       let p1 = [];
+//       let p2 = [];
+//       let p3 = [];
+//       let p4 = [];
+//       let p5 = [];
+//       let p6 = [];
+//       let finalOutput = [];
+
+//       for (d of masterFormData) {
+//         if (
+//           d.status == "PENDING" &&
+//           d.isSubmit == false &&
+//           d.actionTakenByUserRole == "ULB"
+//         ) {
+//           d["printStatus"] = statusTypes.In_Progress;
+//           p6.push(d);
+//         } else if (
+//           d.status == "PENDING" &&
+//           d.isSubmit == true &&
+//           d.actionTakenByUserRole == "ULB"
+//         ) {
+//           d["printStatus"] = statusTypes.Under_Review_By_State;
+//           p2.push(d);
+//         } else if (
+//           d.status == "PENDING" &&
+//           d.isSubmit == false &&
+//           d.actionTakenByUserRole == "STATE"
+//         ) {
+//           d["printStatus"] = statusTypes.Under_Review_By_State;
+//           p2.push(d);
+//         } else if (
+//           d.status == "APPROVED" &&
+//           d.actionTakenByUserRole == "STATE"
+//         ) {
+//           d["printStatus"] = statusTypes.Approved_By_State;
+//           p1.push(d);
+//         } else if (d.isSubmit == false && d.actionTakenByUserRole == "MoHUA") {
+//           d["printStatus"] = statusTypes.Approved_By_State;
+//           p1.push(d);
+//         } else if (
+//           d.status == "REJECTED" &&
+//           d.actionTakenByUserRole == "STATE"
+//         ) {
+//           d["printStatus"] = statusTypes.Rejected_By_State;
+//           p5.push(d);
+//         } else if (
+//           d.status == "REJECTED" &&
+//           d.actionTakenByUserRole == "MoHUA"
+//         ) {
+//           d["printStatus"] = statusTypes.Rejected_By_MoHUA;
+//           p4.push(d);
+//         } else if (
+//           d.status == "APPROVED" &&
+//           d.actionTakenByUserRole == "MoHUA"
+//         ) {
+//           d["printStatus"] = statusTypes.Approval_Completed;
+//           p3.push(d);
+//         }
+//       }
+// console.log(util.inspect(queryNotStarted, {showHidden: false, depth: null}))
+//       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
+//       finalOutput.push(
+//         ...p1,
+//         ...p2,
+//         ...p3,
+//         ...p4,
+//         ...p5,
+//         ...p6,
+//         ...noMasterFormData
+//       );
+//       let tryData = [];
+//       if (newFilter["status"]) {
+//         finalOutput = finalOutput.filter((data) => {
+//           // console.log(data.printStatus.toLowerCase() == newFilter["status"].toLowerCase())
+//           return (
+//             data.printStatus.toLowerCase() == newFilter["status"].toLowerCase()
+//           );
+//         });
+//       }
+//       console.log(finalOutput);
+//       if (finalOutput) {
+//         return res.status(200).json({
+//           success: true,
+//           message: "ULB Master Form Data Found Successfully!",
+//           data: finalOutput,
+//           total: finalOutput.length,
+//         });
+//       } else {
+//         return res.status(400).json({
+//           success: false,
+//           message: "No Data Found",
+//         });
+//       }
+//     }
+//   } else {
+//     return res.status(403).json({
+//       success: false,
+//       message: user.role + " is Not Authenticated to Perform this Action",
+//     });
+//   }
+// });
 
 module.exports.getAllForms = catchAsync(async (req, res) => {
   const { design_year, ulb, financialYear } = req.query;

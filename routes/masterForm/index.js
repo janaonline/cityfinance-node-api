@@ -9,7 +9,7 @@ const { StateDashboard, plansData, slbWaterSanitationState, viewList, getHistory
 router.get('/get/:design_year', verifyToken, get) //ulb login
 router.get('/get/:design_year/:masterform_id', verifyToken, get) // admin login
 router.get('/UAList', verifyToken, UAList) // admin login
-router.get('/getAll/:design_year', verifyToken, getAll)//
+router.get('/getAll/:design_year/:formName', verifyToken, getAll)//
 router.get('/getAllForms', verifyToken, getAllForms)//
 router.get('/state-dashboard/:design_year', verifyToken, StateDashboard)//
 router.get('/dashboard-slbWS/state/:design_year', verifyToken, slbWaterSanitationState)
