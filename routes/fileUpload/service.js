@@ -30,8 +30,8 @@ const sanitation = [
   "efficiency in collection of sewerage charges",
 ];
 const solidWaste = [
-  "household level coverage of solid waste",
-  "management services	Efficiency of collection of municipal solid waste",
+  "household level coverage of solid waste management services",
+  "Efficiency of collection of municipal solid waste",
   "extent of segregation of municipal solid waste",
   "extent of municipal solid waste recovered",
   "extent of scientific disposal of municipal solid waste",
@@ -43,6 +43,103 @@ const stormWater = [
   "coverage of storm water drainage network",
   "incidence of water logging/flooding",
 ];
+
+const unitBenchmark = {
+  "coverage of water supply connections": { benchMark: 100, unit: "Percent" },
+  "per capita available of water at consumer end": {
+    benchMark: 135,
+    unit: "litres per capita per day (lpcd)",
+  },
+  "extent of metering of water connections": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "extent of non-revenue water": { benchMark: 20, unit: "Percent" },
+  "continuity of water supply": { benchMark: 24, unit: "Hours per day" },
+  "efficiency in redressal of customer complaints": {
+    benchMark: 80,
+    unit: "Percent",
+  },
+  "quality of water supplied": { benchMark: 100, unit: "Percent" },
+  "cost recovery in water supply services": { benchMark: 100, unit: "Percent" },
+  "efficieny in collection of water supply related charges": {
+    benchMark: 90,
+    unit: "Percent",
+  },
+
+  "coverage of toilets": { benchMark: 100, unit: "Percent" },
+  "coverage of wastewater network services": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "collection efficiency of wastewater networks": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "adequacy of wastewater treatment capacity": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "quality of wastewater treatment": { benchMark: 100, unit: "Percent" },
+  "extent of reuse and recycling of treated watsewater": {
+    benchMark: 20,
+    unit: "Percent",
+  },
+  "efficiency in redressal of customer complaints": {
+    benchMark: 80,
+    unit: "Percent",
+  },
+  "exetent of cost recovery in wastewater management": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "efficiency in collection of sewerage charges": {
+    benchMark: 90,
+    unit: "Percent",
+  },
+
+  "household level coverage of solid waste management services": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "efficiency of collection of municipal solid waste": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "extent of segregation of municipal solid waste": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "extent of municipal solid waste recovered": {
+    benchMark: 80,
+    unit: "Percent",
+  },
+  "extent of scientific disposal of municipal solid waste": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "extent of cost recovery in solid waste management services": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "efficieny in redressal of customer complaints": {
+    benchMark: 80,
+    unit: "Percent",
+  },
+  "efficiency in collection of solid waste management charges": {
+    benchMark: 90,
+    unit: "Percent",
+  },
+
+  "coverage of storm water drainage network": {
+    benchMark: 100,
+    unit: "Percent",
+  },
+  "incidence of water logging/flooding": {
+    benchMark: 0,
+    unit: "Nos. per year",
+  },
+};
 
 exports.fileUpload = async (req, res) => {
   try {
@@ -59,6 +156,8 @@ exports.fileUpload = async (req, res) => {
           censusCode: "",
           ulb: "",
           year: value?.year,
+          unitType: "",
+          benchMarkValue: "",
         };
         const element = value[key];
         if (waterSupply.includes(key)) {
@@ -74,6 +173,8 @@ exports.fileUpload = async (req, res) => {
             .lean();
           indicator.ulb = ulbId?._id;
           indicator.year += "-" + (Number(indicator.year) + 1);
+          indicator.unitType = unitBenchmark[key].unit;
+          indicator.benchMarkValue = unitBenchmark[key].benchMark;
           bulkUploadData.push(indicator);
         }
         if (sanitation.includes(key)) {
@@ -89,6 +190,9 @@ exports.fileUpload = async (req, res) => {
             .lean();
           indicator.ulb = ulbId?._id;
           indicator.year += "-" + (Number(indicator.year) + 1);
+          if (!unitBenchmark[key]) console.log(key);
+          indicator.unitType = unitBenchmark[key].unit;
+          indicator.benchMarkValue = unitBenchmark[key].benchMark;
           bulkUploadData.push(indicator);
         }
         if (solidWaste.includes(key)) {
@@ -104,6 +208,9 @@ exports.fileUpload = async (req, res) => {
             .lean();
           indicator.ulb = ulbId?._id;
           indicator.year += "-" + (Number(indicator.year) + 1);
+          if (!unitBenchmark[key]) console.log(key);
+          indicator.unitType = unitBenchmark[key].unit;
+          indicator.benchMarkValue = unitBenchmark[key].benchMark;
           bulkUploadData.push(indicator);
         }
         if (stormWater.includes(key)) {
@@ -119,12 +226,15 @@ exports.fileUpload = async (req, res) => {
             .lean();
           indicator.ulb = ulbId?._id;
           indicator.year += "-" + (Number(indicator.year) + 1);
+          if (!unitBenchmark[key]) console.log(key);
+          indicator.unitType = unitBenchmark[key].unit;
+          indicator.benchMarkValue = unitBenchmark[key].benchMark;
           bulkUploadData.push(indicator);
         }
       }
     }
 
-    let newData = Indicator.insertMany(bulkUploadData);
+    let newData = await Indicator.insertMany(bulkUploadData);
 
     return Response.OK(res, newData, "Submitted!");
   } catch (err) {
@@ -171,6 +281,16 @@ exports.getIndicatorData = async (req, res) => {
     return Response.OK(res, data, "Success");
   } catch (error) {
     return Response.DbError(res, error.message);
+  }
+};
+
+exports.deleteALlData = async (req, res) => {
+  try {
+    let data = await Indicator.remove();
+    return Response.OK(res, data);
+  } catch (error) {
+    console.log(error);
+    return Response.DbError(res, error, error.message);
   }
 };
 

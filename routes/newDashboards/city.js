@@ -127,7 +127,7 @@ const indicator = async (req, res) => {
           },
         });
         break;
-      case "deficit":
+      case "deficit_ot_surplus":
         query.map((value) => {
           if (value["$lookup"]?.from === "lineitems") {
             delete value["$lookup"].pipeline[0]?.$match?.$expr;
@@ -147,6 +147,66 @@ const indicator = async (req, res) => {
             amount: { $sum: "$amount" },
           },
         });
+        break;
+      case "capital_expenditure":
+        query.map((value) => {
+          if (value["$lookup"]?.from === "lineitems") {
+            value["$lookup"].pipeline[0] = {
+              $match: {
+                $or: [
+                  {
+                    $expr: {
+                      $eq: ["$code", "412"],
+                    },
+                  },
+                  {
+                    $expr: {
+                      $eq: ["$code", "410"],
+                    },
+                  },
+                ],
+              },
+            };
+          }
+        });
+        let group2 = {
+          _id: {
+            ulb: "$ulb._id",
+            financialYear: "$financialYear",
+            lineItemName: "$lineitems.name",
+          },
+          amount: { $sum: "$amount" },
+          ulbName: { $first: "$ulb.name" },
+        };
+        if (isPerCapita) {
+          group2.amount = {
+            $sum: {
+              $cond: [
+                { $eq: ["$ulb.population", 0] },
+                0,
+                { $divide: ["$amount", "$ulb.population"] },
+              ],
+            },
+          };
+        }
+        let group3 = {
+          "$group":{
+              _id:"$_id.financialYear",
+              yearData:{
+                  $push:{
+                      name:"$_id.lineItemName",
+                      amount:"$amount",
+                      ulbName:"$ulbName"
+                      }
+                  }
+          }
+          }
+
+        query.push({
+          $group: group2,
+        });
+
+        query.push(group3);
       default:
         break;
     }
