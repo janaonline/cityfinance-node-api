@@ -18,6 +18,7 @@ const IndicatorsSchema = new Schema(
     value: {
       type: String,
     },
+    benchMarkValue: { type: String },
     ulbName: { type: String },
     censusCode: { type: String },
     modifiedAt: { type: Date, default: Date.now() },
