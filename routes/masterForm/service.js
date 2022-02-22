@@ -302,6 +302,9 @@ module.exports.getAll = catchAsync(async (req, res) => {
   let user = req.decoded;
   let {design_year,formName} = req.params
   let {state_id} = req.query;
+  if(state_id == 'null'){
+    state_id = null
+  }
   let state = state_id ?? user.state
   if(!design_year || !formName){
     return res.status(400).json({
@@ -358,7 +361,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
           censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
           ua:{$ifNull:["$ua.name","NA"]},
           populationType:{
-              $cond : {$if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+              $cond : {
+                if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
           }
         }
       },
@@ -421,7 +425,61 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
 
     ]
-    let query_util = []
+    let query_util = [
+      {
+        $match:{
+          designYear: ObjectId(design_year)
+        }
+      },
+            {
+              $lookup: {
+                from:"ulbs",
+                localField:"ulb",
+                foreignField:"_id",
+                as:"ulb"
+              }
+            },
+            {
+              $unwind:"$ulb"
+            },
+            {
+              $match:{
+                "ulb.state": ObjectId(state)
+              }
+            },
+            {
+              $lookup:{
+                from:"uas",
+                localField:"ulb._id",
+                foreignField:"ulb",
+                as:"ua"
+              }
+            },{
+              $unwind:{
+                path:"$ua",
+                preserveNullAndEmptyArrays:true
+              }
+            },
+            {
+      
+              $project:{
+                role:"$actionTakenByRole",
+                
+                status:"$status",
+                isDraft:"$isDraft",
+                ulbName:"$ulb.name",
+                ulbId: "$ulb._id",
+                censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
+                ua:{$ifNull:["$ua.name","NA"]},
+                populationType:{
+                    $cond : {if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+                }
+              }
+            },
+      
+      
+      
+          ]
     let query_util_notStarted = [
       {
         $match:{
@@ -477,19 +535,119 @@ module.exports.getAll = catchAsync(async (req, res) => {
 
 
     ]
-    let query_slb = []
-  let query_slb_notStarted = []
+    let query_slb = [
+      {
+        $match:{
+          design_year: ObjectId(design_year)
+        }
+      },
+            {
+              $lookup: {
+                from:"ulbs",
+                localField:"ulb",
+                foreignField:"_id",
+                as:"ulb"
+              }
+            },
+            {
+              $unwind:"$ulb"
+            },
+            {
+              $match:{
+                "ulb.state": ObjectId(state)
+              }
+            },
+            {
+              $lookup:{
+                from:"uas",
+                localField:"ulb._id",
+                foreignField:"ulb",
+                as:"ua"
+              }
+            },{
+              $unwind:{
+                path:"$ua",
+                preserveNullAndEmptyArrays:true
+              }
+            },
+            {
+      
+              $project:{
+                role:"$actionTakenByRole",
+                blank:"$blank",
+                status:"$waterManagement.status",
+                isDraft:{ $not: [ "$isCompleted" ] },
+                ulbName:"$ulb.name",
+                ulbId: "$ulb._id",
+                censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
+                ua:{$ifNull:["$ua.name","NA"]},
+                populationType:{
+                    $cond : {if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+                }
+              }
+            },
+      
+      
+      
+          ]
+  let query_slb_notStarted =  [
+    {
+      $match:{
+        state: ObjectId(state)
+      }
+    },
+    {
+      $lookup:{
+        from:"uas",
+        localField:"ua",
+        foreignField:"_id",
+        as:"ua"
+      }
+    },{
+      $unwind:{
+        path:"$ua",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "xvfcgrantulbforms",
+        let: {
+          firstUser: ObjectId(design_year),
+          secondUser: "$_id",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ["$design_year", "$$firstUser"],
+                  },
+                  {
+                    $eq: ["$ulb", "$$secondUser"],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+        as: "slbData",
+      },
+    },
+    {
+      $match:{
+        slbData:{
+          $size:0
+        }
+      }
+    }
+
+
+  ]
 
   if(formName == 'annual'){
-    let obj={
-ulbName:"",
-censusCode:"",
-ulbId:null,
-populationType:"",
-UA:"",
-auditedStatus:"",
-provisionalStatus:"",
-    }
+    
     let data=[]
 let {annualData,annualData_notStarted } = await new Promise(async (resolve, reject)=>{
   let prms1 = await new Promise(async (rslv, rjct)=>{
@@ -518,6 +676,16 @@ rslv(output)
 })
 
 annualData.forEach(el=>{
+  let obj={
+    ulbName:"",
+    censusCode:"",
+    ulbId:null,
+    populationType:"",
+    UA:"",
+    auditedStatus:"",
+    provisionalStatus:"",
+    canApprove: false
+        }
   obj.ulbName = el.ulbName;
   obj.censusCode = el.censusCode;
   obj.UA = el.ua;
@@ -530,23 +698,27 @@ obj.ulbId = el.ulbId;
 
   }else if(el.role == 'ULB' && !el.isDraft){
     if(el.audited_answer){
-      obj.auditedStatus = STATUS_LIST.Submitted
+      obj.auditedStatus = STATUS_LIST.Submitted;
+      obj.canApprove = true
     }else if(!el.audited_answer){
       obj.auditedStatus = STATUS_LIST.Not_Submitted
     }
     if(el.unAudited_answer){
-      obj.provisionalStatus = STATUS_LIST.Submitted
+      obj.provisionalStatus = STATUS_LIST.Submitted;
+      obj.canApprove = true
     }else if(!el.unAudited_answer){
       obj.provisionalStatus = STATUS_LIST.Not_Submitted
     }
   } else if(el.role == 'STATE' && el.isDraft){
     if(el.audited_answer){
-      obj.auditedStatus = STATUS_LIST.Submitted
+      obj.auditedStatus = STATUS_LIST.Submitted;
+      obj.canApprove = true
     }else if(!el.audited_answer){
       obj.auditedStatus = STATUS_LIST.Not_Submitted
     }
     if(el.unAudited_answer){
       obj.provisionalStatus = STATUS_LIST.Submitted
+      obj.canApprove = true
     }else if(!el.unAudited_answer){
       obj.provisionalStatus = STATUS_LIST.Not_Submitted
     }
@@ -585,6 +757,16 @@ data.push(obj)
 
 })
 annualData_notStarted.forEach(el=>{
+  let obj={
+    ulbName:"",
+    censusCode:"",
+    ulbId:null,
+    populationType:"",
+    UA:"",
+    auditedStatus:"",
+    provisionalStatus:"",
+    canApprove: false
+        }
   obj.ulbName = el.name;
   obj.censusCode = el.censusCode ?? el.sbCode;
   obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
@@ -605,6 +787,7 @@ return res.status(200).json({
 
   } else if(formName == 'slb'){
     let data =[]
+  
     let {slbData,slbData_notStarted } = await new Promise(async (resolve, reject)=>{
       let prms1 = await new Promise(async (rslv, rjct)=>{
     let output = await Slb.aggregate(query_slb)
@@ -631,6 +814,15 @@ return res.status(200).json({
       })
     })
     slbData.forEach(el=>{
+      let obj={
+        ulbName:"",
+        censusCode:"",
+        ulbId:null,
+        populationType:"",
+        UA:"",
+        slbStatus:"",
+        canApprove: false,
+            }
       obj.ulbName = el.ulbName;
       obj.censusCode = el.censusCode;
       obj.UA = el.ua;
@@ -638,59 +830,30 @@ return res.status(200).json({
     obj.ulbId = el.ulbId;
     
       if(el.role == 'ULB' && el.isDraft){
-        obj.auditedStatus = STATUS_LIST.In_Progress
-        obj.provisionalStatus = STATUS_LIST.In_Progress
-    
+        obj.slbStatus = STATUS_LIST.In_Progress
       }else if(el.role == 'ULB' && !el.isDraft){
-        if(el.audited_answer){
-          obj.auditedStatus = STATUS_LIST.Submitted
-        }else if(!el.audited_answer){
-          obj.auditedStatus = STATUS_LIST.Not_Submitted
-        }
-        if(el.unAudited_answer){
-          obj.provisionalStatus = STATUS_LIST.Submitted
-        }else if(!el.unAudited_answer){
-          obj.provisionalStatus = STATUS_LIST.Not_Submitted
-        }
-      } else if(el.role == 'STATE' && el.isDraft){
-        if(el.audited_answer){
-          obj.auditedStatus = STATUS_LIST.Submitted
-        }else if(!el.audited_answer){
-          obj.auditedStatus = STATUS_LIST.Not_Submitted
-        }
-        if(el.unAudited_answer){
-          obj.provisionalStatus = STATUS_LIST.Submitted
-        }else if(!el.unAudited_answer){
-          obj.provisionalStatus = STATUS_LIST.Not_Submitted
-        }
-    
+        if(el.blank){
+          obj.slbStatus = STATUS_LIST.Not_Submitted
+        }else if(!el.blank)
+          obj.slbStatus = STATUS_LIST.Submitted;
+          obj.canApprove = true
+        } else if(el.role == 'STATE' && el.isDraft){
+          obj.slbStatus = STATUS_LIST.Submitted
+          obj.canApprove = true
       }else if(el.role == 'STATE' && !el.isDraft){
         if(el.status == 'APPROVED'){
-          obj.auditedStatus = STATUS_LIST.Approved_By_State
-          obj.provisionalStatus = STATUS_LIST.Approved_By_State
+          obj.slbStatus = STATUS_LIST.Approved_By_State
         }else if(el.status == 'REJECTED'){
-          obj.auditedStatus = STATUS_LIST.In_Progress
-          obj.provisionalStatus = STATUS_LIST.In_Progress
+          obj.slbStatus = STATUS_LIST.In_Progress
         }
       }else if(el.role == 'MoHUA' && el.isDraft){
-        if(el.audited_answer){
-          obj.auditedStatus = STATUS_LIST.Approved_By_State
-        }else if(!el.audited_answer){
-          obj.auditedStatus = STATUS_LIST.Not_Submitted
-        }
-        if(el.unAudited_answer){
-          obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
-        }else if(!el.unAudited_answer){
-          obj.provisionalStatus = STATUS_LIST.Not_Submitted
-        }
-    
+          obj.slbStatus = STATUS_LIST.Approved_By_State
       }else if(el.role == 'MoHUA' && !el.isDraft){
         if(el.status == 'APPROVED'){
-          obj.auditedStatus = STATUS_LIST.Approved_By_MoHUA
-          obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
+          obj.slbStatus = STATUS_LIST.Approved_By_MoHUA
         }else if(el.status == 'REJECTED'){
-          obj.auditedStatus = STATUS_LIST.Rejected_By_MoHUA
-          obj.provisionalStatus = STATUS_LIST.Rejected_By_MoHUA
+          obj.slbStatus = STATUS_LIST.Rejected_By_MoHUA
+          
         }
       }
     
@@ -698,25 +861,34 @@ return res.status(200).json({
     
     })
     slbData_notStarted.forEach(el=>{
+      let obj={
+        ulbName:"",
+        censusCode:"",
+        ulbId:null,
+        populationType:"",
+        UA:"",
+        slbStatus:"",
+        canApprove: false
+            }
       obj.ulbName = el.name;
       obj.censusCode = el.censusCode ?? el.sbCode;
       obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
       obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
     obj.ulbId = el._id;
-    obj.auditedStatus = STATUS_LIST.Not_Started;
-    obj.provisionalStatus = STATUS_LIST.Not_Started
+    obj.slbStatus = STATUS_LIST.Not_Started;
+    
     data.push(obj)
     })
-    
-    
     return res.status(200).json({
       success: true,
-      message:"Annual Accounts Form List",
+      message:"SLB Form List",
       data:data
     })
 
 
   }else if(formName == 'util'){
+    let data = []
+  
     let {utilData,utilData_notStarted } = await new Promise(async (resolve, reject)=>{
       let prms1 = await new Promise(async (rslv, rjct)=>{
     let output = await UtilizationReport.aggregate(query_util)
@@ -742,6 +914,77 @@ return res.status(200).json({
           reject({ message: "No Data Found" });
       })
     })
+
+    utilData.forEach(el=>{
+      let obj={
+        ulbName:"",
+        censusCode:"",
+        ulbId:null,
+        populationType:"",
+        UA:"",
+        utilStatus:"",
+        canApproved: false
+            }
+      obj.ulbName = el.ulbName;
+      obj.censusCode = el.censusCode;
+      obj.UA = el.ua;
+      obj.populationType = el.populationType;
+    obj.ulbId = el.ulbId;
+    
+      if(el.role == 'ULB' && el.isDraft){
+        obj.utilStatus = STATUS_LIST.In_Progress
+      }else if(el.role == 'ULB' && !el.isDraft){
+          obj.utilStatus = STATUS_LIST.Submitted
+          obj.canApprove = true
+        } else if(el.role == 'STATE' && el.isDraft){
+          obj.utilStatus = STATUS_LIST.Submitted
+          obj.canApprove = true
+      }else if(el.role == 'STATE' && !el.isDraft){
+        if(el.status == 'APPROVED'){
+          obj.utilStatus = STATUS_LIST.Approved_By_State
+        }else if(el.status == 'REJECTED'){
+          obj.utilStatus = STATUS_LIST.In_Progress
+        }
+      }else if(el.role == 'MoHUA' && el.isDraft){
+          obj.utilStatus = STATUS_LIST.Approved_By_State
+      }else if(el.role == 'MoHUA' && !el.isDraft){
+        if(el.status == 'APPROVED'){
+          obj.utilStatus = STATUS_LIST.Approved_By_MoHUA
+        }else if(el.status == 'REJECTED'){
+          obj.utilStatus = STATUS_LIST.Rejected_By_MoHUA
+          
+        }
+      }
+    
+    data.push(obj)
+    
+    })
+    utilData_notStarted.forEach(el=>{
+      let obj={
+        ulbName:"",
+        censusCode:"",
+        ulbId:null,
+        populationType:"",
+        UA:"",
+        utilStatus:"",
+        canApproved: false
+            }
+      obj.ulbName = el.name;
+      obj.censusCode = el.censusCode ?? el.sbCode;
+      obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
+      obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
+    obj.ulbId = el._id;
+    obj.utilStatus = STATUS_LIST.Not_Started;
+    
+    data.push(obj)
+    })
+    return res.status(200).json({
+      success: true,
+      message:"DUR Form List",
+      data:data
+    })
+    
+
   }
 
 

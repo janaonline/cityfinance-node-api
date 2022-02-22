@@ -1146,6 +1146,118 @@ if(currentAnnualAccountData && currentAnnualAccountData['actionTakenByRole'] != 
   }
 };
 
+exports.multiApprove = catchAsync(async(req,res)=>{
+let user  = req.decoded;
+let ulbsArray = req.body?.checkedUlbs
+let {design_year} = req.query
+let tab = req.body?.tab
+if(tab && ulbsArray.length>0 && design_year){
+  if(user.role == 'STATE'){
+
+    if(tab == 'annual-acount'){
+      ulbsArray.forEach(async el=>{
+     let oldData =   await AnnualAccountData.findOne({
+          ulb: ObjectId(el),
+          design_year:ObjectId(design_year)
+        }, {history: 0}).lean()
+
+        await AnnualAccountData.findOneAndUpdate(
+          {
+            ulb: ObjectId(el),
+            design_year:ObjectId(design_year)
+          },
+          { 
+            $push:{
+              history:oldData
+          },
+            $set:{
+              status:"APPROVED",
+              actionTakenByRole:"STATE",
+              actionTakenBy:ObjectId(user._id),
+              isDraft: false,
+              modifiedAt: Date.now()
+            }
+          }
+        )
+      })
+
+    }else if(tab == 'Detail-utilisation-report'){
+      ulbsArray.forEach(async el=>{
+        let oldData =   await DUR.findOne({
+             ulb: ObjectId(el),
+             designYear:ObjectId(design_year)
+           }, {history: 0}).lean()
+   
+           await DUR.findOneAndUpdate(
+             {
+               ulb: ObjectId(el),
+               designYear:ObjectId(design_year)
+             },
+             { 
+               $push:{
+                 history:oldData
+             },
+               $set:{
+                 status:"APPROVED",
+                 actionTakenByRole:"STATE",
+                 actionTakenBy:ObjectId(user._id),
+                 isDraft: false,
+                 modifiedAt: Date.now()
+               }
+             }
+           )
+         })
+
+    }else if(tab == 'Slb-sanitation'){
+      ulbsArray.forEach(async el=>{
+        let oldData =   await SLB.findOne({
+             ulb: ObjectId(el),
+             design_year:ObjectId(design_year)
+           }, {history: 0}).lean()
+   
+           await SLB.findOneAndUpdate(
+             {
+               ulb: ObjectId(el),
+               design_year:ObjectId(design_year)
+             },
+             { 
+               $push:{
+                 history:oldData
+             },
+               $set:{
+                 "waterManagement.status":"APPROVED",
+                 actionTakenByRole:"STATE",
+                 actionTakenBy:ObjectId(user._id),
+                 isCompleted: true,
+                 modifiedAt: Date.now()
+               }
+             }
+           )
+         })
+
+    }
+return res.status(200).json({
+  success: true,
+  message:`${ulbsArray.length} Forms Approved by State`
+})
+  }else if(user.role == 'MoHUA'){
+  
+  }else {
+    return res.status(403).json({
+      success: false,
+      message:"Not Authorized to access this API"
+    })
+  }
+}else {
+  return res.status(400).json({
+    success: false,
+    message:"Missing Tab Value or Checked ULBs Array or Design Year"
+  })
+  
+}
+
+})
+
 function csvData_Provisional() {
   return (field = {
     ulbName: "ULB name",
