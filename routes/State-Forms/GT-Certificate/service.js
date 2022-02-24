@@ -4,6 +4,7 @@ const Ulb = require('../../../models/Ulb')
 const State = require('../../../models/State')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../../service')
+const Year = require('../../../models/Year')
 const User = require('../../../models/User')
 const {
   UpdateStateMasterForm,
@@ -76,7 +77,8 @@ module.exports.create = catchAsync(async (req, res) => {
       let mailOptions =     {
         Destination: {
           /* required */
-          ToAddresses: ["ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org", user.email]
+          // ToAddresses: ["ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org", user.email]
+            ToAddresses: ["vishu.gupta@dhwaniris.com"]
         },
         Message: {
           /* required */
