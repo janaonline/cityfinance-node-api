@@ -336,6 +336,7 @@ const chartData2 = async (req, res) => {
     };
     data.push(temp);
     data = data.filter((value) => value._id.revenueName != "Tax Revenue");
+    //rearrange the elements
     return Response.OK(res, data);
   } catch (error) {
     console.log(error);
