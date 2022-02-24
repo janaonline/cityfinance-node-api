@@ -73,6 +73,7 @@ module.exports.create = catchAsync(async (req, res) => {
     });
     if (updatedData) {
       await UpdateStateMasterForm(req, "GTCertificate");
+     if(req.headers.host == 'cityfinance.in'){
       let template = Service.emailTemplate.gtcSubmission(stateData.name, yearData.year, user.name, req.body.installment )
       let mailOptions =     {
         Destination: {
@@ -99,6 +100,9 @@ module.exports.create = catchAsync(async (req, res) => {
         ReplyToAddresses: [process.env.EMAIL],
       }
     Service.sendEmail(mailOptions);
+     }
+
+  
       return res.status(200).json({
         success: true,
         message: "Data Updated Successfully!",
