@@ -1,7 +1,9 @@
 const catchAsync = require("../../../util/catchAsync");
 const StateGTCertificate = require("../../../models/StateGTCertificate");
 const Ulb = require('../../../models/Ulb')
+const State = require('../../../models/State')
 const ObjectId = require("mongoose").Types.ObjectId;
+const Service = require('../../../service')
 const User = require('../../../models/User')
 const {
   UpdateStateMasterForm,
@@ -49,6 +51,8 @@ module.exports.create = catchAsync(async (req, res) => {
   data["actionTakenBy"] = user._id;
   data["state"] = user.state;
   if (user.role === "STATE") {
+    let stateData = await State.findOne({_id: ObjectId(user.state)}).lean()
+    let yearData = await Year.findOne({_id: ObjectId(design_year)})
     let query = {
       state: ObjectId(user.state),
       design_year: ObjectId(design_year),
@@ -68,6 +72,31 @@ module.exports.create = catchAsync(async (req, res) => {
     });
     if (updatedData) {
       await UpdateStateMasterForm(req, "GTCertificate");
+      let template = Service.emailTemplate.gtcSubmission(stateData.name, yearData.year, user.name, req.body.installment )
+      let mailOptions =     {
+        Destination: {
+          /* required */
+          ToAddresses: ["ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org", user.email]
+        },
+        Message: {
+          /* required */
+          Body: {
+            /* required */
+            Html: {
+              Charset: "UTF-8",
+              Data:  template.body
+            },
+          },
+          Subject: {
+            Charset: 'UTF-8',
+            Data:template.subject
+          }
+        },
+        Source: process.env.EMAIL,
+        /* required */
+        ReplyToAddresses: [process.env.EMAIL],
+      }
+    Service.sendEmail(mailOptions);
       return res.status(200).json({
         success: true,
         message: "Data Updated Successfully!",
