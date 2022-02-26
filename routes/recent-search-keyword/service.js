@@ -5,7 +5,7 @@ const SearchKeyword = require("../../models/searchKeywords");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
-
+const catchAsync = require('../../util/catchAsync')
 /**
  * Dynamic Financial Years are  those years which are contain any Financial Data.
  * The list changes based upon the datas present in collection UlbFinancialData.
@@ -107,11 +107,47 @@ async function getAllKeyword(req, res) {
   }
 }
 
-async function search(req, res) {
+const search = catchAsync(async (req, res) => {
   try {
     const { matchingWord, onlyUlb } = req.body;
+    const {type} = req.query
+    
     if (!matchingWord)
       return Response.BadRequest(res, null, "Provide word to match");
+
+      if(type && type == 'state'){
+        let query = { name: { $regex: matchingWord, $options: "im" } };
+        let statePromise = await State.find(query)
+        .limit(5)
+        .lean();
+        let data =[]
+if(statePromise.length>0){
+   data =   
+          statePromise.map((value) => {
+            value.type = "state";
+            return value;
+          })
+}
+      
+        
+
+        return Response.OK(res, data);
+      }else if(type && type == 'ulb'){
+        let query = { name: { $regex: matchingWord, $options: "im" } };
+        let ulbPromise = await Ulb.find(query)
+          .populate("state")
+          .populate("ulbType")
+          .limit(5)
+          .lean();
+          let data =   
+           ulbPromise.map((value) => {
+              value.type = "ulb";
+              return value;
+            })
+          
+
+          return Response.OK(res, data);
+      }
     let query = { name: { $regex: matchingWord, $options: "im" } };
     let ulbPromise = Ulb.find(query)
       .populate("state")
@@ -119,6 +155,7 @@ async function search(req, res) {
       // .select({ name: 1, _id: 1 })
       .limit(2)
       .lean();
+      
     let statePromise = State.find(query)
       // .select({ name: 1, _id: 1 })
       .limit(2)
@@ -160,7 +197,7 @@ async function search(req, res) {
   } catch (error) {
     return Response.InternalError(res, error);
   }
-}
+})
 module.exports = {
   addKeyword,
   getAllKeyword,
