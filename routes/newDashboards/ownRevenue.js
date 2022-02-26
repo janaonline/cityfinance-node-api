@@ -6,6 +6,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
 const util = require('util')
+const catchAsync = require('../../util/catchAsync')
 const revenueList = [ "130", "140", "150", "180", "110"];
 const ObjectIdOfRevenueList = [
   "5dd10c2285c951b54ec1d737",
@@ -19,12 +20,68 @@ const expenseCode = [
   "5dd10c2585c951b54ec1d753",
   "5dd10c2585c951b54ec1d75a",
   "5dd10c2585c951b54ec1d756",
-  "5dd10c2685c951b54ec1d760",
+  
 ];
+
+const yearlist = catchAsync(async(req,res)=>{
+  const { financialYear, stateId, ulb, ulbType, populationCategory } =
+  req.body;
+// matchObj={}
+// if(stateId && ObjectId.isValid(stateId)){
+//   Object.assign(matchObj,{"ulb.state": ObjectId(stateId)})
+// }
+// if(ulb && ObjectId.isValid(ulb)){
+//   Object.assign(matchObj,{"ulb._id": ObjectId(ulb)})
+// }
+// if(ulbType && ObjectId.isValid(ulbType)){
+//   Object.assign(matchObj,{"ulb.ulbType": ObjectId(ulbType)})
+// }
+// if(populationCategory == '4 Million+'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+// }else if(populationCategory == '500 Thousand - 1 Million'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+// }else if(populationCategory == '100 Thousand - 500 Thousand'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+// }else if(populationCategory == '100 Thousand - 500 Thousand'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+// }else if(populationCategory == '1 Million - 4 Million'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+// }else if(populationCategory == '200 Thousand - 500 Thousand'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
+// }
+
+
+
+let query =[]
+
+  // query.push(  {$lookup:{
+  //   from:"ulbs",
+  //   localField:"ulb",
+  //   foreignField:"_id",
+  //   as:"ulb"
+  // }},{$unwind:"$ulb"},)
+  // if(Object.keys(matchObj).length>0){
+  //   query.push({
+  //     $match:matchObj
+  //   })
+  // }
+let obj =  {
+  $group:{
+    _id:"$financialYear"
+  }
+}
+query.push(obj)
+console.log(util.inspect(query,{depth: null, showHidden: false}))
+let yearList = await UlbLedger.aggregate(query);
+return res.status(200).json({
+  success: true,
+  data: yearList
+})
+}) 
 
 const dataAvailability = async (req, res) => {
   try {
-    const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType, csv } =
+    const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType, csv, populationCategory } =
       req.body;
 
     if (!financialYear) {
@@ -58,12 +115,40 @@ const dataAvailability = async (req, res) => {
     ];
 
     let matchObj = {};
-    if (stateId && ObjectId.isValid(stateId))
+    let matchObjNoData = {};
+    if (stateId && ObjectId.isValid(stateId)){
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
-    if (ulbType && ObjectId.isValid(ulbType))
+      Object.assign(matchObjNoData, { "state": ObjectId(stateId) });
+    }
+      
+    if (ulbType && ObjectId.isValid(ulbType)){
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
+      Object.assign(matchObjNoData, { "ulbType": ObjectId(ulbType) });
+
+    }
+      
+   
+      if (ulb && ObjectId.isValid(ulb)){
+        Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
+        Object.assign(matchObjNoData, { "_id": ObjectId(ulb) });
+      }
+      
+      if(populationCategory == '4 Million+'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 4000000}});
+      }else if(populationCategory == '500 Thousand - 1 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 500000, $lt:1000000}});
+      }else if(populationCategory == '100 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 100000, $lt:500000}});
+      }else if(populationCategory == '1 Million - 4 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 1000000, $lt:4000000}});
+      }else if(populationCategory == '200 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 200000, $lt:500000}});
+      }
 
     if (Object.keys(matchObj).length > 0) {
       query.push({
@@ -119,13 +204,23 @@ let query_noData = [
 
  {
    ledgerData: {$size: 0},
-population:{$gte:4000000}
 },
   
-}
+},
+{
+  $sort: {
+    population:-1
+  }
+},
+{$limit: 5}
 
 
 ]
+if(Object.keys(matchObjNoData).length>0){
+  query_noData.unshift({
+    $match:matchObjNoData
+  })
+}
 
 let noData = await Ulb.aggregate(query_noData)
     let data = await UlbLedger.aggregate(query);
@@ -151,7 +246,7 @@ names.push(el.name)
 async function getExcelForAvailability(res, query) {
   let ulbCount = await Ulb.find()
     .populate("state")
-    .select({ _id: 1, name: 1, code: 1, censusCode: 1, state: 1 })
+    .select({ _id: 1, name: 1, state: 1 })
     .lean();
   let data = await UlbLedger.aggregate(query);
   data = JSON.parse(JSON.stringify(data));
@@ -160,8 +255,6 @@ async function getExcelForAvailability(res, query) {
   const worksheet = workbook.addWorksheet("Data Availability");
   worksheet.columns = [
     { header: "ULB name", key: "ulb" },
-    { header: "ULB Code", key: "code" },
-    { header: "Census/SB Code", key: "censusCode" },
     { header: "State Name", key: "state" },
     { header: "Data Availability", key: "status" },
   ];
@@ -175,7 +268,7 @@ async function getExcelForAvailability(res, query) {
       code: value.code,
       censusCode: value.censusCode,
       state: value.state.name,
-      status: ulbMap.includes(value._id) ? "True" : "False",
+      status: ulbMap.includes(value._id) ? "Yes" : "No",
     };
     worksheet.addRow(obj);
   });
@@ -247,7 +340,7 @@ const chartData = async (req, res) => {
 
 const chartData2 = async (req, res) => {
   try {
-    const { ulbType, ulb, stateId, financialYear, getQuery } = req.body;
+    const { ulbType, ulb, stateId, financialYear, populationCategory ,getQuery } = req.body;
 
     if (
       !financialYear || Array.isArray(financialYear)
@@ -292,7 +385,24 @@ const chartData2 = async (req, res) => {
     if (ulb && ObjectId.isValid(ulb))
       Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
 
-    if (Object.keys(matchObj) > 0) {
+
+      if(populationCategory == '4 Million+'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+        
+      }else if(populationCategory == '500 Thousand - 1 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+        
+      }else if(populationCategory == '100 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+        
+      }else if(populationCategory == '1 Million - 4 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+        
+      }else if(populationCategory == '200 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
+        
+      }
+    if (Object.keys(matchObj).length > 0) {
       query.push({
         $match: matchObj,
       });
@@ -337,7 +447,16 @@ const chartData2 = async (req, res) => {
     data.push(temp);
     data = data.filter((value) => value._id.revenueName != "Tax Revenue");
     //rearrange the elements
-    return Response.OK(res, data);
+  
+    let newData=[];
+    newData[0] = data[0]
+    newData[1] = data[5]
+    newData[2] = data[4]
+    newData[3] = data[3]
+    newData[4] = data[1]
+    newData[5] = data[2]
+
+    return Response.OK(res, newData);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, null);
@@ -705,7 +824,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
     let data = await UlbLedger.aggregate(query);
 
     let newData = {
-      ["4M+"]: {
+      ["4 Million+"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -713,7 +832,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["500K-1M"]: {
+      ["500 Thousand - 1 Million"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -721,7 +840,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["100K-500K"]: {
+      ["100 Thousand-500 Thousand"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -729,7 +848,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["1M-4M"]: {
+      ["1 Million - 4 Million"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -737,7 +856,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["<100K"]: {
+      ["<100 Thousand"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -749,45 +868,45 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
 
     newData = data.reduce((newData, value) => {
       if (value.population < 100000) {
-        newData["<100K"].totalRevenue += value.totalRevenue;
-        newData["<100K"].numOfUlbMeetRevenue +=
+        newData["<100 Thousand"].totalRevenue += value.totalRevenue;
+        newData["<100 Thousand"].numOfUlbMeetRevenue +=
           value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["<100K"].population += value.population;
-        newData["<100K"].numOfUlb += 1;
-        newData["<100K"].totalExpense += value.totalExpense;
-        newData["<100K"].totalProperty += value.totalProperty;
+        newData["<100 Thousand"].population += value.population;
+        newData["<100 Thousand"].numOfUlb += 1;
+        newData["<100 Thousand"].totalExpense += value.totalExpense;
+        newData["<100 Thousand"].totalProperty += value.totalProperty;
       } else if (100000 < value.population < 500000) {
-        newData["100K-500K"].totalRevenue += value.totalRevenue;
-        newData["100K-500K"].numOfUlbMeetRevenue +=
+        newData["100 Thousand-500 Thousand"].totalRevenue += value.totalRevenue;
+        newData["100 Thousand-500 Thousand"].numOfUlbMeetRevenue +=
           value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["100K-500K"].population += value.population;
-        newData["100K-500K"].numOfUlb += 1;
-        newData["100K-500K"].totalExpense += value.totalExpense;
-        newData["100K-500K"].totalProperty += value.totalProperty;
+        newData["100 Thousand-500 Thousand"].population += value.population;
+        newData["100 Thousand-500 Thousand"].numOfUlb += 1;
+        newData["100 Thousand-500 Thousand"].totalExpense += value.totalExpense;
+        newData["100 Thousand-500 Thousand"].totalProperty += value.totalProperty;
       } else if (500000 < value.population < 1000000) {
-        newData["500K-1M"].totalRevenue += value.totalRevenue;
-        newData["500K-1M"].numOfUlbMeetRevenue +=
+        newData["500 Thousand - 1 Million"].totalRevenue += value.totalRevenue;
+        newData["500 Thousand - 1 Million"].numOfUlbMeetRevenue +=
           value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["500K-1M"].population += value.population;
-        newData["500K-1M"].numOfUlb += 1;
-        newData["500K-1M"].totalExpense += value.totalExpense;
-        newData["500K-1M"].totalProperty += value.totalProperty;
+        newData["500 Thousand - 1 Million"].population += value.population;
+        newData["500 Thousand - 1 Million"].numOfUlb += 1;
+        newData["500 Thousand - 1 Million"].totalExpense += value.totalExpense;
+        newData["500 Thousand - 1 Million"].totalProperty += value.totalProperty;
       } else if (1000000 < value.population < 4000000) {
-        newData["1M-4M"].totalRevenue += value.totalRevenue;
-        newData["1M-4M"].numOfUlbMeetRevenue +=
+        newData["1 Million - 4 Million"].totalRevenue += value.totalRevenue;
+        newData["1 Million - 4 Million"].numOfUlbMeetRevenue +=
           value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["1M-4M"].population += value.population;
-        newData["1M-4M"].numOfUlb += 1;
-        newData["1M-4M"].totalExpense += value.totalExpense;
-        newData["1M-4M"].totalProperty += value.totalProperty;
+        newData["1 Million - 4 Million"].population += value.population;
+        newData["1 Million - 4 Million"].numOfUlb += 1;
+        newData["1 Million - 4 Million"].totalExpense += value.totalExpense;
+        newData["1 Million - 4 Million"].totalProperty += value.totalProperty;
       } else {
-        newData["4M+"].totalRevenue += value.totalRevenue;
-        newData["4M+"].numOfUlbMeetRevenue +=
+        newData["4 Million+"].totalRevenue += value.totalRevenue;
+        newData["4 Million+"].numOfUlbMeetRevenue +=
           value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["4M+"].population += value.population;
-        newData["4M+"].numOfUlb += 1;
-        newData["4M+"].totalExpense += value.totalExpense;
-        newData["4M+"].totalProperty += value.totalProperty;
+        newData["4 Million+"].population += value.population;
+        newData["4 Million+"].numOfUlb += 1;
+        newData["4 Million+"].totalExpense += value.totalExpense;
+        newData["4 Million+"].totalProperty += value.totalProperty;
       }
 
       return newData;
@@ -804,36 +923,36 @@ function parseData(data) {
   let ulbCategory = data.reduce(
     (ulbCategoryMap, value) => {
       if (value.ulb.population < 100000) {
-        ulbCategoryMap["<100K"].amount += value.amount;
+        ulbCategoryMap["<100 Thousand"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["<100K"].count += 1;
+          ulbCategoryMap["<100 Thousand"].count += 1;
       } else if (100000 < value.ulb.population < 500000) {
-        ulbCategoryMap["100K-500K"].amount += value.amount;
+        ulbCategoryMap["100 Thousand-500 Thousand"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["100K-500K"].count += 1;
+          ulbCategoryMap["100 Thousand-500 Thousand"].count += 1;
       } else if (500000 < value.ulb.population < 1000000) {
-        ulbCategoryMap["500K-1M"].amount += value.amount;
+        ulbCategoryMap["500 Thousand - 1 Million"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["500K-1M"].count += 1;
+          ulbCategoryMap["500 Thousand - 1 Million"].count += 1;
       } else if (1000000 < value.ulb.population < 4000000) {
-        ulbCategoryMap["1M-4M"].amount += value.amount;
+        ulbCategoryMap["1 Million - 4 Million"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["1M-4M"].count += 1;
+          ulbCategoryMap["1 Million - 4 Million"].count += 1;
       } else {
-        ulbCategoryMap["4M+"].amount += value.amount;
+        ulbCategoryMap["4 Million+"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["4M+"].count += 1;
+          ulbCategoryMap["4 Million+"].count += 1;
       }
       ulbCategoryMap.temp[value.ulb._id] = 1;
 
       return ulbCategoryMap;
     },
     {
-      ["4M+"]: { amount: 0, count: 0 },
-      ["1M-4M"]: { amount: 0, count: 0 },
-      ["500K-1M"]: { amount: 0, count: 0 },
-      ["100K-500K"]: { amount: 0, count: 0 },
-      ["<100K"]: { amount: 0, count: 0 },
+      ["4 Million+"]: { amount: 0, count: 0 },
+      ["1 Million - 4 Million"]: { amount: 0, count: 0 },
+      ["500 Thousand - 1 Million"]: { amount: 0, count: 0 },
+      ["100 Thousand-500 Thousand"]: { amount: 0, count: 0 },
+      ["<100 Thousand"]: { amount: 0, count: 0 },
       temp: {},
     }
   );
@@ -998,4 +1117,5 @@ module.exports = {
   topPerForming,
   cardsData,
   tableData,
+  yearlist
 };

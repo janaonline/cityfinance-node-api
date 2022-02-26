@@ -13,10 +13,12 @@ const {
   chartData2,
   cardsData,
   tableData,
+  yearlist
 } = require("./ownRevenue");
 // router.use(verifyToken);
 router.use("/all-dashboard", shared);
 router.post("/data-available", dataAvailability);
+router.post("/yearList", yearlist);
 router.post("/chart-data", chartData2);
 router.post("/cards-data", cardsData);
 router.post("/table-data", tableData);
