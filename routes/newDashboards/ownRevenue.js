@@ -1013,73 +1013,74 @@ function getUlbMatchQuery(stateIds, ulbTypeIds) {
 
 const topPerForming = async (req, res) => {
   try {
-    const { revenueId, stateIds, getQuery, csv, revenueName } = req.body;
+//     financialYear: "2020-21"
+// list: []
+// param: "Property Tax"
+// populationCategory: ""
+// propertyTax: false
+// stateId: "State Name"
+// type: "state"
+// ulb: "ULB Name"
+// ulbType: "ULB Type"
+    const { financialYear, propertyTax ,list,param,populationCategory, stateId, type, ulb, ulbType   , getQuery, csv } = req.body;
 
-    if (!revenueId)
-      return Response.BadRequest(res, null, "wrong revenueIds or stateIds");
-
-    let query = [
-      {
-        $match: {
-          lineItem: ObjectId(revenueId),
+    if (!financialYear)
+      return Response.BadRequest(res, null, "financial year missing");
+let datab;
+      if(list.length == 0){
+  let query = [
+    {
+      $match: {
+        lineItem: {
+          $in: propertyTax
+            ? [ObjectId("5dd10c2285c951b54ec1d737")]
+            : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+        },
+        financialYear: {
+          $in: Array.isArray(financialYear) ? financialYear : [financialYear],
         },
       },
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
       },
-      {
-        $unwind: "$ulb",
-      },
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      {
-        $unwind: "$state",
-      },
-      {
-        $group: {
-          _id: "$ulb.state",
-          amount: { $sum: "$amount" },
-          name: { $first: "$state.name" },
-        },
-      },
-      { $sort: { amount: -1 } },
-      { $limit: 10 },
-    ];
-
-    if (stateIds) {
-      if (Array.isArray(stateIds) && stateIds.length > 0) {
-        query.splice(3, 0, {
-          $match: {
-            $expr: {
-              $in: ["$ulb.state", stateIds.map((value) => ObjectId(value))],
-            },
-          },
-        });
-      } else if (!Array.isArray(stateIds)) {
-        query.splice(3, 0, {
-          $match: {
-            "ulb.state": ObjectId(stateIds),
-          },
-        });
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {$group:{
+      _id: "$ulb._id",
+      name:{$first:"$ulb.name"},
+      amount:{$sum:"$amount"}
+    }},
+    {
+      $sort:{
+        amount:-1
       }
-    }
+    },
+    {$limit:10}
+  ];
+ datab = await UlbLedger.aggregate(query);
+}
+    
+      console.log(datab)
+      if (datab.length == 0)
+      return Response.BadRequest(res, null, "No data Found");
+
+      return res.status(200).json({
+        success: true,
+        data: datab
+      })
+   
 
     if (getQuery) return Response.OK(res, query);
 
     let data = await UlbLedger.aggregate(query);
-    if (data.length == 0)
-      return Response.BadRequest(res, null, "No data Found");
+    
 
     if (csv) {
       const workbook = new ExcelJS.Workbook();
