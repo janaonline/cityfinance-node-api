@@ -1362,6 +1362,20 @@ const grantClaimAcknowledgement = (type, installment, state, financialYear,name,
   };
 }
 
+const gtcSubmission = (state, financialYear, name, installment) =>{
+  return {
+    subject: `Grant Transfer Certificate Submitted Successfully`,
+    body: `Dear ${name},<br>
+                        <br>
+                        <p>
+                        This mail is to inform you that ${state} Government has successfully Submitted the Grant Transfer Certificate(s) for Installment No. - ${installment} of the Financial Year: ${financialYear}.
+                        </p>
+                        <br>
+                    <br>Regards,<br>
+                    City Finance Team`,
+  };
+}
+
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -1397,5 +1411,6 @@ module.exports = {
   stateFormSubmission,
   sendAccountReActivationEmail,
   utilizationRequestAction,
-  grantClaimAcknowledgement
+  grantClaimAcknowledgement,
+  gtcSubmission
 };
