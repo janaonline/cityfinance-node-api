@@ -581,7 +581,7 @@ const cardsData = async (req, res) => {
               {
                 $or: [
                   { $eq: ["$totalRevenue", "$totalExpense"] },
-                  { $gt: ["$totalExpense", "$totalRevenue"] },
+                  { $gt: ["$totalRevenue", "$totalExpense"] },
                 ],
               },
               1,
@@ -660,8 +660,8 @@ const cardsData = async (req, res) => {
       {
         $project: {
           _id: 1,
-          perCapita: { $divide: ["$totalRevenue", "$population"] },
-          totalRevenue: 1,
+          perCapita:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalRevenue", "$population"]} ] } ,
+          totalRevenue: { $subtract: ["$totalRevenue", "$totalProperty"] },
           percentage: {
             $multiply: [{ $divide: ["$totalRevenue", "$totalExpense"] }, 100],
           },
@@ -1228,7 +1228,7 @@ newList.push(el._id)
           $project:{
             _id:1,
             name:1,
-            amount:{$divide:["$totalAmount", "$population"]}
+            amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
           }
         },
         {
@@ -1425,7 +1425,7 @@ newList.push(el._id)
           $project:{
             _id:1,
             name:1,
-            amount:{$divide:["$totalAmount","$population"]}
+            amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
           }
         },
         {
