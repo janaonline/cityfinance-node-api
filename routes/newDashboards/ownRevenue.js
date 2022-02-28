@@ -612,66 +612,70 @@ const cardsData = async (req, res) => {
     );
     query.push(
       {
-        $group: {
-          _id: {
-            financialYear: "$financialYear",
-          },
-          totalRevenue: {
-            $sum: {
-              $cond: [
+        '$group': {
+          _id: { financialYear: '$financialYear' },
+          totalAllRevenue: {
+            '$sum': {
+              '$cond': [
                 {
-                  $in: [
-                    "$lineItem.code",
-                    ["11001", "130", "140", "150", "180", "110"],
-                  ],
+                  '$in': [
+                    '$lineItem.code',
+                    [ '11001', '130', '140', '150', '180', '110' ]
+                  ]
                 },
-                "$amount",
-                0,
-              ],
-            },
+                '$amount',
+                0
+              ]
+            }
           },
           totalProperty: {
-            $sum: {
-              $cond: [
-                {
-                  $in: ["$lineItem.code", ["11001"]],
-                },
-                "$amount",
-                0,
-              ],
-            },
+            '$sum': {
+              '$cond': [
+                { '$in': [ '$lineItem.code', [ '11001' ] ] },
+                '$amount',
+                0
+              ]
+            }
           },
           totalExpense: {
-            $sum: {
-              $cond: [
-                {
-                  $in: ["$lineItem.code", ["210", "220", "230"]],
-                },
-                "$amount",
-                0,
-              ],
-            },
+            '$sum': {
+              '$cond': [
+                { '$in': [ '$lineItem.code', [ '210', '220', '230' ] ] },
+                '$amount',
+                0
+              ]
+            }
           },
-          population: {
-            $sum: "$ulb.population",
-          },
-        },
+          population: { '$sum': '$ulb.population' }
+        }
       },
       {
-        $project: {
+        '$project': {
           _id: 1,
-          perCapita:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalRevenue", "$population"]} ] } ,
-          totalRevenue: { $subtract: ["$totalRevenue", "$totalProperty"] },
-          percentage: {
-            $multiply: [{ $divide: ["$totalRevenue", "$totalExpense"] }, 100],
-          },
+               totalRevenue: { '$subtract': [ '$totalAllRevenue', '$totalProperty' ] },
+       
+         totalExpense:1,
           totalProperty: 1,
-          population: 1,
-        },
+          population: 1
+        }
       },
-      {
-        $sort: { "_id.financialYear": 1 },
-      }
+      {$project:{
+           totalProperty: 1,
+          population: 1,
+          totalRevenue:1,
+          totalExpense:1,
+          percentage: {
+            '$multiply': [ { '$divide': [ '$totalRevenue', '$totalExpense' ] }, 100 ]
+          },
+             perCapita: {
+            '$cond': [
+              { '$eq': [ '$population', 0 ] },
+              0,
+              { '$divide': [ '$totalRevenue', '$population' ] }
+            ]
+          },
+          }},
+      { '$sort': { '_id.financialYear': 1 } }
     );
 
     if (getQuery) return Response.OK(res, { query, query2 });
