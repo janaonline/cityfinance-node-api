@@ -91,22 +91,26 @@ const indicator = async (req, res) => {
 
         query.push({
           $group: group,
+        },
+        {
+          $sort: { "_id.financialYear": 1 },
         });
         break;
       case "revenue_expenditure_mix":
       case "revenue_mix":
-        query.push({
-          $group: {
-            _id: {
-              ulb: "$ulb._id",
-              financialYear: "$financialYear",
-              lineItem: "$lineitems.name",
+        query.push(
+          {
+            $group: {
+              _id: {
+                ulb: "$ulb._id",
+                lineItem: "$lineitems.name",
+              },
+              ulbName: { $first: "$ulb.name" },
+              amount: { $sum: "$amount" },
+              "code":{"$first":"$lineitems.code"}
             },
-            ulbName: { $first: "$ulb.name" },
-            name: { $first: "$lineitems.name" },
-            amount: { $sum: "$amount" },
-          },
-        });
+          }
+        );
         break;
       case "property_tax":
         query.map((value) => {
