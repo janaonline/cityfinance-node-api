@@ -543,7 +543,7 @@ const cardsData = async (req, res) => {
             ulb: "$ulb._id",
             financialYear: "$financialYear",
           },
-          totalRevenue: {
+          totalAllRevenue: {
             $sum: {
               $cond: [
                 {
@@ -568,10 +568,30 @@ const cardsData = async (req, res) => {
               ],
             },
           },
+          totalProperty:{
+            '$sum': {
+              '$cond': [
+                { '$in': [ '$lineItem.code', [ '11001' ] ] },
+                '$amount',
+                0
+              ]
+            }
+          },
           population: {
             $sum: "$ulb.population",
           },
         },
+      },
+      {
+
+        $project:{
+          _id:1,
+          population:1,
+          totalExpense:1,
+          totalProperty:1,
+          totalRevenue:{$subtract:["$totalAllRevenue","$totalProperty"]},
+
+        }
       },
       {
         $project: {
