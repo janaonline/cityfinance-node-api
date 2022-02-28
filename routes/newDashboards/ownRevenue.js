@@ -666,7 +666,9 @@ const cardsData = async (req, res) => {
               ]
             }
           },
-          population: { '$sum': '$ulb.population' }
+          populationArr: {
+            $addToSet:"$ulb.population"
+            }
         }
       },
       {
@@ -676,7 +678,7 @@ const cardsData = async (req, res) => {
        
          totalExpense:1,
           totalProperty: 1,
-          population: 1
+          population: {$sum:"$populationArr"}
         }
       },
       {$project:{
