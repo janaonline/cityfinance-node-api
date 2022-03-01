@@ -259,7 +259,7 @@ exports.getIndicatorData = async (req, res) => {
       Object.assign(query, { ulb });
     }
     if (type) {
-      Object.assign(query, { type });
+      Object.assign(query, { type: { $regex: type } });
     }
     if (indicatorName) {
       indicatorName = indicatorName.toLowerCase();
