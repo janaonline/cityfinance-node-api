@@ -68,10 +68,12 @@ let query =[]
 let obj =  {
   $group:{
     _id:"$financialYear"
-  }
+  },
+
 }
 query.push(obj)
-console.log(util.inspect(query,{depth: null, showHidden: false}))
+query.push(  {$sort:{_id:-1}})
+// console.log(util.inspect(query,{depth: null, showHidden: false}))
 let yearList = await UlbLedger.aggregate(query);
 return res.status(200).json({
   success: true,
@@ -1426,8 +1428,16 @@ let datab;
     {$group:{
       _id: "$ulb._id",
       name:{$first:"$ulb.name"},
-      amount:{$sum:"$amount"}
+      totalAmount:{$sum:"$amount"},
+      population:{$sum:"$ulb.population"}
     }},
+    {
+      $project:{
+        _id:1,
+        name:1,
+        amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
+      }
+    },
     {
       $sort:{
         amount:-1
@@ -1469,7 +1479,7 @@ let datab;
        }
      }
    ])
-   console.log('ulbData',ulbData)
+  //  console.log('ulbData',ulbData)
    if(ulbData.length>0){
      datab.push(...ulbData)
    }
@@ -1901,7 +1911,7 @@ newList.push(el._id)
   }
 }
     
-      console.log(datab)
+      // console.log(datab)
       if (datab.length == 0)
       return Response.BadRequest(res, null, "No data Found");
 
