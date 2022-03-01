@@ -927,7 +927,87 @@ const tableData = async (req, res) => {
                 }
             }
 ]
-  
+  let numOfUlb = await Ulb.aggregate([
+    {
+        $project:{
+            "4mPlus":{
+                $cond:[{$gt:["$population",4000000]},1,0]
+                },
+                   "4m_1m":{
+                $cond:[
+                       {
+                       $and:[
+                       {$lt:["$population",4000000]},
+                       {$gt:["$population",1000000]}
+                       
+                       ]
+                   }
+                       ,1,0]
+                },
+                   "1m_500t":{
+                $cond:[
+                       {
+                       $and:[
+                       {$lt:["$population",1000000]},
+                       {$gt:["$population",500000]}
+                       
+                       ]
+                   }
+                       ,1,0]
+                },
+                   "500t_100t":{
+                $cond:[
+                       {
+                       $and:[
+                       {$lt:["$population",500000]},
+                       {$gt:["$population",100000]}
+                       
+                       ]
+                   }
+                       ,1,0]
+                },
+                   "100t":{
+               $cond:[{$lt:["$population",100000] },1,0]
+                }
+            }
+        },
+        {
+                $group:{
+                    _id: null,
+                    "4mPlusPop":{
+                        $sum:{
+                             $cond:[{$eq:["$4mPlus",1]}, 1, 0]
+                            }
+                       
+                        },
+                         "4m_1mPop":{
+                        $sum:{
+                             $cond:[{$eq:["$4m_1m",1]}, 1, 0]
+                            }
+                       
+                        },
+                         "1m_500tPop":{
+                        $sum:{
+                             $cond:[{$eq:["$1m_500t",1]}, 1, 0]
+                            }
+                       
+                        },
+                         "500t_100tPop":{
+                        $sum:{
+                             $cond:[{$eq:["$500t_100t",1]}, 1, 0]
+                            }
+                       
+                        }, "100tPop":{
+                        $sum:{
+                             $cond:[{$eq:["$100t",1]}, 1, 0]
+                            }
+                       
+                        }
+                    }
+            }
+        
+      
+    ])
   let query_4m_c=[]
  let query_1m_4m_c=[]
  let query_500t_1m_c = []
@@ -1086,16 +1166,19 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
   });
 console.log(data_1m_4m)
   // data_4m.push(...countData_4m?.totalUlbMeetExpense)
+
+  
+
   if(data_4m.length>0)
-  Object.assign(data_4m[0], {numOfUlbMeetRevenue:countData_4m[0]?.totalUlbMeetExpense})
+  Object.assign(data_4m[0], {numOfUlbMeetRevenue:((countData_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4mPlusPop'])*100)})
   if(data_1m_4m.length>0)
-  Object.assign(data_1m_4m[0], {numOfUlbMeetRevenue:countData_1m_4m[0]?.totalUlbMeetExpense})
+  Object.assign(data_1m_4m[0], {numOfUlbMeetRevenue:((countData_1m_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4m_1mPop'] )*100)})
   if(data_1m_500t.length>0)
-  Object.assign(data_1m_500t[0], {numOfUlbMeetRevenue:countData_1m_500t[0]?.totalUlbMeetExpense})
+  Object.assign(data_1m_500t[0], {numOfUlbMeetRevenue:((countData_1m_500t[0]?.totalUlbMeetExpense/numOfUlb[0]['1m_500tPop'] ) *100)})
   if(data_500t_100t.length>0)
-  Object.assign(data_500t_100t[0], {numOfUlbMeetRevenue:countData_500t_100t[0]?.totalUlbMeetExpense})
+  Object.assign(data_500t_100t[0], {numOfUlbMeetRevenue:((countData_500t_100t[0]?.totalUlbMeetExpense /numOfUlb[0]['500t_100tPop'] ) * 100)})
   if(data_100t.length>0)
-  Object.assign(data_100t[0], {numOfUlbMeetRevenue:countData_100t[0]?.totalUlbMeetExpense})
+  Object.assign(data_100t[0], {numOfUlbMeetRevenue:((countData_100t[0]?.totalUlbMeetExpense/numOfUlb[0]['100tPop'])*100)})
   // data_1m_4m[0].push({countData_1m_4m[0].totalUlbMeetExpense)
 
 // let data = await UlbLedger.aggregate(query);
