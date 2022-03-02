@@ -9,7 +9,7 @@ const Response = require("../../service").response;
 const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year')
 const moment = require("moment");
-
+const util = require('util')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const time = () => {
@@ -246,6 +246,10 @@ if(waterRejData){
                     query_filled_util_mpc.unshift(...common) 
                     query_filled_slb_mpc.unshift(...common) 
 
+                    console.log(util.inspect(totalULBs, {showHidden: false, depth: null}))
+                    console.log(util.inspect(totalNMPCs, {showHidden: false, depth: null}))
+                    console.log(util.inspect(totalMPCs, {showHidden: false, depth: null}))
+                    console.log(util.inspect(query_filled_slb_mpc, {showHidden: false, depth: null}))
                     let { totalULBCount, totalNMPCCount, totalMPCCount, filledData_annual, filledData_util_nmpc, filledData_util_mpc, filledData_slb_mpc } = await new Promise(async (resolve, reject) => {
                       let prms1 = new Promise(async (rslv, rjct) => {
                           let output =  await Ulb.aggregate(totalULBs)

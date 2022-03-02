@@ -5,6 +5,7 @@ const ledgerService = require('./service');
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 // Route to download all the existing ledgers in the system
 router.get('/getAllLegdersCsv', ledgerService.getAllLedgersCsv);
+router.get('/lastUpdated', ledgerService.lastUpdated);
 
 // Get income expenditure
 router.post('/getIE', ledgerService.getIE);
