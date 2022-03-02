@@ -24,6 +24,23 @@ const peopleInformation = async (req, res) => {
           .populate("ulbType")
           .populate("state")
           .lean();
+        let ledgerData =  await UlbLedger.aggregate([
+            {
+              $match: {
+                ulb_id: ObjectId(req.query.ulb)
+              }
+            },
+            {
+              $group:{
+                _id : "$financialYear"
+              }
+            }
+          ])
+          if(ledgerData.length>0){
+            data['dataAvailable'] = ledgerData.length
+          }else{
+            data['dataAvailable'] = 0
+          }
         if (!data) return Response.BadRequest(res, null, "No Data Found");
         Object.assign(data, {
           density: parseFloat((data.population / data.area).toFixed(2)),
