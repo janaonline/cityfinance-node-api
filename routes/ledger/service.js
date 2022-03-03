@@ -8,6 +8,17 @@ const RequestLog = require('../../models/RequestLog')
 const DataCollectionForms = require('../../models/DataCollectionForm')
 const AnnualAccount = require('../../models/AnnualAccounts')
 const util = require('util')
+
+module.exports.lastUpdated = async (req,res)=>{
+
+ let data  =  await UlbLedger.find({}).sort({modifiedAt:-1}).limit(1)
+ console.log(data)
+ return res.status(200).json({
+     success: true,
+     data: data[0]?.modifiedAt
+ })
+}
+
 // Get Income expenditure report
 module.exports.getIE = function (req, res) {
 
