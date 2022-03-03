@@ -27,7 +27,7 @@ const peopleInformation = async (req, res) => {
         let ledgerData =  await UlbLedger.aggregate([
             {
               $match: {
-                ulb_id: ObjectId(req.query.ulb)
+                ulb: ObjectId(req.query.ulb)
               }
             },
             {
