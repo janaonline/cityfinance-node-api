@@ -1,6 +1,7 @@
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
 const Sate = require("../../models/State");
+const ULB = require("../../models/Ulb");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
@@ -89,28 +90,28 @@ const indicator = async (req, res) => {
           };
         }
 
-        query.push({
-          $group: group,
-        },
-        {
-          $sort: { "_id.financialYear": 1 },
-        });
-        break;
-      case "revenue_expenditure_mix":
-      case "revenue_mix":
         query.push(
           {
-            $group: {
-              _id: {
-                ulb: "$ulb._id",
-                lineItem: "$lineitems.name",
-              },
-              ulbName: { $first: "$ulb.name" },
-              amount: { $sum: "$amount" },
-              "code":{"$first":"$lineitems.code"}
-            },
+            $group: group,
+          },
+          {
+            $sort: { "_id.financialYear": 1 },
           }
         );
+        break;
+      case "expenditure_mix":
+      case "revenue_mix":
+        query.push({
+          $group: {
+            _id: {
+              ulb: "$ulb._id",
+              lineItem: "$lineitems.name",
+            },
+            ulbName: { $first: "$ulb.name" },
+            amount: { $sum: "$amount" },
+            code: { $first: "$lineitems.code" },
+          },
+        });
         break;
       case "property_tax":
         query.map((value) => {
@@ -131,7 +132,7 @@ const indicator = async (req, res) => {
           },
         });
         break;
-      case "deficit_ot_surplus":
+      case "total_surplus/deficit":
         query.map((value) => {
           if (value["$lookup"]?.from === "lineitems") {
             delete value["$lookup"].pipeline[0]?.$match?.$expr;
@@ -140,35 +141,55 @@ const indicator = async (req, res) => {
             });
           }
         });
-        query.push({
-          $group: {
-            _id: {
-              ulb: "$ulb._id",
-              financialYear: "$financialYear",
-              headOfAccount: "$lineitems.headOfAccount",
+        query.push(
+          {
+            $group: {
+              _id: {
+                ulb: "$ulb._id",
+                financialYear: "$financialYear",
+              },
+              ulbName: {
+                $first: "$ulb.name",
+              },
+              amount: {
+                $sum: "$amount",
+              },
+              revenue: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ["$lineitems.headOfAccount", "Revenue"] },
+                    then: "$amount",
+                    else: 0,
+                  },
+                },
+              },
+              expense: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ["$lineitems.headOfAccount", "Expense"] },
+                    then: "$amount",
+                    else: 0,
+                  },
+                },
+              },
             },
-            ulbName: { $first: "$ulb.name" },
-            amount: { $sum: "$amount" },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              ulbName: 1,
+              amount: { $subtract: ["$revenue", "$expense"] },
+            },
+          }
+        );
         break;
       case "capital_expenditure":
+      case "capital_expenditure_per_capita":
         query.map((value) => {
           if (value["$lookup"]?.from === "lineitems") {
             value["$lookup"].pipeline[0] = {
               $match: {
-                $or: [
-                  {
-                    $expr: {
-                      $eq: ["$code", "412"],
-                    },
-                  },
-                  {
-                    $expr: {
-                      $eq: ["$code", "410"],
-                    },
-                  },
-                ],
+                code: { $in: ["410", "412"] },
               },
             };
           }
@@ -181,6 +202,7 @@ const indicator = async (req, res) => {
           },
           amount: { $sum: "$amount" },
           ulbName: { $first: "$ulb.name" },
+          code: { $first: "$lineitems.code" },
         };
         if (isPerCapita) {
           group2.amount = {
@@ -194,23 +216,132 @@ const indicator = async (req, res) => {
           };
         }
         let group3 = {
-          "$group":{
-              _id:"$_id.financialYear",
-              yearData:{
-                  $push:{
-                      name:"$_id.lineItemName",
-                      amount:"$amount",
-                      ulbName:"$ulbName"
-                      }
-                  }
-          }
-          }
+          $group: {
+            _id: "$_id.financialYear",
+            yearData: {
+              $push: {
+                name: "$_id.lineItemName",
+                amount: "$amount",
+                ulbName: "$ulbName",
+                code: "$code",
+              },
+            },
+          },
+        };
 
         query.push({
           $group: group2,
         });
 
-        query.push(group3);
+        query.push(group3, {
+          $sort: { _id: 1 },
+        });
+        break;
+      case "total_own_revenue":
+      case "own_revenue_per_capita":
+        query.map((value) => {
+          if (value["$lookup"]?.from === "lineitems") {
+            value["$lookup"].pipeline[0] = {
+              $match: {
+                code: { $in: ["11001", "130", "140", "150", "180", "110"] },
+              },
+            };
+          }
+        });
+        let groupNew = {
+          _id: {
+            ulb: "$ulb._id",
+            financialYear: "$financialYear",
+          },
+          amount: { $sum: "$amount" },
+          ulbName: { $first: "$ulb.name" },
+        };
+        if (isPerCapita) {
+          groupNew.amount = {
+            $sum: {
+              $cond: [
+                { $eq: ["$ulb.population", 0] },
+                0,
+                { $divide: ["$amount", "$ulb.population"] },
+              ],
+            },
+          };
+        }
+
+        query.push(
+          {
+            $group: groupNew,
+          },
+          {
+            $sort: { "_id.financialYear": 1 },
+          }
+        );
+        break;
+      case "own_revenue_mix":
+        query.map((value) => {
+          if (value["$lookup"]?.from === "lineitems") {
+            value["$lookup"].pipeline[0] = {
+              $match: {
+                code: { $in: ["11001", "130", "140", "150", "180", "110"] },
+              },
+            };
+          }
+        });
+        query.push({
+          $group: {
+            _id: {
+              ulb: "$ulb._id",
+              lineItem: "$lineitems.name",
+            },
+            ulbName: { $first: "$ulb.name" },
+            amount: { $sum: "$amount" },
+            code: { $first: "$lineitems.code" },
+          },
+        });
+        break;
+      case "revenue_expenditure_mix":
+        query.map((value) => {
+          if (value["$lookup"]?.from === "lineitems") {
+            value["$lookup"].pipeline[0] = {
+              $match: {
+                code: { $in: ["210", "220", "230"] },
+              },
+            };
+          }
+        });
+        query.push({
+          $group: {
+            _id: {
+              ulb: "$ulb._id",
+              lineItem: "$lineitems.name",
+            },
+            ulbName: { $first: "$ulb.name" },
+            amount: { $sum: "$amount" },
+            code: { $first: "$lineitems.code" },
+          },
+        });
+        break;
+      case "revenue_expenditure":
+        query.map((value) => {
+          if (value["$lookup"]?.from === "lineitems") {
+            value["$lookup"].pipeline[0] = {
+              $match: {
+                code: { $in: ["210", "220", "230"] },
+              },
+            };
+          }
+        });
+        query.push({
+          $group: {
+            _id: {
+              ulb: "$ulb._id",
+              financialYear: "$financialYear",
+            },
+            amount: { $sum: "$amount" },
+            ulbName: { $first: "$ulb.name" },
+          },
+        });
+        break;
       default:
         break;
     }
@@ -331,6 +462,301 @@ const comparator = async (compareFrom, query, ulb) => {
   return newData;
 };
 
+let globalState;
+
+const aboutCalculation = async (req, res) => {
+  try {
+    let {
+      state,
+      ulbType,
+      getQuery,
+      financialYear,
+      ulb,
+      compare,
+      populationCategory,
+    } = req.query;
+
+    if (ulb) {
+      let ulbData = await ULB.findOne({ _id: ulb }).lean();
+      ulbType = ulbData.ulbType;
+      state = ulbData.state;
+      globalState = state;
+      populationCategory = getPopulationQuery(ulb.population);
+      populationCategory?.inState?.$max?.$cond?.if?.$and.push({
+        $eq: ["$ulb.state", ObjectId(globalState)],
+      });
+    }
+
+    let query = [
+      {
+        $match: {
+          financialYear: {
+            $in: [financialYear],
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      {
+        $unwind: "$ulb",
+      },
+    ];
+    if (!compare)
+      query.push({
+        $match: {
+          "ulb.ulbType": ObjectId(ulbType),
+          "ulb.state": ObjectId(state),
+        },
+      });
+    query.push(
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineItem",
+        },
+      },
+      {
+        $unwind: "$lineItem",
+      },
+      { $match: { "lineItem.headOfAccount": "Revenue" } }
+    );
+
+    if (!compare)
+      query.push({
+        $group: {
+          _id: null,
+          amount: { $sum: "$amount" },
+          totalPopulation: { $sum: "$ulb.population" },
+        },
+      });
+    else {
+      query.push({
+        $group: {
+          _id: null,
+          inStateUlbType: {
+            $max: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $eq: ["$ulb.state", ObjectId(state)] },
+                    { $eq: ["$ulb.ulbType", ObjectId(ulbType)] },
+                  ],
+                },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+          inIndiaUlbType: {
+            $max: {
+              $cond: {
+                if: { $eq: ["$ulb.ulbType", ObjectId(ulbType)] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+          ...populationCategory,
+        },
+      });
+    }
+
+    if (getQuery) return Response.OK(res, query);
+
+    let key = JSON.stringify(query) + "aboutIndicator";
+    let redisData = await Redis.getDataPromise(key);
+    let data;
+    if (!redisData) {
+      data = await UlbLedger.aggregate(query);
+      Redis.set(key, JSON.stringify(data));
+    } else data = JSON.parse(redisData);
+
+    if (!compare)
+      data = data.map((value) => {
+        value.weightedAmount =
+          (value.amount + value.totalPopulation) / value.totalPopulation;
+        return value;
+      });
+
+    return Response.OK(res, data[0]);
+  } catch (error) {
+    console.log(error);
+    return Response.DbError(res, error, error.message);
+  }
+};
+
+function getPopulationQuery(population) {
+  if (population < 100000) {
+    return populationQuery["<100K"];
+  } else if (100000 < population < 500000) {
+    return populationQuery["100K-500K"];
+  } else if (500000 < population < 1000000) {
+    return populationQuery["500K-1M"];
+  } else if (1000000 < population < 4000000) {
+    return populationQuery["1M-4M"];
+  } else {
+    return populationQuery["4M+"];
+  }
+}
+
+const populationQuery = {
+  ["<100K"]: {
+    inState: {
+      $max: {
+        $cond: {
+          if: {
+            $and: [{ $lt: ["$ulb.population", 100000] }],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+    inIndia: {
+      $max: {
+        $cond: {
+          if: { $lt: ["$ulb.population", 100000] },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+  },
+  ["100K-500K"]: {
+    inState: {
+      $max: {
+        $cond: {
+          if: {
+            $and: [
+              {
+                $or: [
+                  { $gt: ["$ulb.population", 100000] },
+                  { $lt: ["$ulb.population", 500000] },
+                ],
+              },
+            ],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+    inIndia: {
+      $max: {
+        $cond: {
+          if: {
+            $or: [
+              { $gt: ["$ulb.population", 100000] },
+              { $lt: ["$ulb.population", 500000] },
+            ],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+  },
+  ["500K-1M"]: {
+    inState: {
+      $max: {
+        $cond: {
+          if: {
+            $and: [
+              {
+                $or: [
+                  { $gt: ["$ulb.population", 500000] },
+                  { $lt: ["$ulb.population", 1000000] },
+                ],
+              },
+            ],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+    inIndia: {
+      $max: {
+        $cond: {
+          if: {
+            $or: [
+              { $gt: ["$ulb.population", 500000] },
+              { $lt: ["$ulb.population", 1000000] },
+            ],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+  },
+  ["1M-4M"]: {
+    inState: {
+      $max: {
+        $cond: {
+          if: {
+            $and: [
+              {
+                $or: [
+                  { $gt: ["$ulb.population", 1000000] },
+                  { $lt: ["$ulb.population", 4000000] },
+                ],
+              },
+            ],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+    inIndia: {
+      $max: {
+        $cond: {
+          if: {
+            $or: [
+              { $gt: ["$ulb.population", 1000000] },
+              { $lt: ["$ulb.population", 4000000] },
+            ],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+  },
+  ["4M+"]: {
+    inState: {
+      $max: {
+        $cond: {
+          if: {
+            $and: [{ $gt: ["$ulb.population", 400000] }],
+          },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+    inIndia: {
+      $max: {
+        $cond: {
+          if: { $gt: ["$ulb.population", 400000] },
+          then: "$amount",
+          else: 0,
+        },
+      },
+    },
+  },
+};
+
 module.exports = {
   indicator,
+  aboutCalculation,
 };
