@@ -10,7 +10,7 @@ const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year')
 const moment = require("moment");
 const util = require('util')
-
+const UlbFinancialData = require('../../models/UlbFinancialData')
 const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
@@ -100,20 +100,137 @@ exports.createUpdate = async (req, res) => {
 exports.dataset = catchAsync (async (req,res)=>{
   let {year, state, ulb, type, category, nature} = req.query
 console.log(category, type)
+if(!category || !year || !type){
+  return res.status(400).json({
+    success: false,
+    message:"Missing Categoryor Year or Type"
+  })
+}
+let finalData = []
 if(type == 'Raw Data PDF'){
   type = 'pdf'
-}else if(type == 'Raw Data Excel' ||type == 'Standardised Excel' ){
+}else if(type == 'Raw Data Excel'  ){
   type = 'excel'
+}else if(type == 'Standardised Excel' || type == 'Standardised PDF' ){
+  if(type == 'Standardised Excel'){
+    type = 'excel'
+  }else if(type == 'Standardised PDF'){
+    type = 'pdf'
+  }
+  let query=[
+{
+  $match:{
+    financialYear:year
+  }
+},
+    {
+        $lookup:{
+            from:"ulbs",
+            localField:"ulb",
+            foreignField:"_id",
+            as:"ulb"
+            }
+        },{
+            $unwind:"$ulb"
+            },
+            {
+        $lookup:{
+            from:"states",
+            localField:"ulb.state",
+            foreignField:"_id",
+            as:"state"
+            }
+        },{
+            $unwind:"$state"
+            }
+            
+    
+                
+            
+    ];
+    if(ulb && ulb!='undefined'){
+      query.push({
+        $match:{
+          "ulb.name": ulb
+        }
+      })
+    }else if(state && ObjectId.isValid(state)){
+      query.push({
+        $match:{
+          "state._id": ObjectId(state)
+        }
+      })
+    }
+    let query_extn = [
+      {
+        $project:{
+          ulbId:"$ulb._id",
+          ulbName:"$ulb.name",
+          state:"$state.name",
+          modifiedAt:"$modifiedAt",
+          "balance_pdf":"$overallReport.pdfUrl",
+          "balance_excel":"$overallReport.excelUrl",
+          "income_pdf":"$overallReport.pdfUrl",
+          "income_excel":"$overallReport.excelUrl"
+        }
+      },
+      {
+        $project:{
+          ulbId:1,
+          ulbName:1,
+          state:1,
+          modifiedAt:1,
+          file:`$${category}_${type}`
+        }
+      },
+      {
+        $match:{
+            "file":{$exists: true}
+            }
+        },
+      {
+        $sort:{
+          modifiedAt:-1
+        }
+      }
+    ]
+    query.push(...query_extn)
+  let fileData = await UlbFinancialData.aggregate(query)
+  fileData.forEach(el=>{
+    let data ={
+      ulbId:null,
+      ulbName:"",
+      state:"",
+      fileName:"",
+      fileUrl:"",
+      modifiedAt:"",
+      type:type,
+      audited:"",
+      year:"",
+    }
+    data.ulbId = el?.ulbId
+    data.state = el?.state
+    data.ulbName = el?.ulbName
+    data.modifiedAt = el?.modifiedAt
+    data.year = year;
+    data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`
+    data.fileUrl = el?.file
+   
+   
+    finalData.push(data)
+  })
+
+  return res.status(200).json({
+    success: true,
+    data: finalData
+  }) 
 }
 
-  if(!category || !year || !type){
-    return res.status(400).json({
-      success: false,
-      message:"Missing Categoryor Year or Type"
-    })
-  }
-  let finalData = []
-if(year != '2019-20' && year != '2020-21'  ){
+
+
+
+
+  if(year != '2019-20' && year != '2020-21'  ){
   let query_dataCollection = [
 
     {
