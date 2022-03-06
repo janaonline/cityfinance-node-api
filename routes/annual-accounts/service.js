@@ -10,6 +10,8 @@ const catchAsync = require('../../util/catchAsync')
 const Year = require('../../models/Year')
 const moment = require("moment");
 const util = require('util')
+
+const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const time = () => {
@@ -93,6 +95,315 @@ exports.createUpdate = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+
+exports.dataset = catchAsync (async (req,res)=>{
+  let {year, state, ulb, type, category, nature} = req.query
+console.log(category, type)
+if(type == 'Raw Data PDF'){
+  type = 'pdf'
+}else if(type == 'Raw Data Excel' ||type == 'Standardised Excel' ){
+  type = 'excel'
+}
+
+  if(!category || !year || !type){
+    return res.status(400).json({
+      success: false,
+      message:"Missing Categoryor Year or Type"
+    })
+  }
+  let finalData = []
+if(year != '2019-20' && year != '2020-21'  ){
+  let query_dataCollection = [
+
+    {
+        $lookup:{
+            from:"ulbs",
+            localField:"ulb",
+            foreignField:"_id",
+            as:"ulb"
+            }
+        },{
+            $unwind:"$ulb"
+            },
+            {
+        $lookup:{
+            from:"states",
+            localField:"ulb.state",
+            foreignField:"_id",
+            as:"state"
+            }
+        },{
+            $unwind:"$state"
+            }
+            
+    
+                
+            
+    ]
+    let query_extn = [        {
+      $project:{
+          
+          ulbId:"$ulb._id",
+          state:"$state.name",
+          ulbName:"$ulb.name",
+          modifiedAt:"$modifiedAt",
+          "2015-16_income_pdf":"$documents.financial_year_2015_16.pdf",
+          "2015-16_income_excel":"$documents.financial_year_2015_16.excel",
+          "2015-16_balance_pdf":"$documents.financial_year_2015_16.pdf",
+          "2015-16_balance_excel":"$documents.financial_year_2015_16.excel",
+            "2016-17_income_pdf":"$documents.financial_year_2016_17.pdf",
+          "2016-17_income_excel":"$documents.financial_year_2016_17.excel",
+          "2016-17_balance_pdf":"$documents.financial_year_2016_17.pdf",
+          "2016-17_balance_excel":"$documents.financial_year_2016_17.excel",
+             "2017-18_income_pdf":"$documents.financial_year_2017_18.pdf",
+          "2017-18_income_excel":"$documents.financial_year_2017_18.excel",
+          "2017-18_balance_pdf":"$documents.financial_year_2017_18.pdf",
+          "2017-18_balance_excel":"$documents.financial_year_2017_18.excel",
+             "2018-19_income_pdf":"$documents.financial_year_2018_19.pdf",
+          "2018-19_income_excel":"$documents.financial_year_2018_19.excel",
+          "2018-19_balance_pdf":"$documents.financial_year_2018_19.pdf",
+          "2018-19_balance_excel":"$documents.financial_year_2018_19.excel",
+          
+      }
+      
+  },
+  
+  {
+     $project:{
+         ulbId:1,
+         ulbName:1,
+         state:1,
+         modifiedAt:1,
+         "file":{$arrayElemAt: [`$${year}_${category}_${type}`,0]} ,
+  
+         }
+      
+      },
+      {
+        $match:{
+            "file.url":{$exists: true}
+            }
+        },
+      {
+        $sort:{
+          modifiedAt:-1
+        }
+      }
+      ]
+    
+    if(ulb && ulb!='undefined'){
+      query_dataCollection.push({
+        $match:{
+          "ulb.name": ulb
+        }
+      })
+    }else if(state && ObjectId.isValid(state)){
+      query_dataCollection.push({
+        $match:{
+          "state._id": ObjectId(state)
+        }
+      })
+    }
+    query_dataCollection.push(...query_extn)
+  
+  let fileData = await DataCollection.aggregate(query_dataCollection)
+  
+  fileData.forEach(el=>{
+    let data ={
+      ulbId:null,
+      ulbName:"",
+      state:"",
+      fileName:"",
+      fileUrl:"",
+      modifiedAt:"",
+      type:type,
+      audited:"",
+      year:"",
+    }
+    data.ulbId = el?.ulbId
+    data.state = el?.state
+    data.ulbName = el?.ulbName
+    data.modifiedAt = el?.modifiedAt
+    data.year = year;
+    data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`
+    data.fileUrl = el?.file?.url
+   
+   
+    finalData.push(data)
+  })
+}else{
+  let query=[
+
+    {
+        $lookup:{
+            from:"ulbs",
+            localField:"ulb",
+            foreignField:"_id",
+            as:"ulb"
+            }
+        },{
+            $unwind:"$ulb"
+            },
+            {
+        $lookup:{
+            from:"states",
+            localField:"ulb.state",
+            foreignField:"_id",
+            as:"state"
+            }
+        },{
+            $unwind:"$state"
+            }
+            
+    
+                
+            
+    ];
+    if(ulb && ulb!='undefined'){
+      query.push({
+        $match:{
+          "ulb.name": ulb
+        }
+      })
+    }else if(state && ObjectId.isValid(state)){
+      query.push({
+        $match:{
+          "state._id": ObjectId(state)
+        }
+      })
+    }
+  if(year == '2019-20'){
+    let query_extn = [
+{
+  $project:{
+    ulbId:"$ulb._id",
+    ulbName:"$ulb.name",
+    state:"$state.name",
+    modifiedAt:"$modifiedAt",
+    "2019-20_balance_pdf":"$audited.provisional_data.bal_sheet.pdf.url",
+    "2019-20_balance_excel":"$audited.provisional_data.bal_sheet.excel.url",
+    "2019-20_income_pdf":"$audited.provisional_data.inc_exp.pdf.url",
+    "2019-20_income_excel":"$audited.provisional_data.inc_exp.excel.url"
+  }
+},
+{
+  $project:{
+    ulbId:1,
+    ulbName:1,
+    state:1,
+    modifiedAt:1,
+    file:`$${year}_${category}_${type}`
+  }
+},
+{
+  $match:{
+      "file":{$exists: true}
+      }
+  },
+{
+  $sort:{
+    modifiedAt:-1
+  }  }  ]
+    query.push(...query_extn)
+    let fileData = await AnnualAccountData.aggregate(query)
+  
+    fileData.forEach(el=>{
+      let data ={
+        ulbId:null,
+        ulbName:"",
+        state:"",
+        fileName:"",
+        fileUrl:"",
+        modifiedAt:"",
+        type:type,
+        audited:"",
+        year:"",
+      }
+      data.ulbId = el?.ulbId
+      data.state = el?.state
+      data.ulbName = el?.ulbName
+      data.modifiedAt = el?.modifiedAt
+      data.year = year;
+      data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`
+      data.fileUrl = el?.file
+     
+     
+      finalData.push(data)
+    })
+  }else if(year == '2020-21'){
+    let query_extn = [
+      {
+        $project:{
+          ulbId:"$ulb._id",
+          ulbName:"$ulb.name",
+          state:"$state.name",
+          modifiedAt:"$modifiedAt",
+          "2020-21_balance_pdf":"$unAudited.provisional_data.bal_sheet.pdf.url",
+          "2020-21_balance_excel":"$unAudited.provisional_data.bal_sheet.excel.url",
+          "2020-21_income_pdf":"$unAudited.provisional_data.inc_exp.pdf.url",
+          "2020-21_income_excel":"$unAudited.provisional_data.inc_exp.excel.url"
+        }
+      },
+      {
+        $project:{
+          ulbId:1,
+          ulbName:1,
+          state:1,
+          modifiedAt:1,
+          file:`$${year}_${category}_${type}`
+        }
+      },
+      {
+        $match:{
+            "file":{$exists: true}
+            }
+        },
+      {
+        $sort:{
+          modifiedAt:-1
+        }
+      
+}            ]
+          query.push(...query_extn)
+          let fileData = await AnnualAccountData.aggregate(query)
+        
+          fileData.forEach(el=>{
+            let data ={
+              ulbId:null,
+              ulbName:"",
+              state:"",
+              fileName:"",
+              fileUrl:"",
+              modifiedAt:"",
+              type:type,
+              audited:"",
+              year:"",
+            }
+            data.ulbId = el?.ulbId
+            data.state = el?.state
+            data.ulbName = el?.ulbName
+            data.modifiedAt = el?.modifiedAt
+            data.year = year;
+            data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`
+            data.fileUrl = el?.file
+           
+           
+            finalData.push(data)
+          })
+  }
+
+  
+}
+
+
+
+
+return res.status(200).json({
+  success: true,
+  data: finalData
+})
+})
 
 exports.nmpcEligibility = catchAsync(async(req,res)=>{
 
