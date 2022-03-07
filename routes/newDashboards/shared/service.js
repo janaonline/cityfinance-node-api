@@ -160,6 +160,15 @@ const moneyInformation = async (req, res) => {
         $group: {
           _id: "$lineitems.headOfAccount",
           amount: { $sum: "$amount" },
+          totalGrant: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineitems.code", "160"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
         },
       },
     ]);
