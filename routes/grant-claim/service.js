@@ -773,6 +773,39 @@ module.exports.grantStatusCSV = catchAsync(async(req,res)=>{
 
 })
 
+module.exports.updateLatLong = catchAsync(async (req,res)=>{
+    const jsonArray = req.body.jsonArray; 
+    let noFound=[]
+    for(let el of jsonArray){
+      let ulbData = await Ulb.findOne({code:el['City Finance Code'] }).lean()  
+   
+      if(!ulbData){
+notFound.push(el['City Finance Code'])
+continue;
+      }else{
+        if(ulbData.hasOwnProperty('population') && ulbData['population']!= "" && ulbData['population']!= null  ){
+            if(el['Population as per Census 2011'] != 'Not found'){
+            ulbData.population = el['Population as per Census 2011']
+            }
+    if(el['New Latitude'] != 'Not found' && el['New Longitude'] != 'Not found'){
+        ulbData.location.lat = el['New Latitude']
+        ulbData.location.lng = el['New Longitude']
+    }
+      }
+    
+
+      
+    }
+    await Ulb.updateOne({code:el['City Finance Code']}, ulbData)
+
+}
+console.log(notFound)
+return res.json({
+    success: true,
+    message:"Done",
+    notFound: notFound
+})
+})
 var download = function(data, _cb) {
     let url = data['Link'];
     let fileName = data['State'] + '_' + data['Year'] + '_' + data['Type'] + '_' + data['Installment'] + '.pdf' ;
