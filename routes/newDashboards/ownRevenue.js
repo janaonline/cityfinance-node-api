@@ -531,8 +531,8 @@ const cardsData = async (req, res) => {
    
 
     let matchObj = {};
-    if (ulb && ObjectId.isValid(ulb)){
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
+    if (ulb  && ulb != ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
     }else{
       if (stateId && ObjectId.isValid(stateId))
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
