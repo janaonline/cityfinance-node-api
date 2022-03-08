@@ -118,23 +118,20 @@ const dataAvailability = async (req, res) => {
 
     let matchObj = {};
     let matchObjNoData = {};
-    if (stateId && ObjectId.isValid(stateId)){
-      Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
-      Object.assign(matchObjNoData, { "state": ObjectId(stateId) });
-    }
-      
-    if (ulbType && ObjectId.isValid(ulbType)){
-      Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-      Object.assign(matchObjNoData, { "ulbType": ObjectId(ulbType) });
-
-    }
-      
-   
-      if (ulb && ObjectId.isValid(ulb)){
-        Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
-        Object.assign(matchObjNoData, { "_id": ObjectId(ulb) });
+    if (ulb && ulb!= ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+      Object.assign(matchObjNoData, { "name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId)){
+        Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
+        Object.assign(matchObjNoData, { "state": ObjectId(stateId) });
       }
-      
+        
+      if (ulbType && ObjectId.isValid(ulbType)){
+        Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
+        Object.assign(matchObjNoData, { "ulbType": ObjectId(ulbType) });
+  
+      }
       if(populationCategory == '4 Million+'){
         Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
         Object.assign(matchObjNoData, {"ulb.population":{$gt: 4000000}});
@@ -147,10 +144,18 @@ const dataAvailability = async (req, res) => {
       }else if(populationCategory == '1 Million - 4 Million'){
         Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
         Object.assign(matchObjNoData, {"ulb.population":{$gt: 1000000, $lt:4000000}});
-      }else if(populationCategory == '200 Thousand - 500 Thousand'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
-        Object.assign(matchObjNoData, {"ulb.population":{$gt: 200000, $lt:500000}});
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$lt: 100000}});
       }
+
+    }
+   
+      
+   
+ 
+      
+     
 
     if (Object.keys(matchObj).length > 0) {
       query.push({
@@ -226,7 +231,17 @@ if(Object.keys(matchObjNoData).length>0){
 
 let noData = await Ulb.aggregate(query_noData)
     let data = await UlbLedger.aggregate(query);
-    let ulbCount = await Ulb.find().count();
+    let countQuery = [
+      {
+        $count:"ulbCount"
+      }
+    ]
+    if(Object.keys(matchObjNoData).length>0){
+      countQuery.unshift({
+        $match:matchObjNoData
+      })
+    }
+    let ulbCount = await Ulb.aggregate(countQuery);
 
     data = data[0]?.ulb ?? 0;
 let names =[]
@@ -235,7 +250,7 @@ if(noData){
 names.push(el.name)
   })
 }
-    data = (data / ulbCount) * 100;
+    data = (data / ulbCount[0]?.ulbCount) * 100;
 
     return Response.OK(res, { percent: data,
     names: names });
@@ -378,16 +393,15 @@ const chartData2 = async (req, res) => {
         $unwind: "$ulb",
       },
     ];
-
     let matchObj = {};
-    if (stateId && ObjectId.isValid(stateId))
+    if (ulb && ulb != ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId))
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
     if (ulbType && ObjectId.isValid(ulbType))
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
-
-
+  
       if(populationCategory == '4 Million+'){
         Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
         
@@ -400,10 +414,14 @@ const chartData2 = async (req, res) => {
       }else if(populationCategory == '1 Million - 4 Million'){
         Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
         
-      }else if(populationCategory == '200 Thousand - 500 Thousand'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
         
       }
+    }
+
+   
+  
     if (Object.keys(matchObj).length > 0) {
       query.push({
         $match: matchObj,
