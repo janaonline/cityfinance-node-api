@@ -1,5 +1,6 @@
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
+const LineItem = require("../../models/LineItem");
 const Sate = require("../../models/State");
 const ULB = require("../../models/Ulb");
 const Response = require("../../service").response;
@@ -593,6 +594,147 @@ const aboutCalculation = async (req, res) => {
   }
 };
 
+const peerComp = async (req, res) => {
+  try {
+    const {
+      ulb,
+      financialYear,
+      headOfAccount = "Revenue",
+      getQuery,
+    } = req.query;
+    const {
+      ulbType = ulb.ulbType,
+      state = ulb.state,
+      population = ulb.population,
+    } = await ULB.findOne({ _id: ulb }).lean();
+    const lineItemData = await LineItem.find({ headOfAccount }).lean();
+    let lineItem = lineItemData.map((value) => ObjectId(value._id));
+
+    const inStateUlbType = UlbLedger.aggregate(
+      getPeerQuery({
+        headOfAccount,
+        ulbType,
+        state,
+        financialYear,
+        lineItem,
+      })
+    );
+    const inIndiaUlbType = UlbLedger.aggregate(
+      getPeerQuery({
+        headOfAccount,
+        ulbType,
+        financialYear,
+        lineItem,
+      })
+    );
+    const inState = UlbLedger.aggregate(
+      getPeerQuery({
+        headOfAccount,
+        population,
+        state,
+        financialYear,
+        lineItem,
+      })
+    );
+    const inIndia = UlbLedger.aggregate(
+      getPeerQuery({ headOfAccount, population, financialYear, lineItem })
+    );
+
+    const query = [inStateUlbType, inIndiaUlbType, inState, inIndia];
+
+    if (getQuery) return Response.OK(res, query);
+    let data = await Promise.all(query);
+    let newData = {
+      inStateUlbType: data[0][0],
+      inIndiaUlbType: data[1][0],
+      inState: data[2][0],
+      inIndia: data[0][0],
+    };
+    return Response.OK(res, newData);
+  } catch (error) {
+    return Response.DbError(res, error, error.message);
+  }
+};
+
+function getPeerQuery(params) {
+  let matchObj = {};
+  let query = [
+    {
+      $match: {
+        financialYear: {
+          $in: [params.financialYear],
+        },
+        lineItem: {
+          $in: params.lineItem.map((value) => value),
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $match: matchObj,
+    },
+  ];
+
+  if (params.hasOwnProperty("ulbType")) {
+    Object.assign(matchObj, { "ulb.ulbType": ObjectId(params.ulbType) });
+  }
+
+  if (params.hasOwnProperty("state")) {
+    Object.assign(matchObj, { "ulb.state": ObjectId(params.state) });
+  }
+
+  if (params.hasOwnProperty("population")) {
+    if (params.population < 100000) {
+      Object.assign(matchObj, { "ulb.population": { $lt: 100000 } });
+    } else if (100000 < params.population < 500000) {
+      Object.assign(matchObj, {
+        $or: [
+          { "ulb.population": { $gt: 100000 } },
+          { "ulb.population": { $lt: 100000 } },
+        ],
+      });
+    } else if (500000 < params.population < 1000000) {
+      Object.assign(matchObj, {
+        $or: [
+          { "ulb.population": { $gt: 500000 } },
+          { "ulb.population": { $lt: 1000000 } },
+        ],
+      });
+    } else if (1000000 < params.population < 1000000) {
+      Object.assign(matchObj, {
+        $or: [
+          { "ulb.population": { $gt: 1000000 } },
+          { "ulb.population": { $lt: 1000000 } },
+        ],
+      });
+    } else {
+      Object.assign(matchObj, { "ulb.population": { $gt: 4000000 } });
+    }
+  }
+
+  query.push(
+    { $sort: { amount: -1 } },
+    { $limit: 1 },
+    {
+      $project: {
+        ulb: 1,
+        amount: 1,
+      },
+    }
+  );
+  return query;
+}
+
 function getPopulationQuery(population) {
   if (population < 100000) {
     return populationQuery["<100K"];
@@ -759,4 +901,5 @@ const populationQuery = {
 module.exports = {
   indicator,
   aboutCalculation,
+  peerComp,
 };
