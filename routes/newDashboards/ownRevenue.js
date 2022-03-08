@@ -118,23 +118,20 @@ const dataAvailability = async (req, res) => {
 
     let matchObj = {};
     let matchObjNoData = {};
-    if (stateId && ObjectId.isValid(stateId)){
-      Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
-      Object.assign(matchObjNoData, { "state": ObjectId(stateId) });
-    }
-      
-    if (ulbType && ObjectId.isValid(ulbType)){
-      Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-      Object.assign(matchObjNoData, { "ulbType": ObjectId(ulbType) });
-
-    }
-      
-   
-      if (ulb && ObjectId.isValid(ulb)){
-        Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
-        Object.assign(matchObjNoData, { "_id": ObjectId(ulb) });
+    if (ulb && ulb!= ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+      Object.assign(matchObjNoData, { "name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId)){
+        Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
+        Object.assign(matchObjNoData, { "state": ObjectId(stateId) });
       }
-      
+        
+      if (ulbType && ObjectId.isValid(ulbType)){
+        Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
+        Object.assign(matchObjNoData, { "ulbType": ObjectId(ulbType) });
+  
+      }
       if(populationCategory == '4 Million+'){
         Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
         Object.assign(matchObjNoData, {"ulb.population":{$gt: 4000000}});
@@ -147,10 +144,18 @@ const dataAvailability = async (req, res) => {
       }else if(populationCategory == '1 Million - 4 Million'){
         Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
         Object.assign(matchObjNoData, {"ulb.population":{$gt: 1000000, $lt:4000000}});
-      }else if(populationCategory == '200 Thousand - 500 Thousand'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
-        Object.assign(matchObjNoData, {"ulb.population":{$gt: 200000, $lt:500000}});
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$lt: 100000}});
       }
+
+    }
+   
+      
+   
+ 
+      
+     
 
     if (Object.keys(matchObj).length > 0) {
       query.push({
@@ -226,7 +231,17 @@ if(Object.keys(matchObjNoData).length>0){
 
 let noData = await Ulb.aggregate(query_noData)
     let data = await UlbLedger.aggregate(query);
-    let ulbCount = await Ulb.find().count();
+    let countQuery = [
+      {
+        $count:"ulbCount"
+      }
+    ]
+    if(Object.keys(matchObjNoData).length>0){
+      countQuery.unshift({
+        $match:matchObjNoData
+      })
+    }
+    let ulbCount = await Ulb.aggregate(countQuery);
 
     data = data[0]?.ulb ?? 0;
 let names =[]
@@ -235,7 +250,7 @@ if(noData){
 names.push(el.name)
   })
 }
-    data = (data / ulbCount) * 100;
+    data = (data / ulbCount[0]?.ulbCount) * 100;
 
     return Response.OK(res, { percent: data,
     names: names });
@@ -378,16 +393,15 @@ const chartData2 = async (req, res) => {
         $unwind: "$ulb",
       },
     ];
-
     let matchObj = {};
-    if (stateId && ObjectId.isValid(stateId))
+    if (ulb && ulb != ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId))
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
     if (ulbType && ObjectId.isValid(ulbType))
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
-
-
+  
       if(populationCategory == '4 Million+'){
         Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
         
@@ -400,10 +414,14 @@ const chartData2 = async (req, res) => {
       }else if(populationCategory == '1 Million - 4 Million'){
         Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
         
-      }else if(populationCategory == '200 Thousand - 500 Thousand'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
         
       }
+    }
+
+   
+  
     if (Object.keys(matchObj).length > 0) {
       query.push({
         $match: matchObj,
@@ -467,7 +485,7 @@ const chartData2 = async (req, res) => {
 
 const cardsData = async (req, res) => {
   try {
-    let { ulbType, ulb, stateId, financialYear, getQuery } = req.body;
+    let { ulbType, ulb, stateId, financialYear, getQuery, populationCategory, property } = req.body;
 
     if (
       !financialYear || Array.isArray(financialYear)
@@ -482,9 +500,7 @@ const cardsData = async (req, res) => {
       .map((value) => Number(value) - 1)
       .join("-");
     financialYear = [financialYear, tempYear];
-let base_query = [
- 
-]
+
     let query = [
       {
         $match: {
@@ -515,12 +531,34 @@ let base_query = [
    
 
     let matchObj = {};
-    if (stateId && ObjectId.isValid(stateId))
+    if (ulb  && ulb != ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId))
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
     if (ulbType && ObjectId.isValid(ulbType))
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
+
+      if(populationCategory == '4 Million+'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+       
+      }else if(populationCategory == '500 Thousand - 1 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+      
+      }else if(populationCategory == '100 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+      
+      }else if(populationCategory == '1 Million - 4 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+      
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
+      
+      }
+    }
+    
+  
+
 
     if (Object.keys(matchObj).length > 0) {
       query.push({
@@ -606,8 +644,10 @@ let base_query = [
             $cond: [
               {
                 $or: [
-                  { $eq: ["$totalRevenue", "$totalExpense"] },
-                  { $gt: ["$totalRevenue", "$totalExpense"] },
+                  {$and:[{ $eq: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                  ,
+                 { $and:[{ $gt: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                  ,
                 ],
               },
               1,
@@ -713,8 +753,8 @@ let redisKey =  "OwnRevenueCards";
 
   // let dataCard = await Redis.getDataPromise(redisKey); 
 
-  let data = UlbLedger.aggregate(query);
-  let ulbCountExpense = UlbLedger.aggregate(query2);
+  let data = await UlbLedger.aggregate(query);
+  let ulbCountExpense = await UlbLedger.aggregate(query2);
   data = await Promise.all([data, ulbCountExpense]);
    dataCard = data[0].map((value) => {
     let expense = data[1].find(
@@ -815,8 +855,6 @@ const tableData = async (req, res) => {
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
     if (ulbType && ObjectId.isValid(ulbType))
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
 
     if (Object.keys(matchObj).length > 0) {
       queryCal.push({
@@ -902,8 +940,10 @@ const tableData = async (req, res) => {
               $cond: [
                 {
                   $or: [
-                    { $eq: ["$totalRevenue", "$totalExpense"] },
-                    { $gt: ["$totalRevenue", "$totalExpense"] },
+                    {$and:[{ $eq: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                    ,
+                   { $and:[{ $gt: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                    ,
                   ],
                 },
                 1,
