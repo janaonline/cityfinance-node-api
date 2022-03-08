@@ -643,13 +643,24 @@ const peerComp = async (req, res) => {
     const query = [inStateUlbType, inIndiaUlbType, inState, inIndia];
 
     if (getQuery) return Response.OK(res, query);
-    let data = await Promise.all(query);
-    let newData = {
-      inStateUlbType: data[0][0],
-      inIndiaUlbType: data[1][0],
-      inState: data[2][0],
-      inIndia: data[0][0],
-    };
+
+    const redisKey = JSON.stringify(query) + "peerComp";
+    let redisData = await Redis.getDataPromise(redisKey);
+    let data, newData;
+    if (!redisData) {
+      data = await Promise.all(query);
+      newData = {
+        inStateUlbType: data[0][0],
+        inIndiaUlbType: data[1][0],
+        inState: data[2][0],
+        inIndia: data[0][0],
+      };
+      Redis.set(redisKey, JSON.stringify(newData));
+    } else {
+      newData = JSON.parse(redisData);
+    }
+
+    
     return Response.OK(res, newData);
   } catch (error) {
     return Response.DbError(res, error, error.message);
