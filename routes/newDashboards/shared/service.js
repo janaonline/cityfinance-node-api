@@ -160,6 +160,15 @@ const moneyInformation = async (req, res) => {
         $group: {
           _id: "$lineitems.headOfAccount",
           amount: { $sum: "$amount" },
+          totalGrant: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineitems.code", "160"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
         },
       },
     ]);
@@ -172,7 +181,24 @@ const moneyInformation = async (req, res) => {
   }
 };
 
+const getLatestData = async (req, res) => {
+  try {
+    const { ulb } = req.query;
+
+    if (!ulb) return Response.BadRequest(res, null, "no ulb found");
+    let year = await UlbLedger.find({ ulb: req.query.ulb })
+      .sort({ financialYear: -1 })
+      .limit(1)
+      .lean();
+    if (!year[0]) return Response.BadRequest(res, null, "no year data found");
+    return Response.OK(res, year[0]);
+  } catch (error) {
+    return Response.DbError(res, error, error.message);
+  }
+};
+
 module.exports = {
   peopleInformation,
   moneyInformation,
+  getLatestData,
 };
