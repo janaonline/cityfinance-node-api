@@ -718,7 +718,8 @@ const revenueIndicator = async (req, res) => {
               });
             }
             if (value["$group"]) {
-              value["$group"]._id;
+              delete value["$group"]._id.ulb;
+              delete value["$group"]._id.ulb;
             }
           });
           break;
