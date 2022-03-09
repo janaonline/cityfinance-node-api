@@ -71,6 +71,25 @@ const indicator = async (req, res) => {
     switch (filterName) {
       case "revenue_expenditure":
       case "revenue":
+        let lineIds = await LineItem.find({ headOfAccount })
+          .select({ _id: 1 })
+          .lean();
+        query = query
+          .map((value) => {
+            if (value["$match"]) {
+              Object.assign(value["$match"], {
+                lineItem: { $in: lineIds.map((value) => ObjectId(value._id)) },
+              });
+            }
+            if (value["$lookup"]?.from === "lineitems") {
+              return false;
+            }
+            if (value["$unwind"] == "$lineitems") {
+              return false;
+            }
+            return value;
+          })
+          .filter(Boolean);
         let group = {
           _id: {
             ulb: "$ulb._id",
@@ -380,6 +399,11 @@ const comparator = async (compareFrom, query, ulb) => {
   switch (compareFrom) {
     case "State Average":
       delete newData[0]?.$match?.ulb;
+      let temp = newData[0]?.$match?.lineItem.$in;
+      delete newData[0]?.$match?.lineItem.$in;
+      Object.assign(newData[0]?.$match?.lineItem, {
+        $in: temp.map((value) => ObjectId(value)),
+      });
       if (ulbData)
         newData.splice(2, 0, {
           $match: { "ulb.state": ObjectId(ulbData.state) },
@@ -394,14 +418,37 @@ const comparator = async (compareFrom, query, ulb) => {
       });
       newData = newData.map((value) => {
         if (value["$group"]) {
-          delete value["$group"]._id?.ulb;
-          Object.assign(value["$group"]._id, { state: "$ulb.state" });
-          value["$group"].ulbName = { $first: "$state.name" };
-          let old = value["$group"].amount.$sum;
-          delete value["$group"].amount.$sum;
-          value["$group"].amount.$avg = old;
+          delete value["$group"];
+          Object.assign(value, {
+            $group: {
+              _id: {
+                financialYear: "$financialYear",
+                state: "$ulb.state",
+              },
+              amount: {
+                $sum: {
+                  $multiply: ["$amount", "$ulb.population"],
+                },
+              },
+              totalPopulation: { $sum: "$ulb.population" },
+              ulbName: {
+                $first: "$state.name",
+              },
+            },
+          });
         }
         return value;
+      });
+      query[0]?.$match?.lineItem;
+
+      newData.splice(newData.length - 1, 0, {
+        $project: {
+          _id: 1,
+          ulbName: 1,
+          amount: {
+            $divide: ["$amount", "$totalPopulation"],
+          },
+        },
       });
       break;
     case "National Average":
@@ -649,18 +696,31 @@ const peerComp = async (req, res) => {
     let data, newData;
     if (!redisData) {
       data = await Promise.all(query);
+      totalRevenue = await UlbLedger.aggregate([
+        {
+          $match: {
+            financialYear: {
+              $in: [financialYear],
+            },
+            lineItem: {
+              $in: lineItem.map((value) => value),
+            },
+          },
+        },
+        { $group: { _id: null, amount: { $sum: "$amount" } } },
+      ]);
       newData = {
         inStateUlbType: data[0][0],
         inIndiaUlbType: data[1][0],
         inState: data[2][0],
         inIndia: data[0][0],
+        totalRevenue: totalRevenue[0].amount,
       };
       Redis.set(redisKey, JSON.stringify(newData));
     } else {
       newData = JSON.parse(redisData);
     }
 
-    
     return Response.OK(res, newData);
   } catch (error) {
     return Response.DbError(res, error, error.message);
