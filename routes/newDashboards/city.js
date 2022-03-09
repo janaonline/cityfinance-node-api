@@ -602,8 +602,134 @@ const revenueIndicator = async (req, res) => {
       compareType,
       financialYear,
       isPerCapita,
-      getPeerQuery,
+      getQuery,
+      filterName,
     } = req.body;
+    let lineItemIds = await LineItem.find({ headOfAccount })
+      .select({ _id: 1 })
+      .lean();
+    let matchObj = {};
+    let query = [{ $match: matchObj }];
+    if (ulb) {
+      Object.assign(matchObj, {
+        ulb: Array.isArray(ulb)
+          ? { $in: ulb.map((value) => ObjectId(value)) }
+          : ObjectId(ulb),
+      });
+    }
+    if (lineItemIds.length) {
+      Object.assign(matchObj, {
+        lineItem: { $in: lineItemIds.map((value) => value._id) },
+      });
+    }
+    if (financialYear) {
+      Object.assign(matchObj, {
+        financialYear: {
+          $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+        },
+      });
+    }
+
+    query.push(
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      { $unwind: "$ulb" }
+    );
+
+    switch (filterName) {
+      case "total_revenue":
+        query.push(
+          {
+            $lookup: {
+              from: "lineitems",
+              localField: "lineItem",
+              foreignField: "_id",
+              as: "lineItem",
+            },
+          },
+          { $unwind: "$lineItem" }
+        );
+        query.push(
+          {
+            $group: {
+              _id: {
+                ulb: "$ulb._id",
+                financialYear: "$financialYear",
+              },
+              amount: isPerCapita
+                ? { $sum: { $divide: ["$amount", "$ulb.population"] } }
+                : { $sum: "$amount" },
+              ulbName: { $first: "$ulb.name" },
+            },
+          },
+          { $sort: { financialYear: -1 } }
+        );
+        break;
+      case "revenue_mix":
+        query.push(
+          {
+            $lookup: {
+              from: "lineitems",
+              localField: "lineItem",
+              foreignField: "_id",
+              as: "lineItem",
+            },
+          },
+          { $unwind: "$lineItem" }
+        );
+        query.push(
+          {
+            $group: {
+              _id: {
+                financialYear: "$financialYear",
+                lineItem: "$lineItem.name",
+              },
+              amount: { $sum: "$amount" },
+              ulbName: { $first: "$ulb.name" },
+            },
+          },
+          { $sort: { financialYear: -1 } }
+        );
+        break;
+      default:
+        break;
+    }
+    let compQuery = JSON.parse(JSON.stringify(query));
+    if (compareType) {
+      switch (compareType) {
+        case "State Average":
+          compQuery.map((value) => {
+            if (value["$match"]) {
+              delete value["$match"].ulb;
+              let ulbData = await Ulb.findOne({ _id: ulb })
+                .select({ state: 1 })
+                .lean();
+              let ulbIds = await Ulb.find({ state: ulbData.state })
+                .select({ _id: 1 })
+                .lean();
+              Object.assign(value["$match"], {
+                ulb: { $in: ulbIds.map((value) => ObjectId(value._id)) },
+              });
+            }
+            if (value["$group"]) {
+              value["$group"]._id;
+            }
+          });
+          break;
+
+        default:
+          break;
+      }
+    }
+    if (getQuery) return Response.OK(res, query);
+    let data = await UlbLedger.aggregate(query);
+    return Response.OK(res, data);
   } catch (error) {
     return Response.DbError(res, error, error.message);
   }
@@ -927,4 +1053,5 @@ module.exports = {
   indicator,
   aboutCalculation,
   peerComp,
+  revenueIndicator,
 };
