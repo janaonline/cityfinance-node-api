@@ -3,8 +3,14 @@ const router = express.Router();
 const { verifyToken } = require("../auth/services/verifyToken");
 const shared = require("./shared/index");
 
-const { indicator, aboutCalculation, peerComp } = require("./city");
+const {
+  indicator,
+  aboutCalculation,
+  peerComp,
+  revenueIndicator,
+} = require("./city");
 router.post("/indicator", indicator);
+router.post("/indicator/revenue", revenueIndicator);
 router.get("/about-indicator", aboutCalculation);
 router.get("/about-indicator-comp", peerComp);
 

@@ -252,6 +252,7 @@ exports.getIndicatorData = async (req, res) => {
       type,
       indicatorName,
       year,
+      getQuery,
     } = req.query;
     type = type?.toLowerCase();
     let query = {};
@@ -266,7 +267,14 @@ exports.getIndicatorData = async (req, res) => {
       Object.assign(query, { name: indicatorName });
     }
     if (year) {
-      Object.assign(query, { year });
+      let tempYear = year.split("-");
+      tempYear[1] = Number(tempYear[0]) + 1;
+      tempYear = tempYear.join("-");
+      Object.assign(query, { year: tempYear });
+    }
+
+    if (getQuery) {
+      return Response.OK(res, query);
     }
 
     let data = await Indicator.find(query).lean();
