@@ -704,7 +704,7 @@ const revenueIndicator = async (req, res) => {
     if (compareType) {
       switch (compareType) {
         case "State Average":
-          compQuery.map((value) => {
+          compQuery.map(async (value) => {
             if (value["$match"]) {
               delete value["$match"].ulb;
               let ulbData = await Ulb.findOne({ _id: ulb })
