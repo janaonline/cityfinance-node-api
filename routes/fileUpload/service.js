@@ -279,11 +279,19 @@ exports.getIndicatorData = async (req, res) => {
 
     let data = await Indicator.find(query).lean();
     let compData;
-    if (compUlb) compData = await Indicator.find(query).lean();
+    if (compUlb) {
+      if (query.ulb) {
+        query.ulb = compUlb;
+      }
+      compData = await Indicator.find(query).lean();
+    }
     data = data.map((value, index) => {
       value.percentage = (value.value / value.benchMarkValue) * 100;
-      if (compUlb)
-        value.compPercentage = (compData[index] / value.benchMarkValue) * 100;
+      if (compUlb) {
+        let per = (compData[index].value / value.benchMarkValue) * 100;
+        if (isNaN(per) || !per) per = 0;
+        value.compPercentage = per;
+      }
       return value;
     });
     return Response.OK(res, data, "Success");
