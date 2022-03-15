@@ -4,14 +4,9 @@ const User = require("../../models/User");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
-<<<<<<< HEAD
 const Category = require('../../models/Category')
 const catchAsync = require('../../util/catchAsync.js')
 const FORM_STATUS = require('../../util/newStatusList')
-=======
-const Category = require("../../models/Category");
-const FORM_STATUS = require("../../util/newStatusList");
->>>>>>> faf26f01df58ffc531fc75e5c40bcb007862505a
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -454,10 +449,8 @@ exports.report = async (req, res) => {
     }
     res.end();
   }
-<<<<<<< HEAD
-  res.end();
 
- }
+ 
 }
 
 exports.dashboard = catchAsync( async(req,res)=>{
@@ -606,6 +599,3 @@ data.notStarted = notStartedData.length
     })
   }
 })
-=======
-};
->>>>>>> faf26f01df58ffc531fc75e5c40bcb007862505a
