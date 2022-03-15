@@ -367,7 +367,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           ulbName:"$ulb.name",
           ulbId: "$ulb._id",
           censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
-          ua:{$ifNull:["$ua.name","NA"]},
+          UA:{$ifNull:["$ua.name","NA"]},
           populationType:{
               $cond : {
                 if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
@@ -429,7 +429,20 @@ module.exports.getAll = catchAsync(async (req, res) => {
             $size:0
           }
         }
-      }
+      },
+      {
+        $project:{
+          ulbName:"$name",
+        populationType: {
+          $cond : {if:{$eq:["$isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+        },
+        annAccData:1,
+        censusCode: {$ifNull:["$censusCode", "$sbCode"]},
+UA:{$ifNull:["$ua.name","NA"]},
+auditedStatus:"Not Started",
+provisionalStatus:"Not Started",
+        }
+      },
 
 
     ]
@@ -478,7 +491,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                 ulbName:"$ulb.name",
                 ulbId: "$ulb._id",
                 censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
-                ua:{$ifNull:["$ua.name","NA"]},
+                UA:{$ifNull:["$ua.name","NA"]},
                 populationType:{
                     $cond : {if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
                 }
@@ -539,7 +552,23 @@ module.exports.getAll = catchAsync(async (req, res) => {
             $size:0
           }
         }
+      },
+      {
+        $project:{
+          ulbName:"$name",
+        populationType: {
+          $cond : {if:{$eq:["$isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+        },
+       
+        utilData:1,
+        censusCode: {$ifNull:["$censusCode", "$sbCode"]},
+UA: {$ifNull:["$ua.name","NA"]},
+utilStatus:"Not Started",
+
+        
+        }
       }
+
 
 
     ]
@@ -588,7 +617,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
                 ulbName:"$ulb.name",
                 ulbId: "$ulb._id",
                 censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
-                ua:{$ifNull:["$ua.name","NA"]},
+                UA:{$ifNull:["$ua.name","NA"]},
                 populationType:{
                     $cond : {if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
                 }
@@ -649,17 +678,32 @@ module.exports.getAll = catchAsync(async (req, res) => {
           $size:0
         }
       }
-    }
+    },
+    {
+      $project:{
+        ulbName:"$name",
+      populationType: {
+        $cond : {if:{$eq:["$isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+      },
+     
+      slbData:1,
+      censusCode: {$ifNull:["$censusCode", "$sbCode"]},
+UA:{$ifNull:["$ua.name","NA"]},
+slbStatus:"Not Started",
+
+      
+      }
+    },
 
 
   ]
-
+  let data = []
+  let result = []
+  let finalObj = await  filterfunc(filter);
   if(formName == 'annual'){
-    let newFilter = await Service.mapFilter(filter);
-    console.log(newFilter)
-    let data=[]
-
-
+ 
+    query_annual.push(finalObj.obj)
+    query_annual_notStarted.push(finalObj.obj)
 let {annualData,annualData_notStarted } = await new Promise(async (resolve, reject)=>{
   let prms1 = await new Promise(async (rslv, rjct)=>{
 let output = await AnnualAccount.aggregate(query_annual)
@@ -699,7 +743,7 @@ annualData.forEach(el=>{
         }
   obj.ulbName = el.ulbName;
   obj.censusCode = el.censusCode;
-  obj.UA = el.ua;
+  obj.UA = el.UA;
   obj.populationType = el.populationType;
 obj.ulbId = el.ulbId;
 
@@ -767,39 +811,21 @@ obj.ulbId = el.ulbId;
 data.push(obj)
 
 })
-annualData_notStarted.forEach(el=>{
-  let obj={
-    ulbName:"",
-    censusCode:"",
-    ulbId:null,
-    populationType:"",
-    UA:"",
-    auditedStatus:"",
-    provisionalStatus:"",
-    canApprove: false
-        }
-  obj.ulbName = el.name;
-  obj.censusCode = el.censusCode ?? el.sbCode;
-  obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
-  obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
-obj.ulbId = el._id;
-obj.auditedStatus = STATUS_LIST.Not_Started;
-obj.provisionalStatus = STATUS_LIST.Not_Started
-data.push(obj)
-})
-
+data.push(...annualData_notStarted)
+if(finalObj.status != ''){
+  result =     annualData.filter(el => el.auditedStatus == finalObj.auditedstatus ||  el.provisionalStatus == finalObj.provisionalstatus  )
+     }
 
 return res.status(200).json({
   success: true,
   message:"Annual Accounts Form List",
-  data:data
+  data: finalObj.status != '' ? result : data
 })
 
 
   } else if(formName == 'slb'){
-    let data =[]
-    let newFilter = await Service.mapFilter(filter);
-    console.log(newFilter)
+    query_slb.push(finalObj.obj)
+    query_slb_notStarted.push(finalObj.obj)
     let {slbData,slbData_notStarted } = await new Promise(async (resolve, reject)=>{
       let prms1 = await new Promise(async (rslv, rjct)=>{
     let output = await Slb.aggregate(query_slb)
@@ -837,7 +863,7 @@ return res.status(200).json({
             }
       obj.ulbName = el.ulbName;
       obj.censusCode = el.censusCode;
-      obj.UA = el.ua;
+      obj.UA = el.UA;
       obj.populationType = el.populationType;
     obj.ulbId = el.ulbId;
     
@@ -872,36 +898,21 @@ return res.status(200).json({
     data.push(obj)
     
     })
-    slbData_notStarted.forEach(el=>{
-      let obj={
-        ulbName:"",
-        censusCode:"",
-        ulbId:null,
-        populationType:"",
-        UA:"",
-        slbStatus:"",
-        canApprove: false
-            }
-      obj.ulbName = el.name;
-      obj.censusCode = el.censusCode ?? el.sbCode;
-      obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
-      obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
-    obj.ulbId = el._id;
-    obj.slbStatus = STATUS_LIST.Not_Started;
-    
-    data.push(obj)
-    })
+    data.push(...slbData_notStarted)
+    if(finalObj.status != ''){
+      result =     data.filter(el => el.slbStatus == finalObj.status )
+         }
     return res.status(200).json({
       success: true,
       message:"SLB Form List",
-      data:data
+      data: finalObj.status != '' ? result : data
     })
 
 
   }else if(formName == 'util'){
-    let data = []
-    let newFilter = await Service.mapFilter(filter);
-    console.log(newFilter)
+    
+    query_util.push(finalObj.obj)
+    query_util_notStarted.push(finalObj.obj)
     let {utilData,utilData_notStarted } = await new Promise(async (resolve, reject)=>{
       let prms1 = await new Promise(async (rslv, rjct)=>{
     let output = await UtilizationReport.aggregate(query_util)
@@ -940,7 +951,7 @@ return res.status(200).json({
             }
       obj.ulbName = el.ulbName;
       obj.censusCode = el.censusCode;
-      obj.UA = el.ua;
+      obj.UA = el.UA;
       obj.populationType = el.populationType;
     obj.ulbId = el.ulbId;
     
@@ -972,29 +983,16 @@ return res.status(200).json({
     data.push(obj)
     
     })
-    utilData_notStarted.forEach(el=>{
-      let obj={
-        ulbName:"",
-        censusCode:"",
-        ulbId:null,
-        populationType:"",
-        UA:"",
-        utilStatus:"",
-        canApproved: false
-            }
-      obj.ulbName = el.name;
-      obj.censusCode = el.censusCode ?? el.sbCode;
-      obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
-      obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
-    obj.ulbId = el._id;
-    obj.utilStatus = STATUS_LIST.Not_Started;
-    
-    data.push(obj)
-    })
+data.push(...utilData_notStarted);
+if(finalObj.status != ''){
+  result =  data.filter(el => {
+    return el['utilStatus'] == finalObj.status
+  } )
+     }
     return res.status(200).json({
       success: true,
       message:"DUR Form List",
-      data:data
+      data:finalObj.status != '' ? result : data
     })
     
 
@@ -1056,7 +1054,7 @@ return res.status(200).json({
                 ulbId: "$ulb._id",
                 state:"$state.name",
                 censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
-                ua:{$ifNull:["$ua.name","NA"]},
+                UA:{$ifNull:["$ua.name","NA"]},
                 populationType:{
                     $cond : {
                       if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
@@ -1079,6 +1077,19 @@ return res.status(200).json({
               $unwind:{
                 path:"$ua",
                 preserveNullAndEmptyArrays: true
+              }
+            },
+            {
+              $lookup:{
+                from:"states",
+                localField:"state",
+                foreignField:"_id",
+                as:"state"
+              }
+            },{
+              $unwind:{
+                path:"$state",
+                
               }
             },
             {
@@ -1113,7 +1124,23 @@ return res.status(200).json({
                   $size:0
                 }
               }
-            }
+            },
+            {
+              $project:{
+                ulbName:"$name",
+              populationType: {
+                $cond : {if:{$eq:["$isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+              },
+              state:"$state.name",
+              annAccData:1,
+              censusCode: {$ifNull:["$censusCode", "$sbCode"]},
+  UA:{$ifNull:["$ua.name","NA"]},
+  auditedStatus:"Not Started",
+  provisionalStatus:"Not Started",
+  
+              
+              }
+            },
       
       
           ]
@@ -1169,7 +1196,7 @@ return res.status(200).json({
                       ulbName:"$ulb.name",
                       ulbId: "$ulb._id",
                       censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
-                      ua:{$ifNull:["$ua.name","NA"]},
+                      UA:{$ifNull:["$ua.name","NA"]},
                       populationType:{
                           $cond : {if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
                       }
@@ -1192,6 +1219,19 @@ return res.status(200).json({
               $unwind:{
                 path:"$ua",
                 preserveNullAndEmptyArrays: true
+              }
+            },
+            {
+              $lookup:{
+                from:"states",
+                localField:"state",
+                foreignField:"_id",
+                as:"state"
+              }
+            },{
+              $unwind:{
+                path:"$state",
+                
               }
             },
             {
@@ -1226,7 +1266,22 @@ return res.status(200).json({
                   $size:0
                 }
               }
-            }
+            },
+            {
+              $project:{
+                ulbName:"$name",
+              populationType: {
+                $cond : {if:{$eq:["$isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+              },
+              state:"$state.name",
+              utilData:1,
+              censusCode: {$ifNull:["$censusCode", "$sbCode"]},
+  UA: {$ifNull:["$ua.name","NA"]},
+  utilStatus:"Not Started",
+  
+              
+              }
+            },
       
       
           ]
@@ -1283,7 +1338,7 @@ return res.status(200).json({
                       state:"$state.name",
                       ulbId: "$ulb._id",
                       censusCode: {$ifNull:["$ulb.censusCode", "$ulb.sbCode"]},
-                      ua:{$ifNull:["$ua.name","NA"]},
+                      UA:{$ifNull:["$ua.name","NA"]},
                       populationType:{
                           $cond : {if:{$eq:["$ulb.isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
                       }
@@ -1306,6 +1361,19 @@ return res.status(200).json({
             $unwind:{
               path:"$ua",
               preserveNullAndEmptyArrays: true
+            }
+          },
+          {
+            $lookup:{
+              from:"states",
+              localField:"state",
+              foreignField:"_id",
+              as:"state"
+            }
+          },{
+            $unwind:{
+              path:"$state",
+              
             }
           },
           {
@@ -1334,22 +1402,38 @@ return res.status(200).json({
               as: "slbData",
             },
           },
+         
           {
             $match:{
               slbData:{
                 $size:0
               }
             }
-          }
+          },
+          {
+            $project:{
+              ulbName:"$name",
+            populationType: {
+              $cond : {if:{$eq:["$isMillionPlus", "Yes"]}, then: "Million Plus", else:"Non Million"}
+            },
+            state:"$state.name",
+            slbData:1,
+            censusCode: {$ifNull:["$censusCode", "$sbCode"]},
+UA:{$ifNull:["$ua.name","NA"]},
+slbStatus:"Not Started",
+
+            
+            }
+          },
       
       
         ]
-      
+        let data = []
+        let result = []
+        let finalObj = await  filterfunc(filter);
         if(formName == 'annual'){
-          
-          let data=[]
-          let newFilter = await Service.mapFilter(filter);
-          console.log(newFilter)
+          query_annual.push(finalObj.obj)
+          query_annual_notStarted.push(finalObj.obj)
       let {annualData,annualData_notStarted } = await new Promise(async (resolve, reject)=>{
         let prms1 = await new Promise(async (rslv, rjct)=>{
       let output = await AnnualAccount.aggregate(query_annual)
@@ -1389,7 +1473,7 @@ return res.status(200).json({
               }
         obj.ulbName = el.ulbName;
         obj.censusCode = el.censusCode;
-        obj.UA = el.ua;
+        obj.UA = el.UA;
         obj.populationType = el.populationType;
       obj.ulbId = el.ulbId;
       
@@ -1399,35 +1483,35 @@ return res.status(200).json({
       
         }else if(el.role == 'ULB' && !el.isDraft){
           if(el.audited_answer){
-            obj.auditedStatus = STATUS_LIST.Submitted;
-            obj.canApprove = true
+            obj.auditedStatus = STATUS_LIST.Under_Review_By_State;
+           
           }else if(!el.audited_answer){
-            obj.auditedStatus = STATUS_LIST.Not_Submitted
+            obj.auditedStatus = STATUS_LIST.Under_Review_By_State
           }
           if(el.unAudited_answer){
-            obj.provisionalStatus = STATUS_LIST.Submitted;
-            obj.canApprove = true
+            obj.provisionalStatus = STATUS_LIST.Under_Review_By_State;
           }else if(!el.unAudited_answer){
-            obj.provisionalStatus = STATUS_LIST.Not_Submitted
+            obj.provisionalStatus = STATUS_LIST.Under_Review_By_State
           }
         } else if(el.role == 'STATE' && el.isDraft){
           if(el.audited_answer){
-            obj.auditedStatus = STATUS_LIST.Submitted;
+            obj.auditedStatus = STATUS_LIST.Under_Review_By_State;
             obj.canApprove = true
           }else if(!el.audited_answer){
-            obj.auditedStatus = STATUS_LIST.Not_Submitted
+            obj.auditedStatus = STATUS_LIST.Under_Review_By_State
           }
           if(el.unAudited_answer){
-            obj.provisionalStatus = STATUS_LIST.Submitted
+            obj.provisionalStatus = STATUS_LIST.Under_Review_By_State
             obj.canApprove = true
           }else if(!el.unAudited_answer){
-            obj.provisionalStatus = STATUS_LIST.Not_Submitted
+            obj.provisionalStatus = STATUS_LIST.Under_Review_By_State
           }
       
         }else if(el.role == 'STATE' && !el.isDraft){
           if(el.status == 'APPROVED'){
             obj.auditedStatus = STATUS_LIST.Approved_By_State
             obj.provisionalStatus = STATUS_LIST.Approved_By_State
+            obj.canApprove = true
           }else if(el.status == 'REJECTED'){
             obj.auditedStatus = STATUS_LIST.In_Progress
             obj.provisionalStatus = STATUS_LIST.In_Progress
@@ -1435,13 +1519,17 @@ return res.status(200).json({
         }else if(el.role == 'MoHUA' && el.isDraft){
           if(el.audited_answer){
             obj.auditedStatus = STATUS_LIST.Approved_By_State
+            obj.canApprove = true
           }else if(!el.audited_answer){
-            obj.auditedStatus = STATUS_LIST.Not_Submitted
+            obj.auditedStatus = STATUS_LIST.Approved_By_State
+            obj.canApprove = true
           }
           if(el.unAudited_answer){
-            obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
+            obj.provisionalStatus = STATUS_LIST.Approved_By_State
+            obj.canApprove = true
           }else if(!el.unAudited_answer){
-            obj.provisionalStatus = STATUS_LIST.Not_Submitted
+            obj.provisionalStatus = STATUS_LIST.Approved_By_State
+            obj.canApprove = true
           }
       
         }else if(el.role == 'MoHUA' && !el.isDraft){
@@ -1449,47 +1537,30 @@ return res.status(200).json({
             obj.auditedStatus = STATUS_LIST.Approved_By_MoHUA
             obj.provisionalStatus = STATUS_LIST.Approved_By_MoHUA
           }else if(el.status == 'REJECTED'){
-            obj.auditedStatus = STATUS_LIST.Rejected_By_MoHUA
-            obj.provisionalStatus = STATUS_LIST.Rejected_By_MoHUA
+            obj.auditedStatus = STATUS_LIST.In_Progress
+            obj.provisionalStatus = STATUS_LIST.In_Progress
           }
         }
       
       data.push(obj)
       
       })
-      annualData_notStarted.forEach(el=>{
-        let obj={
-          ulbName:"",
-          censusCode:"",
-          ulbId:null,
-          populationType:"",
-          UA:"",
-          auditedStatus:"",
-          provisionalStatus:"",
-          canApprove: false
-              }
-        obj.ulbName = el.name;
-        obj.censusCode = el.censusCode ?? el.sbCode;
-        obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
-        obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
-      obj.ulbId = el._id;
-      obj.auditedStatus = STATUS_LIST.Not_Started;
-      obj.provisionalStatus = STATUS_LIST.Not_Started
-      data.push(obj)
-      })
-      
+      data.push(...annualData_notStarted)
+      if(finalObj.status != ''){
+        result =     annualData.filter(el => el.auditedStatus == finalObj.auditedstatus ||  el.provisionalStatus == finalObj.provisionalstatus  )
+           }
       
       return res.status(200).json({
         success: true,
         message:"Annual Accounts Form List",
-        data:data
+        data:finalObj.status != '' ? result : data
       })
       
       
         } else if(formName == 'slb'){
-          let data =[]
-          let newFilter = await Service.mapFilter(filter);
-    console.log(newFilter)
+       
+          query_slb.push(finalObj.obj)
+          query_slb_notStarted.push(finalObj.obj)
           let {slbData,slbData_notStarted } = await new Promise(async (resolve, reject)=>{
             let prms1 = await new Promise(async (rslv, rjct)=>{
           let output = await Slb.aggregate(query_slb)
@@ -1527,7 +1598,7 @@ return res.status(200).json({
                   }
             obj.ulbName = el.ulbName;
             obj.censusCode = el.censusCode;
-            obj.UA = el.ua;
+            obj.UA = el.UA;
             obj.populationType = el.populationType;
           obj.ulbId = el.ulbId;
           
@@ -1535,26 +1606,26 @@ return res.status(200).json({
               obj.slbStatus = STATUS_LIST.In_Progress
             }else if(el.role == 'ULB' && !el.isDraft){
               if(el.blank){
-                obj.slbStatus = STATUS_LIST.Not_Submitted
+                obj.slbStatus = STATUS_LIST.Under_Review_By_State
               }else if(!el.blank)
-                obj.slbStatus = STATUS_LIST.Submitted;
-                obj.canApprove = true
+                obj.slbStatus = STATUS_LIST.Under_Review_By_State;
               } else if(el.role == 'STATE' && el.isDraft){
-                obj.slbStatus = STATUS_LIST.Submitted
-                obj.canApprove = true
+                obj.slbStatus = STATUS_LIST.Under_Review_By_State
             }else if(el.role == 'STATE' && !el.isDraft){
               if(el.status == 'APPROVED'){
                 obj.slbStatus = STATUS_LIST.Approved_By_State
+                obj.canApprove = true
               }else if(el.status == 'REJECTED'){
                 obj.slbStatus = STATUS_LIST.In_Progress
               }
             }else if(el.role == 'MoHUA' && el.isDraft){
                 obj.slbStatus = STATUS_LIST.Approved_By_State
+                obj.canApprove = true
             }else if(el.role == 'MoHUA' && !el.isDraft){
               if(el.status == 'APPROVED'){
                 obj.slbStatus = STATUS_LIST.Approved_By_MoHUA
               }else if(el.status == 'REJECTED'){
-                obj.slbStatus = STATUS_LIST.Rejected_By_MoHUA
+                obj.slbStatus = STATUS_LIST.In_Progress
                 
               }
             }
@@ -1562,39 +1633,23 @@ return res.status(200).json({
           data.push(obj)
           
           })
-          slbData_notStarted.forEach(el=>{
-            let obj={
-              ulbName:"",
-              censusCode:"",
-              ulbId:null,
-              populationType:"",
-              UA:"",
-              slbStatus:"",
-              canApprove: false
-                  }
-            obj.ulbName = el.name;
-            obj.censusCode = el.censusCode ?? el.sbCode;
-            obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
-            obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
-          obj.ulbId = el._id;
-          obj.slbStatus = STATUS_LIST.Not_Started;
-          
-          data.push(obj)
-          })
+          data.push(...slbData_notStarted)
+          if(finalObj.status != ''){
+            result =     data.filter(el => el.slbStatus == finalObj.status )
+               }
+        
           return res.status(200).json({
             success: true,
             message:"SLB Form List",
-            data:data
+            data:finalObj.status != ''  ? result : data
           })
       
       
         }else if(formName == 'util'){
-          let data = []
-          
-        let {obj, status} =   filterfunc(filter);
-        console.log(obj, status) 
+       
          
-    
+        query_util.push(finalObj.obj)
+        query_util_notStarted.push(finalObj.obj)
           let {utilData,utilData_notStarted } = await new Promise(async (resolve, reject)=>{
             let prms1 = await new Promise(async (rslv, rjct)=>{
           let output = await UtilizationReport.aggregate(query_util)
@@ -1633,31 +1688,33 @@ return res.status(200).json({
                   }
             obj.ulbName = el.ulbName;
             obj.censusCode = el.censusCode;
-            obj.UA = el.ua;
+            obj.UA = el.UA;
             obj.populationType = el.populationType;
           obj.ulbId = el.ulbId;
           
             if(el.role == 'ULB' && el.isDraft){
               obj.utilStatus = STATUS_LIST.In_Progress
             }else if(el.role == 'ULB' && !el.isDraft){
-                obj.utilStatus = STATUS_LIST.Submitted
-                obj.canApprove = true
+                obj.utilStatus = STATUS_LIST.Under_Review_By_State
+                
               } else if(el.role == 'STATE' && el.isDraft){
-                obj.utilStatus = STATUS_LIST.Submitted
-                obj.canApprove = true
+                obj.utilStatus = STATUS_LIST.Under_Review_By_State
+               
             }else if(el.role == 'STATE' && !el.isDraft){
               if(el.status == 'APPROVED'){
                 obj.utilStatus = STATUS_LIST.Approved_By_State
+                obj.canApprove = true
               }else if(el.status == 'REJECTED'){
                 obj.utilStatus = STATUS_LIST.In_Progress
               }
             }else if(el.role == 'MoHUA' && el.isDraft){
                 obj.utilStatus = STATUS_LIST.Approved_By_State
+                obj.canApprove = true
             }else if(el.role == 'MoHUA' && !el.isDraft){
               if(el.status == 'APPROVED'){
                 obj.utilStatus = STATUS_LIST.Approved_By_MoHUA
               }else if(el.status == 'REJECTED'){
-                obj.utilStatus = STATUS_LIST.Rejected_By_MoHUA
+                obj.utilStatus = STATUS_LIST.In_Progress
                 
               }
             }
@@ -1665,29 +1722,18 @@ return res.status(200).json({
           data.push(obj)
           
           })
-          utilData_notStarted.forEach(el=>{
-            let obj={
-              ulbName:"",
-              censusCode:"",
-              ulbId:null,
-              populationType:"",
-              UA:"",
-              utilStatus:"",
-              canApproved: false
-                  }
-            obj.ulbName = el.name;
-            obj.censusCode = el.censusCode ?? el.sbCode;
-            obj.UA = el.hasOwnProperty('ua') ?  el.ua.name : 'NA';
-            obj.populationType = el.isMillionPlus == 'Yes' ? 'Million Plus' : 'Non Million';
-          obj.ulbId = el._id;
-          obj.utilStatus = STATUS_LIST.Not_Started;
-          
-          data.push(obj)
-          })
+
+        data.push(...utilData_notStarted)
+          if(finalObj.status != ''){
+            result =  data.filter(el => {
+              return el['utilStatus'] == finalObj.status
+            } )
+               }
           return res.status(200).json({
             success: true,
             message:"DUR Form List",
-            data:data
+            data:finalObj.status != '' ? result : data
+             
           })
           
       
@@ -1702,22 +1748,7 @@ return res.status(200).json({
 
 })
 
-filterfunc = (filter) => {
-  let status;
-  let newFilter = await Service.mapFilter(filter);
-  if(newFilter.hasOwnProperty('censusCode')){
-     if(newFilter['censusCode'].chartAt(0) =='9'){
-      newFilter['sbCode'] = newFilter['censusCode']
-      delete   newFilter['censusCode']
-    }
-  }
-  if(newFilter.hasOwnProperty('status')){
-  status = newFilter['status']
-  }
 
-let obj = { $match:newFilter}
-return obj, status
-}
 // module.exports.getAll = catchAsync(async (req, res) => {
 //   let statusFilter = {
 //     1: {
@@ -2237,7 +2268,23 @@ return obj, status
 //     });
 //   }
 // });
+const filterfunc = async (filter) => {
+  let status;
 
+  let newFilter = await Service.mapFilter(filter);
+ 
+  if(newFilter.hasOwnProperty('status')){
+  status = newFilter['status']
+  delete newFilter['status']
+  }
+
+let obj = { $match:newFilter}
+let finalObj = {
+  obj: obj,
+  status:status ?? ""
+}
+return finalObj;
+}
 module.exports.getAllForms = catchAsync(async (req, res) => {
   const { design_year, ulb, financialYear } = req.query;
 

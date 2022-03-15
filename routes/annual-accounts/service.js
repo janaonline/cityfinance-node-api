@@ -441,29 +441,29 @@ exports.getAccounts = async (req, res) => {
     if (!annualAccountData) {
       return res.status(400).json({ msg: "No AnnualAccountData found" });
     }
-    annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
-    if (
-      req.decoded.role === "MoHUA" &&
-      annualAccountData.actionTakenByRole === "STATE" &&
-      annualAccountData.status == "APPROVED"
-    ) {
-      annualAccountData.status = "PENDING";
-      if (annualAccountData.unAudited.submit_annual_accounts) {
-        let proData = annualAccountData.unAudited.provisional_data;
-        for (const key in proData) {
-          if (key == "auditor_report") continue;
-          proData[key].status = "PENDING";
-          proData[key].rejectReason = null;
-        }
-      }
-      if (annualAccountData.audited.submit_annual_accounts) {
-        let proData = annualAccountData.audited.provisional_data;
-        for (const key in proData) {
-          proData[key].rejectReason = null;
-          proData[key].status = "PENDING";
-        }
-      }
-    }
+    // annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
+    // if (
+    //   req.decoded.role === "MoHUA" &&
+    //   annualAccountData.actionTakenByRole === "STATE" &&
+    //   annualAccountData.status == "APPROVED"
+    // ) {
+    //   annualAccountData.status = "PENDING";
+    //   if (annualAccountData.unAudited.submit_annual_accounts) {
+    //     let proData = annualAccountData.unAudited.provisional_data;
+    //     for (const key in proData) {
+    //       if (key == "auditor_report") continue;
+    //       proData[key].status = "PENDING";
+    //       proData[key].rejectReason = null;
+    //     }
+    //   }
+    //   if (annualAccountData.audited.submit_annual_accounts) {
+    //     let proData = annualAccountData.audited.provisional_data;
+    //     for (const key in proData) {
+    //       proData[key].rejectReason = null;
+    //       proData[key].status = "PENDING";
+    //     }
+    //   }
+    // }
 
     return res.status(200).json(annualAccountData);
   } catch (err) {
