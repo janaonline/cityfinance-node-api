@@ -9,9 +9,9 @@ module.exports.get = async function(req, res) {
         query = Object.assign(query,{"state":ObjectId(state)})    
     }
 
-    // if(req.query.ulb){
-    //   query['ulb'] = req.query.ulb
-    // }
+    if (req.query.ulb) {
+      query["ulb"] = req.query.ulb;
+    }
     // if (req.method == 'GET') {
     //   query['isActive'] = true;
     //   // Get any line item based on code or overall

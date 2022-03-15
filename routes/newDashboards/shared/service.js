@@ -24,6 +24,23 @@ const peopleInformation = async (req, res) => {
           .populate("ulbType")
           .populate("state")
           .lean();
+        let ledgerData =  await UlbLedger.aggregate([
+            {
+              $match: {
+                ulb: ObjectId(req.query.ulb)
+              }
+            },
+            {
+              $group:{
+                _id : "$financialYear"
+              }
+            }
+          ])
+          if(ledgerData.length>0){
+            data['dataAvailable'] = ledgerData.length
+          }else{
+            data['dataAvailable'] = 0
+          }
         if (!data) return Response.BadRequest(res, null, "No Data Found");
         Object.assign(data, {
           density: parseFloat((data.population / data.area).toFixed(2)),
@@ -143,6 +160,15 @@ const moneyInformation = async (req, res) => {
         $group: {
           _id: "$lineitems.headOfAccount",
           amount: { $sum: "$amount" },
+          totalGrant: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineitems.code", "160"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
         },
       },
     ]);
@@ -155,7 +181,24 @@ const moneyInformation = async (req, res) => {
   }
 };
 
+const getLatestData = async (req, res) => {
+  try {
+    const { ulb } = req.query;
+
+    if (!ulb) return Response.BadRequest(res, null, "no ulb found");
+    let year = await UlbLedger.find({ ulb: req.query.ulb })
+      .sort({ financialYear: -1 })
+      .limit(1)
+      .lean();
+    if (!year[0]) return Response.BadRequest(res, null, "no year data found");
+    return Response.OK(res, year[0]);
+  } catch (error) {
+    return Response.DbError(res, error, error.message);
+  }
+};
+
 module.exports = {
   peopleInformation,
   moneyInformation,
+  getLatestData,
 };

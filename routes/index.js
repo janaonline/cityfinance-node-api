@@ -163,4 +163,10 @@ router.use( newDashboards );
 const scorePerformance = require( "./score-performance" );
 router.use(scorePerformance)
 
+const fileUpload = require("./fileUpload");
+router.use(fileUpload);
+
+const resourceDashboard = require("./resourceDashboard");
+router.use("/resourceDashboard", resourceDashboard);
+
 module.exports = router;

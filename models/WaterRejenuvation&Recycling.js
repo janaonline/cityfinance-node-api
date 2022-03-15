@@ -79,7 +79,7 @@ const projectDetails2 = () => {
       type: String,
     },
     treatmentPlant: {
-      type: String,
+      type: Number,
     },
     lat: {
       type: String,
@@ -109,10 +109,10 @@ const projectDetails3 = () => {
       type: String,
     },
     existing: {
-      type: Number,
+      type: String,
     },
     after: {
-      type: Number,
+      type: String,
     },
     cost: {
       type: Number,

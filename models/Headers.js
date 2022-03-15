@@ -7,7 +7,7 @@ const HeadersSchema = new Schema(
     dashboard: {
       type: Schema.Types.ObjectId,
       ref: "DashboardMaster",
-      required: true
+      required: true,
     },
     subHeaders: [
       {
@@ -25,6 +25,7 @@ const HeadersSchema = new Schema(
                   name: { type: String },
                   desc: [
                     {
+                      code: { type: String },
                       text: { type: String },
                       links: [
                         { label: { type: String }, url: { type: String } },

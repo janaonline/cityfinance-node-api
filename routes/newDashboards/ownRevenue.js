@@ -6,6 +6,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
 const util = require('util')
+const catchAsync = require('../../util/catchAsync')
 const revenueList = [ "130", "140", "150", "180", "110"];
 const ObjectIdOfRevenueList = [
   "5dd10c2285c951b54ec1d737",
@@ -19,12 +20,70 @@ const expenseCode = [
   "5dd10c2585c951b54ec1d753",
   "5dd10c2585c951b54ec1d75a",
   "5dd10c2585c951b54ec1d756",
-  "5dd10c2685c951b54ec1d760",
+  
 ];
+
+const yearlist = catchAsync(async(req,res)=>{
+  const { financialYear, stateId, ulb, ulbType, populationCategory } =
+  req.body;
+// matchObj={}
+// if(stateId && ObjectId.isValid(stateId)){
+//   Object.assign(matchObj,{"ulb.state": ObjectId(stateId)})
+// }
+// if(ulb && ObjectId.isValid(ulb)){
+//   Object.assign(matchObj,{"ulb._id": ObjectId(ulb)})
+// }
+// if(ulbType && ObjectId.isValid(ulbType)){
+//   Object.assign(matchObj,{"ulb.ulbType": ObjectId(ulbType)})
+// }
+// if(populationCategory == '4 Million+'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+// }else if(populationCategory == '500 Thousand - 1 Million'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+// }else if(populationCategory == '100 Thousand - 500 Thousand'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+// }else if(populationCategory == '100 Thousand - 500 Thousand'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+// }else if(populationCategory == '1 Million - 4 Million'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+// }else if(populationCategory == '200 Thousand - 500 Thousand'){
+//   Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
+// }
+
+
+
+let query =[]
+
+  // query.push(  {$lookup:{
+  //   from:"ulbs",
+  //   localField:"ulb",
+  //   foreignField:"_id",
+  //   as:"ulb"
+  // }},{$unwind:"$ulb"},)
+  // if(Object.keys(matchObj).length>0){
+  //   query.push({
+  //     $match:matchObj
+  //   })
+  // }
+let obj =  {
+  $group:{
+    _id:"$financialYear"
+  },
+
+}
+query.push(obj)
+query.push(  {$sort:{_id:-1}})
+// console.log(util.inspect(query,{depth: null, showHidden: false}))
+let yearList = await UlbLedger.aggregate(query);
+return res.status(200).json({
+  success: true,
+  data: yearList
+})
+}) 
 
 const dataAvailability = async (req, res) => {
   try {
-    const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType, csv } =
+    const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType, csv, populationCategory } =
       req.body;
 
     if (!financialYear) {
@@ -58,12 +117,45 @@ const dataAvailability = async (req, res) => {
     ];
 
     let matchObj = {};
-    if (stateId && ObjectId.isValid(stateId))
-      Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
-    if (ulbType && ObjectId.isValid(ulbType))
-      Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
+    let matchObjNoData = {};
+    if (ulb && ulb!= ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+      Object.assign(matchObjNoData, { "name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId)){
+        Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
+        Object.assign(matchObjNoData, { "state": ObjectId(stateId) });
+      }
+        
+      if (ulbType && ObjectId.isValid(ulbType)){
+        Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
+        Object.assign(matchObjNoData, { "ulbType": ObjectId(ulbType) });
+  
+      }
+      if(populationCategory == '4 Million+'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 4000000}});
+      }else if(populationCategory == '500 Thousand - 1 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 500000, $lt:1000000}});
+      }else if(populationCategory == '100 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 100000, $lt:500000}});
+      }else if(populationCategory == '1 Million - 4 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$gt: 1000000, $lt:4000000}});
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
+        Object.assign(matchObjNoData, {"ulb.population":{$lt: 100000}});
+      }
+
+    }
+   
+      
+   
+ 
+      
+     
 
     if (Object.keys(matchObj).length > 0) {
       query.push({
@@ -119,17 +211,37 @@ let query_noData = [
 
  {
    ledgerData: {$size: 0},
-population:{$gte:4000000}
 },
   
-}
+},
+{
+  $sort: {
+    population:-1
+  }
+},
+{$limit: 5}
 
 
 ]
+if(Object.keys(matchObjNoData).length>0){
+  query_noData.unshift({
+    $match:matchObjNoData
+  })
+}
 
 let noData = await Ulb.aggregate(query_noData)
     let data = await UlbLedger.aggregate(query);
-    let ulbCount = await Ulb.find().count();
+    let countQuery = [
+      {
+        $count:"ulbCount"
+      }
+    ]
+    if(Object.keys(matchObjNoData).length>0){
+      countQuery.unshift({
+        $match:matchObjNoData
+      })
+    }
+    let ulbCount = await Ulb.aggregate(countQuery);
 
     data = data[0]?.ulb ?? 0;
 let names =[]
@@ -138,7 +250,7 @@ if(noData){
 names.push(el.name)
   })
 }
-    data = (data / ulbCount) * 100;
+    data = (data / ulbCount[0]?.ulbCount) * 100;
 
     return Response.OK(res, { percent: data,
     names: names });
@@ -151,7 +263,7 @@ names.push(el.name)
 async function getExcelForAvailability(res, query) {
   let ulbCount = await Ulb.find()
     .populate("state")
-    .select({ _id: 1, name: 1, code: 1, censusCode: 1, state: 1 })
+    .select({ _id: 1, name: 1, state: 1 })
     .lean();
   let data = await UlbLedger.aggregate(query);
   data = JSON.parse(JSON.stringify(data));
@@ -160,8 +272,6 @@ async function getExcelForAvailability(res, query) {
   const worksheet = workbook.addWorksheet("Data Availability");
   worksheet.columns = [
     { header: "ULB name", key: "ulb" },
-    { header: "ULB Code", key: "code" },
-    { header: "Census/SB Code", key: "censusCode" },
     { header: "State Name", key: "state" },
     { header: "Data Availability", key: "status" },
   ];
@@ -175,7 +285,7 @@ async function getExcelForAvailability(res, query) {
       code: value.code,
       censusCode: value.censusCode,
       state: value.state.name,
-      status: ulbMap.includes(value._id) ? "True" : "False",
+      status: ulbMap.includes(value._id) ? "Yes" : "No",
     };
     worksheet.addRow(obj);
   });
@@ -247,7 +357,7 @@ const chartData = async (req, res) => {
 
 const chartData2 = async (req, res) => {
   try {
-    const { ulbType, ulb, stateId, financialYear, getQuery } = req.body;
+    const { ulbType, ulb, stateId, financialYear, populationCategory ,getQuery } = req.body;
 
     if (
       !financialYear || Array.isArray(financialYear)
@@ -283,16 +393,36 @@ const chartData2 = async (req, res) => {
         $unwind: "$ulb",
       },
     ];
-
     let matchObj = {};
-    if (stateId && ObjectId.isValid(stateId))
+    if (ulb && ulb != ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId))
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
     if (ulbType && ObjectId.isValid(ulbType))
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
+  
+      if(populationCategory == '4 Million+'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+        
+      }else if(populationCategory == '500 Thousand - 1 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+        
+      }else if(populationCategory == '100 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+        
+      }else if(populationCategory == '1 Million - 4 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+        
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
+        
+      }
+    }
 
-    if (Object.keys(matchObj) > 0) {
+   
+  
+    if (Object.keys(matchObj).length > 0) {
       query.push({
         $match: matchObj,
       });
@@ -336,7 +466,17 @@ const chartData2 = async (req, res) => {
     };
     data.push(temp);
     data = data.filter((value) => value._id.revenueName != "Tax Revenue");
-    return Response.OK(res, data);
+    //rearrange the elements
+  
+    let newData=[];
+    newData[0] = data[0]
+    newData[1] = data[5]
+    newData[2] = data[4]
+    newData[3] = data[3]
+    newData[4] = data[1]
+    newData[5] = data[2]
+
+    return Response.OK(res, newData);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, null);
@@ -345,7 +485,7 @@ const chartData2 = async (req, res) => {
 
 const cardsData = async (req, res) => {
   try {
-    let { ulbType, ulb, stateId, financialYear, getQuery } = req.body;
+    let { ulbType, ulb, stateId, financialYear, getQuery, populationCategory, property } = req.body;
 
     if (
       !financialYear || Array.isArray(financialYear)
@@ -388,13 +528,37 @@ const cardsData = async (req, res) => {
       },
     ];
 
+   
+
     let matchObj = {};
-    if (stateId && ObjectId.isValid(stateId))
+    if (ulb  && ulb != ""){
+      Object.assign(matchObj, { "ulb.name": ulb });
+    }else{
+      if (stateId && ObjectId.isValid(stateId))
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
     if (ulbType && ObjectId.isValid(ulbType))
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
+
+      if(populationCategory == '4 Million+'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+       
+      }else if(populationCategory == '500 Thousand - 1 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+      
+      }else if(populationCategory == '100 Thousand - 500 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+      
+      }else if(populationCategory == '1 Million - 4 Million'){
+        Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+      
+      }else if(populationCategory == '<100 Thousand'){
+        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
+      
+      }
+    }
+    
+  
+
 
     if (Object.keys(matchObj).length > 0) {
       query.push({
@@ -423,7 +587,7 @@ const cardsData = async (req, res) => {
             ulb: "$ulb._id",
             financialYear: "$financialYear",
           },
-          totalRevenue: {
+          totalAllRevenue: {
             $sum: {
               $cond: [
                 {
@@ -441,17 +605,37 @@ const cardsData = async (req, res) => {
             $sum: {
               $cond: [
                 {
-                  $in: ["$lineItem.code", ["210", "220", "230", "240"]],
+                  $in: ["$lineItem.code", ["210", "220", "230"]],
                 },
                 "$amount",
                 0,
               ],
             },
           },
+          totalProperty:{
+            '$sum': {
+              '$cond': [
+                { '$in': [ '$lineItem.code', [ '11001' ] ] },
+                '$amount',
+                0
+              ]
+            }
+          },
           population: {
             $sum: "$ulb.population",
           },
         },
+      },
+      {
+
+        $project:{
+          _id:1,
+          population:1,
+          totalExpense:1,
+          totalProperty:1,
+          totalRevenue:{$subtract:["$totalAllRevenue","$totalProperty"]},
+
+        }
       },
       {
         $project: {
@@ -460,8 +644,10 @@ const cardsData = async (req, res) => {
             $cond: [
               {
                 $or: [
-                  { $eq: ["$totalRevenue", "$totalExpense"] },
-                  { $gt: ["$totalExpense", "$totalRevenue"] },
+                  {$and:[{ $eq: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                  ,
+                 { $and:[{ $gt: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                  ,
                 ],
               },
               1,
@@ -492,66 +678,72 @@ const cardsData = async (req, res) => {
     );
     query.push(
       {
-        $group: {
-          _id: {
-            financialYear: "$financialYear",
-          },
-          totalRevenue: {
-            $sum: {
-              $cond: [
+        '$group': {
+          _id: { financialYear: '$financialYear' },
+          totalAllRevenue: {
+            '$sum': {
+              '$cond': [
                 {
-                  $in: [
-                    "$lineItem.code",
-                    ["11001", "130", "140", "150", "180", "110"],
-                  ],
+                  '$in': [
+                    '$lineItem.code',
+                    [ '11001', '130', '140', '150', '180', '110' ]
+                  ]
                 },
-                "$amount",
-                0,
-              ],
-            },
+                '$amount',
+                0
+              ]
+            }
           },
           totalProperty: {
-            $sum: {
-              $cond: [
-                {
-                  $in: ["$lineItem.code", ["11001"]],
-                },
-                "$amount",
-                0,
-              ],
-            },
+            '$sum': {
+              '$cond': [
+                { '$in': [ '$lineItem.code', [ '11001' ] ] },
+                '$amount',
+                0
+              ]
+            }
           },
           totalExpense: {
-            $sum: {
-              $cond: [
-                {
-                  $in: ["$lineItem.code", ["210", "220", "230", "240"]],
-                },
-                "$amount",
-                0,
-              ],
-            },
+            '$sum': {
+              '$cond': [
+                { '$in': [ '$lineItem.code', [ '210', '220', '230' ] ] },
+                '$amount',
+                0
+              ]
+            }
           },
-          population: {
-            $sum: "$ulb.population",
-          },
-        },
+          populationArr: {
+            $addToSet:"$ulb.population"
+            }
+        }
       },
       {
-        $project: {
+        '$project': {
           _id: 1,
-          perCapita: { $divide: ["$totalRevenue", "$population"] },
-          totalRevenue: 1,
-          percentage: {
-            $multiply: [{ $divide: ["$totalRevenue", "$totalExpense"] }, 100],
-          },
+               totalRevenue: { '$subtract': [ '$totalAllRevenue', '$totalProperty' ] },
+       
+         totalExpense:1,
           totalProperty: 1,
-          population: 1,
-        },
+          population: {$sum:"$populationArr"}
+        }
       },
-      {
-        $sort: { "_id.financialYear": 1 },
-      }
+      {$project:{
+           totalProperty: 1,
+          population: 1,
+          totalRevenue:1,
+          totalExpense:1,
+          percentage: {
+            '$multiply': [ { '$divide': [ '$totalRevenue', '$totalExpense' ] }, 100 ]
+          },
+             perCapita: {
+            '$cond': [
+              { '$eq': [ '$population', 0 ] },
+              0,
+              { '$divide': [ '$totalRevenue', '$population' ] }
+            ]
+          },
+          }},
+      { '$sort': { '_id.financialYear': 1 } }
     );
 
     if (getQuery) return Response.OK(res, { query, query2 });
@@ -561,8 +753,8 @@ let redisKey =  "OwnRevenueCards";
 
   // let dataCard = await Redis.getDataPromise(redisKey); 
 
-  let data = UlbLedger.aggregate(query);
-  let ulbCountExpense = UlbLedger.aggregate(query2);
+  let data = await UlbLedger.aggregate(query);
+  let ulbCountExpense = await UlbLedger.aggregate(query2);
   data = await Promise.all([data, ulbCountExpense]);
    dataCard = data[0].map((value) => {
     let expense = data[1].find(
@@ -621,21 +813,56 @@ const tableData = async (req, res) => {
       },
     ];
 
+    let query_4m = [
+      {
+        $match:{
+          "ulb.population":{$gt:4000000}
+        }
+      }
+    ]
+    let query_1m_4m = [
+      {
+        $match:{
+          "ulb.population":{$lt:4000000, $gt:1000000}
+        }
+      }
+    ]
+    let query_500t_1m = [
+      {
+        $match:{
+          "ulb.population":{$gt:500000, $lt:1000000}
+        }
+      }
+    ]
+    let query_100t_500t = [
+      {
+        $match:{
+          "ulb.population":{$gt:100000, $lt:500000}
+        }
+      }
+    ]
+    let query_100t = [
+      {
+        $match:{
+          "ulb.population":{$lt:100000}
+        }
+      }
+    ]
+    let queryCal = []
+
     let matchObj = {};
     if (stateId && ObjectId.isValid(stateId))
       Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
     if (ulbType && ObjectId.isValid(ulbType))
       Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-    if (ulb && ObjectId.isValid(ulb))
-      Object.assign(matchObj, { "ulb._id": ObjectId(ulb) });
 
     if (Object.keys(matchObj).length > 0) {
-      query.push({
+      queryCal.push({
         $match: matchObj,
       });
     }
 
-    query.push(
+    queryCal.push(
       {
         $lookup: {
           from: "lineitems",
@@ -648,14 +875,13 @@ const tableData = async (req, res) => {
         $unwind: "$lineItem",
       }
     );
-    query.push(
+    queryCal.push(
       {
         $group: {
           _id: {
             ulb: "$ulb._id",
-            financialYear: "$financialYear",
           },
-          totalRevenue: {
+          totalAllRevenue: {
             $sum: {
               $cond: [
                 {
@@ -684,7 +910,7 @@ const tableData = async (req, res) => {
             $sum: {
               $cond: [
                 {
-                  $in: ["$lineItem.code", ["210", "220", "230", "240"]],
+                  $in: ["$lineItem.code", ["210", "220", "230"]],
                 },
                 "$amount",
                 0,
@@ -694,17 +920,313 @@ const tableData = async (req, res) => {
           population: { $first: "$ulb.population" },
         },
       },
+
       {
-        $sort: { "_id.financialYear": 1 },
-      }
+        $project:{
+          totalRevenue:{$subtract:["$totalAllRevenue", "$totalProperty"]},
+          totalProperty:1,
+          totalExpense:1,
+          population:1
+          
+        }
+      },
+
     );
 
+    let count_q = [
+      {
+        $project:{
+         meetsExpense: {
+              $cond: [
+                {
+                  $or: [
+                    {$and:[{ $eq: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                    ,
+                   { $and:[{ $gt: ["$totalRevenue", "$totalExpense"] },{$gt:["$totalExpense", 0]}]}
+                    ,
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+        },
+    },
+        {
+            $group:{
+                _id: null,
+                totalUlbMeetExpense: {
+              $sum: {
+                $cond: [
+                  {
+                    $eq: ["$meetsExpense", 1],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+                }
+            }
+]
+  let numOfUlb = await Ulb.aggregate([
+    {
+        $project:{
+            "4mPlus":{
+                $cond:[{$gt:["$population",4000000]},1,0]
+                },
+                   "4m_1m":{
+                $cond:[
+                       {
+                       $and:[
+                       {$lt:["$population",4000000]},
+                       {$gt:["$population",1000000]}
+                       
+                       ]
+                   }
+                       ,1,0]
+                },
+                   "1m_500t":{
+                $cond:[
+                       {
+                       $and:[
+                       {$lt:["$population",1000000]},
+                       {$gt:["$population",500000]}
+                       
+                       ]
+                   }
+                       ,1,0]
+                },
+                   "500t_100t":{
+                $cond:[
+                       {
+                       $and:[
+                       {$lt:["$population",500000]},
+                       {$gt:["$population",100000]}
+                       
+                       ]
+                   }
+                       ,1,0]
+                },
+                   "100t":{
+               $cond:[{$lt:["$population",100000] },1,0]
+                }
+            }
+        },
+        {
+                $group:{
+                    _id: null,
+                    "4mPlusPop":{
+                        $sum:{
+                             $cond:[{$eq:["$4mPlus",1]}, 1, 0]
+                            }
+                       
+                        },
+                         "4m_1mPop":{
+                        $sum:{
+                             $cond:[{$eq:["$4m_1m",1]}, 1, 0]
+                            }
+                       
+                        },
+                         "1m_500tPop":{
+                        $sum:{
+                             $cond:[{$eq:["$1m_500t",1]}, 1, 0]
+                            }
+                       
+                        },
+                         "500t_100tPop":{
+                        $sum:{
+                             $cond:[{$eq:["$500t_100t",1]}, 1, 0]
+                            }
+                       
+                        }, "100tPop":{
+                        $sum:{
+                             $cond:[{$eq:["$100t",1]}, 1, 0]
+                            }
+                       
+                        }
+                    }
+            }
+        
+      
+    ])
+  let query_4m_c=[]
+ let query_1m_4m_c=[]
+ let query_500t_1m_c = []
+ let query_100t_500t_c = []
+ let query_100t_c = []
+query_4m_c.push(...query, ...query_4m, ...queryCal, ...count_q)
+query_1m_4m_c.push(...query, ...query_1m_4m, ...queryCal, ...count_q)
+query_500t_1m_c.push(...query, ...query_500t_1m, ...queryCal, ...count_q)
+query_100t_500t_c.push(...query, ...query_100t_500t, ...queryCal, ...count_q)
+query_100t_c.push(...query, ...query_100t, ...queryCal, ...count_q)
+console.log(util.inspect(query_100t_500t_c,{showHidden: false, depth: null}))
+let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, countData_100t } = await new Promise(async (resolve, reject) => {
+  let prms1 = new Promise(async (rslv, rjct) => {
+      let output =  await UlbLedger.aggregate(query_4m_c)
+      rslv(output);
+  });
+  let prms2 = new Promise(async (rslv, rjct) => {
+      let output =  await UlbLedger.aggregate(query_1m_4m_c)
+      rslv(output);
+  });
+  let prms3 = new Promise(async (rslv, rjct) => {
+      let output =    await UlbLedger.aggregate(query_500t_1m_c);
+      rslv(output);
+  });
+  let prms4 = new Promise(async (rslv, rjct) => {
+      let output = await UlbLedger.aggregate(query_100t_500t_c);
+      rslv(output);
+  });
+  let prms5 = new Promise(async (rslv, rjct) => {
+      let output = await UlbLedger.aggregate(query_100t_c);
+      rslv(output);
+  });
+
+  Promise.all([prms1, prms2, prms3, prms4, prms5]).then(
+      (outputs) => {
+          let countData_4m = outputs[0];
+          let countData_1m_4m = outputs[1];
+          let countData_1m_500t = outputs[2];
+          let countData_500t_100t = outputs[3];
+          let countData_100t = outputs[4];
+        
+
+          if (countData_4m && countData_1m_4m && countData_1m_500t && countData_500t_100t && countData_100t) {
+              resolve({ countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t , countData_100t});
+          } else {
+              reject({ message: "No Data Found" });
+          }
+      },
+      (e) => {
+          reject(e);
+      }
+  );
+});
+
+
+    queryCal.push(
+      {
+
+        $group:{
+          _id:null,
+          numerator:{
+            $sum:{
+              $multiply:["$totalRevenue", "$population"]
+            }
+          },
+          denominator:{
+            $sum:"$population"
+          },
+          totalProperty:{$first:"$totalProperty"},
+          totalExpense:{$first:"$totalExpense"},
+          population:{$first:"$population"},
+        }
+      },
+
+      {
+          $project:{
+            totalRevenue: { $cond: [ { $eq: [ "$denominator", 0 ] }, 0, {"$divide":["$numerator", "$denominator"]} ] } ,
+            population:1,
+            totalExpense:1,
+            totalProperty:1
+          }
+
+      },
+      {
+        $project:{
+          totalRevenue: 1,
+          perCapita: { $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalRevenue", "$population"]} ] },
+          percentage:{$multiply:[{$cond:[{ $eq: [ "$totalExpense", 0]},0, {"$divide":["$totalRevenue", "$totalExpense"]} ]}, 100]},
+          population:1,
+          totalExpense:1,
+          totalProperty:1
+        }
+
+    })
+    query_4m.unshift(...query)
+    query_4m.push(...queryCal)
+    
+    query_1m_4m.unshift(...query)
+    query_1m_4m.push(...queryCal)
+    
+    query_500t_1m.unshift(...query)
+    query_500t_1m.push(...queryCal)
+
+
+    query_100t_500t.unshift(...query)
+    query_100t_500t.push(...queryCal)
+
+    query_100t.unshift(...query)
+    query_100t.push(...queryCal)
+
     if (getQuery) return Response.OK(res, query);
-console.log(util.inspect(query,{showHidden: false, depth: null}))
-    let data = await UlbLedger.aggregate(query);
+
+
+
+    let { data_4m, data_1m_4m, data_1m_500t, data_500t_100t, data_100t } = await new Promise(async (resolve, reject) => {
+      let prms1 = new Promise(async (rslv, rjct) => {
+          let output =  await UlbLedger.aggregate(query_4m)
+          rslv(output);
+      });
+      let prms2 = new Promise(async (rslv, rjct) => {
+          let output =  await UlbLedger.aggregate(query_1m_4m)
+          rslv(output);
+      });
+      let prms3 = new Promise(async (rslv, rjct) => {
+          let output =    await UlbLedger.aggregate(query_500t_1m);
+          rslv(output);
+      });
+      let prms4 = new Promise(async (rslv, rjct) => {
+          let output = await UlbLedger.aggregate(query_100t_500t);
+          rslv(output);
+      });
+      let prms5 = new Promise(async (rslv, rjct) => {
+          let output = await UlbLedger.aggregate(query_100t);
+          rslv(output);
+      });
+    
+      Promise.all([prms1, prms2, prms3, prms4, prms5]).then(
+          (outputs) => {
+              let data_4m = outputs[0];
+              let data_1m_4m = outputs[1];
+              let data_1m_500t = outputs[2];
+              let data_500t_100t = outputs[3];
+              let data_100t = outputs[4];
+            
+
+              if (data_4m && data_1m_4m && data_1m_500t && data_500t_100t && data_100t) {
+                  resolve({ data_4m, data_1m_4m, data_1m_500t, data_500t_100t , data_100t});
+              } else {
+                  reject({ message: "No Data Found" });
+              }
+          },
+          (e) => {
+              reject(e);
+          }
+      );
+  });
+console.log(data_1m_4m)
+  // data_4m.push(...countData_4m?.totalUlbMeetExpense)
+
+  
+
+  if(data_4m.length>0)
+  Object.assign(data_4m[0], {numOfUlbMeetRevenue:((countData_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4mPlusPop'])*100)})
+  if(data_1m_4m.length>0)
+  Object.assign(data_1m_4m[0], {numOfUlbMeetRevenue:((countData_1m_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4m_1mPop'] )*100)})
+  if(data_1m_500t.length>0)
+  Object.assign(data_1m_500t[0], {numOfUlbMeetRevenue:((countData_1m_500t[0]?.totalUlbMeetExpense/numOfUlb[0]['1m_500tPop'] ) *100)})
+  if(data_500t_100t.length>0)
+  Object.assign(data_500t_100t[0], {numOfUlbMeetRevenue:((countData_500t_100t[0]?.totalUlbMeetExpense /numOfUlb[0]['500t_100tPop'] ) * 100)})
+  if(data_100t.length>0)
+  Object.assign(data_100t[0], {numOfUlbMeetRevenue:((countData_100t[0]?.totalUlbMeetExpense/numOfUlb[0]['100tPop'])*100)})
+  // data_1m_4m[0].push({countData_1m_4m[0].totalUlbMeetExpense)
+
+// let data = await UlbLedger.aggregate(query);
 
     let newData = {
-      ["4M+"]: {
+      ["4 Million+"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -712,7 +1234,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["500K-1M"]: {
+      ["500 Thousand - 1 Million"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -720,7 +1242,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["100K-500K"]: {
+      ["100 Thousand-500 Thousand"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -728,7 +1250,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["1M-4M"]: {
+      ["1 Million - 4 Million"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -736,7 +1258,7 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
         totalExpense: 0,
         totalProperty: 0,
       },
-      ["<100K"]: {
+      ["<100 Thousand"]: {
         totalRevenue: 0,
         numOfUlb: 0,
         population: 0,
@@ -746,52 +1268,63 @@ console.log(util.inspect(query,{showHidden: false, depth: null}))
       },
     };
 
-    newData = data.reduce((newData, value) => {
-      if (value.population < 100000) {
-        newData["<100K"].totalRevenue += value.totalRevenue;
-        newData["<100K"].numOfUlbMeetRevenue +=
-          value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["<100K"].population += value.population;
-        newData["<100K"].numOfUlb += 1;
-        newData["<100K"].totalExpense += value.totalExpense;
-        newData["<100K"].totalProperty += value.totalProperty;
-      } else if (100000 < value.population < 500000) {
-        newData["100K-500K"].totalRevenue += value.totalRevenue;
-        newData["100K-500K"].numOfUlbMeetRevenue +=
-          value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["100K-500K"].population += value.population;
-        newData["100K-500K"].numOfUlb += 1;
-        newData["100K-500K"].totalExpense += value.totalExpense;
-        newData["100K-500K"].totalProperty += value.totalProperty;
-      } else if (500000 < value.population < 1000000) {
-        newData["500K-1M"].totalRevenue += value.totalRevenue;
-        newData["500K-1M"].numOfUlbMeetRevenue +=
-          value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["500K-1M"].population += value.population;
-        newData["500K-1M"].numOfUlb += 1;
-        newData["500K-1M"].totalExpense += value.totalExpense;
-        newData["500K-1M"].totalProperty += value.totalProperty;
-      } else if (1000000 < value.population < 4000000) {
-        newData["1M-4M"].totalRevenue += value.totalRevenue;
-        newData["1M-4M"].numOfUlbMeetRevenue +=
-          value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["1M-4M"].population += value.population;
-        newData["1M-4M"].numOfUlb += 1;
-        newData["1M-4M"].totalExpense += value.totalExpense;
-        newData["1M-4M"].totalProperty += value.totalProperty;
-      } else {
-        newData["4M+"].totalRevenue += value.totalRevenue;
-        newData["4M+"].numOfUlbMeetRevenue +=
-          value.totalExpense >= value.totalRevenue ? 1 : 0;
-        newData["4M+"].population += value.population;
-        newData["4M+"].numOfUlb += 1;
-        newData["4M+"].totalExpense += value.totalExpense;
-        newData["4M+"].totalProperty += value.totalProperty;
-      }
+    if(data_4m.length>0)
+    newData['4 Million+'] = data_4m[0]
+    if(data_1m_500t.length>0)
+    newData['500 Thousand - 1 Million'] = data_1m_500t[0]
+    if(data_500t_100t.length>0)
+    newData['100 Thousand-500 Thousand'] = data_500t_100t[0]
+    if(data_1m_4m.length>0)
+    newData['1 Million - 4 Million'] = data_1m_4m[0]
+    if(data_100t.length>0)
+    newData['<100 Thousand'] = data_100t[0]
 
-      return newData;
-    }, newData);
+    // newData = data.reduce((newData, value) => {
+    //   if (value.population < 100000) {
+    //     newData["<100 Thousand"].totalRevenue += value.totalRevenue;
+    //     newData["<100 Thousand"].numOfUlbMeetRevenue +=
+    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
+    //     newData["<100 Thousand"].population += value.population;
+    //     newData["<100 Thousand"].numOfUlb += 1;
+    //     newData["<100 Thousand"].totalExpense += value.totalExpense;
+    //     newData["<100 Thousand"].totalProperty += value.totalProperty;
+    //   } else if (100000 < value.population < 500000) {
+    //     newData["100 Thousand-500 Thousand"].totalRevenue += value.totalRevenue;
+    //     newData["100 Thousand-500 Thousand"].numOfUlbMeetRevenue +=
+    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
+    //     newData["100 Thousand-500 Thousand"].population += value.population;
+    //     newData["100 Thousand-500 Thousand"].numOfUlb += 1;
+    //     newData["100 Thousand-500 Thousand"].totalExpense += value.totalExpense;
+    //     newData["100 Thousand-500 Thousand"].totalProperty += value.totalProperty;
+    //   } else if (500000 < value.population < 1000000) {
+    //     newData["500 Thousand - 1 Million"].totalRevenue += value.totalRevenue;
+    //     newData["500 Thousand - 1 Million"].numOfUlbMeetRevenue +=
+    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
+    //     newData["500 Thousand - 1 Million"].population += value.population;
+    //     newData["500 Thousand - 1 Million"].numOfUlb += 1;
+    //     newData["500 Thousand - 1 Million"].totalExpense += value.totalExpense;
+    //     newData["500 Thousand - 1 Million"].totalProperty += value.totalProperty;
+    //   } else if (1000000 < value.population < 4000000) {
+    //     newData["1 Million - 4 Million"].totalRevenue += value.totalRevenue;
+    //     newData["1 Million - 4 Million"].numOfUlbMeetRevenue +=
+    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
+    //     newData["1 Million - 4 Million"].population += value.population;
+    //     newData["1 Million - 4 Million"].numOfUlb += 1;
+    //     newData["1 Million - 4 Million"].totalExpense += value.totalExpense;
+    //     newData["1 Million - 4 Million"].totalProperty += value.totalProperty;
+    //   } else {
+    //     newData["4 Million+"].totalRevenue += value.totalRevenue;
+    //     newData["4 Million+"].numOfUlbMeetRevenue +=
+    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
+    //     newData["4 Million+"].population += value.population;
+    //     newData["4 Million+"].numOfUlb += 1;
+    //     newData["4 Million+"].totalExpense += value.totalExpense;
+    //     newData["4 Million+"].totalProperty += value.totalProperty;
+    //   }
 
+    //   return newData;
+    // }, newData);
+console.log(newData)
     return Response.OK(res, newData);
   } catch (error) {
     console.log(error);
@@ -803,36 +1336,36 @@ function parseData(data) {
   let ulbCategory = data.reduce(
     (ulbCategoryMap, value) => {
       if (value.ulb.population < 100000) {
-        ulbCategoryMap["<100K"].amount += value.amount;
+        ulbCategoryMap["<100 Thousand"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["<100K"].count += 1;
+          ulbCategoryMap["<100 Thousand"].count += 1;
       } else if (100000 < value.ulb.population < 500000) {
-        ulbCategoryMap["100K-500K"].amount += value.amount;
+        ulbCategoryMap["100 Thousand-500 Thousand"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["100K-500K"].count += 1;
+          ulbCategoryMap["100 Thousand-500 Thousand"].count += 1;
       } else if (500000 < value.ulb.population < 1000000) {
-        ulbCategoryMap["500K-1M"].amount += value.amount;
+        ulbCategoryMap["500 Thousand - 1 Million"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["500K-1M"].count += 1;
+          ulbCategoryMap["500 Thousand - 1 Million"].count += 1;
       } else if (1000000 < value.ulb.population < 4000000) {
-        ulbCategoryMap["1M-4M"].amount += value.amount;
+        ulbCategoryMap["1 Million - 4 Million"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["1M-4M"].count += 1;
+          ulbCategoryMap["1 Million - 4 Million"].count += 1;
       } else {
-        ulbCategoryMap["4M+"].amount += value.amount;
+        ulbCategoryMap["4 Million+"].amount += value.amount;
         if (!ulbCategoryMap.temp[value.ulb._id])
-          ulbCategoryMap["4M+"].count += 1;
+          ulbCategoryMap["4 Million+"].count += 1;
       }
       ulbCategoryMap.temp[value.ulb._id] = 1;
 
       return ulbCategoryMap;
     },
     {
-      ["4M+"]: { amount: 0, count: 0 },
-      ["1M-4M"]: { amount: 0, count: 0 },
-      ["500K-1M"]: { amount: 0, count: 0 },
-      ["100K-500K"]: { amount: 0, count: 0 },
-      ["<100K"]: { amount: 0, count: 0 },
+      ["4 Million+"]: { amount: 0, count: 0 },
+      ["1 Million - 4 Million"]: { amount: 0, count: 0 },
+      ["500 Thousand - 1 Million"]: { amount: 0, count: 0 },
+      ["100 Thousand-500 Thousand"]: { amount: 0, count: 0 },
+      ["<100 Thousand"]: { amount: 0, count: 0 },
       temp: {},
     }
   );
@@ -893,73 +1426,545 @@ function getUlbMatchQuery(stateIds, ulbTypeIds) {
 
 const topPerForming = async (req, res) => {
   try {
-    const { revenueId, stateIds, getQuery, csv, revenueName } = req.body;
+//     financialYear: "2020-21"
+// list: []
+// param: "Property Tax"
+// populationCategory: ""
+// propertyTax: false
+// stateId: "State Name"
+// type: "state"
+// ulb: "ULB Name"
+// ulbType: "ULB Type"
+    const { financialYear, propertyTax ,list,param,populationCategory, stateId, type, ulb, ulbType   , getQuery, csv } = req.body;
 
-    if (!revenueId)
-      return Response.BadRequest(res, null, "wrong revenueIds or stateIds");
-
-    let query = [
-      {
-        $match: {
-          lineItem: ObjectId(revenueId),
+    if (!financialYear)
+      return Response.BadRequest(res, null, "financial year missing");
+let datab;
+      if(list.length == 0){
+  let query = [
+    {
+      $match: {
+        lineItem: {
+          $in: propertyTax
+            ? [ObjectId("5dd10c2285c951b54ec1d737")]
+            : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+        },
+        financialYear: {
+          $in: Array.isArray(financialYear) ? financialYear : [financialYear],
         },
       },
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {$group:{
+      _id: "$ulb._id",
+      name:{$first:"$ulb.name"},
+      totalAmount:{$sum:"$amount"},
+      population:{$sum:"$ulb.population"}
+    }},
+    {
+      $project:{
+        _id:1,
+        name:1,
+        amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
+      }
+    },
+    {
+      $sort:{
+        amount:-1
+      }
+    },
+    {$limit:10}
+  ];
+ datab = await UlbLedger.aggregate(query);
+ if(ulb && ObjectId.isValid(ulb)){
+ let  ulbData = await UlbLedger.aggregate([
+     {
+       $match:{
+         financialYear: financialYear,
+         ulb:ObjectId(ulb),
+         lineItem: {
+          $in: propertyTax
+            ? [ObjectId("5dd10c2285c951b54ec1d737")]
+            : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
         },
+       }
+     },
+     {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
       },
-      {
-        $unwind: "$ulb",
-      },
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
+    },
+  
+    {
+      $unwind: "$ulb",
+    },
+     {
+       $group:{
+   _id:"$ulb._id",
+   name:{$first:"$ulb.name"},
+   amount:{$sum:"$amount"}
+       }
+     }
+   ])
+  //  console.log('ulbData',ulbData)
+   if(ulbData.length>0){
+     datab.push(...ulbData)
+   }
+ }
+}else if(list.length > 0){
+let newList=[]
+  list.forEach(el=>{
+newList.push(el._id)
+  })
+  if(type=="state"){
+    let query;
+    if(param == 'Own Revenue'){
+      query = [
+        {
+          $match:{
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+            },
+            lineItem: {
+              $in: propertyTax
+                ? [ObjectId("5dd10c2285c951b54ec1d737")]
+                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+            },
+          }
         },
-      },
-      {
-        $unwind: "$state",
-      },
-      {
-        $group: {
-          _id: "$ulb.state",
-          amount: { $sum: "$amount" },
-          name: { $first: "$state.name" },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
         },
-      },
-      { $sort: { amount: -1 } },
-      { $limit: 10 },
-    ];
-
-    if (stateIds) {
-      if (Array.isArray(stateIds) && stateIds.length > 0) {
-        query.splice(3, 0, {
+        {
+          $unwind: "$ulb",
+        },
+        {
           $match: {
-            $expr: {
-              $in: ["$ulb.state", stateIds.map((value) => ObjectId(value))],
+          
+            "ulb.state": {
+              $in: newList.map((value)=>ObjectId(value))
+            },
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
             },
           },
-        });
-      } else if (!Array.isArray(stateIds)) {
-        query.splice(3, 0, {
-          $match: {
-            "ulb.state": ObjectId(stateIds),
+        },
+        
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
           },
-        });
-      }
+        },
+        {
+          $unwind: "$state",
+        },
+        {$group:{
+          _id: "$ulb.state",
+          name:{$first:"$state.name"},
+          amount:{$sum:"$amount"}
+        }},
+        {
+          $sort:{
+            amount:-1
+          }
+        },
+        {$limit:10}
+      ];
+    }else if(param == 'Own Revenue per Capita'){
+      query = [
+        {
+          $match:{
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+            },
+            lineItem: {
+              $in: propertyTax
+                ? [ObjectId("5dd10c2285c951b54ec1d737")]
+                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+            },
+          }
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $match: {
+          
+            "ulb.state": {
+              $in: newList.map((value)=>ObjectId(value))
+            },
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+            },
+          },
+        },
+        
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$state",
+        },
+        {$group:{
+          _id: "$ulb.state",
+          name:{$first:"$state.name"},
+          population:{$sum:"$ulb.population"},
+          totalAmount:{$sum:"$amount"}
+        }},
+        {
+          $project:{
+            _id:1,
+            name:1,
+            amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
+          }
+        },
+        {
+          $sort:{
+            amount:-1
+          }
+        },
+        {$limit:10}
+      ];
+
+    }else if(param == 'Own Revenue as a percentage of Revenue Expenditure'){
+      query = [
+        {
+          $match:{
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+            },
+            lineItem: {
+              $in: [
+                ...ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                ...expenseCode.map((value) => ObjectId(value)),
+              ],
+            },
+          }
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $match: {
+          
+            "ulb.state": {
+              $in: newList.map((value)=>ObjectId(value))
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineItem",
+          },
+        },
+        {
+          $unwind: "$lineItem",
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$state",
+        },
+        {$group:{
+          _id: "$ulb.state",
+          name:{$first:"$state.name"},
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    "$lineItem.code",
+                    ["11001", "130", "140", "150", "180", "110"],
+                  ],
+                },
+                "$amount",
+                0,
+              ],
+            },
+          },
+          totalExpense: {
+            $sum: {
+              $cond: [
+                {
+                  $in: ["$lineItem.code", ["210", "220", "230"]],
+                },
+                "$amount",
+                0,
+              ],
+            },
+          },
+         
+        }},
+        {
+          $project:{
+            _id:1,
+            name:1,
+            amount:{$toInt:{$multiply:[{$divide:["$totalRevenue", "$totalExpense"]},100]}}
+          }
+        },
+        {
+          $sort:{
+            amount:-1
+          }
+        },
+        {$limit:10}
+      ];
     }
+   
+    datab = await UlbLedger.aggregate(query);
+  }else if(type == 'ulb' ){
+    let query;
+    if(param == 'Own Revenue'){
+      query = [
+        {
+          $match: {
+            lineItem: {
+              $in: propertyTax
+                ? [ObjectId("5dd10c2285c951b54ec1d737")]
+                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+            },
+            ulb:{
+              $in: newList.map((value)=> ObjectId(value))
+            },
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        
+        {$group:{
+          _id: "$ulb._id",
+          name:{$first:"$ulb.name"},
+          amount:{$sum:"$amount"}
+        }},
+        {
+          $sort:{
+            amount:-1
+          }
+        },
+        {$limit:10}
+      ];
+
+    }else if(param == 'Own Revenue per Capita'){
+      query = [
+        {
+          $match: {
+            lineItem: {
+              $in: propertyTax
+                ? [ObjectId("5dd10c2285c951b54ec1d737")]
+                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+            },
+            ulb:{
+              $in: newList.map((value)=> ObjectId(value))
+            },
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        
+        {$group:{
+          _id: "$ulb._id",
+          name:{$first:"$ulb.name"},
+          totalAmount:{$sum:"$amount"},
+          population:{$sum:"$ulb.population"}
+        }},
+        {
+          $project:{
+            _id:1,
+            name:1,
+            amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
+          }
+        },
+        {
+          $sort:{
+            amount:-1
+          }
+        },
+        {$limit:10}
+      ];
+
+    }else if(param =='Own Revenue as a percentage of Revenue Expenditure'){
+      query = [
+        {
+          $match:{
+            financialYear: {
+              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+            },
+            lineItem: {
+              $in: [
+                ...ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                ...expenseCode.map((value) => ObjectId(value)),
+              ],
+            },
+            "ulb": {
+              $in: newList.map((value)=>ObjectId(value))
+            },
+          }
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+  
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineItem",
+          },
+        },
+        {
+          $unwind: "$lineItem",
+        },
+     
+        {$group:{
+          _id: "$ulb._id",
+          name:{$first:"$ulb.name"},
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    "$lineItem.code",
+                    ["11001", "130", "140", "150", "180", "110"],
+                  ],
+                },
+                "$amount",
+                0,
+              ],
+            },
+          },
+          totalExpense: {
+            $sum: {
+              $cond: [
+                {
+                  $in: ["$lineItem.code", ["210", "220", "230"]],
+                },
+                "$amount",
+                0,
+              ],
+            },
+          },
+         
+        }},
+        {
+          $project:{
+            _id:1,
+            name:1,
+            amount:{$toInt:{$multiply:[{$divide:["$totalRevenue", "$totalExpense"]},100]}}
+          }
+        },
+        {
+          $sort:{
+            amount:-1
+          }
+        },
+        {$limit:10}
+      ];
+
+    }
+
+
+    datab = await UlbLedger.aggregate(query);
+  }
+}
+    
+      // console.log(datab)
+      if (datab.length == 0)
+      return Response.BadRequest(res, null, "No data Found");
+
+      return res.status(200).json({
+        success: true,
+        data: datab
+      })
+   
 
     if (getQuery) return Response.OK(res, query);
 
     let data = await UlbLedger.aggregate(query);
-    if (data.length == 0)
-      return Response.BadRequest(res, null, "No data Found");
+    
 
     if (csv) {
       const workbook = new ExcelJS.Workbook();
@@ -997,4 +2002,5 @@ module.exports = {
   topPerForming,
   cardsData,
   tableData,
+  yearlist
 };

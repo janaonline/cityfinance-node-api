@@ -4,9 +4,14 @@ const User = require("../../models/User");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
+<<<<<<< HEAD
 const Category = require('../../models/Category')
 const catchAsync = require('../../util/catchAsync.js')
 const FORM_STATUS = require('../../util/newStatusList')
+=======
+const Category = require("../../models/Category");
+const FORM_STATUS = require("../../util/newStatusList");
+>>>>>>> faf26f01df58ffc531fc75e5c40bcb007862505a
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -26,7 +31,7 @@ module.exports.createOrUpdate = async (req, res) => {
     req.body.actionTakenBy = req.decoded?._id;
     req.body.actionTakenByRole = req.decoded?.role;
     req.body.modifiedAt = new Date();
-    // 
+    //
     let currentSavedUtilRep;
     if (req.body?.status == "REJECTED") {
       
@@ -83,7 +88,6 @@ exports.read = async (req, res) => {
       { history: 0 }
     );
 
-
     return res.status(200).json(reports);
   } catch (err) {
     console.error(err.message);
@@ -102,59 +106,53 @@ exports.readById = async (req, res) => {
       $match: {
         ulb: ObjectId(ulb),
         designYear: ObjectId(designYear),
-        financialYear: ObjectId(financialYear)
-      }
+        financialYear: ObjectId(financialYear),
+      },
     },
     {
-      $unwind: "$projects"
+      $unwind: "$projects",
     },
     {
       $group: {
         _id: "$projects.category",
-        count: { "$sum": 1 },
-        amount: { "$sum": { "$toDouble": "$projects.expenditure" } },
-        totalProjectCost: { "$sum": { "$toDouble": "$projects.cost" } }
-      }
-    }
-  ]
-  let arr = await UtilizationReport.aggregate(query)
+        count: { $sum: 1 },
+        amount: { $sum: { $toDouble: "$projects.expenditure" } },
+        totalProjectCost: { $sum: { $toDouble: "$projects.cost" } },
+      },
+    },
+  ];
+  let arr = await UtilizationReport.aggregate(query);
 
-  let catData = await Category.find().lean().exec()
+  let catData = await Category.find().lean().exec();
   let flag = 0;
   let filteredCat = [];
 
-
   for (let el of catData) {
     for (let el2 of arr) {
-
-      if (el2['_id'] != null && (String(el['_id']) === String(el2['_id']))) {
+      if (el2["_id"] != null && String(el["_id"]) === String(el2["_id"])) {
         // console.log(ObjectId(el._id), ObjectId(el2._id))
         flag = 1;
         break;
       }
     }
     if (!flag) {
-      filteredCat.push(el)
+      filteredCat.push(el);
     } else {
       flag = 0;
     }
   }
 
-  console.log(filteredCat)
-  filteredCat.forEach(el => {
-
+  console.log(filteredCat);
+  filteredCat.forEach((el) => {
     arr.push({
       _id: el._id,
       count: 0,
       amount: 0,
-      totalProjectCost: 0
+      totalProjectCost: 0,
+    });
+  });
 
-    })
-
-
-  })
-
-  let arrNew = arr.filter(el => el['_id'] != null)
+  let arrNew = arr.filter((el) => el["_id"] != null);
 
   try {
     let report = await UtilizationReport.findOne({
@@ -162,46 +160,45 @@ exports.readById = async (req, res) => {
       financialYear,
       designYear,
       isActive: true,
-    }).select({ history: 0 }).lean();
+    })
+      .select({ history: 0 })
+      .lean();
 
     if (report == null) {
       report = {
         categoryWiseData_wm: [],
-        categoryWiseData_swm: []
-      }
-      const swm_category = [
-        'Sanitation',
-        'Solid Waste Management'
-      ]
+        categoryWiseData_swm: [],
+      };
+      const swm_category = ["Sanitation", "Solid Waste Management"];
       const wm_category = [
-        'Rejuvenation of Water Bodies',
-        'Drinking Water',
-        'Rainwater Harvesting',
-        'Water Recycling'
-      ]
+        "Rejuvenation of Water Bodies",
+        "Drinking Water",
+        "Rainwater Harvesting",
+        "Water Recycling",
+      ];
       let i = 0;
       for (let el of wm_category) {
-        report['categoryWiseData_wm'].push({
+        report["categoryWiseData_wm"].push({
           category_name: el,
           grantUtilised: null,
           numberOfProjects: null,
-          totalProjectCost: null
-        })
+          totalProjectCost: null,
+        });
         i++;
       }
       i = 0;
       for (let el of swm_category) {
-        report['categoryWiseData_swm'].push({
+        report["categoryWiseData_swm"].push({
           category_name: el,
           grantUtilised: null,
           numberOfProjects: null,
-          totalProjectCost: null
-        })
+          totalProjectCost: null,
+        });
         i++;
       }
     }
 
-    report['analytics'] = (arrNew)
+    report["analytics"] = arrNew;
     if (
       req.decoded.role === "MoHUA" &&
       report?.actionTakenByRole === "STATE" &&
@@ -304,105 +301,160 @@ exports.action = async (req, res) => {
   }
 };
 
-exports.report = async(req,res) =>{
+exports.report = async (req, res) => {
   let filename = "Detailed-Utilization-Report.csv";
-
 
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs) \r\n"
+    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs), Closing balance at the end of year (INR in lakhs), Rejuvenation of Water Bodies/Total Tied Grant Utilised on WM, Rejuvenation of Water Bodies/Total Project Cost Involved, Drinking Water/Total Tied Grant Utilised on WM, Drinking Water/Total Project Cost Involved, Rainwater Harvesting/Total Tied Grant Utilised on WM, Rainwater Harvesting/Total Project Cost Involved, Water Recycling/Total Tied Grant Utilised on WM, Water Recycling/Total Project Cost Involved, Sanitation/Total Tied Grant Utilised on WM, Sanitation/Total Project Cost Involved,  Solid Waste Management/Total Tied Grant Utilised on WM, Solid Waste Management/Total Project Cost Involved \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
   let query = [
     {
-        $lookup:{
-            from:"ulbs",
-            localField:"ulb",
-            foreignField:"_id",
-            as:"ulb"
-            }
-        },{
-            $unwind:"$ulb"
-            },
-            {
-                  $lookup:{
-            from:"states",
-            localField:"ulb.state",
-            foreignField:"_id",
-            as:"state"
-            }
-                
-                },{
-                    $unwind:"$state"
-                    },
-                   { 
-                  $project:  {
-                        ulbName: "$ulb.name",
-                        ulbCode:"$ulb.code",
-                        stateName:"$state.name",
-                        unutilisedTiedGrants:"$grantPosition.unUtilizedPrevYr",
-                        grantReceived:"$grantPosition.receivedDuringYr",
-                        expenditureIncurred:"$grantPosition.expDuringYr",
-                        closingBalance: "$grantPosition.closingBal",
-                        isDraft:"$isDraft",
-                        status:"$status",
-                        role:"$actionTakenByRole"
-                        }
-                    }
-    ]
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $lookup: {
+        from: "states",
+        localField: "ulb.state",
+        foreignField: "_id",
+        as: "state",
+      },
+    },
+    {
+      $unwind: "$state",
+    },
+    {
+      $project: {
+        ulbName: "$ulb.name",
+        ulbCode: "$ulb.code",
+        stateName: "$state.name",
+        unutilisedTiedGrants: "$grantPosition.unUtilizedPrevYr",
+        grantReceived: "$grantPosition.receivedDuringYr",
+        expenditureIncurred: "$grantPosition.expDuringYr",
+        closingBalance: "$grantPosition.closingBal",
+        isDraft: "$isDraft",
+        status: "$status",
+        role: "$actionTakenByRole",
+        waterManagement: "$categoryWiseData_wm",
+        solidWasteMgt: "$categoryWiseData_swm",
+      },
+    },
+  ];
 
- let data =    await UtilizationReport.aggregate(query)
+  let data = await UtilizationReport.aggregate(query);
 
- if(data){
-   for(el of data){
-    if(el.role == 'ULB' && el.isDraft){
-      el['formStatus'] = FORM_STATUS.In_Progress
-                }else if(el.role == 'ULB' && !el.isDraft){
-                  el['formStatus'] = FORM_STATUS.Submitted
-                }else if(el.role == 'STATE' && el.isDraft){
-                  el['formStatus'] = FORM_STATUS.Under_Review_By_State
-                }else if(el.role == 'STATE' && !el.isDraft){
-                  if(el.status =='APPROVED'){
-                    el['formStatus'] = FORM_STATUS.Approved_By_State
-                  }else if(el.status =='REJECTED'){
-                    el['formStatus'] = FORM_STATUS.Rejected_By_State
-                  }
-      
-                }else if(el.role == 'MoHUA' && el.isDraft){
-                  el['formStatus'] = FORM_STATUS.Under_Review_By_MoHUA
-                }else if(el.role == 'MoHUA' && !el.isDraft){
-                  if(el.status =='APPROVED'){
-                    el['formStatus'] = FORM_STATUS.Approved_By_MoHUA
-                  }else if(el.status =='REJECTED'){
-                    el['formStatus'] = FORM_STATUS.Rejected_By_MoHUA
-      
-                  }
-      
-                }
-   }
-  for (el of data) {
-    res.write(
-      el.ulbName +
-      "," +
-      el.ulbCode +
-      "," +
-      el.stateName +
-      "," +
-      el.formStatus +
-      "," +
-      el.unutilisedTiedGrants +
-      "," +
-      el.grantReceived +
-      "," +
-      el.expenditureIncurred +
-      "," +
-      el.closingBalance +
-      "," +
-      "\r\n"
-    );
+  if (data) {
+    for (el of data) {
+      if (
+        el.hasOwnProperty("waterManagement") &&
+        el.hasOwnProperty("solidWasteMgt")
+      ) {
+        for (el2 of el.waterManagement) {
+          if (el2.category_name == "Rejuvenation of Water Bodies") {
+            el["rej_grantUtil"] = el2.grantUtilised;
+            el["rej_totalCost"] = el2.totalProjectCost;
+          } else if (el2.category_name == "Drinking Water") {
+            el["drinking_grantUtil"] = el2.grantUtilised;
+            el["drinking_totalCost"] = el2.totalProjectCost;
+          } else if (el2.category_name == "Rainwater Harvesting") {
+            el["rainwater_grantUtil"] = el2.grantUtilised;
+            el["rainwater_totalCost"] = el2.totalProjectCost;
+          } else if (el2.category_name == "Water Recycling") {
+            el["waterRec_grantUtil"] = el2.grantUtilised;
+            el["waterRec_totalCost"] = el2.totalProjectCost;
+          }
+        }
+        for (el2 of el.solidWasteMgt) {
+          if (el2.category_name == "Sanitation") {
+            el["sanitation_grantUtil"] = el2.grantUtilised;
+            el["sanitation_totalCost"] = el2.totalProjectCost;
+          } else if (el2.category_name == "Solid Waste Management") {
+            el["swm_grantUtil"] = el2.grantUtilised;
+            el["swm_totalCost"] = el2.totalProjectCost;
+          }
+        }
+      }
+      if (el.role == "ULB" && el.isDraft) {
+        el["formStatus"] = FORM_STATUS.In_Progress;
+      } else if (el.role == "ULB" && !el.isDraft) {
+        el["formStatus"] = FORM_STATUS.Submitted;
+      } else if (el.role == "STATE" && el.isDraft) {
+        el["formStatus"] = FORM_STATUS.Under_Review_By_State;
+      } else if (el.role == "STATE" && !el.isDraft) {
+        if (el.status == "APPROVED") {
+          el["formStatus"] = FORM_STATUS.Approved_By_State;
+        } else if (el.status == "REJECTED") {
+          el["formStatus"] = FORM_STATUS.Rejected_By_State;
+        }
+      } else if (el.role == "MoHUA" && el.isDraft) {
+        el["formStatus"] = FORM_STATUS.Under_Review_By_MoHUA;
+      } else if (el.role == "MoHUA" && !el.isDraft) {
+        if (el.status == "APPROVED") {
+          el["formStatus"] = FORM_STATUS.Approved_By_MoHUA;
+        } else if (el.status == "REJECTED") {
+          el["formStatus"] = FORM_STATUS.Rejected_By_MoHUA;
+        }
+      }
+    }
+    for (el of data) {
+      res.write(
+        el.ulbName +
+          "," +
+          el.ulbCode +
+          "," +
+          el.stateName +
+          "," +
+          el.formStatus +
+          "," +
+          el.unutilisedTiedGrants +
+          "," +
+          el.grantReceived +
+          "," +
+          el.expenditureIncurred +
+          "," +
+          el.closingBalance +
+          "," +
+          el.rej_grantUtil +
+          "," +
+          el.rej_totalCost +
+          "," +
+          el.drinking_grantUtil +
+          "," +
+          el.drinking_totalCost +
+          "," +
+          el.rainwater_grantUtil +
+          "," +
+          el.rainwater_totalCost +
+          "," +
+          el.waterRec_grantUtil +
+          "," +
+          el.waterRec_totalCost +
+          "," +
+          el.sanitation_grantUtil +
+          "," +
+          el.sanitation_totalCost +
+          "," +
+          el.swm_grantUtil +
+          "," +
+          el.swm_totalCost +
+          "," +
+          "\r\n"
+      );
+    }
+    res.end();
   }
+<<<<<<< HEAD
   res.end();
 
  }
@@ -554,3 +606,6 @@ data.notStarted = notStartedData.length
     })
   }
 })
+=======
+};
+>>>>>>> faf26f01df58ffc531fc75e5c40bcb007862505a
