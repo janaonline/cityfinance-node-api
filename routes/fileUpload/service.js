@@ -270,28 +270,56 @@ exports.getIndicatorData = async (req, res) => {
       let tempYear = year.split("-");
       tempYear[1] = Number(tempYear[0]) + 1;
       tempYear = tempYear.join("-");
+      year = tempYear;
       Object.assign(query, { year: tempYear });
     }
 
     if (getQuery) {
       return Response.OK(res, query);
     }
-
-    let data = await Indicator.find(query).lean();
+    let promises = [];
+    let data = Indicator.find(query).lean();
+    let nationalAvg = Indicator.aggregate([
+      {
+        $match: {
+          year: {
+            $in: [year],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$name",
+          value: { $avg: "$value" },
+        },
+      },
+    ]);
+    promises.push(data);
+    promises.push(nationalAvg);
     let compData;
     if (compUlb) {
       if (query.ulb) {
         query.ulb = compUlb;
       }
-      compData = await Indicator.find(query).lean();
+      compData = Indicator.find(query).lean();
+      promises.push(compData);
     }
+    let allData = await Promise.all(promises);
+    data = allData[0];
+    nationalAvg = allData[1];
+    compData = allData[2];
+
     data = data.map((value, index) => {
-      value.percentage = (value.value / value.benchMarkValue) * 100;
       if (compUlb) {
-        let per = (compData[index].value / value.benchMarkValue) * 100;
-        if (isNaN(per) || !per) per = 0;
-        value.compPercentage = per;
+        compUlb = compData.find(
+          (innerVal) => innerVal.name === value.name
+        )?.value;
+        Object.assign(value, { compPercentage: compUlb });
       }
+      let nationalValue = nationalAvg.find(
+        (innerVal) => innerVal._id === value.name
+      )?.value;
+      Object.assign(value, { nationalValue });
       return value;
     });
     return Response.OK(res, data, "Success");
