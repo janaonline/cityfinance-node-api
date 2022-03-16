@@ -162,7 +162,8 @@ exports.fileUpload = async (req, res) => {
         const element = value[key];
         if (waterSupply.includes(key)) {
           indicator.type = "water supply";
-          if (element != "NA" || element != "ND") indicator.value = element;
+          if (element != "NA" || element != "ND")
+            indicator.value = Number(element);
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
@@ -172,14 +173,14 @@ exports.fileUpload = async (req, res) => {
             .select({ _id: 1 })
             .lean();
           indicator.ulb = ulbId?._id;
-          indicator.year += "-" + (Number(indicator.year) + 1);
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
           bulkUploadData.push(indicator);
         }
         if (sanitation.includes(key)) {
           indicator.type = "sanitation";
-          if (element != "NA" || element != "ND") indicator.value = element;
+          if (element != "NA" || element != "ND")
+            indicator.value = Number(element);
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
@@ -189,7 +190,6 @@ exports.fileUpload = async (req, res) => {
             .select({ _id: 1 })
             .lean();
           indicator.ulb = ulbId?._id;
-          indicator.year += "-" + (Number(indicator.year) + 1);
           if (!unitBenchmark[key]) console.log(key);
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
@@ -197,7 +197,8 @@ exports.fileUpload = async (req, res) => {
         }
         if (solidWaste.includes(key)) {
           indicator.type = "solid waste";
-          if (element != "NA" || element != "ND") indicator.value = element;
+          if (element != "NA" || element != "ND")
+            indicator.value = Number(element);
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
@@ -207,7 +208,6 @@ exports.fileUpload = async (req, res) => {
             .select({ _id: 1 })
             .lean();
           indicator.ulb = ulbId?._id;
-          indicator.year += "-" + (Number(indicator.year) + 1);
           if (!unitBenchmark[key]) console.log(key);
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
@@ -215,7 +215,8 @@ exports.fileUpload = async (req, res) => {
         }
         if (stormWater.includes(key)) {
           indicator.type = "storm water";
-          if (element != "NA" || element != "ND") indicator.value = element;
+          if (element != "NA" || element != "ND")
+            indicator.value = Number(element);
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
@@ -225,7 +226,6 @@ exports.fileUpload = async (req, res) => {
             .select({ _id: 1 })
             .lean();
           indicator.ulb = ulbId?._id;
-          indicator.year += "-" + (Number(indicator.year) + 1);
           if (!unitBenchmark[key]) console.log(key);
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
@@ -267,11 +267,7 @@ exports.getIndicatorData = async (req, res) => {
       Object.assign(query, { name: indicatorName });
     }
     if (year) {
-      let tempYear = year.split("-");
-      tempYear[1] = Number(tempYear[0]) + 1;
-      tempYear = tempYear.join("-");
-      year = tempYear;
-      Object.assign(query, { year: tempYear });
+      Object.assign(query, { year });
     }
 
     if (getQuery) {
