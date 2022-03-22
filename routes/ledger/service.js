@@ -15,7 +15,8 @@ module.exports.lastUpdated = async (req,res)=>{
  console.log(data)
  return res.status(200).json({
      success: true,
-     data: data[0]?.modifiedAt
+     data: data[0]?.modifiedAt,
+     year: data[0]?.financialYear
  })
 }
 

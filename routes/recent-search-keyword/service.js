@@ -110,15 +110,15 @@ async function getAllKeyword(req, res) {
 const search = catchAsync(async (req, res) => {
   try {
     const { matchingWord, onlyUlb } = req.body;
-    const {type} = req.query
+    const {type, state} = req.query
     
     if (!matchingWord)
       return Response.BadRequest(res, null, "Provide word to match");
 
       if(type && type == 'state'){
-        let query = { name: { $regex: matchingWord, $options: "im" } };
+        let query = { name: { $regex: `^${matchingWord}`, $options: "i" } };
         let statePromise = await State.find(query)
-        .limit(5)
+        .limit(10)
         .lean();
         let data =[]
 if(statePromise.length>0){
@@ -133,11 +133,20 @@ if(statePromise.length>0){
 
         return Response.OK(res, data);
       }else if(type && type == 'ulb'){
-        let query = { name: { $regex: matchingWord, $options: "im" } };
+        let stateData
+      
+
+        let query = { name: { $regex: `^${matchingWord}`, $options: "i" } };
+        if(state){
+          stateData =  await State.findOne({code:state}).lean()
+          Object.assign(query, {state: ObjectId(stateData._id)})
+       }
+
         let ulbPromise = await Ulb.find(query)
           .populate("state")
           .populate("ulbType")
-          .limit(5)
+          .limit(10)
+          .sort({name:1})
           .lean();
           let data =   
            ulbPromise.map((value) => {
@@ -148,21 +157,23 @@ if(statePromise.length>0){
 
           return Response.OK(res, data);
       }
-    let query = { name: { $regex: matchingWord, $options: "im" } };
+    let query = { name: { $regex: `^${matchingWord}`, $options: "i" } };
     let ulbPromise = Ulb.find(query)
       .populate("state")
       .populate("ulbType")
-      // .select({ name: 1, _id: 1 })
-      .limit(2)
+      .limit(8)
+      .sort({name:1})
       .lean();
       
     let statePromise = State.find(query)
       // .select({ name: 1, _id: 1 })
-      .limit(2)
+      .limit(5)
+      .sort({name:1})
       .lean();
     let searchKeywordPromise = SearchKeyword.find(query)
       // .select({ name: 1, _id: 1 })
-      .limit(2)
+      .limit(5)
+      .sort({name:1})
       .lean();
     let data = await Promise.all([
       ulbPromise,
