@@ -130,7 +130,8 @@ const peopleInformation = async (req, res) => {
 const moneyInformation = async (req, res) => {
   try {
     const type = (req.query.type || req.headers.type).toLowerCase();
-    if (!type) return Response.BadRequest(res, {}, "No Type Provided");
+    const  year = req.query.year
+    if (!type || !year ) return Response.BadRequest(res, {}, "No Type Provided");
     let data, ulbId;
     switch (type) {
       case "ulb":
@@ -146,7 +147,7 @@ const moneyInformation = async (req, res) => {
         return Response.BadRequest(res, null, "wrong type selected");
     }
     data = await UlbLedger.aggregate([
-      { $match: { ulb: { $in: ulbId } } },
+      { $match: { ulb: { $in: ulbId }, financialYear: year } },
       {
         $lookup: {
           from: "lineitems",
@@ -172,8 +173,7 @@ const moneyInformation = async (req, res) => {
         },
       },
     ]);
-    if (!data || data.length == 0)
-      return Response.BadRequest(res, null, "No Data Found");
+  
     return Response.OK(res, data);
   } catch (err) {
     console.error(err.message);
