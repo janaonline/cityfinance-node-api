@@ -32,7 +32,10 @@ router.post("/cards-data", cardsData);
 router.post("/table-data", tableData);
 router.post("/topPerformance", topPerForming);
 
-const { scatterMap } = require("./state");
+const { scatterMap, revenue } = require("./state");
 router.post("/state-scatter", scatterMap);
 
+
+//state dashboard
+router.post("/state-revenue", revenue)
 module.exports = router;
