@@ -2,23 +2,34 @@ const LedgerLogModel = require('../../models/LedgerLog');
 const UlbLedger = require('../../models/UlbLedger');
 const mongoose = require("mongoose");
 const moment = require("moment");
-const ObjectId = require('mongoose').Types.ObjectId;
-const Ulb = require('../../models/Ulb');
-const RequestLog = require('../../models/RequestLog')
-const DataCollectionForms = require('../../models/DataCollectionForm')
-const AnnualAccount = require('../../models/AnnualAccounts')
-const util = require('util')
+const ObjectId = require("mongoose").Types.ObjectId;
+const Ulb = require("../../models/Ulb");
+const RequestLog = require("../../models/RequestLog");
+const DataCollectionForms = require("../../models/DataCollectionForm");
+const AnnualAccount = require("../../models/AnnualAccounts");
+const util = require("util");
 
-module.exports.lastUpdated = async (req,res)=>{
-
- let data  =  await UlbLedger.find({}).sort({modifiedAt:-1}).limit(1)
- console.log(data)
- return res.status(200).json({
-     success: true,
-     data: data[0]?.modifiedAt,
-     year: data[0]?.financialYear
- })
-}
+module.exports.lastUpdated = async (req, res) => {
+  try {
+    const { ulb, state } = req.query;
+    let match = {};
+    if (ulb) {
+      match = { ulb };
+    }
+    if (state) {
+      let ulbIds = await Ulb.find({ state }).select({ _id: 1 });
+      match = { ulb: { $in: ulbIds.map((value) => value._id) } };
+    }
+    let data = await UlbLedger.find(match).sort({ modifiedAt: -1 }).limit(1);
+    return res.status(200).json({
+      success: true,
+      data: data[0]?.modifiedAt,
+      year: data[0]?.financialYear,
+    });
+  } catch (error) {
+    return res.status(500).json({ msg: "server Error", error });
+  }
+};
 
 // Get Income expenditure report
 module.exports.getIE = function (req, res) {

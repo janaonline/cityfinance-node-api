@@ -197,8 +197,18 @@ const getLatestData = async (req, res) => {
   }
 };
 
+const getYearList = async (req, res) => {
+  try {
+    let year = await UlbLedger.distinct("financialYear");
+    return Response.OK(res, year);
+  } catch (error) {
+    return Response.DbError(res, error, error.message);
+  }
+};
+
 module.exports = {
   peopleInformation,
   moneyInformation,
   getLatestData,
+  getYearList,
 };
