@@ -16,6 +16,14 @@ const ObjectIdOfRevenueList = [
   "5dd10c2885c951b54ec1d77e",
   "5dd10c2385c951b54ec1d748",
 ];
+const OwnRevenueList = [
+
+  "5dd10c2485c951b54ec1d74b",
+  "5dd10c2685c951b54ec1d762",
+  "5dd10c2485c951b54ec1d74a",
+  "5dd10c2885c951b54ec1d77e",
+  "5dd10c2385c951b54ec1d748",
+];
 const expenseCode = [
   "5dd10c2585c951b54ec1d753",
   "5dd10c2585c951b54ec1d75a",
@@ -1440,14 +1448,40 @@ const topPerForming = async (req, res) => {
     if (!financialYear)
       return Response.BadRequest(res, null, "financial year missing");
 let datab;
+let matchObj = {}
+
+    // if (ulbType && ObjectId.isValid(ulbType))
+    //   Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
+
+    //   if(populationCategory == '4 Million+'){
+    //     Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+       
+    //   }else if(populationCategory == '500 Thousand - 1 Million'){
+    //     Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+      
+    //   }else if(populationCategory == '100 Thousand - 500 Thousand'){
+    //     Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+      
+    //   }else if(populationCategory == '1 Million - 4 Million'){
+    //     Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+      
+    //   }else if(populationCategory == '<100 Thousand'){
+    //     Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
+      
+    //   }
+    //this is the case of default + top filters in function
       if(list.length == 0){
+        // by default only own revenue per capita
+        if (stateId && ObjectId.isValid(stateId))
+      Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
+
   let query = [
     {
       $match: {
         lineItem: {
           $in: propertyTax
             ? [ObjectId("5dd10c2285c951b54ec1d737")]
-            : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+            : OwnRevenueList.map((value) => ObjectId(value)),
         },
         financialYear: {
           $in: Array.isArray(financialYear) ? financialYear : [financialYear],
@@ -1465,26 +1499,42 @@ let datab;
     {
       $unwind: "$ulb",
     },
-    {$group:{
-      _id: "$ulb._id",
-      name:{$first:"$ulb.name"},
-      totalAmount:{$sum:"$amount"},
-      population:{$sum:"$ulb.population"}
-    }},
-    {
-      $project:{
-        _id:1,
-        name:1,
-        amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
-      }
-    },
-    {
-      $sort:{
-        amount:-1
-      }
-    },
-    {$limit:10}
+ 
   ];
+  if(Object.keys(matchObj).length>0){
+    query.push({
+      $match: matchObj
+    })
+  }
+  
+  let attach = [   {$group:{
+    _id: "$ulb._id",
+    state:{$first:"$ulb.state"},
+    name:{$first:"$ulb.name"},
+    totalAmount:{$sum:"$amount"},
+    population:{$sum:"$ulb.population"}
+  }},
+  {
+    $project:{
+      _id:1,
+      name:1,
+      state:1,
+      amount:{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalAmount", "$population"]} ] } ,
+    }
+  },
+  {
+    $sort:{
+      amount:-1
+    }
+  },
+  {$limit: 10 }]
+  query.push(...attach)
+
+if(getQuery){
+  return res.json({
+   query: query
+  })
+}
  datab = await UlbLedger.aggregate(query);
  if(ulb && ObjectId.isValid(ulb)){
  let  ulbData = await UlbLedger.aggregate([
@@ -1495,7 +1545,7 @@ let datab;
          lineItem: {
           $in: propertyTax
             ? [ObjectId("5dd10c2285c951b54ec1d737")]
-            : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+            : OwnRevenueList.map((value) => ObjectId(value)),
         },
        }
      },
@@ -1524,7 +1574,7 @@ let datab;
      datab.push(...ulbData)
    }
  }
-}else if(list.length > 0){
+}else if(list.length > 0){ // this is the case where comparison box is in operation
 let newList=[]
   list.forEach(el=>{
 newList.push(el._id)
@@ -1952,8 +2002,8 @@ newList.push(el._id)
 }
     
       // console.log(datab)
-      if (datab.length == 0)
-      return Response.BadRequest(res, null, "No data Found");
+      // if (datab.length == 0)
+      // return Response.BadRequest(res, null, "No data Found");
 
       return res.status(200).json({
         success: true,
@@ -2004,3 +2054,5 @@ module.exports = {
   tableData,
   yearlist
 };
+
+
