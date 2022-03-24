@@ -7,7 +7,75 @@ const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 
-const headOfAccountDeficit = ["Expense", "Revenue"];
+const headOfAccountDeficit = [
+  ObjectId("5dd10c2885c951b54ec1d77e"),
+  ObjectId("5dd10c2785c951b54ec1d77c"),
+  ObjectId("5dd10c2785c951b54ec1d778"),
+  ObjectId("5dd10c2785c951b54ec1d776"),
+  ObjectId("5dd10c2685c951b54ec1d762"),
+  ObjectId("5dd10c2685c951b54ec1d761"),
+  ObjectId("5dd10c2685c951b54ec1d760"),
+  ObjectId("5dd10c2585c951b54ec1d75f"),
+  ObjectId("5dd10c2585c951b54ec1d75e"),
+  ObjectId("5dd10c2585c951b54ec1d75b"),
+  ObjectId("5dd10c2585c951b54ec1d75a"),
+  ObjectId("5dd10c2585c951b54ec1d756"),
+  ObjectId("5dd10c2585c951b54ec1d755"),
+  ObjectId("5dd10c2585c951b54ec1d753"),
+  ObjectId("5dd10c2485c951b54ec1d74f"),
+  ObjectId("5dd10c2485c951b54ec1d74e"),
+  ObjectId("5dd10c2485c951b54ec1d74b"),
+  ObjectId("5dd10c2485c951b54ec1d74a"),
+  ObjectId("5dd10c2385c951b54ec1d748"),
+  ObjectId("5dd10c2385c951b54ec1d746"),
+  ObjectId("5dd10c2385c951b54ec1d744"),
+  ObjectId("5dd10c2385c951b54ec1d743"),
+];
+const headOfAccountIds = {
+  ["Revenue"]: [
+    ObjectId("5dd10c2885c951b54ec1d77e"),
+    ObjectId("5dd10c2785c951b54ec1d778"),
+    ObjectId("5dd10c2785c951b54ec1d776"),
+    ObjectId("5dd10c2685c951b54ec1d762"),
+    ObjectId("5dd10c2685c951b54ec1d761"),
+    ObjectId("5dd10c2585c951b54ec1d75b"),
+    ObjectId("5dd10c2485c951b54ec1d74f"),
+    ObjectId("5dd10c2485c951b54ec1d74b"),
+    ObjectId("5dd10c2485c951b54ec1d74a"),
+    ObjectId("5dd10c2385c951b54ec1d748"),
+  ],
+  ["own_revenue"]: [
+    ObjectId("5dd10c2885c951b54ec1d77e"),
+    ObjectId("5dd10c2685c951b54ec1d762"),
+    ObjectId("5dd10c2485c951b54ec1d74b"),
+    ObjectId("5dd10c2485c951b54ec1d74a"),
+    ObjectId("5dd10c2385c951b54ec1d748"),
+    ObjectId("5dd10c2285c951b54ec1d737"),
+  ],
+  ["revenue_expenditure_mix"]: [
+    ObjectId("5dd10c2585c951b54ec1d75a"),
+    ObjectId("5dd10c2585c951b54ec1d756"),
+    ObjectId("5dd10c2585c951b54ec1d753"),
+  ],
+  ["Expense"]: [
+    ObjectId("5dd10c2785c951b54ec1d77c"),
+    ObjectId("5dd10c2685c951b54ec1d760"),
+    ObjectId("5dd10c2585c951b54ec1d75f"),
+    ObjectId("5dd10c2585c951b54ec1d75e"),
+    ObjectId("5dd10c2585c951b54ec1d75a"),
+    ObjectId("5dd10c2585c951b54ec1d756"),
+    ObjectId("5dd10c2585c951b54ec1d755"),
+    ObjectId("5dd10c2585c951b54ec1d753"),
+    ObjectId("5dd10c2485c951b54ec1d74e"),
+    ObjectId("5dd10c2385c951b54ec1d746"),
+    ObjectId("5dd10c2385c951b54ec1d744"),
+    ObjectId("5dd10c2385c951b54ec1d743"),
+  ],
+  ["capital_expenditure"]: [
+    ObjectId("5dd10c2785c951b54ec1d779"),
+    ObjectId("5dd10c2785c951b54ec1d774"),
+  ],
+};
 
 const indicator = async (req, res) => {
   try {
@@ -38,12 +106,16 @@ const indicator = async (req, res) => {
       ulb = await Ulb.find({ state: ObjectId(stateId) }, { _id: 1 }).lean();
       ulb = ulb.map((value) => value._id);
     }
+    let matchObj = {
+      financialYear: { $in: financialYear },
+      ulb: { $in: ulb.map((value) => ObjectId(value)) },
+    };
+    Object.assign(matchObj, {
+      lineItem: { $in: headOfAccountIds[headOfAccount] },
+    });
     let query = [
       {
-        $match: {
-          financialYear: { $in: financialYear },
-          ulb: { $in: ulb.map((value) => ObjectId(value)) },
-        },
+        $match: matchObj,
       },
       {
         $lookup: {
@@ -57,11 +129,8 @@ const indicator = async (req, res) => {
       {
         $lookup: {
           from: "lineitems",
-          pipeline: [
-            {
-              $match: { $expr: { $eq: ["$headOfAccount", headOfAccount] } },
-            },
-          ],
+          localField: "lineItem",
+          foreignField: "_id",
           as: "lineitems",
         },
       },
@@ -80,25 +149,26 @@ const indicator = async (req, res) => {
           ulbName: { $first: "$ulb.name" },
         };
         if (isPerCapita) {
-          group.amount = {
-            $sum: {
-              $cond: [
-                { $eq: ["$ulb.population", 0] },
-                0,
-                { $divide: ["$amount", "$ulb.population"] },
-              ],
-            },
+          group.population = {
+            $sum: "$ulb.population",
           };
         }
-
-        query.push(
-          {
-            $group: group,
-          },
-          {
-            $sort: { "_id.financialYear": 1 },
-          }
-        );
+        query.push({
+          $group: group,
+        });
+        if (isPerCapita)
+          query.push({
+            $project: {
+              _id: 1,
+              amount: {
+                $divide: ["$amount", "$population"],
+              },
+              ulbName: 1,
+            },
+          });
+        query.push({
+          $sort: { "_id.financialYear": 1 },
+        });
         break;
       case "expenditure_mix":
       case "revenue_mix":
@@ -134,14 +204,7 @@ const indicator = async (req, res) => {
         });
         break;
       case "total_surplus/deficit":
-        query.map((value) => {
-          if (value["$lookup"]?.from === "lineitems") {
-            delete value["$lookup"].pipeline[0]?.$match?.$expr;
-            Object.assign(value["$lookup"].pipeline[0]?.$match, {
-              $expr: { $in: ["$headOfAccount", headOfAccountDeficit] },
-            });
-          }
-        });
+        matchObj["lineItem"].$in = headOfAccountDeficit;
         query.push(
           {
             $group: {
@@ -186,15 +249,7 @@ const indicator = async (req, res) => {
         break;
       case "capital_expenditure":
       case "capital_expenditure_per_capita":
-        query.map((value) => {
-          if (value["$lookup"]?.from === "lineitems") {
-            value["$lookup"].pipeline[0] = {
-              $match: {
-                code: { $in: ["410", "412"] },
-              },
-            };
-          }
-        });
+        matchObj["lineItem"].$in = headOfAccountIds["capital_expenditure"];
         let group2 = {
           _id: {
             ulb: "$ulb._id",
@@ -240,15 +295,7 @@ const indicator = async (req, res) => {
         break;
       case "total_own_revenue":
       case "own_revenue_per_capita":
-        query.map((value) => {
-          if (value["$lookup"]?.from === "lineitems") {
-            value["$lookup"].pipeline[0] = {
-              $match: {
-                code: { $in: ["11001", "130", "140", "150", "180", "110"] },
-              },
-            };
-          }
-        });
+        matchObj["lineItem"].$in = headOfAccountIds["own_revenue"];
         let groupNew = {
           _id: {
             ulb: "$ulb._id",
@@ -258,36 +305,29 @@ const indicator = async (req, res) => {
           ulbName: { $first: "$ulb.name" },
         };
         if (isPerCapita) {
-          groupNew.amount = {
-            $sum: {
-              $cond: [
-                { $eq: ["$ulb.population", 0] },
-                0,
-                { $divide: ["$amount", "$ulb.population"] },
-              ],
-            },
+          groupNew.population = {
+            $sum: "$ulb.population",
           };
         }
-
-        query.push(
-          {
-            $group: groupNew,
-          },
-          {
-            $sort: { "_id.financialYear": 1 },
-          }
-        );
+        query.push({
+          $group: groupNew,
+        });
+        if (isPerCapita)
+          query.push({
+            $project: {
+              _id: 1,
+              amount: {
+                $divide: ["$amount", "$population"],
+              },
+              ulbName: 1,
+            },
+          });
+        query.push({
+          $sort: { "_id.financialYear": 1 },
+        });
         break;
       case "own_revenue_mix":
-        query.map((value) => {
-          if (value["$lookup"]?.from === "lineitems") {
-            value["$lookup"].pipeline[0] = {
-              $match: {
-                code: { $in: ["11001", "130", "140", "150", "180", "110"] },
-              },
-            };
-          }
-        });
+        matchObj["lineItem"].$in = headOfAccountIds["own_revenue"];
         query.push({
           $group: {
             _id: {
@@ -301,15 +341,7 @@ const indicator = async (req, res) => {
         });
         break;
       case "revenue_expenditure_mix":
-        query.map((value) => {
-          if (value["$lookup"]?.from === "lineitems") {
-            value["$lookup"].pipeline[0] = {
-              $match: {
-                code: { $in: ["210", "220", "230"] },
-              },
-            };
-          }
-        });
+        matchObj["lineItem"].$in = headOfAccountIds["revenue_expenditure_mix"];
         query.push({
           $group: {
             _id: {
@@ -348,10 +380,15 @@ const indicator = async (req, res) => {
     }
 
     let newQuery;
-    if (compareType) newQuery = await comparator(compareType, query, ulb[0]);
-
+    if (compareType)
+      newQuery = await comparator(
+        compareType,
+        query,
+        ulb[0],
+        isPerCapita,
+        filterName
+      );
     if (getQuery) return res.json({ query, newQuery });
-
     let redisKey = JSON.stringify({ query, newQuery });
     let redisData = await Redis.getDataPromise(redisKey);
     let compData, data, returnData;
@@ -374,8 +411,12 @@ const indicator = async (req, res) => {
   }
 };
 
-const comparator = async (compareFrom, query, ulb) => {
+const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
   let newData = JSON.parse(JSON.stringify(query)); //deep copy of prev query
+  if (newData[0]["$match"]["lineItem"])
+    newData[0]["$match"]["lineItem"]["$in"] = newData[0]["$match"]["lineItem"][
+      "$in"
+    ].map((value) => ObjectId(value));
   let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
   switch (compareFrom) {
     case "State Average":
@@ -395,14 +436,66 @@ const comparator = async (compareFrom, query, ulb) => {
       newData = newData.map((value) => {
         if (value["$group"]) {
           delete value["$group"]._id?.ulb;
+          if (from == "total_surplus/deficit") {
+            Object.assign(value["$group"], {
+              population: { $sum: "$ulb.population" },
+            });
+          }
           Object.assign(value["$group"]._id, { state: "$ulb.state" });
           value["$group"].ulbName = { $first: "$state.name" };
-          let old = value["$group"].amount.$sum;
-          delete value["$group"].amount.$sum;
-          value["$group"].amount.$avg = old;
+          Object.assign(value["$group"], {
+            numerator: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+            denominator: { $sum: "$ulb.population" },
+            ulbName: {
+              $first: "$state.name",
+            },
+          });
         }
         return value;
       });
+      if (
+        isPerCapita &&
+        from != "capital_expenditure" &&
+        from != "capital_expenditure_per_capita"
+      ) {
+        let temp = newData.pop();
+        newData.pop();
+        newData.push(temp);
+      }
+      if (from == "total_surplus/deficit") {
+        newData[newData.length - 1]["$project"] = {
+          _id: 1,
+          ulbName: 1,
+          amount: {
+            $divide: [{ $subtract: ["$revenue", "$expense"] }, "$population"],
+          },
+        };
+      }
+      if (
+        from != "total_surplus/deficit" &&
+        from != "capital_expenditure" &&
+        from != "capital_expenditure_per_capita"
+      )
+        newData.push({
+          $project: {
+            _id: 1,
+            amount: { $divide: ["$numerator", "$denominator"] },
+            ulbName: 1,
+          },
+        });
+      if (
+        from == "capital_expenditure" ||
+        from == "capital_expenditure_per_capita"
+      ) {
+        newData.splice(newData.length - 2, 0, {
+          $project: {
+            _id: 1,
+            amount: { $divide: ["$numerator", "$denominator"] },
+            ulbName: 1,
+            code: 1,
+          },
+        });
+      }
       break;
     case "National Average":
       delete newData[0]?.$match?.ulb;
@@ -609,7 +702,7 @@ const revenueIndicator = async (req, res) => {
       .select({ _id: 1 })
       .lean();
     let matchObj = {};
-    let query = [{ $match: matchObj }];
+    let query = [{ $match: matchObj.map((value) => ObjectId(value)) }];
     if (ulb) {
       Object.assign(matchObj, {
         ulb: Array.isArray(ulb)

@@ -199,7 +199,12 @@ const getLatestData = async (req, res) => {
 
 const getYearList = async (req, res) => {
   try {
-    let year = await UlbLedger.distinct("financialYear");
+    const { ulb } = req.query;
+    let matchObj = {};
+    if (ulb) {
+      matchObj = { ulb };
+    }
+    let year = await UlbLedger.distinct("financialYear", matchObj);
     return Response.OK(res, year);
   } catch (error) {
     return Response.DbError(res, error, error.message);
