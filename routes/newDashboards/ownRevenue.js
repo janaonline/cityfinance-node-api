@@ -1591,7 +1591,7 @@ newList.push(el._id)
             lineItem: {
               $in: propertyTax
                 ? [ObjectId("5dd10c2285c951b54ec1d737")]
-                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                : OwnRevenueList.map((value) => ObjectId(value)),
             },
           }
         },
@@ -1612,9 +1612,7 @@ newList.push(el._id)
             "ulb.state": {
               $in: newList.map((value)=>ObjectId(value))
             },
-            financialYear: {
-              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
-            },
+           
           },
         },
         
@@ -1651,7 +1649,7 @@ newList.push(el._id)
             lineItem: {
               $in: propertyTax
                 ? [ObjectId("5dd10c2285c951b54ec1d737")]
-                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                : OwnRevenueList.map((value) => ObjectId(value)),
             },
           }
         },
@@ -1672,9 +1670,7 @@ newList.push(el._id)
             "ulb.state": {
               $in: newList.map((value)=>ObjectId(value))
             },
-            financialYear: {
-              $in: Array.isArray(financialYear) ? financialYear : [financialYear],
-            },
+            
           },
         },
         
@@ -1719,7 +1715,7 @@ newList.push(el._id)
             },
             lineItem: {
               $in: [
-                ...ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                ...OwnRevenueList.map((value) => ObjectId(value)),
                 ...expenseCode.map((value) => ObjectId(value)),
               ],
             },
@@ -1775,7 +1771,7 @@ newList.push(el._id)
                 {
                   $in: [
                     "$lineItem.code",
-                    ["11001", "130", "140", "150", "180", "110"],
+                    [ "130", "140", "150", "180", "110"],
                   ],
                 },
                 "$amount",
@@ -1822,7 +1818,7 @@ newList.push(el._id)
             lineItem: {
               $in: propertyTax
                 ? [ObjectId("5dd10c2285c951b54ec1d737")]
-                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                : OwnRevenueList.map((value) => ObjectId(value)),
             },
             ulb:{
               $in: newList.map((value)=> ObjectId(value))
@@ -1864,7 +1860,7 @@ newList.push(el._id)
             lineItem: {
               $in: propertyTax
                 ? [ObjectId("5dd10c2285c951b54ec1d737")]
-                : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                : OwnRevenueList.map((value) => ObjectId(value)),
             },
             ulb:{
               $in: newList.map((value)=> ObjectId(value))
@@ -1916,7 +1912,7 @@ newList.push(el._id)
             },
             lineItem: {
               $in: [
-                ...ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+                ...OwnRevenueList.map((value) => ObjectId(value)),
                 ...expenseCode.map((value) => ObjectId(value)),
               ],
             },
@@ -1958,7 +1954,7 @@ newList.push(el._id)
                 {
                   $in: [
                     "$lineItem.code",
-                    ["11001", "130", "140", "150", "180", "110"],
+                    ["130", "140", "150", "180", "110"],
                   ],
                 },
                 "$amount",
