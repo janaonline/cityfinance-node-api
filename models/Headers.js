@@ -23,7 +23,7 @@ const HeadersSchema = new Schema(
               indicators: [
                 {
                   name: { type: String },
-                  desc: [
+                  total_revenue: [
                     {
                       code: { type: String },
                       text: { type: String },
@@ -31,6 +31,36 @@ const HeadersSchema = new Schema(
                         { label: { type: String }, url: { type: String } },
                       ],
                     },
+                  ],
+                  revenue_per_capita: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  revenue_mix: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  total_own_revenue: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  own_revenue_per_capita: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  "total_surplus/deficit": [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  expenditure_mix: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  revenue_expenditure_mix: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  revenue_expenditure: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  capital_expenditure: [
+                    { code: { type: String }, text: { type: String } },
+                  ],
+                  capital_expenditure_per_capita: [
+                    { code: { type: String }, text: { type: String } },
                   ],
                 },
               ],
