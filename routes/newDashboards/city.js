@@ -568,6 +568,8 @@ const aboutCalculation = async (req, res) => {
       ulb,
       compare,
       populationCategory,
+      headOfAccount,
+      filterName,
     } = req.query;
 
     if (ulb) {
@@ -581,13 +583,15 @@ const aboutCalculation = async (req, res) => {
       });
     }
 
+    let matchObj = {
+      financialYear: {
+        $in: [financialYear],
+      },
+    };
+
     let query = [
       {
-        $match: {
-          financialYear: {
-            $in: [financialYear],
-          },
-        },
+        $match: matchObj,
       },
       {
         $lookup: {
@@ -608,6 +612,38 @@ const aboutCalculation = async (req, res) => {
           "ulb.state": ObjectId(state),
         },
       });
+
+    if (headOfAccount) {
+      let ids = await LineItem.find({ headOfAccount })
+        .select({ _id: 1 })
+        .lean();
+      Object.assign(matchObj, {
+        lineItem: { $in: ids.map((value) => ObjectId(value._id)) },
+      });
+    }
+    if (filterName) {
+      if (filterName.includes("own")) {
+        let ids = await LineItem.find({
+          code: { $in: ["11001", "180", "140", "110", "130", "150"] },
+        })
+          .select({ _id: 1 })
+          .lean();
+        Object.assign(matchObj, {
+          lineItem: { $in: ids.map((value) => ObjectId(value._id)) },
+        });
+      }
+      if (filterName.includes("surplus")) {
+        let ids = await LineItem.find({
+          headOfAccount: { $in: ["Revenue", "Expense"] },
+        })
+          .select({ _id: 1 })
+          .lean();
+        Object.assign(matchObj, {
+          lineItem: { $in: ids.map((value) => ObjectId(value._id)) },
+        });
+      }
+    }
+
     query.push(
       {
         $lookup: {
@@ -619,18 +655,45 @@ const aboutCalculation = async (req, res) => {
       },
       {
         $unwind: "$lineItem",
-      },
-      { $match: { "lineItem.headOfAccount": "Revenue" } }
+      }
+      // { $match: { "lineItem.headOfAccount": "Revenue" } }
     );
 
-    if (!compare)
-      query.push({
-        $group: {
-          _id: null,
-          amount: { $sum: "$amount" },
-          totalPopulation: { $sum: "$ulb.population" },
-        },
-      });
+    let groupStage = {
+      _id: null,
+      amount: { $sum: "$amount" },
+      totalPopulation: { $sum: "$ulb.population" },
+    };
+
+    if (filterName) {
+      if (filterName.includes("surplus")) {
+        // Object.assign(groupStage, { _id: "$lineItem.headOfAccount" });
+        Object.assign(groupStage, {
+          amount: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+        });
+        Object.assign(groupStage, {
+          expense: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+        });
+      }
+    }
+
+    if (!compare) query.push({ $group: groupStage });
     else {
       query.push({
         $group: {
@@ -666,7 +729,8 @@ const aboutCalculation = async (req, res) => {
     if (getQuery) return Response.OK(res, query);
 
     let key = JSON.stringify(query) + "aboutIndicator";
-    let redisData = await Redis.getDataPromise(key);
+    let redisData;
+    //  = await Redis.getDataPromise(key);
     let data;
     if (!redisData) {
       data = await UlbLedger.aggregate(query);
@@ -680,7 +744,7 @@ const aboutCalculation = async (req, res) => {
         return value;
       });
 
-    return Response.OK(res, data[0]);
+    return Response.OK(res, filterName ? data : data[0]);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);
