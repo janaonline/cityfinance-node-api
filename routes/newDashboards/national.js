@@ -1,7 +1,6 @@
 const ULBLedger = require("../../models/UlbLedger");
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
-const filter = require("../../service/filter");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
