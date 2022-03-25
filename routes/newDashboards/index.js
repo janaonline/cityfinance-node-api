@@ -21,8 +21,10 @@ const {
   chartData2,
   cardsData,
   tableData,
-  yearlist
+  yearlist,
 } = require("./ownRevenue");
+
+const { dataAvailabilityState } = require("./national");
 // router.use(verifyToken);
 router.use("/all-dashboard", shared);
 router.post("/data-available", dataAvailability);
@@ -35,7 +37,9 @@ router.post("/topPerformance", topPerForming);
 const { scatterMap, revenue } = require("./state");
 router.post("/state-scatter", scatterMap);
 
-
 //state dashboard
-router.post("/state-revenue", revenue)
+router.post("/state-revenue", revenue);
+
+//national dashboard
+router.get("/national-dashboard", dataAvailabilityState);
 module.exports = router;
