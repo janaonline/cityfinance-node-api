@@ -344,7 +344,7 @@ const revenue = catchAsync(async (req,res)=>{
         stateAvg: data[1],
         // natAvg : data[2]
       })
-  }else if(filterName.includes('own revenue')){
+  }else if(filterName.includes('own revenue') && !filterName.includes('mix')  ){
    let base_query = [
       {
         $match: {
@@ -572,6 +572,62 @@ copyData.push({
     }else if(compareType =='popCat'){
       
     }
+  }else if(filterName == 'own revenue mix'){
+    let base_query = [
+      {
+        $match: {
+          lineItem: {
+            $in: [
+              ...ObjectIdOfRevenueList.map((value) => ObjectId(value))
+             
+            ],
+          },
+          financialYear: financialYear,
+        },
+      },
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      {
+        $unwind: "$ulb",
+      },
+      {
+        $match:{
+            "ulb.state":ObjectId(state)
+            }
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineItem",
+          },
+        },
+        {
+          $unwind: "$lineItem",
+        },
+        {
+
+          $group:{
+            _id: "$lineItem.name",
+            amount: {$sum:"$amount"},
+            code:{$first:"$lineItem.code"}
+          }
+        }
+    ];
+    let data = await UlbLedger.aggregate(base_query);
+  
+
+  return res.status(200).json({
+    success: true,
+    data: data
+  })
   }
   
 })
