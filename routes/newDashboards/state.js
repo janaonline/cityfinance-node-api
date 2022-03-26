@@ -486,6 +486,92 @@ const revenue = catchAsync(async (req,res)=>{
               // natAvg : data[2]
             })
 
+  } else if(filterName == 'revenue mix'){
+    if(compareType !=''){
+let bse_query = [
+  {
+      $match:{
+          financialYear:financialYear,
+          
+          }
+      },
+  {
+      $lookup:{
+          from:"ulbs",
+          localField:"ulb",
+          foreignField:"_id",
+          as:"ulb"
+          }
+      },
+      {
+          $unwind:"$ulb"
+          },
+          {
+              $match:{
+                  "ulb.state":ObjectId(state)
+                  }
+              },
+              {
+      $lookup:{
+          from:"lineitems",
+          localField:"lineItem",
+          foreignField:"_id",
+          as:"lineItem"
+          }
+      },
+      {
+          $unwind:"$lineItem"
+          },
+              {
+                  $match:{
+                      "lineItem.headOfAccount":headOfAccount
+                      }
+                  },
+                  
+                  {
+                      $group:{
+                          _id:"$lineItem.name",
+                          code:{$first:"$lineItem.code"},
+                          amount:{$sum:"$amount"}
+                          }
+                      },
+    
+  ]
+
+  let data = await UlbLedger.aggregate(bse_query);
+  let ownRev = 0
+  let copyData = []
+  if(data.length>0){
+    console.log(data);
+    copyData = data.slice()
+    for(let el of data){   
+if(el.code == "110" || el.code == "130" || el.code == "140" || el.code == "150" || el.code == "180"){
+  ownRev = ownRev + el.amount
+  let index = copyData.indexOf(el)
+  if(index>-1 && index != copyData.length-1)
+  copyData.splice(index, 1)
+  if(index ==copyData.length-1 ){
+    copyData.pop(el)
+  }
+ 
+
+}
+}
+copyData.push({
+  _id: 'Own Revenue',
+  amount:ownRev
+})
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: copyData
+  })
+    }else if(compareType =='ulbType'){
+
+    }else if(compareType =='popCat'){
+      
+    }
   }
   
 })
