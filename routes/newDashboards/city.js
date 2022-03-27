@@ -501,6 +501,7 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
             _id: 1,
             amount: { $divide: ["$numerator", "$denominator"] },
             ulbName: 1,
+            code: 1,
           },
         });
       if (
