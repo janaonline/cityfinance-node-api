@@ -88,6 +88,7 @@ const indicator = async (req, res) => {
       compareType,
       getQuery,
       stateId,
+      ulbTypeId,
     } = req.body;
     if (
       !headOfAccount ||
@@ -102,10 +103,6 @@ const indicator = async (req, res) => {
         null,
         "check ulb as array, financialYear as array, headOfAccount, filterName, stateId or ulb should be there"
       );
-    if (stateId) {
-      ulb = await Ulb.find({ state: ObjectId(stateId) }, { _id: 1 }).lean();
-      ulb = ulb.map((value) => value._id);
-    }
     let matchObj = {
       financialYear: { $in: financialYear },
       ulb: { $in: ulb.map((value) => ObjectId(value)) },
@@ -386,7 +383,9 @@ const indicator = async (req, res) => {
         query,
         ulb[0],
         isPerCapita,
-        filterName
+        filterName,
+        stateId,
+        ulbTypeId
       );
     if (getQuery) return res.json({ query, newQuery });
     let redisKey = JSON.stringify({ query, newQuery });
@@ -419,8 +418,29 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
     ].map((value) => ObjectId(value));
   let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
   switch (compareFrom) {
+    case "ULB category Average":
+    case "ULB Type Average":
+    case "National Average":
     case "State Average":
-      delete newData[0]?.$match?.ulb;
+      if (compareFrom == "National Average") delete newData[0]?.$match?.ulb;
+      else {
+        let ids;
+        if (compareFrom == "State Average")
+          ids = await Ulb.find({ state: ulbData.state })
+            .select({ _id: 1 })
+            .lean();
+        if (compareFrom == "ULB Type Average")
+          ids = await Ulb.find({ ulbType: ulbData.ulbType })
+            .select({ _id: 1 })
+            .lean();
+        if (compareFrom == "ULB category Average") {
+          let temp = getPopulationIds(ulbData.population);
+          ids = await Ulb.find(temp).select({ _id: 1 }).lean();
+        }
+        newData[0]["$match"]["ulb"] = {
+          $in: ids.map((value) => ObjectId(value._id)),
+        };
+      }
       if (ulbData)
         newData.splice(2, 0, {
           $match: { "ulb.state": ObjectId(ulbData.state) },
@@ -496,61 +516,6 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
           },
         });
       }
-      break;
-    case "National Average":
-      delete newData[0]?.$match?.ulb;
-      newData = newData.map((value) => {
-        if (value["$group"]) {
-          delete value["$group"]._id?.ulb;
-          Object.assign(value["$group"]._id, { state: "$ulb.state" });
-          delete value["$group"].ulbName;
-          let old = value["$group"].amount.$sum;
-          delete value["$group"].amount.$sum;
-          value["$group"].amount.$avg = old;
-        }
-        return value;
-      });
-
-      newData.push({
-        $group: {
-          _id: {
-            financialYear: "$_id.financialYear",
-          },
-          amount: { $avg: "$amount" },
-        },
-      });
-
-      break;
-
-    case "ULB Type Average":
-      delete newData[0]?.$match?.ulb;
-      if (ulbData)
-        newData.splice(3, 0, {
-          $match: { "ulb.ulbType": ObjectId(ulbData.ulbType) },
-        });
-      newData.splice(4, 0, {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulb.ulbType",
-          foreignField: "_id",
-          as: "ulbType",
-        },
-      });
-      newData = newData.map((value) => {
-        if (value["$group"]) {
-          delete value["$group"]._id?.ulb;
-          value["$group"]._id.ulbType = "$ulb.ulbType";
-          value["$group"].ulbName = { $first: "$ulbType.name" };
-          let old = value["$group"].amount.$sum;
-          delete value["$group"].amount.$sum;
-          value["$group"].amount.$avg = old;
-        }
-        return value;
-      });
-      break;
-
-    case "national":
-      delete newData[0].$match.ulb;
       break;
   }
   return newData;
@@ -1042,6 +1007,29 @@ function getPeerQuery(params) {
     }
   );
   return query;
+}
+
+function getPopulationIds(population) {
+  if (population < 100000) {
+    return { population: { $lt: 100000 } };
+  } else if (100000 < population < 500000) {
+    return {
+      $and: [{ population: { $gt: 100000 } }, { population: { $lt: 500000 } }],
+    };
+  } else if (500000 < population < 1000000) {
+    return {
+      $and: [{ population: { $gt: 500000 } }, { population: { $lt: 1000000 } }],
+    };
+  } else if (1000000 < population < 4000000) {
+    return {
+      $and: [
+        { population: { $gt: 1000000 } },
+        { population: { $lt: 4000000 } },
+      ],
+    };
+  } else {
+    return { population: { $gt: 4000000 } };
+  }
 }
 
 function getPopulationQuery(population) {
