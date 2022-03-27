@@ -1706,7 +1706,7 @@ newList.push(el._id)
         {$limit:10}
       ];
 
-    }else if(param == 'Own Revenue as a percentage of Revenue Expenditure'){
+    }else if(param == 'Own Revenue to Revenue Expenditure'){
       query = [
         {
           $match:{
@@ -1903,7 +1903,7 @@ newList.push(el._id)
         {$limit:10}
       ];
 
-    }else if(param =='Own Revenue as a percentage of Revenue Expenditure'){
+    }else if(param =='Own Revenue to Revenue Expenditure'){
       query = [
         {
           $match:{
