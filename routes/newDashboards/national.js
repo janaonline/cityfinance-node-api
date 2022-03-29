@@ -1,8 +1,10 @@
 const ULBLedger = require("../../models/UlbLedger");
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
+const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
-const ObjectId = require("mongoose").Types.ObjectId;
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
@@ -139,10 +141,22 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
     ulbTypes.map((each) => {
       if (ulbTypeMap[each._id]) {
         ulbTypeMap[each.name] = ulbTypeMap[each._id];
-        ulbTypeMap[each._id] = undefined;
+        delete ulbTypeMap[each._id];
       }
     });
-    return ulbTypeMap;
+    let columns = [
+        { key: "ULB Type", display_name: "ULB Type" },
+        ...Object.keys(ulbTypeMap.Average).map((each) => {
+          return mongoose.isValidObjectId(each)
+            ? {}
+            : { key: each, display_name: each };
+        }),
+      ],
+      rows = Object.keys(ulbTypeMap).map((each) => {
+        return { "ULB Type": each, ...ulbTypeMap[each] };
+      });
+    // console.log(columns);
+    return { rows, columns };
   } catch (err) {
     // console.log(err);
     throw err;
@@ -248,24 +262,57 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
   }
   populationMap["Average"]["Urban population percentage"] =
     sumOfUrbanPopulPercentage / 5;
-  return populationMap;
+  let columns = [
+      { key: "ULB Type", display_name: "ULB Type" },
+      ...Object.keys(populationMap.Average).map((each) => {
+        return mongoose.isValidObjectId(each)
+          ? {}
+          : { key: each, display_name: each };
+      }),
+    ],
+    theRows = Object.keys(populationMap).map((each) => {
+      return { "ULB Type": each, ...populationMap[each] };
+    });
+  return { columns, rows: theRows };
 }
 exports.nationalDashRevenue = async (req, res) => {
   try {
-    let { financialYear, type, stateId, formType, visualType } = req.query;
+    let { financialYear, type, stateId, formType, visualType, getQuery } =
+      req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalRevenue";
     formType = formType ? formType : "populationCategory";
     visualType = visualType ? visualType : "table";
     const { nationalDashRevenuePipeline } = require("../../util/aggregation");
     let responsePayload = { data: null };
-    let ulbs = stateId
-      ? await Ulb.find({ state: stateId }).select("_id")
-      : null;
-    if (ulbs && ulbs.length > 0) ulbs = ulbs.map((each) => each._id);
-    console.log("the", ulbs);
+    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItems = await LineItem.find({ headOfAccount: "Revenue" }).select(
+      "_id"
+    );
+    ulbs = ulbs.map((each) => each._id);
+    lineItems = lineItems.map((each) => each._id);
+    if (getQuery)
+      return res
+        .status(200)
+        .json(
+          nationalDashRevenuePipeline(
+            financialYear,
+            stateId,
+            ulbs,
+            lineItems,
+            type,
+            formType
+          )
+        );
     const ulbLeds = await UlbLedger.aggregate(
-      nationalDashRevenuePipeline(financialYear, stateId, ulbs, type, formType)
+      nationalDashRevenuePipeline(
+        financialYear,
+        stateId,
+        ulbs,
+        lineItems,
+        type,
+        formType
+      )
     );
     responsePayload.data = ulbLeds;
     res.status(200).json({ success: true, ...responsePayload });
