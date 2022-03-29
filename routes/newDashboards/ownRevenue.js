@@ -76,7 +76,7 @@ const yearlist = catchAsync(async (req, res) => {
   });
 });
 
-const dataAvailability = async (req, res) => {
+const dataAvailability = async (req, res, reuseOption) => {
   try {
     const {
       financialYear,
@@ -252,7 +252,8 @@ const dataAvailability = async (req, res) => {
       });
     }
     data = (data / ulbCount[0]?.ulbCount) * 100;
-
+    if (reuseOption == "nationalDashboard")
+      return { percent: data, names: names };
     return Response.OK(res, { percent: data, names: names });
   } catch (error) {
     console.log(error);
