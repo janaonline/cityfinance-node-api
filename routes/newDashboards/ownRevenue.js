@@ -89,7 +89,7 @@ return res.status(200).json({
 })
 }) 
 
-const dataAvailability = async (req, res) => {
+const dataAvailability = async (req, res, reuseOption) => {
   try {
     const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType, csv, populationCategory } =
       req.body;
@@ -259,9 +259,9 @@ names.push(el.name)
   })
 }
     data = (data / ulbCount[0]?.ulbCount) * 100;
-
-    return Response.OK(res, { percent: data,
-    names: names });
+    if (reuseOption == "nationalDashboard")
+      return { percent: data, names: names };
+    return Response.OK(res, { percent: data, names: names });
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);

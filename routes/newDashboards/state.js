@@ -176,6 +176,31 @@ const scatterMap = async (req, res) => {
   }
 };
 
+const calData = (data) =>{
+ let copyData = []
+  copyData = data.slice()
+  let ownRev =0
+  for(let el of data){
+    
+    if(el._id.code == "110" || el._id.code == "130" || el._id.code == "140" || el._id.code == "150" || el._id.code == "180"){
+    ownRev = ownRev + el.amount
+    let index = copyData.indexOf(el)
+    if(index>-1 && index != copyData.length-1)
+    copyData.splice(index, 1)
+    if(index ==copyData.length-1 ){
+      copyData.pop(el)
+    }
+    
+    
+    }
+    }
+    copyData.push({
+      name:'Own Revenue',
+      amount:ownRev
+      })
+      return copyData
+}
+
 const revenue = catchAsync(async (req,res)=>{
   let {state, financialYear, headOfAccount, filterName, isPerCapita, ulbs, compareType, getQuery} = req.body
 
@@ -487,7 +512,7 @@ const revenue = catchAsync(async (req,res)=>{
             })
 
   } else if(filterName == 'revenue mix'){
-    if(compareType !=''){
+    if(compareType == ''){
 let bse_query = [
   {
       $match:{
@@ -568,7 +593,98 @@ copyData.push({
     data: copyData
   })
     }else if(compareType =='ulbType'){
+   let base_query =   [
+        {
+            $match:{
+                financialYear:financialYear,
+                
+                }
+            },
+        {
+            $lookup:{
+                from:"ulbs",
+                localField:"ulb",
+                foreignField:"_id",
+                as:"ulb"
+                }
+            },
+            {
+                $unwind:"$ulb"
+                },
+                {
+                    $match:{
+                        "ulb.state":ObjectId(state)
+                        }
+                    },
+                    {
+            $lookup:{
+                from:"lineitems",
+                localField:"lineItem",
+                foreignField:"_id",
+                as:"lineItem"
+                }
+            },
+            {
+                $unwind:"$lineItem"
+                },
+                    {
+                        $match:{
+                            "lineItem.headOfAccount":headOfAccount
+                            }
+                        },
+                          {
+            $lookup:{
+                from:"ulbtypes",
+                localField:"ulb.ulbType",
+                foreignField:"_id",
+                as:"ulbType"
+                }
+            },
+            {
+                $unwind:"$ulbType"
+                },
+                        {
+                            $group:{
+                                _id:{
+                                    type: "$ulbType.name",
+                                    code:"$lineItem.code",
+                                  
+                                    },
+                              name: {$first: "$lineItem.name"},
+                                amount:{$sum:"$amount"}
+                                }
+                            },
+          
+        ]
+let data = await UlbLedger.aggregate(base_query)
+let tpDataNew = []
+let mcDataNew = []
+let  mDataNew = []
+if(data.length){
 
+ 
+  let tpData = data.filter(el => {
+    return el._id.type == 'Town Panchayat'
+  })
+  let mcData = data.filter(el => {
+    return el._id.type == 'Municipal Corporation'
+  })
+  let mData = data.filter(el => {
+    return el._id.type == 'Municipality'
+  })
+
+ tpDataNew =  calData(tpData)
+ mcDataNew =  calData(mcData)
+ mDataNew =  calData(mData)
+
+
+}
+return res.status(200).json({
+  success: true,
+  mcData : mcDataNew,
+  tpData: tpDataNew,
+  mData : mDataNew
+})
     }else if(compareType =='popCat'){
       
     }

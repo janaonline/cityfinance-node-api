@@ -24,7 +24,7 @@ const {
   yearlist,
 } = require("./ownRevenue");
 
-const { dataAvailabilityState } = require("./national");
+const { dataAvailabilityState, nationalDashRevenue } = require("./national");
 // router.use(verifyToken);
 router.use("/all-dashboard", shared);
 router.post("/data-available", dataAvailability);
@@ -41,5 +41,6 @@ router.post("/state-scatter", scatterMap);
 router.post("/state-revenue", revenue);
 
 //national dashboard
-router.get("/national-dashboard", dataAvailabilityState);
+router.get("/national-dashboard/data-availability", dataAvailabilityState);
+router.get("/national-dashboard/revenue", nationalDashRevenue);
 module.exports = router;
