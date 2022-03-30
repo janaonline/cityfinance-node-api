@@ -1,8 +1,10 @@
 const ULBLedger = require("../../models/UlbLedger");
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
+const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
-const ObjectId = require("mongoose").Types.ObjectId;
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
@@ -63,19 +65,19 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
     let ulbTypes = await ULBType.find({ isActive: true }).select("name");
     let ulbTypeMap = {
       Average: {
-        "Number Of ULBs": 0,
-        "ULBs With Data": 0,
-        "Data Availability Percentage": 0,
-        "Urban population percentage": 0,
+        numberOfULBs: 0,
+        ulbsWithData: 0,
+        DataAvailPercentage: 0,
+        urbanPopulationPercentage: 0,
       },
     };
     // console.log("LEO", ulbTypes);
     ulbTypes.forEach((item) => {
       ulbTypeMap[item._id] = {
-        "Number Of ULBs": [],
-        "ULBs With Data": [],
-        "Data Availability Percentage": [],
-        "Urban population percentage": [],
+        numberOfULBs: [],
+        ulbsWithData: [],
+        DataAvailPercentage: [],
+        urbanPopulationPercentage: [],
       };
     });
     // console.log(Object.keys(ulbTypeMap));
@@ -87,7 +89,7 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         specific.ulbType._id &&
         ulbTypeMap[specific.ulbType._id]
       ) {
-        ulbTypeMap[specific.ulbType._id]["Number Of ULBs"].push(specific);
+        ulbTypeMap[specific.ulbType._id]["numberOfULBs"].push(specific);
       }
     }
     let sumOfNoOfUlbs = 0,
@@ -96,7 +98,7 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
       sumOfUrbanPopulPercentage = 0;
     for (each in ulbTypeMap) {
       if (each != "Average") {
-        const arrr = ulbTypeMap[each]["Number Of ULBs"];
+        const arrr = ulbTypeMap[each]["numberOfULBs"];
         let matched = 0;
         for (elem of arrr) {
           // console.log("elemId", elem._id, typeof elem._id);
@@ -104,45 +106,60 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
             ++matched;
           }
         }
-        ulbTypeMap[each]["Number Of ULBs"] = arrr.length;
-        ulbTypeMap[each]["ULBs With Data"] = matched;
+        ulbTypeMap[each]["numberOfULBs"] = arrr.length;
+        ulbTypeMap[each]["ulbsWithData"] = matched;
         const multiply = matched * 100;
-        ulbTypeMap[each]["Data Availability Percentage"] =
+        ulbTypeMap[each]["DataAvailPercentage"] =
           arrr.length == 0 ? 0 : multiply / arrr.length;
         //for average calculation -Begin
         sumOfNoOfUlbs += arrr.length;
         sumOfUlbsWithData += matched;
-        sumOfDataAvailPercentage +=
-          ulbTypeMap[each]["Data Availability Percentage"];
+        sumOfDataAvailPercentage += ulbTypeMap[each]["DataAvailPercentage"];
         //for average calculation -End
       }
     }
     for (each in ulbTypeMap) {
       // console.log("Each", each);
       if (each == "Average") {
-        ulbTypeMap["Average"]["Number Of ULBs"] = sumOfNoOfUlbs / 5;
-        ulbTypeMap["Average"]["ULBs With Data"] = sumOfUlbsWithData / 5;
-        ulbTypeMap["Average"]["Data Availability Percentage"] =
+        ulbTypeMap["Average"]["numberOfULBs"] = sumOfNoOfUlbs / 5;
+        ulbTypeMap["Average"]["ulbsWithData"] = sumOfUlbsWithData / 5;
+        ulbTypeMap["Average"]["DataAvailPercentage"] =
           sumOfDataAvailPercentage / 5;
       } else {
-        const multiply = ulbTypeMap[each]["Number Of ULBs"] * 100;
-        ulbTypeMap[each]["Urban population percentage"] =
+        const multiply = ulbTypeMap[each]["numberOfULBs"] * 100;
+        ulbTypeMap[each]["urbanPopulationPercentage"] =
           totalUlbs == 0 ? 0 : multiply / totalUlbs;
         //for average calculation -Begin
         sumOfUrbanPopulPercentage +=
-          ulbTypeMap[each]["Urban population percentage"];
+          ulbTypeMap[each]["urbanPopulationPercentage"];
         //for average calculation -End
       }
     }
-    ulbTypeMap["Average"]["Urban population percentage"] =
+    ulbTypeMap["Average"]["urbanPopulationPercentage"] =
       sumOfUrbanPopulPercentage / 5;
     ulbTypes.map((each) => {
       if (ulbTypeMap[each._id]) {
         ulbTypeMap[each.name] = ulbTypeMap[each._id];
-        ulbTypeMap[each._id] = undefined;
+        delete ulbTypeMap[each._id];
       }
     });
-    return ulbTypeMap;
+    let displayNameMapper = {
+        numberOfULBs: "Number Of ULBs",
+        ulbsWithData: "ULBs With Data",
+        DataAvailPercentage: "Data Availability Percentage",
+        urbanPopulationPercentage: "Urban population percentage",
+      },
+      columns = [
+        { key: "ulbType", display_name: "ULB Type" },
+        ...Object.keys(ulbTypeMap.Average).map((each) => {
+          return { key: each, display_name: displayNameMapper[each] };
+        }),
+      ],
+      rows = Object.keys(ulbTypeMap).map((each) => {
+        return { ulbType: each, ...ulbTypeMap[each] };
+      });
+    // console.log(columns);
+    return { rows, columns };
   } catch (err) {
     // console.log(err);
     throw err;
@@ -152,55 +169,57 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
 async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
   let populationMap = {
     Average: {
-      "Number Of ULBs": 0,
-      "ULBs With Data": 0,
-      "Data Availability Percentage": 0,
-      "Urban population percentage": 0,
+      numberOfULBs: 0,
+      ulbsWithData: 0,
+      DataAvailPercentage: 0,
+      urbanPopulationPercentage: 0,
     },
-    "4M+": {
-      "Number Of ULBs": [],
-      "ULBs With Data": [],
-      "Data Availability Percentage": [],
-      "Urban population percentage": [],
+    "4 Million+": {
+      numberOfULBs: [],
+      ulbsWithData: [],
+      DataAvailPercentage: [],
+      urbanPopulationPercentage: [],
     },
-    "1M-4M": {
-      "Number Of ULBs": [],
-      "ULBs With Data": [],
-      "Data Availability Percentage": [],
-      "Urban population percentage": [],
+    "1 Million - 4 Million": {
+      numberOfULBs: [],
+      ulbsWithData: [],
+      DataAvailPercentage: [],
+      urbanPopulationPercentage: [],
     },
-    "500K-1M": {
-      "Number Of ULBs": [],
-      "ULBs With Data": [],
-      "Data Availability Percentage": [],
-      "Urban population percentage": [],
+    "500 Thousand - 1 Million": {
+      numberOfULBs: [],
+      ulbsWithData: [],
+      DataAvailPercentage: [],
+      urbanPopulationPercentage: [],
     },
-    "100K-500K": {
-      "Number Of ULBs": [],
-      "ULBs With Data": [],
-      "Data Availability Percentage": [],
-      "Urban population percentage": [],
+    "100 Thousand - 500 Thousand": {
+      numberOfULBs: [],
+      ulbsWithData: [],
+      DataAvailPercentage: [],
+      urbanPopulationPercentage: [],
     },
-    "<100K": {
-      "Number Of ULBs": [],
-      "ULBs With Data": [],
-      "Data Availability Percentage": [],
-      "Urban population percentage": [],
+    "< 100 Thousand": {
+      numberOfULBs: [],
+      ulbsWithData: [],
+      DataAvailPercentage: [],
+      urbanPopulationPercentage: [],
     },
   };
   const lengthOfUlbs = ulbs.length;
   for (let x = 0; x < lengthOfUlbs; ++x) {
     const specific = ulbs[x];
     if (specific.population < 1e5) {
-      populationMap["<100K"]["Number Of ULBs"].push(specific);
+      populationMap["< 100 Thousand"]["numberOfULBs"].push(specific);
     } else if (specific.population >= 1e5 && specific.population <= 5e5) {
-      populationMap["100K-500K"]["Number Of ULBs"].push(specific);
+      populationMap["100 Thousand - 500 Thousand"]["numberOfULBs"].push(
+        specific
+      );
     } else if (specific.population >= 5e5 && specific.population <= 1e6) {
-      populationMap["500K-1M"]["Number Of ULBs"].push(specific);
+      populationMap["500 Thousand - 1 Million"]["numberOfULBs"].push(specific);
     } else if (specific.population >= 1e6 && specific.population <= 4e6) {
-      populationMap["1M-4M"]["Number Of ULBs"].push(specific);
+      populationMap["1 Million - 4 Million"]["numberOfULBs"].push(specific);
     } else if (specific.population > 4e6) {
-      populationMap["4M+"]["Number Of ULBs"].push(specific);
+      populationMap["4 Million+"]["numberOfULBs"].push(specific);
     }
   }
   let rows = Object.keys(populationMap),
@@ -210,62 +229,98 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
     sumOfUrbanPopulPercentage = 0;
   for (each of rows) {
     if (each != "Average") {
-      const arrr = populationMap[each]["Number Of ULBs"];
+      const arrr = populationMap[each]["numberOfULBs"];
       let matched = 0;
       for (elem of arrr)
         if (ulbLedgers.indexOf(elem._id) > -1) {
           ++matched;
         }
-      populationMap[each]["Number Of ULBs"] = arrr.length;
-      populationMap[each]["ULBs With Data"] = matched;
+      populationMap[each]["numberOfULBs"] = arrr.length;
+      populationMap[each]["ulbsWithData"] = matched;
       const multiply = matched * 100;
-      populationMap[each]["Data Availability Percentage"] =
+      populationMap[each]["DataAvailPercentage"] =
         arrr.length == 0 ? 0 : multiply / arrr.length;
       //for average calculation -Begin
       sumOfNoOfUlbs += arrr.length;
       sumOfUlbsWithData += matched;
-      sumOfDataAvailPercentage +=
-        populationMap[each]["Data Availability Percentage"];
+      sumOfDataAvailPercentage += populationMap[each]["DataAvailPercentage"];
       //for average calculation -End
     }
   }
 
   for (each of rows) {
     if (each == "Average") {
-      populationMap["Average"]["Number Of ULBs"] = sumOfNoOfUlbs / 5;
-      populationMap["Average"]["ULBs With Data"] = sumOfUlbsWithData / 5;
-      populationMap["Average"]["Data Availability Percentage"] =
+      populationMap["Average"]["numberOfULBs"] = sumOfNoOfUlbs / 5;
+      populationMap["Average"]["ulbsWithData"] = sumOfUlbsWithData / 5;
+      populationMap["Average"]["DataAvailPercentage"] =
         sumOfDataAvailPercentage / 5;
     } else {
-      const multiply = populationMap[each]["Number Of ULBs"] * 100;
-      populationMap[each]["Urban population percentage"] =
+      const multiply = populationMap[each]["numberOfULBs"] * 100;
+      populationMap[each]["urbanPopulationPercentage"] =
         totalUlbs == 0 ? 0 : multiply / totalUlbs;
       //for average calculation -Begin
       sumOfUrbanPopulPercentage +=
-        populationMap[each]["Urban population percentage"];
+        populationMap[each]["urbanPopulationPercentage"];
       //for average calculation -End
     }
   }
-  populationMap["Average"]["Urban population percentage"] =
+  populationMap["Average"]["urbanPopulationPercentage"] =
     sumOfUrbanPopulPercentage / 5;
-  return populationMap;
+  let displayNameMapper = {
+      numberOfULBs: "Number Of ULBs",
+      ulbsWithData: "ULBs With Data",
+      DataAvailPercentage: "Data Availability Percentage",
+      urbanPopulationPercentage: "Urban population percentage",
+    },
+    columns = [
+      { key: "ulbType", display_name: "ULB Type" },
+      ...Object.keys(populationMap.Average).map((each) => {
+        return { key: each, display_name: displayNameMapper[each] };
+      }),
+    ],
+    theRows = Object.keys(populationMap).map((each) => {
+      return { ulbType: each, ...populationMap[each] };
+    });
+  return { columns, rows: theRows };
 }
 exports.nationalDashRevenue = async (req, res) => {
   try {
-    let { financialYear, type, stateId, formType, visualType } = req.query;
+    let { financialYear, type, stateId, formType, visualType, getQuery } =
+      req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalRevenue";
     formType = formType ? formType : "populationCategory";
     visualType = visualType ? visualType : "table";
     const { nationalDashRevenuePipeline } = require("../../util/aggregation");
     let responsePayload = { data: null };
-    let ulbs = stateId
-      ? await Ulb.find({ state: stateId }).select("_id")
-      : null;
-    if (ulbs && ulbs.length > 0) ulbs = ulbs.map((each) => each._id);
-    console.log("the", ulbs);
+    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItems = await LineItem.find({ headOfAccount: "Revenue" }).select(
+      "_id"
+    );
+    ulbs = ulbs.map((each) => each._id);
+    lineItems = lineItems.map((each) => each._id);
+    if (getQuery)
+      return res
+        .status(200)
+        .json(
+          nationalDashRevenuePipeline(
+            financialYear,
+            stateId,
+            ulbs,
+            lineItems,
+            type,
+            formType
+          )
+        );
     const ulbLeds = await UlbLedger.aggregate(
-      nationalDashRevenuePipeline(financialYear, stateId, ulbs, type, formType)
+      nationalDashRevenuePipeline(
+        financialYear,
+        stateId,
+        ulbs,
+        lineItems,
+        type,
+        formType
+      )
     );
     responsePayload.data = ulbLeds;
     res.status(200).json({ success: true, ...responsePayload });
