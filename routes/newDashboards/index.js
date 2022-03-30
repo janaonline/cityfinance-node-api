@@ -34,11 +34,12 @@ router.post("/cards-data", cardsData);
 router.post("/table-data", tableData);
 router.post("/topPerformance", topPerForming);
 
-const { scatterMap, revenue } = require("./state");
+const { scatterMap, revenue, listOfIndicators } = require("./state");
 router.post("/state-scatter", scatterMap);
 
 //state dashboard
 router.post("/state-revenue", revenue);
+router.get("/state-list-of-indics", listOfIndicators);
 
 //national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
