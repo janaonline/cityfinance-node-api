@@ -559,7 +559,7 @@ module.exports.getAllULBSCSV = function (req, res) {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus, UA \r\n"
+    "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus, Created On, Modified On UA \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -606,6 +606,8 @@ module.exports.getAllULBSCSV = function (req, res) {
         code: 1,
         wards: 1,
         location: 1,
+        createdAt:1,
+        modifiedAt:1,
         isMillionPlus: 1,
         censusCode: 1,
         sbCode: 1,
@@ -627,6 +629,8 @@ module.exports.getAllULBSCSV = function (req, res) {
         wards: 1,
         location: 1,
         isMillionPlus: 1,
+        createdAt:1,
+        modifiedAt:1,
         censusCode: { $cond: ["$censusCode", "$censusCode", "NA"] },
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
         UA: { $cond: ["$UA", "$UA.name", "NA"] }
@@ -676,6 +680,11 @@ module.exports.getAllULBSCSV = function (req, res) {
           el.isMillionPlus +
           "," +
           el.UA +
+          "," +
+          el.createdAt +
+          "," +
+          el.modifiedAt +
+
           "\r\n"
         );
       }

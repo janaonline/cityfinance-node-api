@@ -23,6 +23,7 @@ const peopleInformation = async (req, res) => {
         })
           .populate("ulbType")
           .populate("state")
+          .populate("UA")
           .lean();
         let ledgerData =  await UlbLedger.aggregate([
             {
@@ -130,8 +131,8 @@ const peopleInformation = async (req, res) => {
 const moneyInformation = async (req, res) => {
   try {
     const type = (req.query.type || req.headers.type).toLowerCase();
-    const  year = req.query.year
-    if (!type || !year ) return Response.BadRequest(res, {}, "No Type Provided");
+  
+    if (!type ) return Response.BadRequest(res, {}, "No Type Provided");
     let data, ulbId;
     switch (type) {
       case "ulb":
@@ -147,7 +148,7 @@ const moneyInformation = async (req, res) => {
         return Response.BadRequest(res, null, "wrong type selected");
     }
     data = await UlbLedger.aggregate([
-      { $match: { ulb: { $in: ulbId }, financialYear: year } },
+      { $match: { ulb: { $in: ulbId }} },
       {
         $lookup: {
           from: "lineitems",

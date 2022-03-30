@@ -116,7 +116,7 @@ const search = catchAsync(async (req, res) => {
       return Response.BadRequest(res, null, "Provide word to match");
 
       if(type && type == 'state'){
-        let query = { name: { $regex: `^${matchingWord}`, $options: "i" } };
+        let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
         let statePromise = await State.find(query)
         .limit(10)
         .lean();
@@ -136,10 +136,15 @@ if(statePromise.length>0){
         let stateData
       
 
-        let query = { name: { $regex: `^${matchingWord}`, $options: "i" } };
+        let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
         if(state){
-          stateData =  await State.findOne({code:state}).lean()
-          Object.assign(query, {state: ObjectId(stateData._id)})
+          if(state && ObjectId.isValid(state) ){
+            Object.assign(query, {state: ObjectId(state)})  
+          }else{
+            stateData =  await State.findOne({code:state}).lean()
+            Object.assign(query, {state: ObjectId(stateData._id)})  
+          }
+          
        }
 
         let ulbPromise = await Ulb.find(query)
@@ -157,7 +162,7 @@ if(statePromise.length>0){
 
           return Response.OK(res, data);
       }
-    let query = { name: { $regex: `^${matchingWord}`, $options: "i" } };
+    let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
     let ulbPromise = Ulb.find(query)
       .populate("state")
       .populate("ulbType")
