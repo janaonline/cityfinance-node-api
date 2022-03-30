@@ -23,6 +23,7 @@ const peopleInformation = async (req, res) => {
         })
           .populate("ulbType")
           .populate("state")
+          .populate("UA")
           .lean();
         let ledgerData =  await UlbLedger.aggregate([
             {
