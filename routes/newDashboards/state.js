@@ -940,9 +940,24 @@ const stateRevenueTabs = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const ulbsByPopulation = async (req, res) => {
+  try {
+    const { stateId, getQuery } = req.query;
+    const { getGroupedUlbsByPopulation } = require("../../util/aggregation");
+    const query = getGroupedUlbsByPopulation(stateId);
+    if (getQuery) return res.status(200).json(query);
+    let response = { success: true, data: null };
+    response.data = await Ulb.aggregate(query);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 module.exports = {
   scatterMap,
   revenue,
   listOfIndicators,
   stateRevenueTabs,
+  ulbsByPopulation,
 };

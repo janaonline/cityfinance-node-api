@@ -464,3 +464,91 @@ exports.stateDashRevenueTabs = async (
   // console.log(pipeline);
   return pipeline;
 };
+
+exports.getGroupedUlbsByPopulation = (stateId) => {
+  let pipeline = [];
+  if (stateId) {
+    pipeline.push({
+      $match: {
+        state: ObjectId(stateId),
+      },
+    });
+  }
+  pipeline.push(
+    {
+      $group: {
+        _id: null,
+        "<100K": {
+          $sum: {
+            $cond: {
+              if: {
+                $lt: ["$population", 1e5],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+        "100K-500K": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  { $gte: ["$population", 1e5] },
+                  { $lte: ["$population", 5e5] },
+                ],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+        "500K-1M": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  { $gte: ["$population", 5e5] },
+                  { $lte: ["$population", 1e6] },
+                ],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+        "1M-4M": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  { $gte: ["$population", 1e6] },
+                  { $lte: ["$population", 4e6] },
+                ],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+        "4M+": {
+          $sum: {
+            $cond: {
+              if: {
+                $gt: ["$population", 4e6],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+        total: { $sum: 1 },
+      },
+    },
+    {
+      $project: { _id: 0 },
+    }
+  );
+  // console.log(pipeline);
+  return pipeline;
+};
