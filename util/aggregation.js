@@ -322,7 +322,6 @@ exports.stateDashRevenueTabs = async (
   tabType,
   stateId,
   sortBy = "top",
-  lineItem,
   code
 ) => {
   let ulbIds = await Ulb.find({ state: stateId }).select("_id").lean();
@@ -462,6 +461,6 @@ exports.stateDashRevenueTabs = async (
 
   if (tabType == "RevenueMix") {
   }
-  console.log(pipeline);
+  // console.log(pipeline);
   return pipeline;
 };

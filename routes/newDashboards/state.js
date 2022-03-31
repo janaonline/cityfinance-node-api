@@ -915,15 +915,8 @@ const listOfIndicators = async (req, res) => {
 };
 const stateRevenueTabs = async (req, res) => {
   try {
-    const {
-      tabType,
-      financialYear,
-      stateId,
-      sortBy,
-      lineItem,
-      code,
-      getQuery,
-    } = req.query;
+    const { tabType, financialYear, stateId, sortBy, code, getQuery } =
+      req.query;
     if (!tabType) throw { message: "Type of tab is missing." };
     let response = { success: true, data: null };
     const { stateDashRevenueTabs } = require("../../util/aggregation");
@@ -936,19 +929,11 @@ const stateRevenueTabs = async (req, res) => {
             tabType,
             stateId,
             sortBy,
-            lineItem,
             code
           )
         );
     response.data = await UlbLedger.aggregate(
-      await stateDashRevenueTabs(
-        financialYear,
-        tabType,
-        stateId,
-        sortBy,
-        lineItem,
-        code
-      )
+      await stateDashRevenueTabs(financialYear, tabType, stateId, sortBy, code)
     );
     res.status(200).json(response);
   } catch (error) {
