@@ -904,8 +904,17 @@ const peerComp = async (req, res) => {
     const inIndia = UlbLedger.aggregate(
       getPeerQuery({ headOfAccount, population, financialYear, lineItem })
     );
+    const totalRevenue = UlbLedger.aggregate(
+      getPeerQuery({ headOfAccount, financialYear, lineItem, ulb })
+    );
 
-    const query = [inStateUlbType, inIndiaUlbType, inState, inIndia];
+    const query = [
+      inStateUlbType,
+      inIndiaUlbType,
+      inState,
+      inIndia,
+      totalRevenue,
+    ];
 
     if (getQuery) return Response.OK(res, query);
 
@@ -918,7 +927,8 @@ const peerComp = async (req, res) => {
         inStateUlbType: data[0][0],
         inIndiaUlbType: data[1][0],
         inState: data[2][0],
-        inIndia: data[0][0],
+        inIndia: data[3][0],
+        totalRevenue: data[4][0] ?? 0,
       };
       Redis.set(redisKey, JSON.stringify(newData));
     } else {
@@ -959,6 +969,10 @@ function getPeerQuery(params) {
       $match: matchObj,
     },
   ];
+
+  if (params.hasOwnProperty("ulb")) {
+    Object.assign(matchObj, { "ulb._id": ObjectId(params.ulb) });
+  }
 
   if (params.hasOwnProperty("ulbType")) {
     Object.assign(matchObj, { "ulb.ulbType": ObjectId(params.ulbType) });
@@ -1007,6 +1021,7 @@ function getPeerQuery(params) {
       },
     }
   );
+  console.log(query);
   return query;
 }
 
