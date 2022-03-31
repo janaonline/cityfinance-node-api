@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const Ulb = require("../models/Ulb");
+const LineItem = require("../models/LineItem");
 const { ObjectId } = mongoose.Types;
 
 exports.nationalDashRevenuePipeline = (
@@ -312,5 +314,154 @@ exports.nationalDashRevenuePipeline = (
       );
     }
   }
+  return pipeline;
+};
+
+exports.stateDashRevenueTabs = async (
+  financialYear,
+  tabType,
+  stateId,
+  sortBy = "top",
+  lineItem,
+  code
+) => {
+  let ulbIds = await Ulb.find({ state: stateId }).select("_id").lean();
+  let matchObj = {
+    financialYear,
+    ulb: { $in: ulbIds.map((value) => value._id) },
+  };
+  let pipeline = [
+    {
+      $match: matchObj,
+    },
+  ];
+  pipeline.push(
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $lookup: {
+        from: "lineitems",
+        localField: "lineItem",
+        foreignField: "_id",
+        as: "lineItem",
+      },
+    },
+    {
+      $unwind: "$lineItem",
+    }
+  );
+  if (tabType == "TotalRevenue") {
+    let lineIds = await LineItem.find({ headOfAccount: "Revenue" })
+      .select("_id")
+      .lean();
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+    pipeline.push(
+      {
+        $group: {
+          _id: "$ulb.name",
+          sum: {
+            $sum: "$amount",
+          },
+        },
+      },
+      {
+        $project: {
+          ulbName: "$_id",
+          _id: 0,
+          sum: 1,
+        },
+      }
+    );
+  } else if (tabType == "RevenuePerCapita") {
+    let lineIds = await LineItem.find({ headOfAccount: "Revenue" })
+      .select("_id")
+      .lean();
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+    pipeline.push(
+      {
+        $group: {
+          _id: "$ulb.name",
+          sum: {
+            $sum: "$amount",
+          },
+          population: {
+            $sum: "$ulb.population",
+          },
+        },
+      },
+      {
+        $project: {
+          ulbName: "$_id",
+          sum: {
+            $cond: {
+              if: {
+                $eq: ["$population", 0],
+              },
+              then: 0,
+              else: {
+                $divide: ["$sum", "$population"],
+              },
+            },
+          },
+          _id: 0,
+        },
+      }
+    );
+  } else if (tabType == "RevenueMix") {
+    if (!code) throw { message: "code is missing for revenue mix." };
+    let lineIds = await LineItem.find({
+      code: { $in: Array.isArray(code) ? code : [code] },
+    })
+      .select("_id")
+      .lean();
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+    pipeline.push(
+      // {
+      //   $match: { "lineItem._id": ObjectId(lineItem) },
+      // },
+      {
+        $group: {
+          _id: "$ulb.name",
+          sum: {
+            $sum: "$amount",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          sum: 1,
+          ulbName: "$_id",
+        },
+      }
+    );
+  } else throw { message: "invalid tabType was provided." };
+  pipeline.push({
+    $sort: {
+      sum: sortBy == "top" ? -1 : 1,
+    },
+  });
+  pipeline.push({
+    $limit: 10,
+  });
+
+  if (tabType == "RevenueMix") {
+  }
+  console.log(pipeline);
   return pipeline;
 };

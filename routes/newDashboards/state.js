@@ -906,7 +906,50 @@ const listOfIndicators = async (req, res) => {
         },
       },
     ]);
-    response.data = response.data.length ? response.data[0] : null;
+    if (response.data.length) response.data = response.data[0];
+    else throw { message: "no matching values found." };
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+const stateRevenueTabs = async (req, res) => {
+  try {
+    const {
+      tabType,
+      financialYear,
+      stateId,
+      sortBy,
+      lineItem,
+      code,
+      getQuery,
+    } = req.query;
+    if (!tabType) throw { message: "Type of tab is missing." };
+    let response = { success: true, data: null };
+    const { stateDashRevenueTabs } = require("../../util/aggregation");
+    if (getQuery)
+      return res
+        .status(200)
+        .json(
+          await stateDashRevenueTabs(
+            financialYear,
+            tabType,
+            stateId,
+            sortBy,
+            lineItem,
+            code
+          )
+        );
+    response.data = await UlbLedger.aggregate(
+      await stateDashRevenueTabs(
+        financialYear,
+        tabType,
+        stateId,
+        sortBy,
+        lineItem,
+        code
+      )
+    );
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -916,4 +959,5 @@ module.exports = {
   scatterMap,
   revenue,
   listOfIndicators,
+  stateRevenueTabs,
 };
