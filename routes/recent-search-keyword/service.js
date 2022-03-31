@@ -81,7 +81,7 @@ async function getAllKeyword(req, res) {
     let data = await recentSearchKeywords
       .find({ isActive: true })
       .select({ _id: 0 })
-      .sort({ count: -1 })
+      .sort({ createdAt: -1 })
       .limit(limit)
       .lean();
     data = data.map((value) => {
