@@ -600,6 +600,54 @@ exports.stateDashRevenueTabs = async (
         },
       }
     );
+  } else if (tabType == "DeficitOrSurplus") {
+    let lineIds = await LineItem.find({
+      headOfAccount: { $in: ["Revenue", "Expense"] },
+    })
+      .select("_id")
+      .lean();
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+    pipeline.push(
+      {
+        $group: {
+          _id: null,
+          revenue: {
+            $sum: {
+              $cond: {
+                if: {
+                  $eq: ["$lineItem.headOfAccount", "Revenue"],
+                },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+          expense: {
+            $sum: {
+              $cond: {
+                if: {
+                  $eq: ["$lineItem.headOfAccount", "Expense"],
+                },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          revenue: "$revenue",
+          expense: "$expense",
+          deficitOrSurplus: {
+            $subtract: ["$revenue", "$expense"],
+          },
+        },
+      }
+    );
   } else throw { message: "invalid tabType was provided." };
   let sortByObj;
   if (tabType == "TotalRevenue") {
@@ -650,6 +698,12 @@ exports.stateDashRevenueTabs = async (
         revenueExpendPerCapita: sortBy == "top" ? -1 : 1,
       },
     };
+  } else if (tabType == "DeficitOrSurplus") {
+    sortByObj = {
+      $sort: {
+        deficitOrSurplus: sortBy == "top" ? -1 : 1,
+      },
+    };
   }
 
   pipeline.push(sortByObj);
@@ -658,7 +712,7 @@ exports.stateDashRevenueTabs = async (
   });
   // console.log(tabType);
   return pipeline;
-};;
+};
 
 exports.getGroupedUlbsByPopulation = (stateId) => {
   let pipeline = [];
