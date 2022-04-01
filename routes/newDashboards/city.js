@@ -300,6 +300,15 @@ const indicator = async (req, res) => {
           },
           amount: { $sum: "$amount" },
           ulbName: { $first: "$ulb.name" },
+          amount2: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineitems.code", "11001"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
         };
         if (isPerCapita) {
           groupNew.population = {
@@ -309,16 +318,30 @@ const indicator = async (req, res) => {
         query.push({
           $group: groupNew,
         });
-        if (isPerCapita)
+
+        if (isPerCapita) {
           query.push({
             $project: {
               _id: 1,
               amount: {
-                $divide: ["$amount", "$population"],
+                $divide: [
+                  { $subtract: ["$amount", "$amount2"] },
+                  "$population",
+                ],
               },
               ulbName: 1,
             },
           });
+        } else {
+          query.push({
+            $project: {
+              _id: 1,
+              amount: { $subtract: ["$amount", "$amount2"] },
+              ulbName: 1,
+              population: 1,
+            },
+          });
+        }
         query.push({
           $sort: { "_id.financialYear": 1 },
         });
@@ -333,6 +356,15 @@ const indicator = async (req, res) => {
             },
             ulbName: { $first: "$ulb.name" },
             amount: { $sum: "$amount" },
+            amount2: {
+              $sum: {
+                $cond: {
+                  if: { $eq: ["$linitems.code", "11001"] },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
             code: { $first: "$lineitems.code" },
           },
         });
@@ -453,7 +485,7 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
           as: "state",
         },
       });
-      newData = newData.map((value) => {
+      newData = newData.map((value, index) => {
         if (value["$group"]) {
           delete value["$group"]._id?.ulb;
           if (from == "total_surplus/deficit") {
@@ -465,10 +497,27 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
           value["$group"].ulbName = { $first: "$state.name" };
           Object.assign(value["$group"], {
             numerator: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+            numerator2: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$lineitems.code", "11001"],
+                  },
+                  then: { $multiply: ["$amount", "$ulb.population"] },
+                  else: 0,
+                },
+              },
+            },
             denominator: { $sum: "$ulb.population" },
             ulbName: {
               $first: "$state.name",
             },
+          });
+        }
+        if (value["$project"]) {
+          Object.assign(value["$project"], {
+            numerator: { $subtract: ["$numerator", "$numerator2"] },
+            denominator: 1,
           });
         }
         return value;
@@ -476,7 +525,8 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
       if (
         isPerCapita &&
         from != "capital_expenditure" &&
-        from != "capital_expenditure_per_capita"
+        from != "capital_expenditure_per_capita" &&
+        from !== "own_revenue_per_capita"
       ) {
         let temp = newData.pop();
         newData.pop();
