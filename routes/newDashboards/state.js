@@ -211,7 +211,7 @@ const revenue = catchAsync(async (req, res) => {
     headOfAccount,
     filterName,
     isPerCapita,
-    ulbs,
+    ulb,
     compareType,
     getQuery,
   } = req.body;
@@ -223,172 +223,257 @@ const revenue = catchAsync(async (req, res) => {
     });
   }
   if (filterName == "revenue") {
-    let base_query = [
-      {
-        $match: {
-          financialYear: financialYear,
-        },
-      },
-
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
-      },
-      {
-        $unwind: "$ulb",
-      },
-    ];
-    let state_query = [];
-    state_query.push(...base_query);
-    let avg = [
-      {
-        $group: {
-          _id: null,
-          numerator: { $sum: { $multiply: ["$totalRevenue", "$population"] } },
-          denominator: { $sum: "$population" },
-        },
-      },
-      {
-        $project: {
-          average: {
-            $cond: [
-              { $eq: ["$denominator", 0] },
-              0,
-              { $divide: ["$numerator", "$denominator"] },
-            ],
+    if(!ulb){
+      let base_query = [
+        {
+          $match: {
+            financialYear: financialYear,
           },
         },
-      },
-    ];
-    let stateAvg_query = [];
-    let natAvg_query = [];
-    state_query.push({
-      $match: {
-        "ulb.state": ObjectId(state),
-      },
-    });
-    let x_query = [
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
+  
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
         },
-      },
-      {
-        $unwind: "$state",
-      },
-      {
-        $lookup: {
-          from: "lineitems",
-          localField: "lineItem",
-          foreignField: "_id",
-          as: "lineItem",
+        {
+          $unwind: "$ulb",
         },
-      },
-      {
-        $unwind: "$lineItem",
-      },
-
-      {
+      ];
+      let state_query = [];
+      state_query.push(...base_query);
+      let avg = [
+        {
+          $group: {
+            _id: null,
+            numerator: { $sum: { $multiply: ["$totalRevenue", "$population"] } },
+            denominator: { $sum: "$population" },
+          },
+        },
+        {
+          $project: {
+            average: {
+              $cond: [
+                { $eq: ["$denominator", 0] },
+                0,
+                { $divide: ["$numerator", "$denominator"] },
+              ],
+            },
+          },
+        },
+      ];
+      let stateAvg_query = [];
+      let natAvg_query = [];
+      state_query.push({
         $match: {
-          "lineItem.headOfAccount": headOfAccount,
+          "ulb.state": ObjectId(state),
         },
-      },
-      {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulb.ulbType",
-          foreignField: "_id",
-          as: "ulbType",
-        },
-      },
-      {
-        $unwind: "$ulbType",
-      },
-      {
-        $group: {
-          _id: "$ulb._id",
-          ulbName: { $first: "$ulb.name" },
-          ulbId: { $first: "$ulb._id" },
-          ulbType: { $first: "$ulbType.name" },
-          stateId: { $first: "$state._id" },
-          state: { $first: "$state.name" },
-          totalRevenue: { $sum: "$amount" },
-          population: { $first: "$ulb.population" },
-        },
-      },
-    ];
-    let perCapita = {
-      $project: {
-        ulbName: 1,
-        ulbId: 1,
-        ulbType: 1,
-        stateId: 1,
-        state: 1,
-        totalRevenue: {
-          $cond: [
-            { $eq: ["$population", 0] },
-            0,
-            { $divide: ["$totalRevenue", "$population"] },
-          ],
-        },
-        population: 1,
-      },
-    };
-    let ulb_query = [];
-    ulb_query.push(...state_query);
-    ulb_query.push(...x_query);
-    if (isPerCapita) {
-      ulb_query.push(perCapita);
-    }
-    // base_query.push(...ulb_query)
-    // state_query.push(...ulb_query)
-
-    stateAvg_query.push(...ulb_query);
-    stateAvg_query.push(...avg);
-
-    natAvg_query.push(...base_query);
-    natAvg_query.push(...x_query);
-    if (isPerCapita) {
-      natAvg_query.push(perCapita);
-    }
-    natAvg_query.push(...avg);
-    if (getQuery) {
-      return res.json({
-        query: [ulb_query, stateAvg_query, natAvg_query],
       });
+      let x_query = [
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$state",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineItem",
+          },
+        },
+        {
+          $unwind: "$lineItem",
+        },
+  
+        {
+          $match: {
+            "lineItem.headOfAccount": headOfAccount,
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbtypes",
+            localField: "ulb.ulbType",
+            foreignField: "_id",
+            as: "ulbType",
+          },
+        },
+        {
+          $unwind: "$ulbType",
+        },
+        {
+          $group: {
+            _id: "$ulb._id",
+            ulbName: { $first: "$ulb.name" },
+            ulbId: { $first: "$ulb._id" },
+            ulbType: { $first: "$ulbType.name" },
+            stateId: { $first: "$state._id" },
+            state: { $first: "$state.name" },
+            totalRevenue: { $sum: "$amount" },
+            population: { $first: "$ulb.population" },
+          },
+        },
+      ];
+      let perCapita = {
+        $project: {
+          ulbName: 1,
+          ulbId: 1,
+          ulbType: 1,
+          stateId: 1,
+          state: 1,
+          totalRevenue: {
+            $cond: [
+              { $eq: ["$population", 0] },
+              0,
+              { $divide: ["$totalRevenue", "$population"] },
+            ],
+          },
+          population: 1,
+        },
+      };
+      let ulb_query = [];
+      ulb_query.push(...state_query);
+      ulb_query.push(...x_query);
+      if (isPerCapita) {
+        ulb_query.push(perCapita);
+      }
+      // base_query.push(...ulb_query)
+      // state_query.push(...ulb_query)
+  
+      stateAvg_query.push(...ulb_query);
+      stateAvg_query.push(...avg);
+  
+      natAvg_query.push(...base_query);
+      natAvg_query.push(...x_query);
+      if (isPerCapita) {
+        natAvg_query.push(perCapita);
+      }
+      natAvg_query.push(...avg);
+      if (getQuery) {
+        return res.json({
+          query: [ulb_query, stateAvg_query, natAvg_query],
+        });
+      }
+      let data = await Promise.all([
+        UlbLedger.aggregate(ulb_query),
+        UlbLedger.aggregate(stateAvg_query),
+        // UlbLedger.aggregate(natAvg_query),
+      ]);
+  
+      // let data = await UlbLedger.aggregate(query)
+      let tp_data = data[0].filter((el) => {
+        return el.ulbType == "Town Panchayat";
+      });
+      let m_data = data[0].filter((el) => {
+        return el.ulbType == "Municipality";
+      });
+      let mc_data = data[0].filter((el) => {
+        return el.ulbType == "Municipal Corporation";
+      });
+      return res.status(200).json({
+        success: true,
+        municipality: m_data,
+        townPanchayat: tp_data,
+        mCorporation: mc_data,
+        // ulbData: data[0],
+        stateAvg: data[1],
+        // natAvg : data[2]
+      });
+    }else if(ulb && ObjectId.isValid(ulb) ){
+   let ulbData =    await Ulb.findOne({_id : ObjectId(ulb)}).populate('ulbType')
+ let query = [
+  {
+    $match: {
+      financialYear: financialYear,
+      ulb: ObjectId(ulb)
     }
-    let data = await Promise.all([
-      UlbLedger.aggregate(ulb_query),
-      UlbLedger.aggregate(stateAvg_query),
-      // UlbLedger.aggregate(natAvg_query),
-    ]);
+  },
+  {
+    $lookup:{
 
-    // let data = await UlbLedger.aggregate(query)
-    let tp_data = data[0].filter((el) => {
-      return el.ulbType == "Town Panchayat";
-    });
-    let m_data = data[0].filter((el) => {
-      return el.ulbType == "Municipality";
-    });
-    let mc_data = data[0].filter((el) => {
-      return el.ulbType == "Municipal Corporation";
-    });
-    return res.status(200).json({
-      success: true,
-      municipality: m_data,
-      townPanchayat: tp_data,
-      mCorporation: mc_data,
-      // ulbData: data[0],
-      stateAvg: data[1],
-      // natAvg : data[2]
-    });
+     from:"lineitems",
+     localField:"lineItem",
+     foreignField:"_id",
+     as:"lineItem"
+    }
+  },
+  {
+    $unwind:"$lineItem"
+  },
+  {
+   $lookup:{
+
+    from:"ulbs",
+    localField:"ulb",
+    foreignField:"_id",
+    as:"ulb"
+   }
+ },
+ {
+   $unwind:"$ulb"
+ },
+  {
+    $match:{
+      "lineItem.headOfAccount":"Revenue"
+    }
+  },
+  {
+    $group:{
+
+     _id:"$ulb._id",
+     totalRevenue:{$sum:"$amount"},
+     ulbName: { $first: "$ulb.name" },
+     population: { $first: "$ulb.population" },
+    }
+  }
+]
+if(isPerCapita){
+  query.push({
+    $project:{
+      ulbName:1,
+      population:1,
+      totalRevenue:{
+        $cond: [
+          { $eq: ["$population", 0] },
+          0,
+          { $divide: ["$totalRevenue", "$population"] },
+        ],
+      },
+    }
+  })
+     }
+   let output =  await UlbLedger.aggregate(query)
+
+   
+  let obj = {
+    municipality: [],
+    townPanchayat: [],
+    mCorporation: [],
+  }
+   if(ulbData.ulbType.name == 'Town Panchayat'){
+obj.townPanchayat = output
+   }else if(ulbData.ulbType.name == 'Municipality'){
+     obj.municipality = output
+  }else if(ulbData.ulbType.name == 'Municipal Corporation'){
+     obj.mCorporation = output
+  }
+   return res.status(200).json({
+     success: true,
+    ...obj
+   })
+    }
+
   } else if (
     filterName.includes("own revenue") &&
     !filterName.includes("mix")
@@ -545,6 +630,7 @@ const revenue = catchAsync(async (req, res) => {
     });
   } else if (filterName == "revenue mix") {
     if (compareType == "") {
+     if(!ulb){
       let bse_query = [
         {
           $match: {
@@ -626,6 +712,76 @@ const revenue = catchAsync(async (req, res) => {
         success: true,
         data: copyData,
       });
+     }else if(ulb && ObjectId.isValid(ulb)){
+       let query = [
+         {
+           $match:{
+
+            ulb: ObjectId(ulb),
+            financialYear: financialYear,
+           
+           }
+         },
+         {
+           $lookup:{
+             from:"lineitems",
+             localField:"lineItem",
+             foreignField:"_id",
+             as:"lineItem"
+           }
+         },{
+           $unwind:"$lineItem"
+         },
+         {
+           $match:{
+             "lineItem.headOfAccount":"Revenue"
+           }
+         },
+         {
+
+          $group:{
+            _id: "$lineItem.name",
+            code: { $first: "$lineItem.code" },
+            amount: { $sum: "$amount" },
+          }
+         }
+
+       ]
+        let data =  await UlbLedger.aggregate(query)
+       let ownRev = 0;
+       let copyData = [];
+       if (data.length > 0) {
+         console.log(data);
+         copyData = data.slice();
+         for (let el of data) {
+           if (
+             el.code == "110" ||
+             el.code == "130" ||
+             el.code == "140" ||
+             el.code == "150" ||
+             el.code == "180"
+           ) {
+             ownRev = ownRev + el.amount;
+             let index = copyData.indexOf(el);
+             if (index > -1 && index != copyData.length - 1)
+               copyData.splice(index, 1);
+             if (index == copyData.length - 1) {
+               copyData.pop(el);
+             }
+           }
+         }
+         copyData.push({
+           _id: "Own Revenue",
+           amount: ownRev,
+         });
+       }
+      
+
+       return res.status(200).json({
+         success: true,
+data : copyData
+       })
+     }
     } else if (compareType == "ulbType") {
       let base_query = [
         {
