@@ -185,7 +185,7 @@ if(type == 'Raw Data PDF'){
       },
       {
         $match:{
-            "file":{$exists: true}
+            "file":{$exists: true, $ne:null}
             }
         },
       {
@@ -299,7 +299,7 @@ if(type == 'Raw Data PDF'){
       },
       {
         $match:{
-            "file.url":{$exists: true}
+            "file.url":{$exists: true, $ne: null}
             }
         },
       {
@@ -415,7 +415,7 @@ if(type == 'Raw Data PDF'){
 },
 {
   $match:{
-      "file":{$exists: true}
+      "file":{$exists: truem, $ne: null}
       }
   },
 {
@@ -473,7 +473,7 @@ if(type == 'Raw Data PDF'){
       },
       {
         $match:{
-            "file":{$exists: true}
+            "file":{$exists: true, $ne: null}
             }
         },
       {

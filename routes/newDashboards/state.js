@@ -906,6 +906,7 @@ const listOfIndicators = async (req, res) => {
         },
       },
     ]);
+    response.data = response.data.length ? response.data[0] : null;
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
