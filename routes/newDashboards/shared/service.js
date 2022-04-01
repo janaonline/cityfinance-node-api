@@ -7,7 +7,7 @@ const State = require("../../../models/State");
 
 let filterType = [
   "Town Panchayat",
-  "Municipal Council",
+  "Municipality",
   "Municipal Corporation",
 ];
 
