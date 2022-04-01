@@ -312,7 +312,7 @@ const indicator = async (req, res) => {
         };
         if (isPerCapita) {
           groupNew.population = {
-            $sum: "$ulb.population",
+            $first: "$ulb.population",
           };
         }
         query.push({
