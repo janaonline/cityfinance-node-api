@@ -735,7 +735,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
     {
       $group: {
         _id: null,
-        "<100K": {
+        "<100 Thousand": {
           $sum: {
             $cond: {
               if: {
@@ -746,7 +746,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
             },
           },
         },
-        "100K-500K": {
+        "100 Thousand - 500 Thousand": {
           $sum: {
             $cond: {
               if: {
@@ -760,7 +760,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
             },
           },
         },
-        "500K-1M": {
+        "500 Thousand - 1 Million": {
           $sum: {
             $cond: {
               if: {
@@ -774,7 +774,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
             },
           },
         },
-        "1M-4M": {
+        "1 Million - 4 Million": {
           $sum: {
             $cond: {
               if: {
@@ -788,7 +788,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
             },
           },
         },
-        "4M+": {
+        "4 Million+": {
           $sum: {
             $cond: {
               if: {
@@ -799,7 +799,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
             },
           },
         },
-        total: { $sum: 1 },
+        "Total Cities": { $sum: 1 },
       },
     },
     {
