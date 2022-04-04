@@ -91,7 +91,7 @@ const projectDetails2 = () => {
       type: Number,
     },
     targetCust: {
-      type: Number,
+      type: String,
     },
     _id: false,
   };
