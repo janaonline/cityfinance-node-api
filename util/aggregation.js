@@ -612,14 +612,23 @@ exports.stateDashRevenueTabs = async (
     pipeline.push(
       {
         $group: {
-          _id: null,
+          _id: {
+            headOfAccount: "$lineItem.headOfAccount",
+            ulbName: "$ulb.name",
+          },
+          sum: {
+            $sum: "$amount",
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$_id.ulbName",
           revenue: {
             $sum: {
               $cond: {
-                if: {
-                  $eq: ["$lineItem.headOfAccount", "Revenue"],
-                },
-                then: "$amount",
+                if: { $eq: ["$_id.headOfAccount", "Revenue"] },
+                then: "$sum",
                 else: 0,
               },
             },
@@ -627,10 +636,8 @@ exports.stateDashRevenueTabs = async (
           expense: {
             $sum: {
               $cond: {
-                if: {
-                  $eq: ["$lineItem.headOfAccount", "Expense"],
-                },
-                then: "$amount",
+                if: { $eq: ["$_id.headOfAccount", "Expense"] },
+                then: "$sum",
                 else: 0,
               },
             },
@@ -640,6 +647,7 @@ exports.stateDashRevenueTabs = async (
       {
         $project: {
           _id: 0,
+          ulbName: "$_id",
           revenue: "$revenue",
           expense: "$expense",
           deficitOrSurplus: {
