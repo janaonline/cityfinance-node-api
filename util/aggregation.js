@@ -41,7 +41,7 @@ exports.nationalDashRevenuePipeline = (
         {
           $group: {
             _id: null,
-            "<100K_count": {
+            "<100K_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -52,7 +52,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "100K-500K_count": {
+            "100K-500K_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -66,7 +66,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "500K-1M_count": {
+            "500K-1M_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -80,7 +80,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "1M-4M_count": {
+            "1M-4M_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -94,7 +94,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "4M+_count": {
+            "4M+_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -239,72 +239,79 @@ exports.nationalDashRevenuePipeline = (
           $project: {
             _id: 0,
             "<100K": {
-              amount: "$<100K_amount",
-              perCapita: {
+              revenue: "$<100K_amount",
+              population: "$<100K",
+              set: "$<100K_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$<100K", 0],
+                    $eq: ["$<100K_amount", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$<100K_amount", "$<100K"],
+                    $divide: ["$<100K", "$<100K_amount"],
                   },
                 },
               },
             },
-            leo: "$4M+_count",
             "100K-500K": {
-              amount: "$100K-500K_amount",
-              perCapita: {
+              revenue: "$100K-500K_amount",
+              population: "$100K-500K",
+              set: "$100K-500K_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$100K-500K", 0],
+                    $eq: ["$100K-500K_amount", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$100K-500K_amount", "$100K-500K"],
+                    $divide: ["$100K-500K", "$100K-500K_amount"],
                   },
                 },
               },
             },
             "500K-1M": {
-              amount: "$500K-1M_amount",
-              perCapita: {
+              revenue: "$500K-1M_amount",
+              population: "$500K-1M",
+              set: "$500K-1M_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$500K-1M", 0],
+                    $eq: ["$500K-1M_amount", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$500K-1M_amount", "$500K-1M"],
+                    $divide: ["$500K-1M", "$500K-1M_amount"],
                   },
                 },
               },
             },
             "1M-4M": {
-              amount: "$1M-4M_amount",
-              perCapita: {
+              revenue: "$1M-4M_amount",
+              set: "$1M-4M_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$1M-4M", 0],
+                    $eq: ["$1M-4M_amount", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$1M-4M_amount", "$1M-4M"],
+                    $divide: ["$1M-4M", "$1M-4M_amount"],
                   },
                 },
               },
             },
             "4M+": {
-              amount: "$4M+_amount",
-              perCapita: {
+              revenue: "$4M+_amount",
+              set: "$4M+_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$4M+", 0],
+                    $eq: ["$4M+_amount", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$4M+_amount", "$4M+"],
+                    $divide: ["$4M+", "$4M+_amount"],
                   },
                 },
               },
