@@ -338,7 +338,7 @@ exports.nationalDashRevenue = async (req, res) => {
       Average: {
         revenue: 0,
         revenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       "< 100 Thousand": {
         revenue: 0,
@@ -371,7 +371,7 @@ exports.nationalDashRevenue = async (req, res) => {
       Average: {
         revenue: 0,
         revenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       "Municipal Corporation": {
         revenue: 0,
@@ -409,21 +409,45 @@ exports.nationalDashRevenue = async (req, res) => {
         sumOfRevenue += obj["revenue"];
         sumOfRevPerCapita += obj["revenuePerCapita"];
         delete obj["set"];
-        obj["dataAvailPercent"] = (seenUlbs * 100) / ulbs.length;
-        sumOfDataAval += obj["dataAvailPercent"];
+        obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
+        sumOfDataAval += obj["DataAvailPercentage"];
       }
     }
     if (formType == "ulbType") {
       ulbTypeMap["Average"]["revenue"] = sumOfRevenue / 5;
       ulbTypeMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
-      ulbTypeMap["Average"]["dataAvailPercent"] = sumOfDataAval / 5;
+      ulbTypeMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
       responsePayload.data = ulbTypeMap;
     } else if (formType == "populationCategory") {
       populationMap["Average"]["revenue"] = sumOfRevenue / 5;
       populationMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
-      populationMap["Average"]["dataAvailPercent"] = sumOfDataAval / 5;
+      populationMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
       responsePayload.data = populationMap;
     }
+    let displayNameMapper = {
+        revenue: "Revenue (in Cr)",
+        revenuePerCapita: "Revenue Per Capita (in Rs.)",
+        DataAvailPercentage: "Data Availability Percentage",
+      },
+      columns = [
+        {
+          key: "ulb_pop_category",
+          display_name: "ULB Population Category",
+        },
+        ...Object.keys(populationMap["Average"]).map((each) => {
+          return { key: each, display_name: displayNameMapper[each] };
+        }),
+      ],
+      rows = [
+        ...Object.keys(responsePayload.data).map((each) => {
+          let output = { ulb_pop_category: each };
+          for (x in responsePayload.data[each]) {
+            output[x] = responsePayload.data[each][x].toFixed(2);
+          }
+          return output;
+        }),
+      ];
+    responsePayload.data = { rows, columns };
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
     console.log(err);
