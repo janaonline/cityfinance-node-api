@@ -293,11 +293,15 @@ exports.nationalDashRevenue = async (req, res) => {
     visualType = visualType ? visualType : "table";
     const { nationalDashRevenuePipeline } = require("../../util/aggregation");
     let responsePayload = { data: null };
+    const HashTable = new Map();
     let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
     let lineItems = await LineItem.find({ headOfAccount: "Revenue" }).select(
       "_id"
     );
-    ulbs = ulbs.map((each) => each._id);
+    ulbs = ulbs.map((each) => {
+      HashTable.set(each._id.toString(), true);
+      return each._id;
+    });
     lineItems = lineItems.map((each) => each._id);
     if (getQuery)
       return res
@@ -322,6 +326,18 @@ exports.nationalDashRevenue = async (req, res) => {
         formType
       )
     );
+    if (ulbLeds.length) {
+      const keys = Object.keys(ulbLeds[0]);
+      for (key of keys) {
+        //O(5) time complexity
+        let seenUlbs = 0;
+        for (each of ulbLeds[0][key]["set"]) {
+          if (HashTable.get(each.toString())) ++seenUlbs;
+        }
+        delete ulbLeds[0][key]["set"];
+        ulbLeds[0][key]["dataAvailPercent"] = (seenUlbs * 100) / ulbs.length;
+      }
+    }
     responsePayload.data = ulbLeds;
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {

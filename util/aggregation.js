@@ -240,48 +240,45 @@ exports.nationalDashRevenuePipeline = (
             _id: 0,
             "<100K": {
               revenue: "$<100K_amount",
-              population: "$<100K",
               set: "$<100K_set",
               revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$<100K_amount", 0],
+                    $eq: ["$<100K", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$<100K", "$<100K_amount"],
+                    $divide: ["$<100K_amount", "$<100K"],
                   },
                 },
               },
             },
             "100K-500K": {
               revenue: "$100K-500K_amount",
-              population: "$100K-500K",
               set: "$100K-500K_set",
               revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$100K-500K_amount", 0],
+                    $eq: ["$100K-500K", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$100K-500K", "$100K-500K_amount"],
+                    $divide: ["$100K-500K_amount", "$100K-500K"],
                   },
                 },
               },
             },
             "500K-1M": {
               revenue: "$500K-1M_amount",
-              population: "$500K-1M",
               set: "$500K-1M_set",
               revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$500K-1M_amount", 0],
+                    $eq: ["$500K-1M", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$500K-1M", "$500K-1M_amount"],
+                    $divide: ["$500K-1M_amount", "$500K-1M"],
                   },
                 },
               },
@@ -292,11 +289,11 @@ exports.nationalDashRevenuePipeline = (
               revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$1M-4M_amount", 0],
+                    $eq: ["$1M-4M", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$1M-4M", "$1M-4M_amount"],
+                    $divide: ["$1M-4M_amount", "$1M-4M"],
                   },
                 },
               },
@@ -307,11 +304,11 @@ exports.nationalDashRevenuePipeline = (
               revenuePerCapita: {
                 $cond: {
                   if: {
-                    $eq: ["$4M+_amount", 0],
+                    $eq: ["$4M+", 0],
                   },
                   then: 0,
                   else: {
-                    $divide: ["$4M+", "$4M+_amount"],
+                    $divide: ["$4M+_amount", "$4M+"],
                   },
                 },
               },
