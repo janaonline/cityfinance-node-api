@@ -41,7 +41,7 @@ exports.nationalDashRevenuePipeline = (
         {
           $group: {
             _id: null,
-            "<100K_count": {
+            "<100K_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -52,7 +52,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "100K-500K_count": {
+            "100K-500K_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -66,7 +66,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "500K-1M_count": {
+            "500K-1M_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -80,7 +80,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "1M-4M_count": {
+            "1M-4M_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -94,7 +94,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "4M+_count": {
+            "4M+_set": {
               $addToSet: {
                 $cond: {
                   if: {
@@ -238,9 +238,10 @@ exports.nationalDashRevenuePipeline = (
         {
           $project: {
             _id: 0,
-            "<100K": {
-              amount: "$<100K_amount",
-              perCapita: {
+            "< 100 Thousand": {
+              revenue: "$<100K_amount",
+              set: "$<100K_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
                     $eq: ["$<100K", 0],
@@ -252,10 +253,10 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            leo: "$4M+_count",
-            "100K-500K": {
-              amount: "$100K-500K_amount",
-              perCapita: {
+            "100 Thousand - 500 Thousand": {
+              revenue: "$100K-500K_amount",
+              set: "$100K-500K_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
                     $eq: ["$100K-500K", 0],
@@ -267,9 +268,10 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "500K-1M": {
-              amount: "$500K-1M_amount",
-              perCapita: {
+            "500 Thousand - 1 Million": {
+              revenue: "$500K-1M_amount",
+              set: "$500K-1M_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
                     $eq: ["$500K-1M", 0],
@@ -281,9 +283,10 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "1M-4M": {
-              amount: "$1M-4M_amount",
-              perCapita: {
+            "1 Million - 4 Million": {
+              revenue: "$1M-4M_amount",
+              set: "$1M-4M_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
                     $eq: ["$1M-4M", 0],
@@ -295,9 +298,10 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "4M+": {
-              amount: "$4M+_amount",
-              perCapita: {
+            "4 Million+": {
+              revenue: "$4M+_amount",
+              set: "$4M+_set",
+              revenuePerCapita: {
                 $cond: {
                   if: {
                     $eq: ["$4M+", 0],
@@ -305,6 +309,163 @@ exports.nationalDashRevenuePipeline = (
                   then: 0,
                   else: {
                     $divide: ["$4M+_amount", "$4M+"],
+                  },
+                },
+              },
+            },
+          },
+        }
+      );
+    } else if (formType == "ulbType") {
+      pipeline.push(
+        {
+          $group: {
+            _id: null,
+            municipalCorp_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            municipal_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            townPanchayat_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            municipalCorp: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            municipalCorp_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            municipal: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            municipal_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            townPanchayat: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            townPanchayat_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            "Municipal Corporation": {
+              revenue: "$municipalCorp_amount",
+              set: "$municipalCorp_set",
+              revenuePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$municipalCorp", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$municipalCorp_amount", "$municipalCorp"],
+                  },
+                },
+              },
+            },
+            Municipality: {
+              revenue: "$municipal_amount",
+              set: "$municipal_set",
+              revenuePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$municipal", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$municipal_amount", "$municipal"],
+                  },
+                },
+              },
+            },
+            "Town Panchayat": {
+              revenue: "$townPanchayat_amount",
+              set: "$townPanchayat_set",
+              revenuePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$townPanchayat", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$townPanchayat_amount", "$townPanchayat"],
                   },
                 },
               },
