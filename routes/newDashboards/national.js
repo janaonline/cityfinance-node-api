@@ -156,7 +156,11 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         }),
       ],
       rows = Object.keys(ulbTypeMap).map((each) => {
-        return { ulbType: each, ...ulbTypeMap[each] };
+        let output = { ulbType: each };
+        for (key in ulbTypeMap[each]) {
+          output[key] = ulbTypeMap[each][key].toFixed(2);
+        }
+        return output;
       });
     // console.log(columns);
     return { rows, columns };
@@ -279,7 +283,11 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
       }),
     ],
     theRows = Object.keys(populationMap).map((each) => {
-      return { ulbType: each, ...populationMap[each] };
+      let output = { ulbType: each };
+      for (key in populationMap[each]) {
+        output[key] = populationMap[each][key].toFixed(2);
+      }
+      return output;
     });
   return { columns, rows: theRows };
 }
