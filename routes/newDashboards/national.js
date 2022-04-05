@@ -359,6 +359,28 @@ exports.nationalDashRevenue = async (req, res) => {
         dataAvailPercent: 0,
       },
     };
+    let ulbTypeMap = {
+      Average: {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "Municipal Corporation": {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      Municipality: {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "Town Panchayat": {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+    };
     let sumOfRevenue = 0,
       sumOfRevPerCapita = 0,
       sumOfDataAval = 0;
@@ -368,7 +390,11 @@ exports.nationalDashRevenue = async (req, res) => {
         //O(5) time complexity
         let seenUlbs = 0,
           obj = ulbLeds[0][key];
-        populationMap[key] = obj;
+        if (formType == "ulbType") {
+          ulbTypeMap[key] = obj;
+        } else if (formType == "populationCategory") {
+          populationMap[key] = obj;
+        }
         for (each of obj["set"]) {
           if (HashTable.get(each.toString())) ++seenUlbs;
         }
@@ -379,10 +405,17 @@ exports.nationalDashRevenue = async (req, res) => {
         sumOfDataAval += obj["dataAvailPercent"];
       }
     }
-    populationMap["Average"]["revenue"] = sumOfRevenue / 5;
-    populationMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
-    populationMap["Average"]["dataAvailPercent"] = sumOfDataAval / 5;
-    responsePayload.data = populationMap;
+    if (formType == "ulbType") {
+      ulbTypeMap["Average"]["revenue"] = sumOfRevenue / 5;
+      ulbTypeMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
+      ulbTypeMap["Average"]["dataAvailPercent"] = sumOfDataAval / 5;
+      responsePayload.data = ulbTypeMap;
+    } else if (formType == "populationCategory") {
+      populationMap["Average"]["revenue"] = sumOfRevenue / 5;
+      populationMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
+      populationMap["Average"]["dataAvailPercent"] = sumOfDataAval / 5;
+      responsePayload.data = populationMap;
+    }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
     console.log(err);
