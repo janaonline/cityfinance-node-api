@@ -326,19 +326,63 @@ exports.nationalDashRevenue = async (req, res) => {
         formType
       )
     );
+    let populationMap = {
+      Average: {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "< 100 Thousand": {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "100 Thousand - 500 Thousand": {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+
+      "500 Thousand - 1 Million": {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "1 Million - 4 Million": {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "4 Million+": {
+        revenue: 0,
+        revenuePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+    };
+    let sumOfRevenue = 0,
+      sumOfRevPerCapita = 0,
+      sumOfDataAval = 0;
     if (ulbLeds.length) {
       const keys = Object.keys(ulbLeds[0]);
       for (key of keys) {
         //O(5) time complexity
-        let seenUlbs = 0;
-        for (each of ulbLeds[0][key]["set"]) {
+        let seenUlbs = 0,
+          obj = ulbLeds[0][key];
+        populationMap[key] = obj;
+        for (each of obj["set"]) {
           if (HashTable.get(each.toString())) ++seenUlbs;
         }
-        delete ulbLeds[0][key]["set"];
-        ulbLeds[0][key]["dataAvailPercent"] = (seenUlbs * 100) / ulbs.length;
+        sumOfRevenue += obj["revenue"];
+        sumOfRevPerCapita += obj["revenuePerCapita"];
+        delete obj["set"];
+        obj["dataAvailPercent"] = (seenUlbs * 100) / ulbs.length;
+        sumOfDataAval += obj["dataAvailPercent"];
       }
     }
-    responsePayload.data = ulbLeds;
+    populationMap["Average"]["revenue"] = sumOfRevenue / 5;
+    populationMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
+    populationMap["Average"]["dataAvailPercent"] = sumOfDataAval / 5;
+    responsePayload.data = populationMap;
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
     console.log(err);

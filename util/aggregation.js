@@ -238,7 +238,7 @@ exports.nationalDashRevenuePipeline = (
         {
           $project: {
             _id: 0,
-            "<100K": {
+            "< 100 Thousand": {
               revenue: "$<100K_amount",
               set: "$<100K_set",
               revenuePerCapita: {
@@ -253,7 +253,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "100K-500K": {
+            "100 Thousand - 500 Thousand": {
               revenue: "$100K-500K_amount",
               set: "$100K-500K_set",
               revenuePerCapita: {
@@ -268,7 +268,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "500K-1M": {
+            "500 Thousand - 1 Million": {
               revenue: "$500K-1M_amount",
               set: "$500K-1M_set",
               revenuePerCapita: {
@@ -283,7 +283,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "1M-4M": {
+            "1 Million - 4 Million": {
               revenue: "$1M-4M_amount",
               set: "$1M-4M_set",
               revenuePerCapita: {
@@ -298,7 +298,7 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
-            "4M+": {
+            "4 Million+": {
               revenue: "$4M+_amount",
               set: "$4M+_set",
               revenuePerCapita: {
