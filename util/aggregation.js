@@ -582,6 +582,7 @@ exports.stateDashRevenueTabs = async (
     );
   } else if (tabType == "RevenueMix") {
     if (!code) throw { message: "code is missing for revenue mix." };
+    code = code.split(",");
     let lineIds = await LineItem.find({
       code: { $in: Array.isArray(code) ? code : [code] },
     })
