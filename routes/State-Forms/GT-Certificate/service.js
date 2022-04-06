@@ -78,8 +78,8 @@ module.exports.create = catchAsync(async (req, res) => {
       let mailOptions =     {
         Destination: {
           /* required */
-          // ToAddresses: ["ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org", user.email]
-            ToAddresses: ["vishu.gupta@dhwaniris.com"]
+          ToAddresses: ["ansh.mittal@janaagraha.org", "pankaj.mittal@janaagraha.org", user.email, "vishu.gupta@dhwaniris.com"]
+            
         },
         Message: {
           /* required */
