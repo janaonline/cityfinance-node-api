@@ -144,6 +144,12 @@ const moneyInformation = async (req, res) => {
           .lean();
         ulbId = ulbId.map((value) => value._id);
         break;
+        case "national":
+          ulbId = await Ulb.find()
+            .select({ _id: 1 })
+            .lean();
+          ulbId = ulbId.map((value) => value._id);
+          break;
       default:
         return Response.BadRequest(res, null, "wrong type selected");
     }
