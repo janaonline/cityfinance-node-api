@@ -529,10 +529,15 @@ exports.stateDashRevenueTabs = async (
       $unwind: "$lineItem",
     }
   );
-  if (tabType == "TotalRevenue") {
-    let lineIds = await LineItem.find({ headOfAccount: "Revenue" })
-      .select("_id")
-      .lean();
+  if (tabType == "TotalRevenue" || tabType == "TotalOwnRevenue") {
+    let lineItemFilter = { headOfAccount: "Revenue" };
+    if (tabType == "TotalOwnRevenue")
+      lineItemFilter = {
+        code: {
+          $in: ["110", "130", "140", "150", "180"],
+        },
+      };
+    let lineIds = await LineItem.find(lineItemFilter).select("_id").lean();
     Object.assign(matchObj, {
       lineItem: { $in: lineIds.map((value) => value._id) },
     });
@@ -553,10 +558,18 @@ exports.stateDashRevenueTabs = async (
         },
       }
     );
-  } else if (tabType == "RevenuePerCapita") {
-    let lineIds = await LineItem.find({ headOfAccount: "Revenue" })
-      .select("_id")
-      .lean();
+  } else if (
+    tabType == "RevenuePerCapita" ||
+    tabType == "OwnRevenuePerCapita"
+  ) {
+    let lineItemFilter = { headOfAccount: "Revenue" };
+    if (tabType == "OwnRevenuePerCapita")
+      lineItemFilter = {
+        code: {
+          $in: ["110", "130", "140", "150", "180"],
+        },
+      };
+    let lineIds = await LineItem.find(lineItemFilter).select("_id").lean();
     Object.assign(matchObj, {
       lineItem: { $in: lineIds.map((value) => value._id) },
     });
@@ -590,11 +603,11 @@ exports.stateDashRevenueTabs = async (
         },
       }
     );
-  } else if (tabType == "RevenueMix") {
+  } else if (tabType == "RevenueMix" || tabType == "OwnRevenueMix") {
     if (!code) throw { message: "code is missing for revenue mix." };
     code = code.split(",");
     let lineIds = await LineItem.find({
-      code: { $in: Array.isArray(code) ? code : [code] },
+      code: { $in: code },
     })
       .select("_id")
       .lean();
@@ -830,19 +843,22 @@ exports.stateDashRevenueTabs = async (
     );
   } else throw { message: "invalid tabType was provided." };
   let sortByObj;
-  if (tabType == "TotalRevenue") {
+  if (tabType == "TotalRevenue" || tabType == "TotalOwnRevenue") {
     sortByObj = {
       $sort: {
         sum: sortBy == "top" ? -1 : 1,
       },
     };
-  } else if (tabType == "RevenuePerCapita") {
+  } else if (
+    tabType == "RevenuePerCapita" ||
+    tabType == "OwnRevenuePerCapita"
+  ) {
     sortByObj = {
       $sort: {
         revenuePerCapita: sortBy == "top" ? -1 : 1,
       },
     };
-  } else if (tabType == "RevenueMix") {
+  } else if (tabType == "RevenueMix" || tabType == "OwnRevenueMix") {
     sortByObj = {
       $sort: {
         sum: sortBy == "top" ? -1 : 1,
