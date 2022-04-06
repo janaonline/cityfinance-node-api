@@ -239,7 +239,9 @@ exports.nationalDashRevenuePipeline = (
           $project: {
             _id: 0,
             "< 100 Thousand": {
-              revenue: "$<100K_amount",
+              revenue: {
+                $divide: ["$<100K_amount", 1e7],
+              },
               set: "$<100K_set",
               revenuePerCapita: {
                 $cond: {
@@ -254,7 +256,9 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "100 Thousand - 500 Thousand": {
-              revenue: "$100K-500K_amount",
+              revenue: {
+                $divide: ["$100K-500K_amount", 1e7],
+              },
               set: "$100K-500K_set",
               revenuePerCapita: {
                 $cond: {
@@ -269,7 +273,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "500 Thousand - 1 Million": {
-              revenue: "$500K-1M_amount",
+              revenue: { $divide: ["$500K-1M_amount", 1e7] },
               set: "$500K-1M_set",
               revenuePerCapita: {
                 $cond: {
@@ -284,7 +288,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "1 Million - 4 Million": {
-              revenue: "$1M-4M_amount",
+              revenue: { $divide: ["$1M-4M_amount", 1e7] },
               set: "$1M-4M_set",
               revenuePerCapita: {
                 $cond: {
@@ -299,7 +303,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "4 Million+": {
-              revenue: "$4M+_amount",
+              revenue: { $divide: ["$4M+_amount", 1e7] },
               set: "$4M+_set",
               revenuePerCapita: {
                 $cond: {
@@ -426,7 +430,9 @@ exports.nationalDashRevenuePipeline = (
           $project: {
             _id: 0,
             "Municipal Corporation": {
-              revenue: "$municipalCorp_amount",
+              revenue: {
+                $divide: ["$municipalCorp_amount", 1e7],
+              },
               set: "$municipalCorp_set",
               revenuePerCapita: {
                 $cond: {
@@ -441,7 +447,9 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             Municipality: {
-              revenue: "$municipal_amount",
+              revenue: {
+                $divide: ["$municipal_amount", 1e7],
+              },
               set: "$municipal_set",
               revenuePerCapita: {
                 $cond: {
@@ -456,7 +464,9 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "Town Panchayat": {
-              revenue: "$townPanchayat_amount",
+              revenue: {
+                $divide: ["$townPanchayat_amount", 1e7],
+              },
               set: "$townPanchayat_set",
               revenuePerCapita: {
                 $cond: {
