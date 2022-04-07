@@ -40,7 +40,10 @@ const {
   listOfIndicators,
   stateRevenueTabs,
   ulbsByPopulation,
+  serviceLevelBenchmark,
+  getFYsWithSpecification,
 } = require("./state");
+
 router.post("/state-scatter", scatterMap);
 
 //state dashboard
@@ -48,6 +51,8 @@ router.post("/state-revenue", revenue);
 router.get("/state-list-of-indics", listOfIndicators);
 router.get("/state-revenue-tabs", stateRevenueTabs);
 router.get("/state-ulbs-grouped-by-population", ulbsByPopulation);
+router.post("/state-slb", serviceLevelBenchmark);
+router.get("/get-FYs-with-specification", getFYsWithSpecification);
 
 //national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
