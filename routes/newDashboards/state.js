@@ -1129,16 +1129,16 @@ const getFYsWithSpecification = async (req, res) => {
 
 const serviceLevelBenchmark = catchAsync( async (req,res)=>{
 
-  let {state,
+  let {stateId,
     financialYear,
     filterName,
-  request,
+  sortBy,
     isPerCapita,
     ulb,
     compareType,
     getQuery,} = req.body
   
-    if(!state || !financialYear || !filterName){
+    if(!stateId || !financialYear || !filterName){
       return res.status(400).json({
         success: false,
         message: "Missing Information"
@@ -1164,7 +1164,7 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
                   },
                   {
                       $match:{
-                          "ulb.state":ObjectId(state)
+                          "ulb.state":ObjectId(stateId)
                          
                       }
                   },
@@ -1188,7 +1188,8 @@ $project:{
   value:"$value",
   benchMarkValue:"$benchMarkValue",
   unitType:"$unitType",
-  ulbType:"$ulbType.name"
+  ulbType:"$ulbType.name",
+  population:"$ulb.population"
 }
 
                       }
@@ -1198,8 +1199,8 @@ $project:{
   // console.log(data)
   
   if(data.length>0){
-    if(request){
-       tenData = fetchTen(data, request)
+    if(sortBy){
+       tenData = fetchTen(data, sortBy)
     }else{
       tp_data = data.filter((el) => {
 
@@ -1242,16 +1243,16 @@ $project:{
   })
   })
 
-  const fetchTen = (data,request) => {
+  const fetchTen = (data,sortBy) => {
    let topTen =  data.slice(0, 10);
    let bottomTen =  data.slice(-10);
-if(request == 'top10'){
+if(sortBy == 'top10'){
   topTen.forEach(el => {
     el.value = (el.value/el.benchMarkValue) * 100
   })
   return topTen
 }
-if(request == 'bottom10'){
+if(sortBy == 'bottom10'){
   bottomTen.forEach(el => {
     el.value = (el.value/el.benchMarkValue) * 100
   })
