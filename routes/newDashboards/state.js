@@ -1112,7 +1112,7 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
   let {state,
     financialYear,
     filterName,
-  
+  req,
     isPerCapita,
     ulb,
     compareType,
@@ -1162,26 +1162,33 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
                       $sort:{"value":-1}
                       }
       ]
-      let tp_data, m_data, mc_data
+      let tp_data = [], m_data = [], mc_data = [], tenData = []
   let data = await Indicator.aggregate(query)
   console.log(data)
   if(data.length>0){
-          tp_data = data.filter((el) => {
-          return el.ulbType.name == "Town Panchayat";
-        });
-         m_data = data.filter((el) => {
-          return el.ulbType.name == "Municipality";
-        });
-         mc_data = data.filter((el) => {
-          return el.ulbType.name == "Municipal Corporation";
-        });
+    if(req){
+       tenData = fetchTen(data, req)
+    }else{
+      tp_data = data.filter((el) => {
+        return el.ulbType.name == "Town Panchayat";
+      });
+       m_data = data.filter((el) => {
+        return el.ulbType.name == "Municipality";
+      });
+       mc_data = data.filter((el) => {
+        return el.ulbType.name == "Municipal Corporation";
+      });
+    }
+    
+     
   }
     const obj = {
     barChart:[],
     scatterData:{
       tp_data:tp_data,
       m_data: m_data,
-      mc_data:mc_data
+      mc_data:mc_data,
+      tenData:tenData
     }
   }
   
@@ -1190,6 +1197,13 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
     data: obj
   })
   })
+
+  const fetchTen = (data,req) => {
+   let topTen =  array.slice(0, 10);
+   let bottomTen =  array.slice(-10);
+if(req == 'top10')return topTen
+if(req == 'bottom10') return bottomTen
+  }
 module.exports = {
   scatterMap,
   revenue,
