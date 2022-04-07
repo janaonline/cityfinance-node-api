@@ -603,7 +603,11 @@ exports.stateDashRevenueTabs = async (
         },
       }
     );
-  } else if (tabType == "RevenueMix" || tabType == "OwnRevenueMix") {
+  } else if (
+    tabType == "RevenueMix" ||
+    tabType == "OwnRevenueMix" ||
+    tabType == "ExpenditureMix"
+  ) {
     if (!code) throw { message: "code is missing for revenue mix." };
     code = code.split(",");
     let lineIds = await LineItem.find({
