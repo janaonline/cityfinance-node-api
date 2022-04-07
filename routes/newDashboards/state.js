@@ -1106,10 +1106,95 @@ const ulbsByPopulation = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const serviceLevelBenchmark = catchAsync( async (req,res)=>{
+
+  let {state,
+    financialYear,
+    filterName,
+  
+    isPerCapita,
+    ulb,
+    compareType,
+    getQuery,} = req.body
+  
+    if(!state || !financialYear || !filterName){
+      return res.status(400).json({
+        success: false,
+        message: "Missing Information"
+      })
+    }
+  
+    let query = [
+      {
+          $match:{
+              name:filterName,
+              year:financialYear
+              }
+          },
+          {
+              $lookup:{
+                  from:"ulbs",
+                  localField:"ulb",
+                  foreignField:"_id",
+                  as:"ulb"
+                  }
+              },{
+                  $unwind:"$ulb"
+                  },
+                  {
+                      $match:{
+                          "ulb.state":ObjectId(state)
+                         
+                      }
+                  },
+                  {
+                    $lookup:{
+               from:"ulbtypes",
+               localField:"ulb.ulbType",
+               foreignField:"_id",
+               as:"ulbType"
+               }
+           },{
+               $unwind:"$ulbType"
+               },
+                  {
+                      $sort:{"value":-1}
+                      }
+      ]
+      let tp_data, m_data, mc_data
+  let data = await Indicator.aggregate(query)
+  console.log(data)
+  if(data.length>0){
+          tp_data = data.filter((el) => {
+          return el.ulbType.name == "Town Panchayat";
+        });
+         m_data = data.filter((el) => {
+          return el.ulbType.name == "Municipality";
+        });
+         mc_data = data.filter((el) => {
+          return el.ulbType.name == "Municipal Corporation";
+        });
+  }
+    const obj = {
+    barChart:[],
+    scatterData:{
+      tp_data:tp_data,
+      m_data: m_data,
+      mc_data:mc_data
+    }
+  }
+  
+  return res.status(200).json({
+    success: true,
+    data: obj
+  })
+  })
 module.exports = {
   scatterMap,
   revenue,
   listOfIndicators,
   stateRevenueTabs,
   ulbsByPopulation,
+  serviceLevelBenchmark
 };
