@@ -1180,32 +1180,50 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
                },
                   {
                       $sort:{"value":-1}
+                      },
+                      {
+$project:{
+
+  ulbName:"$ulb.name",
+  value:"$value",
+  benchMarkValue:"$benchMarkValue",
+  unitType:"$unitType",
+  ulbType:"$ulbType.name"
+}
+
                       }
       ]
       let tp_data = [], m_data = [], mc_data = [], tenData = []
   let data = await Indicator.aggregate(query)
-  console.log(data)
+  // console.log(data)
+  
   if(data.length>0){
     if(request){
        tenData = fetchTen(data, request)
     }else{
       tp_data = data.filter((el) => {
-        el.ulbType.name == "Town Panchayat";
-        el.value = el.value * el.benchMarkValue * 100
-        return 
+
+        if(el.ulbType == "Town Panchayat")
+        {el.value = (el.value / el.benchMarkValue) * 100
+          return el}
+        
       });
        m_data = data.filter((el) => {
-         el.ulbType.name == "Municipality";
-         el.value = el.value * el.benchMarkValue * 100;
-        return
+         if(el.ulbType == "Municipality"){
+          el.value = (el.value / el.benchMarkValue) * 100;
+          return el
+         }
+         
       });
        mc_data = data.filter((el) => {
-         el.ulbType.name == "Municipal Corporation";
-        el.value = el.value * el.benchMarkValue * 100;
-        return
+        if(el.ulbType == "Municipal Corporation"){
+          el.value = (el.value / el.benchMarkValue) * 100;
+          return el
+        }
+        
       });
     }
-    
+  
      
   }
     const obj = {
@@ -1225,10 +1243,20 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
   })
 
   const fetchTen = (data,request) => {
-   let topTen =  array.slice(0, 10);
-   let bottomTen =  array.slice(-10);
-if(request == 'top10')return topTen
-if(request == 'bottom10') return bottomTen
+   let topTen =  data.slice(0, 10);
+   let bottomTen =  data.slice(-10);
+if(request == 'top10'){
+  topTen.forEach(el => {
+    el.value = (el.value/el.benchMarkValue) * 100
+  })
+  return topTen
+}
+if(request == 'bottom10'){
+  bottomTen.forEach(el => {
+    el.value = (el.value/el.benchMarkValue) * 100
+  })
+  return bottomTen
+} 
   }
 module.exports = {
   scatterMap,
