@@ -862,7 +862,11 @@ exports.stateDashRevenueTabs = async (
         revenuePerCapita: sortBy == "top" ? -1 : 1,
       },
     };
-  } else if (tabType == "RevenueMix" || tabType == "OwnRevenueMix") {
+  } else if (
+    tabType == "RevenueMix" ||
+    tabType == "OwnRevenueMix" ||
+    tabType == "ExpenditureMix"
+  ) {
     sortByObj = {
       $sort: {
         sum: sortBy == "top" ? -1 : 1,
