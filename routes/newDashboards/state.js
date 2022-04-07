@@ -1106,10 +1106,31 @@ const ulbsByPopulation = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const getFYsWithSpecification = async (req, res) => {
+  try {
+    //getFYsWithSpecification
+    const { state, city, getQuery } = req.query;
+    if (!state && !city)
+      throw { message: "Any of the state or city is mandatory." };
+    let response = { success: true, data: null };
+    const query =
+      await require("../../util/aggregation").getFYsWithSpecificationPipeline(
+        state,
+        city
+      );
+    if (getQuery) return res.status(200).json(query);
+    response.data = await UlbLedger.aggregate(query);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 module.exports = {
   scatterMap,
   revenue,
   listOfIndicators,
   stateRevenueTabs,
   ulbsByPopulation,
+  getFYsWithSpecification,
 };

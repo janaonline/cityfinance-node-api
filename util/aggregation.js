@@ -1005,3 +1005,41 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
   // console.log(pipeline);
   return pipeline;
 };
+
+exports.getFYsWithSpecificationPipeline = async (state, city) => {
+  let pipeline = [];
+  if (state) {
+    let ulbs = await Ulb.find({ state: ObjectId(state) }).select("_id");
+    ulbs = ulbs.map((each) => each._id);
+    pipeline.push({
+      $match: {
+        ulb: {
+          $in: ulbs,
+        },
+      },
+    });
+  } else if (city) {
+    pipeline.push({
+      $match: {
+        ulb: ObjectId(city),
+      },
+    });
+  }
+  pipeline.push(
+    {
+      $group: {
+        _id: null,
+        FYs: {
+          $addToSet: "$financialYear",
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+      },
+    }
+  );
+
+  return pipeline;
+};
