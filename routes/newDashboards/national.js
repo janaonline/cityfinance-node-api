@@ -454,3 +454,37 @@ exports.nationalDashRevenue = async (req, res) => {
     res.status(500).json({ success: true, message: err.message });
   }
 };
+
+exports.getStatewiseDataAvail = async (req, res) => {
+  try {
+    const { financialYear, getQuery } = req.query;
+    if (!financialYear) throw { message: "Financial Year is missing" };
+    let response = { success: true, data: null };
+    const ulbsStateWise = await Ulb.aggregate([
+      {
+        $group: {
+          _id: "$state",
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+    const { getStateWiseDataAvailPipeline } = require("../../util/aggregation");
+    const query = getStateWiseDataAvailPipeline(financialYear);
+    if (getQuery) return res.status(200).json(query);
+    response.data = await UlbLedger.aggregate(query);
+    response.data.map((each) => {
+      for (value of ulbsStateWise) {
+        if (each.stateId.toString() == value._id.toString()) {
+          each.percentage = ((each.count * 100) / value.count).toFixed(2);
+          delete each.count;
+        }
+      }
+      return each;
+    });
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: true, message: error.message });
+  }
+};

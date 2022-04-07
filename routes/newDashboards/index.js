@@ -24,7 +24,11 @@ const {
   yearlist,
 } = require("./ownRevenue");
 
-const { dataAvailabilityState, nationalDashRevenue } = require("./national");
+const {
+  dataAvailabilityState,
+  nationalDashRevenue,
+  getStatewiseDataAvail,
+} = require("./national");
 // router.use(verifyToken);
 router.use("/all-dashboard", shared);
 router.post("/data-available", dataAvailability);
@@ -52,7 +56,8 @@ router.get("/state-revenue-tabs", stateRevenueTabs);
 router.get("/state-ulbs-grouped-by-population", ulbsByPopulation);
 router.get("/get-FYs-with-specification", getFYsWithSpecification);
 
-//national dashboard
+// national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
 router.get("/national-dashboard/revenue", nationalDashRevenue);
+router.get("/get-statewise-data-availability", getStatewiseDataAvail);
 module.exports = router;
