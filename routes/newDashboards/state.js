@@ -1107,12 +1107,32 @@ const ulbsByPopulation = async (req, res) => {
   }
 };
 
+const getFYsWithSpecification = async (req, res) => {
+  try {
+    //getFYsWithSpecification
+    const { state, city, getQuery } = req.query;
+    if (!state && !city)
+      throw { message: "Any of the state or city is mandatory." };
+    let response = { success: true, data: null };
+    const query =
+      await require("../../util/aggregation").getFYsWithSpecificationPipeline(
+        state,
+        city
+      );
+    if (getQuery) return res.status(200).json(query);
+    response.data = await UlbLedger.aggregate(query);
+    res.status(200).json(response);
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 const serviceLevelBenchmark = catchAsync( async (req,res)=>{
 
   let {state,
     financialYear,
     filterName,
-  req,
+  request,
     isPerCapita,
     ulb,
     compareType,
@@ -1166,17 +1186,23 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
   let data = await Indicator.aggregate(query)
   console.log(data)
   if(data.length>0){
-    if(req){
-       tenData = fetchTen(data, req)
+    if(request){
+       tenData = fetchTen(data, request)
     }else{
       tp_data = data.filter((el) => {
-        return el.ulbType.name == "Town Panchayat";
+        el.ulbType.name == "Town Panchayat";
+        el.value = el.value * el.benchMarkValue * 100
+        return 
       });
        m_data = data.filter((el) => {
-        return el.ulbType.name == "Municipality";
+         el.ulbType.name == "Municipality";
+         el.value = el.value * el.benchMarkValue * 100;
+        return
       });
        mc_data = data.filter((el) => {
-        return el.ulbType.name == "Municipal Corporation";
+         el.ulbType.name == "Municipal Corporation";
+        el.value = el.value * el.benchMarkValue * 100;
+        return
       });
     }
     
@@ -1198,11 +1224,11 @@ const serviceLevelBenchmark = catchAsync( async (req,res)=>{
   })
   })
 
-  const fetchTen = (data,req) => {
+  const fetchTen = (data,request) => {
    let topTen =  array.slice(0, 10);
    let bottomTen =  array.slice(-10);
-if(req == 'top10')return topTen
-if(req == 'bottom10') return bottomTen
+if(request == 'top10')return topTen
+if(request == 'bottom10') return bottomTen
   }
 module.exports = {
   scatterMap,
@@ -1210,5 +1236,6 @@ module.exports = {
   listOfIndicators,
   stateRevenueTabs,
   ulbsByPopulation,
-  serviceLevelBenchmark
+  serviceLevelBenchmark,
+  getFYsWithSpecification
 };
