@@ -40,7 +40,13 @@ const {
   listOfIndicators,
   stateRevenueTabs,
   ulbsByPopulation,
+<<<<<<< HEAD
+  serviceLevelBenchmark
+=======
+  getFYsWithSpecification,
+>>>>>>> 93e4b5ac78eddaf965bf181479dc01934170a720
 } = require("./state");
+
 router.post("/state-scatter", scatterMap);
 
 //state dashboard
@@ -48,6 +54,11 @@ router.post("/state-revenue", revenue);
 router.get("/state-list-of-indics", listOfIndicators);
 router.get("/state-revenue-tabs", stateRevenueTabs);
 router.get("/state-ulbs-grouped-by-population", ulbsByPopulation);
+<<<<<<< HEAD
+router.post("/state-slb", serviceLevelBenchmark);
+=======
+router.get("/get-FYs-with-specification", getFYsWithSpecification);
+>>>>>>> 93e4b5ac78eddaf965bf181479dc01934170a720
 
 //national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
