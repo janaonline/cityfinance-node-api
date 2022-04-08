@@ -4,6 +4,7 @@ const UlbLedger = require("../../models/UlbLedger");
 const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
 const mongoose = require("mongoose");
+const { response } = require("../../service");
 const ObjectId = mongoose.Types.ObjectId;
 
 exports.dataAvailabilityState = async (req, res) => {
@@ -392,62 +393,66 @@ exports.nationalDashRevenue = async (req, res) => {
     let sumOfRevenue = 0,
       sumOfRevPerCapita = 0,
       sumOfDataAval = 0;
-    if (ulbLeds.length) {
-      const keys = Object.keys(ulbLeds[0]);
-      for (key of keys) {
-        //O(5) time complexity
-        let seenUlbs = 0,
-          obj = ulbLeds[0][key];
-        if (formType == "ulbType") {
-          ulbTypeMap[key] = obj;
-        } else if (formType == "populationCategory") {
-          populationMap[key] = obj;
-        }
-        for (each of obj["set"]) {
-          if (HashTable.get(each.toString())) ++seenUlbs;
-        }
-        sumOfRevenue += obj["revenue"];
-        sumOfRevPerCapita += obj["revenuePerCapita"];
-        delete obj["set"];
-        obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
-        sumOfDataAval += obj["DataAvailPercentage"];
-      }
-    }
-    if (formType == "ulbType") {
-      ulbTypeMap["Average"]["revenue"] = sumOfRevenue / 5;
-      ulbTypeMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
-      ulbTypeMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
-      responsePayload.data = ulbTypeMap;
-    } else if (formType == "populationCategory") {
-      populationMap["Average"]["revenue"] = sumOfRevenue / 5;
-      populationMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
-      populationMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
-      responsePayload.data = populationMap;
-    }
-    let displayNameMapper = {
-        revenue: "Revenue (in Cr)",
-        revenuePerCapita: "Revenue Per Capita (in Rs.)",
-        DataAvailPercentage: "Data Availability Percentage",
-      },
-      columns = [
-        {
-          key: "ulb_pop_category",
-          display_name: "ULB Population Category",
-        },
-        ...Object.keys(populationMap["Average"]).map((each) => {
-          return { key: each, display_name: displayNameMapper[each] };
-        }),
-      ],
-      rows = [
-        ...Object.keys(responsePayload.data).map((each) => {
-          let output = { ulb_pop_category: each };
-          for (x in responsePayload.data[each]) {
-            output[x] = responsePayload.data[each][x].toFixed(2);
+    if (type == "totalRevenue") {
+      if (ulbLeds.length) {
+        const keys = Object.keys(ulbLeds[0]);
+        for (key of keys) {
+          //O(5) time complexity
+          let seenUlbs = 0,
+            obj = ulbLeds[0][key];
+          if (formType == "ulbType") {
+            ulbTypeMap[key] = obj;
+          } else if (formType == "populationCategory") {
+            populationMap[key] = obj;
           }
-          return output;
-        }),
-      ];
-    responsePayload.data = { rows, columns };
+          for (each of obj["set"]) {
+            if (HashTable.get(each.toString())) ++seenUlbs;
+          }
+          sumOfRevenue += obj["revenue"];
+          sumOfRevPerCapita += obj["revenuePerCapita"];
+          delete obj["set"];
+          obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
+          sumOfDataAval += obj["DataAvailPercentage"];
+        }
+      }
+      if (formType == "ulbType") {
+        ulbTypeMap["Average"]["revenue"] = sumOfRevenue / 5;
+        ulbTypeMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
+        ulbTypeMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
+        responsePayload.data = ulbTypeMap;
+      } else if (formType == "populationCategory") {
+        populationMap["Average"]["revenue"] = sumOfRevenue / 5;
+        populationMap["Average"]["revenuePerCapita"] = sumOfRevPerCapita / 5;
+        populationMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
+        responsePayload.data = populationMap;
+      }
+      let displayNameMapper = {
+          revenue: "Revenue (in Cr)",
+          revenuePerCapita: "Revenue Per Capita (in Rs.)",
+          DataAvailPercentage: "Data Availability Percentage",
+        },
+        columns = [
+          {
+            key: "ulb_pop_category",
+            display_name: "ULB Population Category",
+          },
+          ...Object.keys(populationMap["Average"]).map((each) => {
+            return { key: each, display_name: displayNameMapper[each] };
+          }),
+        ],
+        rows = [
+          ...Object.keys(responsePayload.data).map((each) => {
+            let output = { ulb_pop_category: each };
+            for (x in responsePayload.data[each]) {
+              output[x] = responsePayload.data[each][x].toFixed(2);
+            }
+            return output;
+          }),
+        ];
+      responsePayload.data = { rows, columns };
+    } else if (type == "revenueMix") {
+      responsePayload.data = ulbLeds[0];
+    }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
     console.log(err);

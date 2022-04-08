@@ -484,6 +484,43 @@ exports.nationalDashRevenuePipeline = (
         }
       );
     }
+  } else if (type == "revenueMix") {
+    if (formType == "populationCategory") {
+    } else if (formType == "ulbType") {
+      pipeline.push({
+        $facet: {
+          national: [
+            {
+              $group: {
+                _id: { lineItem: "$lineItem" },
+                amount: {
+                  $sum: "$amount",
+                },
+              },
+            },
+          ],
+          individual: [
+            {
+              $group: {
+                _id: { lineItem: "$lineItem", type: "$ulb.ulbType" },
+                amount: { $sum: "$amount" },
+              },
+            },
+            {
+              $group: {
+                _id: "$_id.type",
+                data: {
+                  $push: {
+                    lineItem: "$_id.lineItem",
+                    amount: "$amount",
+                  },
+                },
+              },
+            },
+          ],
+        },
+      });
+    }
   }
   return pipeline;
 };
@@ -1026,6 +1063,11 @@ exports.getFYsWithSpecificationPipeline = async (state, city) => {
     });
   }
   pipeline.push(
+    {
+      $sort: {
+        financialYear: 1,
+      },
+    },
     {
       $group: {
         _id: null,
