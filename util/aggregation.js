@@ -1043,3 +1043,60 @@ exports.getFYsWithSpecificationPipeline = async (state, city) => {
 
   return pipeline;
 };
+
+exports.getStateWiseDataAvailPipeline = (financialYear) => {
+  let pipeline = [];
+  pipeline.push(
+    {
+      $match: {
+        financialYear,
+        lineItem: ObjectId("5dd10c2485c951b54ec1d74b"),
+      },
+    },
+
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $lookup: {
+        from: "states",
+        localField: "ulb.state",
+        foreignField: "_id",
+        as: "state",
+      },
+    },
+    {
+      $unwind: "$state",
+    },
+    {
+      $group: {
+        _id: "$ulb._id",
+        state: { $first: "$state.name" },
+        stateId: { $first: "$state._id" },
+        code: { $first: "$state.code" },
+      },
+    },
+    {
+      $group: {
+        _id: "$state",
+        count: { $sum: 1 },
+        stateId: { $first: "$stateId" },
+        code: { $first: "$code" },
+      },
+    },
+    {
+      $addFields: {
+        percentage: 0,
+      },
+    }
+  );
+  return pipeline;
+};
