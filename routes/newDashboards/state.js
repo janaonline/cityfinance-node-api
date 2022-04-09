@@ -1111,8 +1111,6 @@ const getFYsWithSpecification = async (req, res) => {
   try {
     //getFYsWithSpecification
     const { state, city, getQuery } = req.query;
-    if (!state && !city)
-      throw { message: "Any of the state or city is mandatory." };
     let response = { success: true, data: null };
     const query =
       await require("../../util/aggregation").getFYsWithSpecificationPipeline(
@@ -1121,6 +1119,7 @@ const getFYsWithSpecification = async (req, res) => {
       );
     if (getQuery) return res.status(200).json(query);
     response.data = await UlbLedger.aggregate(query);
+    response.data = response.data.length ? response.data[0] : null;
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
