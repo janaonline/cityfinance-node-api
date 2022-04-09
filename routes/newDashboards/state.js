@@ -1196,11 +1196,13 @@ $project:{
       let tp_data = [], m_data = [], mc_data = [], tenData = []
   let data = await Indicator.aggregate(query)
   // console.log(data)
-  
+  let stateAvg = [{average:0}]
   if(data.length>0){
+   
     if(sortBy){
        tenData = fetchTen(data, sortBy)
     }else{
+      stateAvg[0].average = calculateStateAvg(data)
       tp_data = data.filter((el) => {
 
         if(el.ulbType == "Town Panchayat")
@@ -1232,6 +1234,7 @@ $project:{
       tp_data:tp_data,
       m_data: m_data,
       mc_data:mc_data,
+      stateAvg: stateAvg,
       tenData:tenData
     }
   }
@@ -1241,6 +1244,16 @@ $project:{
     data: obj
   })
   })
+
+const calculateStateAvg = (data) => {
+ let numerator = 0, denominator = 0;
+
+  data.forEach(el => {
+    numerator = el.value * el.population + numerator 
+    denominator = el.population + denominator
+  })
+  return Number((numerator/denominator).toFixed(2))
+}
 
   const fetchTen = (data,sortBy) => {
    let topTen =  data.slice(0, 10);
