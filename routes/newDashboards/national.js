@@ -1,5 +1,6 @@
 const ULBLedger = require("../../models/UlbLedger");
 const Ulb = require("../../models/Ulb");
+const UlbType = require("../../models/UlbType");
 const UlbLedger = require("../../models/UlbLedger");
 const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
@@ -451,7 +452,68 @@ exports.nationalDashRevenue = async (req, res) => {
         ];
       responsePayload.data = { rows, columns };
     } else if (type == "revenueMix") {
-      responsePayload.data = ulbLeds[0];
+      if (formType == "ulbType") {
+        responsePayload.data = ulbLeds[0];
+        let nationalArr = responsePayload.data.national,
+          individualArr = responsePayload.data.individual;
+        let lineItemMap = new Map(),
+          ulbTypeMap = new Map();
+        const lineItems = await LineItem.find();
+        const UlbTypes = await UlbType.find();
+        lineItems.map((each) => {
+          lineItemMap.set(each._id.toString(), each.name);
+          return each;
+        });
+        UlbTypes.map((each) => {
+          ulbTypeMap.set(each._id.toString(), each.name);
+          return each;
+        });
+        nationalArr = nationalArr.map((each) => {
+          each._id.lineItem = lineItemMap.get(each._id.lineItem.toString());
+          return each;
+        });
+        individualArr = individualArr.map((each, idx) => {
+          each._id = ulbTypeMap.get(each._id.toString());
+          each.data.map((ev) => {
+            ev.lineItem = lineItemMap.get(ev.lineItem.toString());
+            return ev;
+          });
+          return each;
+        });
+        responsePayload.data.national = nationalArr;
+        responsePayload.data.individual = individualArr;
+      } else {
+        let lineItemMap = new Map();
+        const lineItems = await LineItem.find();
+        lineItems.map((each) => {
+          lineItemMap.set(each._id.toString(), each.name);
+          return each;
+        });
+        let populKeys = ["<100K", "100K-500K", "500K-1M", "1M-4M", "4M+"];
+        responsePayload.data = ulbLeds[0];
+        let dataMapper = {
+          "<100K": {},
+          "100K-500K": {},
+          "500K-1M": {},
+          "1M-4M": {},
+          "4M+": {},
+        };
+        responsePayload.data.individual.map((each) => {
+          const currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          populKeys.map((key) => {
+            if (!dataMapper[key][currLineItem])
+              dataMapper[key][currLineItem] = 0;
+            dataMapper[key][currLineItem] += each[key];
+          });
+        });
+        responsePayload.data.individual = dataMapper;
+        responsePayload.data.national = responsePayload.data.national.map(
+          (each) => {
+            each._id.lineItem = lineItemMap.get(each._id.lineItem.toString());
+            return each;
+          }
+        );
+      }
     }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
