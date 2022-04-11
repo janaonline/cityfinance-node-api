@@ -485,42 +485,116 @@ exports.nationalDashRevenuePipeline = (
       );
     }
   } else if (type == "revenueMix") {
-    if (formType == "populationCategory") {
-    } else if (formType == "ulbType") {
-      pipeline.push({
-        $facet: {
-          national: [
-            {
-              $group: {
-                _id: { lineItem: "$lineItem" },
-                amount: {
-                  $sum: "$amount",
-                },
+    pipeline.push({
+      $facet: {
+        national: [
+          {
+            $group: {
+              _id: { lineItem: "$lineItem" },
+              amount: {
+                $sum: "$amount",
               },
             },
-          ],
-          individual: [
-            {
-              $group: {
-                _id: { lineItem: "$lineItem", type: "$ulb.ulbType" },
-                amount: { $sum: "$amount" },
-              },
-            },
-            {
-              $group: {
-                _id: "$_id.type",
-                data: {
-                  $push: {
-                    lineItem: "$_id.lineItem",
-                    amount: "$amount",
+          },
+        ],
+        individual:
+          formType == "ulbType"
+            ? [
+                {
+                  $group: {
+                    _id: { lineItem: "$lineItem", type: "$ulb.ulbType" },
+                    amount: { $sum: "$amount" },
                   },
                 },
-              },
-            },
-          ],
-        },
-      });
-    }
+                {
+                  $group: {
+                    _id: "$_id.type",
+                    data: {
+                      $push: {
+                        lineItem: "$_id.lineItem",
+                        amount: "$amount",
+                      },
+                    },
+                  },
+                },
+              ]
+            : [
+                {
+                  $group: {
+                    _id: { lineItem: "$lineItem" },
+                    "<100K": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $lt: ["$ulb.population", 1e5],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "100K-500K": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $and: [
+                              { $gte: ["$ulb.population", 1e5] },
+                              { $lte: ["$ulb.population", 5e5] },
+                            ],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "500K-1M": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $and: [
+                              { $gte: ["$ulb.population", 5e5] },
+                              { $lte: ["$ulb.population", 1e6] },
+                            ],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "1M-4M": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $and: [
+                              { $gte: ["$ulb.population", 1e6] },
+                              { $lte: ["$ulb.population", 4e6] },
+                            ],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "4M+": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $gt: ["$ulb.population", 4e6],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
+      },
+    });
   }
   return pipeline;
 };
