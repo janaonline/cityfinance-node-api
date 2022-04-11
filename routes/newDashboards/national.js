@@ -468,20 +468,27 @@ exports.nationalDashRevenue = async (req, res) => {
           ulbTypeMap.set(each._id.toString(), each.name);
           return each;
         });
-        nationalArr = nationalArr.map((each) => {
-          each._id.lineItem = lineItemMap.get(each._id.lineItem.toString());
+        let national_Format = {},
+          individual_Format = {
+            Municipality: {},
+            "Municipal Corporation": {},
+            "Town Panchayat": {},
+          };
+        nationalArr.map((each) => {
+          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
+            each.amount;
           return each;
         });
-        individualArr = individualArr.map((each, idx) => {
-          each._id = ulbTypeMap.get(each._id.toString());
+        individualArr.map((each, idx) => {
+          const ulbTypeName = ulbTypeMap.get(each._id.toString());
           each.data.map((ev) => {
-            ev.lineItem = lineItemMap.get(ev.lineItem.toString());
-            return ev;
+            individual_Format[ulbTypeName][
+              lineItemMap.get(ev.lineItem.toString())
+            ] = ev.amount;
           });
-          return each;
         });
-        responsePayload.data.national = nationalArr;
-        responsePayload.data.individual = individualArr;
+        responsePayload.data.national = national_Format;
+        responsePayload.data.individual = individual_Format;
       } else {
         let lineItemMap = new Map();
         const lineItems = await LineItem.find();
@@ -507,12 +514,13 @@ exports.nationalDashRevenue = async (req, res) => {
           });
         });
         responsePayload.data.individual = dataMapper;
-        responsePayload.data.national = responsePayload.data.national.map(
-          (each) => {
-            each._id.lineItem = lineItemMap.get(each._id.lineItem.toString());
-            return each;
-          }
-        );
+        let national_Format = {};
+        responsePayload.data.national.map((each) => {
+          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
+            each.amount;
+          return each;
+        });
+        responsePayload.data.national = national_Format;
       }
     }
     res.status(200).json({ success: true, ...responsePayload });
