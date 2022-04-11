@@ -53,9 +53,11 @@ const headOfAccountIds = {
     ObjectId("5dd10c2285c951b54ec1d737"),
   ],
   ["revenue_expenditure_mix"]: [
+    ObjectId("5dd10c2685c951b54ec1d760"),
     ObjectId("5dd10c2585c951b54ec1d75a"),
     ObjectId("5dd10c2585c951b54ec1d756"),
     ObjectId("5dd10c2585c951b54ec1d753"),
+    ObjectId("5dd10c2385c951b54ec1d743"),
   ],
   ["Expense"]: [
     ObjectId("5dd10c2785c951b54ec1d77c"),
@@ -74,6 +76,18 @@ const headOfAccountIds = {
   ["capital_expenditure"]: [
     ObjectId("5dd10c2785c951b54ec1d779"),
     ObjectId("5dd10c2785c951b54ec1d774"),
+  ],
+  ["revenue_expenditure"]: [
+    ObjectId("5dd10c2885c951b54ec1d77e"),
+    ObjectId("5dd10c2685c951b54ec1d762"),
+    ObjectId("5dd10c2685c951b54ec1d760"),
+    ObjectId("5dd10c2585c951b54ec1d75a"),
+    ObjectId("5dd10c2585c951b54ec1d756"),
+    ObjectId("5dd10c2585c951b54ec1d753"),
+    ObjectId("5dd10c2485c951b54ec1d74b"),
+    ObjectId("5dd10c2485c951b54ec1d74a"),
+    ObjectId("5dd10c2385c951b54ec1d748"),
+    ObjectId("5dd10c2385c951b54ec1d743"),
   ],
 };
 
@@ -135,7 +149,6 @@ const indicator = async (req, res) => {
     ];
 
     switch (filterName) {
-      case "revenue_expenditure":
       case "revenue":
         let group = {
           _id: {
@@ -239,6 +252,8 @@ const indicator = async (req, res) => {
             $project: {
               _id: 1,
               ulbName: 1,
+              revenue: 1,
+              expense: 1,
               amount: { $subtract: ["$revenue", "$expense"] },
             },
           }
@@ -384,24 +399,45 @@ const indicator = async (req, res) => {
         });
         break;
       case "revenue_expenditure":
-        query.map((value) => {
-          if (value["$lookup"]?.from === "lineitems") {
-            value["$lookup"].pipeline[0] = {
-              $match: {
-                code: { $in: ["210", "220", "230"] },
+        Object.assign(matchObj, {
+          lineItem: {
+            $in: headOfAccountIds["revenue_expenditure"],
+          },
+        });
+        let groupObj = {
+          _id: {
+            ulb: "$ulb._id",
+            financialYear: "$financialYear",
+          },
+          amount: { $sum: "$amount" },
+          ulbName: { $first: "$ulb.name" },
+        };
+        Object.assign(groupObj, {
+          revenue: {
+            $sum: {
+              $cond: {
+                if: {
+                  $in: ["$lineitems.code", ["110", "130", "140", "150", "180"]],
+                },
+                then: "$amount",
+                else: 0,
               },
-            };
-          }
+            },
+          },
+          expense: {
+            $sum: {
+              $cond: {
+                if: {
+                  $in: ["$lineitems.code", ["200", "210", "220", "230", "240"]],
+                },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
         });
         query.push({
-          $group: {
-            _id: {
-              ulb: "$ulb._id",
-              financialYear: "$financialYear",
-            },
-            amount: { $sum: "$amount" },
-            ulbName: { $first: "$ulb.name" },
-          },
+          $group: groupObj,
         });
         break;
       default:
@@ -443,6 +479,8 @@ const indicator = async (req, res) => {
 };
 
 const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
+  if (from == "revenue_expenditure")
+    return revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapita);
   let newData = JSON.parse(JSON.stringify(query)); //deep copy of prev query
   if (newData[0]["$match"]["lineItem"])
     newData[0]["$match"]["lineItem"]["$in"] = newData[0]["$match"]["lineItem"][
@@ -496,14 +534,14 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
           Object.assign(value["$group"]._id, { state: "$ulb.state" });
           value["$group"].ulbName = { $first: "$state.name" };
           Object.assign(value["$group"], {
-            numerator: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+            numerator: { $sum: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] } },
             numerator2: {
               $sum: {
                 $cond: {
                   if: {
                     $eq: ["$lineitems.code", "11001"],
                   },
-                  then: { $multiply: ["$amount", "$ulb.population"] },
+                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
                   else: 0,
                 },
               },
@@ -536,6 +574,8 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
         newData[newData.length - 1]["$project"] = {
           _id: 1,
           ulbName: 1,
+          revenue: 1,
+          expense: 1,
           amount: {
             $divide: [{ $subtract: ["$revenue", "$expense"] }, "$population"],
           },
@@ -573,6 +613,344 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
 };
 
 let globalState;
+
+async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapita) {
+  console.log(compareFrom, query, ulb);
+  let ulbData;
+  let ulbId;
+  let tempQ;
+  switch (compareFrom) {
+    case "State Average":
+      ulbData = await ULB.findOne({ _id: ulb });
+      ulbId = await ULB.find({ state: ulbData.state });
+      tempQ = [
+        {
+          $match: {
+            financialYear: {
+              $in: ["2020-21", "2019-20", "2018-19"],
+            },
+            ulb: {
+              $in: ulbId.map((val) => val._id),
+            },
+            lineItem: {
+              $in: headOfAccountIds["revenue_expenditure"],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems",
+          },
+        },
+        {
+          $unwind: "$lineitems",
+        },
+        {
+          $group: {
+            _id: {
+              financialYear: "$financialYear",
+              state: "$ulb.state",
+            },
+            amount: {
+              $sum: "$amount",
+            },
+            ulbName: {
+              $first: "$state.name",
+            },
+            revenue: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $in: [
+                      "$lineitems.code",
+                      ["110", "130", "140", "150", "180"],
+                    ],
+                  },
+                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  else: 0,
+                },
+              },
+            },
+            expense: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $in: [
+                      "$lineitems.code",
+                      ["200", "210", "220", "230", "240"],
+                    ],
+                  },
+                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  else: 0,
+                },
+              },
+            },
+            denominator: {
+              $sum: "$ulb.population",
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            revenue: {
+              $divide: ["$revenue", "$denominator"],
+            },
+            expense: {
+              $divide: ["$expense", "$denominator"],
+            },
+            ulbName: 1,
+            code: 1,
+          },
+        },
+      ];
+      return tempQ;
+      break;
+    case "ULB category Average":
+    case "National Average":
+      ulbData = await ULB.findOne({ _id: ulb });
+      ulbId = await ULB.find({ state: ulbData.state });
+      tempQ = [
+        {
+          $match: {
+            financialYear: {
+              $in: ["2020-21", "2019-20", "2018-19"],
+            },
+            // ulb: {
+            //   $in: ulbId.map((val) => val._id),
+            // },
+            lineItem: {
+              $in: headOfAccountIds["revenue_expenditure"],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems",
+          },
+        },
+        {
+          $unwind: "$lineitems",
+        },
+        {
+          $group: {
+            _id: {
+              financialYear: "$financialYear",
+              state: "$ulb.state",
+            },
+            amount: {
+              $sum: "$amount",
+            },
+            ulbName: {
+              $first: "$state.name",
+            },
+            revenue: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $in: [
+                      "$lineitems.code",
+                      ["110", "130", "140", "150", "180"],
+                    ],
+                  },
+                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  else: 0,
+                },
+              },
+            },
+            expense: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $in: [
+                      "$lineitems.code",
+                      ["200", "210", "220", "230", "240"],
+                    ],
+                  },
+                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  else: 0,
+                },
+              },
+            },
+            denominator: {
+              $sum: "$ulb.population",
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            revenue: {
+              $divide: ["$revenue", "$denominator"],
+            },
+            expense: {
+              $divide: ["$expense", "$denominator"],
+            },
+            ulbName: 1,
+            code: 1,
+          },
+        },
+      ];
+      return tempQ;
+      break;
+
+    case "ULB Type Average":
+      ulbData = await ULB.findOne({ _id: ulb });
+      ulbId = await ULB.find({ state: ulbData.ulbType });
+      tempQ = [
+        {
+          $match: {
+            financialYear: {
+              $in: ["2020-21", "2019-20", "2018-19"],
+            },
+            // ulb: {
+            //   $in: ulbId.map((val) => val._id),
+            // },
+            lineItem: {
+              $in: headOfAccountIds["revenue_expenditure"],
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems",
+          },
+        },
+        {
+          $unwind: "$lineitems",
+        },
+        {
+          $group: {
+            _id: {
+              financialYear: "$financialYear",
+              state: "$ulb.state",
+            },
+            amount: {
+              $sum: "$amount",
+            },
+            ulbName: {
+              $first: "$state.name",
+            },
+            revenue: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $in: [
+                      "$lineitems.code",
+                      ["110", "130", "140", "150", "180"],
+                    ],
+                  },
+                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  else: 0,
+                },
+              },
+            },
+            expense: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $in: [
+                      "$lineitems.code",
+                      ["200", "210", "220", "230", "240"],
+                    ],
+                  },
+                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  else: 0,
+                },
+              },
+            },
+            denominator: {
+              $sum: "$ulb.population",
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            revenue: {
+              $divide: ["$revenue", "$denominator"],
+            },
+            expense: {
+              $divide: ["$expense", "$denominator"],
+            },
+            ulbName: 1,
+            code: 1,
+          },
+        },
+      ];
+      return tempQ;
+      break;
+
+    default:
+      break;
+  }
+}
 
 const aboutCalculation = async (req, res) => {
   try {
@@ -679,6 +1057,15 @@ const aboutCalculation = async (req, res) => {
       _id: null,
       amount: { $sum: "$amount" },
       totalPopulation: { $sum: "$ulb.population" },
+      ulbAmount: {
+        $sum: {
+          $cond: {
+            if: { $eq: ["$ulb._id", ObjectId(ulb)] },
+            then: "$amount",
+            else: 0,
+          },
+        },
+      },
     };
 
     if (filterName) {

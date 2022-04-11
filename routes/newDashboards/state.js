@@ -1125,11 +1125,158 @@ const getFYsWithSpecification = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+const serviceLevelBenchmark = catchAsync( async (req,res)=>{
+
+  let {stateId,
+    financialYear,
+    filterName,
+  sortBy,
+    isPerCapita,
+    ulb,
+    compareType,
+    getQuery,} = req.body
+  
+    if(!stateId || !financialYear || !filterName){
+      return res.status(400).json({
+        success: false,
+        message: "Missing Information"
+      })
+    }
+  
+    let query = [
+      {
+          $match:{
+              name:filterName,
+              year:financialYear
+              }
+          },
+          {
+              $lookup:{
+                  from:"ulbs",
+                  localField:"ulb",
+                  foreignField:"_id",
+                  as:"ulb"
+                  }
+              },{
+                  $unwind:"$ulb"
+                  },
+                  {
+                      $match:{
+                          "ulb.state":ObjectId(stateId)
+                         
+                      }
+                  },
+                  {
+                    $lookup:{
+               from:"ulbtypes",
+               localField:"ulb.ulbType",
+               foreignField:"_id",
+               as:"ulbType"
+               }
+           },{
+               $unwind:"$ulbType"
+               },
+                  {
+                      $sort:{"value":-1}
+                      },
+                      {
+$project:{
+
+  ulbName:"$ulb.name",
+  value:"$value",
+  benchMarkValue:"$benchMarkValue",
+  unitType:"$unitType",
+  ulbType:"$ulbType.name",
+  population:"$ulb.population"
+}
+
+                      }
+      ]
+      let tp_data = [], m_data = [], mc_data = [], tenData = []
+  let data = await Indicator.aggregate(query)
+  // console.log(data)
+  let stateAvg = [{average:0}]
+  if(data.length>0){
+   
+    if(sortBy){
+       tenData = fetchTen(data, sortBy)
+    }else{
+      stateAvg[0].average = calculateStateAvg(data)
+      tp_data = data.filter((el) => {
+
+        if(el.ulbType == "Town Panchayat")
+        {el.value = (el.value / el.benchMarkValue) * 100
+          return el}
+        
+      });
+       m_data = data.filter((el) => {
+         if(el.ulbType == "Municipality"){
+          el.value = (el.value / el.benchMarkValue) * 100;
+          return el
+         }
+         
+      });
+       mc_data = data.filter((el) => {
+        if(el.ulbType == "Municipal Corporation"){
+          el.value = (el.value / el.benchMarkValue) * 100;
+          return el
+        }
+        
+      });
+    }
+  
+     
+  }
+    const obj = {
+    barChart:[],
+    scatterData:{
+      tp_data:tp_data,
+      m_data: m_data,
+      mc_data:mc_data,
+      stateAvg: stateAvg,
+      tenData:tenData
+    }
+  }
+  
+  return res.status(200).json({
+    success: true,
+    data: obj
+  })
+  })
+
+const calculateStateAvg = (data) => {
+ let numerator = 0, denominator = 0;
+
+  data.forEach(el => {
+    numerator = el.value * el.population + numerator 
+    denominator = el.population + denominator
+  })
+  return Number((numerator/denominator).toFixed(2))
+}
+
+  const fetchTen = (data,sortBy) => {
+   let topTen =  data.slice(0, 10);
+   let bottomTen =  data.slice(-10);
+if(sortBy == 'top10'){
+  topTen.forEach(el => {
+    el.value = (el.value/el.benchMarkValue) * 100
+  })
+  return topTen
+}
+if(sortBy == 'bottom10'){
+  bottomTen.forEach(el => {
+    el.value = (el.value/el.benchMarkValue) * 100
+  })
+  return bottomTen
+} 
+  }
 module.exports = {
   scatterMap,
   revenue,
   listOfIndicators,
   stateRevenueTabs,
   ulbsByPopulation,
-  getFYsWithSpecification,
+  serviceLevelBenchmark,
+  getFYsWithSpecification
 };
