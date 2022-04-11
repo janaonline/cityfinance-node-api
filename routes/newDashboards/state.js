@@ -177,6 +177,16 @@ const scatterMap = async (req, res) => {
   }
 };
 
+const getFYsSLB = catchAsync(async(req,res)=>{
+  let arr = await Indicator.distinct("year").sort()
+  let reversedArr = arr.reverse()
+
+  return res.status(200).json({
+    success: true,
+    data: reversedArr
+  })
+})
+
 const calData = (data) => {
   let copyData = [];
   copyData = data.slice();
@@ -1278,5 +1288,6 @@ module.exports = {
   stateRevenueTabs,
   ulbsByPopulation,
   serviceLevelBenchmark,
-  getFYsWithSpecification
+  getFYsWithSpecification,
+  getFYsSLB
 };

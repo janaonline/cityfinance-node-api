@@ -46,6 +46,7 @@ const {
   ulbsByPopulation,
   serviceLevelBenchmark,
   getFYsWithSpecification,
+  getFYsSLB
 } = require("./state");
 
 router.post("/state-scatter", scatterMap);
@@ -57,6 +58,7 @@ router.get("/state-revenue-tabs", stateRevenueTabs);
 router.get("/state-ulbs-grouped-by-population", ulbsByPopulation);
 router.post("/state-slb", serviceLevelBenchmark);
 router.get("/get-FYs-with-specification", getFYsWithSpecification);
+router.get("/get-FYs-slb", getFYsSLB);
 
 // national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
