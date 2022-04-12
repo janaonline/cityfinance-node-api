@@ -1211,36 +1211,12 @@ module.exports.getForm = catchAsync(async (req, res) => {
         ];
         let { output1, output2, output3, output4, output5, output6 } =
             await new Promise(async (resolve, reject) => {
-                let prms1 = new Promise(async (rslv, rjct) => {
-                    let output = await MasterFormData.aggregate(query1);
-
-                    rslv(output);
-                });
-                let prms2 = new Promise(async (rslv, rjct) => {
-                    let output = await MasterFormData.aggregate(query2);
-
-                    rslv(output);
-                });
-                let prms3 = new Promise(async (rslv, rjct) => {
-                    let output = await MasterFormData.aggregate(query3);
-
-                    rslv(output);
-                });
-                let prms4 = new Promise(async (rslv, rjct) => {
-                    let output = await MasterFormData.aggregate(query4);
-
-                    rslv(output);
-                });
-                let prms5 = new Promise(async (rslv, rjct) => {
-                    let output = await MasterFormData.aggregate(query5);
-
-                    rslv(output);
-                });
-                let prms6 = new Promise(async (rslv, rjct) => {
-                    let output = await MasterFormData.aggregate(query6);
-
-                    rslv(output);
-                });
+                let prms1 = MasterFormData.aggregate(query1);
+                let prms2 = MasterFormData.aggregate(query2);
+                let prms3 = MasterFormData.aggregate(query3);
+                let prms4 = MasterFormData.aggregate(query4);
+                let prms5 = MasterFormData.aggregate(query5);
+                let prms6 = MasterFormData.aggregate(query6);
                 Promise.all([prms1, prms2, prms3, prms4, prms5, prms6]).then(
                     (outputs) => {
                         let output1 = outputs[0];
