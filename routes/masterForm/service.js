@@ -2476,6 +2476,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
           },
         },
         {
+          $match:{
+            $or:[{"masterforms.design_year":ObjectId(design_year)},{"masterforms.design_year":{$exists: false}}]
+          }
+        },
+        {
           $lookup: {
             from: "annualaccountdatas",
             localField: "_id",
@@ -2730,6 +2735,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
             path: "$masterforms",
             preserveNullAndEmptyArrays: true,
           },
+        },
+        {
+          $match:{
+            $or:[{"masterforms.design_year":ObjectId(design_year)},{"masterforms.design_year":{$exists: false}}]
+          }
         },
         {
           $lookup: {
