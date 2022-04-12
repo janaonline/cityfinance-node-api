@@ -1119,10 +1119,10 @@ module.exports.getForm = catchAsync(async (req, res) => {
 
         let { output1, output2, output3, output4 } =
             await new Promise(async (resolve, reject) => {
-                let prms1 = MasterFormData.aggregate(query1 );
-                let prms2 = MasterFormData.aggregate(query2 );
-                let prms3 = MasterFormData.aggregate(query3 );
-                let prms4 = MasterFormData.aggregate(query4 );
+                let prms1 = MasterFormData.aggregate(query1 ).allowDiskUse(true);
+                let prms2 = MasterFormData.aggregate(query2 ).allowDiskUse(true);
+                let prms3 = MasterFormData.aggregate(query3 ).allowDiskUse(true);
+                let prms4 = MasterFormData.aggregate(query4 ).allowDiskUse(true);
                
                 Promise.all([prms1, prms2, prms3, prms4]).then(
                     (outputs) => {
