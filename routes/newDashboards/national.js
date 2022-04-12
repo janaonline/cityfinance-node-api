@@ -533,25 +533,31 @@ exports.nationalDashRevenue = async (req, res) => {
 exports.nationalDashExpenditure = async (req, res) => {
   try {
     let responsePayload = { data: null };
-    let { financialYear, type, formType, visualType, getQuery } = req.query;
+    let { financialYear, type, formType, visualType, getQuery, stateId } =
+      req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalExpenditure";
     formType = formType ? formType : "populationCategory";
     const { nationalDashExpensePipeline } = require("../../util/aggregation");
     const HashTable = new Map();
-    let ulbs = await Ulb.find().select("_id");
-    let lineItemsExp = await LineItem.find({ headOfAccount: "Expense" }).select(
-      "_id"
-    );
-    ulbs.map((each) => {
+    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItemsExp = await LineItem.find(
+      type == "deficitOrSurplus"
+        ? { headOfAccount: { $in: ["Expense", "Revenue"] } }
+        : { headOfAccount: "Expense" }
+    ).select("_id");
+    ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
+      return each._id;
     });
     lineItemsExp = lineItemsExp.map((each) => each._id);
     const query = nationalDashExpensePipeline(
       financialYear,
+      stateId,
       type,
       formType,
-      lineItemsExp
+      lineItemsExp,
+      ulbs
     );
     if (getQuery) return res.status(200).json(query);
     const ulbLeds = await UlbLedger.aggregate(query);
@@ -741,6 +747,67 @@ exports.nationalDashExpenditure = async (req, res) => {
           return each;
         });
         responsePayload.data.national = national_Format;
+      }
+    } else {
+      //deficitOrSurplus
+      if (formType == "ulbType") {
+        responsePayload.data = ulbLeds[0];
+        const national_Format = {
+          revenue: ulbLeds[0].national.revenue.toFixed(2),
+          expense: ulbLeds[0].national.expense.toFixed(2),
+          deficitOrSurplus: ulbLeds[0].national.deficitOrSurplus.toFixed(2),
+        };
+        responsePayload.data.national = national_Format;
+        let individualArr = responsePayload.data.individual;
+        let ulbTypeMap = new Map();
+        const UlbTypes = await UlbType.find();
+        UlbTypes.map((each) => {
+          ulbTypeMap.set(each._id.toString(), each.name);
+          return each;
+        });
+        let individual_Format = {
+          Municipality: {},
+          "Municipal Corporation": {},
+          "Town Panchayat": {},
+        };
+        individualArr.map((each) => {
+          individual_Format[ulbTypeMap.get(each._id.toString())] = {
+            revenue: each.revenue.toFixed(2),
+            expense: each.expense.toFixed(2),
+            deficitOrSurplus: each.deficitOrSurplus.toFixed(2),
+            _id: undefined,
+          };
+        });
+        responsePayload.data.individual = individual_Format;
+      } else {
+        responsePayload.data = ulbLeds[0];
+        const national_Format = {
+          revenue: ulbLeds[0].national.revenue.toFixed(2),
+          expense: ulbLeds[0].national.expense.toFixed(2),
+          deficitOrSurplus: ulbLeds[0].national.deficitOrSurplus.toFixed(2),
+        };
+        responsePayload.data.national = national_Format;
+        let rows = Object.keys(responsePayload.data.individual).filter(
+          (each) => each != "_id"
+        );
+        const cols = ["revenue", "expense", "deficitOrSurplus"];
+        let individual_Format = {},
+          rowMapper = {
+            "<100K": "< 100 Thousand",
+            "100K-500K": "100 Thousand - 500 Thousand",
+            "500K-1M": "500 Thousand - 1 Million",
+            "1M-4M": "1 Million - 4 Million",
+            "4M+": "4 Million+",
+          };
+        for (row of rows) {
+          const newRow = rowMapper[row];
+          for (col of cols) {
+            const val = responsePayload.data.individual[row][col];
+            if(!individual_Format[newRow]) individual_Format[newRow] = {};
+            individual_Format[newRow][col] = val.toFixed(2);
+          }
+        }
+        responsePayload.data.individual = individual_Format;
       }
     }
     res.status(200).json({ success: true, ...responsePayload });

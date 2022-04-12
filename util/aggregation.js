@@ -1219,19 +1219,23 @@ exports.getStateWiseDataAvailPipeline = (financialYear) => {
 
 exports.nationalDashExpensePipeline = (
   financialYear,
+  stateId,
   type,
   formType,
-  lineItems
+  lineItems,
+  ulbs
 ) => {
-  let pipeline = [];
   let matchObj = {
     financialYear,
     lineItem: { $in: lineItems },
   };
-  pipeline.push(
+  let pipeline = [
     {
       $match: matchObj,
     },
+  ];
+  if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  pipeline.push(
     {
       $lookup: {
         from: "ulbs",
@@ -1804,7 +1808,305 @@ exports.nationalDashExpensePipeline = (
               ],
       },
     });
+  } else {
+    //deficitOrSurplus
+    pipeline.push(
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineItem",
+        },
+      },
+      {
+        $unwind: "$lineItem",
+      },
+      {
+        $facet: {
+          national: [
+            {
+              $group: {
+                _id: null,
+                revenue: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                expense: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                revenue: 1,
+                expense: 1,
+                deficitOrSurplus: {
+                  $subtract: ["$revenue", "$expense"],
+                },
+              },
+            },
+          ],
+          individual:
+            formType == "ulbType"
+              ? [
+                  {
+                    $group: {
+                      _id: "$ulb.ulbType",
+                      revenue: {
+                        $sum: {
+                          $cond: {
+                            if: { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      expense: {
+                        $sum: {
+                          $cond: {
+                            if: { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 1,
+                      revenue: 1,
+                      expense: 1,
+                      deficitOrSurplus: {
+                        $subtract: ["$revenue", "$expense"],
+                      },
+                    },
+                  },
+                ]
+              : [
+                  {
+                    $group: {
+                      _id: null,
+                      "<100K_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $lt: ["$ulb.population", 1e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "<100K_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $lt: ["$ulb.population", 1e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "100K-500K_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $gte: ["$ulb.population", 1e5] },
+                                { $lte: ["$ulb.population", 5e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "100K-500K_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $gte: ["$ulb.population", 1e5] },
+                                { $lte: ["$ulb.population", 5e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+
+                      "500K-1M_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $gte: ["$ulb.population", 5e5] },
+                                { $lte: ["$ulb.population", 1e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "500K-1M_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $gte: ["$ulb.population", 5e5] },
+                                { $lte: ["$ulb.population", 1e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+
+                      "1M-4M_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $gte: ["$ulb.population", 1e6] },
+                                { $lte: ["$ulb.population", 4e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "1M-4M_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $gte: ["$ulb.population", 1e6] },
+                                { $lte: ["$ulb.population", 4e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+
+                      "4M+_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                ,
+                                {
+                                  $gt: ["$ulb.population", 4e6],
+                                },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "4M+_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                ,
+                                {
+                                  $gt: ["$ulb.population", 4e6],
+                                },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                    },
+                  },
+                  {
+                    $project: {
+                      "<100K": {
+                        revenue: "$<100K_revenue",
+                        expense: "$<100K_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$<100K_revenue", "$<100K_expense"],
+                        },
+                      },
+                      "100K-500K": {
+                        revenue: "$100K-500K_revenue",
+                        expense: "$100K-500K_expense",
+                        deficitOrSurplus: {
+                          $subtract: [
+                            "$100K-500K_revenue",
+                            "$100K-500K_expense",
+                          ],
+                        },
+                      },
+                      "500K-1M": {
+                        revenue: "$500K-1M_revenue",
+                        expense: "$500K-1M_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$500K-1M_revenue", "$500K-1M_expense"],
+                        },
+                      },
+                      "1M-4M": {
+                        revenue: "$1M-4M_revenue",
+                        expense: "$1M-4M_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$1M-4M_revenue", "$1M-4M_expense"],
+                        },
+                      },
+                      "4M+": {
+                        revenue: "$4M+_revenue",
+                        expense: "$4M+_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$4M+_revenue", "$4M+_expense"],
+                        },
+                      },
+                    },
+                  },
+                ],
+        },
+      }
+    );
   }
-  // pipeline.push({ $limit: 5 });
+  pipeline.push({ $unwind: "$national" });
+  if (type == "deficitOrSurplus" && formType == "populationCategory") {
+    pipeline.push({ $unwind: "$individual" });
+  }
   return pipeline;
 };
