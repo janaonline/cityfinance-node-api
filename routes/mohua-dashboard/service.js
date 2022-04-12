@@ -940,55 +940,10 @@ module.exports.getForm = catchAsync(async (req, res) => {
                 },
             },
         ];
-//pfms
-        let query2 = [
-            {
-                $lookup: {
-                    from: "ulbs",
-                    localField: "ulb",
-                    foreignField: "_id",
-                    as: "ulbData",
-                },
-            },
-            {
-                $unwind: "$ulbData",
-            },
-            {
-                $project: {
-                    steps: 1,
-                    actionTakenByRole: 1,
-                    status: 1,
-                    isSubmit: 1,
-                    ulb: 1,
-                    state: 1,
-                    design_year: 1,
-                    isUA: "$ulbData.isUA",
-                    isMillionPlus: "$ulbData.isMillionPlus",
-                },
-            },
-            match,
-            {
-                $lookup: {
-                    from: "pfmsaccounts",
-                    localField: "ulb",
-                    foreignField: "ulb",
-                    as: "pfms",
-                },
-            },
-            {
-                $unwind: "$pfms",
-            },
 
-            {
-                $group: {
-                    _id: "$pfms.linked",
-                    count: { $sum: 1 },
-                },
-            },
-        ];
 //annualaccounts
 
-        let query3 = [
+        let query2 = [
             {
     $match:{
       
@@ -1065,7 +1020,7 @@ module.exports.getForm = catchAsync(async (req, res) => {
             { '$match': { _id: true } },
           ];
 //util report
-        let query4 = [
+        let query3 = [
             {
                 $lookup: {
                     from: "ulbs",
@@ -1113,7 +1068,7 @@ module.exports.getForm = catchAsync(async (req, res) => {
             },
         ];
 //xv fc grant ulb form
-        let query5 = [
+        let query4 = [
             {
                 $lookup: {
                     from: "ulbs",
@@ -1161,85 +1116,34 @@ module.exports.getForm = catchAsync(async (req, res) => {
             },
         ];
 
-//plans
-        let query6 = [
-            {
-                $lookup: {
-                    from: "ulbs",
-                    localField: "ulb",
-                    foreignField: "_id",
-                    as: "ulbData",
-                },
-            },
-            {
-                $unwind: "$ulbData",
-            },
-            {
-                $project: {
-                    steps: 1,
-                    actionTakenByRole: 1,
-                    status: 1,
-                    isSubmit: 1,
-                    ulb: 1,
-                    state: 1,
-                    design_year: 1,
-                    isUA: "$ulbData.isUA",
-                    isMillionPlus: "$ulbData.isMillionPlus",
-                },
-            },
-            match,
-            {
-                $lookup: {
-                    from: "xvfcgrantplans",
-                    localField: "ulb",
-                    foreignField: "ulb",
-                    as: "plans",
-                },
-            },
-            { $unwind: "$plans" },
-            {
-                $group: {
-                    _id: {
-                        isSubmit: "$isSubmit",
-                        actionTakenByRole: "$actionTakenByRole",
-                        status: "$plans.status",
-                        isDraft: "$plans.isDraft",
-                    },
-                    count: { $sum: 1 },
-                },
-            },
-        ];
-        let { output1, output2, output3, output4, output5, output6 } =
+
+        let { output1, output2, output3, output4 } =
             await new Promise(async (resolve, reject) => {
-                let prms1 = MasterFormData.aggregate(query1,{ allowDiskUse: true } );
-                let prms2 = MasterFormData.aggregate(query2,{ allowDiskUse: true } );
-                let prms3 = MasterFormData.aggregate(query3,{ allowDiskUse: true } );
-                let prms4 = MasterFormData.aggregate(query4,{ allowDiskUse: true } );
-                let prms5 = MasterFormData.aggregate(query5,{ allowDiskUse: true } );
-                let prms6 = MasterFormData.aggregate(query6,{ allowDiskUse: true } );
-                Promise.all([prms1, prms2, prms3, prms4, prms5, prms6]).then(
+                let prms1 = MasterFormData.aggregate(query1 );
+                let prms2 = MasterFormData.aggregate(query2 );
+                let prms3 = MasterFormData.aggregate(query3 );
+                let prms4 = MasterFormData.aggregate(query4 );
+               
+                Promise.all([prms1, prms2, prms3, prms4]).then(
                     (outputs) => {
                         let output1 = outputs[0];
                         let output2 = outputs[1];
                         let output3 = outputs[2];
                         let output4 = outputs[3];
-                        let output5 = outputs[4];
-                        let output6 = outputs[5];
+                  
                         if (
                             output1 &&
                             output2 &&
                             output3 &&
-                            output4 &&
-                            output5 &&
-                            output6
+                            output4
+                           
                         ) {
                             resolve({
                                 output1,
                                 output2,
                                 output3,
-                                output4,
-                                output5,
-                                output6,
+                                output4
+                                
                             });
                         } else {
                             reject({ message: "No Data Found" });
@@ -1256,8 +1160,7 @@ module.exports.getForm = catchAsync(async (req, res) => {
             output2,
             output3,
             output4,
-            output5,
-            output6,
+       
             0,
             numbers
         );
@@ -1388,8 +1291,7 @@ const formatOutput = (
     output2,
     output3,
     output4,
-    output5,
-    output6,
+ 
     i,
     numbers
 ) => {
@@ -1434,28 +1336,19 @@ const formatOutput = (
             numbers[i] - underReviewByState - overall_approvedByState;
     });
 
-    //pfms
-    output2.forEach((el) => {
-        if (el._id === "no") {
-            notRegistered = el.count;
-        } else if (el._id === "yes") {
-            registered = el.count;
-        }
-
-        pendingResponse = numbers[i] - registered - notRegistered;
-    });
+ 
 
     //annualaccounts
-    if (output3.length > 0) {
-        provisional = (output3[0]?.unAudited / numbers[i]) * 100;
-        audited = (output3[0]?.audited / numbers[i]) * 100;
+    if (output2.length) {
+        provisional = (output2[0]?.unAudited / numbers[i]) * 100;
+        audited = (output2[0]?.audited / numbers[i]) * 100;
       } else {
         provisional = 0;
         audited = 0;
       }
 
     //detailed utilization report
-    output4.forEach((el) => {
+    output3.forEach((el) => {
         if (
             el._id.actionTakenByRole === "ULB" &&
             el._id.status === "PENDING" &&
@@ -1484,7 +1377,7 @@ const formatOutput = (
     });
 
     //slb
-    output5.forEach((el) => {
+    output4.forEach((el) => {
         if (
             el._id.actionTakenByRole === "ULB" &&
             el._id.status === "PENDING" &&
@@ -1512,33 +1405,7 @@ const formatOutput = (
             slb_completedAndPendingSubmission;
     });
 
-    output6.forEach((el) => {
-        if (
-            el._id.actionTakenByRole === "ULB" &&
-            el._id.status === "PENDING" &&
-            el._id.isSubmit
-        ) {
-            plans_underStateReview = el.count;
-        } else if (
-            el._id.actionTakenByRole === "STATE" &&
-            el._id.status === "APPROVED" &&
-            el._id.isSubmit
-        ) {
-            plans_approvedbyState = el.count;
-        } else if (
-            !el._id.isSubmit &&
-            el._id.actionTakenByRole === "ULB" &&
-            el._id.isCompleted
-        ) {
-            plans_completedAndPendingSubmission = el.count;
-        }
-
-        plans_pendingCompletion =
-            numbers[i] -
-            plans_underStateReview -
-            plans_approvedbyState -
-            plans_completedAndPendingSubmission;
-    });
+ 
 
     let finalOutput = {
         type:

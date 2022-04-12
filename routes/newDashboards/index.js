@@ -46,7 +46,8 @@ const {
   ulbsByPopulation,
   serviceLevelBenchmark,
   getFYsWithSpecification,
-  getFYsSLB
+  getFYsSLB,
+  indicatorDump
 } = require("./state");
 
 router.post("/state-scatter", scatterMap);
@@ -59,6 +60,8 @@ router.get("/state-ulbs-grouped-by-population", ulbsByPopulation);
 router.post("/state-slb", serviceLevelBenchmark);
 router.get("/get-FYs-with-specification", getFYsWithSpecification);
 router.get("/get-FYs-slb", getFYsSLB);
+router.get("/indicatorCSV", indicatorDump);
+
 
 // national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
