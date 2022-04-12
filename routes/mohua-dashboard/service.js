@@ -1358,12 +1358,10 @@ const formatOutput = (
         ) {
             util_underStateReview = el.count;
         } else if (
-            (el._id.actionTakenByRole === "STATE" &&
-            el._id.status === "APPROVED") ||
-            (el._id.actionTakenByRole === "MoHUA" &&
-            !el._id.status === "REJECTED"
+    
+            el._id.status === "APPROVED"
             )
-        ) {
+         {
             util_approvedbyState = el.count;
         } else if (
             !el._id.isSubmit &&
