@@ -1216,3 +1216,897 @@ exports.getStateWiseDataAvailPipeline = (financialYear) => {
   );
   return pipeline;
 };
+
+exports.nationalDashExpensePipeline = (
+  financialYear,
+  stateId,
+  type,
+  formType,
+  lineItems,
+  ulbs
+) => {
+  let matchObj = {
+    financialYear,
+    lineItem: { $in: lineItems },
+  };
+  let pipeline = [
+    {
+      $match: matchObj,
+    },
+  ];
+  if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  pipeline.push(
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    }
+  );
+  if (type == "totalExpenditure") {
+    if (formType == "populationCategory") {
+      pipeline.push(
+        {
+          $group: {
+            _id: null,
+            "<100K_set": {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $lt: ["$ulb.population", 1e5],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            "100K-500K_set": {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 1e5] },
+                      { $lte: ["$ulb.population", 5e5] },
+                    ],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            "500K-1M_set": {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 5e5] },
+                      { $lte: ["$ulb.population", 1e6] },
+                    ],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            "1M-4M_set": {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 1e6] },
+                      { $lte: ["$ulb.population", 4e6] },
+                    ],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            "4M+_set": {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $gt: ["$ulb.population", 4e6],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            "<100K": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $lt: ["$ulb.population", 1e5],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            "<100K_amount": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $lt: ["$ulb.population", 1e5],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            "100K-500K": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 1e5] },
+                      { $lte: ["$ulb.population", 5e5] },
+                    ],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            "100K-500K_amount": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 1e5] },
+                      { $lte: ["$ulb.population", 5e5] },
+                    ],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            "500K-1M": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 5e5] },
+                      { $lte: ["$ulb.population", 1e6] },
+                    ],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            "500K-1M_amount": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 5e5] },
+                      { $lte: ["$ulb.population", 1e6] },
+                    ],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            "1M-4M": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 1e6] },
+                      { $lte: ["$ulb.population", 4e6] },
+                    ],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            "1M-4M_amount": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $and: [
+                      { $gte: ["$ulb.population", 1e6] },
+                      { $lte: ["$ulb.population", 4e6] },
+                    ],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            "4M+": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $gt: ["$ulb.population", 4e6],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            "4M+_amount": {
+              $sum: {
+                $cond: {
+                  if: {
+                    $gt: ["$ulb.population", 4e6],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            "< 100 Thousand": {
+              expenditure: {
+                $divide: ["$<100K_amount", 1e7],
+              },
+              set: "$<100K_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$<100K", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$<100K_amount", "$<100K"],
+                  },
+                },
+              },
+            },
+            "100 Thousand - 500 Thousand": {
+              expenditure: {
+                $divide: ["$100K-500K_amount", 1e7],
+              },
+              set: "$100K-500K_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$100K-500K", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$100K-500K_amount", "$100K-500K"],
+                  },
+                },
+              },
+            },
+            "500 Thousand - 1 Million": {
+              expenditure: { $divide: ["$500K-1M_amount", 1e7] },
+              set: "$500K-1M_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$500K-1M", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$500K-1M_amount", "$500K-1M"],
+                  },
+                },
+              },
+            },
+            "1 Million - 4 Million": {
+              expenditure: { $divide: ["$1M-4M_amount", 1e7] },
+              set: "$1M-4M_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$1M-4M", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$1M-4M_amount", "$1M-4M"],
+                  },
+                },
+              },
+            },
+            "4 Million+": {
+              expenditure: { $divide: ["$4M+_amount", 1e7] },
+              set: "$4M+_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$4M+", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$4M+_amount", "$4M+"],
+                  },
+                },
+              },
+            },
+          },
+        }
+      );
+    } else if (formType == "ulbType") {
+      pipeline.push(
+        {
+          $group: {
+            _id: null,
+            municipalCorp_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            municipal_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            townPanchayat_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  },
+                  then: "$ulb._id",
+                  else: "",
+                },
+              },
+            },
+            municipalCorp: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            municipalCorp_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            municipal: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            municipal_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            townPanchayat: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  },
+                  then: "$ulb.population",
+                  else: 0,
+                },
+              },
+            },
+            townPanchayat_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            "Municipal Corporation": {
+              expenditure: {
+                $divide: ["$municipalCorp_amount", 1e7],
+              },
+              set: "$municipalCorp_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$municipalCorp", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$municipalCorp_amount", "$municipalCorp"],
+                  },
+                },
+              },
+            },
+            Municipality: {
+              expenditure: {
+                $divide: ["$municipal_amount", 1e7],
+              },
+              set: "$municipal_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$municipal", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$municipal_amount", "$municipal"],
+                  },
+                },
+              },
+            },
+            "Town Panchayat": {
+              expenditure: {
+                $divide: ["$townPanchayat_amount", 1e7],
+              },
+              set: "$townPanchayat_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$townPanchayat", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$townPanchayat_amount", "$townPanchayat"],
+                  },
+                },
+              },
+            },
+          },
+        }
+      );
+    }
+  } else if (type == "expenditureMix") {
+    pipeline.push({
+      $facet: {
+        national: [
+          {
+            $group: {
+              _id: { lineItem: "$lineItem" },
+              amount: {
+                $sum: "$amount",
+              },
+            },
+          },
+        ],
+        individual:
+          formType == "ulbType"
+            ? [
+                {
+                  $group: {
+                    _id: { lineItem: "$lineItem", type: "$ulb.ulbType" },
+                    amount: { $sum: "$amount" },
+                  },
+                },
+                {
+                  $group: {
+                    _id: "$_id.type",
+                    data: {
+                      $push: {
+                        lineItem: "$_id.lineItem",
+                        amount: "$amount",
+                      },
+                    },
+                  },
+                },
+              ]
+            : [
+                {
+                  $group: {
+                    _id: { lineItem: "$lineItem" },
+                    "<100K": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $lt: ["$ulb.population", 1e5],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "100K-500K": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $and: [
+                              { $gte: ["$ulb.population", 1e5] },
+                              { $lte: ["$ulb.population", 5e5] },
+                            ],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "500K-1M": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $and: [
+                              { $gte: ["$ulb.population", 5e5] },
+                              { $lte: ["$ulb.population", 1e6] },
+                            ],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "1M-4M": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $and: [
+                              { $gte: ["$ulb.population", 1e6] },
+                              { $lte: ["$ulb.population", 4e6] },
+                            ],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+
+                    "4M+": {
+                      $sum: {
+                        $cond: {
+                          if: {
+                            $gt: ["$ulb.population", 4e6],
+                          },
+                          then: "$amount",
+                          else: 0,
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
+      },
+    });
+  } else {
+    //deficitOrSurplus
+    pipeline.push(
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineItem",
+        },
+      },
+      {
+        $unwind: "$lineItem",
+      },
+      {
+        $facet: {
+          national: [
+            {
+              $group: {
+                _id: null,
+                revenue: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                expense: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                revenue: 1,
+                expense: 1,
+                deficitOrSurplus: {
+                  $subtract: ["$revenue", "$expense"],
+                },
+              },
+            },
+          ],
+          individual:
+            formType == "ulbType"
+              ? [
+                  {
+                    $group: {
+                      _id: "$ulb.ulbType",
+                      revenue: {
+                        $sum: {
+                          $cond: {
+                            if: { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      expense: {
+                        $sum: {
+                          $cond: {
+                            if: { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 1,
+                      revenue: 1,
+                      expense: 1,
+                      deficitOrSurplus: {
+                        $subtract: ["$revenue", "$expense"],
+                      },
+                    },
+                  },
+                ]
+              : [
+                  {
+                    $group: {
+                      _id: null,
+                      "<100K_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $lt: ["$ulb.population", 1e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "<100K_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $lt: ["$ulb.population", 1e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "100K-500K_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $gte: ["$ulb.population", 1e5] },
+                                { $lte: ["$ulb.population", 5e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "100K-500K_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $gte: ["$ulb.population", 1e5] },
+                                { $lte: ["$ulb.population", 5e5] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+
+                      "500K-1M_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $gte: ["$ulb.population", 5e5] },
+                                { $lte: ["$ulb.population", 1e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "500K-1M_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $gte: ["$ulb.population", 5e5] },
+                                { $lte: ["$ulb.population", 1e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+
+                      "1M-4M_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                { $gte: ["$ulb.population", 1e6] },
+                                { $lte: ["$ulb.population", 4e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "1M-4M_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                { $gte: ["$ulb.population", 1e6] },
+                                { $lte: ["$ulb.population", 4e6] },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+
+                      "4M+_revenue": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                                ,
+                                {
+                                  $gt: ["$ulb.population", 4e6],
+                                },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                      "4M+_expense": {
+                        $sum: {
+                          $cond: {
+                            if: {
+                              $and: [
+                                { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                                ,
+                                {
+                                  $gt: ["$ulb.population", 4e6],
+                                },
+                              ],
+                            },
+                            then: "$amount",
+                            else: 0,
+                          },
+                        },
+                      },
+                    },
+                  },
+                  {
+                    $project: {
+                      "<100K": {
+                        revenue: "$<100K_revenue",
+                        expense: "$<100K_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$<100K_revenue", "$<100K_expense"],
+                        },
+                      },
+                      "100K-500K": {
+                        revenue: "$100K-500K_revenue",
+                        expense: "$100K-500K_expense",
+                        deficitOrSurplus: {
+                          $subtract: [
+                            "$100K-500K_revenue",
+                            "$100K-500K_expense",
+                          ],
+                        },
+                      },
+                      "500K-1M": {
+                        revenue: "$500K-1M_revenue",
+                        expense: "$500K-1M_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$500K-1M_revenue", "$500K-1M_expense"],
+                        },
+                      },
+                      "1M-4M": {
+                        revenue: "$1M-4M_revenue",
+                        expense: "$1M-4M_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$1M-4M_revenue", "$1M-4M_expense"],
+                        },
+                      },
+                      "4M+": {
+                        revenue: "$4M+_revenue",
+                        expense: "$4M+_expense",
+                        deficitOrSurplus: {
+                          $subtract: ["$4M+_revenue", "$4M+_expense"],
+                        },
+                      },
+                    },
+                  },
+                ],
+        },
+      }
+    );
+  }
+  pipeline.push({ $unwind: "$national" });
+  if (type == "deficitOrSurplus" && formType == "populationCategory") {
+    pipeline.push({ $unwind: "$individual" });
+  }
+  return pipeline;
+};
