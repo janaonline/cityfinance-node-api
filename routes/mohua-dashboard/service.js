@@ -1350,15 +1350,19 @@ const formatOutput = (
     //detailed utilization report
     output3.forEach((el) => {
         if (
-            el._id.actionTakenByRole === "ULB" &&
+            (el._id.actionTakenByRole === "ULB" &&
             el._id.status === "PENDING" &&
-            el._id.isSubmit
+            el._id.isSubmit) ||
+            el._id.actionTakenByRole === "STATE" &&
+            el._id.status === "PENDING" 
         ) {
             util_underStateReview = el.count;
         } else if (
-            el._id.actionTakenByRole === "STATE" &&
-            el._id.status === "APPROVED" &&
-            el._id.isSubmit
+            (el._id.actionTakenByRole === "STATE" &&
+            el._id.status === "APPROVED") ||
+            (el._id.actionTakenByRole === "MoHUA" &&
+            !el._id.status === "REJECTED"
+            )
         ) {
             util_approvedbyState = el.count;
         } else if (
