@@ -1354,7 +1354,7 @@ const formatOutput = (
             el._id.status == "APPROVED"
             )
          {
-            util_approvedbyState = el.count;
+            util_approvedbyState = el.count + util_approvedbyState;
         } else  if (
             (el._id.actionTakenByRole === "ULB" &&
             el._id.isSubmit &&
@@ -1362,22 +1362,22 @@ const formatOutput = (
             (el._id.actionTakenByRole === "STATE" &&
             el._id.status != "APPROVED" && el._id.status != "REJECTED" )  
         ) {
-            util_underStateReview = el.count;
+            util_underStateReview = el.count + util_underStateReview;
         } else if (
             !el._id.isSubmit &&
             el._id.actionTakenByRole === "ULB" &&
             !el._id.isDraft
         ) {
-            util_completedAndPendingSubmission = el.count;
+            util_completedAndPendingSubmission = el.count + util_completedAndPendingSubmission;
         }
 
-        util_pendingCompletion =
-            numbers[i] -
-            util_underStateReview -
-            util_approvedbyState -
-            util_completedAndPendingSubmission;
+        
     });
-
+    util_pendingCompletion =
+    numbers[i] -
+    util_underStateReview -
+    util_approvedbyState -
+    util_completedAndPendingSubmission;
     //slb
     output4.forEach((el) => {
         if (
