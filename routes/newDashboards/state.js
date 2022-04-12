@@ -1265,6 +1265,10 @@ const calculateStateAvg = (data) => {
   return Number((numerator/denominator).toFixed(2))
 }
 
+const indicatorDump = async (req,res) => {
+
+}
+
   const fetchTen = (data,sortBy) => {
    let topTen =  data.slice(0, 10);
    let bottomTen =  data.slice(-10);
@@ -1289,5 +1293,6 @@ module.exports = {
   ulbsByPopulation,
   serviceLevelBenchmark,
   getFYsWithSpecification,
-  getFYsSLB
+  getFYsSLB,
+  indicatorDump
 };
