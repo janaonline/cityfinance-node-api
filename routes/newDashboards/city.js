@@ -577,7 +577,7 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
           revenue: 1,
           expense: 1,
           amount: {
-            $divide: [{ $subtract: ["$revenue", "$expense"] }, "$population"],
+             $subtract: ["$revenue", "$expense"] ,
           },
         };
       }
@@ -612,9 +612,52 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from) => {
   return newData;
 };
 
+// async function comparator(
+//   compareType,
+//   oldQuery,
+//   ulb,
+//   isPerCapita,
+//   filterName,
+//   stateId,
+//   ulbTypeId
+// ) {
+//   let ulbData = await ULB.findOne({ _id: ulb }).lean();
+//   let query = [];
+//   switch (compareType) {
+//     case "ULB category Average":
+//       break;
+
+//     case "ULB Type Average":
+//       break;
+
+//     case "National Average":
+//       break;
+
+//     case "State Average":
+//       let ulbIds = await ULB.find({state:ulbData.state}).lean
+//       ulbIds = ulbIds.map(val=>val._id)
+//       let match = oldQuery[0]
+//       match["$match"]["ulb"] = {$in:ulbIds}
+//       query.push(match)
+//       query.push({
+        
+//       })
+
+//       break;
+
+//     default:
+//       break;
+//   }
+// }
+
 let globalState;
 
-async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapita) {
+async function revenueExpenditureQueryCompare(
+  compareFrom,
+  query,
+  ulb,
+  isPerCapita
+) {
   console.log(compareFrom, query, ulb);
   let ulbData;
   let ulbId;
@@ -688,7 +731,9 @@ async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapit
                       ["110", "130", "140", "150", "180"],
                     ],
                   },
-                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  then: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$ulb.population"] },
                   else: 0,
                 },
               },
@@ -702,7 +747,9 @@ async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapit
                       ["200", "210", "220", "230", "240"],
                     ],
                   },
-                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  then: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$ulb.population"] },
                   else: 0,
                 },
               },
@@ -797,7 +844,9 @@ async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapit
                       ["110", "130", "140", "150", "180"],
                     ],
                   },
-                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  then: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$ulb.population"] },
                   else: 0,
                 },
               },
@@ -811,7 +860,9 @@ async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapit
                       ["200", "210", "220", "230", "240"],
                     ],
                   },
-                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  then: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$ulb.population"] },
                   else: 0,
                 },
               },
@@ -906,7 +957,9 @@ async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapit
                       ["110", "130", "140", "150", "180"],
                     ],
                   },
-                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  then: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$ulb.population"] },
                   else: 0,
                 },
               },
@@ -920,7 +973,9 @@ async function revenueExpenditureQueryCompare(compareFrom, query, ulb,isPerCapit
                       ["200", "210", "220", "230", "240"],
                     ],
                   },
-                  then: isPerCapita ? "$amount":{ $multiply: ["$amount", "$ulb.population"] },
+                  then: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$ulb.population"] },
                   else: 0,
                 },
               },
