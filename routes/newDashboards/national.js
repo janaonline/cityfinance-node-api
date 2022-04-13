@@ -1194,7 +1194,7 @@ exports.nationalDashCapexpense = async (req, res) => {
       } else if (formType == "populationCategory") {
         populationMap["Average"]["Capexpense"] = sumOfCapexpense / 5;
         populationMap["Average"]["CapexpensePerCapita"] =
-          sumOfOwnRevPerCapita / 5;
+          sumOfCapexpensePerCapita / 5;
         populationMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
         responsePayload.data = populationMap;
       }
