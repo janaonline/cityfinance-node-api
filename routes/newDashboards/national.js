@@ -1058,6 +1058,248 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     res.status(500).json({ success: true, message: err.message });
   }
 };
+exports.nationalDashCapexpense = async (req, res) => {
+  try {
+    let { financialYear, type, stateId, formType, visualType, getQuery } =
+      req.query;
+    if (!financialYear) throw { message: "financial year is missing." };
+    type = type ? type : "totalCapexpense";
+    formType = formType ? formType : "populationCategory";
+    visualType = visualType ? visualType : "table";
+    const {
+      nationalDashCapexpensePipeline,
+    } = require("../../util/aggregation");
+    let responsePayload = { data: null };
+    const HashTable = new Map();
+    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItems = await LineItem.find({
+      code: {
+        $in: ["410", "412"],
+      },
+    }).select("_id");
+    ulbs = ulbs.map((each) => {
+      HashTable.set(each._id.toString(), true);
+      return each._id;
+    });
+    lineItems = lineItems.map((each) => each._id);
+    if (getQuery)
+      return res
+        .status(200)
+        .json(
+          nationalDashCapexpensePipeline(
+            financialYear,
+            stateId,
+            ulbs,
+            lineItems,
+            type,
+            formType
+          )
+        );
+    const ulbLeds = await UlbLedger.aggregate(
+      nationalDashCapexpensePipeline(
+        financialYear,
+        stateId,
+        ulbs,
+        lineItems,
+        type,
+        formType
+      )
+    );
+    let populationMap = {
+      Average: {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "< 100 Thousand": {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "100 Thousand - 500 Thousand": {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+
+      "500 Thousand - 1 Million": {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "1 Million - 4 Million": {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "4 Million+": {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+    };
+    let ulbTypeMap = {
+      Average: {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "Municipal Corporation": {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      Municipality: {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+      "Town Panchayat": {
+        Capexpense: 0,
+        CapexpensePerCapita: 0,
+        dataAvailPercent: 0,
+      },
+    };
+    let sumOfCapexpense = 0,
+      sumOfCapexpensePerCapita = 0,
+      sumOfDataAval = 0;
+    if (type == "totalCapexpense") {
+      if (ulbLeds.length) {
+        const keys = Object.keys(ulbLeds[0]);
+        for (key of keys) {
+          //O(5) time complexity
+          let seenUlbs = 0,
+            obj = ulbLeds[0][key];
+          if (formType == "ulbType") {
+            ulbTypeMap[key] = obj;
+          } else if (formType == "populationCategory") {
+            populationMap[key] = obj;
+          }
+          for (each of obj["set"]) {
+            if (HashTable.get(each.toString())) ++seenUlbs;
+          }
+          sumOfCapexpense += obj["Capexpense"];
+          sumOfCapexpensePerCapita += obj["CapexpensePerCapita"];
+          delete obj["set"];
+          obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
+          sumOfDataAval += obj["DataAvailPercentage"];
+        }
+      }
+      if (formType == "ulbType") {
+        ulbTypeMap["Average"]["Capexpense"] = sumOfCapexpense / 5;
+        ulbTypeMap["Average"]["CapexpensePerCapita"] =
+          sumOfCapexpensePerCapita / 5;
+        ulbTypeMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
+        responsePayload.data = ulbTypeMap;
+      } else if (formType == "populationCategory") {
+        populationMap["Average"]["Capexpense"] = sumOfCapexpense / 5;
+        populationMap["Average"]["CapexpensePerCapita"] =
+          sumOfOwnRevPerCapita / 5;
+        populationMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
+        responsePayload.data = populationMap;
+      }
+      let displayNameMapper = {
+          Capexpense: "Capital Expenditure (in Cr)",
+          CapexpensePerCapita: "Capital Expenditure Per Capita (in Rs.)",
+          DataAvailPercentage: "Data Availability Percentage",
+        },
+        columns = [
+          {
+            key: "ulb_pop_category",
+            display_name: "ULB Population Category",
+          },
+          ...Object.keys(populationMap["Average"]).map((each) => {
+            return { key: each, display_name: displayNameMapper[each] };
+          }),
+        ],
+        rows = [
+          ...Object.keys(responsePayload.data).map((each) => {
+            let output = { ulb_pop_category: each };
+            for (x in responsePayload.data[each]) {
+              output[x] = responsePayload.data[each][x].toFixed(2);
+            }
+            return output;
+          }),
+        ];
+      responsePayload.data = { rows, columns };
+    } else if (type == "CapexpenseMix") {
+      if (formType == "ulbType") {
+        responsePayload.data = ulbLeds[0];
+        let nationalArr = responsePayload.data.national,
+          individualArr = responsePayload.data.individual;
+        let lineItemMap = new Map(),
+          ulbTypeMap = new Map();
+        const lineItems = await LineItem.find();
+        const UlbTypes = await UlbType.find();
+        lineItems.map((each) => {
+          lineItemMap.set(each._id.toString(), each.name);
+          return each;
+        });
+        UlbTypes.map((each) => {
+          ulbTypeMap.set(each._id.toString(), each.name);
+          return each;
+        });
+        let national_Format = {},
+          individual_Format = {
+            Municipality: {},
+            "Municipal Corporation": {},
+            "Town Panchayat": {},
+          };
+        nationalArr.map((each) => {
+          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
+            each.amount;
+          return each;
+        });
+        individualArr.map((each, idx) => {
+          const ulbTypeName = ulbTypeMap.get(each._id.toString());
+          each.data.map((ev) => {
+            individual_Format[ulbTypeName][
+              lineItemMap.get(ev.lineItem.toString())
+            ] = ev.amount;
+          });
+        });
+        responsePayload.data.national = national_Format;
+        responsePayload.data.individual = individual_Format;
+      } else {
+        let lineItemMap = new Map();
+        const lineItems = await LineItem.find();
+        lineItems.map((each) => {
+          lineItemMap.set(each._id.toString(), each.name);
+          return each;
+        });
+        let populKeys = ["<100K", "100K-500K", "500K-1M", "1M-4M", "4M+"];
+        responsePayload.data = ulbLeds[0];
+        let dataMapper = {
+          "<100K": {},
+          "100K-500K": {},
+          "500K-1M": {},
+          "1M-4M": {},
+          "4M+": {},
+        };
+        responsePayload.data.individual.map((each) => {
+          const currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          populKeys.map((key) => {
+            if (!dataMapper[key][currLineItem])
+              dataMapper[key][currLineItem] = 0;
+            dataMapper[key][currLineItem] += each[key];
+          });
+        });
+        responsePayload.data.individual = dataMapper;
+        let national_Format = {};
+        responsePayload.data.national.map((each) => {
+          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
+            each.amount;
+          return each;
+        });
+        responsePayload.data.national = national_Format;
+      }
+    }
+    res.status(200).json({ success: true, ...responsePayload });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: true, message: err.message });
+  }
+};
 
 exports.getStatewiseDataAvail = async (req, res) => {
   try {
