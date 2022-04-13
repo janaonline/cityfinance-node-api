@@ -30,6 +30,7 @@ const {
   getStatewiseDataAvail,
   nationalDashExpenditure,
   nationalDashOwnRevenue,
+  nationalDashCapexpense,
 } = require("./national");
 // router.use(verifyToken);
 router.use("/all-dashboard", shared);
@@ -69,5 +70,6 @@ router.get("/national-dashboard/data-availability", dataAvailabilityState);
 router.get("/national-dashboard/revenue", nationalDashRevenue);
 router.get("/national-dashboard/expenditure", nationalDashExpenditure);
 router.get("/national-dashboard/own-revenue", nationalDashOwnRevenue);
+router.get("/national-dashboard/capital-expenditure", nationalDashCapexpense);
 router.get("/get-statewise-data-availability", getStatewiseDataAvail);
 module.exports = router;
