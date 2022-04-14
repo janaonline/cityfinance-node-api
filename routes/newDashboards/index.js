@@ -51,6 +51,7 @@ const {
   getFYsWithSpecification,
   getFYsSLB,
   indicatorDump,
+  stateDashAvgs,
 } = require("./state");
 
 router.post("/state-scatter", scatterMap);
@@ -64,6 +65,7 @@ router.post("/state-slb", serviceLevelBenchmark);
 router.get("/get-FYs-with-specification", getFYsWithSpecification);
 router.get("/get-FYs-slb", getFYsSLB);
 router.get("/indicatorCSV", indicatorDump);
+router.get("/state-dashboard-averages", stateDashAvgs);
 
 // national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
