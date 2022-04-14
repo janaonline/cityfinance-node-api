@@ -8,6 +8,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 const { from } = require("form-data");
 const { format } = require("util");
+const LineItem = require("../../models/LineItem");
 
 const headOfAccountDeficit = [
   ObjectId("5dd10c2885c951b54ec1d77e"),
@@ -482,6 +483,16 @@ const indicator = async (req, res) => {
 const comparator = async (compareFrom, query, ulb, isPerCapita, from, body) => {
   if (from == "revenue_expenditure")
     return revenueExpenditureQueryCompare(compareFrom, query, ulb, isPerCapita);
+  if (from.includes("expenditure") || from.includes("surplus")) {
+    return expenseQueryCompare(
+      compareFrom,
+      query,
+      ulb,
+      isPerCapita,
+      from,
+      body
+    );
+  }
   if (from.includes("revenue"))
     return revenueQueryCompare(
       compareFrom,
@@ -1567,6 +1578,689 @@ async function revenueQueryCompare(
               },
             },
             { $sort: { "_id.financialYear": 1 } }
+          );
+        }
+      }
+      return tempQ;
+      break;
+  }
+}
+
+async function expenseQueryCompare(
+  compareFrom,
+  query,
+  ulb,
+  isPerCapita,
+  from,
+  body
+) {
+  let ulbData;
+  let ulbId, lineItemIds;
+  let tempQ;
+  if (from.includes("capital")) {
+    lineItemIds = await LINEITEM.find({ code: { $in: ["410", "412"] } });
+  } else if (from.includes("surplus")) {
+    lineItemIds = await LINEITEM.find({
+      headOfAccount: { $in: ["Expense", "Revenue"] },
+    });
+  } else if (from.includes("revenue") && from.includes("expenditure")) {
+    lineItemIds = await LINEITEM.find({
+      code: { $in: ["200", "210", "220", "230", "240"] },
+    });
+  } else lineItemIds = await LINEITEM.find({ headOfAccount: "Expense" });
+  switch (compareFrom) {
+    case "State Average":
+      ulbData = await ULB.findOne({ _id: ulb });
+      ulbId = await ULB.find({ state: ulbData.state });
+      tempQ = [
+        {
+          $match: {
+            financialYear: {
+              $in: body.financialYear,
+            },
+            ulb: {
+              $in: ulbId.map((val) => val._id),
+            },
+            lineItem: {
+              $in: lineItemIds.map((val) => val._id),
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        { $unwind: "$state" },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems",
+          },
+        },
+        {
+          $unwind: "$lineitems",
+        },
+      ];
+      if (from.includes("mix")) {
+        tempQ.push({
+          $group: {
+            _id: {
+              state: "$state._id",
+              lineItem: "$lineitems.name",
+            },
+            ulbName: { $first: "$state.name" },
+            code: { $first: "$lineitems.code" },
+            amount: { $sum: "$amount" },
+          },
+        });
+      } else {
+        if (from.includes("surplus")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: { financialYear: "$financialYear", state: "$state._id" },
+                revenue: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Revenue"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                expense: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Expense"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                ulbName: { $first: "$state.name" },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: { $subtract: ["$revenue", "$expense"] },
+                revenue: 1,
+                expense: 1,
+                ulbName: 1,
+              },
+            }
+          );
+        } else if (from.includes("capital")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: {
+                  financialYear: "$financialYear",
+                  lineItemName: "$lineitems.name",
+                  state: "$state._id",
+                },
+                amount: {
+                  $sum: "$amount",
+                },
+                ulbName: {
+                  $first: "$state.name",
+                },
+                code: {
+                  $first: "$lineitems.code",
+                },
+                numerator: {
+                  $sum: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$population"] },
+                },
+                denominator: {
+                  $sum: "$ulb.population",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: {
+                  $divide: ["$numerator", "$denominator"],
+                },
+                ulbName: 1,
+                code: 1,
+              },
+            },
+            {
+              $group: {
+                _id: "$_id.financialYear",
+                yearData: {
+                  $push: {
+                    name: "$_id.lineItemName",
+                    amount: "$amount",
+                    ulbName: "$ulbName",
+                    code: "$code",
+                  },
+                },
+              },
+            },
+            {
+              $sort: {
+                _id: 1,
+              },
+            }
+          );
+        }
+      }
+      return tempQ;
+      break;
+    case "ULB category Average":
+      ulbData = await ULB.findOne({ _id: ulb });
+      let matchObj = {};
+      if (ulbData.hasOwnProperty("population")) {
+        if (ulbData.population < 100000) {
+          Object.assign(matchObj, { "ulb.population": { $lt: 100000 } });
+        } else if (100000 < ulbData.population < 500000) {
+          Object.assign(matchObj, {
+            $or: [
+              { "ulb.population": { $gt: 100000 } },
+              { "ulb.population": { $lt: 100000 } },
+            ],
+          });
+        } else if (500000 < ulbData.population < 1000000) {
+          Object.assign(matchObj, {
+            $or: [
+              { "ulb.population": { $gt: 500000 } },
+              { "ulb.population": { $lt: 1000000 } },
+            ],
+          });
+        } else if (1000000 < ulbData.population < 1000000) {
+          Object.assign(matchObj, {
+            $or: [
+              { "ulb.population": { $gt: 1000000 } },
+              { "ulb.population": { $lt: 1000000 } },
+            ],
+          });
+        } else {
+          Object.assign(matchObj, { "ulb.population": { $gt: 4000000 } });
+        }
+      }
+      ulbId = await ULB.find(matchObj);
+      tempQ = [
+        {
+          $match: {
+            financialYear: {
+              $in: body.financialYear,
+            },
+            lineItem: {
+              $in: lineItemIds.map((val) => val._id),
+            },
+            ulb: {
+              $in: ulbId.map((val) => val._id),
+            },
+          },
+        },
+      ];
+
+      tempQ.push(
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems",
+          },
+        },
+        {
+          $unwind: "$lineitems",
+        }
+      );
+      if (from.includes("mix")) {
+        tempQ.push({
+          $group: {
+            _id: {
+              state: "$state._id",
+              lineItem: "$lineitems.name",
+            },
+            ulbName: { $first: "$state.name" },
+            code: { $first: "$lineitems.code" },
+            amount: { $sum: "$amount" },
+          },
+        });
+      } else {
+        if (from.includes("surplus")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: { financialYear: "$financialYear" },
+                revenue: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Revenue"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                expense: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Expense"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                ulbName: { $first: "National" },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: { $subtract: ["$revenue", "$expense"] },
+                revenue: 1,
+                expense: 1,
+                ulbName: 1,
+              },
+            }
+          );
+        } else if (from.includes("capital")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: {
+                  financialYear: "$financialYear",
+                  lineItemName: "$lineitems.name",
+                  state: "$state._id",
+                },
+                amount: {
+                  $sum: "$amount",
+                },
+                ulbName: {
+                  $first: "$state.name",
+                },
+                code: {
+                  $first: "$lineitems.code",
+                },
+                numerator: {
+                  $sum: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$population"] },
+                },
+                denominator: {
+                  $sum: "$ulb.population",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: {
+                  $divide: ["$numerator", "$denominator"],
+                },
+                ulbName: 1,
+                code: 1,
+              },
+            },
+            {
+              $group: {
+                _id: "$_id.financialYear",
+                yearData: {
+                  $push: {
+                    name: "$_id.lineItemName",
+                    amount: "$amount",
+                    ulbName: "$ulbName",
+                    code: "$code",
+                  },
+                },
+              },
+            },
+            {
+              $sort: {
+                _id: 1,
+              },
+            },
+          );
+        }
+      }
+      return tempQ;
+      break;
+
+    case "National Average":
+      ulbData = await ULB.findOne({ _id: ulb });
+      ulbId = await ULB.find({ state: ulbData.state });
+      tempQ = [
+        {
+          $match: {
+            financialYear: {
+              $in: body.financialYear,
+            },
+            lineItem: {
+              $in: lineItemIds.map((val) => val._id),
+            },
+          },
+        },
+      ];
+
+      tempQ.push(
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems",
+          },
+        },
+        {
+          $unwind: "$lineitems",
+        }
+      );
+      if (from.includes("mix")) {
+        tempQ.push({
+          $group: {
+            _id: {
+              lineItem: "$lineitems.name",
+            },
+            ulbName: { $first: "$state.name" },
+            code: { $first: "$lineitems.code" },
+            amount: { $sum: "$amount" },
+          },
+        });
+      } else {
+        if (from.includes("surplus")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: { financialYear: "$financialYear" },
+                revenue: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Revenue"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                expense: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Expense"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                ulbName: { $first: "National" },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: { $subtract: ["$revenue", "$expense"] },
+                revenue: 1,
+                expense: 1,
+                ulbName: 1,
+              },
+            }
+          );
+        } else if (from.includes("capital")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: {
+                  financialYear: "$financialYear",
+                  lineItemName: "$lineitems.name",
+                },
+                amount: {
+                  $sum: "$amount",
+                },
+                ulbName: {
+                  $first: "$state.name",
+                },
+                code: {
+                  $first: "$lineitems.code",
+                },
+                numerator: {
+                  $sum: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$population"] },
+                },
+                denominator: {
+                  $sum: "$ulb.population",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: {
+                  $divide: ["$numerator", "$denominator"],
+                },
+                ulbName: 1,
+                code: 1,
+              },
+            },
+            {
+              $group: {
+                _id: "$_id.financialYear",
+                yearData: {
+                  $push: {
+                    name: "$_id.lineItemName",
+                    amount: "$amount",
+                    ulbName: "$ulbName",
+                    code: "$code",
+                  },
+                },
+              },
+            },
+            {
+              $sort: {
+                _id: 1,
+              },
+            },
+          );
+        }
+      }
+      return tempQ;
+      break;
+
+    case "ULB Type Average":
+      ulbData = await ULB.findOne({ _id: ulb });
+      ulbId = await ULB.find({ state: ulbData.ulbType });
+      tempQ = [
+        {
+          $match: {
+            ulb: { $in: ulbId.map((val) => val._id) },
+            financialYear: {
+              $in: body.financialYear,
+            },
+            lineItem: {
+              $in: headOfAccountIds["revenue"],
+            },
+          },
+        },
+      ];
+
+      tempQ.push(
+        {
+          $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulb",
+          },
+        },
+        {
+          $lookup: {
+            from: "UlbTypes",
+            localField: "ulb.ulbType",
+            foreignField: "_id",
+            as: "ulbType",
+          },
+        },
+        {
+          $unwind: "$ulb",
+        },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems",
+          },
+        },
+        {
+          $unwind: "$lineitems",
+        }
+      );
+      if (from.includes("mix")) {
+        tempQ.push({
+          $group: {
+            _id: {
+              lineItem: "$lineitems.name",
+            },
+            ulbName: { $first: "$ulbType.name" },
+            code: { $first: "$lineitems.code" },
+            amount: { $sum: "$amount" },
+          },
+        });
+      } else {
+        if (from.includes("surplus")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: { financialYear: "$financialYear" },
+                revenue: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Revenue"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                expense: {
+                  $sum: {
+                    $cond: {
+                      if: { $eq: ["$lineitems.headOfAccount", "Expense"] },
+                      then: "$amount",
+                      else: 0,
+                    },
+                  },
+                },
+                ulbName: { $first: "$ulbType.name" },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: { $subtract: ["$revenue", "$expense"] },
+                revenue: 1,
+                expense: 1,
+                ulbName: 1,
+              },
+            }
+          );
+        } else if (from.includes("capital")) {
+          tempQ.push(
+            {
+              $group: {
+                _id: {
+                  financialYear: "$financialYear",
+                  lineItemName: "$lineitems.name",
+                  ulbType: "$ulbType._id",
+                },
+                amount: {
+                  $sum: "$amount",
+                },
+                ulbName: {
+                  $first: "$state.name",
+                },
+                code: {
+                  $first: "$lineitems.code",
+                },
+                numerator: {
+                  $sum: isPerCapita
+                    ? "$amount"
+                    : { $multiply: ["$amount", "$population"] },
+                },
+                denominator: {
+                  $sum: "$ulb.population",
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                amount: {
+                  $divide: ["$numerator", "$denominator"],
+                },
+                ulbName: 1,
+                code: 1,
+              },
+            },
+            {
+              $group: {
+                _id: "$_id.financialYear",
+                yearData: {
+                  $push: {
+                    name: "$_id.lineItemName",
+                    amount: "$amount",
+                    ulbName: "$ulbName",
+                    code: "$code",
+                  },
+                },
+              },
+            },
+            {
+              $sort: {
+                _id: 1,
+              },
+            },
           );
         }
       }
