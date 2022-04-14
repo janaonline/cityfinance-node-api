@@ -2476,6 +2476,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
           },
         },
         {
+          $match:{
+            $or:[{"masterforms.design_year":ObjectId(design_year)},{"masterforms.design_year":{$exists: false}}]
+          }
+        },
+        {
           $lookup: {
             from: "annualaccountdatas",
             localField: "_id",
@@ -2730,6 +2735,11 @@ module.exports.viewList = catchAsync(async (req, res) => {
             path: "$masterforms",
             preserveNullAndEmptyArrays: true,
           },
+        },
+        {
+          $match:{
+            $or:[{"masterforms.design_year":ObjectId(design_year)},{"masterforms.design_year":{$exists: false}}]
+          }
         },
         {
           $lookup: {
@@ -3401,11 +3411,8 @@ const formatOutput = (
       ) {
         underReviewByState = el.count;
       } else if (
-        (el._id.status === "APPROVED" &&
-          el._id.actionTakenByRole === "STATE") ||
-        ((el._id.status === "APPROVED" || el._id.status === "PENDING") &&
-          el._id.actionTakenByRole === "MoHUA")
-      ) {
+        el._id.status == 'APPROVED' || (el._id.actionTakenByRole === "MoHUA" && el._id.status == !'REJECTED'  ))
+       {
         overall_approvedByState = el.count;
       }
 
@@ -3443,11 +3450,8 @@ const formatOutput = (
       ) {
         util_underStateReview = el.count;
       } else if (
-        (el._id.status === "APPROVED" &&
-          el._id.actionTakenByRole === "STATE" &&
-          el._id.masterformSubmit === true) ||
-        ((el._id.status === "APPROVED" || el._id.status === "PENDING") &&
-          el._id.actionTakenByRole === "MoHUA")
+        (el._id.status === "APPROVED"  || ( el._id.actionTakenByRole === "MoHUA" && el._id.status != "REJECTED" ))
+       
       ) {
         util_approvedbyState = el.count;
       } else if (
