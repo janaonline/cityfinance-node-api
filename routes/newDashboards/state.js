@@ -1263,12 +1263,18 @@ const calculateStateAvg = (data) => {
   return Number((numerator / denominator).toFixed(2));
 };
 const stateDashAvgs = async (req, res) => {
-  const { financialYear, which, headOfAccount, getQuery, stateId } = req.query;
+  const { financialYear, which, TabType, getQuery, stateId } = req.query;
   const distinctUlbs =
     which == "nationalAvg" ? await UlbLedger.distinct("ulb") : [];
   const noOfUlbs = distinctUlbs.length;
-  const { stateDashAvgs } = require("../../util/aggregation");
-  const query = await stateDashAvgs(financialYear, which, noOfUlbs, headOfAccount, stateId);
+  const { stateDashAvgsPipeline } = require("../../util/aggregation");
+  const query = await stateDashAvgsPipeline(
+    financialYear,
+    which,
+    noOfUlbs,
+    TabType,
+    stateId
+  );
   if(getQuery) return res.send(query)
   const data = await UlbLedger.aggregate(query);
   function roundOffy2(obj){

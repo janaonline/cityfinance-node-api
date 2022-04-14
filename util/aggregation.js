@@ -3302,16 +3302,105 @@ exports.nationalDashCapexpensePipeline = (
   return pipeline;
 };
 
-exports.stateDashAvgs = async (
+exports.stateDashAvgsPipeline = async (
   financialYear,
   which,
   noOfUlbs,
-  headOfAccount,
+  TabType,
   stateId
 ) => {
   let matchObj = {};
   let pipeline = [{ $match: matchObj }];
   if (financialYear) matchObj.financialYear = financialYear;
+  if (which == "ulbTypeAvg" || which == "populationAvg") {
+    if (stateId) {
+      let ulbs = await Ulb.find({ state: stateId }).select("_id");
+      matchObj.ulb = { $in: ulbs.map((each) => each._id) };
+    }
+  }
+  if (TabType == "TotalRevenue" || TabType == "TotalOwnRevenue") {
+    let lineItemFilter = { headOfAccount: "Revenue" };
+    if (TabType == "TotalOwnRevenue")
+      lineItemFilter = {
+        code: {
+          $in: ["110", "130", "140", "150", "180"],
+        },
+      };
+    let lineIds = await LineItem.find(lineItemFilter).select("_id");
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (
+    TabType == "RevenuePerCapita" ||
+    TabType == "OwnRevenuePerCapita"
+  ) {
+    let lineItemFilter = { headOfAccount: "Revenue" };
+    if (TabType == "OwnRevenuePerCapita")
+      lineItemFilter = {
+        code: {
+          $in: ["110", "130", "140", "150", "180"],
+        },
+      };
+    let lineIds = await LineItem.find(lineItemFilter).select("_id");
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (
+    TabType == "RevenueMix" ||
+    TabType == "OwnRevenueMix" ||
+    TabType == "ExpenditureMix"
+  ) {
+    if (!code) throw { message: "code is missing" };
+    code = code.split(",");
+    let lineIds = await LineItem.find({
+      code: { $in: code },
+    }).select("_id");
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (TabType == "RevenueTotalExpenditure") {
+    let lineIds = await LineItem.find({
+      code: { $in: ["210", "220", "230"] },
+    }).select("_id");
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (TabType == "RevenueExpenditurePerCapita") {
+    let lineIds = await LineItem.find({ code: { $in: ["210", "220", "230"] } })
+      .select("_id")
+      .lean();
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (TabType == "RevenueExpenditureMix") {
+    let lineIds = await LineItem.find({
+      code: { $in: ["210", "220", "230"] },
+    }).select("_id");
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (TabType == "CapitalTotalExpenditure") {
+    let lineIds = await LineItem.find({ code: { $in: ["410", "412"] } })
+      .select("_id")
+      .lean();
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (TabType == "CapitalExpenditurePerCapita") {
+    let lineIds = await LineItem.find({ code: { $in: ["410", "412"] } })
+      .select("_id")
+      .lean();
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  } else if (TabType == "DeficitOrSurplus") {
+    let lineIds = await LineItem.find({
+      headOfAccount: { $in: ["Revenue", "Expense"] },
+    }).select("_id");
+    Object.assign(matchObj, {
+      lineItem: { $in: lineIds.map((value) => value._id) },
+    });
+  }
   pipeline.push(
     {
       $lookup: {
@@ -3326,8 +3415,6 @@ exports.stateDashAvgs = async (
     }
   );
   if (which == "nationalAvg") {
-    let lineItems = await LineItem.find({ headOfAccount }).select("_id");
-    matchObj.lineItem = { $in: lineItems.map((each) => each._id) };
     pipeline.push(
       {
         $group: {
@@ -3347,10 +3434,6 @@ exports.stateDashAvgs = async (
       }
     );
   } else if (which == "ulbTypeAvg") {
-    if (stateId) {
-      let ulbs = await Ulb.find({ state: stateId }).select("_id");
-      matchObj.ulb = { $in: ulbs.map((each) => each._id) };
-    }
     pipeline.push(
       {
         $group: {
@@ -3439,10 +3522,6 @@ exports.stateDashAvgs = async (
       }
     );
   } else if (which == "populationAvg") {
-    if (stateId) {
-      let ulbs = await Ulb.find({ state: stateId }).select("_id");
-      matchObj.ulb = { $in: ulbs.map((each) => each._id) };
-    }
     pipeline.push(
       {
         $group: {
