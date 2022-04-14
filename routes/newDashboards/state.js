@@ -233,7 +233,7 @@ const revenue = catchAsync(async (req, res) => {
     });
   }
   if (filterName == "revenue") {
-    if (!ulb) {
+    if (!ulb.length  ) {
       let base_query = [
         {
           $match: {
@@ -402,15 +402,18 @@ const revenue = catchAsync(async (req, res) => {
         stateAvg: data[1],
         // natAvg : data[2]
       });
-    } else if (ulb && ObjectId.isValid(ulb)) {
-      let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).populate(
-        "ulbType"
-      );
+    } else if (ulb.length) {
+   console.log('entered the array if')
+      // let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).populate(
+      //   "ulbType"
+      // );
       let query = [
         {
           $match: {
             financialYear: financialYear,
-            ulb: ObjectId(ulb),
+            ulb:{
+              $in: [...ulb.map((value) => ObjectId(value))],
+            }
           },
         },
         {
@@ -441,11 +444,23 @@ const revenue = catchAsync(async (req, res) => {
           },
         },
         {
+          $lookup: {
+            from: "ulbtypes",
+            localField: "ulb.ulbType",
+            foreignField: "_id",
+            as: "ulbType",
+          },
+        },
+        {
+          $unwind: "$ulbType",
+        },
+        {
           $group: {
             _id: "$ulb._id",
             totalRevenue: { $sum: "$amount" },
             ulbName: { $first: "$ulb.name" },
             population: { $first: "$ulb.population" },
+            ulbType:{$first:"$ulbType.name"}
           },
         },
       ];
@@ -471,13 +486,16 @@ const revenue = catchAsync(async (req, res) => {
         townPanchayat: [],
         mCorporation: [],
       };
-      if (ulbData.ulbType.name == "Town Panchayat") {
-        obj.townPanchayat = output;
-      } else if (ulbData.ulbType.name == "Municipality") {
-        obj.municipality = output;
-      } else if (ulbData.ulbType.name == "Municipal Corporation") {
-        obj.mCorporation = output;
-      }
+output.forEach(el=>{
+  if (el.ulbType == "Town Panchayat"){
+    obj.townPanchayat.push(el);
+  } else if (el.ulbType == "Municipality") {
+    obj.municipality.push(el);
+  } else if (el.ulbType == "Municipal Corporation") {
+    obj.mCorporation.push(el);
+  }
+})
+     
       return res.status(200).json({
         success: true,
         ...obj,
