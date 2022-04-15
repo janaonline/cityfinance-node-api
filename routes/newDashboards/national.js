@@ -787,6 +787,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           deficitOrSurplus: ulbLeds[0].national.deficitOrSurplus.toFixed(2),
         };
         responsePayload.data.national = national_Format;
+        responsePayload.data.individual = responsePayload.data.individual[0];
         let rows = Object.keys(responsePayload.data.individual).filter(
           (each) => each != "_id"
         );
