@@ -53,7 +53,7 @@ const headOfAccountIds = {
     ObjectId("5dd10c2485c951b54ec1d74b"),
     ObjectId("5dd10c2485c951b54ec1d74a"),
     ObjectId("5dd10c2385c951b54ec1d748"),
-    ObjectId("5dd10c2285c951b54ec1d737"),
+    // ObjectId("5dd10c2285c951b54ec1d737"),
   ],
   ["revenue_expenditure_mix"]: [
     ObjectId("5dd10c2685c951b54ec1d760"),
@@ -1065,17 +1065,28 @@ async function revenueQueryCompare(
         },
       ];
       if (from.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: {
-              state: "$state._id",
-              lineItem: "$lineitems.name",
+        tempQ.push(
+          {
+            $group: {
+              _id: {
+                state: "$state._id",
+                lineItem: "$lineitems.name",
+              },
+              ulbName: { $first: "$state.name" },
+              code: { $first: "$lineitems.code" },
+              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              population: { $sum: "$ulb.population" },
             },
-            ulbName: { $first: "$state.name" },
-            code: { $first: "$lineitems.code" },
-            amount: { $sum: "$amount" },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              ulbName: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (isPerCapita) {
           tempQ.push(
@@ -1227,13 +1238,23 @@ async function revenueQueryCompare(
         }
       );
       if (format.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: { lineItem: "$lineitems" },
-            amount: { $sum: "$amount" },
-            code: { $first: "$lineitems.code" },
+        tempQ.push(
+          {
+            $group: {
+              _id: { lineItem: "$lineitems" },
+              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              code: { $first: "$lineitems.code" },
+              population: { $sum: "$amount" },
+            },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (isPerCapita) {
           tempQ.push(
@@ -1361,13 +1382,23 @@ async function revenueQueryCompare(
         }
       );
       if (from.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: { lineItem: "lineitems.name" },
-            code: { $first: "$lineitems.code" },
-            amount: { $sum: "$amount" },
+        tempQ.push(
+          {
+            $group: {
+              _id: { lineItem: "$lineitems" },
+              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              code: { $first: "$lineitems.code" },
+              population: { $sum: "$amount" },
+            },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (isPerCapita) {
           tempQ.push(
@@ -1425,7 +1456,7 @@ async function revenueQueryCompare(
                 numerator: {
                   $sum: { $multiply: ["$amount", "$population"] },
                 },
-                ulbName: "National",
+                ulbName: { $first: "National" },
                 denominator: {
                   $sum: "$population",
                 },
@@ -1497,11 +1528,23 @@ async function revenueQueryCompare(
         }
       );
       if (from.includes("mix")) {
-        tempQ.push({
-          _id: { lineItem: "$lineitems.name", ulbType: "$ulb.ulbType" },
-          code: { $first: "$lineitems.code" },
-          amount: { $sum: "$amount" },
-        });
+        tempQ.push(
+          {
+            $group: {
+              _id: { lineItem: "$lineitems" },
+              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              code: { $first: "$lineitems.code" },
+              population: { $sum: "$amount" },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (isPerCapita) {
           tempQ.push(
@@ -1659,17 +1702,34 @@ async function expenseQueryCompare(
         },
       ];
       if (from.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: {
-              state: "$state._id",
-              lineItem: "$lineitems.name",
+        tempQ.push(
+          {
+            $group: {
+              _id: { state: "$state._id", lineItem: "$lineitems" },
+              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              code: { $first: "$lineitems.code" },
+              population: { $sum: "$amount" },
             },
-            ulbName: { $first: "$state.name" },
-            code: { $first: "$lineitems.code" },
-            amount: { $sum: "$amount" },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+          //   {
+          //   $group: {
+          //     _id: {
+          //       state: "$state._id",
+          //       lineItem: "$lineitems.name",
+          //     },
+          //     ulbName: { $first: "$state.name" },
+          //     code: { $first: "$lineitems.code" },
+          //     amount: { $sum: "$amount" },
+          //   },
+          // }
+        );
       } else {
         if (from.includes("surplus")) {
           tempQ.push(
@@ -1841,17 +1901,28 @@ async function expenseQueryCompare(
         }
       );
       if (from.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: {
-              state: "$state._id",
-              lineItem: "$lineitems.name",
+        tempQ.push(
+          {
+            $group: {
+              _id: {
+                state: "$state._id",
+                lineItem: "$lineitems.name",
+              },
+              ulbName: { $first: "$state.name" },
+              code: { $first: "$lineitems.code" },
+              amount: { $multiply: ["$amount", "$population"] },
+              population: { $sum: "$population" },
             },
-            ulbName: { $first: "$state.name" },
-            code: { $first: "$lineitems.code" },
-            amount: { $sum: "$amount" },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              ulbName: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (from.includes("surplus")) {
           tempQ.push(
@@ -1944,7 +2015,7 @@ async function expenseQueryCompare(
               $sort: {
                 _id: 1,
               },
-            },
+            }
           );
         }
       }
@@ -2000,16 +2071,27 @@ async function expenseQueryCompare(
         }
       );
       if (from.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: {
-              lineItem: "$lineitems.name",
+        tempQ.push(
+          {
+            $group: {
+              _id: {
+                lineItem: "$lineitems.name",
+              },
+              ulbName: { $first: "$state.name" },
+              code: { $first: "$lineitems.code" },
+              amount: { $multiply: ["$amount", "$population"] },
+              population: { $sum: "$population" },
             },
-            ulbName: { $first: "$state.name" },
-            code: { $first: "$lineitems.code" },
-            amount: { $sum: "$amount" },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              ulbName: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (from.includes("surplus")) {
           tempQ.push(
@@ -2101,7 +2183,7 @@ async function expenseQueryCompare(
               $sort: {
                 _id: 1,
               },
-            },
+            }
           );
         }
       }
@@ -2158,16 +2240,27 @@ async function expenseQueryCompare(
         }
       );
       if (from.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: {
-              lineItem: "$lineitems.name",
+        tempQ.push(
+          {
+            $group: {
+              _id: {
+                lineItem: "$lineitems.name",
+              },
+              ulbName: { $first: "$ulbType.name" },
+              code: { $first: "$lineitems.code" },
+              amount: { $multiply: ["$amount", "$population"] },
+              population: { $sum: "$population" },
             },
-            ulbName: { $first: "$ulbType.name" },
-            code: { $first: "$lineitems.code" },
-            amount: { $sum: "$amount" },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              ulbName: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (from.includes("surplus")) {
           tempQ.push(
@@ -2260,7 +2353,7 @@ async function expenseQueryCompare(
               $sort: {
                 _id: 1,
               },
-            },
+            }
           );
         }
       }
@@ -2335,7 +2428,7 @@ const aboutCalculation = async (req, res) => {
     if (filterName) {
       if (filterName.includes("own")) {
         let ids = await LineItem.find({
-          code: { $in: ["11001", "180", "140", "110", "130", "150"] },
+          code: { $in: ["180", "140", "110", "130", "150"] },
         })
           .select({ _id: 1 })
           .lean();
