@@ -1074,16 +1074,7 @@ async function revenueQueryCompare(
               },
               ulbName: { $first: "$state.name" },
               code: { $first: "$lineitems.code" },
-              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
-              population: { $sum: "$ulb.population" },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              ulbName: 1,
-              code: 1,
-              amount: { $divide: ["$amount", "$population"] },
+              amount: { $sum: "$amount" },
             },
           }
         );
@@ -1386,16 +1377,8 @@ async function revenueQueryCompare(
           {
             $group: {
               _id: { lineItem: "$lineitems" },
-              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
               code: { $first: "$lineitems.code" },
-              population: { $sum: "$amount" },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              code: 1,
-              amount: { $divide: ["$amount", "$population"] },
+              amount: { $sum: "$amount" },
             },
           }
         );
@@ -1532,18 +1515,10 @@ async function revenueQueryCompare(
           {
             $group: {
               _id: { lineItem: "$lineitems" },
-              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              amount: { $sum: "$amount" },
               code: { $first: "$lineitems.code" },
-              population: { $sum: "$amount" },
             },
           },
-          {
-            $project: {
-              _id: 1,
-              code: 1,
-              amount: { $divide: ["$amount", "$population"] },
-            },
-          }
         );
       } else {
         if (isPerCapita) {
@@ -1703,32 +1678,17 @@ async function expenseQueryCompare(
       ];
       if (from.includes("mix")) {
         tempQ.push(
-          {
+            {
             $group: {
-              _id: { state: "$state._id", lineItem: "$lineitems" },
-              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              _id: {
+                state: "$state._id",
+                lineItem: "$lineitems.name",
+              },
+              ulbName: { $first: "$state.name" },
               code: { $first: "$lineitems.code" },
-              population: { $sum: "$amount" },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              code: 1,
-              amount: { $divide: ["$amount", "$population"] },
+              amount: { $sum: "$amount" },
             },
           }
-          //   {
-          //   $group: {
-          //     _id: {
-          //       state: "$state._id",
-          //       lineItem: "$lineitems.name",
-          //     },
-          //     ulbName: { $first: "$state.name" },
-          //     code: { $first: "$lineitems.code" },
-          //     amount: { $sum: "$amount" },
-          //   },
-          // }
         );
       } else {
         if (from.includes("surplus")) {
@@ -1910,16 +1870,7 @@ async function expenseQueryCompare(
               },
               ulbName: { $first: "$state.name" },
               code: { $first: "$lineitems.code" },
-              amount: { $multiply: ["$amount", "$population"] },
-              population: { $sum: "$population" },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              ulbName: 1,
-              code: 1,
-              amount: { $divide: ["$amount", "$population"] },
+              amount: { $sum: "$amount" },
             },
           }
         );
@@ -2079,16 +2030,7 @@ async function expenseQueryCompare(
               },
               ulbName: { $first: "$state.name" },
               code: { $first: "$lineitems.code" },
-              amount: { $multiply: ["$amount", "$population"] },
-              population: { $sum: "$population" },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              ulbName: 1,
-              code: 1,
-              amount: { $divide: ["$amount", "$population"] },
+              amount: { $sum: "$amount" },
             },
           }
         );
@@ -2248,16 +2190,7 @@ async function expenseQueryCompare(
               },
               ulbName: { $first: "$ulbType.name" },
               code: { $first: "$lineitems.code" },
-              amount: { $multiply: ["$amount", "$population"] },
-              population: { $sum: "$population" },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              ulbName: 1,
-              code: 1,
-              amount: { $divide: ["$amount", "$population"] },
+              amount: { $sum: "$amount" },
             },
           }
         );
