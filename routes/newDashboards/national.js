@@ -792,16 +792,9 @@ exports.nationalDashExpenditure = async (req, res) => {
           (each) => each != "_id"
         );
         const cols = ["revenue", "expense", "deficitOrSurplus"];
-        let individual_Format = {},
-          rowMapper = {
-            "<100K": "< 100 Thousand",
-            "100K-500K": "100 Thousand - 500 Thousand",
-            "500K-1M": "500 Thousand - 1 Million",
-            "1M-4M": "1 Million - 4 Million",
-            "4M+": "4 Million+",
-          };
+        let individual_Format = {};
         for (row of rows) {
-          const newRow = rowMapper[row];
+          const newRow = row;
           for (col of cols) {
             const val = responsePayload.data.individual[row][col];
             if (!individual_Format[newRow]) individual_Format[newRow] = {};
