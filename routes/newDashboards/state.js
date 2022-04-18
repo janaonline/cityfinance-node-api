@@ -1503,29 +1503,34 @@ const calculateStateAvg = (data) => {
   return Number((numerator / denominator).toFixed(2));
 };
 const stateDashAvgs = async (req, res) => {
-  const { financialYear, which, TabType, getQuery, stateId } = req.query;
-  const distinctUlbs =
-    which == "nationalAvg" ? await UlbLedger.distinct("ulb") : [];
-  const noOfUlbs = distinctUlbs.length;
-  const { stateDashAvgsPipeline } = require("../../util/aggregation");
-  const query = await stateDashAvgsPipeline(
-    financialYear,
-    which,
-    noOfUlbs,
-    TabType,
-    stateId
-  );
-  if(getQuery) return res.send(query)
-  const data = await UlbLedger.aggregate(query);
-  function roundOffy2(obj){
-    const keys=Object.keys(obj);
-    for(each of keys){
-      obj[each]=obj[each].toFixed(2)
-    }
-    return obj
-  }
-  res.status(200).json({ success: true, data: roundOffy2(data[0] )});
-};``
+ try {
+   const { financialYear, which, TabType, getQuery, stateId, code } = req.query;
+   const distinctUlbs =
+     which == "nationalAvg" ? await UlbLedger.distinct("ulb") : [];
+   const noOfUlbs = distinctUlbs.length;
+   const { stateDashAvgsPipeline } = require("../../util/aggregation");
+   const query = await stateDashAvgsPipeline(
+     financialYear,
+     which,
+     noOfUlbs,
+     TabType,
+     stateId,
+     code
+   );
+   if (getQuery) return res.send(query);
+   const data = await UlbLedger.aggregate(query);
+   function roundOffy2(obj) {
+     const keys = Object.keys(obj);
+     for (each of keys) {
+       obj[each] = obj[each].toFixed(2);
+     }
+     return obj;
+   }
+   res.status(200).json({ success: true, data: roundOffy2(data[0]) });
+ } catch (error) {
+   return res.status(500).json({ success: false, message: error.message });
+ }
+};
 
 const indicatorDump = async (req, res) => {};
 
