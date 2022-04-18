@@ -53,7 +53,7 @@ const headOfAccountIds = {
     ObjectId("5dd10c2485c951b54ec1d74b"),
     ObjectId("5dd10c2485c951b54ec1d74a"),
     ObjectId("5dd10c2385c951b54ec1d748"),
-    ObjectId("5dd10c2285c951b54ec1d737"),
+    // ObjectId("5dd10c2285c951b54ec1d737"),
   ],
   ["revenue_expenditure_mix"]: [
     ObjectId("5dd10c2685c951b54ec1d760"),
@@ -192,6 +192,7 @@ const indicator = async (req, res) => {
               lineItem: "$lineitems.name",
             },
             ulbName: { $first: "$ulb.name" },
+            colour: { $first: "$lineitems.colour" },
             amount: { $sum: "$amount" },
             code: { $first: "$lineitems.code" },
           },
@@ -273,6 +274,7 @@ const indicator = async (req, res) => {
           },
           amount: { $sum: "$amount" },
           ulbName: { $first: "$ulb.name" },
+          colour: { $first: "$lineitems.colour" },
           code: { $first: "$lineitems.code" },
         };
         if (isPerCapita) {
@@ -374,6 +376,7 @@ const indicator = async (req, res) => {
             },
             ulbName: { $first: "$ulb.name" },
             amount: { $sum: "$amount" },
+            colour: { $first: "$lineitems.colour" },
             amount2: {
               $sum: {
                 $cond: {
@@ -396,6 +399,7 @@ const indicator = async (req, res) => {
               lineItem: "$lineitems.name",
             },
             ulbName: { $first: "$ulb.name" },
+            colour: { $first: "$lineitems.colour" },
             amount: { $sum: "$amount" },
             code: { $first: "$lineitems.code" },
           },
@@ -1071,6 +1075,7 @@ async function revenueQueryCompare(
               state: "$state._id",
               lineItem: "$lineitems.name",
             },
+            colour: { $first: "$lineitems.colour" },
             ulbName: { $first: "$state.name" },
             code: { $first: "$lineitems.code" },
             amount: { $sum: "$amount" },
@@ -1227,13 +1232,23 @@ async function revenueQueryCompare(
         }
       );
       if (format.includes("mix")) {
-        tempQ.push({
-          $group: {
-            _id: { lineItem: "$lineitems" },
-            amount: { $sum: "$amount" },
-            code: { $first: "$lineitems.code" },
+        tempQ.push(
+          {
+            $group: {
+              _id: { lineItem: "$lineitems" },
+              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+              code: { $first: "$lineitems.code" },
+              population: { $sum: "$amount" },
+            },
           },
-        });
+          {
+            $project: {
+              _id: 1,
+              code: 1,
+              amount: { $divide: ["$amount", "$population"] },
+            },
+          }
+        );
       } else {
         if (isPerCapita) {
           tempQ.push(
@@ -1363,7 +1378,7 @@ async function revenueQueryCompare(
       if (from.includes("mix")) {
         tempQ.push({
           $group: {
-            _id: { lineItem: "lineitems.name" },
+            _id: { lineItem: "$lineitems" },
             code: { $first: "$lineitems.code" },
             amount: { $sum: "$amount" },
           },
@@ -1425,7 +1440,7 @@ async function revenueQueryCompare(
                 numerator: {
                   $sum: { $multiply: ["$amount", "$population"] },
                 },
-                ulbName: "National",
+                ulbName: { $first: "National" },
                 denominator: {
                   $sum: "$population",
                 },
@@ -1498,9 +1513,11 @@ async function revenueQueryCompare(
       );
       if (from.includes("mix")) {
         tempQ.push({
-          _id: { lineItem: "$lineitems.name", ulbType: "$ulb.ulbType" },
-          code: { $first: "$lineitems.code" },
-          amount: { $sum: "$amount" },
+          $group: {
+            _id: { lineItem: "$lineitems" },
+            amount: { $sum: "$amount" },
+            code: { $first: "$lineitems.code" },
+          },
         });
       } else {
         if (isPerCapita) {
@@ -1665,6 +1682,7 @@ async function expenseQueryCompare(
               state: "$state._id",
               lineItem: "$lineitems.name",
             },
+            colour: { $first: "$lineitems.colour" },
             ulbName: { $first: "$state.name" },
             code: { $first: "$lineitems.code" },
             amount: { $sum: "$amount" },
@@ -1716,6 +1734,7 @@ async function expenseQueryCompare(
                   lineItemName: "$lineitems.name",
                   state: "$state._id",
                 },
+                colour: { $first: "$lineitems.colour" },
                 amount: {
                   $sum: "$amount",
                 },
@@ -1847,6 +1866,7 @@ async function expenseQueryCompare(
               state: "$state._id",
               lineItem: "$lineitems.name",
             },
+            colour: { $first: "$lineitems.colour" },
             ulbName: { $first: "$state.name" },
             code: { $first: "$lineitems.code" },
             amount: { $sum: "$amount" },
@@ -1898,6 +1918,7 @@ async function expenseQueryCompare(
                   lineItemName: "$lineitems.name",
                   state: "$state._id",
                 },
+                colour: { $first: "$lineitems.colour" },
                 amount: {
                   $sum: "$amount",
                 },
@@ -1944,7 +1965,7 @@ async function expenseQueryCompare(
               $sort: {
                 _id: 1,
               },
-            },
+            }
           );
         }
       }
@@ -2005,6 +2026,7 @@ async function expenseQueryCompare(
             _id: {
               lineItem: "$lineitems.name",
             },
+            colour: { $first: "$lineitems.colour" },
             ulbName: { $first: "$state.name" },
             code: { $first: "$lineitems.code" },
             amount: { $sum: "$amount" },
@@ -2055,6 +2077,7 @@ async function expenseQueryCompare(
                   financialYear: "$financialYear",
                   lineItemName: "$lineitems.name",
                 },
+                colour: { $first: "$lineitems.colour" },
                 amount: {
                   $sum: "$amount",
                 },
@@ -2101,7 +2124,7 @@ async function expenseQueryCompare(
               $sort: {
                 _id: 1,
               },
-            },
+            }
           );
         }
       }
@@ -2163,6 +2186,7 @@ async function expenseQueryCompare(
             _id: {
               lineItem: "$lineitems.name",
             },
+            colour: { $first: "$lineitems.colour" },
             ulbName: { $first: "$ulbType.name" },
             code: { $first: "$lineitems.code" },
             amount: { $sum: "$amount" },
@@ -2214,6 +2238,7 @@ async function expenseQueryCompare(
                   lineItemName: "$lineitems.name",
                   ulbType: "$ulbType._id",
                 },
+                colour: { $first: "$lineitems.colour" },
                 amount: {
                   $sum: "$amount",
                 },
@@ -2260,7 +2285,7 @@ async function expenseQueryCompare(
               $sort: {
                 _id: 1,
               },
-            },
+            }
           );
         }
       }
@@ -2335,7 +2360,7 @@ const aboutCalculation = async (req, res) => {
     if (filterName) {
       if (filterName.includes("own")) {
         let ids = await LineItem.find({
-          code: { $in: ["11001", "180", "140", "110", "130", "150"] },
+          code: { $in: ["180", "140", "110", "130", "150"] },
         })
           .select({ _id: 1 })
           .lean();
@@ -2449,8 +2474,7 @@ const aboutCalculation = async (req, res) => {
     if (getQuery) return Response.OK(res, query);
 
     let key = JSON.stringify(query) + "aboutIndicator";
-    let redisData;
-    //  = await Redis.getDataPromise(key);
+    let redisData = await Redis.getDataPromise(key);
     let data;
     if (!redisData) {
       data = await UlbLedger.aggregate(query);
@@ -2615,23 +2639,38 @@ const revenueIndicator = async (req, res) => {
 
 const peerComp = async (req, res) => {
   try {
-    const {
-      ulb,
-      financialYear,
-      headOfAccount = "Revenue",
-      getQuery,
-    } = req.query;
+    const { ulb, financialYear, from, isPerCapita, getQuery } = req.body;
+
     const {
       ulbType = ulb.ulbType,
       state = ulb.state,
       population = ulb.population,
     } = await ULB.findOne({ _id: ulb }).lean();
-    const lineItemData = await LineItem.find({ headOfAccount }).lean();
+
+    let lineMatch = {};
+    if (from.includes("capital")) {
+      Object.assign(lineMatch, {
+        code: { $in: ["410", "412"] },
+      });
+    } else if (from.includes("surplus")) {
+      Object.assign(lineMatch, {
+        headOfAccount: { $in: ["Revenue", "Expense"] },
+      });
+    } else if (from.includes("own") && from.includes("revenue")) {
+      Object.assign(lineMatch, {
+        code: { $in: ["110", "130", "140", "150", "180"] },
+      });
+    } else if (from.includes("revenue")) {
+      Object.assign(lineMatch, { headOfAccount: "Revenue" });
+    }
+
+    const lineItemData = await LineItem.find(lineMatch).lean();
     let lineItem = lineItemData.map((value) => ObjectId(value._id));
 
     const inStateUlbType = UlbLedger.aggregate(
       getPeerQuery({
-        headOfAccount,
+        from,
+        isPerCapita,
         ulbType,
         state,
         financialYear,
@@ -2640,7 +2679,8 @@ const peerComp = async (req, res) => {
     );
     const inIndiaUlbType = UlbLedger.aggregate(
       getPeerQuery({
-        headOfAccount,
+        from,
+        isPerCapita,
         ulbType,
         financialYear,
         lineItem,
@@ -2648,7 +2688,8 @@ const peerComp = async (req, res) => {
     );
     const inState = UlbLedger.aggregate(
       getPeerQuery({
-        headOfAccount,
+        from,
+        isPerCapita,
         population,
         state,
         financialYear,
@@ -2656,10 +2697,16 @@ const peerComp = async (req, res) => {
       })
     );
     const inIndia = UlbLedger.aggregate(
-      getPeerQuery({ headOfAccount, population, financialYear, lineItem })
+      getPeerQuery({
+        from,
+        isPerCapita,
+        population,
+        financialYear,
+        lineItem,
+      })
     );
     const totalRevenue = UlbLedger.aggregate(
-      getPeerQuery({ headOfAccount, financialYear, lineItem, ulb })
+      getPeerQuery({ isPerCapita, from, financialYear, lineItem, ulb })
     );
 
     const query = [
@@ -2673,16 +2720,44 @@ const peerComp = async (req, res) => {
     if (getQuery) return Response.OK(res, query);
 
     const redisKey = JSON.stringify(query) + "peerComp";
-    let redisData = await Redis.getDataPromise(redisKey);
+    let redisData;
+    // = await Redis.getDataPromise(redisKey);
     let data, newData;
     if (!redisData) {
       data = await Promise.all(query);
+      if (from.includes("capital_expenditure")) {
+        data = JSON.parse(JSON.stringify(data));
+        data = data.map((innerData) => {
+          let tempData = innerData.reduce((result, val) => {
+            let key = val._id.financialYear;
+            if (!result.hasOwnProperty(key)) {
+              result[key] = [val];
+            } else {
+              result[key].push(val);
+            }
+            return result;
+          }, {});
+          return tempData[financialYear[0]]
+            .reduce((rand, value) => {
+              let lastDate = tempData[financialYear[1]];
+              let lastUlb = lastDate.find((v) => v.ulb._id == value.ulb._id);
+              rand.push({
+                amount: lastUlb ? getCapitalChangeAmount(lastUlb, value) : 0,
+                ulb: value["ulb"],
+              });
+              return rand;
+            }, [])
+            .sort(function (a, b) {
+              return b.amount - a.amount;
+            })[0];
+        });
+      }
       newData = {
-        inStateUlbType: data[0][0],
-        inIndiaUlbType: data[1][0],
-        inState: data[2][0],
-        inIndia: data[3][0],
-        totalRevenue: data[4][0] ?? 0,
+        inStateUlbType: data[0][0] ?? data[0],
+        inIndiaUlbType: data[1][0] ?? data[1],
+        inState: data[2][0] ?? data[2],
+        inIndia: data[3][0] ?? data[3],
+        totalRevenue: data[4][0] ?? data[4] ?? 0,
       };
       Redis.set(redisKey, JSON.stringify(newData));
     } else {
@@ -2695,13 +2770,21 @@ const peerComp = async (req, res) => {
   }
 };
 
+function getCapitalChangeAmount(ulb1, ulb2) {
+  let gross = ulb2.gross - ulb1.gross;
+  let cwip = ulb2.cwip - ulb2.cwip;
+  return gross + cwip;
+}
+
 function getPeerQuery(params) {
   let matchObj = {};
   let query = [
     {
       $match: {
         financialYear: {
-          $in: [params.financialYear],
+          $in: params.from.includes("capital_expenditure")
+            ? [...params.financialYear]
+            : [params.financialYear],
         },
         lineItem: {
           $in: params.lineItem.map((value) => value),
@@ -2764,18 +2847,186 @@ function getPeerQuery(params) {
       Object.assign(matchObj, { "ulb.population": { $gt: 4000000 } });
     }
   }
-
-  query.push(
-    { $sort: { amount: -1 } },
-    { $limit: 1 },
-    {
-      $project: {
-        ulb: 1,
-        amount: 1,
+  if (params.from.includes("surplus")) {
+    query.push(
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineItem",
+        },
       },
-    }
-  );
-  console.log(query);
+      { $unwind: "$lineItem" },
+      {
+        $group: {
+          _id: "$ulb._id",
+          revenue: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineItem.headOfAccount", "Revenue"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+          expense: {
+            $sum: {
+              $cond: {
+                if: { $eq: ["$lineItem.headOfAccount", "Expense"] },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+          ulb: { $first: "$ulb" },
+        },
+      },
+      { $project: { ulb: 1, amount: { $subtract: ["$revenue", "$expense"] } } }
+    );
+  }
+  if (params.isPerCapita && !params.from.includes("capital_expenditure")) {
+    query.push(
+      {
+        $group: {
+          _id: "$ulb._id",
+          amount: { $sum: "$amount" },
+          ulb: { $first: "$ulb" },
+        },
+      },
+      { $unwind: "$ulb" },
+      {
+        $project: {
+          ulb: 1,
+          amount: {
+            $cond: {
+              if: { $gt: ["$ulb.population", 0] },
+              then: { $divide: ["$amount", "$ulb.population"] },
+              else: 0,
+            },
+          },
+        },
+      }
+    );
+  }
+  if (params.from == "revenue_mix" || params.from == "revenue_expenditure") {
+    query.push(
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineItem",
+        },
+      },
+      { $unwind: "$lineItem" },
+      {
+        $group: {
+          _id: "$ulb._id",
+          ownRevenue: {
+            $sum: {
+              $cond: {
+                if: {
+                  $in: ["$lineItem.code", ["110", "130", "140", "150", "180"]],
+                },
+                then: "$amount",
+                else: 0,
+              },
+            },
+          },
+          totalRevenue: { $sum: "$amount" },
+          ulb: { $first: "$ulb" },
+        },
+      },
+      { $unwind: "$ulb" },
+      {
+        $project: {
+          ulb: 1,
+          amount: {
+            $cond: {
+              if: { $gt: ["$totalRevenue", 0] },
+              then: {
+                $multiply: [{ $divide: ["$ownRevenue", "$totalRevenue"] }, 100],
+              },
+              else: 0,
+            },
+          },
+        },
+      }
+    );
+  }
+
+  if (params.from.includes("capital_expenditure")) {
+    query.push(
+      {
+        $lookup: {
+          from: "lineitems",
+          localField: "lineItem",
+          foreignField: "_id",
+          as: "lineItem",
+        },
+      },
+      { $unwind: "$lineItem" },
+      {
+        $group: {
+          _id: {
+            ulb: "$ulb._id",
+            financialYear: "$financialYear",
+          },
+          gross: {
+            $sum: {
+              $cond: {
+                if: {
+                  $eq: ["$lineItem.code", "410"],
+                },
+                then: params.isPerCapita
+                  ? {
+                      $cond: {
+                        if: { $gt: ["$ulb.population", 0] },
+                        then: { $divide: ["$amount", "$ulb.population"] },
+                        else: 0,
+                      },
+                    }
+                  : "$amount",
+                else: 0,
+              },
+            },
+          },
+          cwip: {
+            $sum: {
+              $cond: {
+                if: {
+                  $eq: ["$lineItem.code", "412"],
+                },
+                then: params.isPerCapita
+                  ? {
+                      $cond: {
+                        if: { $gt: ["$ulb.population", 0] },
+                        then: { $divide: ["$amount", "$ulb.population"] },
+                        else: 0,
+                      },
+                    }
+                  : "$amount",
+                else: 0,
+              },
+            },
+          },
+          ulb: { $first: "$ulb" },
+        },
+      }
+    );
+  } else {
+    query.push(
+      { $sort: { amount: -1 } },
+      { $limit: 1 },
+      {
+        $project: {
+          ulb: 1,
+          amount: 1,
+        },
+      }
+    );
+  }
   return query;
 }
 
