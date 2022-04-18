@@ -1,5 +1,6 @@
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
+const LineItem = require("../../models/LineItem")
 const Indicator = require("../../models/indicators");
 const Sate = require("../../models/State");
 const Response = require("../../service").response;
@@ -16,6 +17,46 @@ const ObjectIdOfRevenueList = [
   "5dd10c2885c951b54ec1d77e",
   "5dd10c2385c951b54ec1d748",
 ];
+
+const All_Revenue_ObjectIDs = [       
+   "5dd10c2685c951b54ec1d761", 
+"5dd10c2785c951b54ec1d776", 
+"5dd10c2585c951b54ec1d75b", 
+"5dd10c2885c951b54ec1d77e", 
+"5dd10c2485c951b54ec1d74b", 
+"5dd10c2385c951b54ec1d748", 
+"5dd10c2685c951b54ec1d762", 
+"5dd10c2485c951b54ec1d74f", 
+"5dd10c2785c951b54ec1d778", 
+"5dd10c2485c951b54ec1d74a"]
+const All_Expense_ObjectIDs = [
+  "5dd10c2385c951b54ec1d743", 
+  "5dd10c2685c951b54ec1d760", 
+  "5dd10c2585c951b54ec1d75e", 
+  "5dd10c2585c951b54ec1d755", 
+  "5dd10c2585c951b54ec1d75f", 
+  "5dd10c2585c951b54ec1d756", 
+  "5dd10c2585c951b54ec1d75a", 
+  "5dd10c2585c951b54ec1d753", 
+  "5dd10c2485c951b54ec1d74e", 
+  "5dd10c2385c951b54ec1d744", 
+  "5dd10c2785c951b54ec1d77c", 
+  "5dd10c2385c951b54ec1d746"
+]
+
+const Revenue_Expenditure = [
+  "5dd10c2385c951b54ec1d743",
+  "5dd10c2585c951b54ec1d753",
+  "5dd10c2585c951b54ec1d75a",
+  "5dd10c2585c951b54ec1d756",
+  "5dd10c2685c951b54ec1d760"
+]
+
+const Capital_Expenditure = [
+  "5dd10c2785c951b54ec1d779",
+  "5dd10c2785c951b54ec1d774"
+]
+
 const scatterMap = async (req, res) => {
   try {
     const { financialYear } = req.body;
@@ -224,6 +265,7 @@ const revenue = catchAsync(async (req, res) => {
     ulb,
     compareType,
     getQuery,
+    sortBy
   } = req.body;
 
   if (!state || !financialYear || !headOfAccount || !filterName) {
@@ -232,429 +274,387 @@ const revenue = catchAsync(async (req, res) => {
       message: "Missing Information",
     });
   }
-  if (filterName == "revenue") {
-    if (!ulb.length  ) {
-      let base_query = [
-        {
-          $match: {
-            financialYear: financialYear,
-          },
-        },
+  const HashTable = new Map();
+  let ulbIDs = [], AllULBs = [];
 
-        {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulb",
-          },
-        },
-        {
-          $unwind: "$ulb",
-        },
-      ];
-      let state_query = [];
-      state_query.push(...base_query);
-      let avg = [
-        {
-          $group: {
-            _id: null,
-            numerator: {
-              $sum: { $multiply: ["$totalRevenue", "$population"] },
-            },
-            denominator: { $sum: "$population" },
-          },
-        },
-        {
-          $project: {
-            average: {
-              $cond: [
-                { $eq: ["$denominator", 0] },
-                0,
-                { $divide: ["$numerator", "$denominator"] },
-              ],
-            },
-          },
-        },
-      ];
-      let stateAvg_query = [];
-      let natAvg_query = [];
-      state_query.push({
-        $match: {
-          "ulb.state": ObjectId(state),
-        },
-      });
-      let x_query = [
-        {
-          $lookup: {
-            from: "states",
-            localField: "ulb.state",
-            foreignField: "_id",
-            as: "state",
-          },
-        },
-        {
-          $unwind: "$state",
-        },
-        {
-          $lookup: {
-            from: "lineitems",
-            localField: "lineItem",
-            foreignField: "_id",
-            as: "lineItem",
-          },
-        },
-        {
-          $unwind: "$lineItem",
-        },
-
-        {
-          $match: {
-            "lineItem.headOfAccount": headOfAccount,
-          },
-        },
-        {
-          $lookup: {
-            from: "ulbtypes",
-            localField: "ulb.ulbType",
-            foreignField: "_id",
-            as: "ulbType",
-          },
-        },
-        {
-          $unwind: "$ulbType",
-        },
-        {
-          $group: {
-            _id: "$ulb._id",
-            ulbName: { $first: "$ulb.name" },
-            ulbId: { $first: "$ulb._id" },
-            ulbType: { $first: "$ulbType.name" },
-            stateId: { $first: "$state._id" },
-            state: { $first: "$state.name" },
-            totalRevenue: { $sum: "$amount" },
-            population: { $first: "$ulb.population" },
-          },
-        },
-      ];
-      let perCapita = {
-        $project: {
-          ulbName: 1,
-          ulbId: 1,
-          ulbType: 1,
-          stateId: 1,
-          state: 1,
-          totalRevenue: {
-            $cond: [
-              { $eq: ["$population", 0] },
-              0,
-              { $divide: ["$totalRevenue", "$population"] },
-            ],
-          },
-          population: 1,
-        },
-      };
-      let ulb_query = [];
-      ulb_query.push(...state_query);
-      ulb_query.push(...x_query);
-      if (isPerCapita) {
-        ulb_query.push(perCapita);
-      }
-      // base_query.push(...ulb_query)
-      // state_query.push(...ulb_query)
-
-      stateAvg_query.push(...ulb_query);
-      stateAvg_query.push(...avg);
-
-      natAvg_query.push(...base_query);
-      natAvg_query.push(...x_query);
-      if (isPerCapita) {
-        natAvg_query.push(perCapita);
-      }
-      natAvg_query.push(...avg);
-      if (getQuery) {
-        return res.json({
-          query: [ulb_query, stateAvg_query, natAvg_query],
-        });
-      }
-      let data = await Promise.all([
-        UlbLedger.aggregate(ulb_query),
-        UlbLedger.aggregate(stateAvg_query),
-        // UlbLedger.aggregate(natAvg_query),
-      ]);
-
-      // let data = await UlbLedger.aggregate(query)
-      let tp_data = data[0].filter((el) => {
-        return el.ulbType == "Town Panchayat";
-      });
-      let m_data = data[0].filter((el) => {
-        return el.ulbType == "Municipality";
-      });
-      let mc_data = data[0].filter((el) => {
-        return el.ulbType == "Municipal Corporation";
-      });
-      return res.status(200).json({
-        success: true,
-        municipality: m_data,
-        townPanchayat: tp_data,
-        mCorporation: mc_data,
-        // ulbData: data[0],
-        stateAvg: data[1],
-        // natAvg : data[2]
-      });
-    } else if (ulb.length) {
-   console.log('entered the array if')
-      // let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).populate(
-      //   "ulbType"
-      // );
-      let query = [
-        {
-          $match: {
-            financialYear: financialYear,
-            ulb:{
-              $in: [...ulb.map((value) => ObjectId(value))],
-            }
-          },
-        },
-        {
-          $lookup: {
-            from: "lineitems",
-            localField: "lineItem",
-            foreignField: "_id",
-            as: "lineItem",
-          },
-        },
-        {
-          $unwind: "$lineItem",
-        },
-        {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulb",
-          },
-        },
-        {
-          $unwind: "$ulb",
-        },
-        {
-          $match: {
-            "lineItem.headOfAccount": "Revenue",
-          },
-        },
-        {
-          $lookup: {
-            from: "ulbtypes",
-            localField: "ulb.ulbType",
-            foreignField: "_id",
-            as: "ulbType",
-          },
-        },
-        {
-          $unwind: "$ulbType",
-        },
-        {
-          $group: {
-            _id: "$ulb._id",
-            totalRevenue: { $sum: "$amount" },
-            ulbName: { $first: "$ulb.name" },
-            population: { $first: "$ulb.population" },
-            ulbType:{$first:"$ulbType.name"}
-          },
-        },
-      ];
-      if (isPerCapita) {
-        query.push({
-          $project: {
-            ulbName: 1,
-            population: 1,
-            totalRevenue: {
-              $cond: [
-                { $eq: ["$population", 0] },
-                0,
-                { $divide: ["$totalRevenue", "$population"] },
-              ],
-            },
-          },
-        });
-      }
-      let output = await UlbLedger.aggregate(query);
-
-      let obj = {
-        municipality: [],
-        townPanchayat: [],
-        mCorporation: [],
-      };
-output.forEach(el=>{
-  if (el.ulbType == "Town Panchayat"){
-    obj.townPanchayat.push(el);
-  } else if (el.ulbType == "Municipality") {
-    obj.municipality.push(el);
-  } else if (el.ulbType == "Municipal Corporation") {
-    obj.mCorporation.push(el);
+AllULBs = await Ulb.find({state: ObjectId(state)}).select("_id").lean()
+AllULBs = AllULBs.map((each) => {
+  HashTable.set(each._id.toString(), true);
+  return each._id;
+});
+  if(!ulb.length){
+    ulbIDs = AllULBs
+  }else{
+    ulbIDs = ulb
   }
-})
-     
-      return res.status(200).json({
-        success: true,
-        ...obj,
-      });
+  let base_query = [
+    {
+
+      $match:{
+
+        financialYear: financialYear,
+        ulb: {
+          $in: [...ulbIDs],
+        }
+      }
     }
+  ]
+  // state Avg is calculatd separately to handle the ulb specific searches
+  let state_avg_base_query = [
+    {
+
+      $match:{
+
+        financialYear: financialYear,
+        ulb: {
+          $in: [...AllULBs],
+        }
+      }
+    }
+  ]
+  
+  // total revenue and revenue per capita
+  if (filterName == "revenue") {
+let query = [
+  {
+$match:{
+
+  lineItem: {
+    $in: [...All_Revenue_ObjectIDs.map((value) => ObjectId(value))]
+  }
+}
+
+},
+{
+
+  $lookup:{
+from:"ulbs",
+localField:"ulb",
+foreignField:"_id",
+as:"ulb"
+
+  }
+},
+{
+  $unwind:"$ulb"
+},
+{
+
+  $lookup:{
+from:"ulbtypes",
+localField:"ulb.ulbType",
+foreignField:"_id",
+as:"ulbType"
+
+  }
+},
+{
+  $unwind:"$ulbType"
+},
+{
+  $group:{
+
+    _id: "$ulb._id",
+    ulbName:{$first:"$ulb.name"},
+    population:{$first:"$ulb.population" },
+    ulbType:{$first:"$ulbType.name"},
+    amount:{$sum:"$amount"}
+  }
+},
+{
+
+  $sort:{
+    "amount":-1
+  }
+}
+]
+finalQuery = [...base_query, ...query]
+finalQuery_stateAvg = [...state_avg_base_query, ...query]
+let tenData = []
+// console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+// is per capita attachment code
+if(isPerCapita){
+  let perCapitaQuery = [
+    {
+      $project:{
+        ulbName:1,
+        population:1,
+        ulbType:1,
+        amount: {
+          $cond: [
+            { $eq: ["$population", 0] },
+            0,
+            { $divide: ["$amount", "$population"] },
+          ],
+        }
+      }
+    }
+  ]
+  finalQuery.push(...perCapitaQuery)
+  finalQuery_stateAvg.push(...perCapitaQuery)
+}
+
+
+let data = await Promise.all([
+  UlbLedger.aggregate(finalQuery),
+  UlbLedger.aggregate(finalQuery_stateAvg)
+])
+// console.log(util.inspect(data, {showHidden: false, depth: null}))
+// finding Top ten or bottom ten data
+tenData = fetchTen(data[0],sortBy)
+// calculating State Avg
+let stateAvg = calculateStateAvg(data[1])
+// console.log(tenData, stateAvg);
+// grouping the data in ulbTypewise
+let groupedData = groupDataTypeWise(data[0]);
+
+Object.assign(groupedData, {stateAvg: stateAvg})
+// table Data api called
+if(sortBy){
+return res.status(200).json({
+  success: true,
+  data: tenData
+})
+}else{
+  // scatter plot api called
+  return res.status(200).json({
+    success: true,
+    data: groupedData
+  })
+}
+
   } else if (
     filterName.includes("own revenue") &&
     !filterName.includes("mix")
   ) {
-    let base_query = [
-      {
-        $match: {
-          lineItem: {
-            $in: [...ObjectIdOfRevenueList.map((value) => ObjectId(value))],
-          },
-          financialYear: financialYear,
-        },
-      },
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
-      },
-      {
-        $unwind: "$ulb",
-      },
-    ];
-    let state_query = [];
-    state_query.push(...base_query);
-    let avg = [
-      {
-        $group: {
-          _id: null,
-          numerator: { $sum: { $multiply: ["$totalRevenue", "$population"] } },
-          denominator: { $sum: "$population" },
-        },
-      },
-      {
-        $project: {
-          average: {
-            $cond: [
-              { $eq: ["$denominator", 0] },
-              0,
-              { $divide: ["$numerator", "$denominator"] },
-            ],
-          },
-        },
-      },
-    ];
-    let stateAvg_query = [];
-    let natAvg_query = [];
-    state_query.push({
-      $match: {
-        "ulb.state": ObjectId(state),
-      },
-    });
-    let x_query = [
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      {
-        $unwind: "$state",
-      },
 
+    // total own revenue and revenue per capita Tabs 
+    let query = [
       {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulb.ulbType",
-          foreignField: "_id",
-          as: "ulbType",
-        },
-      },
-      {
-        $unwind: "$ulbType",
-      },
-      {
-        $group: {
-          _id: "$ulb._id",
-          totalRevenue: { $sum: "$amount" },
-          population: { $first: "$ulb.population" },
-          ulbName: { $first: "$ulb.name" },
-          ulbId: { $first: "$ulb._id" },
-          ulbType: { $first: "$ulbType.name" },
-          stateId: { $first: "$state._id" },
-          state: { $first: "$state.name" },
-        },
-      },
-    ];
-
-    let perCapita = {
-      $project: {
-        ulbName: 1,
-        ulbId: 1,
-        ulbType: 1,
-        stateId: 1,
-        state: 1,
-        totalRevenue: {
-          $cond: [
-            { $eq: ["$population", 0] },
-            0,
-            { $divide: ["$totalRevenue", "$population"] },
-          ],
-        },
-        population: 1,
-      },
-    };
-    let ulb_query = [];
-    ulb_query.push(...state_query);
-    ulb_query.push(...x_query);
-    if (isPerCapita) {
-      ulb_query.push(perCapita);
+    $match:{
+    
+      lineItem: {
+        $in: [...ObjectIdOfRevenueList.map((value) => ObjectId(value))]
+      }
     }
-
-    stateAvg_query.push(...ulb_query);
-    stateAvg_query.push(...avg);
-
-    natAvg_query.push(...base_query);
-    natAvg_query.push(...x_query);
-    if (isPerCapita) {
-      natAvg_query.push(perCapita);
+    
+    },
+    {
+    
+      $lookup:{
+    from:"ulbs",
+    localField:"ulb",
+    foreignField:"_id",
+    as:"ulb"
+    
+      }
+    },
+    {
+      $unwind:"$ulb"
+    },
+    {
+    
+      $lookup:{
+    from:"ulbtypes",
+    localField:"ulb.ulbType",
+    foreignField:"_id",
+    as:"ulbType"
+    
+      }
+    },
+    {
+      $unwind:"$ulbType"
+    },
+    {
+      $group:{
+    
+        _id: "$ulb._id",
+        ulbName:{$first:"$ulb.name"},
+        population:{$first:"$ulb.population" },
+        ulbType:{$first:"$ulbType.name"},
+        amount:{$sum:"$amount"}
+      }
+    },
+    {
+    
+      $sort:{
+        "amount":-1
+      }
     }
-    natAvg_query.push(...avg);
-    if (getQuery) {
-      return res.json({
-        query: [ulb_query, stateAvg_query, natAvg_query],
-      });
+    ]
+    finalQuery = [...base_query, ...query]
+    finalQuery_stateAvg = [...state_avg_base_query, ...query]
+    let tenData = []
+    // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+    // is per capita attachment code
+    if(isPerCapita){
+      let perCapitaQuery = [
+        {
+          $project:{
+            ulbName:1,
+            population:1,
+            ulbType:1,
+            amount: {
+              $cond: [
+                { $eq: ["$population", 0] },
+                0,
+                { $divide: ["$amount", "$population"] },
+              ],
+            }
+          }
+        }
+      ]
+      finalQuery.push(...perCapitaQuery)
+      finalQuery_stateAvg.push(...perCapitaQuery)
     }
+    
+    
     let data = await Promise.all([
-      UlbLedger.aggregate(ulb_query),
-      UlbLedger.aggregate(stateAvg_query),
-      // UlbLedger.aggregate(natAvg_query),
-    ]);
-
-    let tp_data = data[0].filter((el) => {
-      return el.ulbType == "Town Panchayat";
-    });
-    let m_data = data[0].filter((el) => {
-      return el.ulbType == "Municipality";
-    });
-    let mc_data = data[0].filter((el) => {
-      return el.ulbType == "Municipal Corporation";
-    });
+      UlbLedger.aggregate(finalQuery),
+      UlbLedger.aggregate(finalQuery_stateAvg)
+    ])
+    // console.log(util.inspect(data, {showHidden: false, depth: null}))
+    // finding Top ten or bottom ten data
+    tenData = fetchTen(data[0],sortBy)
+    // calculating State Avg
+    let stateAvg = calculateStateAvg(data[1])
+    // console.log(tenData, stateAvg);
+    // grouping the data in ulbTypewise
+    let groupedData = groupDataTypeWise(data[0]);
+    
+    Object.assign(groupedData, {stateAvg: stateAvg})
+    // table Data api called
+    if(sortBy){
     return res.status(200).json({
       success: true,
-      municipality: m_data,
-      townPanchayat: tp_data,
-      mCorporation: mc_data,
-      // ulbData: data[0],
-      stateAvg: data[1],
-      // natAvg : data[2]
-    });
+      data: tenData
+    })
+    }else{
+      // scatter plot api called
+      return res.status(200).json({
+        success: true,
+        data: groupedData
+      })
+    }
+
+   
+   
+  }else if (
+    filterName.includes("revenue expenditure") &&
+    !filterName.includes("mix")
+  ) {
+
+    // revenue expenditure Tabs 
+    let query = [
+      {
+    $match:{
+    
+      lineItem: {
+        $in: [...Revenue_Expenditure.map((value) => ObjectId(value))]
+      }
+    }
+    
+    },
+    {
+    
+      $lookup:{
+    from:"ulbs",
+    localField:"ulb",
+    foreignField:"_id",
+    as:"ulb"
+    
+      }
+    },
+    {
+      $unwind:"$ulb"
+    },
+    {
+    
+      $lookup:{
+    from:"ulbtypes",
+    localField:"ulb.ulbType",
+    foreignField:"_id",
+    as:"ulbType"
+    
+      }
+    },
+    {
+      $unwind:"$ulbType"
+    },
+    {
+      $group:{
+    
+        _id: "$ulb._id",
+        ulbName:{$first:"$ulb.name"},
+        population:{$first:"$ulb.population" },
+        ulbType:{$first:"$ulbType.name"},
+        amount:{$sum:"$amount"}
+      }
+    },
+    {
+    
+      $sort:{
+        "amount":-1
+      }
+    }
+    ]
+    finalQuery = [...base_query, ...query]
+    finalQuery_stateAvg = [...state_avg_base_query, ...query]
+    let tenData = []
+    // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+    // is per capita attachment code
+    if(isPerCapita){
+      let perCapitaQuery = [
+        {
+          $project:{
+            ulbName:1,
+            population:1,
+            ulbType:1,
+            amount: {
+              $cond: [
+                { $eq: ["$population", 0] },
+                0,
+                { $divide: ["$amount", "$population"] },
+              ],
+            }
+          }
+        }
+      ]
+      finalQuery.push(...perCapitaQuery)
+      finalQuery_stateAvg.push(...perCapitaQuery)
+    }
+    
+    
+    let data = await Promise.all([
+      UlbLedger.aggregate(finalQuery),
+      UlbLedger.aggregate(finalQuery_stateAvg)
+    ])
+    // console.log(util.inspect(data, {showHidden: false, depth: null}))
+    // finding Top ten or bottom ten data
+    tenData = fetchTen(data[0],sortBy)
+    // calculating State Avg
+    let stateAvg = calculateStateAvg(data[1])
+    // console.log(tenData, stateAvg);
+    // grouping the data in ulbTypewise
+    let groupedData = groupDataTypeWise(data[0]);
+    
+    Object.assign(groupedData, {stateAvg: stateAvg})
+    // table Data api called
+    if(sortBy){
+    return res.status(200).json({
+      success: true,
+      data: tenData
+    })
+    }else{
+      // scatter plot api called
+      return res.status(200).json({
+        success: true,
+        data: groupedData
+      })
+    }
+
+   
+   
   } else if (filterName == "revenue mix") {
     if (compareType == "") {
       if (!ulb) {
@@ -945,118 +945,321 @@ output.forEach(el=>{
       data: data,
     });
   } else if (filterName == "total surplus/deficit") {
-    let base_query = [
+    let query = [
       {
-        $match: {
-          financialYear: financialYear,
-        },
-      },
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
-      },
-      {
-        $unwind: "$ulb",
-      },
-      {
-        $match: {
-          "ulb.state": ObjectId(state),
-        },
-      },
-      {
-        $lookup: {
-          from: "lineitems",
-          localField: "lineItem",
-          foreignField: "_id",
-          as: "lineItem",
-        },
-      },
-      {
-        $unwind: "$lineItem",
-      },
-      {
-        $match: {
-          $or: [
-            { "lineItem.headOfAccount": "Revenue" },
-            { "lineItem.headOfAccount": "Expense" },
+    $match:{
+    
+      lineItem: {
+        $in: [...All_Revenue_ObjectIDs.map((value) => ObjectId(value)),
+        ...All_Expense_ObjectIDs.map((value) => ObjectId(value))
+      ]
+      }
+    }
+    
+    },
+    {
+    
+      $lookup:{
+    from:"ulbs",
+    localField:"ulb",
+    foreignField:"_id",
+    as:"ulb"
+    
+      }
+    },
+    {
+      $unwind:"$ulb"
+    },
+    {
+    
+      $lookup:{
+    from:"lineitems",
+    localField:"lineItem",
+    foreignField:"_id",
+    as:"lineItem"
+    
+      }
+    },
+    {
+      $unwind:"$lineItem"
+    },
+    {
+    
+      $lookup:{
+    from:"ulbtypes",
+    localField:"ulb.ulbType",
+    foreignField:"_id",
+    as:"ulbType"
+    
+      }
+    },
+    {
+      $unwind:"$ulbType"
+    },
+    {
+      $group:{
+    
+        _id: "$ulb._id",
+        ulbName:{$first:"$ulb.name"},
+        population:{$first:"$ulb.population" },
+        ulbType:{$first:"$ulbType.name"},
+        totalRevenue:{$sum: {
+          $cond: [
+            {
+              $eq: ["$lineItem.headOfAccount","Revenue"],
+            },
+            "$amount",
+            0,
           ],
-        },
-      },
-      {
-        $lookup: {
-          from: "ulbtypes",
-          localField: "ulb.ulbType",
-          foreignField: "_id",
-          as: "ulbType",
-        },
-      },
-      {
-        $unwind: "$ulbType",
-      },
-      {
-        $group: {
-          _id: "$ulb._id",
-          ulbName: { $first: "$ulb.name" },
-          ulbType: { $first: "$ulbType.name" },
-          population: { $first: "$ulb.population" },
-          revenue: {
-            $sum: {
-              $cond: [
-                {
-                  $eq: ["$lineItem.headOfAccount", "Revenue"],
-                },
-                "$amount",
-                0,
-              ],
+        },},
+        totalExpenditure:{$sum: {
+          $cond: [
+            {
+              $eq: ["$lineItem.headOfAccount","Expense"],
             },
-          },
-          expenditure: {
-            $sum: {
-              $cond: [
-                {
-                  $eq: ["$lineItem.headOfAccount", "Expense"],
-                },
-                "$amount",
-                0,
-              ],
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          ulbName: 1,
-          ulbType: 1,
-          population: 1,
-          totalRevenue: { $subtract: ["$revenue", "$expenditure"] },
-        },
-      },
-    ];
+            "$amount",
+            0,
+          ],
+        },},
+        
+      }
+    },
+    {
+      $project:{
 
-    let data = await UlbLedger.aggregate(base_query);
-    let tp_data = data.filter((el) => {
-      return el.ulbType == "Town Panchayat";
-    });
-    let m_data = data.filter((el) => {
-      return el.ulbType == "Municipality";
-    });
-    let mc_data = data.filter((el) => {
-      return el.ulbType == "Municipal Corporation";
-    });
+        ulbName:1,
+        population:1,
+        ulbType:1,
+        totalExpenditure: 1,
+        totalRevenue:1,
+        amount:{$subtract:["$totalRevenue", "$totalExpenditure"]}
+      }
+    },
+    {
+    
+      $sort:{
+        "amount":-1
+      }
+    }
+    ]
+    finalQuery = [...base_query, ...query]
+    finalQuery_stateAvg = [...state_avg_base_query, ...query]
+    let tenData = []
+    // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+    // is per capita attachment code
+    if(isPerCapita){
+      let perCapitaQuery = [
+        {
+          $project:{
+            ulbName:1,
+            population:1,
+            ulbType:1,
+            totalExpenditure: 1,
+        totalRevenue:1,
+            amount: {
+              $cond: [
+                { $eq: ["$population", 0] },
+                0,
+                { $divide: ["$amount", "$population"] },
+              ],
+            }
+          }
+        }
+      ]
+      finalQuery.push(...perCapitaQuery)
+      finalQuery_stateAvg.push(...perCapitaQuery)
+    }
+    
+    
+    let data = await Promise.all([
+      UlbLedger.aggregate(finalQuery),
+      UlbLedger.aggregate(finalQuery_stateAvg)
+    ])
+    // console.log(util.inspect(data, {showHidden: false, depth: null}))
+    // finding Top ten or bottom ten data
+    tenData = fetchTen(data[0],sortBy)
+    // calculating State Avg
+    let stateAvg = calculateStateAvg(data[1])
+    // console.log(tenData, stateAvg);
+    // grouping the data in ulbTypewise
+    let groupedData = groupDataTypeWise(data[0]);
+    
+    Object.assign(groupedData, {stateAvg: stateAvg})
+    // table Data api called
+    if(sortBy){
     return res.status(200).json({
       success: true,
-      municipality: m_data,
-      townPanchayat: tp_data,
-      mCorporation: mc_data,
-      // ulbData: data[0],
-      // stateAvg: data[1],
-      // natAvg : data[2]
-    });
+      data: tenData
+    })
+    }else{
+      // scatter plot api called
+      return res.status(200).json({
+        success: true,
+        data: groupedData
+      })
+    }
+    
+      } else if(filterName == 'capital expenditure'){
+        let tempYear = financialYear
+        .split("-")
+        .map((value) => Number(value) - 1)
+        .join("-");
+      financialYear = [financialYear, tempYear];
+base_query =  [
+  {
+
+    $match:{
+
+      financialYear: {$in: [...financialYear]} ,
+      ulb: {
+        $in: [...ulbIDs],
+      }
+    }
   }
+]
+
+state_avg_base_query = [
+  {
+
+    $match:{
+
+      financialYear: {$in: [...financialYear]} ,
+      ulb: {
+        $in: [...AllULBs],
+      }
+    }
+  }
+]
+
+  let query = [
+    {
+  $match:{
+  
+    lineItem: {
+      $in: [...Capital_Expenditure.map((value) => ObjectId(value))]
+    }
+  }
+  
+  },
+  {
+  
+    $lookup:{
+  from:"ulbs",
+  localField:"ulb",
+  foreignField:"_id",
+  as:"ulb"
+  
+    }
+  },
+  {
+    $unwind:"$ulb"
+  },
+  {
+  
+    $lookup:{
+  from:"ulbtypes",
+  localField:"ulb.ulbType",
+  foreignField:"_id",
+  as:"ulbType"
+  
+    }
+  },
+  {
+    $unwind:"$ulbType"
+  },
+  {
+    
+    $lookup:{
+  from:"lineitems",
+  localField:"lineItem",
+  foreignField:"_id",
+  as:"lineItem"
+  
+    }
+  },
+  {
+    $unwind:"$lineItem"
+  },
+  {
+    $group:{
+  
+      _id:{
+        ulb: "$ulb._id",
+        financialYear: "$financialYear",
+        lineItem:"$lineItem"
+      } ,
+      ulbName:{$first:"$ulb.name"},
+      population:{$first:"$ulb.population" },
+      ulbType:{$first:"$ulbType.name"},
+      amount:{$sum:"$amount"}
+    }
+  },
+  {
+  
+    $sort:{
+      "amount":-1
+    }
+  }
+  ]
+  finalQuery = [...base_query, ...query]
+  finalQuery_stateAvg = [...state_avg_base_query, ...query]
+  let tenData = []
+  console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+  // is per capita attachment code
+  if(isPerCapita){
+    let perCapitaQuery = [
+      {
+        $project:{
+          ulbName:1,
+          population:1,
+          ulbType:1,
+          amount: {
+            $cond: [
+              { $eq: ["$population", 0] },
+              0,
+              { $divide: ["$amount", "$population"] },
+            ],
+          }
+        }
+      }
+    ]
+    finalQuery.push(...perCapitaQuery)
+    finalQuery_stateAvg.push(...perCapitaQuery)
+  }
+  
+  
+  let data = await Promise.all([
+    UlbLedger.aggregate(finalQuery),
+    UlbLedger.aggregate(finalQuery_stateAvg)
+  ])
+  // console.log(util.inspect(data, {showHidden: false, depth: null}))
+  // finding Top ten or bottom ten data
+  tenData = fetchTen(data[0],sortBy)
+  // calculating State Avg
+  let stateAvg = calculateStateAvg(data[1])
+  // console.log(tenData, stateAvg);
+  // grouping the data in ulbTypewise
+  let groupedData = groupDataTypeWise(data[0]);
+  
+  Object.assign(groupedData, {stateAvg: stateAvg})
+  // table Data api called
+  if(sortBy){
+  return res.status(200).json({
+    success: true,
+    data: tenData
+  })
+  }else{
+    // scatter plot api called
+    return res.status(200).json({
+      success: true,
+      data: groupedData
+    })
+  }
+  
+    
+
+
+      }
 });
 const listOfIndicators = async (req, res) => {
   try {
@@ -1270,12 +1473,31 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
   });
 });
 
+const groupDataTypeWise = (data) => {
+  let tp_data = data.filter((el) => {
+    return el.ulbType == "Town Panchayat";
+  });
+  let m_data = data.filter((el) => {
+    return el.ulbType == "Municipality";
+  });
+  let mc_data = data.filter((el) => {
+    return el.ulbType == "Municipal Corporation";
+  });
+
+  let obj = {
+    tp_data : tp_data,
+    m_data : m_data,
+    mc_data: mc_data
+  }
+  return obj;
+}
+
 const calculateStateAvg = (data) => {
   let numerator = 0,
     denominator = 0;
 
   data.forEach((el) => {
-    numerator = el.value * el.population + numerator;
+    numerator = (el.value ? el.value : el.amount)  * el.population + numerator;
     denominator = el.population + denominator;
   });
   return Number((numerator / denominator).toFixed(2));
@@ -1297,23 +1519,17 @@ const stateDashAvgs = async (req, res) => {
     return obj
   }
   res.status(200).json({ success: true, data: roundOffy2(data[0] )});
-};
+};``
 
 const indicatorDump = async (req, res) => {};
 
 const fetchTen = (data, sortBy) => {
   let topTen = data.slice(0, 10);
   let bottomTen = data.slice(-10);
-  if (sortBy == "top10") {
-    topTen.forEach((el) => {
-      el.value = (el.value / el.benchMarkValue) * 100;
-    });
+  if (sortBy.includes("top")) {
     return topTen;
   }
-  if (sortBy == "bottom10") {
-    bottomTen.forEach((el) => {
-      el.value = (el.value / el.benchMarkValue) * 100;
-    });
+  if (sortBy.includes("bottom") ){
     return bottomTen;
   }
 };
