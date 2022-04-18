@@ -486,7 +486,13 @@ const indicator = async (req, res) => {
 
 const comparator = async (compareFrom, query, ulb, isPerCapita, from, body) => {
   if (from == "revenue_expenditure")
-    return revenueExpenditureQueryCompare(compareFrom, query, ulb, isPerCapita);
+    return revenueExpenditureQueryCompare(
+      compareFrom,
+      query,
+      ulb,
+      isPerCapita,
+      body
+    );
   if (from.includes("expenditure") || from.includes("surplus")) {
     return expenseQueryCompare(
       compareFrom,
@@ -649,7 +655,8 @@ async function revenueExpenditureQueryCompare(
   compareFrom,
   query,
   ulb,
-  isPerCapita
+  isPerCapita,
+  body
 ) {
   console.log(compareFrom, query, ulb);
   let ulbData;
@@ -663,7 +670,7 @@ async function revenueExpenditureQueryCompare(
         {
           $match: {
             financialYear: {
-              $in: ["2020-21", "2019-20", "2018-19"],
+              $in: body.financialYear,
             },
             ulb: {
               $in: ulbId.map((val) => val._id),
