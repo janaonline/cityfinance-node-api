@@ -12,7 +12,7 @@ const {
 router.post("/indicator", indicator);
 router.post("/indicator/revenue", revenueIndicator);
 router.get("/about-indicator", aboutCalculation);
-router.get("/about-indicator-comp", peerComp);
+router.post("/about-indicator-comp", peerComp);
 
 const {
   dataAvailability,

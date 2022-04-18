@@ -2,6 +2,7 @@ require('./dbConnect');
 var LineItemSchema = new Schema({
     name: { type: String, required: true },
     code: { type: String, required: true },
+    colour: { type: String, },
     headOfAccount: { type: String, enum : ["Revenue","Expense","Liability","Asset", "Debt","Tax","Other"], required: true ,index:true},
     modifiedAt : { type: Date, default : Date.now() },
     createdAt : { type: Date, default : Date.now() },
