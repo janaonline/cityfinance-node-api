@@ -6,11 +6,16 @@ const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
 const mongoose = require("mongoose");
 const { response } = require("../../service");
+const {
+  sendProfileUpdateStatusEmail,
+} = require("../../service/email-template");
 const ObjectId = mongoose.Types.ObjectId;
+const ExcelJS = require("exceljs");
+const { relativeTimeRounding } = require("moment");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
-    const { financialYear, stateId, population, ulbType } = req.query;
+    const { financialYear, stateId, population, ulbType, csv } = req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     let filterCondition = {},
       ulbLedgers;
@@ -55,6 +60,9 @@ exports.dataAvailabilityState = async (req, res) => {
       "nationalDashboard"
     );
     responsePayload.dataAvailability = dataAvailResponse.percent;
+    if (csv) {
+      return getExcel(req, res, responsePayload.data);
+    }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -73,7 +81,6 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         urbanPopulationPercentage: 0,
       },
     };
-    // console.log("LEO", ulbTypes);
     ulbTypes.forEach((item) => {
       ulbTypeMap[item._id] = {
         numberOfULBs: [],
@@ -82,7 +89,6 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         urbanPopulationPercentage: [],
       };
     });
-    // console.log(Object.keys(ulbTypeMap));
     for (let x = 0; x < totalUlbs; ++x) {
       const specific = ulbs[x];
       if (
@@ -103,7 +109,6 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         const arrr = ulbTypeMap[each]["numberOfULBs"];
         let matched = 0;
         for (elem of arrr) {
-          // console.log("elemId", elem._id, typeof elem._id);
           if (ulbLedgers.indexOf(elem._id) > -1) {
             ++matched;
           }
@@ -113,15 +118,12 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         const multiply = matched * 100;
         ulbTypeMap[each]["DataAvailPercentage"] =
           arrr.length == 0 ? 0 : multiply / arrr.length;
-        //for average calculation -Begin
         sumOfNoOfUlbs += arrr.length;
         sumOfUlbsWithData += matched;
         sumOfDataAvailPercentage += ulbTypeMap[each]["DataAvailPercentage"];
-        //for average calculation -End
       }
     }
     for (each in ulbTypeMap) {
-      // console.log("Each", each);
       if (each == "Average") {
         ulbTypeMap["Average"]["numberOfULBs"] = sumOfNoOfUlbs / 5;
         ulbTypeMap["Average"]["ulbsWithData"] = sumOfUlbsWithData / 5;
@@ -131,10 +133,8 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         const multiply = ulbTypeMap[each]["numberOfULBs"] * 100;
         ulbTypeMap[each]["urbanPopulationPercentage"] =
           totalUlbs == 0 ? 0 : multiply / totalUlbs;
-        //for average calculation -Begin
         sumOfUrbanPopulPercentage +=
           ulbTypeMap[each]["urbanPopulationPercentage"];
-        //for average calculation -End
       }
     }
     ulbTypeMap["Average"]["urbanPopulationPercentage"] =
@@ -149,7 +149,7 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         numberOfULBs: "Number Of ULBs",
         ulbsWithData: "ULBs With Data",
         DataAvailPercentage: "Data Availability Percentage",
-        urbanPopulationPercentage: "Urban population percentage",
+        urbanPopulationPercentage: "Urban Population Percentage",
       },
       columns = [
         { key: "ulbType", display_name: "ULB Type" },
@@ -161,13 +161,14 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
         let output = { ulbType: each };
         for (key in ulbTypeMap[each]) {
           output[key] = ulbTypeMap[each][key].toFixed(2);
+          if (key.includes("Percentage")) {
+            output[key] += " %";
+          }
         }
         return output;
       });
-    // console.log(columns);
     return { rows, columns };
   } catch (err) {
-    // console.log(err);
     throw err;
   }
 }
@@ -276,7 +277,7 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
       numberOfULBs: "Number Of ULBs",
       ulbsWithData: "ULBs With Data",
       DataAvailPercentage: "Data Availability Percentage",
-      urbanPopulationPercentage: "Urban population percentage",
+      urbanPopulationPercentage: "Urban Population Percentage",
     },
     columns = [
       { key: "ulbType", display_name: "ULB Type" },
@@ -288,6 +289,9 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
       let output = { ulbType: each };
       for (key in populationMap[each]) {
         output[key] = populationMap[each][key].toFixed(2);
+        if (key.includes("Percentage")) {
+          output[key] += " %";
+        }
       }
       return output;
     });
@@ -295,7 +299,7 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
 }
 exports.nationalDashRevenue = async (req, res) => {
   try {
-    let { financialYear, type, stateId, formType, visualType, getQuery } =
+    let { financialYear, type, stateId, formType, visualType, getQuery, csv } =
       req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalRevenue";
@@ -446,6 +450,9 @@ exports.nationalDashRevenue = async (req, res) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
               output[x] = responsePayload.data[each][x].toFixed(2);
+              if (x.includes("Percentage")) {
+                output[x] += " %";
+              }
             }
             return output;
           }),
@@ -523,6 +530,9 @@ exports.nationalDashRevenue = async (req, res) => {
         responsePayload.data.national = national_Format;
       }
     }
+    if (csv) {
+      return getExcel(req, res, responsePayload.data);
+    }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
     console.log(err);
@@ -533,7 +543,7 @@ exports.nationalDashRevenue = async (req, res) => {
 exports.nationalDashExpenditure = async (req, res) => {
   try {
     let responsePayload = { data: null };
-    let { financialYear, type, formType, visualType, getQuery, stateId } =
+    let { financialYear, type, formType, visualType, getQuery, stateId, csv } =
       req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalExpenditure";
@@ -561,6 +571,7 @@ exports.nationalDashExpenditure = async (req, res) => {
     );
     if (getQuery) return res.status(200).json(query);
     const ulbLeds = await UlbLedger.aggregate(query);
+    // return res.json(ulbLeds);
     let populationMap = {
       Average: {
         expenditure: 0,
@@ -672,6 +683,9 @@ exports.nationalDashExpenditure = async (req, res) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
               output[x] = responsePayload.data[each][x].toFixed(2);
+              if (x.includes("Percentage")) {
+                output[x] += " %";
+              }
             }
             return output;
           }),
@@ -750,59 +764,68 @@ exports.nationalDashExpenditure = async (req, res) => {
       }
     } else {
       //deficitOrSurplus
-      if (formType == "ulbType") {
-        responsePayload.data = ulbLeds[0];
-        const national_Format = {
-          revenue: ulbLeds[0].national.revenue.toFixed(2),
-          expense: ulbLeds[0].national.expense.toFixed(2),
-          deficitOrSurplus: ulbLeds[0].national.deficitOrSurplus.toFixed(2),
-        };
-        responsePayload.data.national = national_Format;
-        let individualArr = responsePayload.data.individual;
-        let ulbTypeMap = new Map();
-        const UlbTypes = await UlbType.find();
-        UlbTypes.map((each) => {
-          ulbTypeMap.set(each._id.toString(), each.name);
-          return each;
-        });
-        let individual_Format = {
-          Municipality: {},
-          "Municipal Corporation": {},
-          "Town Panchayat": {},
-        };
-        individualArr.map((each) => {
-          individual_Format[ulbTypeMap.get(each._id.toString())] = {
-            revenue: each.revenue.toFixed(2),
-            expense: each.expense.toFixed(2),
-            deficitOrSurplus: each.deficitOrSurplus.toFixed(2),
-            _id: undefined,
-          };
-        });
-        responsePayload.data.individual = individual_Format;
-      } else {
-        responsePayload.data = ulbLeds[0];
-        const national_Format = {
-          revenue: ulbLeds[0].national.revenue.toFixed(2),
-          expense: ulbLeds[0].national.expense.toFixed(2),
-          deficitOrSurplus: ulbLeds[0].national.deficitOrSurplus.toFixed(2),
-        };
-        responsePayload.data.national = national_Format;
-        responsePayload.data.individual = responsePayload.data.individual[0];
-        let rows = Object.keys(responsePayload.data.individual).filter(
-          (each) => each != "_id"
-        );
-        const cols = ["revenue", "expense", "deficitOrSurplus"];
-        let individual_Format = {};
-        for (row of rows) {
-          const newRow = row;
-          for (col of cols) {
-            const val = responsePayload.data.individual[row][col];
-            if (!individual_Format[newRow]) individual_Format[newRow] = {};
-            individual_Format[newRow][col] = val.toFixed(2);
-          }
-        }
-        responsePayload.data.individual = individual_Format;
-      }
+      responsePayload.data = await createTableData(
+        formType,
+        ulbLeds[0],
+        ulbs.length
+      );
+      // for Mix Data
+      // if (formType == "ulbType") {
+      //   responsePayload.data = ulbLeds[0];
+      //   const national_Format = {
+      //     revenue: ulbLeds[0].national.revenue.toFixed(2),
+      //     expense: ulbLeds[0].national.expense.toFixed(2),
+      //     deficitOrSurplus: ulbLeds[0].national.deficitOrSurplus.toFixed(2),
+      //   };
+      //   responsePayload.data.national = national_Format;
+      //   let individualArr = responsePayload.data.individual;
+      //   let ulbTypeMap = new Map();
+      //   const UlbTypes = await UlbType.find();
+      //   UlbTypes.map((each) => {
+      //     ulbTypeMap.set(each._id.toString(), each.name);
+      //     return each;
+      //   });
+      //   let individual_Format = {
+      //     Municipality: {},
+      //     "Municipal Corporation": {},
+      //     "Town Panchayat": {},
+      //   };
+      //   individualArr.map((each) => {
+      //     individual_Format[ulbTypeMap.get(each._id.toString())] = {
+      //       revenue: each.revenue.toFixed(2),
+      //       expense: each.expense.toFixed(2),
+      //       deficitOrSurplus: each.deficitOrSurplus.toFixed(2),
+      //       _id: undefined,
+      //     };
+      //   });
+      //   responsePayload.data.individual = individual_Format;
+      // } else {
+      //   responsePayload.data = ulbLeds[0];
+      //   const national_Format = {
+      //     revenue: ulbLeds[0].national.revenue.toFixed(2),
+      //     expense: ulbLeds[0].national.expense.toFixed(2),
+      //     deficitOrSurplus: ulbLeds[0].national.deficitOrSurplus.toFixed(2),
+      //   };
+      //   responsePayload.data.national = national_Format;
+      //   responsePayload.data.individual = responsePayload.data.individual[0];
+      //   let rows = Object.keys(responsePayload.data.individual).filter(
+      //     (each) => each != "_id"
+      //   );
+      //   const cols = ["revenue", "expense", "deficitOrSurplus"];
+      //   let individual_Format = {};
+      //   for (row of rows) {
+      //     const newRow = row;
+      //     for (col of cols) {
+      //       const val = responsePayload.data.individual[row][col];
+      //       if (!individual_Format[newRow]) individual_Format[newRow] = {};
+      //       individual_Format[newRow][col] = val.toFixed(2);
+      //     }
+      //   }
+      //   responsePayload.data.individual = individual_Format;
+      // }
+    }
+    if (csv) {
+      return getExcel(req, res, responsePayload.data);
     }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
@@ -811,9 +834,88 @@ exports.nationalDashExpenditure = async (req, res) => {
   }
 };
 
+async function createTableData(type, data, ulbsCountInIndia) {
+  let columns = [
+    { key: "ulbType", display_name: "" },
+    { key: "revenue", display_name: "Revenue" },
+    { key: "expense", display_name: "Expenditure" },
+    { key: "deficitOrSurplus", display_name: "Deficit or Surplus" },
+  ];
+  let rows = [
+    { revenue: "", ulbType: "Average", expense: "", deficitOrSurplus: "" },
+  ];
+  let ulbTypes;
+  for (const key in rows[0]) {
+    if (key == "ulbType") continue;
+    let element = rows[0][key];
+    element = data.national[key] / ulbsCountInIndia;
+    if (key == "deficitOrSurplus") {
+      element = element > 0 ? "Surplus" : "Deficit";
+    }
+    Object.assign(rows[0], { [key]: element });
+  }
+  if (type == "ulbType") {
+    columns[0].display_name = "ULB Type";
+    ulbTypes = await UlbType.find().lean();
+    for (const value of data.individual) {
+      let tempData = {
+        ulbType: ulbTypes.find((val) => val._id.toString() == value._id).name,
+        ...value,
+      };
+      if (tempData.deficitOrSurplus > 0) tempData.deficitOrSurplus = "Surplus";
+      else tempData.deficitOrSurplus = "Deficit";
+      rows.push(tempData);
+    }
+  } else {
+    data = data.individual[0];
+    columns[0].display_name = "ULB Population Category";
+    for (const key in data) {
+      if (key == "_id") continue;
+      const element = data[key];
+      let tempData = {
+        ulbType: key,
+        ...element,
+      };
+      if (tempData.deficitOrSurplus > 0) tempData.deficitOrSurplus = "Surplus";
+      else tempData.deficitOrSurplus = "Deficit";
+      rows.push(tempData);
+    }
+  }
+  return { columns, rows };
+}
+
+let getExcel = async (req, res, data) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Data");
+    worksheet.columns = data.columns.map((value) => {
+      let temp = {
+        header: value.display_name,
+        key: value.key,
+      };
+      return temp;
+    });
+    data.rows.map((value) => {
+      worksheet.addRow(value);
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=" + "data.xlsx");
+    return workbook.xlsx.write(res).then(function () {
+      res.status(200).end();
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(400).json(err);
+  }
+};
+
 exports.nationalDashOwnRevenue = async (req, res) => {
   try {
-    let { financialYear, type, stateId, formType, visualType, getQuery } =
+    let { financialYear, type, stateId, formType, visualType, getQuery,csv } =
       req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalOwnRevenue";
@@ -1046,6 +1148,9 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         responsePayload.data.national = national_Format;
       }
     }
+    if (csv) {
+      return getExcel(req, res, responsePayload.data);
+    }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
     console.log(err);
@@ -1054,7 +1159,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
 };
 exports.nationalDashCapexpense = async (req, res) => {
   try {
-    let { financialYear, type, stateId, formType, visualType, getQuery } =
+    let { financialYear, type, stateId, formType, visualType, getQuery,csv } =
       req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalCapexpense";
@@ -1287,6 +1392,9 @@ exports.nationalDashCapexpense = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
+    }
+    if (csv) {
+      return getExcel(req, res, responsePayload.data);
     }
     res.status(200).json({ success: true, ...responsePayload });
   } catch (err) {
