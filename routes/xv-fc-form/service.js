@@ -16,6 +16,8 @@ var AdmZip = require("adm-zip");
 const { strict } = require("assert");
 const { MongooseDocument } = require("mongoose");
 const dir = "uploads";
+const axios = require('axios')
+const request = require('request')
 const subDir = "/source";
 const date = moment().format("DD-MMM-YY");
 const catchAsync = require("../../util/catchAsync");
@@ -326,6 +328,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
       },
       {
         $project: {
+          ua:"$name",
           waterSuppliedPerDay: "$xvfcformDataApproved.waterManagement.waterSuppliedPerDay",
           reduction: "$xvfcformDataApproved.waterManagement.reduction",
           houseHoldCoveredWithSewerage:
@@ -338,7 +341,7 @@ population:"$approvedULBs.population"
       },
       {
         $project: {
-    
+    ua: 1,
           ulbData:  "$ulb" ,
             population:"$population",
           waterSuppliedPerDay2021: {
@@ -492,6 +495,7 @@ population:"$approvedULBs.population"
       {
           $group:{
          _id:"",
+         ua:{$first:"$ua"},
          ulbData:{$addToSet:"$ulbData._id"},
          total:{$sum:1},
                   "waterSuppliedPerDay2021n":{
@@ -605,6 +609,7 @@ population:"$approvedULBs.population"
               $project:{
                 total:1,
                 ulbData:1,
+                ua:1,
                   waterSuppliedPerDay2021: {$divide:["$waterSuppliedPerDay2021n", "$waterSuppliedPerDay2021d"]},
                     waterSuppliedPerDay2122: {$divide:["$waterSuppliedPerDay2122n", "$waterSuppliedPerDay2122d"]},
                       waterSuppliedPerDay2223: {$divide:["$waterSuppliedPerDay2223n", "$waterSuppliedPerDay2223d"]},
@@ -4146,6 +4151,54 @@ module.exports.addFlag = async (req, res) => {
   }
   ])
 }
+
+module.exports.getUAwiseCSV = catchAsync (async (req,res) => {
+let uaIDs = await UA.find().select("_id").lean()
+
+let finalData = []
+let x = 1;
+let data = await axios.post('https://cityfinance.in/api/v1/login', {
+  "email":"admin@cityfinance.in",
+  "password":"admin007@cityfinance"
+})
+for(let el of uaIDs ){
+await  axios.get(`https://cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
+  { params:{}, headers: { "x-access-token": data?.data?.token } }
+  ).then(function(response) {
+ 
+
+   finalData.push(response.data.data)
+
+}).catch(function(error) {
+
+
+});
+
+}
+  
+  
+
+ console.log(util.inspect(finalData, {showHidden: false, depth: null}))
+let printData = {}
+let totalDataa = []
+ finalData.forEach(el => {
+   Object.assign(printData, el[0]);
+   if(el[1].completedAndpendingSubmission.length){
+    let arr = []
+    el[1].completedAndpendingSubmission.forEach(el2 => {
+  
+      arr.push(el2.name)
+      
+    })
+    Object.assign(printData, {"pending": arr })
+
+   }
+totalDataa.push(printData)
+printData = {}
+ })
+ console.log('printData',totalDataa)
+
+})
 
 exports.newFormAction = async (req, res) => {
   try {

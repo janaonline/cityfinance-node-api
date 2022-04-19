@@ -1100,17 +1100,18 @@ return res.status(200).json({
     }
     
       } else if(filterName == 'capital expenditure'){
+        // for capital expenditure and capex per capita
         let tempYear = financialYear
         .split("-")
         .map((value) => Number(value) - 1)
         .join("-");
-      financialYear = [financialYear, tempYear];
+   let    financialYearArr = [financialYear, tempYear];
 base_query =  [
   {
 
     $match:{
 
-      financialYear: {$in: [...financialYear]} ,
+      financialYear: {$in: [...financialYearArr]} ,
       ulb: {
         $in: [...ulbIDs],
       }
@@ -1123,7 +1124,7 @@ state_avg_base_query = [
 
     $match:{
 
-      financialYear: {$in: [...financialYear]} ,
+      financialYear: {$in: [...financialYearArr]} ,
       ulb: {
         $in: [...AllULBs],
       }
@@ -1168,32 +1169,75 @@ state_avg_base_query = [
     $unwind:"$ulbType"
   },
   {
-    
-    $lookup:{
-  from:"lineitems",
-  localField:"lineItem",
-  foreignField:"_id",
-  as:"lineItem"
-  
-    }
-  },
-  {
-    $unwind:"$lineItem"
-  },
-  {
     $group:{
-  
-      _id:{
-        ulb: "$ulb._id",
-        financialYear: "$financialYear",
-        lineItem:"$lineItem"
-      } ,
-      ulbName:{$first:"$ulb.name"},
-      population:{$first:"$ulb.population" },
-      ulbType:{$first:"$ulbType.name"},
-      amount:{$sum:"$amount"}
-    }
-  },
+        _id:"$ulb._id",
+        ulbName:{$first:"$ulb.name"},
+                  ulbId:{$first:"$ulb._id"},
+        ulbType:{$first:"$ulbType.name"},
+        population:{$first:"$ulb.population"},
+capitalWorkPrevYear:{
+            $addToSet:{
+                $cond:[{
+                    $and:[
+                    {$eq:["$financialYear", tempYear]}, 
+                    {$eq:["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")]}]
+                    }, 
+                    "$amount" ,
+                    0 ]
+                }
+            },
+capitalWorkCurrYear:{
+            $addToSet:{
+                $cond:[{
+                    $and:[
+                    {$eq:["$financialYear", financialYear]}, 
+                    {$eq:["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")]}]
+                    }, 
+                    "$amount" ,
+                    0 ]
+                }
+            },
+        grossBlockPrevYear:{
+            $addToSet:{
+                $cond:[{
+                    $and:[
+                    {$eq:["$financialYear", tempYear]}, 
+                    {$eq:["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")]}]
+                    }, 
+                    "$amount" ,
+                    0 ]
+                }
+            },
+             grossBlockCurrYear:{
+            $addToSet:{
+                $cond:[{$and:[{$eq:["$financialYear", financialYear]}, {$eq:["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")]}]}, "$amount" , 0 ]
+                }
+            }
+            
+        }
+    },
+    {
+        $project:{
+            ulbName:1,
+            ulbType:1,
+            ulbId:1,
+            population:1,
+            grossBlockPrevYear: {$arrayElemAt:["$grossBlockPrevYear", 0]},
+            grossBlockCurrYear: {$arrayElemAt:["$grossBlockCurrYear", 0]},
+             capitalWorkPrevYear: {$arrayElemAt:["$capitalWorkPrevYear", 1]},
+            capitalWorkCurrYear: {$arrayElemAt:["$capitalWorkCurrYear", 0]}
+            }
+        },
+        {
+            $project:{
+                  ulbName:1,
+            ulbType:1,
+            ulbId:1,
+            population:1,
+                amount: {$add: [{$subtract:["$grossBlockCurrYear", "$grossBlockPrevYear"]},{$subtract:["$capitalWorkCurrYear","$capitalWorkPrevYear"]}]}
+                }
+            }
+,
   {
   
     $sort:{
@@ -1485,9 +1529,9 @@ const groupDataTypeWise = (data) => {
   });
 
   let obj = {
-    tp_data : tp_data,
-    m_data : m_data,
-    mc_data: mc_data
+    townPanchayat : tp_data,
+    municipality : m_data,
+    mCorporation: mc_data
   }
   return obj;
 }

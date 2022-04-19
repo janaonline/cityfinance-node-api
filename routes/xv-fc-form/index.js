@@ -49,6 +49,8 @@ router.get(
     verifyToken,
     ufdService.getXVFCStateFormById
 );
+
+router.get('/reportUA',ufdService.getUAwiseCSV )
 router.post(
     '/multiple-approve-action/:_id',
     verifyToken,
