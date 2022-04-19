@@ -1754,7 +1754,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                        $multiply: [
+                          "$amount",
+                          {
+                            $cond: {
+                              if: { $eq: ["$ulb.population", 0] },
+                              then: 1,
+                              else: "$ulb.population",
+                            },
+                          },
+                        ],
+                      },
                 },
                 denominator: {
                   $sum: "$ulb.population",
@@ -1938,7 +1949,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                      $multiply: [
+                        "$amount",
+                        {
+                          $cond: {
+                            if: { $eq: ["$ulb.population", 0] },
+                            then: 1,
+                            else: "$ulb.population",
+                          },
+                        },
+                      ],
+                    },
                 },
                 denominator: {
                   $sum: "$ulb.population",
@@ -2097,7 +2119,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                      $multiply: [
+                        "$amount",
+                        {
+                          $cond: {
+                            if: { $eq: ["$ulb.population", 0] },
+                            then: 1,
+                            else: "$ulb.population",
+                          },
+                        },
+                      ],
+                    },
                 },
                 denominator: {
                   $sum: "$ulb.population",
@@ -2258,7 +2291,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                      $multiply: [
+                        "$amount",
+                        {
+                          $cond: {
+                            if: { $eq: ["$ulb.population", 0] },
+                            then: 1,
+                            else: "$ulb.population",
+                          },
+                        },
+                      ],
+                    },
                 },
                 denominator: {
                   $sum: "$ulb.population",
