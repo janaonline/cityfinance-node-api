@@ -4226,7 +4226,6 @@ exports.newFormAction = async (req, res) => {
       }
       req.body.status = req.body.waterManagement.status;
       req.body.rejectReason = req.body.waterManagement.rejectReason;
-
       await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
       updatedRecord.history = null;
       let waterManagement = updatedRecord.waterManagement;
