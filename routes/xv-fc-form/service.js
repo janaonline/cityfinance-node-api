@@ -4161,6 +4161,7 @@ let data = await axios.post('https://cityfinance.in/api/v1/login', {
   "email":"admin@cityfinance.in",
   "password":"admin007@cityfinance"
 })
+
 for(let el of uaIDs ){
 await  axios.get(`https://cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
   { params:{}, headers: { "x-access-token": data?.data?.token } }
