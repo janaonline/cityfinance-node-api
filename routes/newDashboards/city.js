@@ -1140,13 +1140,18 @@ async function revenueQueryCompare(
                   state: "$stateId",
                 },
                 numerator: {
-                  $sum: { $multiply: ["$amount", {
-                    $cond: {
-                      if: { $eq: ["$population", 0] },
-                      then: 1,
-                      else: "$population",
-                    },
-                  },] },
+                  $sum: {
+                    $multiply: [
+                      "$amount",
+                      {
+                        $cond: {
+                          if: { $eq: ["$population", 0] },
+                          then: 1,
+                          else: "$population",
+                        },
+                      },
+                    ],
+                  },
                 },
                 ulbName: {
                   $first: "$state",
@@ -1251,19 +1256,7 @@ async function revenueQueryCompare(
               amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
               code: { $first: "$lineitems.code" },
               population: { $sum: "$amount" },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              code: 1,
-              amount: { $divide: ["$amount", {
-                $cond: {
-                  if: { $eq: ["$population", 0] },
-                  then: 1,
-                  else: "$population",
-                },
-              },] },
+              colour: { $first: "$lineitems.colour" },
             },
           }
         );
@@ -1398,6 +1391,7 @@ async function revenueQueryCompare(
           $group: {
             _id: { lineItem: "$lineitems" },
             code: { $first: "$lineitems.code" },
+            colour: { $first: "$lineitems.colour" },
             amount: { $sum: "$amount" },
           },
         });
@@ -1456,13 +1450,18 @@ async function revenueQueryCompare(
                   financialYear: "$_id.financialYear",
                 },
                 numerator: {
-                  $sum: { $multiply: ["$amount", {
-                    $cond: {
-                      if: { $eq: ["$population", 0] },
-                      then: 1,
-                      else: "$population",
-                    },
-                  },] },
+                  $sum: {
+                    $multiply: [
+                      "$amount",
+                      {
+                        $cond: {
+                          if: { $eq: ["$population", 0] },
+                          then: 1,
+                          else: "$population",
+                        },
+                      },
+                    ],
+                  },
                 },
                 ulbName: { $first: "National" },
                 denominator: {
@@ -1541,6 +1540,7 @@ async function revenueQueryCompare(
             _id: { lineItem: "$lineitems" },
             amount: { $sum: "$amount" },
             code: { $first: "$lineitems.code" },
+            colour: { $first: "$lineitems.colour" },
           },
         });
       } else {
