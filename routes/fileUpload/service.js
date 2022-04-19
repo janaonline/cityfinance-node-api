@@ -307,10 +307,10 @@ exports.getIndicatorData = async (req, res) => {
 
     data = data.map((value, index) => {
       if (compUlb) {
-        compUlb = compData.find(
+        let compUlbData = compData.find(
           (innerVal) => innerVal.name === value.name
         )?.value;
-        Object.assign(value, { compPercentage: compUlb });
+        Object.assign(value, { compPercentage: compUlbData });
       }
       let nationalValue = nationalAvg.find(
         (innerVal) => innerVal._id === value.name
