@@ -7,7 +7,6 @@ const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 const { from } = require("form-data");
-const { format } = require("util");
 const LineItem = require("../../models/LineItem");
 
 const headOfAccountDeficit = [
@@ -1101,7 +1100,7 @@ async function revenueQueryCompare(
                   $sum: "$amount",
                 },
                 population: {
-                  $first: "$ulb.population",
+                  $sum: "$ulb.population",
                 },
               },
             },
@@ -1141,7 +1140,13 @@ async function revenueQueryCompare(
                   state: "$stateId",
                 },
                 numerator: {
-                  $sum: { $multiply: ["$amount", "$population"] },
+                  $sum: { $multiply: ["$amount", {
+                    $cond: {
+                      if: { $eq: ["$population", 0] },
+                      then: 1,
+                      else: "$population",
+                    },
+                  },] },
                 },
                 ulbName: {
                   $first: "$state",
@@ -1238,7 +1243,7 @@ async function revenueQueryCompare(
           $unwind: "$lineitems",
         }
       );
-      if (format.includes("mix")) {
+      if (from.includes("mix")) {
         tempQ.push(
           {
             $group: {
@@ -1252,7 +1257,13 @@ async function revenueQueryCompare(
             $project: {
               _id: 1,
               code: 1,
-              amount: { $divide: ["$amount", "$population"] },
+              amount: { $divide: ["$amount", {
+                $cond: {
+                  if: { $eq: ["$population", 0] },
+                  then: 1,
+                  else: "$population",
+                },
+              },] },
             },
           }
         );
@@ -1271,7 +1282,7 @@ async function revenueQueryCompare(
                   $first: "$ulb.name",
                 },
                 population: {
-                  $first: "$ulb.population",
+                  $sum: "$ulb.population",
                 },
               },
             },
@@ -1406,7 +1417,7 @@ async function revenueQueryCompare(
                   $first: "National",
                 },
                 population: {
-                  $first: "$ulb.population",
+                  $sum: "$ulb.population",
                 },
               },
             },
@@ -1445,7 +1456,13 @@ async function revenueQueryCompare(
                   financialYear: "$_id.financialYear",
                 },
                 numerator: {
-                  $sum: { $multiply: ["$amount", "$population"] },
+                  $sum: { $multiply: ["$amount", {
+                    $cond: {
+                      if: { $eq: ["$population", 0] },
+                      then: 1,
+                      else: "$population",
+                    },
+                  },] },
                 },
                 ulbName: { $first: "National" },
                 denominator: {
@@ -1471,7 +1488,7 @@ async function revenueQueryCompare(
 
     case "ULB Type Average":
       ulbData = await ULB.findOne({ _id: ulb });
-      ulbId = await ULB.find({ state: ulbData.ulbType });
+      ulbId = await ULB.find({ ulbType: ulbData.ulbType });
       tempQ = [
         {
           $match: {
@@ -1480,7 +1497,7 @@ async function revenueQueryCompare(
               $in: body.financialYear,
             },
             lineItem: {
-              $in: headOfAccountIds["revenue"],
+              $in: lineItemIds.map((val) => val._id),
             },
           },
         },
@@ -1497,7 +1514,7 @@ async function revenueQueryCompare(
         },
         {
           $lookup: {
-            from: "UlbTypes",
+            from: "ulbtypes",
             localField: "ulb.ulbType",
             foreignField: "_id",
             as: "ulbType",
@@ -1541,7 +1558,7 @@ async function revenueQueryCompare(
                   $first: "$ulbType.name",
                 },
                 population: {
-                  $first: "$ulb.population",
+                  $sum: "$ulb.population",
                 },
               },
             },
@@ -1574,7 +1591,7 @@ async function revenueQueryCompare(
                 },
               },
             },
-            { $unwind: "ulbTypeId" },
+            { $unwind: "$ulbTypeId" },
             {
               $group: {
                 _id: {
@@ -1582,7 +1599,18 @@ async function revenueQueryCompare(
                   ulbType: "$ulbTypeId",
                 },
                 numerator: {
-                  $sum: { $multiply: ["$amount", "$population"] },
+                  $sum: {
+                    $multiply: [
+                      "$amount",
+                      {
+                        $cond: {
+                          if: { $eq: ["$population", 0] },
+                          then: 1,
+                          else: "$population",
+                        },
+                      },
+                    ],
+                  },
                 },
                 ulbName: {
                   $first: "$ulbName",
@@ -1754,7 +1782,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                        $multiply: [
+                          "$amount",
+                          {
+                            $cond: {
+                              if: { $eq: ["$ulb.population", 0] },
+                              then: 1,
+                              else: "$ulb.population",
+                            },
+                          },
+                        ],
+                      },
                 },
                 denominator: {
                   $sum: "$ulb.population",
@@ -1938,7 +1977,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                        $multiply: [
+                          "$amount",
+                          {
+                            $cond: {
+                              if: { $eq: ["$ulb.population", 0] },
+                              then: 1,
+                              else: "$ulb.population",
+                            },
+                          },
+                        ],
+                      },
                 },
                 denominator: {
                   $sum: "$ulb.population",
@@ -2097,7 +2147,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                        $multiply: [
+                          "$amount",
+                          {
+                            $cond: {
+                              if: { $eq: ["$ulb.population", 0] },
+                              then: 1,
+                              else: "$ulb.population",
+                            },
+                          },
+                        ],
+                      },
                 },
                 denominator: {
                   $sum: "$ulb.population",
@@ -2258,7 +2319,18 @@ async function expenseQueryCompare(
                 numerator: {
                   $sum: isPerCapita
                     ? "$amount"
-                    : { $multiply: ["$amount", "$population"] },
+                    : {
+                        $multiply: [
+                          "$amount",
+                          {
+                            $cond: {
+                              if: { $eq: ["$ulb.population", 0] },
+                              then: 1,
+                              else: "$ulb.population",
+                            },
+                          },
+                        ],
+                      },
                 },
                 denominator: {
                   $sum: "$ulb.population",
