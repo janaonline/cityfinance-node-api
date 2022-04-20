@@ -285,6 +285,9 @@ AllULBs = AllULBs.map((each) => {
   if(!ulb.length){
     ulbIDs = AllULBs
   }else{
+    ulb = ulb.map(value => {
+      return ObjectId(value)
+    })
     ulbIDs = ulb
   }
   let base_query = [
@@ -371,7 +374,7 @@ as:"ulbType"
 finalQuery = [...base_query, ...query]
 finalQuery_stateAvg = [...state_avg_base_query, ...query]
 let tenData = []
-// console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
 // is per capita attachment code
 if(isPerCapita){
   let perCapitaQuery = [
@@ -1099,7 +1102,7 @@ return res.status(200).json({
       })
     }
     
-      } else if(filterName == 'capital expenditure'){
+      } else if(filterName.includes('capital expenditure')){
         // for capital expenditure and capex per capita
         let tempYear = financialYear
         .split("-")
