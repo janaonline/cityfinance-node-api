@@ -1094,17 +1094,38 @@ async function revenueQueryCompare(
               $group: {
                 _id: {
                   financialYear: "$financialYear",
+                  ulb: "$ulb._id",
                 },
-                state: { $first: "$state.name" },
+                state: {
+                  $first: "$state.name",
+                },
                 amount: {
                   $sum: "$amount",
                 },
                 population: {
-                  $sum: "$ulb.population",
+                  $first: "$ulb.population",
                 },
               },
             },
-            { $unwind: "$state" },
+            {
+              $unwind: "$state",
+            },
+            {
+              $group: {
+                _id: {
+                  financialYear: "$_id.financialYear",
+                },
+                state: {
+                  $first: "$state",
+                },
+                amount: {
+                  $sum: "$amount",
+                },
+                population: {
+                  $sum: "$population",
+                },
+              },
+            },
             {
               $project: {
                 _id: 1,
@@ -1249,17 +1270,15 @@ async function revenueQueryCompare(
         }
       );
       if (from.includes("mix")) {
-        tempQ.push(
-          {
-            $group: {
-              _id: { lineItem: "$lineitems" },
-              amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
-              code: { $first: "$lineitems.code" },
-              population: { $sum: "$amount" },
-              colour: { $first: "$lineitems.colour" },
-            },
-          }
-        );
+        tempQ.push({
+          $group: {
+            _id: { lineItem: "$lineitems" },
+            amount: { $sum: { $multiply: ["$amount", "$ulb.population"] } },
+            code: { $first: "$lineitems.code" },
+            population: { $sum: "$amount" },
+            colour: { $first: "$lineitems.colour" },
+          },
+        });
       } else {
         if (isPerCapita) {
           tempQ.push(
