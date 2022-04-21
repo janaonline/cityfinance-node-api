@@ -16,6 +16,8 @@ var AdmZip = require("adm-zip");
 const { strict } = require("assert");
 const { MongooseDocument } = require("mongoose");
 const dir = "uploads";
+const axios = require('axios')
+const request = require('request')
 const subDir = "/source";
 const date = moment().format("DD-MMM-YY");
 const catchAsync = require("../../util/catchAsync");
@@ -326,6 +328,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
       },
       {
         $project: {
+          ua:"$name",
           waterSuppliedPerDay: "$xvfcformDataApproved.waterManagement.waterSuppliedPerDay",
           reduction: "$xvfcformDataApproved.waterManagement.reduction",
           houseHoldCoveredWithSewerage:
@@ -338,7 +341,7 @@ population:"$approvedULBs.population"
       },
       {
         $project: {
-    
+    ua: 1,
           ulbData:  "$ulb" ,
             population:"$population",
           waterSuppliedPerDay2021: {
@@ -492,6 +495,7 @@ population:"$approvedULBs.population"
       {
           $group:{
          _id:"",
+         ua:{$first:"$ua"},
          ulbData:{$addToSet:"$ulbData._id"},
          total:{$sum:1},
                   "waterSuppliedPerDay2021n":{
@@ -605,30 +609,171 @@ population:"$approvedULBs.population"
               $project:{
                 total:1,
                 ulbData:1,
-                  waterSuppliedPerDay2021: {$divide:["$waterSuppliedPerDay2021n", "$waterSuppliedPerDay2021d"]},
-                    waterSuppliedPerDay2122: {$divide:["$waterSuppliedPerDay2122n", "$waterSuppliedPerDay2122d"]},
-                      waterSuppliedPerDay2223: {$divide:["$waterSuppliedPerDay2223n", "$waterSuppliedPerDay2223d"]},
-                        waterSuppliedPerDay2324: {$divide:["$waterSuppliedPerDay2324n", "$waterSuppliedPerDay2324d"]},
-                          waterSuppliedPerDay2425: {$divide:["$waterSuppliedPerDay2425n", "$waterSuppliedPerDay2425d"]},
-                          
-                           reduction2021: {$divide:["$reduction2021n", "$reduction2021d"]},
-                    reduction2122: {$divide:["$reduction2122n", "$reduction2122d"]},
-                      reduction2223: {$divide:["$reduction2223n", "$reduction2223d"]},
-                        reduction2324: {$divide:["$reduction2324n", "$reduction2324d"]},
-                          reduction2425: {$divide:["$reduction2425n", "$reduction2425d"]},
-                          
-                          
-                          houseHoldCoveredWithSewerage2021: {$divide:["$houseHoldCoveredWithSewerage2021n", "$houseHoldCoveredWithSewerage2021d"]},
-                    houseHoldCoveredWithSewerage2122: {$divide:["$houseHoldCoveredWithSewerage2122n", "$houseHoldCoveredWithSewerage2122d"]},
-                     houseHoldCoveredWithSewerage2223: {$divide:["$houseHoldCoveredWithSewerage2223n", "$houseHoldCoveredWithSewerage2223d"]},
-                       houseHoldCoveredWithSewerage2324: {$divide:["$houseHoldCoveredWithSewerage2324n", "$houseHoldCoveredWithSewerage2324d"]},
-                         houseHoldCoveredWithSewerage2425: {$divide:["$houseHoldCoveredWithSewerage2425n", "$houseHoldCoveredWithSewerage2425d"]},
+                ua:1,
+                  waterSuppliedPerDay2021:{
+                    '$cond': [
+                      { '$eq': [ '$waterSuppliedPerDay2021d', 0 ] },
+                      0,
+                      { '$divide': [ '$waterSuppliedPerDay2021n', '$waterSuppliedPerDay2021d' ] }
+                    ]
+                  },
+                    waterSuppliedPerDay2122:{
+                      '$cond': [
+                        { '$eq': [ '$waterSuppliedPerDay2122d', 0 ] },
+                        0,
+                        { '$divide': [ '$waterSuppliedPerDay2122n', '$waterSuppliedPerDay2122d' ] }
+                      ]
+                    },
+                     
+                      waterSuppliedPerDay2223:{
+                        '$cond': [
+                          { '$eq': [ '$waterSuppliedPerDay2223d', 0 ] },
+                          0,
+                          { '$divide': [ '$waterSuppliedPerDay2223n', '$waterSuppliedPerDay2223d' ] }
+                        ]
+                      },
+                      
+                      
+                        waterSuppliedPerDay2324:{
+                          '$cond': [
+                            { '$eq': [ '$waterSuppliedPerDay2324d', 0 ] },
+                            0,
+                            { '$divide': [ '$waterSuppliedPerDay2324n', '$waterSuppliedPerDay2324d' ] }
+                          ]
+                        },
                          
-houseHoldCoveredPipedSupply2021: {$divide:["$houseHoldCoveredPipedSupply2021n", "$houseHoldCoveredPipedSupply2021d"]},
-houseHoldCoveredPipedSupply2122: {$divide:["$houseHoldCoveredPipedSupply2122n", "$houseHoldCoveredPipedSupply2122d"]},
-houseHoldCoveredPipedSupply2223: {$divide:["$houseHoldCoveredPipedSupply2223n", "$houseHoldCoveredPipedSupply2223d"]},
-houseHoldCoveredPipedSupply2324: {$divide:["$houseHoldCoveredPipedSupply2324n", "$houseHoldCoveredPipedSupply2324d"]},
-houseHoldCoveredPipedSupply2425: {$divide:["$houseHoldCoveredPipedSupply2425n", "$houseHoldCoveredPipedSupply2425d"]},
+                          waterSuppliedPerDay2425: {
+                            '$cond': [
+                              { '$eq': [ '$waterSuppliedPerDay2425d', 0 ] },
+                              0,
+                              { '$divide': [ '$waterSuppliedPerDay2425n', '$waterSuppliedPerDay2425d' ] }
+                            ]
+                          },
+                          
+                          
+                           reduction2021: {
+                            '$cond': [
+                              { '$eq': [ '$reduction2021d', 0 ] },
+                              0,
+                              { '$divide': [ '$reduction2021n', '$reduction2021d' ] }
+                            ]
+                          },
+                            
+                    reduction2122:  {
+                      '$cond': [
+                        { '$eq': [ '$reduction2122d', 0 ] },
+                        0,
+                        { '$divide': [ '$reduction2122n', '$reduction2122d' ] }
+                      ]
+                    },
+                    
+                      reduction2223: {
+                        '$cond': [
+                          { '$eq': [ '$reduction2223d', 0 ] },
+                          0,
+                          { '$divide': [ '$reduction2223n', '$reduction2223d' ] }
+                        ]
+                      },
+                       
+                        reduction2324:  {
+                          '$cond': [
+                            { '$eq': [ '$reduction2324d', 0 ] },
+                            0,
+                            { '$divide': [ '$reduction2324n', '$reduction2324d' ] }
+                          ]
+                        },
+                        
+                          reduction2425:  {
+                            '$cond': [
+                              { '$eq': [ '$reduction2425d', 0 ] },
+                              0,
+                              { '$divide': [ '$reduction2425n', '$reduction2425d' ] }
+                            ]
+                          },
+                          
+                          
+                          
+                          houseHoldCoveredWithSewerage2021: {
+                            '$cond': [
+                              { '$eq': [ '$houseHoldCoveredWithSewerage2021d', 0 ] },
+                              0,
+                              { '$divide': [ '$houseHoldCoveredWithSewerage2021n', '$houseHoldCoveredWithSewerage2021d' ] }
+                            ]
+                          },
+                           
+                    houseHoldCoveredWithSewerage2122: {
+                      '$cond': [
+                        { '$eq': [ '$houseHoldCoveredWithSewerage2122d', 0 ] },
+                        0,
+                        { '$divide': [ '$houseHoldCoveredWithSewerage2122n', '$houseHoldCoveredWithSewerage2122d' ] }
+                      ]
+                    },
+                     
+                     houseHoldCoveredWithSewerage2223: {
+                      '$cond': [
+                        { '$eq': [ '$houseHoldCoveredWithSewerage2223d', 0 ] },
+                        0,
+                        { '$divide': [ '$houseHoldCoveredWithSewerage2223n', '$houseHoldCoveredWithSewerage2223d' ] }
+                      ]
+                    },
+                      
+                       houseHoldCoveredWithSewerage2324:  {
+                        '$cond': [
+                          { '$eq': [ '$houseHoldCoveredWithSewerage2324d', 0 ] },
+                          0,
+                          { '$divide': [ '$houseHoldCoveredWithSewerage2324n', '$houseHoldCoveredWithSewerage2324d' ] }
+                        ]
+                      },
+                       
+                         houseHoldCoveredWithSewerage2425:  {
+                          '$cond': [
+                            { '$eq': [ '$houseHoldCoveredWithSewerage2425d', 0 ] },
+                            0,
+                            { '$divide': [ '$houseHoldCoveredWithSewerage2425n', '$houseHoldCoveredWithSewerage2425d' ] }
+                          ]
+                        },
+                         
+                         
+houseHoldCoveredPipedSupply2021: {
+  '$cond': [
+    { '$eq': [ '$houseHoldCoveredPipedSupply2021d', 0 ] },
+    0,
+    { '$divide': [ '$houseHoldCoveredPipedSupply2021n', '$houseHoldCoveredPipedSupply2021d' ] }
+  ]
+},
+ 
+houseHoldCoveredPipedSupply2122: {
+  '$cond': [
+    { '$eq': [ '$houseHoldCoveredPipedSupply2122d', 0 ] },
+    0,
+    { '$divide': [ '$houseHoldCoveredPipedSupply2122n', '$houseHoldCoveredPipedSupply2122d' ] }
+  ]
+},
+
+houseHoldCoveredPipedSupply2223: {
+  '$cond': [
+    { '$eq': [ '$houseHoldCoveredPipedSupply2223d', 0 ] },
+    0,
+    { '$divide': [ '$houseHoldCoveredPipedSupply2223n', '$houseHoldCoveredPipedSupply2223d' ] }
+  ]
+},
+
+houseHoldCoveredPipedSupply2324: {
+  '$cond': [
+    { '$eq': [ '$houseHoldCoveredPipedSupply2324d', 0 ] },
+    0,
+    { '$divide': [ '$houseHoldCoveredPipedSupply2324n', '$houseHoldCoveredPipedSupply2324d' ] }
+  ]
+},
+
+houseHoldCoveredPipedSupply2425: {
+  '$cond': [
+    { '$eq': [ '$houseHoldCoveredPipedSupply2425d', 0 ] },
+    0,
+    { '$divide': [ '$houseHoldCoveredPipedSupply2425n', '$houseHoldCoveredPipedSupply2425d' ] }
+  ]
+},
+
                           
                           
                           
@@ -4147,6 +4292,58 @@ module.exports.addFlag = async (req, res) => {
   ])
 }
 
+module.exports.getUAwiseCSV = catchAsync (async (req,res) => {
+let uaIDs = await UA.find().select("_id").lean()
+
+let finalData = []
+let x = 1;
+let data = await axios.post('https://cityfinance.in/api/v1/login', {
+  "email":"admin@cityfinance.in",
+  "password":"admin007@cityfinance"
+})
+
+for(let el of uaIDs ){
+  await axios.get(`https://cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
+  { params:{}, headers: { "x-access-token": data?.data?.token } }
+  ).then(function(response) {
+ 
+
+   finalData.push(response.data.data)
+
+}).catch(function(error) {
+
+
+});
+
+}
+  
+  
+
+ console.log(util.inspect(finalData, {showHidden: false, depth: null}))
+let printData = {}
+let totalDataa = []
+ finalData.forEach(el => {
+   Object.assign(printData, el[0]);
+   if(el[1].completedAndpendingSubmission.length){
+    let arr = []
+    el[1].completedAndpendingSubmission.forEach(el2 => {
+  
+      arr.push(el2.name)
+      
+    })
+    Object.assign(printData, {"pending": arr })
+
+   }
+totalDataa.push(printData)
+printData = {}
+ })
+ console.log('printData',totalDataa)
+res.status(200).json({
+  success: true,
+  data: totalDataa
+})
+})
+
 exports.newFormAction = async (req, res) => {
   try {
     const data = req.body,
@@ -4173,7 +4370,6 @@ exports.newFormAction = async (req, res) => {
       }
       req.body.status = req.body.waterManagement.status;
       req.body.rejectReason = req.body.waterManagement.rejectReason;
-
       await UpdateMasterSubmitForm(req, "slbForWaterSupplyAndSanitation");
       updatedRecord.history = null;
       let waterManagement = updatedRecord.waterManagement;
