@@ -459,6 +459,9 @@ exports.nationalDashRevenue = async (req, res) => {
         ];
       responsePayload.data = { rows, columns };
     } else if (type == "revenueMix") {
+      let colourArray = ulbLeds[0].national.map((val) => {
+        return { colour: val.colour, lineitem: val.lineName };
+      });
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
@@ -529,6 +532,7 @@ exports.nationalDashRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
+      responsePayload.data.colourArray = colourArray
     }
     if (csv) {
       return getExcel(req, res, responsePayload.data);
@@ -692,6 +696,9 @@ exports.nationalDashExpenditure = async (req, res) => {
         ];
       responsePayload.data = { rows, columns };
     } else if (type == "expenditureMix") {
+      let colourArray = ulbLeds[0].national.map((val) => {
+        return { colour: val.colour, lineitem: val.lineName };
+      });
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
@@ -762,6 +769,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
+      responsePayload.data.colourArray = colourArray
     } else {
       //deficitOrSurplus
       responsePayload.data = await createTableData(
@@ -915,7 +923,7 @@ let getExcel = async (req, res, data) => {
 
 exports.nationalDashOwnRevenue = async (req, res) => {
   try {
-    let { financialYear, type, stateId, formType, visualType, getQuery,csv } =
+    let { financialYear, type, stateId, formType, visualType, getQuery, csv } =
       req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalOwnRevenue";
@@ -1077,6 +1085,9 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         ];
       responsePayload.data = { rows, columns };
     } else if (type == "OwnrevenueMix") {
+      let colourArray = ulbLeds[0].national.map((val) => {
+        return { colour: val.colour, lineitem: val.lineName };
+      });
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
@@ -1147,6 +1158,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
+      responsePayload.data.colourArray = colourArray
     }
     if (csv) {
       return getExcel(req, res, responsePayload.data);
@@ -1159,7 +1171,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
 };
 exports.nationalDashCapexpense = async (req, res) => {
   try {
-    let { financialYear, type, stateId, formType, visualType, getQuery,csv } =
+    let { financialYear, type, stateId, formType, visualType, getQuery, csv } =
       req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     type = type ? type : "totalCapexpense";
