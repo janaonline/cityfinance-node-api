@@ -20,11 +20,12 @@ module.exports.lastUpdated = async (req, res) => {
       let ulbIds = await Ulb.find({ state }).select({ _id: 1 });
       match = { ulb: { $in: ulbIds.map((value) => value._id) } };
     }
-    let data = await UlbLedger.find(match).sort({ modifiedAt: -1 }).limit(1);
+    let modifiedAtData = await UlbLedger.find(match).sort({ modifiedAt: -1 }).limit(1);
+    let financialYearData = await UlbLedger.find(match).sort({ financialYear: -1 }).limit(1);
     return res.status(200).json({
       success: true,
-      data: data[0]?.modifiedAt,
-      year: data[0]?.financialYear,
+      data: modifiedAtData[0]?.modifiedAt,
+      year: financialYearData[0]?.financialYear,
     });
   } catch (error) {
     return res.status(500).json({ msg: "server Error", error });

@@ -5,11 +5,7 @@ const Response = require("../../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require("../../../models/State");
 
-let filterType = [
-  "Town Panchayat",
-  "Municipality",
-  "Municipal Corporation",
-];
+let filterType = ["Town Panchayat", "Municipality", "Municipal Corporation"];
 
 const peopleInformation = async (req, res) => {
   try {
@@ -25,23 +21,23 @@ const peopleInformation = async (req, res) => {
           .populate("state")
           .populate("UA")
           .lean();
-        let ledgerData =  await UlbLedger.aggregate([
-            {
-              $match: {
-                ulb: ObjectId(req.query.ulb)
-              }
+        let ledgerData = await UlbLedger.aggregate([
+          {
+            $match: {
+              ulb: ObjectId(req.query.ulb),
             },
-            {
-              $group:{
-                _id : "$financialYear"
-              }
-            }
-          ])
-          if(ledgerData.length>0){
-            data['dataAvailable'] = ledgerData.length
-          }else{
-            data['dataAvailable'] = 0
-          }
+          },
+          {
+            $group: {
+              _id: "$financialYear",
+            },
+          },
+        ]);
+        if (ledgerData.length > 0) {
+          data["dataAvailable"] = ledgerData.length;
+        } else {
+          data["dataAvailable"] = 0;
+        }
         if (!data) return Response.BadRequest(res, null, "No Data Found");
         Object.assign(data, {
           density: parseFloat((data.population / data.area).toFixed(2)),
@@ -131,8 +127,8 @@ const peopleInformation = async (req, res) => {
 const moneyInformation = async (req, res) => {
   try {
     const type = (req.query.type || req.headers.type).toLowerCase();
-  
-    if (!type ) return Response.BadRequest(res, {}, "No Type Provided");
+
+    if (!type) return Response.BadRequest(res, {}, "No Type Provided");
     let data, ulbId;
     switch (type) {
       case "ulb":
@@ -144,17 +140,15 @@ const moneyInformation = async (req, res) => {
           .lean();
         ulbId = ulbId.map((value) => value._id);
         break;
-        case "national":
-          ulbId = await Ulb.find()
-            .select({ _id: 1 })
-            .lean();
-          ulbId = ulbId.map((value) => value._id);
-          break;
+      case "national":
+        ulbId = await Ulb.find().select({ _id: 1 }).lean();
+        ulbId = ulbId.map((value) => value._id);
+        break;
       default:
         return Response.BadRequest(res, null, "wrong type selected");
     }
     data = await UlbLedger.aggregate([
-      { $match: { ulb: { $in: ulbId }} },
+      { $match: { ulb: { $in: ulbId }, financialYear: req.query.year } },
       {
         $lookup: {
           from: "lineitems",
@@ -180,7 +174,7 @@ const moneyInformation = async (req, res) => {
         },
       },
     ]);
-  
+
     return Response.OK(res, data);
   } catch (err) {
     console.error(err.message);
