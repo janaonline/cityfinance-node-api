@@ -543,7 +543,6 @@ exports.nationalDashRevenue = async (req, res) => {
     res.status(500).json({ success: true, message: err.message });
   }
 };
-
 exports.nationalDashExpenditure = async (req, res) => {
   try {
     let responsePayload = { data: null };
