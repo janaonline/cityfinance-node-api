@@ -228,34 +228,71 @@ const getFYsSLB = catchAsync(async (req, res) => {
   });
 });
 
-const calData = (data) => {
-  let copyData = [];
-  copyData = data.slice();
-  let ownRev = 0;
-  for (let el of data) {
-    if (
-      el.code == "110" ||
-      el.code == "130" ||
-      el.code == "140" ||
-      el.code == "150" ||
-      el.code == "180"
-    ) {
-      ownRev = ownRev + el.amount;
-      let index = copyData.indexOf(el);
-      if (index > -1 && index != copyData.length - 1) copyData.splice(index, 1);
-      if (index == copyData.length - 1) {
-        copyData.pop(el);
+const calData = (data,filterName = "") => {
+  if(filterName == 'own revenue mix' || filterName == 'revenue expenditure mix' ){
+return data;
+  }else if(filterName == 'expenditure mix'){
+
+    let copyData = [];
+    copyData = data.slice();
+    let otherExp = 0;
+    for (let el of data) {
+      if (
+        el.code == "250" ||
+        el.code == "260" ||
+        el.code == "271" ||
+        el.code == "270" ||
+        el.code == "280" ||
+        el.code == "272" ||
+        el.code == "290"
+      ) {
+        otherExp = otherExp + el.amount;
+        let index = copyData.indexOf(el);
+        if (index > -1 && index != copyData.length - 1) copyData.splice(index, 1);
+        if (index == copyData.length - 1) {
+          copyData.pop(el);
+        }
+      }else{
+        continue
       }
-    }else{
-      continue
     }
+    copyData.push({
+      _id: "Other Expenditure",
+      code:["250","260","271","270","280","272","290"],
+      amount: otherExp,
+    });
+    return copyData;
+  
+  }else{
+    let copyData = [];
+    copyData = data.slice();
+    let ownRev = 0;
+    for (let el of data) {
+      if (
+        el.code == "110" ||
+        el.code == "130" ||
+        el.code == "140" ||
+        el.code == "150" ||
+        el.code == "180"
+      ) {
+        ownRev = ownRev + el.amount;
+        let index = copyData.indexOf(el);
+        if (index > -1 && index != copyData.length - 1) copyData.splice(index, 1);
+        if (index == copyData.length - 1) {
+          copyData.pop(el);
+        }
+      }else{
+        continue
+      }
+    }
+    copyData.push({
+      _id: "Own Revenue",
+      code:["110","130","140","150","180"],
+      amount: ownRev,
+    });
+    return copyData;
   }
-  copyData.push({
-    _id: "Own Revenue",
-    code:["110","130","140","150","180"],
-    amount: ownRev,
-  });
-  return copyData;
+ 
 };
 
 const revenue = catchAsync(async (req, res) => {
@@ -754,7 +791,7 @@ let tenData = []
 let data = await Promise.all([
   UlbLedger.aggregate(finalQuery)
 ])
-data = calData(data[0])
+data = calData(data[0], filterName)
    return res.status(200).json({
      success: true,
      data: data
@@ -801,7 +838,7 @@ data = calData(data[0])
             UlbLedger.aggregate(finalQuery)
           ])
           console.log(el._id)
-          data = calData(data[0])
+          data = calData(data[0],filterName)
           if((el._id).valueOf() == ("5dcfa66b43263a0e75c71696")){
   // town Panchayat
   obj.tpData.push(data)
@@ -927,7 +964,7 @@ data = calData(data[0])
             UlbLedger.aggregate(finalQuery)
           ])
           console.log(el._id)
-          data = calData(data[0])
+          data = calData(data[0],filterName)
           let key = keyArr[i]
           Object.assign(output, {[key] : data})
   i++;        
