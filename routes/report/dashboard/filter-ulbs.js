@@ -41,6 +41,10 @@ module.exports = async (req, res, next) => {
                 $match: condition
             },
             {
+                $match: {population:{$gt: 0}}
+            },
+
+            {
                 $project: {
                     _id: 1,
                     "range": {
