@@ -9,6 +9,7 @@ const Redis = require("../../service/redis");
 const catchAsync = require("../../util/catchAsync");
 const util = require("util");
 const { response } = require("../../service");
+const axios = require('axios').default;
 
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
@@ -1636,7 +1637,13 @@ const calculateStateAvg = (data) => {
 };
 const stateDashAvgs = async (req, res) => {
  try {
-   const { financialYear, which, TabType, getQuery, stateId, code } = req.query;
+   const { financialYear, which, TabType, getQuery, stateId, code,  state,
+    headOfAccount,
+    filterName,
+    isPerCapita,
+    ulb,
+    compareType,
+    sortBy } = req.body;
    const distinctUlbs =
      which == "nationalAvg" ? await UlbLedger.distinct("ulb") : [];
    const noOfUlbs = distinctUlbs.length;
@@ -1650,7 +1657,10 @@ const stateDashAvgs = async (req, res) => {
      code
    );
    if (getQuery) return res.send(query);
-   const data = await UlbLedger.aggregate(query);
+   let otherApiData = axios.post(`${process.env.BASEURL}/state-revenue`,{...req.body})
+   const data = UlbLedger.aggregate(query);
+   let newData = await Promise.all([data,otherApiData])
+
    function roundOffy2(obj) {
      const keys = Object.keys(obj);
      for (each of keys) {
@@ -1658,7 +1668,7 @@ const stateDashAvgs = async (req, res) => {
      }
      return obj;
    }
-   res.status(200).json({ success: true, data: roundOffy2(data[0]) });
+   res.status(200).json({ success: true, data: {...newData[1].data.data,...roundOffy2(newData[0][0])} });
  } catch (error) {
    return res.status(500).json({ success: false, message: error.message });
  }
