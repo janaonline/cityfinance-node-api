@@ -662,19 +662,42 @@ return res.status(200).json({
 
    
    
-  } else if (filterName == "revenue mix") {
+  } else if (filterName.includes("mix")) {
 if(compareType && ulb.length){
   return res.status(400).json({
     success: false,
     message:"Both Compare Type and ULB ID are not allowed"
   })
 }
+let idArray = []
+switch (filterName) {
+  case "revenue mix":
+idArray = All_Revenue_ObjectIDs;
+    
+    break;
+    case "own revenue mix":
+      idArray = ObjectIdOfRevenueList;
+          
+          break;
+          case "expenditure mix":
+            idArray = All_Expense_ObjectIDs;
+                
+                break;
+                case "revenue expenditure mix":
+                  idArray = Revenue_Expenditure;
+                      
+                      break;
+                     
+
+  default:
+    break;
+}
 let query = [
   {
     $match:{
     
       lineItem: {
-        $in: [...All_Revenue_ObjectIDs.map((value) => ObjectId(value))]
+        $in: [...idArray.map((value) => ObjectId(value))]
       }
     }
     
@@ -748,6 +771,7 @@ data = calData(data[0])
         ulb: {$addToSet:"$_id"}
                 }
             }
+        
         ]
       )
       let obj = {
@@ -807,7 +831,119 @@ data = calData(data[0])
       })
      })
      
-    } else if (compareType == "popCat") {
+    } else if (compareType == "popType") {
+      let ulbIDObj = await Ulb.aggregate([
+        {
+          $group:{
+              _id:"",
+"<100k": {$addToSet:{
+  $cond:[
+  {$lt:["$population", 100000]},
+  "$_id",
+  ""
+  ]
+  }},
+  
+  "1m-4m": {
+      $addToSet:{
+          
+  $cond:[ 
+          {$and:
+              [
+              {$lt:["$population", 4000000]},{$gt:["$population", 1000000]}
+              ]
+              },
+  "$_id",
+  ""
+  ]
+  }},
+  
+  "4m+": {$addToSet:{
+  $cond:[
+  {$gt:["$population", 4000000]},
+  "$_id",
+  ""
+  ]
+  }},
+  
+  "500k-1M": {$addToSet:{
+  $cond:[
+ {$and:[{$lt:["$population", 1000000]},{$gt:["$population", 500000]}]},
+  "$_id",
+  ""
+  ]
+  }},
+  
+  "100k-500k": {$addToSet:{
+  $cond:[
+  {$and:[{$lt:["$population", 500000]},{$gt:["$population", 100000]}]},
+  "$_id",
+  ""
+  ]
+  }}
+              }
+          },
+          {
+            $project:{
+                _id:0,
+                "<100k":1,
+                "1m-4m":1,
+                "4m+":1,
+                "500k-1M":1,
+                "100k-500k":1
+                }
+            }
+      ]) 
+      let obj = {
+        "<100k": [],
+        "100k-500k":[],
+        "500k-1M": [],
+        "1M-4M":[],
+        "4M+":[]
+      }
+      let finalArr = []
+      let ulbIDArr = Object.values(ulbIDObj[0])
+      let keyArr = Object.keys(ulbIDObj[0])
+      let output = {}
+      let prms1 =  new Promise(async (rslv, rjct) => {
+   let i = 0;
+        for await(let el of ulbIDArr ){
+       
+          base_query = [
+            {
+        
+              $match:{
+        
+                financialYear: financialYear,
+                ulb: {
+                  $in: [...el],
+                }
+              }
+            }
+          ]
+          finalQuery = [...base_query, ...query]
+          let tenData = []
+          // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+          let data = await Promise.all([
+            UlbLedger.aggregate(finalQuery)
+          ])
+          console.log(el._id)
+          data = calData(data[0])
+          let key = keyArr[i]
+          Object.assign(output, {[key] : data})
+  i++;        
+}
+        
+        rslv(output);
+    });
+     prms1.then(values => {
+     console.log(values)
+      return res.status(200).json({
+        success: true,
+        data: values
+      })
+     })
+
     }
   } else if (filterName == "own revenue mix") {
     let base_query = [
