@@ -3488,17 +3488,27 @@ exports.stateDashAvgsPipeline = async (
     pipeline.push(
       {
         $group: {
+          _id: "$ulb._id",
+          amount: {
+            $sum: "$amount",
+          },
+          population: { $first: "$ulb.population" },
+        },
+      },
+      {
+        $group: {
           _id: null,
           sum: {
             $sum: "$amount",
           },
+          population: { $sum: "$population" },
         },
       },
       {
         $project: {
           _id: 0,
           national: {
-            $divide: ["$sum", noOfUlbs],
+            $divide: ["$sum", "$population"],
           },
         },
       }
@@ -3507,12 +3517,26 @@ exports.stateDashAvgsPipeline = async (
     pipeline.push(
       {
         $group: {
+          _id: "$ulb._id",
+          amount: {
+            $sum: "$amount",
+          },
+          population: {
+            $first: "$ulb.population",
+          },
+          ulbType: {
+            $first: "$ulb.ulbType",
+          },
+        },
+      },
+      {
+        $group: {
           _id: null,
           municipalAmt: {
             $sum: {
               $cond: {
                 if: {
-                  $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  $eq: ["$ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
                 },
                 then: "$amount",
                 else: 0,
@@ -3523,9 +3547,9 @@ exports.stateDashAvgsPipeline = async (
             $sum: {
               $cond: {
                 if: {
-                  $eq: ["$ulb.ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+                  $eq: ["$ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
@@ -3534,7 +3558,7 @@ exports.stateDashAvgsPipeline = async (
             $sum: {
               $cond: {
                 if: {
-                  $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  $eq: ["$ulbType", ObjectId("5dcfa67543263a0e75c71697")],
                 },
                 then: "$amount",
                 else: 0,
@@ -3545,9 +3569,9 @@ exports.stateDashAvgsPipeline = async (
             $sum: {
               $cond: {
                 if: {
-                  $eq: ["$ulb.ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+                  $eq: ["$ulbType", ObjectId("5dcfa67543263a0e75c71697")],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
@@ -3556,7 +3580,7 @@ exports.stateDashAvgsPipeline = async (
             $sum: {
               $cond: {
                 if: {
-                  $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  $eq: ["$ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
                 },
                 then: "$amount",
                 else: 0,
@@ -3567,9 +3591,9 @@ exports.stateDashAvgsPipeline = async (
             $sum: {
               $cond: {
                 if: {
-                  $eq: ["$ulb.ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+                  $eq: ["$ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
@@ -3580,13 +3604,37 @@ exports.stateDashAvgsPipeline = async (
         $project: {
           _id: 0,
           Municipality: {
-            $divide: ["$municipalAmt", "$municipalUlbs"],
+            $cond: {
+              if: {
+                $lt: ["$municipalAmt", 1],
+              },
+              then: 0,
+              else: {
+                $divide: ["$municipalAmt", "$municipalUlbs"],
+              },
+            },
           },
           "Municipal Corporation": {
-            $divide: ["$municipalCorAmt", "$municipalCorUlbs"],
+            $cond: {
+              if: {
+                $lt: ["$municipalCorAmt", 1],
+              },
+              then: 0,
+              else: {
+                $divide: ["$municipalCorAmt", "$municipalUlbs"],
+              },
+            },
           },
           "Town Panchayat": {
-            $divide: ["$townPanAmt", "$townPanUlbs"],
+            $cond: {
+              if: {
+                $lt: ["$townPanAmt", 1],
+              },
+              then: 0,
+              else: {
+                $divide: ["$townPanAmt", "$municipalUlbs"],
+              },
+            },
           },
         },
       }
@@ -3595,12 +3643,19 @@ exports.stateDashAvgsPipeline = async (
     pipeline.push(
       {
         $group: {
+          _id: "$ulb._id",
+          amount: { $sum: "$amount" },
+          population: { $first: "$ulb.population" },
+        },
+      },
+      {
+        $group: {
           _id: null,
           "<100KAmt": {
             $sum: {
               $cond: {
                 if: {
-                  $lt: ["$ulb.population", 1e5],
+                  $lt: ["population", 100000],
                 },
                 then: "$amount",
                 else: 0,
@@ -3611,21 +3666,24 @@ exports.stateDashAvgsPipeline = async (
             $sum: {
               $cond: {
                 if: {
-                  $lt: ["$ulb.population", 1e5],
+                  $lt: ["$population", 100000],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
           },
-
           "100K-500KAmt": {
             $sum: {
               $cond: {
                 if: {
                   $and: [
-                    { $gte: ["$ulb.population", 1e5] },
-                    { $lte: ["$ulb.population", 5e5] },
+                    {
+                      $gte: ["$population", 100000],
+                    },
+                    {
+                      $lte: ["$population", 500000],
+                    },
                   ],
                 },
                 then: "$amount",
@@ -3638,23 +3696,30 @@ exports.stateDashAvgsPipeline = async (
               $cond: {
                 if: {
                   $and: [
-                    { $gte: ["$ulb.population", 1e5] },
-                    { $lte: ["$ulb.population", 5e5] },
+                    {
+                      $gte: ["$population", 100000],
+                    },
+                    {
+                      $lte: ["$population", 500000],
+                    },
                   ],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
           },
-
           "500K-1MAmt": {
             $sum: {
               $cond: {
                 if: {
                   $and: [
-                    { $gte: ["$ulb.population", 5e5] },
-                    { $lte: ["$ulb.population", 1e6] },
+                    {
+                      $gte: ["$population", 500000],
+                    },
+                    {
+                      $lte: ["$population", 1000000],
+                    },
                   ],
                 },
                 then: "$amount",
@@ -3667,23 +3732,30 @@ exports.stateDashAvgsPipeline = async (
               $cond: {
                 if: {
                   $and: [
-                    { $gte: ["$ulb.population", 5e5] },
-                    { $lte: ["$ulb.population", 1e6] },
+                    {
+                      $gte: ["$population", 500000],
+                    },
+                    {
+                      $lte: ["$population", 1000000],
+                    },
                   ],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
           },
-
           "1M-4MAmt": {
             $sum: {
               $cond: {
                 if: {
                   $and: [
-                    { $gte: ["$ulb.population", 1e6] },
-                    { $lte: ["$ulb.population", 4e6] },
+                    {
+                      $gte: ["$population", 1000000],
+                    },
+                    {
+                      $lte: ["$population", 4000000],
+                    },
                   ],
                 },
                 then: "$amount",
@@ -3696,21 +3768,24 @@ exports.stateDashAvgsPipeline = async (
               $cond: {
                 if: {
                   $and: [
-                    { $gte: ["$ulb.population", 1e6] },
-                    { $lte: ["$ulb.population", 4e6] },
+                    {
+                      $gte: ["$population", 1000000],
+                    },
+                    {
+                      $lte: ["$population", 4000000],
+                    },
                   ],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
           },
-
           "4M+Amt": {
             $sum: {
               $cond: {
                 if: {
-                  $gt: ["$ulb.population", 4e6],
+                  $gt: ["$population", 4000000],
                 },
                 then: "$amount",
                 else: 0,
@@ -3721,9 +3796,9 @@ exports.stateDashAvgsPipeline = async (
             $sum: {
               $cond: {
                 if: {
-                  $gt: ["$ulb.population", 4e6],
+                  $gt: ["$population", 4000000],
                 },
-                then: 1,
+                then: "$population",
                 else: 0,
               },
             },
@@ -3735,7 +3810,9 @@ exports.stateDashAvgsPipeline = async (
           _id: 0,
           "< 100 Thousand": {
             $cond: {
-              if: { $eq: ["$<100KUlbs", 0] },
+              if: {
+                $eq: ["$<100KUlbs", 0],
+              },
               then: 0,
               else: {
                 $divide: ["$<100KAmt", "$<100KUlbs"],
@@ -3744,7 +3821,9 @@ exports.stateDashAvgsPipeline = async (
           },
           "100 Thousand - 500 Thousand": {
             $cond: {
-              if: { $eq: ["$100K-500KUlbs", 0] },
+              if: {
+                $eq: ["$100K-500KUlbs", 0],
+              },
               then: 0,
               else: {
                 $divide: ["$100K-500KAmt", "$100K-500KUlbs"],
@@ -3753,7 +3832,9 @@ exports.stateDashAvgsPipeline = async (
           },
           "500 Thousand - 1 Million": {
             $cond: {
-              if: { $eq: ["$500K-1MUlbs", 0] },
+              if: {
+                $eq: ["$500K-1MUlbs", 0],
+              },
               then: 0,
               else: {
                 $divide: ["$500K-1MAmt", "$500K-1MUlbs"],
@@ -3762,7 +3843,9 @@ exports.stateDashAvgsPipeline = async (
           },
           "1 Million - 4 Million": {
             $cond: {
-              if: { $eq: ["$1M-4MUlbs", 0] },
+              if: {
+                $eq: ["$1M-4MUlbs", 0],
+              },
               then: 0,
               else: {
                 $divide: ["$1M-4MAmt", "$1M-4MUlbs"],
@@ -3771,7 +3854,9 @@ exports.stateDashAvgsPipeline = async (
           },
           "4 Million+": {
             $cond: {
-              if: { $eq: ["$4M+Ulbs", 0] },
+              if: {
+                $eq: ["$4M+Ulbs", 0],
+              },
               then: 0,
               else: {
                 $divide: ["$4M+Amt", "$4M+Ulbs"],
