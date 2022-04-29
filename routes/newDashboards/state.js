@@ -11,6 +11,7 @@ const util = require("util");
 const { response } = require("../../service");
 const axios = require('axios').default;
 const ExcelJS = require("exceljs");
+const fs = require("fs");
 
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
@@ -748,7 +749,7 @@ const revenue = catchAsync(async (req, res) => {
       let tenData = [];
       // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
       let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
-      data = calData(data[0]);
+      data = calData(data[0], filterName);
       return res.status(200).json({
         success: true,
         data: data,
@@ -1420,6 +1421,12 @@ let getExcel = async (req, res, data) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Data");
+    const imageId2 = workbook.addImage({
+      buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
+      extension: "png",
+    });
+    worksheet.addImage(imageId2, "A1:F3");
+    data.columns.unshift({ display_name: "S.no", key: "sno" });
     worksheet.columns = data.columns.map((value) => {
       let temp = {
         header: value.display_name,
@@ -1427,7 +1434,11 @@ let getExcel = async (req, res, data) => {
       };
       return temp;
     });
-    data.rows.map((value) => {
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    data.rows.map((value, i) => {
+      value.sno = i + 1;
       worksheet.addRow(value);
     });
 
