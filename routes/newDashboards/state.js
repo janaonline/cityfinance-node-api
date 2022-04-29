@@ -10,6 +10,7 @@ const catchAsync = require("../../util/catchAsync");
 const util = require("util");
 const { response } = require("../../service");
 const axios = require('axios').default;
+const ExcelJS = require("exceljs");
 
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
@@ -19,44 +20,45 @@ const ObjectIdOfRevenueList = [
   "5dd10c2385c951b54ec1d748",
 ];
 
-const All_Revenue_ObjectIDs = [       
-   "5dd10c2685c951b54ec1d761", 
-"5dd10c2785c951b54ec1d776", 
-"5dd10c2585c951b54ec1d75b", 
-"5dd10c2885c951b54ec1d77e", 
-"5dd10c2485c951b54ec1d74b", 
-"5dd10c2385c951b54ec1d748", 
-"5dd10c2685c951b54ec1d762", 
-"5dd10c2485c951b54ec1d74f", 
-"5dd10c2785c951b54ec1d778", 
-"5dd10c2485c951b54ec1d74a"]
+const All_Revenue_ObjectIDs = [
+  "5dd10c2685c951b54ec1d761",
+  "5dd10c2785c951b54ec1d776",
+  "5dd10c2585c951b54ec1d75b",
+  "5dd10c2885c951b54ec1d77e",
+  "5dd10c2485c951b54ec1d74b",
+  "5dd10c2385c951b54ec1d748",
+  "5dd10c2685c951b54ec1d762",
+  "5dd10c2485c951b54ec1d74f",
+  "5dd10c2785c951b54ec1d778",
+  "5dd10c2485c951b54ec1d74a",
+];
 const All_Expense_ObjectIDs = [
-  "5dd10c2385c951b54ec1d743", 
-  "5dd10c2685c951b54ec1d760", 
-  "5dd10c2585c951b54ec1d75e", 
-  "5dd10c2585c951b54ec1d755", 
-  "5dd10c2585c951b54ec1d75f", 
-  "5dd10c2585c951b54ec1d756", 
-  "5dd10c2585c951b54ec1d75a", 
-  "5dd10c2585c951b54ec1d753", 
-  "5dd10c2485c951b54ec1d74e", 
-  "5dd10c2385c951b54ec1d744", 
-  "5dd10c2785c951b54ec1d77c", 
-  "5dd10c2385c951b54ec1d746"
-]
+  "5dd10c2385c951b54ec1d743",
+  "5dd10c2685c951b54ec1d760",
+  "5dd10c2585c951b54ec1d75e",
+  "5dd10c2585c951b54ec1d755",
+  "5dd10c2585c951b54ec1d75f",
+  "5dd10c2585c951b54ec1d756",
+  "5dd10c2585c951b54ec1d75a",
+  "5dd10c2585c951b54ec1d753",
+  "5dd10c2485c951b54ec1d74e",
+  "5dd10c2385c951b54ec1d744",
+  "5dd10c2785c951b54ec1d77c",
+  "5dd10c2385c951b54ec1d746",
+];
 
 const Revenue_Expenditure = [
   "5dd10c2385c951b54ec1d743",
   "5dd10c2585c951b54ec1d753",
   "5dd10c2585c951b54ec1d75a",
   "5dd10c2585c951b54ec1d756",
-  "5dd10c2685c951b54ec1d760"
-]
+  "5dd10c2685c951b54ec1d760",
+];
 
 const Capital_Expenditure = [
   "5dd10c2785c951b54ec1d779",
-  "5dd10c2785c951b54ec1d774"
-]
+  "5dd10c2785c951b54ec1d774",
+];
 
 const scatterMap = async (req, res) => {
   try {
@@ -229,11 +231,13 @@ const getFYsSLB = catchAsync(async (req, res) => {
   });
 });
 
-const calData = (data,filterName = "") => {
-  if(filterName == 'own revenue mix' || filterName == 'revenue expenditure mix' ){
-return data;
-  }else if(filterName == 'expenditure mix'){
-
+const calData = (data, filterName = "") => {
+  if (
+    filterName == "own revenue mix" ||
+    filterName == "revenue expenditure mix"
+  ) {
+    return data;
+  } else if (filterName == "expenditure mix") {
     let copyData = [];
     copyData = data.slice();
     let otherExp = 0;
@@ -249,22 +253,22 @@ return data;
       ) {
         otherExp = otherExp + el.amount;
         let index = copyData.indexOf(el);
-        if (index > -1 && index != copyData.length - 1) copyData.splice(index, 1);
+        if (index > -1 && index != copyData.length - 1)
+          copyData.splice(index, 1);
         if (index == copyData.length - 1) {
           copyData.pop(el);
         }
-      }else{
-        continue
+      } else {
+        continue;
       }
     }
     copyData.push({
       _id: "Other Expenditure",
-      code:["250","260","271","270","280","272","290"],
+      code: ["250", "260", "271", "270", "280", "272", "290"],
       amount: otherExp,
     });
     return copyData;
-  
-  }else{
+  } else {
     let copyData = [];
     copyData = data.slice();
     let ownRev = 0;
@@ -278,22 +282,22 @@ return data;
       ) {
         ownRev = ownRev + el.amount;
         let index = copyData.indexOf(el);
-        if (index > -1 && index != copyData.length - 1) copyData.splice(index, 1);
+        if (index > -1 && index != copyData.length - 1)
+          copyData.splice(index, 1);
         if (index == copyData.length - 1) {
           copyData.pop(el);
         }
-      }else{
-        continue
+      } else {
+        continue;
       }
     }
     copyData.push({
       _id: "Own Revenue",
-      code:["110","130","140","150","180"],
+      code: ["110", "130", "140", "150", "180"],
       amount: ownRev,
     });
     return copyData;
   }
- 
 };
 
 const revenue = catchAsync(async (req, res) => {
@@ -456,7 +460,10 @@ const revenue = catchAsync(async (req, res) => {
         data: groupedData,
       });
     }
-  } else if (filterName.includes("own revenue") && !filterName.includes("mix")) {
+  } else if (
+    filterName.includes("own revenue") &&
+    !filterName.includes("mix")
+  ) {
     // total own revenue and revenue per capita Tabs
     let query = [
       {
@@ -1375,7 +1382,7 @@ const listOfIndicators = async (req, res) => {
 };
 const stateRevenueTabs = async (req, res) => {
   try {
-    const { tabType, financialYear, stateId, sortBy, code, getQuery } =
+    const { tabType, financialYear, stateId, sortBy, code, getQuery, csv } =
       req.query;
     if (!tabType) throw { message: "Type of tab is missing." };
     let response = { success: true, data: null };
@@ -1395,12 +1402,49 @@ const stateRevenueTabs = async (req, res) => {
     response.data = await UlbLedger.aggregate(
       await stateDashRevenueTabs(financialYear, tabType, stateId, sortBy, code)
     );
+    if (csv) {
+      let columns = [
+        { display_name: "ULB Name", key: "ulbName" },
+        { display_name: "Amount", key: "sum" },
+      ];
+      return getExcel(req, res, { columns, rows: response.data });
+    }
     res.status(200).json(response);
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+let getExcel = async (req, res, data) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Data");
+    worksheet.columns = data.columns.map((value) => {
+      let temp = {
+        header: value.display_name,
+        key: value.key,
+      };
+      return temp;
+    });
+    data.rows.map((value) => {
+      worksheet.addRow(value);
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=" + "data.xlsx");
+    return workbook.xlsx.write(res).then(function () {
+      res.status(200).end();
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(400).json(err);
+  }
+};
+
 
 const ulbsByPopulation = async (req, res) => {
   try {
