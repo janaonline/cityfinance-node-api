@@ -8,6 +8,8 @@ const ExcelJS = require("exceljs");
 const util = require('util')
 const catchAsync = require('../../util/catchAsync')
 const revenueList = [ "130", "140", "150", "180", "110"];
+const fs = require("fs");
+
 const ObjectIdOfRevenueList = [
   "5dd10c2285c951b54ec1d737",
   "5dd10c2485c951b54ec1d74b",
@@ -17,7 +19,6 @@ const ObjectIdOfRevenueList = [
   "5dd10c2385c951b54ec1d748",
 ];
 const OwnRevenueList = [
-
   "5dd10c2485c951b54ec1d74b",
   "5dd10c2685c951b54ec1d762",
   "5dd10c2485c951b54ec1d74a",
@@ -28,39 +29,35 @@ const expenseCode = [
   "5dd10c2585c951b54ec1d753",
   "5dd10c2585c951b54ec1d75a",
   "5dd10c2585c951b54ec1d756",
-  
 ];
 
-const yearlist = catchAsync(async(req,res)=>{
-  const { financialYear, stateId, ulb, ulbType, populationCategory } =
-  req.body;
-// matchObj={}
-// if(stateId && ObjectId.isValid(stateId)){
-//   Object.assign(matchObj,{"ulb.state": ObjectId(stateId)})
-// }
-// if(ulb && ObjectId.isValid(ulb)){
-//   Object.assign(matchObj,{"ulb._id": ObjectId(ulb)})
-// }
-// if(ulbType && ObjectId.isValid(ulbType)){
-//   Object.assign(matchObj,{"ulb.ulbType": ObjectId(ulbType)})
-// }
-// if(populationCategory == '4 Million+'){
-//   Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
-// }else if(populationCategory == '500 Thousand - 1 Million'){
-//   Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
-// }else if(populationCategory == '100 Thousand - 500 Thousand'){
-//   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
-// }else if(populationCategory == '100 Thousand - 500 Thousand'){
-//   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
-// }else if(populationCategory == '1 Million - 4 Million'){
-//   Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
-// }else if(populationCategory == '200 Thousand - 500 Thousand'){
-//   Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
-// }
+const yearlist = catchAsync(async (req, res) => {
+  const { financialYear, stateId, ulb, ulbType, populationCategory } = req.body;
+  // matchObj={}
+  // if(stateId && ObjectId.isValid(stateId)){
+  //   Object.assign(matchObj,{"ulb.state": ObjectId(stateId)})
+  // }
+  // if(ulb && ObjectId.isValid(ulb)){
+  //   Object.assign(matchObj,{"ulb._id": ObjectId(ulb)})
+  // }
+  // if(ulbType && ObjectId.isValid(ulbType)){
+  //   Object.assign(matchObj,{"ulb.ulbType": ObjectId(ulbType)})
+  // }
+  // if(populationCategory == '4 Million+'){
+  //   Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
+  // }else if(populationCategory == '500 Thousand - 1 Million'){
+  //   Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
+  // }else if(populationCategory == '100 Thousand - 500 Thousand'){
+  //   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+  // }else if(populationCategory == '100 Thousand - 500 Thousand'){
+  //   Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
+  // }else if(populationCategory == '1 Million - 4 Million'){
+  //   Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
+  // }else if(populationCategory == '200 Thousand - 500 Thousand'){
+  //   Object.assign(matchObj,{"ulb.population":{$gt: 200000, $lt:500000}})
+  // }
 
-
-
-let query =[]
+  let query = [];
 
   // query.push(  {$lookup:{
   //   from:"ulbs",
@@ -73,39 +70,51 @@ let query =[]
   //     $match:matchObj
   //   })
   // }
-let obj =  {
-  $group:{
-    _id:"$financialYear"
-  },
-
-}
-query.push(obj)
-query.push(  {$sort:{_id:-1}})
-// console.log(util.inspect(query,{depth: null, showHidden: false}))
-let yearList = await UlbLedger.aggregate(query);
-return res.status(200).json({
-  success: true,
-  data: yearList
-})
-}) 
+  let obj = {
+    $group: {
+      _id: "$financialYear",
+    },
+  };
+  query.push(obj);
+  query.push({ $sort: { _id: -1 } });
+  // console.log(util.inspect(query,{depth: null, showHidden: false}))
+  let yearList = await UlbLedger.aggregate(query);
+  return res.status(200).json({
+    success: true,
+    data: yearList,
+  });
+});
 
 const dataAvailability = async (req, res, reuseOption) => {
   try {
-    const { financialYear, propertyTax, getQuery, stateId, ulb, ulbType, csv, populationCategory } =
-      req.body;
+    const {
+      financialYear,
+      propertyTax,
+      getQuery,
+      stateId,
+      ulb,
+      ulbType,
+      csv,
+      populationCategory,
+    } = req.body;
 
     if (!financialYear) {
       return Response.BadRequest(res, null, "financialYear is required");
     }
 
+    let stateUlbs = await Ulb.find(stateId ? { state: ObjectId(stateId) } : {})
+      .select({ _id: 1 })
+      .lean();
+
     let query = [
       {
         $match: {
-          lineItem: {
-            $in: propertyTax
-              ? [ObjectId("5dd10c2285c951b54ec1d737")]
-              : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
-          },
+          // lineItem: {
+          //   $in: propertyTax
+          //     ? [ObjectId("5dd10c2285c951b54ec1d737")]
+          //     : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
+          // },
+          ulb: { $in: stateUlbs.map((val) => val._id) },
           financialYear: {
             $in: Array.isArray(financialYear) ? financialYear : [financialYear],
           },
@@ -126,44 +135,48 @@ const dataAvailability = async (req, res, reuseOption) => {
 
     let matchObj = {};
     let matchObjNoData = {};
-    if (ulb && ulb!= ""){
+    if (ulb && ulb != "") {
       Object.assign(matchObj, { "ulb.name": ulb });
-      Object.assign(matchObjNoData, { "name": ulb });
-    }else{
-      if (stateId && ObjectId.isValid(stateId)){
+      Object.assign(matchObjNoData, { name: ulb });
+    } else {
+      if (stateId && ObjectId.isValid(stateId)) {
         Object.assign(matchObj, { "ulb.state": ObjectId(stateId) });
-        Object.assign(matchObjNoData, { "state": ObjectId(stateId) });
-      }
-        
-      if (ulbType && ObjectId.isValid(ulbType)){
-        Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
-        Object.assign(matchObjNoData, { "ulbType": ObjectId(ulbType) });
-  
-      }
-      if(populationCategory == '4 Million+'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 4000000}})
-        Object.assign(matchObjNoData, {"ulb.population":{$gt: 4000000}});
-      }else if(populationCategory == '500 Thousand - 1 Million'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 500000, $lt:1000000}})
-        Object.assign(matchObjNoData, {"ulb.population":{$gt: 500000, $lt:1000000}});
-      }else if(populationCategory == '100 Thousand - 500 Thousand'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 100000, $lt:500000}})
-        Object.assign(matchObjNoData, {"ulb.population":{$gt: 100000, $lt:500000}});
-      }else if(populationCategory == '1 Million - 4 Million'){
-        Object.assign(matchObj,{"ulb.population":{$gt: 1000000, $lt:4000000}})
-        Object.assign(matchObjNoData, {"ulb.population":{$gt: 1000000, $lt:4000000}});
-      }else if(populationCategory == '<100 Thousand'){
-        Object.assign(matchObj,{"ulb.population":{$lt: 100000}})
-        Object.assign(matchObjNoData, {"ulb.population":{$lt: 100000}});
+        Object.assign(matchObjNoData, { state: ObjectId(stateId) });
       }
 
+      if (ulbType && ObjectId.isValid(ulbType)) {
+        Object.assign(matchObj, { "ulb.ulbType": ObjectId(ulbType) });
+        Object.assign(matchObjNoData, { ulbType: ObjectId(ulbType) });
+      }
+      if (populationCategory == "4 Million+") {
+        Object.assign(matchObj, { "ulb.population": { $gt: 4000000 } });
+        Object.assign(matchObjNoData, { "ulb.population": { $gt: 4000000 } });
+      } else if (populationCategory == "500 Thousand - 1 Million") {
+        Object.assign(matchObj, {
+          "ulb.population": { $gt: 500000, $lt: 1000000 },
+        });
+        Object.assign(matchObjNoData, {
+          "ulb.population": { $gt: 500000, $lt: 1000000 },
+        });
+      } else if (populationCategory == "100 Thousand - 500 Thousand") {
+        Object.assign(matchObj, {
+          "ulb.population": { $gt: 100000, $lt: 500000 },
+        });
+        Object.assign(matchObjNoData, {
+          "ulb.population": { $gt: 100000, $lt: 500000 },
+        });
+      } else if (populationCategory == "1 Million - 4 Million") {
+        Object.assign(matchObj, {
+          "ulb.population": { $gt: 1000000, $lt: 4000000 },
+        });
+        Object.assign(matchObjNoData, {
+          "ulb.population": { $gt: 1000000, $lt: 4000000 },
+        });
+      } else if (populationCategory == "<100 Thousand") {
+        Object.assign(matchObj, { "ulb.population": { $lt: 100000 } });
+        Object.assign(matchObjNoData, { "ulb.population": { $lt: 100000 } });
+      }
     }
-   
-      
-   
- 
-      
-     
 
     if (Object.keys(matchObj).length > 0) {
       query.push({
@@ -178,7 +191,7 @@ const dataAvailability = async (req, res, reuseOption) => {
     });
 
     if (csv) {
-      return getExcelForAvailability(res, query);
+      return getExcelForAvailability(res, query, stateId);
     } else {
       query.push({
         $count: "ulb",
@@ -186,78 +199,76 @@ const dataAvailability = async (req, res, reuseOption) => {
     }
 
     if (getQuery) return Response.OK(res, query);
-let query_noData = [
-  {
-    $lookup: {
-      from: "ulbledgers",
-      let: {
-        firstUser: financialYear,
-        secondUser: "$_id",
-      },
-      pipeline: [
-        {
-          $match: {
-            $expr: {
-              $and: [
-                {
-                  $eq: ["$financialYear", "$$firstUser"],
-                },
-                {
-                  $eq: ["$ulb", "$$secondUser"],
-                },
-              ],
-            },
+    let query_noData = [
+      {
+        $lookup: {
+          from: "ulbledgers",
+          let: {
+            firstUser: financialYear,
+            secondUser: "$_id",
           },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$financialYear", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "ledgerData",
         },
-      ],
-      as: "ledgerData",
-    },
-   
-  },
-{
-  $match:
+      },
+      {
+        $match: {
+          ledgerData: { $size: 0 },
+        },
+      },
+      {
+        $sort: {
+          population: -1,
+        },
+      },
+      { $limit: 5 },
+    ];
+    if (Object.keys(matchObjNoData).length > 0) {
+      query_noData.unshift({
+        $match: matchObjNoData,
+      });
+    }
 
- {
-   ledgerData: {$size: 0},
-},
-  
-},
-{
-  $sort: {
-    population:-1
-  }
-},
-{$limit: 5}
-
-
-]
-if(Object.keys(matchObjNoData).length>0){
-  query_noData.unshift({
-    $match:matchObjNoData
-  })
-}
-
-let noData = await Ulb.aggregate(query_noData)
-    let data = await UlbLedger.aggregate(query);
     let countQuery = [
       {
-        $count:"ulbCount"
-      }
-    ]
-    if(Object.keys(matchObjNoData).length>0){
+        $count: "ulbCount",
+      },
+    ];
+    if (Object.keys(matchObjNoData).length > 0) {
       countQuery.unshift({
-        $match:matchObjNoData
-      })
+        $match: matchObjNoData,
+      });
     }
-    let ulbCount = await Ulb.aggregate(countQuery);
+    let noData = Ulb.aggregate(query_noData);
+    let data = UlbLedger.aggregate(query);
+    let ulbCount = Ulb.aggregate(countQuery);
+    let promiseData = await Promise.all([noData, data, ulbCount]);
+    noData = promiseData[0];
+    data = promiseData[1];
+    ulbCount = promiseData[2];
 
     data = data[0]?.ulb ?? 0;
-let names =[]
-if(noData){
-  noData.forEach(el=>{
-names.push(el.name)
-  })
-}
+    let names = [];
+    if (noData) {
+      noData.forEach((el) => {
+        names.push(el.name);
+      });
+    }
     data = (data / ulbCount[0]?.ulbCount) * 100;
     if (reuseOption == "nationalDashboard")
       return { percent: data, names: names };
@@ -268,27 +279,38 @@ names.push(el.name)
   }
 };
 
-async function getExcelForAvailability(res, query) {
-  let ulbCount = await Ulb.find()
+async function getExcelForAvailability(res, query, stateId) {
+  let ulbCount = await Ulb.find({ state: ObjectId(stateId) })
     .populate("state")
     .select({ _id: 1, name: 1, state: 1 })
     .lean();
   let data = await UlbLedger.aggregate(query);
+
   data = JSON.parse(JSON.stringify(data));
   let ulbMap = data.map((value) => value._id);
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Data Availability");
+  const imageId2 = workbook.addImage({
+    buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
+    extension: "png",
+  });
+  worksheet.addImage(imageId2, "A1:F3");
   worksheet.columns = [
+    { header: "S.no", key: "sno" },
     { header: "ULB name", key: "ulb" },
-    { header: "State Name", key: "state" },
+    // { header: "State Name", key: "state" },
     { header: "Data Availability", key: "status" },
   ];
-  ulbCount.map((value) => {
+  worksheet.insertRow(1, {});
+  worksheet.insertRow(1, {});
+  worksheet.insertRow(1, {});
+  ulbCount.map((value, i) => {
     value = JSON.parse(JSON.stringify(value));
     if (value._id == "5fa281a3c7ffa964f0cfa9fb") {
       console.log("Ss");
     }
     let obj = {
+      sno: i + 1,
       ulb: value.name,
       code: value.code,
       censusCode: value.censusCode,
