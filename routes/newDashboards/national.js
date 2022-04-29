@@ -12,6 +12,7 @@ const {
 const ObjectId = mongoose.Types.ObjectId;
 const ExcelJS = require("exceljs");
 const { relativeTimeRounding } = require("moment");
+const fs = require("fs");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
@@ -532,7 +533,7 @@ exports.nationalDashRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
-      responsePayload.data.colourArray = colourArray
+      responsePayload.data.colourArray = colourArray;
     }
     if (csv) {
       return getExcel(req, res, responsePayload.data);
@@ -769,7 +770,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
-      responsePayload.data.colourArray = colourArray
+      responsePayload.data.colourArray = colourArray;
     } else {
       //deficitOrSurplus
       responsePayload.data = await createTableData(
@@ -896,6 +897,12 @@ let getExcel = async (req, res, data) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Data");
+    const imageId2 = workbook.addImage({
+      buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
+      extension: "png",
+    });
+    worksheet.addImage(imageId2, "A1:F3");
+    data.columns.unshift({ display_name: "S.no", key: "sno" });
     worksheet.columns = data.columns.map((value) => {
       let temp = {
         header: value.display_name,
@@ -903,7 +910,11 @@ let getExcel = async (req, res, data) => {
       };
       return temp;
     });
-    data.rows.map((value) => {
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    data.rows.map((value, i) => {
+      value.sno = i + 1;
       worksheet.addRow(value);
     });
 
