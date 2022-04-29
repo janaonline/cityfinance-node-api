@@ -1607,7 +1607,8 @@ const stateDashAvgs = async (req, res) => {
       noOfUlbs,
       TabType,
       stateId,
-      code
+      code,
+      isPerCapita
     );
     if (getQuery) return res.send(query);
     let otherApiData = axios.post(`${process.env.BASEURL}/state-revenue`, {
