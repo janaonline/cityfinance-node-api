@@ -1194,7 +1194,7 @@ const revenue = catchAsync(async (req, res) => {
           ulbType: { $first: "$ulbType.name" },
           population: { $first: "$ulb.population" },
           capitalWorkPrevYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1210,7 +1210,7 @@ const revenue = catchAsync(async (req, res) => {
             },
           },
           capitalWorkCurrYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1226,7 +1226,7 @@ const revenue = catchAsync(async (req, res) => {
             },
           },
           grossBlockPrevYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1242,7 +1242,7 @@ const revenue = catchAsync(async (req, res) => {
             },
           },
           grossBlockCurrYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1257,18 +1257,6 @@ const revenue = catchAsync(async (req, res) => {
               ],
             },
           },
-        },
-      },
-      {
-        $project: {
-          ulbName: 1,
-          ulbType: 1,
-          ulbId: 1,
-          population: 1,
-          grossBlockPrevYear: { $arrayElemAt: ["$grossBlockPrevYear", 0] },
-          grossBlockCurrYear: { $arrayElemAt: ["$grossBlockCurrYear", 0] },
-          capitalWorkPrevYear: { $arrayElemAt: ["$capitalWorkPrevYear", 0] },
-          capitalWorkCurrYear: { $arrayElemAt: ["$capitalWorkCurrYear", 0] },
         },
       },
       {
@@ -1293,6 +1281,8 @@ const revenue = catchAsync(async (req, res) => {
     ];
     finalQuery = [...base_query, ...query];
     finalQuery_stateAvg = [...state_avg_base_query, ...query];
+    if (getQuery)
+      return res.status(200).json({ finalQuery, finalQuery_stateAvg });
     let tenData = [];
     console.log(util.inspect(finalQuery, { showHidden: false, depth: null }));
     // is per capita attachment code
