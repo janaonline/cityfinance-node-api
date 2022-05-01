@@ -145,6 +145,15 @@ exports.fileUpload = async (req, res) => {
   try {
     let data = await readXlsxFile(req.file);
     let bulkUploadData = [];
+    let censusCodeMap = await ULB.find({})
+      .select({ _id: 1, censusCode: 1 })
+      .lean();
+    censusCodeMap = censusCodeMap.reduce((map, val) => {
+      if (!map.hasOwnProperty(val.censusCode)) {
+        map[val.censusCode] = val._id;
+      }
+      return map;
+    }, {});
     for (let index = 0; index < data.dataSheet.length; index++) {
       const value = data.dataSheet[index];
       for (const key in value) {
@@ -167,15 +176,12 @@ exports.fileUpload = async (req, res) => {
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
-          let ulbId = await ULB.findOne({
-            censusCode: value["census code"],
-          })
-            .select({ _id: 1 })
-            .lean();
+          let ulbId = censusCodeMap[value["census code"]];
           indicator.ulb = ulbId?._id;
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
-          bulkUploadData.push(indicator);
+          if (checkCanPush(bulkUploadData, indicator))
+            bulkUploadData.push(indicator);
         }
         if (sanitation.includes(key)) {
           indicator.type = "sanitation";
@@ -184,16 +190,13 @@ exports.fileUpload = async (req, res) => {
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
-          let ulbId = await ULB.findOne({
-            censusCode: value["census code"],
-          })
-            .select({ _id: 1 })
-            .lean();
+          let ulbId = censusCodeMap[value["census code"]];
           indicator.ulb = ulbId?._id;
           if (!unitBenchmark[key]) console.log(key);
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
-          bulkUploadData.push(indicator);
+          if (checkCanPush(bulkUploadData, indicator))
+            bulkUploadData.push(indicator);
         }
         if (solidWaste.includes(key)) {
           indicator.type = "solid waste";
@@ -202,16 +205,13 @@ exports.fileUpload = async (req, res) => {
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
-          let ulbId = await ULB.findOne({
-            censusCode: value["census code"],
-          })
-            .select({ _id: 1 })
-            .lean();
+          let ulbId = censusCodeMap[value["census code"]];
           indicator.ulb = ulbId?._id;
           if (!unitBenchmark[key]) console.log(key);
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
-          bulkUploadData.push(indicator);
+          if (checkCanPush(bulkUploadData, indicator))
+            bulkUploadData.push(indicator);
         }
         if (stormWater.includes(key)) {
           indicator.type = "storm water";
@@ -220,28 +220,32 @@ exports.fileUpload = async (req, res) => {
           indicator.name = key;
           indicator.ulbName = value["city name"];
           indicator.censusCode = value["census code"];
-          let ulbId = await ULB.findOne({
-            censusCode: value["census code"],
-          })
-            .select({ _id: 1 })
-            .lean();
+          let ulbId = censusCodeMap[value["census code"]];
           indicator.ulb = ulbId?._id;
           if (!unitBenchmark[key]) console.log(key);
           indicator.unitType = unitBenchmark[key].unit;
           indicator.benchMarkValue = unitBenchmark[key].benchMark;
-          bulkUploadData.push(indicator);
+          if (checkCanPush(bulkUploadData, indicator))
+            bulkUploadData.push(indicator);
         }
       }
     }
-
-    let newData = await Indicator.insertMany(bulkUploadData);
-
-    return Response.OK(res, newData, "Submitted!");
+    return Response.OK(res, bulkUploadData);
+    Indicator.insertMany(bulkUploadData).then((newData) => {
+      return Response.OK(res, newData, "Submitted!");
+    });
   } catch (err) {
     console.error(err.message);
     return Response.DbError(res, err.message, "server error");
   }
 };
+
+function checkCanPush(data, valCheck) {
+  let dupVal = data.find(
+    (val) => JSON.stringify(val) == JSON.stringify(valCheck)
+  );
+  return dupVal == undefined;
+}
 
 exports.getIndicatorData = async (req, res) => {
   try {
