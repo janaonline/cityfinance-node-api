@@ -230,7 +230,6 @@ exports.fileUpload = async (req, res) => {
         }
       }
     }
-    return Response.OK(res, bulkUploadData);
     Indicator.insertMany(bulkUploadData).then((newData) => {
       return Response.OK(res, newData, "Submitted!");
     });
