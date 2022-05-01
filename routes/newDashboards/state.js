@@ -1561,6 +1561,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     m_data = [],
     mc_data = [],
     tenData = [];
+  if (getQuery) return res.status(200).json(query);
   let data = await Indicator.aggregate(query);
   // console.log(data)
   let stateAvg = [{ average: 0 }];
@@ -1630,7 +1631,8 @@ const calculateStateAvg = (data) => {
     denominator = 0;
 
   data.forEach((el) => {
-    numerator = (el.value ? el.value : el.amount) * el.population + numerator;
+    numerator +=
+      (el.value || el.value == 0 ? el.value : el.amount) * el.population;
     denominator = el.population + denominator;
   });
   return Number((numerator / denominator).toFixed(2));
