@@ -2,6 +2,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const ResourceLineItem = require("../../models/ResourceLineItem");
 const ULB = require("../../models/Ulb");
+const resource = require("../../models/Resources");
 
 module.exports.get = async function (req, res) {
   try {
@@ -38,6 +39,25 @@ module.exports.post = async function (req, res) {
     return Response.OK(res.data);
   } catch (error) {
     console.log(error);
+    return Response.DbError(res, error, error.message);
+  }
+};
+
+
+/* A search function. */
+module.exports.search = async function (req, res) {
+  try {
+    if(!req.query.name) throw new Error("Empty search !");
+
+    const searchGlobal = req.query.name;
+    const fromModelData = { learningCenter : 0, dataSet : 0, repostAndPublication : 0 };
+    let query = { name : new RegExp(searchGlobal, "i") };
+
+    fromModelData.dataSet = await ULB.count(query);
+    fromModelData.repostAndPublication = await resource.count(query);
+
+    return Response.OK(res, fromModelData);
+  } catch (error) {
     return Response.DbError(res, error, error.message);
   }
 };
