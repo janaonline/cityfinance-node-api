@@ -791,7 +791,7 @@ const revenue = catchAsync(async (req, res) => {
           // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
           let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
           console.log(el._id);
-          data = calData(data[0]);
+          data = calData(data[0], filterName);
           if (el._id.valueOf() == "5dcfa66b43263a0e75c71696") {
             // town Panchayat
             obj.tpData.push(data);
@@ -918,7 +918,7 @@ const revenue = catchAsync(async (req, res) => {
           // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
           let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
           console.log(el._id);
-          data = calData(data[0]);
+          data = calData(data[0], filterName);
           let key = keyArr[i];
           Object.assign(output, { [key]: data });
           i++;
