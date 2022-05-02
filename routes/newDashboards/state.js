@@ -1494,6 +1494,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     ulb,
     compareType,
     getQuery,
+    csv,
   } = req.body;
 
   if (!stateId || !financialYear || !filterName) {
@@ -1562,6 +1563,36 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
   if (data.length > 0) {
     if (sortBy) {
       tenData = fetchTen(data, sortBy);
+      if (csv) {
+        let columns = [
+          {
+            display_name: "ULB",
+            key: "ulbName",
+          },
+          {
+            display_name: "Value",
+            key: "value",
+          },
+          {
+            display_name: "Bench Mark Value",
+            key: "benchMarkValue",
+          },
+          {
+            display_name: "Unit Type",
+            key: "unitType",
+          },
+          {
+            display_name: "ULB Type",
+            key: "ulbType",
+          },
+          {
+            display_name: "Population",
+            key: "population",
+          },
+        ];
+        let data = { columns, rows: tenData };
+        return getExcel(req, res, data);
+      }
     } else {
       stateAvg[0].average = calculateStateAvg(data);
       tp_data = data.filter((el) => {
