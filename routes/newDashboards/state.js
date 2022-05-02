@@ -270,33 +270,37 @@ const calData = (data, filterName = "") => {
     });
     return copyData;
   } else {
-    let copyData = [];
-    copyData = data.slice();
-    let ownRev = 0;
+    let copyData = [
+      {
+        _id: "Own Revenue",
+        code: ["110", "130", "140", "150", "180"],
+        amount: 0,
+      },
+      {
+        _id: "Assigned Revenues & Compensation",
+        code: ["120"],
+        amount: 0,
+      },
+      {
+        _id: "Grants",
+        code: ["160"],
+        amount: 0,
+      },
+      {
+        _id: "Interest Income",
+        code: ["171"],
+        amount: 0,
+      },
+      {
+        _id: "Other Receipts",
+        code: ["170", "100"],
+        amount: 0,
+      },
+    ];
     for (let el of data) {
-      if (
-        el.code == "110" ||
-        el.code == "130" ||
-        el.code == "140" ||
-        el.code == "150" ||
-        el.code == "180"
-      ) {
-        ownRev = ownRev + el.amount;
-        let index = copyData.indexOf(el);
-        if (index > -1 && index != copyData.length - 1)
-          copyData.splice(index, 1);
-        if (index == copyData.length - 1) {
-          copyData.pop(el);
-        }
-      } else {
-        continue;
-      }
+      let temp = copyData.find((value) => value.code.includes(el.code));
+      if (temp) temp.amount += el.amount;
     }
-    copyData.push({
-      _id: "Own Revenue",
-      code: ["110", "130", "140", "150", "180"],
-      amount: ownRev,
-    });
     return copyData;
   }
 };
