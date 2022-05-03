@@ -1502,55 +1502,58 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       message: "Missing Information",
     });
   }
-
-  let query = [
-    {
-      $match: {
-        name: filterName,
-        year: financialYear,
-      },
+let matchObj = {
+  $match: {
+    name: filterName,
+    year: financialYear,
+  },
+};
+if (ulb?.length > 0) {
+  matchObj.$match.ulb = ObjectId(ulb[0]);
+}
+let query = [
+  matchObj,
+  {
+    $lookup: {
+      from: "ulbs",
+      localField: "ulb",
+      foreignField: "_id",
+      as: "ulb",
     },
-    {
-      $lookup: {
-        from: "ulbs",
-        localField: "ulb",
-        foreignField: "_id",
-        as: "ulb",
-      },
+  },
+  {
+    $unwind: "$ulb",
+  },
+  {
+    $match: {
+      "ulb.state": ObjectId(stateId),
     },
-    {
-      $unwind: "$ulb",
+  },
+  {
+    $lookup: {
+      from: "ulbtypes",
+      localField: "ulb.ulbType",
+      foreignField: "_id",
+      as: "ulbType",
     },
-    {
-      $match: {
-        "ulb.state": ObjectId(stateId),
-      },
+  },
+  {
+    $unwind: "$ulbType",
+  },
+  {
+    $sort: { value: -1 },
+  },
+  {
+    $project: {
+      ulbName: "$ulb.name",
+      value: "$value",
+      benchMarkValue: "$benchMarkValue",
+      unitType: "$unitType",
+      ulbType: "$ulbType.name",
+      population: "$ulb.population",
     },
-    {
-      $lookup: {
-        from: "ulbtypes",
-        localField: "ulb.ulbType",
-        foreignField: "_id",
-        as: "ulbType",
-      },
-    },
-    {
-      $unwind: "$ulbType",
-    },
-    {
-      $sort: { value: -1 },
-    },
-    {
-      $project: {
-        ulbName: "$ulb.name",
-        value: "$value",
-        benchMarkValue: "$benchMarkValue",
-        unitType: "$unitType",
-        ulbType: "$ulbType.name",
-        population: "$ulb.population",
-      },
-    },
-  ];
+  },
+];
   let tp_data = [],
     m_data = [],
     mc_data = [],
