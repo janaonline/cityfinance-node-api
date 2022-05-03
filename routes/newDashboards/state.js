@@ -1471,6 +1471,12 @@ const getFYsWithSpecification = async (req, res) => {
     if (getQuery) return res.status(200).json(query);
     response.data = await UlbLedger.aggregate(query);
     response.data = response.data.length ? response.data[0] : null;
+    if (response.data)
+      response.data?.FYs.sort((a, b) => {
+        let year1 = a.split("-")[0];
+        let year2 = b.split("-")[0];
+        return year2 - year1;
+      });
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
