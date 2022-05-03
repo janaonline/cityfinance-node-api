@@ -23,8 +23,8 @@ module.exports.yearsContainingFinancialYear = async function (req, res) {
     query['isActive'] = true;
     try {
         let years = await ulbledgers.distinct('financialYear');
-
-        return Response.OK(res, years, `Financial year list.`);
+        let getSortedYear = years.sort((a, b) => (b.split("-")[0] - a.split("-")[0]));
+        return Response.OK(res, getSortedYear, `Financial year list.`);
     } catch (e) {
         return Response.InternalError(res, {}, `Exception: ${e.message}.`);
     }
