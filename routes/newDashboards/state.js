@@ -1629,7 +1629,7 @@ let query = [
         return getExcel(req, res, data);
       }
     } else {
-      stateAvg[0].average = data2[0]?.average;
+      stateAvg[0].average = Math.round(data2[0]?.average);
       tp_data = data.filter((el) => {
         if (el.ulbType == "Town Panchayat") {
           el.value = (el.value / el.benchMarkValue) * 100;
