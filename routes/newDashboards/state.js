@@ -270,33 +270,37 @@ const calData = (data, filterName = "") => {
     });
     return copyData;
   } else {
-    let copyData = [];
-    copyData = data.slice();
-    let ownRev = 0;
+    let copyData = [
+      {
+        _id: "Own Revenue",
+        code: ["110", "130", "140", "150", "180"],
+        amount: 0,
+      },
+      {
+        _id: "Assigned Revenues & Compensation",
+        code: ["120"],
+        amount: 0,
+      },
+      {
+        _id: "Grants",
+        code: ["160"],
+        amount: 0,
+      },
+      {
+        _id: "Interest Income",
+        code: ["171"],
+        amount: 0,
+      },
+      {
+        _id: "Other Receipts",
+        code: ["170", "100"],
+        amount: 0,
+      },
+    ];
     for (let el of data) {
-      if (
-        el.code == "110" ||
-        el.code == "130" ||
-        el.code == "140" ||
-        el.code == "150" ||
-        el.code == "180"
-      ) {
-        ownRev = ownRev + el.amount;
-        let index = copyData.indexOf(el);
-        if (index > -1 && index != copyData.length - 1)
-          copyData.splice(index, 1);
-        if (index == copyData.length - 1) {
-          copyData.pop(el);
-        }
-      } else {
-        continue;
-      }
+      let temp = copyData.find((value) => value.code.includes(el.code));
+      if (temp) temp.amount += el.amount;
     }
-    copyData.push({
-      _id: "Own Revenue",
-      code: ["110", "130", "140", "150", "180"],
-      amount: ownRev,
-    });
     return copyData;
   }
 };
@@ -744,7 +748,7 @@ const revenue = catchAsync(async (req, res) => {
       },
     ];
 
-    if (compareType == "" && !ulb.length) {
+    if ((compareType == "default" || compareType == "") && !ulb.length) {
       finalQuery = [...base_query, ...query];
       let tenData = [];
       // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
@@ -770,46 +774,39 @@ const revenue = catchAsync(async (req, res) => {
         mData: [],
       };
       let finalArr = [];
-      let prms1 = new Promise(async (rslv, rjct) => {
-        for await (let el of ulbIDArr) {
-          base_query = [
-            {
-              $match: {
-                financialYear: financialYear,
-                ulb: {
-                  $in: [...el.ulb],
-                },
+      for (let el of ulbIDArr) {
+        base_query = [
+          {
+            $match: {
+              financialYear: financialYear,
+              ulb: {
+                $in: [...el.ulb],
               },
             },
-          ];
-          finalQuery = [...base_query, ...query];
-          let tenData = [];
-          // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
-          let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
-          console.log(el._id);
-          data = calData(data[0]);
-          if (el._id.valueOf() == "5dcfa66b43263a0e75c71696") {
-            // town Panchayat
-            obj.tpData.push(data);
-          } else if (el._id.valueOf() == "5dcfa67543263a0e75c71697") {
-            // town Panchayat
-            obj.mcData.push(data);
-          } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
-            // town Panchayat
-            obj.mData.push(data);
-          }
-
-          finalArr.push(obj);
+          },
+        ];
+        finalQuery = [...base_query, ...query];
+        let tenData = [];
+        // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+        let data = await UlbLedger.aggregate(finalQuery);
+        console.log(el._id);
+        data = calData(data, filterName);
+        if (el._id.valueOf() == "5dcfa66b43263a0e75c71696") {
+          // town Panchayat
+          obj.tpData.push(data);
+        } else if (el._id.valueOf() == "5dcfa67543263a0e75c71697") {
+          // town Panchayat
+          obj.mcData.push(data);
+        } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
+          // town Panchayat
+          obj.mData.push(data);
         }
 
-        rslv(finalArr);
-      });
-      prms1.then((values) => {
-        console.log(values);
-        return res.status(200).json({
-          success: true,
-          data: values[0],
-        });
+        finalArr.push(obj);
+      }
+      return res.status(200).json({
+        success: true,
+        data: finalArr[0],
       });
     } else if (compareType == "popType") {
       let ulbIDObj = await Ulb.aggregate([
@@ -914,7 +911,7 @@ const revenue = catchAsync(async (req, res) => {
           // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
           let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
           console.log(el._id);
-          data = calData(data[0]);
+          data = calData(data[0], filterName);
           let key = keyArr[i];
           Object.assign(output, { [key]: data });
           i++;
@@ -1474,6 +1471,12 @@ const getFYsWithSpecification = async (req, res) => {
     if (getQuery) return res.status(200).json(query);
     response.data = await UlbLedger.aggregate(query);
     response.data = response.data.length ? response.data[0] : null;
+    if (response.data)
+      response.data?.FYs.sort((a, b) => {
+        let year1 = a.split("-")[0];
+        let year2 = b.split("-")[0];
+        return year2 - year1;
+      });
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1490,6 +1493,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     ulb,
     compareType,
     getQuery,
+    csv,
   } = req.body;
 
   if (!stateId || !financialYear || !filterName) {
@@ -1498,55 +1502,58 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       message: "Missing Information",
     });
   }
-
-  let query = [
-    {
-      $match: {
-        name: filterName,
-        year: financialYear,
-      },
+let matchObj = {
+  $match: {
+    name: filterName,
+    year: financialYear,
+  },
+};
+if (ulb?.length > 0) {
+  matchObj.$match.ulb = ObjectId(ulb[0]);
+}
+let query = [
+  matchObj,
+  {
+    $lookup: {
+      from: "ulbs",
+      localField: "ulb",
+      foreignField: "_id",
+      as: "ulb",
     },
-    {
-      $lookup: {
-        from: "ulbs",
-        localField: "ulb",
-        foreignField: "_id",
-        as: "ulb",
-      },
+  },
+  {
+    $unwind: "$ulb",
+  },
+  {
+    $match: {
+      "ulb.state": ObjectId(stateId),
     },
-    {
-      $unwind: "$ulb",
+  },
+  {
+    $lookup: {
+      from: "ulbtypes",
+      localField: "ulb.ulbType",
+      foreignField: "_id",
+      as: "ulbType",
     },
-    {
-      $match: {
-        "ulb.state": ObjectId(stateId),
-      },
+  },
+  {
+    $unwind: "$ulbType",
+  },
+  {
+    $sort: { value: -1 },
+  },
+  {
+    $project: {
+      ulbName: "$ulb.name",
+      value: "$value",
+      benchMarkValue: "$benchMarkValue",
+      unitType: "$unitType",
+      ulbType: "$ulbType.name",
+      population: "$ulb.population",
     },
-    {
-      $lookup: {
-        from: "ulbtypes",
-        localField: "ulb.ulbType",
-        foreignField: "_id",
-        as: "ulbType",
-      },
-    },
-    {
-      $unwind: "$ulbType",
-    },
-    {
-      $sort: { value: -1 },
-    },
-    {
-      $project: {
-        ulbName: "$ulb.name",
-        value: "$value",
-        benchMarkValue: "$benchMarkValue",
-        unitType: "$unitType",
-        ulbType: "$ulbType.name",
-        population: "$ulb.population",
-      },
-    },
-  ];
+  },
+];
   let tp_data = [],
     m_data = [],
     mc_data = [],
@@ -1558,6 +1565,36 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
   if (data.length > 0) {
     if (sortBy) {
       tenData = fetchTen(data, sortBy);
+      if (csv) {
+        let columns = [
+          {
+            display_name: "ULB",
+            key: "ulbName",
+          },
+          {
+            display_name: "Value",
+            key: "value",
+          },
+          {
+            display_name: "Bench Mark Value",
+            key: "benchMarkValue",
+          },
+          {
+            display_name: "Unit Type",
+            key: "unitType",
+          },
+          {
+            display_name: "ULB Type",
+            key: "ulbType",
+          },
+          {
+            display_name: "Population",
+            key: "population",
+          },
+        ];
+        let data = { columns, rows: tenData };
+        return getExcel(req, res, data);
+      }
     } else {
       stateAvg[0].average = calculateStateAvg(data);
       tp_data = data.filter((el) => {
