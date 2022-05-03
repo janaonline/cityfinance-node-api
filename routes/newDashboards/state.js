@@ -748,7 +748,7 @@ const revenue = catchAsync(async (req, res) => {
       },
     ];
 
-    if (compareType == "" && !ulb.length) {
+    if ((compareType == "default" || compareType == "") && !ulb.length) {
       finalQuery = [...base_query, ...query];
       let tenData = [];
       // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
@@ -774,46 +774,39 @@ const revenue = catchAsync(async (req, res) => {
         mData: [],
       };
       let finalArr = [];
-      let prms1 = new Promise(async (rslv, rjct) => {
-        for await (let el of ulbIDArr) {
-          base_query = [
-            {
-              $match: {
-                financialYear: financialYear,
-                ulb: {
-                  $in: [...el.ulb],
-                },
+      for (let el of ulbIDArr) {
+        base_query = [
+          {
+            $match: {
+              financialYear: financialYear,
+              ulb: {
+                $in: [...el.ulb],
               },
             },
-          ];
-          finalQuery = [...base_query, ...query];
-          let tenData = [];
-          // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
-          let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
-          console.log(el._id);
-          data = calData(data[0], filterName);
-          if (el._id.valueOf() == "5dcfa66b43263a0e75c71696") {
-            // town Panchayat
-            obj.tpData.push(data);
-          } else if (el._id.valueOf() == "5dcfa67543263a0e75c71697") {
-            // town Panchayat
-            obj.mcData.push(data);
-          } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
-            // town Panchayat
-            obj.mData.push(data);
-          }
-
-          finalArr.push(obj);
+          },
+        ];
+        finalQuery = [...base_query, ...query];
+        let tenData = [];
+        // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+        let data = await UlbLedger.aggregate(finalQuery);
+        console.log(el._id);
+        data = calData(data, filterName);
+        if (el._id.valueOf() == "5dcfa66b43263a0e75c71696") {
+          // town Panchayat
+          obj.tpData.push(data);
+        } else if (el._id.valueOf() == "5dcfa67543263a0e75c71697") {
+          // town Panchayat
+          obj.mcData.push(data);
+        } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
+          // town Panchayat
+          obj.mData.push(data);
         }
 
-        rslv(finalArr);
-      });
-      prms1.then((values) => {
-        console.log(values);
-        return res.status(200).json({
-          success: true,
-          data: values[0],
-        });
+        finalArr.push(obj);
+      }
+      return res.status(200).json({
+        success: true,
+        data: finalArr[0],
       });
     } else if (compareType == "popType") {
       let ulbIDObj = await Ulb.aggregate([
