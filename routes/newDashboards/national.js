@@ -5,7 +5,7 @@ const UlbLedger = require("../../models/UlbLedger");
 const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
 const mongoose = require("mongoose");
-const { response } = require("../../service");
+const { response,common } = require("../../service");
 const {
   sendProfileUpdateStatusEmail,
 } = require("../../service/email-template");
@@ -298,6 +298,7 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
     });
   return { columns, rows: theRows };
 }
+
 exports.nationalDashRevenue = async (req, res) => {
   try {
     let { financialYear, type, stateId, formType, visualType, getQuery, csv } =
@@ -533,6 +534,7 @@ exports.nationalDashRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
+      if (csv) await specifiedRowColumn(responsePayload.data);
       responsePayload.data.colourArray = colourArray;
     }
     if (csv) {
@@ -770,6 +772,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
+      if (csv) await specifiedRowColumn(responsePayload.data);
       responsePayload.data.colourArray = colourArray;
     } else {
       //deficitOrSurplus
@@ -891,6 +894,34 @@ async function createTableData(type, data, ulbsCountInIndia) {
     }
   }
   return { columns, rows };
+}
+
+async function specifiedRowColumn(data){
+  let defaultlabel = 'INR Cr.';
+  data.columns = [];
+  data.rows = [];
+  data.columns.push({ 
+    'display_name' : defaultlabel,
+    'key' : common.camelize(defaultlabel) 
+  });
+  Object.keys(data.national).map((label) => {
+    data.columns.push({ 
+      'display_name' : label,
+      'key' : common.camelize(label) 
+    });
+  })
+
+  for (let innerKey in data.individual) {
+    let createObj = {};
+    let genKey = common.camelize(defaultlabel);
+    createObj[genKey] = innerKey;
+
+    for (let finalKey in data.individual[innerKey]) {
+      genKey = common.camelize(finalKey);
+      createObj[genKey] = data.individual[innerKey][finalKey];
+    }
+    data.rows.push(createObj);
+  }
 }
 
 let getExcel = async (req, res, data) => {
@@ -1169,6 +1200,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
+      if (csv) await specifiedRowColumn(responsePayload.data);
       responsePayload.data.colourArray = colourArray
     }
     if (csv) {
@@ -1180,6 +1212,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     res.status(500).json({ success: true, message: err.message });
   }
 };
+
 exports.nationalDashCapexpense = async (req, res) => {
   try {
     let { financialYear, type, stateId, formType, visualType, getQuery, csv } =

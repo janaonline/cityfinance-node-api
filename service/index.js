@@ -169,5 +169,6 @@ module.exports = {
   emailTemplate: require('./email-template'),
   emailVerificationLink: require('./email-verification-link'),
   dataFormating: require('./data-fomatting'),
-  checkUnique: require('./check-unique')
+  checkUnique: require('./check-unique'),
+  common: require('./common')
 };
