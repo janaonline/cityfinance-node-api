@@ -1559,7 +1559,40 @@ let query = [
     mc_data = [],
     tenData = [];
   if (getQuery) return res.status(200).json(query);
-  let data = await Indicator.aggregate(query);
+  let data = Indicator.aggregate(query);
+  let data2 = Indicator.aggregate([
+    {
+      $match: {
+        name: filterName,
+        year: financialYear,
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $match: {
+        "ulb.state": ObjectId(stateId),
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        average: { $avg: "$value" },
+      },
+    },
+  ]);
+  let tempArr = await Promise.all([data, data2]);
+  data = tempArr[0];
+  data2 = tempArr[1];
   // console.log(data)
   let stateAvg = [{ average: 0 }];
   if (data.length > 0) {
@@ -1596,7 +1629,7 @@ let query = [
         return getExcel(req, res, data);
       }
     } else {
-      stateAvg[0].average = calculateStateAvg(data);
+      stateAvg[0].average = Math.round(data2[0]?.average);
       tp_data = data.filter((el) => {
         if (el.ulbType == "Town Panchayat") {
           el.value = (el.value / el.benchMarkValue) * 100;
