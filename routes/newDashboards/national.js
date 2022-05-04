@@ -33,6 +33,7 @@ exports.dataAvailabilityState = async (req, res) => {
     totalUlbs = temp[1];
     filterCondition = {
       ulb: ulbs.map((ech) => ObjectId(ech._id)),
+      financialYear,
     };
     ulbLedgers = await UlbLedger.distinct("ulb", filterCondition);
     // console.log("ulbLedgers", ulbLedgers);
