@@ -539,8 +539,12 @@ exports.nationalDashRevenuePipeline = (
                           amount: "$amount",
                         },
                       },
-                      colour: "$colour",
-                      lineName: "$lineName",
+                      colour: {
+                        $first: "$lineitem.colour"
+                      },
+                      lineName: {
+                        $first: "$lineitem.name"
+                      }
                     },
                   },
                 ]
