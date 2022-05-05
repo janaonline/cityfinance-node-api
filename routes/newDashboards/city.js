@@ -162,7 +162,7 @@ const indicator = async (req, res) => {
         };
         if (isPerCapita) {
           group.population = {
-            $sum: "$ulb.population",
+            $first: "$ulb.population",
           };
         }
         query.push({
@@ -465,8 +465,11 @@ const indicator = async (req, res) => {
     let redisData = await Redis.getDataPromise(redisKey);
     let compData, data, returnData;
     if (!redisData) {
-      if (newQuery) compData = await UlbLedger.aggregate(newQuery);
-      data = await UlbLedger.aggregate(query);
+      if (newQuery) compData = UlbLedger.aggregate(newQuery);
+      data = UlbLedger.aggregate(query);
+      let allData = await Promise.all([data, compData]);
+      data = allData[0];
+      compData = allData[1];
       returnData = { ulbData: data, compData };
       Redis.set(redisKey, JSON.stringify(returnData));
     } else {
@@ -1198,37 +1201,37 @@ async function revenueQueryCompare(
       return tempQ;
       break;
     case "ULB Population Category Average":
-      ulbData = await ULB.findOne({ _id: ulb });
+      ulbData = await ULB.findOne({ _id: ulb }).lean();
       let matchObj = {};
       if (ulbData.hasOwnProperty("population")) {
         if (ulbData.population < 100000) {
-          Object.assign(matchObj, { "ulb.population": { $lt: 100000 } });
+          Object.assign(matchObj, { population: { $lt: 100000 } });
         } else if (100000 < ulbData.population < 500000) {
           Object.assign(matchObj, {
-            $or: [
-              { "ulb.population": { $gt: 100000 } },
-              { "ulb.population": { $lt: 100000 } },
+            $and: [
+              { population: { $gt: 100000 } },
+              { population: { $lt: 500000 } },
             ],
           });
         } else if (500000 < ulbData.population < 1000000) {
           Object.assign(matchObj, {
-            $or: [
-              { "ulb.population": { $gt: 500000 } },
-              { "ulb.population": { $lt: 1000000 } },
+            $and: [
+              { population: { $gt: 500000 } },
+              { population: { $lt: 1000000 } },
             ],
           });
         } else if (1000000 < ulbData.population < 1000000) {
           Object.assign(matchObj, {
-            $or: [
-              { "ulb.population": { $gt: 1000000 } },
-              { "ulb.population": { $lt: 1000000 } },
+            $and: [
+              { population: { $gt: 1000000 } },
+              { population: { $lt: 1000000 } },
             ],
           });
         } else {
-          Object.assign(matchObj, { "ulb.population": { $gt: 4000000 } });
+          Object.assign(matchObj, { population: { $gt: 4000000 } });
         }
       }
-      ulbId = await ULB.find(matchObj);
+      ulbId = await ULB.find(matchObj).lean();
       tempQ = [
         {
           $match: {
@@ -1283,6 +1286,17 @@ async function revenueQueryCompare(
         if (isPerCapita) {
           tempQ.push(
             {
+              $lookup: {
+                from: "states",
+                localField: "ulb.state",
+                foreignField: "_id",
+                as: "state",
+              },
+            },
+            {
+              $unwind: "$state",
+            },
+            {
               $group: {
                 _id: {
                   financialYear: "$financialYear",
@@ -1315,6 +1329,9 @@ async function revenueQueryCompare(
                 },
                 population: {
                   $sum: "$population",
+                },
+                ulbName: {
+                  $first: "ULB Population Category",
                 },
               },
             },
@@ -1913,37 +1930,37 @@ async function expenseQueryCompare(
       return tempQ;
       break;
     case "ULB Population Category Average":
-      ulbData = await ULB.findOne({ _id: ulb });
+      ulbData = await ULB.findOne({ _id: ulb }).lean();
       let matchObj = {};
       if (ulbData.hasOwnProperty("population")) {
         if (ulbData.population < 100000) {
-          Object.assign(matchObj, { "ulb.population": { $lt: 100000 } });
+          Object.assign(matchObj, { population: { $lt: 100000 } });
         } else if (100000 < ulbData.population < 500000) {
           Object.assign(matchObj, {
             $or: [
-              { "ulb.population": { $gt: 100000 } },
-              { "ulb.population": { $lt: 100000 } },
+              { population: { $gt: 100000 } },
+              { population: { $lt: 100000 } },
             ],
           });
         } else if (500000 < ulbData.population < 1000000) {
           Object.assign(matchObj, {
             $or: [
-              { "ulb.population": { $gt: 500000 } },
-              { "ulb.population": { $lt: 1000000 } },
+              { population: { $gt: 500000 } },
+              { population: { $lt: 1000000 } },
             ],
           });
         } else if (1000000 < ulbData.population < 1000000) {
           Object.assign(matchObj, {
             $or: [
-              { "ulb.population": { $gt: 1000000 } },
-              { "ulb.population": { $lt: 1000000 } },
+              { population: { $gt: 1000000 } },
+              { population: { $lt: 1000000 } },
             ],
           });
         } else {
-          Object.assign(matchObj, { "ulb.population": { $gt: 4000000 } });
+          Object.assign(matchObj, { population: { $gt: 4000000 } });
         }
       }
-      ulbId = await ULB.find(matchObj);
+      ulbId = await ULB.find(matchObj).lean();
       tempQ = [
         {
           $match: {
@@ -1982,6 +1999,17 @@ async function expenseQueryCompare(
         },
         {
           $unwind: "$lineitems",
+        },
+        {
+          $lookup: {
+            from: "states",
+            localField: "ulb.state",
+            foreignField: "_id",
+            as: "state",
+          },
+        },
+        {
+          $unwind: "$state",
         }
       );
       if (from.includes("mix")) {
@@ -2021,7 +2049,7 @@ async function expenseQueryCompare(
                     },
                   },
                 },
-                ulbName: { $first: "National" },
+                ulbName: { $first: "ULB Population Category" },
               },
             },
             {
@@ -2048,7 +2076,7 @@ async function expenseQueryCompare(
                   $sum: "$amount",
                 },
                 ulbName: {
-                  $first: "$state.name",
+                  $first: "ULB Population Category",
                 },
                 code: {
                   $first: "$lineitems.code",
