@@ -1321,7 +1321,8 @@ async function revenueQueryCompare(
             {
               $project: {
                 _id: 1,
-                amount: { $divide: ["$amount", "$population"], ulbName: 1 },
+                amount: { $divide: ["$amount", "$population"] },
+                ulbName: 1,
               },
             },
             { $sort: { "_id.financialYear": 1 } }
