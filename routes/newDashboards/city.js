@@ -763,7 +763,7 @@ async function revenueExpenditureQueryCompare(
         {
           $group: {
             _id: {
-              financialYear: "$financialYear",
+              financialYear: "$_id.financialYear",
               state: "$state",
             },
             ulbName: {
