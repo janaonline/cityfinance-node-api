@@ -2340,8 +2340,8 @@ async function expenseQueryCompare(
       break;
 
     case "ULB Type Average":
-      ulbData = await ULB.findOne({ _id: ulb });
-      ulbId = await ULB.find({ state: ulbData.ulbType });
+      ulbData = await ULB.findOne({ _id: ulb }).lean();
+      ulbId = await ULB.find({ ulbType: ulbData.ulbType });
       tempQ = [
         {
           $match: {
