@@ -257,7 +257,15 @@ const dataAvailability = async (req, res, reuseOption) => {
     let noData = Ulb.aggregate(query_noData);
     let data = UlbLedger.aggregate(query);
     let ulbCount = Ulb.aggregate(countQuery);
-    let promiseData = await Promise.all([noData, data, ulbCount]);
+    let redisKey = JSON.stringify([query_noData, query, countQuery]);
+    let redisData = await Redis.getDataPromise(redisKey);
+    let promiseData;
+    if (!redisData) {
+      promiseData = await Promise.all([noData, data, ulbCount]);
+      Redis.set(redisKey, JSON.stringify(promiseData));
+    } else {
+      promiseData = JSON.parse(redisData);
+    }
     noData = promiseData[0];
     data = promiseData[1];
     ulbCount = promiseData[2];
