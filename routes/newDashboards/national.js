@@ -13,6 +13,8 @@ const ObjectId = mongoose.Types.ObjectId;
 const ExcelJS = require("exceljs");
 const { relativeTimeRounding } = require("moment");
 const fs = require("fs");
+const Redis = require("../../service/redis");
+const { query } = require("express");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
@@ -311,38 +313,36 @@ exports.nationalDashRevenue = async (req, res) => {
     const { nationalDashRevenuePipeline } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
-    let lineItems = await LineItem.find({ headOfAccount: "Revenue" }).select(
-      "_id"
-    );
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItems = LineItem.find({ headOfAccount: "Revenue" }).select("_id");
+    let promiseData = await Promise.all([ulbs, lineItems]);
+    ulbs = promiseData[0];
+    lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
       return each._id;
     });
     lineItems = lineItems.map((each) => each._id);
-    if (getQuery)
-      return res
-        .status(200)
-        .json(
-          nationalDashRevenuePipeline(
-            financialYear,
-            stateId,
-            ulbs,
-            lineItems,
-            type,
-            formType
-          )
-        );
-    const ulbLeds = await UlbLedger.aggregate(
-      nationalDashRevenuePipeline(
-        financialYear,
-        stateId,
-        ulbs,
-        lineItems,
-        type,
-        formType
-      )
+    let query = nationalDashRevenuePipeline(
+      financialYear,
+      stateId,
+      ulbs,
+      lineItems,
+      type,
+      formType
     );
+    if (getQuery) return res.status(200).json(query);
+
+    let redisKey = JSON.stringify(query);
+    let redisData = await Redis.getDataPromise(redisKey);
+    let ulbLeds;
+    if (!redisData) {
+      ulbLeds = await UlbLedger.aggregate(query);
+      Redis.set(redisKey, JSON.stringify(ulbLeds));
+    } else {
+      ulbLeds = JSON.parse(redisData);
+    }
+
     let populationMap = {
       Average: {
         revenue: 0,
@@ -558,12 +558,15 @@ exports.nationalDashExpenditure = async (req, res) => {
     formType = formType ? formType : "populationCategory";
     const { nationalDashExpensePipeline } = require("../../util/aggregation");
     const HashTable = new Map();
-    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
-    let lineItemsExp = await LineItem.find(
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItemsExp = LineItem.find(
       type == "deficitOrSurplus"
         ? { headOfAccount: { $in: ["Expense", "Revenue"] } }
         : { headOfAccount: "Expense" }
     ).select("_id");
+    let promiseData = await Promise.all([ulbs, lineItemsExp]);
+    ulbs = promiseData[0];
+    lineItemsExp = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
       return each._id;
@@ -578,7 +581,15 @@ exports.nationalDashExpenditure = async (req, res) => {
       ulbs
     );
     if (getQuery) return res.status(200).json(query);
-    const ulbLeds = await UlbLedger.aggregate(query);
+    let redisKey = JSON.stringify(query);
+    let redisData = await Redis.getDataPromise(redisKey);
+    let ulbLeds;
+    if (!redisData) {
+      ulbLeds = await UlbLedger.aggregate(query);
+      Redis.set(redisKey, JSON.stringify(ulbLeds));
+    } else {
+      ulbLeds = JSON.parse(redisData);
+    }
     // return res.json(ulbLeds);
     let populationMap = {
       Average: {
@@ -709,8 +720,8 @@ exports.nationalDashExpenditure = async (req, res) => {
           individualArr = responsePayload.data.individual;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
-        const lineItems = await LineItem.find();
-        const UlbTypes = await UlbType.find();
+        const lineItems = await LineItem.find().lean();
+        const UlbTypes = await UlbType.find().lean();
         lineItems.map((each) => {
           lineItemMap.set(each._id.toString(), each.name);
           return each;
@@ -742,7 +753,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         responsePayload.data.individual = individual_Format;
       } else {
         let lineItemMap = new Map();
-        const lineItems = await LineItem.find();
+        const lineItems = await LineItem.find().lean();
         lineItems.map((each) => {
           lineItemMap.set(each._id.toString(), each.name);
           return each;
@@ -897,20 +908,20 @@ async function createTableData(type, data, ulbsCountInIndia) {
   return { columns, rows };
 }
 
-async function specifiedRowColumn(data){
-  let defaultlabel = 'INR Cr.';
+async function specifiedRowColumn(data) {
+  let defaultlabel = "INR Cr.";
   data.columns = [];
   data.rows = [];
-  data.columns.push({ 
-    'display_name' : defaultlabel,
-    'key' : common.camelize(defaultlabel) 
+  data.columns.push({
+    display_name: defaultlabel,
+    key: common.camelize(defaultlabel),
   });
   Object.keys(data.national).map((label) => {
-    data.columns.push({ 
-      'display_name' : label,
-      'key' : common.camelize(label) 
+    data.columns.push({
+      display_name: label,
+      key: common.camelize(label),
     });
-  })
+  });
 
   for (let innerKey in data.individual) {
     let createObj = {};
@@ -977,40 +988,38 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
-    let lineItems = await LineItem.find({
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItems = LineItem.find({
       code: {
         $in: ["110", "130", "140", "150", "180"],
       },
     }).select("_id");
+    let promiseData = await Promise.all([ulbs, lineItems]);
+    ulbs = promiseData[0];
+    lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
       return each._id;
     });
     lineItems = lineItems.map((each) => each._id);
-    if (getQuery)
-      return res
-        .status(200)
-        .json(
-          nationalDashOwnRevenuePipeline(
-            financialYear,
-            stateId,
-            ulbs,
-            lineItems,
-            type,
-            formType
-          )
-        );
-    const ulbLeds = await UlbLedger.aggregate(
-      nationalDashOwnRevenuePipeline(
-        financialYear,
-        stateId,
-        ulbs,
-        lineItems,
-        type,
-        formType
-      )
+    let query = nationalDashOwnRevenuePipeline(
+      financialYear,
+      stateId,
+      ulbs,
+      lineItems,
+      type,
+      formType
     );
+    if (getQuery) return res.status(200).json(query);
+    let redisKey = JSON.stringify(query);
+    let redisData = await Redis.getDataPromise(redisKey);
+    let ulbLeds;
+    if (!redisData) {
+      ulbLeds = await UlbLedger.aggregate(query);
+      Redis.set(redisKey, JSON.stringify(ulbLeds));
+    } else {
+      ulbLeds = JSON.parse(redisData);
+    }
     let populationMap = {
       Average: {
         Ownrevenue: 0,
@@ -1137,8 +1146,8 @@ exports.nationalDashOwnRevenue = async (req, res) => {
           individualArr = responsePayload.data.individual;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
-        const lineItems = await LineItem.find();
-        const UlbTypes = await UlbType.find();
+        const lineItems = await LineItem.find().lean();
+        const UlbTypes = await UlbType.find().lean();
         lineItems.map((each) => {
           lineItemMap.set(each._id.toString(), each.name);
           return each;
@@ -1170,7 +1179,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         responsePayload.data.individual = individual_Format;
       } else {
         let lineItemMap = new Map();
-        const lineItems = await LineItem.find();
+        const lineItems = await LineItem.find().lean();
         lineItems.map((each) => {
           lineItemMap.set(each._id.toString(), each.name);
           return each;
@@ -1202,7 +1211,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         responsePayload.data.national = national_Format;
       }
       if (csv) await specifiedRowColumn(responsePayload.data);
-      responsePayload.data.colourArray = colourArray
+      responsePayload.data.colourArray = colourArray;
     }
     if (csv) {
       return getExcel(req, res, responsePayload.data);
@@ -1227,40 +1236,38 @@ exports.nationalDashCapexpense = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = await Ulb.find(stateId ? { state: stateId } : {}).select("_id");
-    let lineItems = await LineItem.find({
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let lineItems = LineItem.find({
       code: {
         $in: ["410", "412"],
       },
     }).select("_id");
+    let promiseData = await Promise.all([ulbs, lineItems]);
+    ulbs = promiseData[0];
+    lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
       return each._id;
     });
     lineItems = lineItems.map((each) => each._id);
-    if (getQuery)
-      return res
-        .status(200)
-        .json(
-          nationalDashCapexpensePipeline(
-            financialYear,
-            stateId,
-            ulbs,
-            lineItems,
-            type,
-            formType
-          )
-        );
-    const ulbLeds = await UlbLedger.aggregate(
-      nationalDashCapexpensePipeline(
-        financialYear,
-        stateId,
-        ulbs,
-        lineItems,
-        type,
-        formType
-      )
+    let query = nationalDashCapexpensePipeline(
+      financialYear,
+      stateId,
+      ulbs,
+      lineItems,
+      type,
+      formType
     );
+    if (getQuery) return res.status(200).json(query);
+    let redisKey = JSON.stringify(query);
+    let redisData = await Redis.getDataPromise(redisKey);
+    let ulbLeds;
+    if (!redisData) {
+      ulbLeds = await UlbLedger.aggregate(query);
+      Redis.set(redisKey, JSON.stringify(ulbLeds));
+    } else {
+      ulbLeds = JSON.parse(redisData);
+    }
     let populationMap = {
       Average: {
         Capexpense: 0,
@@ -1385,8 +1392,8 @@ exports.nationalDashCapexpense = async (req, res) => {
           individualArr = responsePayload.data.individual;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
-        const lineItems = await LineItem.find();
-        const UlbTypes = await UlbType.find();
+        const lineItems = await LineItem.find().lean();
+        const UlbTypes = await UlbType.find().lean();
         lineItems.map((each) => {
           lineItemMap.set(each._id.toString(), each.name);
           return each;
@@ -1418,7 +1425,7 @@ exports.nationalDashCapexpense = async (req, res) => {
         responsePayload.data.individual = individual_Format;
       } else {
         let lineItemMap = new Map();
-        const lineItems = await LineItem.find();
+        const lineItems = await LineItem.find().lean();
         lineItems.map((each) => {
           lineItemMap.set(each._id.toString(), each.name);
           return each;
@@ -1465,7 +1472,7 @@ exports.getStatewiseDataAvail = async (req, res) => {
     const { financialYear, getQuery } = req.query;
     if (!financialYear) throw { message: "Financial Year is missing" };
     let response = { success: true, data: null };
-    const ulbsStateWise = await Ulb.aggregate([
+    let ulbsStateWise = Ulb.aggregate([
       {
         $group: {
           _id: "$state",
@@ -1478,7 +1485,10 @@ exports.getStatewiseDataAvail = async (req, res) => {
     const { getStateWiseDataAvailPipeline } = require("../../util/aggregation");
     const query = getStateWiseDataAvailPipeline(financialYear);
     if (getQuery) return res.status(200).json(query);
-    response.data = await UlbLedger.aggregate(query);
+    response.data = UlbLedger.aggregate(query);
+    let promiseData = await Promise.all([ulbsStateWise, query]);
+    ulbsStateWise = promiseData[0];
+    response.data = promiseData[1];
     response.data.map((each) => {
       for (value of ulbsStateWise) {
         if (each.stateId.toString() == value._id.toString()) {
