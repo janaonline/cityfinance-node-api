@@ -1223,10 +1223,32 @@ module.exports.getApprovedFinancialData = async (req, res) => {
         return Response.BadRequest(res, e, e.message);
     }
 };
+
+/* Checking if the ulbId is valid or not. and send to next for getting documents*/
+module.exports.findFiles = async (req, res, next) => {
+    let _id = ObjectId(req.params._id);
+    try { 
+        let ulbId = await UlbFinancialData.find({ ulb: _id },{_id : 1}).exec();
+        if(!ulbId) throw new Error("Ulb Id is invalid!");
+        
+        req.params._id = ulbId.map(l => l._id).join(",");
+        next();
+    } catch (error) {
+        return Response.BadRequest(res, error, error.message);
+    }
+}
+
 module.exports.sourceFiles = async (req, res) => {
     try {
-        let lh_id = ObjectId(req.decoded.lh_id); // Login history id
-        let _id = ObjectId(req.params._id);
+        if(req.decoded){
+            let lh_id = ObjectId(req.decoded.lh_id); // Login history id
+        }
+        let allId = req.params._id.split(",");
+        let condition = {_id : {$in : allId}};
+        
+        if(req.query.financialYear){
+            condition['financialYear'] = req.query.financialYear;
+        }
         let select = {
             'balanceSheet.pdfUrl': 1,
             'balanceSheet.excelUrl': 1,
@@ -1243,16 +1265,23 @@ module.exports.sourceFiles = async (req, res) => {
             'overallReport.pdfUrl': 1,
             'overallReport.excelUrl': 1,
         };
-        let data = await UlbFinancialData.find({ _id: _id }, select).exec();
-        let lh = await LoginHistory.update(
-            { _id: lh_id },
-            { $push: { reports: _id } }
-        );
-        return Response.OK(res, data.length ? getSourceFiles(data[0]) : {});
+        let data = await UlbFinancialData.find(condition, select).exec();
+        if(req.decoded){
+            let lh = await LoginHistory.update(
+                { _id: lh_id },
+                { $push: { reports: allId[0] } }
+            );
+        }
+        let result = [];
+        for (const objectData of data) {
+            result.push(getSourceFiles(objectData))
+        }
+        return Response.OK(res, data.length ? result : {});
     } catch (e) {
         return Response.DbError(res, e);
     }
 };
+
 function getSourceFiles(obj) {
     let o = {
         pdf: [],
