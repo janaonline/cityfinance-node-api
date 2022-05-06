@@ -691,6 +691,9 @@ async function revenueExpenditureQueryCompare(
           },
         },
         {
+          $unwind: "$ulb",
+        },
+        {
           $lookup: {
             from: "states",
             localField: "ulb.state",
@@ -699,7 +702,7 @@ async function revenueExpenditureQueryCompare(
           },
         },
         {
-          $unwind: "$ulb",
+          $unwind: "$state",
         },
         {
           $lookup: {
@@ -716,10 +719,10 @@ async function revenueExpenditureQueryCompare(
           $group: {
             _id: {
               financialYear: "$financialYear",
-              state: "$ulb.state",
+              ulb: "$ulb._id",
             },
-            amount: {
-              $sum: "$amount",
+            state: {
+              $first: "$state._id",
             },
             ulbName: {
               $first: "$state.name",
@@ -733,9 +736,7 @@ async function revenueExpenditureQueryCompare(
                       ["110", "130", "140", "150", "180"],
                     ],
                   },
-                  then: isPerCapita
-                    ? "$amount"
-                    : { $multiply: ["$amount", "$ulb.population"] },
+                  then: "$amount",
                   else: 0,
                 },
               },
@@ -749,15 +750,33 @@ async function revenueExpenditureQueryCompare(
                       ["200", "210", "220", "230", "240"],
                     ],
                   },
-                  then: isPerCapita
-                    ? "$amount"
-                    : { $multiply: ["$amount", "$ulb.population"] },
+                  then: "$amount",
                   else: 0,
                 },
               },
             },
+            population: {
+              $first: "$ulb.population",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              financialYear: "$financialYear",
+              state: "$state",
+            },
+            ulbName: {
+              $first: "$ulbName",
+            },
+            revenue: {
+              $sum: { $multiply: ["$revenue", "$population"] },
+            },
+            expense: {
+              $sum: { $multiply: ["$expense", "$population"] },
+            },
             denominator: {
-              $sum: "$ulb.population",
+              $sum: "$population",
             },
           },
         },
@@ -765,10 +784,18 @@ async function revenueExpenditureQueryCompare(
           $project: {
             _id: 1,
             revenue: {
-              $divide: ["$revenue", "$denominator"],
+              $cond: {
+                if: { $lt: ["$denominator", 1] },
+                then: 0,
+                else: { $divide: ["$revenue", "$denominator"] },
+              },
             },
             expense: {
-              $divide: ["$expense", "$denominator"],
+              $cond: {
+                if: { $lt: ["$denominator", 1] },
+                then: 0,
+                else: { $divide: ["$expense", "$denominator"] },
+              },
             },
             ulbName: 1,
             code: 1,
@@ -1446,7 +1473,7 @@ async function revenueQueryCompare(
       if (from.includes("mix")) {
         tempQ.push({
           $group: {
-            _id: { lineItem: "$lineitems" },
+            _id: { lineItem: "$lineitems.name" },
             code: { $first: "$lineitems.code" },
             colour: { $first: "$lineitems.colour" },
             amount: { $sum: "$amount" },
