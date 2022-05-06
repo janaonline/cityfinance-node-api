@@ -1650,6 +1650,15 @@ async function revenueQueryCompare(
         if (isPerCapita) {
           tempQ.push(
             {
+              $lookup: {
+                from: "states",
+                localField: "ulb.state",
+                foreignField: "_id",
+                as: "state",
+              },
+            },
+            { $unwind: "$state" },
+            {
               $group: {
                 _id: {
                   financialYear: "$financialYear",
@@ -1665,9 +1674,6 @@ async function revenueQueryCompare(
                   $first: "$ulb.population",
                 },
               },
-            },
-            {
-              $unwind: "$state",
             },
             {
               $group: {
