@@ -535,7 +535,7 @@ exports.nationalDashRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
-      if (csv) await specifiedRowColumn(responsePayload.data);
+      if (csv) await specifiedRowColumn(req.query.formType ? req.query.formType : "INR Cr.",responsePayload.data);
       responsePayload.data.colourArray = colourArray;
     }
     if (csv) {
@@ -784,7 +784,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
-      if (csv) await specifiedRowColumn(responsePayload.data);
+      if (csv) await specifiedRowColumn(req.query.formType ? req.query.formType : "INR Cr.",responsePayload.data);
       responsePayload.data.colourArray = colourArray;
     } else {
       //deficitOrSurplus
@@ -908,13 +908,14 @@ async function createTableData(type, data, ulbsCountInIndia) {
   return { columns, rows };
 }
 
-async function specifiedRowColumn(data) {
-  let defaultlabel = "INR Cr.";
+async function specifiedRowColumn(defaultlabel,data) {
+  var result = defaultlabel.replace( /([A-Z])/g, " $1" );
+  var finalDefaultLabel = result.charAt(0).toUpperCase() + result.slice(1);
   data.columns = [];
   data.rows = [];
   data.columns.push({
-    display_name: defaultlabel,
-    key: common.camelize(defaultlabel),
+    display_name: finalDefaultLabel,
+    key: common.camelize(finalDefaultLabel),
   });
   Object.keys(data.national).map((label) => {
     data.columns.push({
@@ -923,9 +924,18 @@ async function specifiedRowColumn(data) {
     });
   });
 
+  
+  let newNationalObj = {[common.camelize(finalDefaultLabel)] : 'National',...data.national};
+  let nationaNewObj = {};
+  for (let nationalInnerKey in newNationalObj) {
+    let genKey = common.camelize(nationalInnerKey);
+    nationaNewObj[genKey] = newNationalObj[nationalInnerKey];
+  }
+  data.rows.push(nationaNewObj);
+
   for (let innerKey in data.individual) {
     let createObj = {};
-    let genKey = common.camelize(defaultlabel);
+    let genKey = common.camelize(finalDefaultLabel);
     createObj[genKey] = innerKey;
 
     for (let finalKey in data.individual[innerKey]) {
@@ -1210,7 +1220,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
-      if (csv) await specifiedRowColumn(responsePayload.data);
+      if (csv) await specifiedRowColumn(req.query.formType ? req.query.formType : "INR Cr.",responsePayload.data);
       responsePayload.data.colourArray = colourArray;
     }
     if (csv) {
