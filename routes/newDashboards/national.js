@@ -1486,7 +1486,7 @@ exports.getStatewiseDataAvail = async (req, res) => {
     const query = getStateWiseDataAvailPipeline(financialYear);
     if (getQuery) return res.status(200).json(query);
     response.data = UlbLedger.aggregate(query);
-    let promiseData = await Promise.all([ulbsStateWise, query]);
+    let promiseData = await Promise.all([ulbsStateWise, response.data]);
     ulbsStateWise = promiseData[0];
     response.data = promiseData[1];
     response.data.map((each) => {
