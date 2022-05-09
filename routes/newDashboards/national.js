@@ -23,10 +23,12 @@ exports.dataAvailabilityState = async (req, res) => {
     let filterCondition = {},
       ulbLedgers;
     if (stateId) filterCondition["state"] = stateId;
+
     let ulbs = Ulb.find(filterCondition)
       .populate("ulbType", "name")
       .select("_id population ulbType")
       .lean();
+      
     let totalUlbs = Ulb.countDocuments();
     if (financialYear) filterCondition["financialYear"] = financialYear;
 
@@ -43,6 +45,7 @@ exports.dataAvailabilityState = async (req, res) => {
     let responsePayload = {
       data: null,
     };
+    
     if (population)
       responsePayload.data = await createPopulationData(
         JSON.parse(JSON.stringify(ulbs)),
@@ -217,22 +220,24 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
     },
   };
   const lengthOfUlbs = ulbs.length;
+  let aa = 0;
   for (let x = 0; x < lengthOfUlbs; ++x) {
     const specific = ulbs[x];
-    if (specific.population < 1e5) {
-      populationMap["< 100 Thousand"]["numberOfULBs"].push(specific);
-    } else if (specific.population >= 1e5 && specific.population <= 5e5) {
+    if (specific.population < 1e5 && specific.population != null) {
+      populationMap["< 100 Thousand"]["numberOfULBs"].push(specific._id);
+    } else if (specific.population >= 1e5 && specific.population <= 5e5 && specific.population != null) {
       populationMap["100 Thousand - 500 Thousand"]["numberOfULBs"].push(
         specific
       );
-    } else if (specific.population >= 5e5 && specific.population <= 1e6) {
+    } else if (specific.population >= 5e5 && specific.population <= 1e6 && specific.population != null) {
       populationMap["500 Thousand - 1 Million"]["numberOfULBs"].push(specific);
-    } else if (specific.population >= 1e6 && specific.population <= 4e6) {
+    } else if (specific.population >= 1e6 && specific.population <= 4e6 && specific.population != null) {
       populationMap["1 Million - 4 Million"]["numberOfULBs"].push(specific);
-    } else if (specific.population > 4e6) {
+    } else if (specific.population > 4e6 && specific.population != null) {
       populationMap["4 Million+"]["numberOfULBs"].push(specific);
     }
   }
+  
   let rows = Object.keys(populationMap),
     sumOfNoOfUlbs = 0,
     sumOfUlbsWithData = 0,
