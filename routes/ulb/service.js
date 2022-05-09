@@ -293,7 +293,7 @@ module.exports.multiUlbPost = async function (req, res) {
         name: value[2],
         code: value[3],
         censusCode: value[4],
-        ulbType: value[5],
+        type: value[5],
         state: value[6],
         amrut: value[8],
         isMillionPlus: value[9],
