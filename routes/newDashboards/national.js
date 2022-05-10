@@ -716,9 +716,21 @@ exports.nationalDashExpenditure = async (req, res) => {
         ];
       responsePayload.data = { rows, columns };
     } else if (type == "expenditureMix") {
-      let colourArray = ulbLeds[0].national.map((val) => {
-        return { colour: val.colour, lineitem: val.lineName };
-      });
+      let flag = false;
+      let colourArray = ulbLeds[0].national
+        .map((val) => {
+          let lineName = val.lineName;
+          if (!includeInExpenditure.includes(lineName)) {
+            if (!flag) {
+              flag = true;
+              return { colour: val.colour, lineitem: "Other Expenditure" };
+            } else {
+              return false;
+            }
+          }
+          return { colour: val.colour, lineitem: lineName };
+        })
+        .filter(Boolean);
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
@@ -742,16 +754,25 @@ exports.nationalDashExpenditure = async (req, res) => {
             "Town Panchayat": {},
           };
         nationalArr.map((each) => {
-          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
-            each.amount;
+          let lineName = lineItemMap.get(each._id.lineItem.toString());
+          if (!includeInExpenditure.includes(lineName)) {
+            lineName = "Other Expenditure";
+          }
+          if (national_Format[lineName] > 1) {
+            national_Format[lineName] += each.amount;
+          } else national_Format[lineName] = each.amount;
           return each;
         });
         individualArr.map((each, idx) => {
           const ulbTypeName = ulbTypeMap.get(each._id.toString());
-          each.data.map((ev) => {
-            individual_Format[ulbTypeName][
-              lineItemMap.get(ev.lineItem.toString())
-            ] = ev.amount;
+          each.data.forEach((ev) => {
+            let lineName = lineItemMap.get(ev.lineItem.toString());
+            if (!includeInExpenditure.includes(lineName)) {
+              lineName = "Other Expenditure";
+            }
+            if (individual_Format[ulbTypeName][lineName] > 1)
+              individual_Format[ulbTypeName][lineName] += ev.amount;
+            else individual_Format[ulbTypeName][lineName] = ev.amount;
           });
         });
         responsePayload.data.national = national_Format;
@@ -773,7 +794,10 @@ exports.nationalDashExpenditure = async (req, res) => {
           "4M+": {},
         };
         responsePayload.data.individual.map((each) => {
-          const currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          let currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          if (!includeInExpenditure.includes(currLineItem)) {
+            currLineItem = "Other Expenditure";
+          }
           populKeys.map((key) => {
             if (!dataMapper[key][currLineItem])
               dataMapper[key][currLineItem] = 0;
@@ -783,13 +807,20 @@ exports.nationalDashExpenditure = async (req, res) => {
         responsePayload.data.individual = dataMapper;
         let national_Format = {};
         responsePayload.data.national.map((each) => {
-          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
-            each.amount;
+          let lineName = lineItemMap.get(each._id.lineItem.toString());
+          if (!includeInExpenditure.includes(lineName)) {
+            lineName = "Other Expenditure";
+          }
+          national_Format[lineName] = each.amount;
           return each;
         });
         responsePayload.data.national = national_Format;
       }
-      if (csv) await specifiedRowColumn(req.query.formType ? req.query.formType : "INR Cr.",responsePayload.data);
+      if (csv)
+        await specifiedRowColumn(
+          req.query.formType ? req.query.formType : "INR Cr.",
+          responsePayload.data
+        );
       responsePayload.data.colourArray = colourArray;
     } else {
       //deficitOrSurplus
@@ -913,8 +944,8 @@ async function createTableData(type, data, ulbsCountInIndia) {
   return { columns, rows };
 }
 
-async function specifiedRowColumn(defaultlabel,data) {
-  var result = defaultlabel.replace( /([A-Z])/g, " $1" );
+async function specifiedRowColumn(defaultlabel, data) {
+  var result = defaultlabel.replace(/([A-Z])/g, " $1");
   var finalDefaultLabel = result.charAt(0).toUpperCase() + result.slice(1);
   data.columns = [];
   data.rows = [];
@@ -929,8 +960,10 @@ async function specifiedRowColumn(defaultlabel,data) {
     });
   });
 
-  
-  let newNationalObj = {[common.camelize(finalDefaultLabel)] : 'National',...data.national};
+  let newNationalObj = {
+    [common.camelize(finalDefaultLabel)]: "National",
+    ...data.national,
+  };
   let nationaNewObj = {};
   for (let nationalInnerKey in newNationalObj) {
     let genKey = common.camelize(nationalInnerKey);
@@ -1225,7 +1258,11 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
       }
-      if (csv) await specifiedRowColumn(req.query.formType ? req.query.formType : "INR Cr.",responsePayload.data);
+      if (csv)
+        await specifiedRowColumn(
+          req.query.formType ? req.query.formType : "INR Cr.",
+          responsePayload.data
+        );
       responsePayload.data.colourArray = colourArray;
     }
     if (csv) {
@@ -1518,3 +1555,25 @@ exports.getStatewiseDataAvail = async (req, res) => {
     res.status(500).json({ success: true, message: error.message });
   }
 };
+
+const includeInExpenditure = [
+  "Others",
+  "Establishment Expenses",
+  "Interest & Finance Charges",
+  "Administrative Expenses",
+  "Operation & Maintenance",
+];
+
+function createExpenditureMixData(data) {
+  let tempArray = [
+    { _id: { lineItem: "Other Expenditure" }, amount: 0, colour: "#0FA386" },
+  ];
+  data.forEach((element) => {
+    if (includeInExpenditure.includes(element.code)) {
+      tempArray.push(element);
+    } else {
+      tempArray[0].amount += element.amount;
+    }
+  });
+  return tempArray;
+}
