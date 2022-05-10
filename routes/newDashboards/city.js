@@ -2939,8 +2939,7 @@ const peerComp = async (req, res) => {
     if (getQuery) return Response.OK(res, query);
 
     const redisKey = JSON.stringify(query) + "peerComp";
-    let redisData;
-    // = await Redis.getDataPromise(redisKey);
+    let redisData = await Redis.getDataPromise(redisKey);
     let data, newData;
     if (!redisData) {
       data = await Promise.all(query);
@@ -2957,8 +2956,8 @@ const peerComp = async (req, res) => {
             return result;
           }, {});
           return tempData[financialYear[0]]
-            .reduce((rand, value) => {
-              let lastDate = tempData[financialYear[1]];
+            ?.reduce((rand, value) => {
+              let lastDate = tempData[financialYear[1]] ?? [];
               let lastUlb = lastDate.find((v) => v.ulb._id == value.ulb._id);
               rand.push({
                 amount: lastUlb ? getCapitalChangeAmount(lastUlb, value) : 0,
