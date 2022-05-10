@@ -102,7 +102,9 @@ const dataAvailability = async (req, res, reuseOption) => {
       return Response.BadRequest(res, null, "financialYear is required");
     }
 
-    let stateUlbs = await Ulb.find(stateId ? { state: ObjectId(stateId) } : {})
+    let stateUlbs = await Ulb.find(
+      stateId && ObjectId.isValid(stateId) ? { state: ObjectId(stateId) } : {}
+    )
       .select({ _id: 1 })
       .lean();
 
