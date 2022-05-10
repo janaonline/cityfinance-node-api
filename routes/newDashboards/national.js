@@ -467,17 +467,34 @@ exports.nationalDashRevenue = async (req, res) => {
         ];
       responsePayload.data = { rows, columns };
     } else if (type == "revenueMix") {
-      let colourArray = ulbLeds[0].national.map((val) => {
-        return { colour: val.colour, lineitem: val.lineName };
-      });
+      let f1 = true,
+        f2 = true;
+      let colourArray = ulbLeds[0].national
+        .map((val) => {
+          if (ownRevenueLineItems.includes(val.lineName)) {
+            if (f1) {
+              f1 = false;
+              return { colour: "#00ffff", lineitem: "Own Revenues" };
+            } else return f1;
+          } else if (otherReceiptsLineItem.includes(val.lineName)) {
+            if (f2) {
+              f2 = false;
+              return { colour: "#ff00bf", lineitem: "Other Receipts" };
+            } else {
+              return f2;
+            }
+          }
+          return { colour: val.colour, lineitem: val.lineName };
+        })
+        .filter(Boolean);
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
           individualArr = responsePayload.data.individual;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
-        const lineItems = await LineItem.find();
-        const UlbTypes = await UlbType.find();
+        const lineItems = await LineItem.find().lean();
+        const UlbTypes = await UlbType.find().lean();
         lineItems.map((each) => {
           lineItemMap.set(each._id.toString(), each.name);
           return each;
@@ -493,16 +510,31 @@ exports.nationalDashRevenue = async (req, res) => {
             "Town Panchayat": {},
           };
         nationalArr.map((each) => {
-          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
-            each.amount;
+          let lineName = lineItemMap.get(each._id.lineItem.toString());
+          if (ownRevenueLineItems.includes(lineName)) {
+            lineName = "Owen Revenue";
+          }
+          if (otherReceiptsLineItem.includes(lineName)) {
+            lineName = "Other Receipts";
+          }
+          if (national_Format[lineName] > 1) {
+            national_Format[lineName] += each.amount;
+          } else national_Format[lineName] = each.amount;
           return each;
         });
         individualArr.map((each, idx) => {
           const ulbTypeName = ulbTypeMap.get(each._id.toString());
           each.data.map((ev) => {
-            individual_Format[ulbTypeName][
-              lineItemMap.get(ev.lineItem.toString())
-            ] = ev.amount;
+            let lineName = lineItemMap.get(ev.lineItem.toString());
+            if (ownRevenueLineItems.includes(lineName)) {
+              lineName = "Owen Revenue";
+            }
+            if (otherReceiptsLineItem.includes(lineName)) {
+              lineName = "Other Receipts";
+            }
+            if (individual_Format[ulbTypeName][lineName] > 1)
+              individual_Format[ulbTypeName][lineName] += ev.amount;
+            else individual_Format[ulbTypeName][lineName] = ev.amount;
           });
         });
         responsePayload.data.national = national_Format;
@@ -524,7 +556,13 @@ exports.nationalDashRevenue = async (req, res) => {
           "4M+": {},
         };
         responsePayload.data.individual.map((each) => {
-          const currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          let currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          if (ownRevenueLineItems.includes(currLineItem)) {
+            currLineItem = "Owen Revenue";
+          }
+          if (otherReceiptsLineItem.includes(currLineItem)) {
+            currLineItem = "Other Receipts";
+          }
           populKeys.map((key) => {
             if (!dataMapper[key][currLineItem])
               dataMapper[key][currLineItem] = 0;
@@ -534,13 +572,27 @@ exports.nationalDashRevenue = async (req, res) => {
         responsePayload.data.individual = dataMapper;
         let national_Format = {};
         responsePayload.data.national.map((each) => {
-          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
-            each.amount;
+          let currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          if (ownRevenueLineItems.includes(currLineItem)) {
+            currLineItem = "Owen Revenue";
+          }
+          if (otherReceiptsLineItem.includes(currLineItem)) {
+            currLineItem = "Other Receipts";
+          }
+          if (national_Format[currLineItem] > 1) {
+            national_Format[currLineItem] += each.amount;
+          } else {
+            national_Format[currLineItem] = each.amount;
+          }
           return each;
         });
         responsePayload.data.national = national_Format;
       }
-      if (csv) await specifiedRowColumn(req.query.formType ? req.query.formType : "INR Cr.",responsePayload.data);
+      if (csv)
+        await specifiedRowColumn(
+          req.query.formType ? req.query.formType : "INR Cr.",
+          responsePayload.data
+        );
       responsePayload.data.colourArray = colourArray;
     }
     if (csv) {
@@ -1564,16 +1616,11 @@ const includeInExpenditure = [
   "Operation & Maintenance",
 ];
 
-function createExpenditureMixData(data) {
-  let tempArray = [
-    { _id: { lineItem: "Other Expenditure" }, amount: 0, colour: "#0FA386" },
-  ];
-  data.forEach((element) => {
-    if (includeInExpenditure.includes(element.code)) {
-      tempArray.push(element);
-    } else {
-      tempArray[0].amount += element.amount;
-    }
-  });
-  return tempArray;
-}
+const ownRevenueLineItems = [
+  "Tax Revenue",
+  "Rental Income from Municipal Properties",
+  "Fee & User Charges",
+  "Sale & Hire charges",
+  "Other Income",
+];
+const otherReceiptsLineItem = ["Others", "Income from Investment"];
