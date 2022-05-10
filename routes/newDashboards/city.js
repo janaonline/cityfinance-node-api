@@ -2350,7 +2350,7 @@ async function expenseQueryCompare(
               $in: body.financialYear,
             },
             lineItem: {
-              $in: headOfAccountIds["revenue"],
+              $in: lineItemIds.map((val) => val._id),
             },
           },
         },
