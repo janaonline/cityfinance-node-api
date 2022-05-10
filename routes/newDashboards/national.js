@@ -225,19 +225,31 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
     const specific = ulbs[x];
     if (specific.population < 1e5 && specific.population != null) {
       populationMap["< 100 Thousand"]["numberOfULBs"].push(specific._id);
-    } else if (specific.population >= 1e5 && specific.population <= 5e5 && specific.population != null) {
+    } else if (
+      specific.population >= 1e5 &&
+      specific.population <= 5e5 &&
+      specific.population != null
+    ) {
       populationMap["100 Thousand - 500 Thousand"]["numberOfULBs"].push(
         specific
       );
-    } else if (specific.population >= 5e5 && specific.population <= 1e6 && specific.population != null) {
+    } else if (
+      specific.population >= 5e5 &&
+      specific.population <= 1e6 &&
+      specific.population != null
+    ) {
       populationMap["500 Thousand - 1 Million"]["numberOfULBs"].push(specific);
-    } else if (specific.population >= 1e6 && specific.population <= 4e6 && specific.population != null) {
+    } else if (
+      specific.population >= 1e6 &&
+      specific.population <= 4e6 &&
+      specific.population != null
+    ) {
       populationMap["1 Million - 4 Million"]["numberOfULBs"].push(specific);
     } else if (specific.population > 4e6 && specific.population != null) {
       populationMap["4 Million+"]["numberOfULBs"].push(specific);
     }
   }
-  
+
   let rows = Object.keys(populationMap),
     sumOfNoOfUlbs = 0,
     sumOfUlbsWithData = 0,
@@ -289,7 +301,7 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
       urbanPopulationPercentage: "Urban Population Percentage",
     },
     columns = [
-      { key: "ulbType", display_name: "ULB Type" },
+      { key: "ulbType", display_name: "Population Category" },
       ...Object.keys(populationMap.Average).map((each) => {
         return { key: each, display_name: displayNameMapper[each] };
       }),
@@ -447,7 +459,10 @@ exports.nationalDashRevenue = async (req, res) => {
         columns = [
           {
             key: "ulb_pop_category",
-            display_name: "ULB Population Category",
+            display_name:
+              formType == "populationCategory"
+                ? "ULB Population Category"
+                : "ULB Type",
           },
           ...Object.keys(populationMap["Average"]).map((each) => {
             return { key: each, display_name: displayNameMapper[each] };
@@ -748,7 +763,10 @@ exports.nationalDashExpenditure = async (req, res) => {
         columns = [
           {
             key: "ulb_pop_category",
-            display_name: "ULB Population Category",
+            display_name:
+              formType == "populationCategory"
+                ? "ULB Population Category"
+                : "ULB Type",
           },
           ...Object.keys(populationMap["Average"]).map((each) => {
             return { key: each, display_name: displayNameMapper[each] };
@@ -1220,7 +1238,10 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         columns = [
           {
             key: "ulb_pop_category",
-            display_name: "ULB Population Category",
+            display_name:
+              formType == "populationCategory"
+                ? "ULB Population Category"
+                : "ULB Type",
           },
           ...Object.keys(populationMap["Average"]).map((each) => {
             return { key: each, display_name: displayNameMapper[each] };
@@ -1473,7 +1494,10 @@ exports.nationalDashCapexpense = async (req, res) => {
         columns = [
           {
             key: "ulb_pop_category",
-            display_name: "ULB Population Category",
+            display_name:
+              formType == "populationCategory"
+                ? "ULB Population Category"
+                : "ULB Type",
           },
           ...Object.keys(populationMap["Average"]).map((each) => {
             return { key: each, display_name: displayNameMapper[each] };
