@@ -2925,7 +2925,14 @@ const peerComp = async (req, res) => {
       })
     );
     const totalRevenue = UlbLedger.aggregate(
-      getPeerQuery({ isPerCapita, from, financialYear, lineItem, ulb })
+      getPeerQuery({
+        isPerCapita,
+        from,
+        financialYear,
+        lineItem,
+        ulb,
+        getTotal: true,
+      })
     );
 
     const query = [
@@ -3233,6 +3240,16 @@ function getPeerQuery(params) {
         },
       }
     );
+  } else if (params.hasOwnProperty("getTotal")) {
+    query.push({
+      $group: {
+        _id: "ulb._id",
+        amount: { $sum: "$amount" },
+        ulb: {
+          $first: "$ulb",
+        },
+      },
+    });
   } else {
     query.push(
       { $sort: { amount: -1 } },

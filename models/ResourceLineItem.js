@@ -7,7 +7,7 @@ var ResourceLineItemSchema = new Schema(
     imageUrl: { type: String, default: "" },
     header: {
       type: String,
-      enum: ["learning center", "datasets", "reports & publications"],
+      enum: ["learning_center", "datasets", "reports_&_publications"],
       required: true,
       index: true,
     },
@@ -18,9 +18,9 @@ var ResourceLineItemSchema = new Schema(
       enum: [
         "toolkit",
         "blog",
-        "best practices",
+        "best_practices",
         "videos",
-        "e-learning modules",
+        "e-learning_modules",
         "podcasts",
       ],
     },
