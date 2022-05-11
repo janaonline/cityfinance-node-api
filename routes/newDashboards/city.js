@@ -3240,18 +3240,17 @@ function getPeerQuery(params) {
         },
       }
     );
-  } else if (params.hasOwnProperty("getTotal")) {
-    query.push({
-      $group: {
-        _id: "ulb._id",
-        amount: { $sum: "$amount" },
-        ulb: {
-          $first: "$ulb",
+  }else {
+    query.push(
+      {
+        $group: {
+          _id: "$ulb._id",
+          amount: { $sum: "$amount" },
+          ulb: {
+            $first: "$ulb",
+          },
         },
       },
-    });
-  } else {
-    query.push(
       { $sort: { amount: -1 } },
       { $limit: 1 },
       {
