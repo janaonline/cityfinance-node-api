@@ -28,7 +28,7 @@ exports.dataAvailabilityState = async (req, res) => {
       .populate("ulbType", "name")
       .select("_id population ulbType")
       .lean();
-      
+
     let totalUlbs = Ulb.countDocuments();
     if (financialYear) filterCondition["financialYear"] = financialYear;
 
@@ -36,7 +36,7 @@ exports.dataAvailabilityState = async (req, res) => {
     ulbs = temp[0];
     totalUlbs = temp[1];
     filterCondition = {
-      ulb: { $in : ulbs.map((ech) => ObjectId(ech._id)) },
+      ulb: { $in: ulbs.map((ech) => ObjectId(ech._id)) },
       financialYear,
     };
     ulbLedgers = await UlbLedger.distinct("ulb", filterCondition);
@@ -45,7 +45,7 @@ exports.dataAvailabilityState = async (req, res) => {
     let responsePayload = {
       data: null,
     };
-    
+
     if (population)
       responsePayload.data = await createPopulationData(
         JSON.parse(JSON.stringify(ulbs)),
@@ -66,7 +66,7 @@ exports.dataAvailabilityState = async (req, res) => {
       null,
       "nationalDashboard"
     );
-    responsePayload.dataAvailability = dataAvailResponse.percent;
+    responsePayload.dataAvailability = Math.round(dataAvailResponse.percent);
     if (csv) {
       return getExcel(req, res, responsePayload.data);
     }
@@ -167,7 +167,7 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
       rows = Object.keys(ulbTypeMap).map((each) => {
         let output = { ulbType: each };
         for (key in ulbTypeMap[each]) {
-          output[key] = ulbTypeMap[each][key].toFixed(2);
+          output[key] = Math.round(ulbTypeMap[each][key]);
           if (key.includes("Percentage")) {
             output[key] += " %";
           }
@@ -309,7 +309,7 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
     theRows = Object.keys(populationMap).map((each) => {
       let output = { ulbType: each };
       for (key in populationMap[each]) {
-        output[key] = populationMap[each][key].toFixed(2);
+        output[key] = Math.round(populationMap[each][key]);
         if (key.includes("Percentage")) {
           output[key] += " %";
         }
@@ -472,7 +472,7 @@ exports.nationalDashRevenue = async (req, res) => {
           ...Object.keys(responsePayload.data).map((each) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
-              output[x] = responsePayload.data[each][x].toFixed(2);
+              output[x] = Math.round(responsePayload.data[each][x]);
               if (x.includes("Percentage")) {
                 output[x] += " %";
               }
@@ -776,7 +776,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           ...Object.keys(responsePayload.data).map((each) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
-              output[x] = responsePayload.data[each][x].toFixed(2);
+              output[x] = Math.round(responsePayload.data[each][x]);
               if (x.includes("Percentage")) {
                 output[x] += " %";
               }
@@ -1251,7 +1251,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
           ...Object.keys(responsePayload.data).map((each) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
-              output[x] = responsePayload.data[each][x].toFixed(2);
+              output[x] = Math.round(responsePayload.data[each][x]);
             }
             return output;
           }),
@@ -1507,7 +1507,7 @@ exports.nationalDashCapexpense = async (req, res) => {
           ...Object.keys(responsePayload.data).map((each) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
-              output[x] = responsePayload.data[each][x].toFixed(2);
+              output[x] = Math.round(responsePayload.data[each][x]);
             }
             return output;
           }),
@@ -1620,7 +1620,7 @@ exports.getStatewiseDataAvail = async (req, res) => {
     response.data.map((each) => {
       for (value of ulbsStateWise) {
         if (each.stateId.toString() == value._id.toString()) {
-          each.percentage = ((each.count * 100) / value.count).toFixed(2);
+          each.percentage = Math.round((each.count * 100) / value.count);
           delete each.count;
         }
       }
