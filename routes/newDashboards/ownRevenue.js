@@ -290,56 +290,62 @@ const dataAvailability = async (req, res, reuseOption) => {
 };
 
 async function getExcelForAvailability(res, query, stateId) {
-  let ulbCount = await Ulb.find({ state: ObjectId(stateId) })
-    .populate("state")
-    .select({ _id: 1, name: 1, state: 1 })
-    .lean();
-  let data = await UlbLedger.aggregate(query);
+  try {
+    if (!ObjectId.isValid(stateId))
+      throw Error(`invalid objectId stateId=${stateId}`);
+    let ulbCount = await Ulb.find({ state: ObjectId(stateId) })
+      .populate("state")
+      .select({ _id: 1, name: 1, state: 1 })
+      .lean();
+    let data = await UlbLedger.aggregate(query);
 
-  data = JSON.parse(JSON.stringify(data));
-  let ulbMap = data.map((value) => value._id);
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet("Data Availability");
-  // const imageId2 = workbook.addImage({
-  //   buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
-  //   extension: "png",
-  // });
-  // worksheet.addImage(imageId2, "A1:F3");
-  worksheet.columns = [
-    { header: "S.no", key: "sno" },
-    { header: "ULB name", key: "ulb" },
-    // { header: "State Name", key: "state" },
-    { header: "Data Availability", key: "status" },
-  ];
-  // worksheet.insertRow(1, {});
-  // worksheet.insertRow(1, {});
-  // worksheet.insertRow(1, {});
-  ulbCount.map((value, i) => {
-    value = JSON.parse(JSON.stringify(value));
-    if (value._id == "5fa281a3c7ffa964f0cfa9fb") {
-      console.log("Ss");
-    }
-    let obj = {
-      sno: i + 1,
-      ulb: value.name,
-      code: value.code,
-      censusCode: value.censusCode,
-      state: value.state.name,
-      status: ulbMap.includes(value._id) ? "Yes" : "No",
-    };
-    worksheet.addRow(obj);
-  });
-  res.setHeader(
-    "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-  );
-  res.setHeader(
-    "Content-Disposition",
-    "attachment; filename=" + "Data_Availability.xlsx"
-  );
-  return workbook.xlsx.write(res).then(function () {
-    res.status(200).end();
-  });
+    data = JSON.parse(JSON.stringify(data));
+    let ulbMap = data.map((value) => value._id);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Data Availability");
+    // const imageId2 = workbook.addImage({
+    //   buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
+    //   extension: "png",
+    // });
+    // worksheet.addImage(imageId2, "A1:F3");
+    worksheet.columns = [
+      { header: "S.no", key: "sno" },
+      { header: "ULB name", key: "ulb" },
+      // { header: "State Name", key: "state" },
+      { header: "Data Availability", key: "status" },
+    ];
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    ulbCount.map((value, i) => {
+      value = JSON.parse(JSON.stringify(value));
+      if (value._id == "5fa281a3c7ffa964f0cfa9fb") {
+        console.log("Ss");
+      }
+      let obj = {
+        sno: i + 1,
+        ulb: value.name,
+        code: value.code,
+        censusCode: value.censusCode,
+        state: value.state.name,
+        status: ulbMap.includes(value._id) ? "Yes" : "No",
+      };
+      worksheet.addRow(obj);
+    });
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=" + "Data_Availability.xlsx"
+    );
+    return workbook.xlsx.write(res).then(function () {
+      res.status(200).end();
+    });
+  } catch (error) {
+    return res.status(400).json({ msg: error.message || error.msg || error });
+  }
 }
 
 const chartData = async (req, res) => {
