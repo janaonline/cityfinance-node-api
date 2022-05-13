@@ -1491,7 +1491,7 @@ const topPerForming = async (req, res) => {
 
     if (!financialYear)
       return Response.BadRequest(res, null, "financial year missing");
-    let datab;
+    let data;
     let matchObj = {};
 
     // if (ulbType && ObjectId.isValid(ulbType))
@@ -1635,6 +1635,7 @@ const topPerForming = async (req, res) => {
       list.forEach((el) => {
         newList.push(el._id);
       });
+      if (!type) return res.status(400).json({ msg: "type is required" });
       if (type == "state") {
         let query;
         if (param == "Own Revenue") {
@@ -1882,7 +1883,7 @@ const topPerForming = async (req, res) => {
           ];
         }
 
-        datab = await UlbLedger.aggregate(query);
+        data = await UlbLedger.aggregate(query);
       } else if (type == "ulb") {
         let query;
         if (param == "Own Revenue") {
@@ -2087,18 +2088,13 @@ const topPerForming = async (req, res) => {
           ];
         }
 
-        datab = await UlbLedger.aggregate(query);
+        data = await UlbLedger.aggregate(query);
       }
     }
 
     // console.log(datab)
     // if (datab.length == 0)
     // return Response.BadRequest(res, null, "No data Found");
-
-    // return res.status(200).json({
-    //   success: true,
-    //   data: datab
-    // })
 
     // if (getQuery) return Response.OK(res, query);
 
@@ -2126,7 +2122,10 @@ const topPerForming = async (req, res) => {
         res.status(200).end();
       });
     }
-    return Response.OK(res, data);
+    return res.status(200).json({
+      success: true,
+      data,
+    });
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);
