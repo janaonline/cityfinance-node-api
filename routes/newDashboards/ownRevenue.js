@@ -291,9 +291,9 @@ const dataAvailability = async (req, res, reuseOption) => {
 
 async function getExcelForAvailability(res, query, stateId) {
   try {
-    if (!ObjectId.isValid(stateId))
-      throw Error(`invalid objectId stateId=${stateId}`);
-    let ulbCount = await Ulb.find({ state: ObjectId(stateId) })
+    let ulbCount = await Ulb.find(
+      ObjectId.isValid(stateId) ? { state: ObjectId(stateId) } : {}
+    )
       .populate("state")
       .select({ _id: 1, name: 1, state: 1 })
       .lean();
@@ -319,9 +319,6 @@ async function getExcelForAvailability(res, query, stateId) {
     // worksheet.insertRow(1, {});
     ulbCount.map((value, i) => {
       value = JSON.parse(JSON.stringify(value));
-      if (value._id == "5fa281a3c7ffa964f0cfa9fb") {
-        console.log("Ss");
-      }
       let obj = {
         sno: i + 1,
         ulb: value.name,
