@@ -2,26 +2,49 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const ResourceLineItem = require("../../models/ResourceLineItem");
 const ULB = require("../../models/Ulb");
+const STATE = require("../../models/State");
 const resource = require("../../models/Resources");
+const ExcelJS = require("exceljs");
+const Resources = require("../../models/Resources");
 
 module.exports.get = async function (req, res) {
   try {
-    const { header, subheader, ulb, state, type } = req.query;
-    if (!header || !subheader)
-      return Response.BadRequest(res, null, "header and subheader is required");
-    let query = { header, subheader };
+    let {
+      header,
+      subHeader,
+      ulb,
+      state,
+      type,
+      toolKitVisible,
+      getQuery,
+      globalName,
+      fromOld,
+    } = req.query;
+    if (fromOld) {
+      let data = await Resources.find().lean();
+      return Response.OK(res, data);
+    }
+    if ((!header || !subHeader) && !toolKitVisible)
+      return Response.BadRequest(res, null, "header and subHeader is required");
+    let query = { header, subHeader };
     if (type) {
       Object.assign(query, { type });
     }
-    let ulbs;
     if (ulb) {
       Object.assign(query, { ulb });
     } else if (state) {
-      ulbs = await ULB.find({ state }, { _id: 1 }).lean();
-      ulbs = ulbs.map((value) => value._id);
-      Object.assign(query, { ulb: { $in: ulbs } });
+      Object.assign(query, { state });
     }
-    let data = await Resource.find(query);
+    if (globalName) {
+      Object.assign(query, { name: { $regex: globalName, $options: "si" } });
+    }
+    if (toolKitVisible) {
+      toolKitVisible = formateName(toolKitVisible);
+      query = { toolKitVisible };
+    }
+    if (getQuery) return res.status(200).json(query);
+    let data = await ResourceLineItem.find(query).lean();
+    if (data.length < 1) throw Error("No Resource Found");
     return Response.OK(res, data);
   } catch (error) {
     console.log(error);
@@ -43,21 +66,98 @@ module.exports.post = async function (req, res) {
   }
 };
 
+module.exports.bulkPost = async function (req, res) {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    let file = await workbook.xlsx.readFile(req.file.path);
+    let worksheet = file.getWorksheet(1);
+    let rowData = worksheet.getRows(1, worksheet.rowCount);
+    let ulbData = [],
+      allPromises = [];
+    let allowedHeaders = [
+      "Tab",
+      "Sub Tab",
+      "State Code",
+      "ULB Code",
+      "Year (Published In)",
+      "File Name",
+      "File Type",
+      "File URL",
+      "Toolkit Tab Visible",
+    ];
+    let errorHeads = [];
+    rowData[0].values.forEach((val, index) => {
+      if (val != allowedHeaders[index - 1]) {
+        errorHeads.push(
+          `${val} should be equal to ${allowedHeaders[index - 1]}`
+        );
+      }
+    });
+    if (errorHeads.length > 0) {
+      return Response.BadRequest(res, errorHeads);
+    }
+
+    for (let index = 0; index < rowData.length; index++) {
+      const ele = rowData[index];
+      if (index == 0) continue;
+      let value = ele.values;
+      let ulb = value[4]
+          ? (await ULB.findOne({ code: value[4] }).select("_id").lean())["_id"]
+          : null,
+        state = value[3]
+          ? (await STATE.findOne({ code: value[3] }).select("_id").lean())[
+              "_id"
+            ]
+          : null;
+      let temObj = {
+        name: value[6],
+        downloadUrl: value[8]?.text,
+        header: formateName(value[1]),
+        type: value[7],
+        subHeader: formateName(value[2]),
+        toolKitVisible: formateName(value[9]),
+        publishedYear: value[5],
+        ulb,
+        state,
+      };
+      ulbData.push(temObj);
+      let data = new ResourceLineItem(temObj);
+      allPromises.push(data.save());
+    }
+
+    let result = await Promise.all(allPromises);
+    return res.status(200).json({ msg: "success", ulbData, result });
+  } catch (error) {
+    return Response.InternalError(res, error?.message || error);
+  }
+};
 
 /* A search function. */
 module.exports.search = async function (req, res) {
   try {
-    if(!req.query.name) throw new Error("Empty search !");
+    if (!req.query.name) throw new Error("Empty search !");
 
     const searchGlobal = req.query.name;
-    const fromModelData = { learningCenter : 0, dataSet : 0, repostAndPublication : 0 };
-    let query = { name : new RegExp(searchGlobal, "i") };
+    const fromModelData = {
+      learningCenter: 0,
+      dataSet: 0,
+      reportsAndPublication: 0,
+    };
+    let query = { name: new RegExp(searchGlobal, "i") };
 
     fromModelData.dataSet = await ULB.count(query);
-    fromModelData.repostAndPublication = await resource.count(query);
+    fromModelData.reportsAndPublication = await resource.count(query);
+    fromModelData.learningCenter_bestPractices = await ResourceLineItem.count(
+      query
+    );
 
     return Response.OK(res, fromModelData);
   } catch (error) {
     return Response.DbError(res, error, error.message);
   }
 };
+
+function formateName(name) {
+  let newName = name.toLowerCase().split(" ").join("_");
+  return newName;
+}

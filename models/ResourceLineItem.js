@@ -3,7 +3,7 @@ var ResourceLineItemSchema = new Schema(
   {
     name: { type: String, required: true },
     code: { type: String },
-    downloadUrl: { type: String, unique: true },
+    downloadUrl: { type: String },
     imageUrl: { type: String, default: "" },
     header: {
       type: String,
@@ -24,8 +24,18 @@ var ResourceLineItemSchema = new Schema(
         "podcasts",
       ],
     },
-    inType: { type: String },
+    toolKitVisible: {
+      type: String,
+      enum: [
+        "assessment",
+        "billing_and_collection",
+        "enumeration",
+        "reporting",
+      ],
+    },
+    publishedYear: { type: String },
     ulb: { type: Schema.Types.ObjectId, ref: "ulb", default: null },
+    state: { type: Schema.Types.ObjectId, ref: "state", default: null },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
@@ -33,13 +43,11 @@ var ResourceLineItemSchema = new Schema(
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 
-ResourceLineItemSchema.index(
-  {
-    code: 1,
-    isActive: 1,
-  },
-  {
-    unique: true,
-  }
-);
+ResourceLineItemSchema.index({
+  name: 1,
+  header: 1,
+  subHeader: 1,
+  toolKitVisible: 1,
+  isActive: 1,
+});
 module.exports = mongoose.model("ResourceLineItem", ResourceLineItemSchema);
