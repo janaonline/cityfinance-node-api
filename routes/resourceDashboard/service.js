@@ -20,8 +20,8 @@ module.exports.get = async function (req, res) {
       globalName,
       year,
     } = req.query;
-    if ((!header || !subHeader) && !toolKitVisible)
-      return Response.BadRequest(res, null, "header and subHeader is required");
+    if (!header && !toolKitVisible)
+      return Response.BadRequest(res, null, "header  is required");
     let query = { header, subHeader };
     if (type) {
       Object.assign(query, { type });
