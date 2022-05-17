@@ -18,12 +18,8 @@ module.exports.get = async function (req, res) {
       toolKitVisible,
       getQuery,
       globalName,
-      fromOld,
+      year,
     } = req.query;
-    if (fromOld) {
-      let data = await Resources.find().lean();
-      return Response.OK(res, data);
-    }
     if ((!header || !subHeader) && !toolKitVisible)
       return Response.BadRequest(res, null, "header and subHeader is required");
     let query = { header, subHeader };
@@ -34,6 +30,9 @@ module.exports.get = async function (req, res) {
       Object.assign(query, { ulb });
     } else if (state) {
       Object.assign(query, { state });
+    }
+    if (year) {
+      Object.assign(query, { publishedYear: year });
     }
     if (globalName) {
       Object.assign(query, { name: { $regex: globalName, $options: "si" } });
