@@ -22,7 +22,10 @@ module.exports.get = async function (req, res) {
     } = req.query;
     if (!header && !toolKitVisible)
       return Response.BadRequest(res, null, "header  is required");
-    let query = { header, subHeader };
+    let query = { header };
+    if (subHeader) {
+      Object.assign(query, { subHeader });
+    }
     if (type) {
       Object.assign(query, { type });
     }
