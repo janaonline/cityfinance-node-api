@@ -4287,7 +4287,7 @@ exports.stateDashAvgsPipeline = async (
               $sum: {
                 $cond: {
                   if: {
-                    $lt: ["population", 100000],
+                    $lt: ["$population", 100000],
                   },
                   then: { $multiply: ["$amount", "$population"] },
                   else: 0,
