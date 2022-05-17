@@ -70,7 +70,10 @@ module.exports.bulkPost = async function (req, res) {
     const workbook = new ExcelJS.Workbook();
     let file = await workbook.xlsx.readFile(req.file.path);
     let worksheet = file.getWorksheet(1);
-    let rowData = worksheet.getRows(1, worksheet.rowCount);
+    let rowData = [];
+    worksheet.eachRow(function (row) {
+      rowData.push(row);
+    });
     let ulbData = [],
       allPromises = [];
     let allowedHeaders = [
@@ -113,12 +116,16 @@ module.exports.bulkPost = async function (req, res) {
         downloadUrl: value[8]?.text,
         header: formateName(value[1]),
         type: value[7],
-        subHeader: formateName(value[2]),
-        toolKitVisible: formateName(value[9]),
         publishedYear: value[5],
         ulb,
         state,
       };
+      if (value[2]) {
+        Object.assign(temObj, { subHeader: formateName(value[2]) });
+      }
+      if (value[9]) {
+        Object.assign(temObj, { toolKitVisible: formateName(value[9]) });
+      }
       ulbData.push(temObj);
       let data = new ResourceLineItem(temObj);
       allPromises.push(data.save());
