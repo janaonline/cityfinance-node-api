@@ -4151,7 +4151,7 @@ exports.stateDashAvgsPipeline = async (
             "< 100 Thousand": {
               $cond: {
                 if: {
-                  $eq: ["$<100KAmt", 0],
+                  $eq: ["$<100KPopulation", 0],
                 },
                 then: 0,
                 else: {
@@ -4162,7 +4162,7 @@ exports.stateDashAvgsPipeline = async (
             "100 Thousand - 500 Thousand": {
               $cond: {
                 if: {
-                  $eq: ["$100K-500KAmt", 0],
+                  $eq: ["$100K-500KPopulation", 0],
                 },
                 then: 0,
                 else: {
@@ -4173,7 +4173,7 @@ exports.stateDashAvgsPipeline = async (
             "500 Thousand - 1 Million": {
               $cond: {
                 if: {
-                  $eq: ["$500K-1MAmt", 0],
+                  $eq: ["$500K-1MPopulation", 0],
                 },
                 then: 0,
                 else: {
@@ -4184,7 +4184,7 @@ exports.stateDashAvgsPipeline = async (
             "1 Million - 4 Million": {
               $cond: {
                 if: {
-                  $eq: ["$1M-4MAmt", 0],
+                  $eq: ["$1M-4MPopulation", 0],
                 },
                 then: 0,
                 else: {
@@ -4195,7 +4195,7 @@ exports.stateDashAvgsPipeline = async (
             "4 Million+": {
               $cond: {
                 if: {
-                  $eq: ["$4M+Amt", 0],
+                  $eq: ["$4M+Population", 0],
                 },
                 then: 0,
                 else: {
@@ -4216,7 +4216,7 @@ exports.stateDashAvgsPipeline = async (
             "< 100 Thousand": {
               $cond: {
                 if: {
-                  $eq: ["$< 100 Thousand", 0],
+                  $eq: ["$<100KUlbs", 0],
                 },
                 then: 0,
                 else: {
@@ -4227,7 +4227,7 @@ exports.stateDashAvgsPipeline = async (
             "100 Thousand - 500 Thousand": {
               $cond: {
                 if: {
-                  $eq: ["$100 Thousand - 500 Thousand", 0],
+                  $eq: ["$100K-500KUlbs", 0],
                 },
                 then: 0,
                 else: {
@@ -4238,7 +4238,7 @@ exports.stateDashAvgsPipeline = async (
             "500 Thousand - 1 Million": {
               $cond: {
                 if: {
-                  $eq: ["$500 Thousand - 1 Million", 0],
+                  $eq: ["$500K-1MUlbs", 0],
                 },
                 then: 0,
                 else: {
@@ -4249,7 +4249,7 @@ exports.stateDashAvgsPipeline = async (
             "1 Million - 4 Million": {
               $cond: {
                 if: {
-                  $eq: ["$1 Million - 4 Million", 0],
+                  $eq: ["$1M-4MUlbs", 0],
                 },
                 then: 0,
                 else: {
@@ -4260,7 +4260,7 @@ exports.stateDashAvgsPipeline = async (
             "4 Million+": {
               $cond: {
                 if: {
-                  $eq: ["$4 Million+", 0],
+                  $eq: ["$4M+Ulbs", 0],
                 },
                 then: 0,
                 else: {
@@ -4287,7 +4287,7 @@ exports.stateDashAvgsPipeline = async (
               $sum: {
                 $cond: {
                   if: {
-                    $lt: ["population", 100000],
+                    $lt: ["$population", 100000],
                   },
                   then: { $multiply: ["$amount", "$population"] },
                   else: 0,
