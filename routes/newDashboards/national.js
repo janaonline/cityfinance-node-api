@@ -978,7 +978,7 @@ async function createTableData(type, data, ulbsCountInIndia) {
   for (const key in rows[0]) {
     if (key == "ulbType") continue;
     let element = rows[0][key];
-    element = data.national[key] / ulbsCountInIndia;
+    element = Math.round(data.national[key] / ulbsCountInIndia);
     if (key == "deficitOrSurplus") {
       element = element > 0 ? "Surplus" : "Deficit";
     }
