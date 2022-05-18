@@ -666,8 +666,8 @@ async function revenueExpenditureQueryCompare(
   let tempQ;
   switch (compareFrom) {
     case "State Average":
-      ulbData = await ULB.findOne({ _id: ulb });
-      ulbId = await ULB.find({ state: ulbData.state });
+      ulbData = await ULB.findOne({ _id: ulb }).lean();
+      ulbId = await ULB.find({ state: ulbData.state }).lean();
       tempQ = [
         {
           $match: {
@@ -806,8 +806,8 @@ async function revenueExpenditureQueryCompare(
       break;
     case "ULB Population Category Average":
     case "National Average":
-      ulbData = await ULB.findOne({ _id: ulb });
-      ulbId = await ULB.find({ state: ulbData.state });
+      ulbData = await ULB.findOne({ _id: ulb }).lean();
+      ulbId = await ULB.find({ state: ulbData.state }).lean();
       tempQ = [
         {
           $match: {
@@ -919,8 +919,8 @@ async function revenueExpenditureQueryCompare(
       break;
 
     case "ULB Type Average":
-      ulbData = await ULB.findOne({ _id: ulb });
-      ulbId = await ULB.find({ state: ulbData.ulbType });
+      ulbData = await ULB.findOne({ _id: ulb }).lean();
+      ulbId = await ULB.find({ state: ulbData.ulbType }).lean();
       tempQ = [
         {
           $match: {
@@ -1791,8 +1791,9 @@ async function expenseQueryCompare(
   } else lineItemIds = await LINEITEM.find({ headOfAccount: "Expense" });
   switch (compareFrom) {
     case "State Average":
-      ulbData = await ULB.findOne({ _id: ulb });
-      ulbId = await ULB.find({ state: ulbData.state });
+      ulbData = await ULB.findOne({ _id: ulb }).lean();
+      ulbId = await ULB.find({ state: ulbData.state }).lean();
+      ulbId = ulbId.map((val) => val._id);
       tempQ = [
         {
           $match: {
@@ -1800,7 +1801,7 @@ async function expenseQueryCompare(
               $in: body.financialYear,
             },
             ulb: {
-              $in: ulbId.map((val) => val._id),
+              $in: ulbId,
             },
             lineItem: {
               $in: lineItemIds.map((val) => val._id),
@@ -1890,6 +1891,7 @@ async function expenseQueryCompare(
             }
           );
         } else if (from.includes("capital")) {
+          tempQ = await capitalLogic(tempQ);
           tempQ.push(
             {
               $group: {
@@ -2096,13 +2098,13 @@ async function expenseQueryCompare(
             }
           );
         } else if (from.includes("capital")) {
+          tempQ = await capitalLogic(tempQ);
           tempQ.push(
             {
               $group: {
                 _id: {
                   financialYear: "$financialYear",
                   lineItemName: "$lineitems.name",
-                  state: "$state._id",
                 },
                 colour: { $first: "$lineitems.colour" },
                 amount: {
@@ -2139,10 +2141,12 @@ async function expenseQueryCompare(
               $project: {
                 _id: 1,
                 amount: {
-                  $divide: ["$numerator", "$denominator"],
+                  $cond: {
+                    if: { $gt: ["$denominator", 0] },
+                    then: { $divide: ["$numerator", "$denominator"] },
+                    else: 0,
+                  },
                 },
-                ulbName: 1,
-                code: 1,
               },
             },
             {
@@ -2267,6 +2271,7 @@ async function expenseQueryCompare(
             }
           );
         } else if (from.includes("capital")) {
+          tempQ = await capitalLogic(tempQ);
           tempQ.push(
             {
               $group: {
@@ -2341,7 +2346,7 @@ async function expenseQueryCompare(
 
     case "ULB Type Average":
       ulbData = await ULB.findOne({ _id: ulb }).lean();
-      ulbId = await ULB.find({ ulbType: ulbData.ulbType });
+      ulbId = await ULB.find({ ulbType: ulbData.ulbType }).lean();
       tempQ = [
         {
           $match: {
@@ -2438,6 +2443,7 @@ async function expenseQueryCompare(
             }
           );
         } else if (from.includes("capital")) {
+          tempQ = await capitalLogic(tempQ);
           tempQ.push(
             {
               $group: {
@@ -2511,6 +2517,36 @@ async function expenseQueryCompare(
       return tempQ;
       break;
   }
+}
+
+async function capitalLogic(aggregateQuery) {
+  aggregateQuery.push({
+    $group: {
+      _id: {
+        financialYear: "$financialYear",
+      },
+      ulb: { $addToSet: "$ulb._id" },
+    },
+  });
+  let ulbId = [];
+  let newUlbs = await UlbLedger.aggregate(aggregateQuery);
+  newUlbs = JSON.parse(JSON.stringify(newUlbs));
+  if (newUlbs.length > 2) {
+    newUlbs[0].ulb.forEach((val) => {
+      if (newUlbs[1]?.ulb?.includes(val) && newUlbs[2]?.ulb?.includes(val)) {
+        ulbId.push(ObjectId(val));
+      }
+    });
+  } else {
+    newUlbs[0].ulb.forEach((val) => {
+      if (newUlbs[1]?.ulb?.includes(val)) {
+        ulbId.push(ObjectId(val));
+      }
+    });
+  }
+  Object.assign(aggregateQuery[0]?.$match, { ulb: { $in: ulbId } });
+  aggregateQuery.pop();
+  return aggregateQuery;
 }
 
 const aboutCalculation = async (req, res) => {
