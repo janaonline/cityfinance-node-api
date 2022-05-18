@@ -3888,7 +3888,7 @@ exports.stateDashAvgsPipeline = async (
       );
     }
   } else if (which == "populationAvg") {
-    if (isPerCapita) {
+    if (isPerCapita && TabType != "DeficitOrSurplus") {
       pipeline.push(
         {
           $group: {
@@ -4270,6 +4270,565 @@ exports.stateDashAvgsPipeline = async (
             },
           },
         }
+      );
+    } else if (!isPerCapita && TabType == "DeficitOrSurplus"){
+      pipeline.push(
+        {
+          "$lookup": {
+              "from": "lineitems",
+              "localField": "lineItem",
+              "foreignField": "_id",
+              "as": "lineItem"
+          }
+      },
+      {
+          "$unwind": "$lineItem"
+      },
+      {
+          "$group": {
+              "_id": "$ulb._id",
+              "revenue": {
+                  "$sum": {
+                      $cond: {
+                          if: {
+                              $eq:["$lineItem.headOfAccount", "Revenue"]
+                              },
+                          then:"$amount",
+                          else: 0,
+                          },
+  
+                      }
+              },
+                  "expenditure": {
+                  "$sum": {
+                      $cond: {
+                          if: {
+                              $eq:["$lineItem.headOfAccount", "Expense"]
+                              },
+                                                      then:"$amount",
+                          else: 0
+                          }
+                      }
+              },
+              "population": {
+                  "$first": "$ulb.population"
+              },
+              name:{$first:"$ulb.name"}
+          }
+      },
+      
+      {
+          $project:{
+              amount: {
+                  $subtract:["$revenue", "$expenditure"]
+                  },
+                  population:1
+              }
+          },
+           {
+          "$group": {
+              "_id": null,
+              "<100KAmt": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$lt": [
+                                  "$population",
+                                  100000
+                              ]
+                          },
+                          "then": "$amount",
+                          "else": 0
+                      }
+                  }
+              },
+              "<100Kset": {
+                  "$addToSet": {
+                      "$cond": {
+                          "if": {
+                              "$lt": [
+                                  "$population",
+                                  100000
+                              ]
+                          },
+                          "then": "$_id",
+                          "else": ""
+                      }
+                  }
+              },
+              "<100KUlbs": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$lt": [
+                                  "$population",
+                                  100000
+                              ]
+                          },
+                          "then": 1,
+                          "else": 0
+                      }
+                  }
+              },
+              "<100KPopulation": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$lt": [
+                                  "$population",
+                                  100000
+                              ]
+                          },
+                          "then": "$population",
+                          "else": 0
+                      }
+                  }
+              },
+              "100K-500KAmt": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          100000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          500000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": "$amount",
+                          "else": 0
+                      }
+                  }
+              },
+              "100K-500KUlbs": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          100000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          500000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": 1,
+                          "else": 0
+                      }
+                  }
+              },
+              "100K-500KPopulation": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          100000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          500000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": "$population",
+                          "else": 0
+                      }
+                  }
+              },
+              "500K-1MAmt": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          500000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          1000000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": "$amount",
+                          "else": 0
+                      }
+                  }
+              },
+              "500K-1MUlbs": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          500000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          1000000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": 1,
+                          "else": 0
+                      }
+                  }
+              },
+              "500K-1MPopulation": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          500000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          1000000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": "$population",
+                          "else": 0
+                      }
+                  }
+              },
+              "1M-4MAmt": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          1000000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          4000000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": "$amount",
+                          "else": 0
+                      }
+                  }
+              },
+              "1M-4MUlbs": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          1000000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          4000000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": 1,
+                          "else": 0
+                      }
+                  }
+              },
+              "1M-4MPopulation": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$gte": [
+                                          "$population",
+                                          1000000
+                                      ]
+                                  },
+                                  {
+                                      "$lte": [
+                                          "$population",
+                                          4000000
+                                      ]
+                                  }
+                              ]
+                          },
+                          "then": "$population",
+                          "else": 0
+                      }
+                  }
+              },
+              "4M+Amt": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$gt": [
+                                  "$population",
+                                  4000000
+                              ]
+                          },
+                          "then": "$amount",
+                          "else": 0
+                      }
+                  }
+              },
+              "4M+Ulbs": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$gt": [
+                                  "$population",
+                                  4000000
+                              ]
+                          },
+                          "then": 1,
+                          "else": 0
+                      }
+                  }
+              },
+              "4M+Population": {
+                  "$sum": {
+                      "$cond": {
+                          "if": {
+                              "$gt": [
+                                  "$population",
+                                  4000000
+                              ]
+                          },
+                          "then": "$population",
+                          "else": 0
+                      }
+                  }
+              }
+          }
+      },
+      {
+          "$project": {
+              "_id": 0,
+              "< 100 Thousand": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$<100KPopulation",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$<100KAmt",
+                              "$<100KPopulation"
+                          ]
+                      }
+                  }
+              },
+              "100 Thousand - 500 Thousand": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$100K-500KPopulation",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$100K-500KAmt",
+                              "$100K-500KPopulation"
+                          ]
+                      }
+                  }
+              },
+              "500 Thousand - 1 Million": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$500K-1MPopulation",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$500K-1MAmt",
+                              "$500K-1MPopulation"
+                          ]
+                      }
+                  }
+              },
+              "1 Million - 4 Million": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$1M-4MPopulation",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$1M-4MAmt",
+                              "$1M-4MPopulation"
+                          ]
+                      }
+                  }
+              },
+              "4 Million+": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$4M+Population",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$4M+Amt",
+                              "$4M+Population"
+                          ]
+                      }
+                  }
+              },
+              "4M+Ulbs": 1,
+              "1M-4MUlbs": 1,
+              "500K-1MUlbs": 1,
+              "100K-500KUlbs": 1,
+              "<100KUlbs": 1
+          }
+      },
+      {
+          "$project": {
+              "_id": 0,
+              "< 100 Thousand": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$<100KUlbs",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$< 100 Thousand",
+                              "$<100KUlbs"
+                          ]
+                      }
+                  }
+              },
+              "100 Thousand - 500 Thousand": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$100K-500KUlbs",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$100 Thousand - 500 Thousand",
+                              "$100K-500KUlbs"
+                          ]
+                      }
+                  }
+              },
+              "500 Thousand - 1 Million": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$500K-1MUlbs",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$500 Thousand - 1 Million",
+                              "$500K-1MUlbs"
+                          ]
+                      }
+                  }
+              },
+              "1 Million - 4 Million": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$1M-4MUlbs",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$1 Million - 4 Million",
+                              "$1M-4MUlbs"
+                          ]
+                      }
+                  }
+              },
+              "4 Million+": {
+                  "$cond": {
+                      "if": {
+                          "$eq": [
+                              "$4M+Ulbs",
+                              0
+                          ]
+                      },
+                      "then": 0,
+                      "else": {
+                          "$divide": [
+                              "$4 Million+",
+                              "$4M+Ulbs"
+                          ]
+                      }
+                  }
+              }
+          }
+      }
       );
     } else {
       pipeline.push(
