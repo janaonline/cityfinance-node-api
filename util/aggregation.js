@@ -2083,7 +2083,6 @@ exports.nationalDashExpensePipeline = (
                             if: {
                               $and: [
                                 { $eq: ["$lineItem.headOfAccount", "Revenue"] },
-                                ,
                                 {
                                   $gt: ["$ulb.population", 4e6],
                                 },
@@ -2100,7 +2099,6 @@ exports.nationalDashExpensePipeline = (
                             if: {
                               $and: [
                                 { $eq: ["$lineItem.headOfAccount", "Expense"] },
-                                ,
                                 {
                                   $gt: ["$ulb.population", 4e6],
                                 },
