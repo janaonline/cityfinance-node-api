@@ -70,15 +70,24 @@ const yearlist = catchAsync(async (req, res) => {
   //     $match:matchObj
   //   })
   // }
-  let obj = {
-    $group: {
-      _id: "$financialYear",
-    },
-  };
-  query.push(obj);
-  query.push({ $sort: { _id: -1 } });
+  // let obj = {
+  //   $group: {
+  //     _id: "$financialYear",
+  //   },
+  // };
+  // query.push(obj);
+  // query.push({ $sort: { _id: -1 } });
   // console.log(util.inspect(query,{depth: null, showHidden: false}))
-  let yearList = await UlbLedger.aggregate(query);
+  let yearList = await UlbLedger.distinct("financialYear");
+  yearList = yearList
+    .sort((a, b) => {
+      a = Number(a.split("-")[0]);
+      b = Number(b.split("-")[0]);
+      return b - a;
+    })
+    .map((val) => {
+      return { _id: val };
+    });
   return res.status(200).json({
     success: true,
     data: yearList,
