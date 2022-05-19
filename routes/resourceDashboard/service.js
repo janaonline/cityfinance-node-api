@@ -170,9 +170,7 @@ module.exports.search = async function (req, res) {
 
     fromModelData.dataSet = await ULB.count(query);
     fromModelData.reportsAndPublication = await resource.count(query);
-    fromModelData.learningCenter_bestPractices = await ResourceLineItem.count(
-      query
-    );
+    fromModelData.learningCenter = await ResourceLineItem.count(query);
 
     return Response.OK(res, fromModelData);
   } catch (error) {
