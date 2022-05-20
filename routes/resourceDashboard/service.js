@@ -5,7 +5,6 @@ const ULB = require("../../models/Ulb");
 const STATE = require("../../models/State");
 const resource = require("../../models/Resources");
 const ExcelJS = require("exceljs");
-const Resources = require("../../models/Resources");
 
 module.exports.get = async function (req, res) {
   try {
@@ -47,6 +46,21 @@ module.exports.get = async function (req, res) {
     if (getQuery) return res.status(200).json(query);
     let data = await ResourceLineItem.find(query).lean();
     if (data.length < 1) throw Error("No Resource Found");
+    return Response.OK(res, data);
+  } catch (error) {
+    console.log(error);
+    return Response.DbError(res, error, error.message);
+  }
+};
+
+module.exports.getYears = async function (req, res) {
+  try {
+    let data = await ResourceLineItem.distinct("publishedYear").lean();
+    data.sort((a, b) => {
+      a = Number(a.split("-")[0]);
+      b = Number(b.split("-")[0]);
+      return b - a;
+    });
     return Response.OK(res, data);
   } catch (error) {
     console.log(error);
@@ -156,9 +170,7 @@ module.exports.search = async function (req, res) {
 
     fromModelData.dataSet = await ULB.count(query);
     fromModelData.reportsAndPublication = await resource.count(query);
-    fromModelData.learningCenter_bestPractices = await ResourceLineItem.count(
-      query
-    );
+    fromModelData.learningCenter = await ResourceLineItem.count(query);
 
     return Response.OK(res, fromModelData);
   } catch (error) {

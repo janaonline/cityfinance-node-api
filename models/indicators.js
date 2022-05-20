@@ -4,14 +4,11 @@ const { Schema } = mongoose;
 const IndicatorsSchema = new Schema(
   {
     ulb: { type: Schema.Types.ObjectId, ref: "ulbs" },
-    year: { type: String },
-    name: { type: String, required: true },
-    type: {
-      type: String,
-      enum: {
-        values: ["water supply", "sanitation", "solid waste", "storm water"],
-      },
+    indicatorLineItem: {
+      type: Schema.Types.ObjectId,
+      ref: "indicatorLineItem",
     },
+    year: { type: String },
     unitType: {
       type: String,
     },

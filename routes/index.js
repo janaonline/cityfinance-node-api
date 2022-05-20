@@ -169,4 +169,7 @@ router.use(fileUpload);
 const resourceDashboard = require("./resourceDashboard");
 router.use("/resourceDashboard", resourceDashboard);
 
+const indicatorLineItem = require("./indicatorLineItem");
+router.use("/indicatorLineItem", indicatorLineItem);
+
 module.exports = router;
