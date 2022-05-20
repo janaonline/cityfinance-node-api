@@ -1,17 +1,13 @@
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
-const LineItem = require("../../models/LineItem")
 const Indicator = require("../../models/indicators");
-const Sate = require("../../models/State");
+const IndicatorLineItems = require("../../models/indicatorLineItems");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
-const Redis = require("../../service/redis");
 const catchAsync = require("../../util/catchAsync");
 const util = require("util");
-const { response } = require("../../service");
-const axios = require('axios').default;
+const axios = require("axios").default;
 const ExcelJS = require("exceljs");
-const fs = require("fs");
 
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
@@ -1339,30 +1335,10 @@ const listOfIndicators = async (req, res) => {
     let response = { success: true, data: null };
     const { type } = req.query;
     if (!type) throw { message: "Type is missing." };
-    response.data = await Indicator.aggregate([
-      {
-        $match: {
-          type,
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          names: {
-            $addToSet: "$name",
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          type,
-          names: "$names",
-        },
-      },
-    ]);
-    if (response.data.length) response.data = response.data[0];
-    else throw { message: "no matching values found." };
+    response.data = await IndicatorLineItems.find({ type }).lean();
+    if (response.data.length) {
+      response.data = { type, names: response.data.map((val) => val.name) };
+    } else throw { message: "no matching values found." };
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1443,7 +1419,6 @@ let getExcel = async (req, res, data) => {
   }
 };
 
-
 const ulbsByPopulation = async (req, res) => {
   try {
     const { stateId, getQuery } = req.query;
@@ -1488,10 +1463,9 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     stateId,
     financialYear,
     filterName,
+    filterId,
     sortBy,
-    isPerCapita,
     ulb,
-    compareType,
     getQuery,
     csv,
   } = req.body;
@@ -1502,58 +1476,61 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       message: "Missing Information",
     });
   }
-let matchObj = {
-  $match: {
-    name: filterName,
-    year: financialYear,
-  },
-};
-if (ulb?.length > 0) {
-  matchObj.$match.ulb = ObjectId(ulb[0]);
-}
-let query = [
-  matchObj,
-  {
-    $lookup: {
-      from: "ulbs",
-      localField: "ulb",
-      foreignField: "_id",
-      as: "ulb",
-    },
-  },
-  {
-    $unwind: "$ulb",
-  },
-  {
+  let matchId =
+    filterId ??
+    (await IndicatorLineItems.findOne({ name: filterName }).lean())._id;
+  let matchObj = {
     $match: {
-      "ulb.state": ObjectId(stateId),
+      indicatorLineItem: ObjectId(matchId),
+      year: financialYear,
     },
-  },
-  {
-    $lookup: {
-      from: "ulbtypes",
-      localField: "ulb.ulbType",
-      foreignField: "_id",
-      as: "ulbType",
+  };
+  if (ulb?.length > 0) {
+    matchObj.$match.ulb = ObjectId(ulb[0]);
+  }
+  let query = [
+    matchObj,
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
     },
-  },
-  {
-    $unwind: "$ulbType",
-  },
-  {
-    $sort: { value: -1 },
-  },
-  {
-    $project: {
-      ulbName: "$ulb.name",
-      value: "$value",
-      benchMarkValue: "$benchMarkValue",
-      unitType: "$unitType",
-      ulbType: "$ulbType.name",
-      population: "$ulb.population",
+    {
+      $unwind: "$ulb",
     },
-  },
-];
+    {
+      $match: {
+        "ulb.state": ObjectId(stateId),
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbtypes",
+        localField: "ulb.ulbType",
+        foreignField: "_id",
+        as: "ulbType",
+      },
+    },
+    {
+      $unwind: "$ulbType",
+    },
+    {
+      $sort: { value: -1 },
+    },
+    {
+      $project: {
+        ulbName: "$ulb.name",
+        value: "$value",
+        benchMarkValue: "$benchMarkValue",
+        unitType: "$unitType",
+        ulbType: "$ulbType.name",
+        population: "$ulb.population",
+      },
+    },
+  ];
   let tp_data = [],
     m_data = [],
     mc_data = [],
@@ -1563,7 +1540,7 @@ let query = [
   let data2 = Indicator.aggregate([
     {
       $match: {
-        name: filterName,
+        indicatorLineItem: ObjectId(matchId),
         year: financialYear,
       },
     },
