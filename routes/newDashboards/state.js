@@ -271,31 +271,39 @@ const calData = (data, filterName = "") => {
         _id: "Own Revenue",
         code: ["110", "130", "140", "150", "180"],
         amount: 0,
+        colour: "#25C7CE",
       },
       {
         _id: "Assigned Revenues & Compensation",
         code: ["120"],
         amount: 0,
+        colour: "",
       },
       {
         _id: "Grants",
         code: ["160"],
         amount: 0,
+        colour: "",
       },
       {
         _id: "Interest Income",
         code: ["171"],
         amount: 0,
+        colour: "",
       },
       {
         _id: "Other Receipts",
         code: ["170", "100"],
         amount: 0,
+        colour: "#00ff80",
       },
     ];
     for (let el of data) {
       let temp = copyData.find((value) => value.code.includes(el.code));
-      if (temp) temp.amount += el.amount;
+      if (temp) {
+        temp.amount += el.amount;
+        if (!temp.colour) temp.colour = el.colour;
+      }
     }
     return copyData;
   }
@@ -740,6 +748,7 @@ const revenue = catchAsync(async (req, res) => {
           _id: "$lineItem.name",
           code: { $first: "$lineItem.code" },
           amount: { $sum: "$amount" },
+          colour: { $first: "$lineItem.colour" },
         },
       },
     ];
@@ -965,6 +974,7 @@ const revenue = catchAsync(async (req, res) => {
           _id: "$lineItem.name",
           amount: { $sum: "$amount" },
           code: { $first: "$lineItem.code" },
+          colour: { $first: "$lineItem.colour" },
         },
       },
     ];
