@@ -186,16 +186,36 @@ async function getAnswerByUlb(req, res) {
         },
       },
       {
-        $limit: 3,
+        $group: {
+          _id: "$ulb._id",
+          ulb: {
+            $first: "$ulb._id",
+          },
+          ulbName: {
+            $first: "$ulb.name",
+          },
+          scorePerformance: {
+            $first: "$scorePerformance",
+          },
+          total: {
+            $first: "$total",
+          },
+          partcularAnswerValues: {
+            $first: "$partcularAnswerValues",
+          },
+          createdAt: {
+            $first: "$createdAt",
+          },
+        },
       },
       {
-        $project: {
-          ulb: "$ulb._id",
-          ulbName: "$ulb.name",
-          scorePerformance: 1,
-          total: 1,
-          partcularAnswerValues: 1,
+        $sort: {
+          total: -1,
+          createdAt: -1,
         },
+      },
+      {
+        $limit: 3,
       },
     ];
     let topThreeData = await scorePerformance.aggregate(query);
