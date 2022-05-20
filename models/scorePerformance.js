@@ -4,7 +4,7 @@ const scorePerformanceSchema = new Schema(
   {
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb" },
     total: {
-      type: String,
+      type: Number,
     },
     partcularAnswerValues: [{ name: String, value: Number }],
     scorePerformance: {
@@ -39,8 +39,8 @@ const scorePerformanceSchema = new Schema(
         },
       ],
     },
-    modifiedAt: { type: Date },
-    createdAt: { type: Date },
+    modifiedAt: { type: Date, default: new Date() },
+    createdAt: { type: Date, default: new Date() },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
