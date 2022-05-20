@@ -3433,7 +3433,7 @@ exports.stateDashAvgsPipeline = async (
     });
   } else if (TabType == "RevenueTotalExpenditure") {
     let lineIds = await LineItem.find({
-      code: { $in: ["210", "220", "230"] },
+      code: { $in: ["200", "210", "220", "230", "240"] },
     }).select("_id");
     Object.assign(matchObj, {
       lineItem: { $in: lineIds.map((value) => value._id) },
@@ -3488,7 +3488,7 @@ exports.stateDashAvgsPipeline = async (
     }
   );
   if (which == "nationalAvg") {
-    if (isPerCapita) {
+    if (isPerCapita && TabType != "DeficitOrSurplus") {
       pipeline.push(
         {
           $group: {
@@ -3527,7 +3527,90 @@ exports.stateDashAvgsPipeline = async (
           },
         }
       );
-    } else {
+    } else if (!isPerCapita && TabType == "DeficitOrSurplus"){
+      pipeline.push(
+        {
+          "$lookup": {
+              "from": "lineitems",
+              "localField": "lineItem",
+              "foreignField": "_id",
+              "as": "lineItem"
+          }
+      },
+      {
+          "$unwind": "$lineItem"
+      },
+      {
+          "$group": {
+              "_id": "$ulb._id",
+              "revenue": {
+                  "$sum": {
+                      $cond: {
+                          if: {
+                              $eq:["$lineItem.headOfAccount", "Revenue"]
+                              },
+                          then:"$amount",
+                          else: 0,
+                          },
+  
+                      }
+              },
+                  "expenditure": {
+                  "$sum": {
+                      $cond: {
+                          if: {
+                              $eq:["$lineItem.headOfAccount", "Expense"]
+                              },
+                                                      then:"$amount",
+                          else: 0
+                          }
+                      }
+              },
+              "population": {
+                  "$first": "$ulb.population"
+              },
+              name:{$first:"$ulb.name"}
+          }
+      },
+      
+      {
+          $project:{
+              amount: {
+                  $subtract:["$revenue", "$expenditure"]
+                  },
+                  population:1
+              }
+          },
+          {
+            $group: {
+              _id: null,
+              sum: {
+                $sum: "$amount",
+              },
+              population: { $sum: "$population" },
+              ulbCount: { $sum: 1 },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              national: {
+                $divide: ["$sum", "$population"],
+              },
+              ulbCount: 1,
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              national: {
+                $divide: ["$national", "$ulbCount"],
+              },
+            },
+          }
+      )
+    }
+    else {
       pipeline.push(
         {
           $group: {
@@ -3558,22 +3641,42 @@ exports.stateDashAvgsPipeline = async (
       );
     }
   } else if (which == "ulbTypeAvg") {
-    if (isPerCapita) {
+    if (isPerCapita &&  TabType != "DeficitOrSurplus" ) {
       pipeline.push(
-        {
-          $group: {
-            _id: "$ulb._id",
-            amount: {
-              $sum: "$amount",
-            },
-            population: {
-              $first: "$ulb.population",
-            },
-            ulbType: {
-              $first: "$ulb.ulbType",
-            },
+        
+      {
+          "$group": {
+              "_id": "$ulb._id",
+              "amount": {
+                  "$sum": "$amount"
+              },
+                  "expenditure": {
+                  "$sum": {
+                      $cond: {
+                          if: {
+                              $eq:["$lineItem.headOfAccount", "Expense"]
+                              },
+                                                      then:"$amount",
+                          else: 0
+                          }
+                      }
+              },
+              "population": {
+                  "$first": "$ulb.population"
+              },
+              ulbType:{$first:"$ulb.ulbType"}
+          }
+      },
+      
+      {
+          $project:{
+              amount: {
+                  $subtract:["$revenue", "$expenditure"]
+                  },
+                  population:1,
+                  ulbType:1
+              }
           },
-        },
         {
           $group: {
             _id: null,
@@ -3758,7 +3861,259 @@ exports.stateDashAvgsPipeline = async (
           },
         }
       );
-    } else {
+    } else if(!isPerCapita && TabType == "DeficitOrSurplus") {
+      pipeline.push( {
+        "$lookup": {
+            "from": "lineitems",
+            "localField": "lineItem",
+            "foreignField": "_id",
+            "as": "lineItem"
+        }
+    },
+    {
+        "$unwind": "$lineItem"
+    },
+    {
+        "$group": {
+            "_id": "$ulb._id",
+            "revenue": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$lineItem.headOfAccount",
+                                "Revenue"
+                            ]
+                        },
+                        "then": "$amount",
+                        "else": 0
+                    }
+                }
+            },
+            "expenditure": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$lineItem.headOfAccount",
+                                "Expense"
+                            ]
+                        },
+                        "then": "$amount",
+                        "else": 0
+                    }
+                }
+            },
+            "population": {
+                "$first": "$ulb.population"
+            },
+            "ulbType": {
+                "$first": "$ulb.ulbType"
+            }
+        }
+    },
+    {
+        "$project": {
+            "amount": {
+                "$subtract": [
+                    "$revenue",
+                    "$expenditure"
+                ]
+            },
+            "population": 1,
+            "ulbType": 1
+        }
+    },
+    {
+        "$group": {
+            "_id": null,
+            "municipalAmt": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa64e43263a0e75c71695")
+                            ]
+                        },
+                        "then": { $multiply: ["$amount", "$population"] },
+                        "else": 0
+                    }
+                }
+            },
+            "municipalUlbs": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa64e43263a0e75c71695")
+                            ]
+                        },
+                        "then": 1,
+                        "else": 0
+                    }
+                }
+            },
+            "municipalPopulation": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa64e43263a0e75c71695")
+                            ]
+                        },
+                        "then": "$population",
+                        "else": 0
+                    }
+                }
+            },
+            "municipalCorAmt": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa67543263a0e75c71697")
+                            ]
+                        },
+                        "then": { $multiply: ["$amount", "$population"] },
+                        "else": 0
+                    }
+                }
+            },
+            "municipalCorUlbs": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa67543263a0e75c71697")
+                            ]
+                        },
+                        "then": 1,
+                        "else": 0
+                    }
+                }
+            },
+            "municipalCorPopulation": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa67543263a0e75c71697")
+                            ]
+                        },
+                        "then": "$population",
+                        "else": 0
+                    }
+                }
+            },
+            "townPanAmt": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa66b43263a0e75c71696")
+                            ]
+                        },
+                        "then": { $multiply: ["$amount", "$population"] },
+                        "else": 0
+                    }
+                }
+            },
+            "townPanUlbs": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa66b43263a0e75c71696")
+                            ]
+                        },
+                        "then": 1,
+                        "else": 0
+                    }
+                }
+            },
+            "townPanPopulation": {
+                "$sum": {
+                    "$cond": {
+                        "if": {
+                            "$eq": [
+                                "$ulbType",
+                                                    ObjectId("5dcfa66b43263a0e75c71696")
+                            ]
+                        },
+                        "then": "$population",
+                        "else": 0
+                    }
+                }
+            }
+        }
+    },
+    {
+        "$project": {
+            "_id": 0,
+            "Municipality": {
+                "$cond": {
+                    "if": {
+                        "$eq": [
+                            "$municipalPopulation",
+                            0
+                        ]
+                    },
+                    "then": 0,
+                    "else": {
+                        "$divide": [
+                            "$municipalAmt",
+                            "$municipalPopulation"
+                        ]
+                    }
+                }
+            },
+            "Municipal Corporation": {
+                "$cond": {
+                    "if": {
+                        "$eq": [
+                            "$municipalCorPopulation",
+                            0
+                        ]
+                    },
+                    "then": 0,
+                    "else": {
+                        "$divide": [
+                            "$municipalCorAmt",
+                            "$municipalCorPopulation"
+                        ]
+                    }
+                }
+            },
+            "Town Panchayat": {
+                "$cond": {
+                    "if": {
+                        "$eq": [
+                            "$townPanPopulation",
+                            0
+                        ]
+                    },
+                    "then": 0,
+                    "else": {
+                        "$divide": [
+                            "$townPanAmt",
+                            "$townPanPopulation"
+                        ]
+                    }
+                }
+            },
+       
+        }
+    },
+);
+    }else {
       pipeline.push(
         {
           $group: {
