@@ -785,13 +785,13 @@ const cardsData = async (req, res) => {
           totalRevenue:1,
           totalExpense:1,
           percentage: {
-            '$multiply': [ { '$divide': [ '$totalRevenue', '$totalExpense' ] }, 100 ]
+            '$multiply': [ { '$divide': [ property ? '$totalProperty' :  '$totalRevenue', '$totalExpense' ] }, 100 ]
           },
              perCapita: {
             '$cond': [
               { '$eq': [ '$population', 0 ] },
               0,
-              { '$divide': [ '$totalRevenue', '$population' ] }
+              { '$divide': [  property ? '$totalProperty' : '$totalRevenue', '$population' ] }
             ]
           },
           }},
