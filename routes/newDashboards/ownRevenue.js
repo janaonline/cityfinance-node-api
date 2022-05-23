@@ -933,13 +933,13 @@ const tableData = async (req, res) => {
           _id: {
             ulb: "$ulb._id",
           },
-          totalAllRevenue: {
+          totalOwnRevenue: {
             $sum: {
               $cond: [
                 {
                   $in: [
                     "$lineItem.code",
-                    ["11001", "130", "140", "150", "180", "110"],
+                    ["130", "140", "150", "180", "110"],
                   ],
                 },
                 "$amount",
@@ -975,7 +975,7 @@ const tableData = async (req, res) => {
 
       {
         $project:{
-          totalRevenue:{$subtract:["$totalAllRevenue", "$totalProperty"]},
+          totalRevenue: propertyTax ? {$divide:["$totalProperty", "$totalOwnRevenue"]} : "$totalOwnRevenue",
           totalProperty:1,
           totalExpense:1,
           population:1
@@ -1164,7 +1164,7 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
           _id:null,
           numerator:{
             $sum:{
-              $multiply:[propertyTax ? "$totalProperty" : "$totalRevenue", "$population"]
+              $multiply:[ "$totalRevenue", "$population"]
             }
           },
           denominator:{
@@ -1189,7 +1189,7 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
         $project:{
           totalRevenue: 1,
           perCapita: { $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalRevenue", "$population"]} ] },
-          percentage:{$multiply:[{$cond:[{ $eq: [ "$totalExpense", 0]},0, {"$divide":["$totalRevenue", "$totalExpense"]} ]}, 100]},
+          percentage: propertyTax ? {$multiply: ["$totalRevenue", 100]}: {$multiply:[{$cond:[{ $eq: [ "$totalExpense", 0]},0, {"$divide":["$totalRevenue", "$totalExpense"]} ]}, 100]},
           population:1,
           totalExpense:1,
           totalProperty:1
@@ -1218,6 +1218,7 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
 
     let { data_4m, data_1m_4m, data_1m_500t, data_500t_100t, data_100t } = await new Promise(async (resolve, reject) => {
       let prms1 = new Promise(async (rslv, rjct) => {
+        console.log(util.inspect(query_4m, {showHidden : false, depth: null}))
           let output =  await UlbLedger.aggregate(query_4m)
           rslv(output);
       });
