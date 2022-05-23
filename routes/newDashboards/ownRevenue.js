@@ -1571,7 +1571,7 @@ const topPerForming = async (req, res) => {
             state: { $first: "$ulb.state" },
             name: { $first: "$ulb.name" },
             totalAmount: { $sum: "$amount" },
-            population: { $sum: "$ulb.population" },
+            population: { $first: "$ulb.population" },
           },
         },
         {
