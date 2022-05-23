@@ -1282,12 +1282,14 @@ const revenue = catchAsync(async (req, res) => {
         },
       },
     ];
+    
     finalQuery = [...base_query, ...query];
     finalQuery_stateAvg = [...state_avg_base_query, ...query];
     if (getQuery)
       return res.status(200).json({ finalQuery, finalQuery_stateAvg });
+      console.log(util.inspect(finalQuery_stateAvg, {showHidden: false, depth: null}))
     let tenData = [];
-    console.log(util.inspect(finalQuery, { showHidden: false, depth: null }));
+    // console.log(util.inspect(finalQuery, { showHidden: false, depth: null }));
     // is per capita attachment code
     if (isPerCapita) {
       let perCapitaQuery = [

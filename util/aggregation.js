@@ -787,7 +787,7 @@ exports.stateDashRevenueTabs = async (
       }
     );
   } else if (tabType == "RevenueTotalExpenditure") {
-    let lineIds = await LineItem.find({ code: { $in: ["210", "220", "230"] } })
+    let lineIds = await LineItem.find({ code: { $in: ["210", "220", "230", "240"] } })
       .select("_id")
       .lean();
     Object.assign(matchObj, {
@@ -811,7 +811,7 @@ exports.stateDashRevenueTabs = async (
       }
     );
   } else if (tabType == "RevenueExpenditurePerCapita") {
-    let lineIds = await LineItem.find({ code: { $in: ["210", "220", "230"] } })
+    let lineIds = await LineItem.find({ code: { $in: ["210", "220", "230",  "240"] } })
       .select("_id")
       .lean();
     Object.assign(matchObj, {
