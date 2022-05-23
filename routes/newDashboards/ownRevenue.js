@@ -829,7 +829,7 @@ let redisKey =  "OwnRevenueCards";
 
 const tableData = async (req, res) => {
   try {
-    let { ulbType, ulb, stateId, financialYear, getQuery } = req.body;
+    let { ulbType, ulb, stateId, financialYear, getQuery, propertyTax } = req.body;
 
     if (
       !financialYear || Array.isArray(financialYear)
@@ -1164,7 +1164,7 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
           _id:null,
           numerator:{
             $sum:{
-              $multiply:["$totalRevenue", "$population"]
+              $multiply:[propertyTax ? "$totalProperty" : "$totalRevenue", "$population"]
             }
           },
           denominator:{
