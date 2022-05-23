@@ -5,6 +5,8 @@ const ULB = require("../../models/Ulb");
 const STATE = require("../../models/State");
 const resource = require("../../models/Resources");
 const ExcelJS = require("exceljs");
+const DataCollection = require("../../models/DataCollectionForm");
+const AnnualAccountData = require("../../models/AnnualAccounts");
 
 module.exports.get = async function (req, res) {
   try {
@@ -168,10 +170,23 @@ module.exports.search = async function (req, res) {
     };
     let query = { name: new RegExp(searchGlobal, "i") };
 
-    fromModelData.dataSet = await ULB.count(query);
-    fromModelData.reportsAndPublication = await resource.count(query);
-    fromModelData.learningCenter = await ResourceLineItem.count(query);
-
+    fromModelData.dataSet = getDataSetCount(searchGlobal);
+    fromModelData.reportsAndPublication = ResourceLineItem.find({
+      header: "reports_&_publications",
+      ...query,
+    }).count();
+    fromModelData.learningCenter = ResourceLineItem.find({
+      header: "learning_center",
+      ...query,
+    }).count();
+    let allData = await Promise.all([
+      fromModelData.dataSet,
+      fromModelData.reportsAndPublication,
+      fromModelData.learningCenter,
+    ]);
+    fromModelData.dataSet = allData[0];
+    fromModelData.reportsAndPublication = allData[1];
+    fromModelData.learningCenter = allData[2];
     return Response.OK(res, fromModelData);
   } catch (error) {
     return Response.DbError(res, error, error.message);
@@ -181,4 +196,146 @@ module.exports.search = async function (req, res) {
 function formateName(name) {
   let newName = name.toLowerCase().split(" ").join("_");
   return newName;
+}
+
+async function getDataSetCount(globalName) {
+  try {
+    let totalCount = 0;
+    let queries = [];
+    let query_dataCollection = [
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      {
+        $unwind: "$ulb",
+      },
+      {
+        $lookup: {
+          from: "states",
+          localField: "ulb.state",
+          foreignField: "_id",
+          as: "state",
+        },
+      },
+      {
+        $unwind: "$state",
+      },
+    ];
+    query_extn = [
+      {
+        $project: {
+          ulbId: "$ulb._id",
+          state: "$state.name",
+          ulbName: "$ulb.name",
+          modifiedAt: "$modifiedAt",
+          "2015-16_income_pdf": "$documents.financial_year_2015_16.pdf",
+          "2015-16_income_excel": "$documents.financial_year_2015_16.excel",
+          "2015-16_balance_pdf": "$documents.financial_year_2015_16.pdf",
+          "2015-16_balance_excel": "$documents.financial_year_2015_16.excel",
+          "2016-17_income_pdf": "$documents.financial_year_2016_17.pdf",
+          "2016-17_income_excel": "$documents.financial_year_2016_17.excel",
+          "2016-17_balance_pdf": "$documents.financial_year_2016_17.pdf",
+          "2016-17_balance_excel": "$documents.financial_year_2016_17.excel",
+          "2017-18_income_pdf": "$documents.financial_year_2017_18.pdf",
+          "2017-18_income_excel": "$documents.financial_year_2017_18.excel",
+          "2017-18_balance_pdf": "$documents.financial_year_2017_18.pdf",
+          "2017-18_balance_excel": "$documents.financial_year_2017_18.excel",
+          "2018-19_income_pdf": "$documents.financial_year_2018_19.pdf",
+          "2018-19_income_excel": "$documents.financial_year_2018_19.excel",
+          "2018-19_balance_pdf": "$documents.financial_year_2018_19.pdf",
+          "2018-19_balance_excel": "$documents.financial_year_2018_19.excel",
+        },
+      },
+      {
+        $project: {
+          ulbId: 1,
+          ulbName: 1,
+          state: 1,
+          modifiedAt: 1,
+          file: 1,
+        },
+      },
+    ];
+
+    query_dataCollection.push(...query_extn);
+    queries.push(query_dataCollection);
+
+    let query = [
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      {
+        $unwind: "$ulb",
+      },
+      {
+        $lookup: {
+          from: "states",
+          localField: "ulb.state",
+          foreignField: "_id",
+          as: "state",
+        },
+      },
+      {
+        $unwind: "$state",
+      },
+    ];
+    query_extn = [
+      {
+        $project: {
+          ulbId: "$ulb._id",
+          ulbName: "$ulb.name",
+          state: "$state.name",
+          modifiedAt: "$modifiedAt",
+          "2019-20_balance_pdf": "$audited.provisional_data.bal_sheet.pdf.url",
+          "2019-20_balance_excel":
+            "$audited.provisional_data.bal_sheet.excel.url",
+          "2019-20_income_pdf": "$audited.provisional_data.inc_exp.pdf.url",
+          "2019-20_income_excel": "$audited.provisional_data.inc_exp.excel.url",
+          "2020-21_balance_pdf":
+            "$unAudited.provisional_data.bal_sheet.pdf.url",
+          "2020-21_balance_excel":
+            "$unAudited.provisional_data.bal_sheet.excel.url",
+          "2020-21_income_pdf": "$unAudited.provisional_data.inc_exp.pdf.url",
+          "2020-21_income_excel":
+            "$unAudited.provisional_data.inc_exp.excel.url",
+        },
+      },
+      {
+        $project: {
+          ulbId: 1,
+          ulbName: 1,
+          state: 1,
+          modifiedAt: 1,
+          file: 1,
+        },
+      },
+    ];
+    query.push(...query_extn);
+    queries.push(query);
+    let fileData = await Promise.all([
+      DataCollection.aggregate(query_dataCollection),
+      AnnualAccountData.aggregate(query),
+    ]);
+    fileData = [...fileData[0], ...fileData[1]];
+
+    fileData.forEach((el) => {
+      let fileName = `${el?.state}_${el?.ulbName}`;
+      if (fileName.toLowerCase().includes(globalName.toLowerCase())) {
+        totalCount++;
+      }
+    });
+    return totalCount;
+  } catch (error) {
+    console.log(error, "in count dataset");
+  }
 }

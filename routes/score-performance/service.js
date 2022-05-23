@@ -181,7 +181,6 @@ async function getAnswerByUlb(req, res) {
       },
       {
         $sort: {
-          total: -1,
           _id: -1,
         },
       },
