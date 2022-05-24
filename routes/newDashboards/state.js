@@ -8,7 +8,12 @@ const catchAsync = require("../../util/catchAsync");
 const util = require("util");
 const axios = require("axios").default;
 const ExcelJS = require("exceljs");
-
+// own revenue
+//  ObjectId("5dd10c2485c951b54ec1d74b"),
+// ObjectId("5dd10c2685c951b54ec1d762"),
+// ObjectId("5dd10c2485c951b54ec1d74a"),
+// ObjectId("5dd10c2885c951b54ec1d77e"),
+// ObjectId("5dd10c2385c951b54ec1d748"),
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
   "5dd10c2685c951b54ec1d762",
@@ -764,6 +769,13 @@ const revenue = catchAsync(async (req, res) => {
         data: data,
       });
     } else if (compareType == "" && ulb) {
+      finalQuery = [...base_query, ...query];
+      let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
+      data = calData(data[0], filterName);
+      return res.status(200).json({
+        success: true,
+        data: data,
+      });
     } else if (compareType == "ulbType") {
       let ulbIDArr = await Ulb.aggregate([
         {
@@ -791,6 +803,7 @@ const revenue = catchAsync(async (req, res) => {
           },
         ];
         finalQuery = [...base_query, ...query];
+       console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
         let tenData = [];
         // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
         let data = await UlbLedger.aggregate(finalQuery);
@@ -800,10 +813,10 @@ const revenue = catchAsync(async (req, res) => {
           // town Panchayat
           obj.tpData.push(data);
         } else if (el._id.valueOf() == "5dcfa67543263a0e75c71697") {
-          // town Panchayat
+          // municipal corporation
           obj.mcData.push(data);
         } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
-          // town Panchayat
+          // Municipality
           obj.mData.push(data);
         }
 
@@ -1717,6 +1730,7 @@ const stateDashAvgs = async (req, res) => {
       isPerCapita
     );
     if (getQuery) return res.send(query);
+    console.log(util.inspect(query, {showHidden: false, depth: null}))
     let otherApiData = axios.post(`${process.env.BASEURL}/state-revenue`, {
       ...req.body,
       k: 90,

@@ -3585,7 +3585,7 @@ exports.stateDashAvgsPipeline = async (
             $group: {
               _id: null,
               sum: {
-                $sum: "$amount",
+                $sum: {$multiply: ["$population", "$amount"]},
               },
               population: { $sum: "$population" },
               ulbCount: { $sum: 1 },
