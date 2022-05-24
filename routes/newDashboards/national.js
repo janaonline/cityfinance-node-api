@@ -1,11 +1,10 @@
-const ULBLedger = require("../../models/UlbLedger");
 const Ulb = require("../../models/Ulb");
 const UlbType = require("../../models/UlbType");
 const UlbLedger = require("../../models/UlbLedger");
 const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
 const mongoose = require("mongoose");
-const { response,common } = require("../../service");
+const { response, common } = require("../../service");
 const {
   sendProfileUpdateStatusEmail,
 } = require("../../service/email-template");
@@ -39,8 +38,7 @@ exports.dataAvailabilityState = async (req, res) => {
       ulb: { $in: ulbs.map((ech) => ObjectId(ech._id)) },
       financialYear,
     };
-    ulbLedgers = await UlbLedger.distinct("ulb", filterCondition);
-    // console.log("ulbLedgers", ulbLedgers);
+    ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
 
     let responsePayload = {
       data: null,
@@ -49,8 +47,8 @@ exports.dataAvailabilityState = async (req, res) => {
     if (population)
       responsePayload.data = await createPopulationData(
         JSON.parse(JSON.stringify(ulbs)),
-        JSON.parse(JSON.stringify(ulbLedgers)),
-        totalUlbs
+        totalUlbs,
+        financialYear
       );
     else if (ulbType)
       responsePayload.data = await createdUlbTypeData(
@@ -180,7 +178,7 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
   }
 }
 
-async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
+async function createPopulationData(ulbs, totalUlbs, financialYear) {
   let populationMap = {
     Average: {
       numberOfULBs: 0,
@@ -258,11 +256,12 @@ async function createPopulationData(ulbs, ulbLedgers, totalUlbs) {
   for (each of rows) {
     if (each != "Average") {
       const arrr = populationMap[each]["numberOfULBs"];
-      let matched = 0;
-      for (elem of arrr)
-        if (ulbLedgers.indexOf(elem._id) > -1) {
-          ++matched;
-        }
+      let matched = (
+        await UlbLedger.distinct("ulb", {
+          financialYear,
+          ulb: { $in: populationMap[each].numberOfULBs },
+        }).lean()
+      ).length;
       populationMap[each]["numberOfULBs"] = arrr.length;
       populationMap[each]["ulbsWithData"] = matched;
       const multiply = matched * 100;
