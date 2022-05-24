@@ -40,14 +40,23 @@ exports.nationalDashRevenuePipeline = (
       pipeline.push(
         {
           $group: {
+            _id: "$ulb._id",
+            population: { $first: "$ulb.population" },
+            amount: {
+              $sum: "$amount",
+            },
+          },
+        },
+        {
+          $group: {
             _id: null,
             "<100K_set": {
               $addToSet: {
                 $cond: {
                   if: {
-                    $lt: ["$ulb.population", 1e5],
+                    $lt: ["$population", 1e5],
                   },
-                  then: "$ulb._id",
+                  then: "$_id",
                   else: "",
                 },
               },
@@ -57,11 +66,11 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 1e5] },
-                      { $lte: ["$ulb.population", 5e5] },
+                      { $gte: ["$population", 1e5] },
+                      { $lte: ["$population", 5e5] },
                     ],
                   },
-                  then: "$ulb._id",
+                  then: "$_id",
                   else: "",
                 },
               },
@@ -71,11 +80,11 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 5e5] },
-                      { $lte: ["$ulb.population", 1e6] },
+                      { $gte: ["$population", 5e5] },
+                      { $lte: ["$population", 1e6] },
                     ],
                   },
-                  then: "$ulb._id",
+                  then: "$_id",
                   else: "",
                 },
               },
@@ -85,11 +94,11 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 1e6] },
-                      { $lte: ["$ulb.population", 4e6] },
+                      { $gte: ["$population", 1e6] },
+                      { $lte: ["$population", 4e6] },
                     ],
                   },
-                  then: "$ulb._id",
+                  then: "$_id",
                   else: "",
                 },
               },
@@ -98,9 +107,9 @@ exports.nationalDashRevenuePipeline = (
               $addToSet: {
                 $cond: {
                   if: {
-                    $gt: ["$ulb.population", 4e6],
+                    $gt: ["$population", 4e6],
                   },
-                  then: "$ulb._id",
+                  then: "$_id",
                   else: "",
                 },
               },
@@ -109,9 +118,9 @@ exports.nationalDashRevenuePipeline = (
               $sum: {
                 $cond: {
                   if: {
-                    $lt: ["$ulb.population", 1e5],
+                    $lt: ["$population", 1e5],
                   },
-                  then: "$ulb.population",
+                  then: "$population",
                   else: 0,
                 },
               },
@@ -120,7 +129,7 @@ exports.nationalDashRevenuePipeline = (
               $sum: {
                 $cond: {
                   if: {
-                    $lt: ["$ulb.population", 1e5],
+                    $lt: ["$population", 1e5],
                   },
                   then: "$amount",
                   else: 0,
@@ -132,11 +141,11 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 1e5] },
-                      { $lte: ["$ulb.population", 5e5] },
+                      { $gte: ["$population", 1e5] },
+                      { $lte: ["$population", 5e5] },
                     ],
                   },
-                  then: "$ulb.population",
+                  then: "$population",
                   else: 0,
                 },
               },
@@ -146,8 +155,8 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 1e5] },
-                      { $lte: ["$ulb.population", 5e5] },
+                      { $gte: ["$population", 1e5] },
+                      { $lte: ["$population", 5e5] },
                     ],
                   },
                   then: "$amount",
@@ -160,11 +169,11 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 5e5] },
-                      { $lte: ["$ulb.population", 1e6] },
+                      { $gte: ["$population", 5e5] },
+                      { $lte: ["$population", 1e6] },
                     ],
                   },
-                  then: "$ulb.population",
+                  then: "$population",
                   else: 0,
                 },
               },
@@ -174,8 +183,8 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 5e5] },
-                      { $lte: ["$ulb.population", 1e6] },
+                      { $gte: ["$population", 5e5] },
+                      { $lte: ["$population", 1e6] },
                     ],
                   },
                   then: "$amount",
@@ -188,11 +197,11 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 1e6] },
-                      { $lte: ["$ulb.population", 4e6] },
+                      { $gte: ["$population", 1e6] },
+                      { $lte: ["$population", 4e6] },
                     ],
                   },
-                  then: "$ulb.population",
+                  then: "$population",
                   else: 0,
                 },
               },
@@ -202,8 +211,8 @@ exports.nationalDashRevenuePipeline = (
                 $cond: {
                   if: {
                     $and: [
-                      { $gte: ["$ulb.population", 1e6] },
-                      { $lte: ["$ulb.population", 4e6] },
+                      { $gte: ["$population", 1e6] },
+                      { $lte: ["$population", 4e6] },
                     ],
                   },
                   then: "$amount",
@@ -215,9 +224,9 @@ exports.nationalDashRevenuePipeline = (
               $sum: {
                 $cond: {
                   if: {
-                    $gt: ["$ulb.population", 4e6],
+                    $gt: ["$population", 4e6],
                   },
-                  then: "$ulb.population",
+                  then: "$population",
                   else: 0,
                 },
               },
@@ -226,7 +235,7 @@ exports.nationalDashRevenuePipeline = (
               $sum: {
                 $cond: {
                   if: {
-                    $gt: ["$ulb.population", 4e6],
+                    $gt: ["$population", 4e6],
                   },
                   then: "$amount",
                   else: 0,
