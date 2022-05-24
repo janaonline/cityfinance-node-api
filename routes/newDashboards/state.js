@@ -770,11 +770,21 @@ const revenue = catchAsync(async (req, res) => {
       });
     } else if (compareType == "" && ulb) {
       finalQuery = [...base_query, ...query];
+      finalQuery_state = [ {
+        $match: {
+          financialYear: financialYear,
+          ulb: {
+            $in: [...AllULBs],
+          },
+        },
+      }, ...query];
       let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
+      let data_state = await Promise.all([UlbLedger.aggregate(finalQuery_state)]);
       data = calData(data[0], filterName);
       return res.status(200).json({
         success: true,
-        data: data,
+        state: data_state,
+        ulb: data
       });
     } else if (compareType == "ulbType") {
       let ulbIDArr = await Ulb.aggregate([
