@@ -785,7 +785,7 @@ const revenue = catchAsync(async (req, res) => {
       });
     } else if (compareType == "ulbType") {
    let data =[]
-      if(ulb){
+      if(ulb.length == 1){
         finalQuery_ulb = [...base_query, ...query];
          data = await Promise.all([UlbLedger.aggregate(finalQuery_ulb)]);
          data = calData(data[0], filterName);
@@ -844,6 +844,12 @@ const revenue = catchAsync(async (req, res) => {
         
       });
     } else if (compareType == "popType") {
+      let data =[]
+      if(ulb.lengh == 1){
+        finalQuery_ulb = [...base_query, ...query];
+         data = await Promise.all([UlbLedger.aggregate(finalQuery_ulb)]);
+         data = calData(data[0], filterName);
+      }
       let ulbIDObj = await Ulb.aggregate([
         {
           $group: {
@@ -954,8 +960,10 @@ const revenue = catchAsync(async (req, res) => {
 
         rslv(output);
       });
+     
       prms1.then((values) => {
         console.log(values);
+        Object.assign(  values, {ulb:data})
         return res.status(200).json({
           success: true,
           data: values,
