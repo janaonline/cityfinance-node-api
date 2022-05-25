@@ -980,7 +980,7 @@ const tableData = async (req, res) => {
           totalOwnRevenue:1,
           totalExpense:1,
           population:1,
-          ownRevenuePerCapita  :{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalOwnRevenue", "$population"]} ] } ,
+          ownRevenuePerCapita  :{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":[propertyTax ? "$totalProperty"  : "$totalOwnRevenue", "$population"]} ] } ,
         }
       },
 
