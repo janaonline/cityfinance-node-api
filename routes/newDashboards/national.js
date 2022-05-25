@@ -329,13 +329,18 @@ exports.nationalDashRevenue = async (req, res) => {
     const { nationalDashRevenuePipeline } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
+      _id: 1,
+      population: 1,
+      ulbType: 1,
+    });
     let lineItems = LineItem.find({ headOfAccount: "Revenue" }).select("_id");
     let promiseData = await Promise.all([ulbs, lineItems]);
     ulbs = promiseData[0];
     lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
+      setPopCatValInHash(HashTable, each);
       return each._id;
     });
     lineItems = lineItems.map((each) => each._id);
@@ -435,7 +440,7 @@ exports.nationalDashRevenue = async (req, res) => {
           sumOfRevenue += obj["revenue"];
           sumOfRevPerCapita += obj["revenuePerCapita"];
           delete obj["set"];
-          obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
+          obj["DataAvailPercentage"] = (seenUlbs / HashTable[key]) * 100;
           sumOfDataAval += obj["DataAvailPercentage"];
         }
       }
@@ -629,7 +634,11 @@ exports.nationalDashExpenditure = async (req, res) => {
     formType = formType ? formType : "populationCategory";
     const { nationalDashExpensePipeline } = require("../../util/aggregation");
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
+      _id: 1,
+      population: 1,
+      ulbType: 1,
+    });
     let lineItemsExp = LineItem.find(
       type == "deficitOrSurplus"
         ? { headOfAccount: { $in: ["Expense", "Revenue"] } }
@@ -640,6 +649,7 @@ exports.nationalDashExpenditure = async (req, res) => {
     lineItemsExp = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
+      setPopCatValInHash(HashTable, each);
       return each._id;
     });
     lineItemsExp = lineItemsExp.map((each) => each._id);
@@ -738,7 +748,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           sumOfExp += obj["expenditure"];
           sumOfExpPerCapita += obj["expenditurePerCapita"];
           delete obj["set"];
-          obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
+          obj["DataAvailPercentage"] = (seenUlbs / HashTable[key]) * 100;
           sumOfDataAval += obj["DataAvailPercentage"];
         }
       }
@@ -1105,7 +1115,11 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
+      _id: 1,
+      population: 1,
+      ulbType: 1,
+    });
     let lineItems = LineItem.find({
       code: {
         $in: ["110", "130", "140", "150", "180"],
@@ -1116,6 +1130,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
+      setPopCatValInHash(HashTable, each);
       return each._id;
     });
     lineItems = lineItems.map((each) => each._id);
@@ -1213,7 +1228,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
           sumOfOwnRevenue += obj["Ownrevenue"];
           sumOfOwnRevPerCapita += obj["OwnrevenuePerCapita"];
           delete obj["set"];
-          obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
+          obj["DataAvailPercentage"] = (seenUlbs / HashTable[key]) * 100;
           sumOfDataAval += obj["DataAvailPercentage"];
         }
       }
@@ -1251,6 +1266,9 @@ exports.nationalDashOwnRevenue = async (req, res) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
               output[x] = Math.round(responsePayload.data[each][x]);
+              if (x.toLowerCase().includes("percentage")) {
+                output[x] += "%";
+              }
             }
             return output;
           }),
@@ -1360,7 +1378,11 @@ exports.nationalDashCapexpense = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select("_id");
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
+      _id: 1,
+      population: 1,
+      ulbType: 1,
+    });
     let lineItems = LineItem.find({
       code: {
         $in: ["410", "412"],
@@ -1371,6 +1393,7 @@ exports.nationalDashCapexpense = async (req, res) => {
     lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
+      setPopCatValInHash(HashTable, each);
       return each._id;
     });
     lineItems = lineItems.map((each) => each._id);
@@ -1468,7 +1491,7 @@ exports.nationalDashCapexpense = async (req, res) => {
           sumOfCapexpense += obj["Capexpense"];
           sumOfCapexpensePerCapita += obj["CapexpensePerCapita"];
           delete obj["set"];
-          obj["DataAvailPercentage"] = (seenUlbs * 100) / ulbs.length;
+          obj["DataAvailPercentage"] = (seenUlbs / HashTable[key]) * 100;
           sumOfDataAval += obj["DataAvailPercentage"];
         }
       }
@@ -1507,6 +1530,9 @@ exports.nationalDashCapexpense = async (req, res) => {
             let output = { ulb_pop_category: each };
             for (x in responsePayload.data[each]) {
               output[x] = Math.round(responsePayload.data[each][x]);
+              if (x.toLowerCase().includes("percentage")) {
+                output[x] += "%";
+              }
             }
             return output;
           }),
@@ -1630,6 +1656,56 @@ exports.getStatewiseDataAvail = async (req, res) => {
     res.status(500).json({ success: true, message: error.message });
   }
 };
+
+function setPopCatValInHash(HashTable, each) {
+  if (each.ulbType.toString() == "5dcfa66b43263a0e75c71696") {
+    if (HashTable["Town Panchayat"]) HashTable["Town Panchayat"] += 1;
+    else {
+      HashTable["Town Panchayat"] = 1;
+    }
+  } else if (each.ulbType.toString() == "5dcfa64e43263a0e75c71695") {
+    if (HashTable["Municipality"]) HashTable["Municipality"] += 1;
+    else {
+      HashTable["Municipality"] = 1;
+    }
+  } else if (each.ulbType.toString() == "5dcfa67543263a0e75c71697") {
+    if (HashTable["Municipal Corporation"])
+      HashTable["Municipal Corporation"] += 1;
+    else {
+      HashTable["Municipal Corporation"] = 1;
+    }
+  }
+
+  if (each.population < 1e5) {
+    if (HashTable["< 100 Thousand"]) HashTable["< 100 Thousand"] += 1;
+    else {
+      HashTable["< 100 Thousand"] = 1;
+    }
+  } else if (each.population >= 1e5 && each.population < 5e5) {
+    if (HashTable["100 Thousand - 500 Thousand"])
+      HashTable["100 Thousand - 500 Thousand"] += 1;
+    else {
+      HashTable["100 Thousand - 500 Thousand"] = 1;
+    }
+  } else if (each.population >= 5e5 && each.population < 1e6) {
+    if (HashTable["500 Thousand - 1 Million"])
+      HashTable["500 Thousand - 1 Million"] += 1;
+    else {
+      HashTable["500 Thousand - 1 Million"] = 1;
+    }
+  } else if (each.population >= 1e6 && each.population < 4e6) {
+    if (HashTable["1 Million - 4 Million"])
+      HashTable["1 Million - 4 Million"] += 1;
+    else {
+      HashTable["1 Million - 4 Million"] = 1;
+    }
+  } else if (each.population > 4e6) {
+    if (HashTable["4 Million+"]) HashTable["4 Million+"] += 1;
+    else {
+      HashTable["4 Million+"] = 1;
+    }
+  }
+}
 
 const includeInExpenditure = [
   "Others",
