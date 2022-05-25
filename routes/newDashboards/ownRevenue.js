@@ -977,14 +977,73 @@ const tableData = async (req, res) => {
         $project:{
           totalRevenue: propertyTax ? {$divide:["$totalProperty", "$totalOwnRevenue"]} : "$totalOwnRevenue",
           totalProperty:1,
+          totalOwnRevenue:1,
           totalExpense:1,
-          population:1
-          
+          population:1,
+          ownRevenuePerCapita  :{ $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalOwnRevenue", "$population"]} ] } ,
         }
       },
 
     );
+    let query_4m_median=[]
+    let query_1m_4m_median=[]
+    let query_500t_1m_median = []
+    let query_100t_500t_median = []
+    let query_100t_median = []
+    query_4m_median.push(...query, ...query_4m, ...queryCal)
+query_1m_4m_median.push(...query, ...query_1m_4m, ...queryCal)
+query_500t_1m_median.push(...query, ...query_500t_1m, ...queryCal)
+query_100t_500t_median.push(...query, ...query_100t_500t, ...queryCal)
+query_100t_median.push(...query, ...query_100t, ...queryCal)
+  
+let { medianData_4m, medianData_1m_4m, medianData_1m_500t, medianData_500t_100t, medianData_100t } = await new Promise(async (resolve, reject) => {
+  let prms1 = new Promise(async (rslv, rjct) => {
+      let output =  await UlbLedger.aggregate(query_4m_median)
+      let ans = calculateMedian (output);
+      rslv(ans);
+  });
+  let prms2 = new Promise(async (rslv, rjct) => {
+      let output =  await UlbLedger.aggregate(query_1m_4m_median)
+      let ans = calculateMedian (output);
+      rslv(ans);
+  });
+  let prms3 = new Promise(async (rslv, rjct) => {
+      let output =    await UlbLedger.aggregate(query_500t_1m_median);
+      let ans = calculateMedian (output);
+      rslv(ans);
+  });
+  let prms4 = new Promise(async (rslv, rjct) => {
+      let output = await UlbLedger.aggregate(query_100t_500t_median);
+      let ans = calculateMedian (output);
+      rslv(ans);
+  });
+  let prms5 = new Promise(async (rslv, rjct) => {
+      let output = await UlbLedger.aggregate(query_100t_median);
+      let ans = calculateMedian (output);
+      rslv(ans);
+  });
 
+  Promise.all([prms1, prms2, prms3, prms4, prms5]).then(
+      (outputs) => {
+          let medianData_4m = outputs[0];
+          let medianData_1m_4m = outputs[1];
+          let medianData_1m_500t = outputs[2];
+          let medianData_500t_100t = outputs[3];
+          let medianData_100t = outputs[4];
+        
+
+          if (medianData_4m && medianData_1m_4m && medianData_1m_500t && medianData_500t_100t && medianData_100t) {
+              resolve({ medianData_4m, medianData_1m_4m, medianData_1m_500t, medianData_500t_100t , medianData_100t});
+          } else {
+              reject({ message: "No Data Found" });
+          }
+      },
+      (e) => {
+          reject(e);
+      }
+  );
+});
+  
     let count_q = [
       {
         $project:{
@@ -1021,6 +1080,7 @@ const tableData = async (req, res) => {
                 }
             }
 ]
+console.log(medianData_4m,medianData_1m_4m,medianData_1m_500t,medianData_500t_100t,medianData_100t)
   let numOfUlb = await Ulb.aggregate([
     {
         $project:{
@@ -1182,6 +1242,8 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
             population:1,
             totalExpense:1,
             totalProperty:1
+            
+
           }
 
       },
@@ -1265,15 +1327,15 @@ console.log(data_1m_4m)
   
 
   if(data_4m.length>0)
-  Object.assign(data_4m[0], {numOfUlbMeetRevenue:((countData_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4mPlusPop'])*100)})
+  Object.assign(data_4m[0], {numOfUlbMeetRevenue:((countData_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4mPlusPop'])*100), median:medianData_4m })
   if(data_1m_4m.length>0)
-  Object.assign(data_1m_4m[0], {numOfUlbMeetRevenue:((countData_1m_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4m_1mPop'] )*100)})
+  Object.assign(data_1m_4m[0], {numOfUlbMeetRevenue:((countData_1m_4m[0]?.totalUlbMeetExpense/numOfUlb[0]['4m_1mPop'] )*100),  median :medianData_1m_4m })
   if(data_1m_500t.length>0)
-  Object.assign(data_1m_500t[0], {numOfUlbMeetRevenue:((countData_1m_500t[0]?.totalUlbMeetExpense/numOfUlb[0]['1m_500tPop'] ) *100)})
+  Object.assign(data_1m_500t[0], {numOfUlbMeetRevenue:((countData_1m_500t[0]?.totalUlbMeetExpense/numOfUlb[0]['1m_500tPop'] ) *100), median: medianData_1m_500t})
   if(data_500t_100t.length>0)
-  Object.assign(data_500t_100t[0], {numOfUlbMeetRevenue:((countData_500t_100t[0]?.totalUlbMeetExpense /numOfUlb[0]['500t_100tPop'] ) * 100)})
+  Object.assign(data_500t_100t[0], {numOfUlbMeetRevenue:((countData_500t_100t[0]?.totalUlbMeetExpense /numOfUlb[0]['500t_100tPop'] ) * 100), median : medianData_500t_100t })
   if(data_100t.length>0)
-  Object.assign(data_100t[0], {numOfUlbMeetRevenue:((countData_100t[0]?.totalUlbMeetExpense/numOfUlb[0]['100tPop'])*100)})
+  Object.assign(data_100t[0], {numOfUlbMeetRevenue:((countData_100t[0]?.totalUlbMeetExpense/numOfUlb[0]['100tPop'])*100), median :medianData_100t })
   // data_1m_4m[0].push({countData_1m_4m[0].totalUlbMeetExpense)
 
 // let data = await UlbLedger.aggregate(query);
@@ -1332,51 +1394,6 @@ console.log(data_1m_4m)
     if(data_100t.length>0)
     newData['<100 Thousand'] = data_100t[0]
 
-    // newData = data.reduce((newData, value) => {
-    //   if (value.population < 100000) {
-    //     newData["<100 Thousand"].totalRevenue += value.totalRevenue;
-    //     newData["<100 Thousand"].numOfUlbMeetRevenue +=
-    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
-    //     newData["<100 Thousand"].population += value.population;
-    //     newData["<100 Thousand"].numOfUlb += 1;
-    //     newData["<100 Thousand"].totalExpense += value.totalExpense;
-    //     newData["<100 Thousand"].totalProperty += value.totalProperty;
-    //   } else if (100000 < value.population < 500000) {
-    //     newData["100 Thousand-500 Thousand"].totalRevenue += value.totalRevenue;
-    //     newData["100 Thousand-500 Thousand"].numOfUlbMeetRevenue +=
-    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
-    //     newData["100 Thousand-500 Thousand"].population += value.population;
-    //     newData["100 Thousand-500 Thousand"].numOfUlb += 1;
-    //     newData["100 Thousand-500 Thousand"].totalExpense += value.totalExpense;
-    //     newData["100 Thousand-500 Thousand"].totalProperty += value.totalProperty;
-    //   } else if (500000 < value.population < 1000000) {
-    //     newData["500 Thousand - 1 Million"].totalRevenue += value.totalRevenue;
-    //     newData["500 Thousand - 1 Million"].numOfUlbMeetRevenue +=
-    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
-    //     newData["500 Thousand - 1 Million"].population += value.population;
-    //     newData["500 Thousand - 1 Million"].numOfUlb += 1;
-    //     newData["500 Thousand - 1 Million"].totalExpense += value.totalExpense;
-    //     newData["500 Thousand - 1 Million"].totalProperty += value.totalProperty;
-    //   } else if (1000000 < value.population < 4000000) {
-    //     newData["1 Million - 4 Million"].totalRevenue += value.totalRevenue;
-    //     newData["1 Million - 4 Million"].numOfUlbMeetRevenue +=
-    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
-    //     newData["1 Million - 4 Million"].population += value.population;
-    //     newData["1 Million - 4 Million"].numOfUlb += 1;
-    //     newData["1 Million - 4 Million"].totalExpense += value.totalExpense;
-    //     newData["1 Million - 4 Million"].totalProperty += value.totalProperty;
-    //   } else {
-    //     newData["4 Million+"].totalRevenue += value.totalRevenue;
-    //     newData["4 Million+"].numOfUlbMeetRevenue +=
-    //       value.totalExpense >= value.totalRevenue ? 1 : 0;
-    //     newData["4 Million+"].population += value.population;
-    //     newData["4 Million+"].numOfUlb += 1;
-    //     newData["4 Million+"].totalExpense += value.totalExpense;
-    //     newData["4 Million+"].totalProperty += value.totalProperty;
-    //   }
-
-    //   return newData;
-    // }, newData);
 console.log(newData)
     return Response.OK(res, newData);
   } catch (error) {
@@ -1477,6 +1494,24 @@ function getUlbMatchQuery(stateIds, ulbTypeIds) {
   return ulbMatch;
 }
 
+function calculateMedian(data){
+  let values = []
+  data.forEach( el => {
+values.push(el.ownRevenuePerCapita)
+  })
+  if(values.length ===0) throw new Error("No inputs");
+
+  values.sort(function(a,b){
+    return a-b;
+  });
+
+  var half = Math.floor(values.length / 2);
+  
+  if (values.length % 2)
+    return values[half];
+  
+  return (values[half - 1] + values[half]) / 2.0;
+}
 const topPerForming = async (req, res) => {
   try {
     //     financialYear: "2020-21"

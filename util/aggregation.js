@@ -3600,14 +3600,7 @@ exports.stateDashAvgsPipeline = async (
               ulbCount: 1,
             },
           },
-          {
-            $project: {
-              _id: 0,
-              national: {
-                $divide: ["$national", "$ulbCount"],
-              },
-            },
-          }
+          
       )
     }
     else {
