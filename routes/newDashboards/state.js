@@ -1175,17 +1175,63 @@ const revenue = catchAsync(async (req, res) => {
       .map((value) => Number(value) - 1)
       .join("-");
     let financialYearArr = [financialYear, tempYear];
-    base_query = [
-      {
+   let ulbIds_query = [
+    {
         $match: {
-          financialYear: { $in: [...financialYearArr] },
-          ulb: {
-            $in: [...ulbIDs],
-          },
+    $or : [{financialYear:financialYear},{financialYear:tempYear}],
+            lineItem: {
+                $in: [
+                ObjectId("5dd10c2785c951b54ec1d779"),
+                ObjectId("5dd10c2785c951b54ec1d774")
+                ]
+                }
+            }
         },
-      },
-    ];
-
+        {
+            $group: {
+                _id : "$financialYear",
+                ulbs: {$addToSet: "$ulb"}
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    ulbPrev : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", tempYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        },
+                          ulbNew : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", financialYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        }
+                        
+                    }
+                },
+                {
+                    $project: {
+                        ulbPrev: {$arrayElemAt: ["$ulbPrev", 0]},
+                                            ulbNew: {$arrayElemAt: ["$ulbNew", 1]},
+                        }
+                    },
+                     { $project: { commonToBoth: { $setIntersection: [ "$ulbPrev", "$ulbNew" ] }} }
+    ]
+  let output =   await UlbLedger.aggregate(ulbIds_query)
+ let ulbID = output[0]?.commonToBoth
+ ulbID = ulbID.map((value) => {
+    return ObjectId(value);
+  });
     state_avg_base_query = [
       {
         $match: {
@@ -1200,9 +1246,13 @@ const revenue = catchAsync(async (req, res) => {
     let query = [
       {
         $match: {
+           $or: [{financialYear: financialYear},{financialYear: tempYear}],
           lineItem: {
             $in: [...Capital_Expenditure.map((value) => ObjectId(value))],
           },
+ulb: {
+  $in: ulbID
+}
         },
       },
       {
@@ -1215,6 +1265,12 @@ const revenue = catchAsync(async (req, res) => {
       },
       {
         $unwind: "$ulb",
+      },
+      {
+        $match: {
+
+          "ulb.state": ObjectId(state)
+        }
       },
       {
         $lookup: {
@@ -1321,11 +1377,11 @@ const revenue = catchAsync(async (req, res) => {
       },
     ];
     
-    finalQuery = [...base_query, ...query];
+    finalQuery = query;
     finalQuery_stateAvg = [...state_avg_base_query, ...query];
     if (getQuery)
       return res.status(200).json({ finalQuery, finalQuery_stateAvg });
-      console.log(util.inspect(finalQuery_stateAvg, {showHidden: false, depth: null}))
+      console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
     let tenData = [];
     // console.log(util.inspect(finalQuery, { showHidden: false, depth: null }));
     // is per capita attachment code
