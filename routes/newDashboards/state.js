@@ -780,6 +780,7 @@ const revenue = catchAsync(async (req, res) => {
       }, ...query];
       let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
       let data_state = await Promise.all([UlbLedger.aggregate(finalQuery_state)]);
+      data_state = calData(data_state[0], filterName);
       data = calData(data[0], filterName);
       return res.status(200).json({
         success: true,
