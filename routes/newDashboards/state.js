@@ -681,12 +681,7 @@ const revenue = catchAsync(async (req, res) => {
       });
     }
   } else if (filterName.includes("mix")) {
-    if (compareType && ulb.length) {
-      return res.status(400).json({
-        success: false,
-        message: "Both Compare Type and ULB ID are not allowed",
-      });
-    }
+   
     let idArray = [];
     switch (filterName) {
       case "revenue mix":
@@ -764,6 +759,7 @@ const revenue = catchAsync(async (req, res) => {
       // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
       let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
       data = calData(data[0], filterName);
+     Object.assign(data, )
       return res.status(200).json({
         success: true,
         data: data,
@@ -788,6 +784,14 @@ const revenue = catchAsync(async (req, res) => {
         ulb: data
       });
     } else if (compareType == "ulbType") {
+   let data =[]
+      if(ulb){
+        finalQuery_ulb = [...base_query, ...query];
+         data = await Promise.all([UlbLedger.aggregate(finalQuery_ulb)]);
+         data = calData(data[0], filterName);
+      }
+     
+
       let ulbIDArr = await Ulb.aggregate([
         {
           $group: {
@@ -833,9 +837,11 @@ const revenue = catchAsync(async (req, res) => {
 
         finalArr.push(obj);
       }
+    Object.assign(  finalArr[0], {ulb:data})
       return res.status(200).json({
         success: true,
-        data: finalArr[0],
+        data: finalArr[0]
+        
       });
     } else if (compareType == "popType") {
       let ulbIDObj = await Ulb.aggregate([
