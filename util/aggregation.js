@@ -1,7 +1,14 @@
 const mongoose = require("mongoose");
 const Ulb = require("../models/Ulb");
 const LineItem = require("../models/LineItem");
+const UlbLedger = require('../models/UlbLedger')
 const { ObjectId } = mongoose.Types;
+
+const Capital_Expenditure = [
+  "5dd10c2785c951b54ec1d779",
+  "5dd10c2785c951b54ec1d774",
+];
+
 
 exports.nationalDashRevenuePipeline = (
   financialYear,
@@ -3602,6 +3609,212 @@ exports.stateDashAvgsPipeline = async (
           },
           
       )
+    }else if(TabType == 'CapitalTotalExpenditure'){
+      let tempYear = financialYear
+      .split("-")
+      .map((value) => Number(value) - 1)
+      .join("-");
+    let financialYearArr = [financialYear, tempYear];
+   let ulbIds_query = [
+    {
+        $match: {
+    $or : [{financialYear:financialYear},{financialYear:tempYear}],
+            lineItem: {
+                $in: [
+                ObjectId("5dd10c2785c951b54ec1d779"),
+                ObjectId("5dd10c2785c951b54ec1d774")
+                ]
+                }
+            }
+        },
+        {
+            $group: {
+                _id : "$financialYear",
+                ulbs: {$addToSet: "$ulb"}
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    ulbPrev : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", tempYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        },
+                          ulbNew : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", financialYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        }
+                        
+                    }
+                },
+                {
+                    $project: {
+                        ulbPrev: {$arrayElemAt: ["$ulbPrev", 0]},
+                                            ulbNew: {$arrayElemAt: ["$ulbNew", 1]},
+                        }
+                    },
+                     { $project: { commonToBoth: { $setIntersection: [ "$ulbPrev", "$ulbNew" ] }} }
+    ]
+  let output =   await UlbLedger.aggregate(ulbIds_query)
+ let ulbID = output[0]?.commonToBoth
+ ulbID = ulbID.map((value) => {
+    return ObjectId(value);
+  });
+  let query = [
+    {
+      $match: {
+         $or: [{financialYear: financialYear},{financialYear: tempYear}],
+        lineItem: {
+          $in: [...Capital_Expenditure.map((value) => ObjectId(value))],
+        },
+ulb: {
+$in: ulbID
+}
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $lookup: {
+        from: "ulbtypes",
+        localField: "ulb.ulbType",
+        foreignField: "_id",
+        as: "ulbType",
+      },
+    },
+    {
+      $unwind: "$ulbType",
+    },
+    {
+      $group: {
+        _id: "$ulb._id",
+        ulbName: { $first: "$ulb.name" },
+        ulbId: { $first: "$ulb._id" },
+        ulbType: { $first: "$ulbType.name" },
+        population: { $first: "$ulb.population" },
+        capitalWorkPrevYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", tempYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        capitalWorkCurrYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", financialYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        grossBlockPrevYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", tempYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        grossBlockCurrYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", financialYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        ulbName: 1,
+        ulbType: 1,
+        ulbId: 1,
+        population: 1,
+        amount: {
+          $add: [
+            { $subtract: ["$grossBlockCurrYear", "$grossBlockPrevYear"] },
+            { $subtract: ["$capitalWorkCurrYear", "$capitalWorkPrevYear"] },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        sum: {
+          $sum: { $multiply: ["$amount", isPerCapita ? 1 : "$population"] },
+        },
+        population: { $sum: "$population" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        national: {
+          $divide: ["$sum", "$population"],
+        },
+      },
+    }
+   
+  ];
+  pipeline = query
+  
+
     }
     else {
       pipeline.push(
@@ -4106,6 +4319,304 @@ exports.stateDashAvgsPipeline = async (
         }
     },
 );
+    }else if(TabType == 'CapitalTotalExpenditure'){
+      let tempYear = financialYear
+      .split("-")
+      .map((value) => Number(value) - 1)
+      .join("-");
+    let financialYearArr = [financialYear, tempYear];
+   let ulbIds_query = [
+    {
+        $match: {
+    $or : [{financialYear:financialYear},{financialYear:tempYear}],
+            lineItem: {
+                $in: [
+                ObjectId("5dd10c2785c951b54ec1d779"),
+                ObjectId("5dd10c2785c951b54ec1d774")
+                ]
+                }
+            }
+        },
+        {
+            $group: {
+                _id : "$financialYear",
+                ulbs: {$addToSet: "$ulb"}
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    ulbPrev : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", tempYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        },
+                          ulbNew : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", financialYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        }
+                        
+                    }
+                },
+                {
+                    $project: {
+                        ulbPrev: {$arrayElemAt: ["$ulbPrev", 0]},
+                                            ulbNew: {$arrayElemAt: ["$ulbNew", 1]},
+                        }
+                    },
+                     { $project: { commonToBoth: { $setIntersection: [ "$ulbPrev", "$ulbNew" ] }} }
+    ]
+  let output =   await UlbLedger.aggregate(ulbIds_query)
+ let ulbID = output[0]?.commonToBoth
+ ulbID = ulbID.map((value) => {
+    return ObjectId(value);
+  });
+  let query = [
+    {
+      $match: {
+         $or: [{financialYear: financialYear},{financialYear: tempYear}],
+        lineItem: {
+          $in: [...Capital_Expenditure.map((value) => ObjectId(value))],
+        },
+ulb: {
+$in: ulbID
+}
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $lookup: {
+        from: "ulbtypes",
+        localField: "ulb.ulbType",
+        foreignField: "_id",
+        as: "ulbType",
+      },
+    },
+    {
+      $unwind: "$ulbType",
+    },
+    {
+      $group: {
+        _id: "$ulb._id",
+        ulbName: { $first: "$ulb.name" },
+        ulbId: { $first: "$ulb._id" },
+        ulbType: { $first: "$ulbType._id" },
+        population: { $first: "$ulb.population" },
+        capitalWorkPrevYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", tempYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        capitalWorkCurrYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", financialYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        grossBlockPrevYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", tempYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        grossBlockCurrYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", financialYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        ulbName: 1,
+        ulbType: 1,
+        ulbId: 1,
+        population: 1,
+        amount: {
+          $add: [
+            { $subtract: ["$grossBlockCurrYear", "$grossBlockPrevYear"] },
+            { $subtract: ["$capitalWorkCurrYear", "$capitalWorkPrevYear"] },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        municipalAmt: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ["$ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+              },
+              then: { $multiply: ["$amount", isPerCapita ? 1 : "$population"] },
+              else: 0,
+            },
+          },
+        },
+        municipalUlbs: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ["$ulbType", ObjectId("5dcfa64e43263a0e75c71695")],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+        municipalCorAmt: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ["$ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+              },
+              then: { $multiply: ["$amount", isPerCapita ? 1 : "$population"] },
+              else: 0,
+            },
+          },
+        },
+        municipalCorUlbs: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ["$ulbType", ObjectId("5dcfa67543263a0e75c71697")],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+        townPanAmt: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ["$ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+              },
+              then: { $multiply: ["$amount", isPerCapita ? 1 : "$population"] },
+              else: 0,
+            },
+          },
+        },
+        townPanUlbs: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ["$ulbType", ObjectId("5dcfa66b43263a0e75c71696")],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        Municipality: {
+          $cond: {
+            if: {
+              $lt: ["$municipalAmt", 1],
+            },
+            then: 0,
+            else: {
+              $divide: ["$municipalAmt", "$municipalUlbs"],
+            },
+          },
+        },
+        "Municipal Corporation": {
+          $cond: {
+            if: {
+              $lt: ["$municipalCorAmt", 1],
+            },
+            then: 0,
+            else: {
+              $divide: ["$municipalCorAmt", "$municipalCorUlbs"],
+            },
+          },
+        },
+        "Town Panchayat": {
+          $cond: {
+            if: {
+              $lt: ["$townPanAmt", 1],
+            },
+            then: 0,
+            else: {
+              $divide: ["$townPanAmt", "$townPanUlbs"],
+            },
+          },
+        },
+      },
+    }
+   
+  ];
+  pipeline = query
+  
+
     }else {
       pipeline.push(
         {
@@ -5176,6 +5687,412 @@ exports.stateDashAvgsPipeline = async (
           }
       }
       );
+    }else if(TabType == 'CapitalTotalExpenditure' || TabType == 'CapitalExpenditurePerCapita'){
+      let tempYear = financialYear
+      .split("-")
+      .map((value) => Number(value) - 1)
+      .join("-");
+    let financialYearArr = [financialYear, tempYear];
+   let ulbIds_query = [
+    {
+        $match: {
+    $or : [{financialYear:financialYear},{financialYear:tempYear}],
+            lineItem: {
+                $in: [
+                ObjectId("5dd10c2785c951b54ec1d779"),
+                ObjectId("5dd10c2785c951b54ec1d774")
+                ]
+                }
+            }
+        },
+        {
+            $group: {
+                _id : "$financialYear",
+                ulbs: {$addToSet: "$ulb"}
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    ulbPrev : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", tempYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        },
+                          ulbNew : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", financialYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        }
+                        
+                    }
+                },
+                {
+                    $project: {
+                        ulbPrev: {$arrayElemAt: ["$ulbPrev", 0]},
+                                            ulbNew: {$arrayElemAt: ["$ulbNew", 1]},
+                        }
+                    },
+                     { $project: { commonToBoth: { $setIntersection: [ "$ulbPrev", "$ulbNew" ] }} }
+    ]
+  let output =   await UlbLedger.aggregate(ulbIds_query)
+ let ulbID = output[0]?.commonToBoth
+ ulbID = ulbID.map((value) => {
+    return ObjectId(value);
+  });
+  let query = [
+    {
+      $match: {
+         $or: [{financialYear: financialYear},{financialYear: tempYear}],
+        lineItem: {
+          $in: [...Capital_Expenditure.map((value) => ObjectId(value))],
+        },
+ulb: {
+$in: ulbID
+}
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $lookup: {
+        from: "ulbtypes",
+        localField: "ulb.ulbType",
+        foreignField: "_id",
+        as: "ulbType",
+      },
+    },
+    {
+      $unwind: "$ulbType",
+    },
+    {
+      $group: {
+        _id: "$ulb._id",
+        ulbName: { $first: "$ulb.name" },
+        ulbId: { $first: "$ulb._id" },
+        ulbType: { $first: "$ulbType._id" },
+        population: { $first: "$ulb.population" },
+        capitalWorkPrevYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", tempYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        capitalWorkCurrYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", financialYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        grossBlockPrevYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", tempYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+        grossBlockCurrYear: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$financialYear", financialYear] },
+                  {
+                    $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+                  },
+                ],
+              },
+              "$amount",
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        ulbName: 1,
+        ulbType: 1,
+        ulbId: 1,
+        population: 1,
+        amount: {
+          $add: [
+            { $subtract: ["$grossBlockCurrYear", "$grossBlockPrevYear"] },
+            { $subtract: ["$capitalWorkCurrYear", "$capitalWorkPrevYear"] },
+          ],
+        },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        "<100KAmt": {
+          $sum: {
+            $cond: {
+              if: {
+                $lt: ["$population", 100000],
+              },
+              then: { $multiply: ["$amount", isPerCapita ? 1 :  "$population"] },
+              else: 0,
+            },
+          },
+        },
+        "<100KUlbs": {
+          $sum: {
+            $cond: {
+              if: {
+                $lt: ["$population", 100000],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+        "100K-500KAmt": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  {
+                    $gte: ["$population", 100000],
+                  },
+                  {
+                    $lte: ["$population", 500000],
+                  },
+                ],
+              },
+              then: { $multiply: ["$amount", isPerCapita ? 1 :  "$population"] },
+              else: 0,
+            },
+          },
+        },
+        "100K-500KUlbs": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  {
+                    $gte: ["$population", 100000],
+                  },
+                  {
+                    $lte: ["$population", 500000],
+                  },
+                ],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+        "500K-1MAmt": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  {
+                    $gte: ["$population", 500000],
+                  },
+                  {
+                    $lte: ["$population", 1000000],
+                  },
+                ],
+              },
+              then: { $multiply: ["$amount", isPerCapita ? 1 :  "$population"] },
+              else: 0,
+            },
+          },
+        },
+        "500K-1MUlbs": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  {
+                    $gte: ["$population", 500000],
+                  },
+                  {
+                    $lte: ["$population", 1000000],
+                  },
+                ],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+        "1M-4MAmt": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  {
+                    $gte: ["$population", 1000000],
+                  },
+                  {
+                    $lte: ["$population", 4000000],
+                  },
+                ],
+              },
+              then: { $multiply: ["$amount", isPerCapita ? 1 :  "$population"] },
+              else: 0,
+            },
+          },
+        },
+        "1M-4MUlbs": {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  {
+                    $gte: ["$population", 1000000],
+                  },
+                  {
+                    $lte: ["$population", 4000000],
+                  },
+                ],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+        "4M+Amt": {
+          $sum: {
+            $cond: {
+              if: {
+                $gt: ["$population", 4000000],
+              },
+              then: { $multiply: ["$amount",isPerCapita ? 1 :  "$population"] },
+              else: 0,
+            },
+          },
+        },
+        "4M+Ulbs": {
+          $sum: {
+            $cond: {
+              if: {
+                $gt: ["$population", 4000000],
+              },
+              then: "$population",
+              else: 0,
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        "< 100 Thousand": {
+          $cond: {
+            if: {
+              $eq: ["$<100KUlbs", 0],
+            },
+            then: 0,
+            else: {
+              $divide: ["$<100KAmt", "$<100KUlbs"],
+            },
+          },
+        },
+        "100 Thousand - 500 Thousand": {
+          $cond: {
+            if: {
+              $eq: ["$100K-500KUlbs", 0],
+            },
+            then: 0,
+            else: {
+              $divide: ["$100K-500KAmt", "$100K-500KUlbs"],
+            },
+          },
+        },
+        "500 Thousand - 1 Million": {
+          $cond: {
+            if: {
+              $eq: ["$500K-1MUlbs", 0],
+            },
+            then: 0,
+            else: {
+              $divide: ["$500K-1MAmt", "$500K-1MUlbs"],
+            },
+          },
+        },
+        "1 Million - 4 Million": {
+          $cond: {
+            if: {
+              $eq: ["$1M-4MUlbs", 0],
+            },
+            then: 0,
+            else: {
+              $divide: ["$1M-4MAmt", "$1M-4MUlbs"],
+            },
+          },
+        },
+        "4 Million+": {
+          $cond: {
+            if: {
+              $eq: ["$4M+Ulbs", 0],
+            },
+            then: 0,
+            else: {
+              $divide: ["$4M+Amt", "$4M+Ulbs"],
+            },
+          },
+        },
+      },
+    }
+   
+  ];
+  pipeline = query
+  
+
     } else {
       pipeline.push(
         {
@@ -5406,4 +6323,16 @@ exports.stateDashAvgsPipeline = async (
     }
   }
   return pipeline;
+};
+
+const calculateWeigthedAvg = (data) => {
+  let numerator = 0,
+    denominator = 0;
+
+  data.forEach((el) => {
+    numerator +=
+      (el.value || el.value == 0 ? el.value : el.amount) * el.population;
+    denominator = el.population + denominator;
+  });
+  return Number((numerator / denominator).toFixed(2));
 };

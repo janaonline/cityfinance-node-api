@@ -1816,7 +1816,8 @@ const stateDashAvgs = async (req, res) => {
       ...req.body,
       k: 90,
     });
-    const data = UlbLedger.aggregate(query);
+    const data =  UlbLedger.aggregate(query);
+
     let newData = await Promise.all([data, otherApiData]);
 
     function roundOffy2(obj) {
