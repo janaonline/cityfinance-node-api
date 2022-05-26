@@ -1443,7 +1443,7 @@ const listOfIndicators = async (req, res) => {
     if (!type) throw { message: "Type is missing." };
     response.data = await IndicatorLineItems.find({ type }).lean();
     if (response.data.length) {
-      response.data = { type, names: response.data.map((val) => val.name) };
+      response.data = { type, obj : response.data  , names: response.data.map((val) => val.name) };
     } else throw { message: "no matching values found." };
     res.status(200).json(response);
   } catch (error) {
@@ -1715,19 +1715,19 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       stateAvg[0].average = Math.round(data2[0]?.average);
       tp_data = data.filter((el) => {
         if (el.ulbType == "Town Panchayat") {
-          el.value = (el.value / el.benchMarkValue) * 100;
+          el.value = el.value;
           return el;
         }
       });
       m_data = data.filter((el) => {
         if (el.ulbType == "Municipality") {
-          el.value = (el.value / el.benchMarkValue) * 100;
+          el.value = el.value;
           return el;
         }
       });
       mc_data = data.filter((el) => {
         if (el.ulbType == "Municipal Corporation") {
-          el.value = (el.value / el.benchMarkValue) * 100;
+          el.value = el.value;
           return el;
         }
       });
@@ -1816,8 +1816,7 @@ const stateDashAvgs = async (req, res) => {
       ...req.body,
       k: 90,
     });
-    const data =  UlbLedger.aggregate(query);
-
+    const data =  await UlbLedger.aggregate(query);
     let newData = await Promise.all([data, otherApiData]);
 
     function roundOffy2(obj) {
