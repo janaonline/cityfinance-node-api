@@ -493,7 +493,7 @@ exports.nationalDashRevenue = async (req, res) => {
           if (ownRevenueLineItems.includes(val.lineName)) {
             if (f1) {
               f1 = false;
-              return { colour: "#00ffff", lineitem: "Own Revenues" };
+              return { colour: "#00ffff", lineitem: "Own Revenue" };
             } else return f1;
           } else if (otherReceiptsLineItem.includes(val.lineName)) {
             if (f2) {
@@ -531,7 +531,7 @@ exports.nationalDashRevenue = async (req, res) => {
         nationalArr.map((each) => {
           let lineName = lineItemMap.get(each._id.lineItem.toString());
           if (ownRevenueLineItems.includes(lineName)) {
-            lineName = "Owen Revenue";
+            lineName = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(lineName)) {
             lineName = "Other Receipts";
@@ -546,7 +546,7 @@ exports.nationalDashRevenue = async (req, res) => {
           each.data.map((ev) => {
             let lineName = lineItemMap.get(ev.lineItem.toString());
             if (ownRevenueLineItems.includes(lineName)) {
-              lineName = "Owen Revenue";
+              lineName = "Own Revenue";
             }
             if (otherReceiptsLineItem.includes(lineName)) {
               lineName = "Other Receipts";
@@ -577,7 +577,7 @@ exports.nationalDashRevenue = async (req, res) => {
         responsePayload.data.individual.map((each) => {
           let currLineItem = lineItemMap.get(each._id.lineItem.toString());
           if (ownRevenueLineItems.includes(currLineItem)) {
-            currLineItem = "Owen Revenue";
+            currLineItem = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(currLineItem)) {
             currLineItem = "Other Receipts";
@@ -593,7 +593,7 @@ exports.nationalDashRevenue = async (req, res) => {
         responsePayload.data.national.map((each) => {
           let currLineItem = lineItemMap.get(each._id.lineItem.toString());
           if (ownRevenueLineItems.includes(currLineItem)) {
-            currLineItem = "Owen Revenue";
+            currLineItem = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(currLineItem)) {
             currLineItem = "Other Receipts";
