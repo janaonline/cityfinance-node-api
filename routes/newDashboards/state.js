@@ -791,7 +791,20 @@ const revenue = catchAsync(async (req, res) => {
          data = calData(data[0], filterName);
       }
      
-
+     let finalQuery_state = [
+      {
+        $match: {
+          financialYear: financialYear,
+          ulb: {
+            $in: [...AllULBs],
+          },
+        },
+      }
+    , ...query];
+  
+      // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+      let rawData = await Promise.all([UlbLedger.aggregate(finalQuery_state)]);
+      let stateData = calData(rawData[0], filterName);
       let ulbIDArr = await Ulb.aggregate([
         {
           $group: {
@@ -837,7 +850,7 @@ const revenue = catchAsync(async (req, res) => {
 
         finalArr.push(obj);
       }
-    Object.assign(  finalArr[0], {ulb:data})
+    Object.assign(  finalArr[0], {ulb:data, state: stateData})
       return res.status(200).json({
         success: true,
         data: finalArr[0]
@@ -845,11 +858,25 @@ const revenue = catchAsync(async (req, res) => {
       });
     } else if (compareType == "popType") {
       let data =[]
-      if(ulb.lengh == 1){
+      if(ulb.length == 1){
         finalQuery_ulb = [...base_query, ...query];
          data = await Promise.all([UlbLedger.aggregate(finalQuery_ulb)]);
          data = calData(data[0], filterName);
       }
+      let finalQuery_state = [
+        {
+          $match: {
+            financialYear: financialYear,
+            ulb: {
+              $in: [...AllULBs],
+            },
+          },
+        }
+      , ...query];
+  
+      // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+      let rawData = await Promise.all([UlbLedger.aggregate(finalQuery_state)]);
+      let stateData = calData(rawData[0], filterName);
       let ulbIDObj = await Ulb.aggregate([
         {
           $group: {
@@ -963,7 +990,7 @@ const revenue = catchAsync(async (req, res) => {
      
       prms1.then((values) => {
         console.log(values);
-        Object.assign(  values, {ulb:data})
+        Object.assign(  values, {ulb:data, state: stateData})
         return res.status(200).json({
           success: true,
           data: values,
