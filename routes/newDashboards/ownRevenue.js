@@ -31,6 +31,9 @@ const expenseCode = [
   "5dd10c2585c951b54ec1d756",
   "5dd10c2685c951b54ec1d760"
 ];
+const ObjectIdPropertyTax = [
+  "5dd10c2285c951b54ec1d737"
+]
 
 const yearlist = catchAsync(async (req, res) => {
   const { financialYear, stateId, ulb, ulbType, populationCategory } = req.body;
@@ -830,7 +833,30 @@ let redisKey =  "OwnRevenueCards";
 
 const tableData = async (req, res) => {
   try {
-    let { ulbType, ulb, stateId, financialYear, getQuery, propertyTax } = req.body;
+    let { ulbType, ulb, stateId, financialYear, getQuery, propertyTax } = req.body;    
+      let matchFilter = {
+      }
+
+      if(stateId && ObjectId.isValid(stateId) ){
+      Object.assign(matchFilter, {state: ObjectId(stateId)})
+      }
+   if(ulbType && ObjectId.isValid(ulbType)){
+    Object.assign(matchFilter, {ulbType: ObjectId(ulbType)})
+   }
+   if(ulb.length){
+    Object.assign(matchFilter, {_id: ObjectId(ulb)})
+   }
+   const HashTable = new Map();
+  let ulbIDs = [],
+    AllULBs = [];
+
+  AllULBs = await Ulb.find(matchFilter)
+    .select("_id")
+    .lean();
+  AllULBs = AllULBs.map((each) => {
+    HashTable.set(each._id.toString(), true);
+    return each._id;
+  });
 
     if (
       !financialYear || Array.isArray(financialYear)
@@ -842,7 +868,11 @@ const tableData = async (req, res) => {
     let query = [
       {
         $match: {
+          ulb: {
+            $in: [...AllULBs]
+          },
           lineItem: {
+            
             $in: [
               ...ObjectIdOfRevenueList.map((value) => ObjectId(value)),
               ...expenseCode.map((value) => ObjectId(value)),
@@ -976,7 +1006,7 @@ const tableData = async (req, res) => {
 
       {
         $project:{
-          totalRevenue: propertyTax ? {$divide:["$totalProperty", "$totalOwnRevenue"]} : "$totalOwnRevenue",
+          totalRevenue: propertyTax ? "$totalProperty" : "$totalOwnRevenue",
           totalProperty:1,
           totalOwnRevenue:1,
           totalExpense:1,
@@ -1000,6 +1030,7 @@ query_100t_median.push(...query, ...query_100t, ...queryCal)
 let { medianData_4m, medianData_1m_4m, medianData_1m_500t, medianData_500t_100t, medianData_100t } = await new Promise(async (resolve, reject) => {
   let prms1 = new Promise(async (rslv, rjct) => {
       let output =  await UlbLedger.aggregate(query_4m_median)
+      console.log(util.inspect(query_4m_median, {showHidden: false, depth: null}))
       let ans = calculateMedian (output);
       rslv(ans);
   });
@@ -1033,7 +1064,7 @@ let { medianData_4m, medianData_1m_4m, medianData_1m_500t, medianData_500t_100t,
           let medianData_100t = outputs[4];
         
 
-          if (medianData_4m && medianData_1m_4m && medianData_1m_500t && medianData_500t_100t && medianData_100t) {
+          if (medianData_4m || medianData_1m_4m || medianData_1m_500t || medianData_500t_100t || medianData_100t) {
               resolve({ medianData_4m, medianData_1m_4m, medianData_1m_500t, medianData_500t_100t , medianData_100t});
           } else {
               reject({ message: "No Data Found" });
@@ -1231,6 +1262,7 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
           denominator:{
             $sum:"$population"
           },
+          totalOwnRevenue:{$sum : "$totalOwnRevenue"},
           totalProperty:{$first:"$totalProperty"},
           totalExpense:{$first:"$totalExpense"},
           population:{$first:"$population"},
@@ -1242,8 +1274,8 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
             totalRevenue: { $cond: [ { $eq: [ "$denominator", 0 ] }, 0, {"$divide":["$numerator", "$denominator"]} ] } ,
             population:1,
             totalExpense:1,
-            totalProperty:1
-            
+            totalProperty:1,
+            totalOwnRevenue:1
 
           }
 
@@ -1252,7 +1284,7 @@ let { countData_4m, countData_1m_4m, countData_1m_500t, countData_500t_100t, cou
         $project:{
           totalRevenue: 1,
           perCapita: { $cond: [ { $eq: [ "$population", 0 ] }, 0, {"$divide":["$totalRevenue", "$population"]} ] },
-          percentage: propertyTax ? {$multiply: ["$totalRevenue", 100]}: {$multiply:[{$cond:[{ $eq: [ "$totalExpense", 0]},0, {"$divide":["$totalRevenue", "$totalExpense"]} ]}, 100]},
+          percentage: propertyTax ? {$multiply: [{$cond: [{$eq: ["$totalOwnRevenue", 0]}, 0, {$divide:["$totalRevenue", "$totalOwnRevenue"]}]}, 100]}: {$multiply:[{$cond:[{ $eq: [ "$totalExpense", 0]},0, {"$divide":["$totalRevenue", "$totalExpense"]} ]}, 100]},
           population:1,
           totalExpense:1,
           totalProperty:1
@@ -1500,7 +1532,7 @@ function calculateMedian(data){
   data.forEach( el => {
 values.push(el.ownRevenuePerCapita)
   })
-  if(values.length ===0) throw new Error("No inputs");
+  if(values.length ===0) return 0;
 
   values.sort(function(a,b){
     return a-b;
