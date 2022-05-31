@@ -1378,16 +1378,20 @@ exports.nationalDashCapexpense = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
-      _id: 1,
-      population: 1,
-      ulbType: 1,
-    });
+    let ulbs = Ulb.find(stateId ? { state: stateId } : {})
+      .select({
+        _id: 1,
+        population: 1,
+        ulbType: 1,
+      })
+      .lean();
     let lineItems = LineItem.find({
       code: {
         $in: ["410", "412"],
       },
-    }).select("_id");
+    })
+      .select("_id")
+      .lean();
     let promiseData = await Promise.all([ulbs, lineItems]);
     ulbs = promiseData[0];
     lineItems = promiseData[1];
@@ -1397,7 +1401,7 @@ exports.nationalDashCapexpense = async (req, res) => {
       return each._id;
     });
     lineItems = lineItems.map((each) => each._id);
-    let query = nationalDashCapexpensePipeline(
+    let query = await nationalDashCapexpensePipeline(
       financialYear,
       stateId,
       ulbs,
@@ -1407,7 +1411,8 @@ exports.nationalDashCapexpense = async (req, res) => {
     );
     if (getQuery) return res.status(200).json(query);
     let redisKey = JSON.stringify(query);
-    let redisData = await Redis.getDataPromise(redisKey);
+    let redisData;
+    // = await Redis.getDataPromise(redisKey);
     let ulbLeds;
     if (!redisData) {
       ulbLeds = await UlbLedger.aggregate(query);
@@ -1415,201 +1420,134 @@ exports.nationalDashCapexpense = async (req, res) => {
     } else {
       ulbLeds = JSON.parse(redisData);
     }
-    let populationMap = {
-      Average: {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        DataAvailPercentage: 0,
-      },
-      "< 100 Thousand": {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "100 Thousand - 500 Thousand": {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
+    ulbLeds = ulbLeds.reduce((newVal, val) => {
+      if (newVal[val._id.financialYear]) {
+        newVal[val._id.financialYear].push(val);
+      } else {
+        newVal[val._id.financialYear] = [val];
+      }
+      return newVal;
+    }, {});
+    let row = [],
+      columns = [];
+    if (formType == "ulbType") {
+      columns = [
+        {
+          key: "ulbType",
+          display_name: "ULB Type",
+        },
+        {
+          key: "amount",
+          display_name: "Capital Expenditure (in Cr)",
+        },
+        {
+          key: "perCapita",
+          display_name: "Capital Expenditure Per Capita (in Rs.)",
+        },
+        {
+          key: "percentage",
+          display_name: "Data Availability Percentage",
+        },
+      ];
 
-      "500 Thousand - 1 Million": {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "1 Million - 4 Million": {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "4 Million+": {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-    };
-    let ulbTypeMap = {
-      Average: {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        DataAvailPercentage: 0,
-      },
-      "Municipal Corporation": {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      Municipality: {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "Town Panchayat": {
-        Capexpense: 0,
-        CapexpensePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-    };
-    let sumOfCapexpense = 0,
-      sumOfCapexpensePerCapita = 0,
-      sumOfDataAval = 0;
-    if (type == "totalCapexpense") {
-      if (ulbLeds.length) {
-        const keys = Object.keys(ulbLeds[0]);
-        for (key of keys) {
-          //O(5) time complexity
-          let seenUlbs = 0,
-            obj = ulbLeds[0][key];
-          if (formType == "ulbType") {
-            ulbTypeMap[key] = obj;
-          } else if (formType == "populationCategory") {
-            populationMap[key] = obj;
+      rows = ulbLeds[financialYear].map((val) => {
+        let oldYear = financialYear.split("-");
+        oldYear = `${oldYear[0] - 1}-${oldYear[1] - 1}`;
+        let newData = {
+          ulbType: val.ulbType,
+          amount: 0,
+          perCapita: 0,
+          percentage: 0,
+        };
+        let oldYearValues = ulbLeds[oldYear].find(
+          (value) => value.ulbType == val.ulbType
+        );
+        newData.amount = Math.round(
+          val.amount_410 -
+            oldYearValues.amount_410 +
+            (val.amount_412 - oldYearValues.amount_412)
+        );
+        newData.perCapita = Math.round(newData.amount / val.population);
+        newData.percentage =
+          Math.round((val.noOfUlbs / HashTable[val.ulbType]) * 100) + "%";
+        return newData;
+      });
+    }
+    if (formType == "populationCategory") {
+      columns = [
+        {
+          key: "ulb_pop_category",
+          display_name: "ULB Population Category",
+        },
+        {
+          key: "amount",
+          display_name: "Capital Expenditure (in Cr)",
+        },
+        {
+          key: "perCapita",
+          display_name: "Capital Expenditure Per Capita (in Rs.)",
+        },
+        {
+          key: "percentage",
+          display_name: "Data Availability Percentage",
+        },
+      ];
+      let calVal = {};
+      row = ulbLeds[financialYear][0];
+      for (const key in row) {
+        const element = row[key];
+        if (key == "_id") continue;
+        let popCat = key.split("_");
+        if (key.includes("410") || key.includes("412")) {
+          let oldYear = financialYear.split("-");
+          oldYear = `${oldYear[0] - 1}-${oldYear[1] - 1}`;
+          if (!calVal[popCat[0]]) {
+            calVal[popCat[0]] = {};
           }
-          for (each of obj["set"]) {
-            if (HashTable.get(each.toString())) ++seenUlbs;
-          }
-          sumOfCapexpense += obj["Capexpense"];
-          sumOfCapexpensePerCapita += obj["CapexpensePerCapita"];
-          delete obj["set"];
-          obj["DataAvailPercentage"] = (seenUlbs / HashTable[key]) * 100;
-          sumOfDataAval += obj["DataAvailPercentage"];
+          calVal[popCat[0]][popCat[1]] = element - ulbLeds[oldYear][0][key];
+        } else {
+          calVal[popCat[0]][popCat[1]] = element;
         }
       }
-      if (formType == "ulbType") {
-        ulbTypeMap["Average"]["Capexpense"] = sumOfCapexpense / 5;
-        ulbTypeMap["Average"]["CapexpensePerCapita"] =
-          sumOfCapexpensePerCapita / 5;
-        ulbTypeMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
-        responsePayload.data = ulbTypeMap;
-      } else if (formType == "populationCategory") {
-        populationMap["Average"]["Capexpense"] = sumOfCapexpense / 5;
-        populationMap["Average"]["CapexpensePerCapita"] =
-          sumOfCapexpensePerCapita / 5;
-        populationMap["Average"]["DataAvailPercentage"] = sumOfDataAval / 5;
-        responsePayload.data = populationMap;
-      }
-      let displayNameMapper = {
-          Capexpense: "Capital Expenditure (in Cr)",
-          CapexpensePerCapita: "Capital Expenditure Per Capita (in Rs.)",
-          DataAvailPercentage: "Data Availability Percentage",
-        },
-        columns = [
-          {
-            key: "ulb_pop_category",
-            display_name:
-              formType == "populationCategory"
-                ? "ULB Population Category"
-                : "ULB Type",
-          },
-          ...Object.keys(populationMap["Average"]).map((each) => {
-            return { key: each, display_name: displayNameMapper[each] };
-          }),
-        ],
-        rows = [
-          ...Object.keys(responsePayload.data).map((each) => {
-            let output = { ulb_pop_category: each };
-            for (x in responsePayload.data[each]) {
-              output[x] = Math.round(responsePayload.data[each][x]);
-              if (x.toLowerCase().includes("percentage")) {
-                output[x] += "%";
-              }
-            }
-            return output;
-          }),
-        ];
-      responsePayload.data = { rows, columns };
-    } else if (type == "CapexpenseMix") {
-      if (formType == "ulbType") {
-        responsePayload.data = ulbLeds[0];
-        let nationalArr = responsePayload.data.national,
-          individualArr = responsePayload.data.individual;
-        let lineItemMap = new Map(),
-          ulbTypeMap = new Map();
-        const lineItems = await LineItem.find().lean();
-        const UlbTypes = await UlbType.find().lean();
-        lineItems.map((each) => {
-          lineItemMap.set(each._id.toString(), each.name);
-          return each;
-        });
-        UlbTypes.map((each) => {
-          ulbTypeMap.set(each._id.toString(), each.name);
-          return each;
-        });
-        let national_Format = {},
-          individual_Format = {
-            Municipality: {},
-            "Municipal Corporation": {},
-            "Town Panchayat": {},
-          };
-        nationalArr.map((each) => {
-          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
-            each.amount;
-          return each;
-        });
-        individualArr.map((each, idx) => {
-          const ulbTypeName = ulbTypeMap.get(each._id.toString());
-          each.data.map((ev) => {
-            individual_Format[ulbTypeName][
-              lineItemMap.get(ev.lineItem.toString())
-            ] = ev.amount;
-          });
-        });
-        responsePayload.data.national = national_Format;
-        responsePayload.data.individual = individual_Format;
-      } else {
-        let lineItemMap = new Map();
-        const lineItems = await LineItem.find().lean();
-        lineItems.map((each) => {
-          lineItemMap.set(each._id.toString(), each.name);
-          return each;
-        });
-        let populKeys = ["<100K", "100K-500K", "500K-1M", "1M-4M", "4M+"];
-        responsePayload.data = ulbLeds[0];
-        let dataMapper = {
-          "<100K": {},
-          "100K-500K": {},
-          "500K-1M": {},
-          "1M-4M": {},
-          "4M+": {},
+      rows = [];
+      for (let key in calVal) {
+        const element = calVal[key];
+        switch (key) {
+          case "<100K":
+            key = "< 100 Thousand";
+            break;
+          case "100K-500K":
+            key = "100 Thousand - 500 Thousand";
+
+            break;
+          case "500K-1M":
+            key = "500 Thousand - 1 Million";
+
+            break;
+          case "1M-4M":
+            key = "1 Million - 4 Million";
+
+            break;
+          case "4M+":
+            key = "4 Million+";
+
+            break;
+        }
+        let newData = {
+          ulb_pop_category: key,
+          amount: Math.round(element["410"] + element["412"]),
+          perCapita: Math.round(
+            (element["410"] + element["412"]) / element["pop"]
+          ),
+          percentage:
+            Math.round((element["noOfUlbs"] / HashTable[key]) * 100) + "%",
         };
-        responsePayload.data.individual.map((each) => {
-          const currLineItem = lineItemMap.get(each._id.lineItem.toString());
-          populKeys.map((key) => {
-            if (!dataMapper[key][currLineItem])
-              dataMapper[key][currLineItem] = 0;
-            dataMapper[key][currLineItem] += each[key];
-          });
-        });
-        responsePayload.data.individual = dataMapper;
-        let national_Format = {};
-        responsePayload.data.national.map((each) => {
-          national_Format[lineItemMap.get(each._id.lineItem.toString())] =
-            each.amount;
-          return each;
-        });
-        responsePayload.data.national = national_Format;
+        rows.push(newData);
       }
     }
+
+    responsePayload.data = { rows, columns, keys: ["amount", "perCapita"] };
+
     if (csv) {
       return getExcel(req, res, responsePayload.data);
     }
