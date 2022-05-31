@@ -806,6 +806,22 @@ return res.json({
     notFound: notFound
 })
 })
+
+module.exports.updatepopulation = catchAsync(async(req,res)=> {
+    const jsonArray = req.body.jsonArray; 
+    let notFound=[]
+    for(let el of jsonArray){
+      let ulbData = await Ulb.findOne({code:el['code'] }).lean()  
+      if(!ulbData){
+        notFound.push(el['code'])
+        continue;
+              }else{
+                    ulbData['population'] = el['population']
+                    }
+                    await Ulb.updateOne({code:el['code']}, ulbData)
+}
+res.send('Done');
+})
 var download = function(data, _cb) {
     let url = data['Link'];
     let fileName = data['State'] + '_' + data['Year'] + '_' + data['Type'] + '_' + data['Installment'] + '.pdf' ;

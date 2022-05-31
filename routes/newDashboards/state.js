@@ -1704,6 +1704,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
   data = tempArr[0];
   data2 = tempArr[1];
   // console.log(data)
+  let unit = data[0]?.unitType
   let stateAvg = [{ average: 0 }];
   if (data.length > 0) {
     if (sortBy) {
@@ -1768,6 +1769,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       mc_data: mc_data,
       stateAvg: stateAvg,
       tenData: tenData,
+      unitType: unit
     },
   };
 
