@@ -2013,7 +2013,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         {
           $group: {
             _id: {
-              isSubmit: "$steps.utilReport.isSubmit",
+              isSubmit: {$not: "$utilReportForm.isDraft" },
               actionTakenByRole: "$actionTakenByRole",
               masterformSubmit: "$isSubmit",
               status: "$status",
@@ -2039,7 +2039,8 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
             rslv(output);
           });
           let prms4 = new Promise(async (rslv, rjct) => {
-            // console.log(util.inspect(query4, { showHidden: false, depth: null }))
+            console.log(util.inspect(query4, { showHidden: false, depth: null }))
+          
             let output = await MasterFormData.aggregate(query4);
 
             rslv(output);
@@ -3409,16 +3410,17 @@ const formatOutput = (
           el._id.actionTakenByRole == "STATE" &&
           el._id.isSubmit == false)
       ) {
-        underReviewByState = el.count;
+        underReviewByState = el.count +  underReviewByState;
       } else if (
         el._id.status == 'APPROVED' || (el._id.actionTakenByRole === "MoHUA" && el._id.status == !'REJECTED'  ))
        {
-        overall_approvedByState = el.count;
+        overall_approvedByState = el.count + overall_approvedByState ;
       }
 
-      pendingForSubmission =
-        numbers[i] - underReviewByState - overall_approvedByState;
+    
     });
+    pendingForSubmission =
+    numbers[i] - underReviewByState - overall_approvedByState;
   }
 
   let total = 0;
@@ -3448,27 +3450,28 @@ const formatOutput = (
           el._id.actionTakenByRole == "STATE" &&
           el._id.isSubmit == false)
       ) {
-        util_underStateReview = el.count;
+        util_underStateReview = el.count + util_underStateReview;
       } else if (
         (el._id.status === "APPROVED"  || ( el._id.actionTakenByRole === "MoHUA" && el._id.status != "REJECTED" ))
        
       ) {
-        util_approvedbyState = el.count;
+        util_approvedbyState = el.count + util_approvedbyState;
       } else if (
         el._id.isSubmit &&
         el._id.actionTakenByRole === "ULB" &&
         el._id.status === "PENDING" &&
         el._id.masterformSubmit === false
       ) {
-        util_completedAndPendingSubmission = el.count;
+        util_completedAndPendingSubmission = el.count + util_approvedbyState;
       }
 
-      util_pendingCompletion =
-        numbers[i] -
-        util_underStateReview -
-        util_approvedbyState -
-        util_completedAndPendingSubmission;
+     
     });
+    util_pendingCompletion =
+    numbers[i] -
+    util_underStateReview -
+    util_approvedbyState -
+    util_completedAndPendingSubmission;
   }
 
   let finalOutput = {
