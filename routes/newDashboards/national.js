@@ -996,7 +996,12 @@ async function createTableData(type, data, ulbsCountInIndia) {
   if (type == "ulbType") {
     columns[0].display_name = "ULB Type";
     ulbTypes = await UlbType.find().lean();
+  
     for (const value of data.individual) {
+       for(let elem in  value){
+         if(typeof value[elem] != 'string' )
+      value[elem] =  value[elem].toFixed(0)
+    }
       let tempData = {
         ulbType: ulbTypes.find((val) => val._id.toString() == value._id).name,
         ...value,
@@ -1011,6 +1016,9 @@ async function createTableData(type, data, ulbsCountInIndia) {
     for (const key in data) {
       if (key == "_id") continue;
       const element = data[key];
+      for(let elem in  element){
+        element[elem] =  element[elem].toFixed(0)
+      }
       let tempData = {
         ulbType: key,
         ...element,

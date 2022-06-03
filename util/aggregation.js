@@ -1987,8 +1987,8 @@ exports.nationalDashExpensePipeline = (
                   {
                     $project: {
                       _id: 1,
-                      revenue: 1,
-                      expense: 1,
+                      revenue: {$divide: ["$revenue", 1e7]},
+                      expense: {$divide: ["$expense", 1e7]},
                       deficitOrSurplus: {
                         $subtract: ["$revenue", "$expense"],
                       },
