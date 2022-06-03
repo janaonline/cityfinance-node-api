@@ -512,6 +512,10 @@ exports.nationalDashRevenuePipeline = (
     }
   } else if (type == "revenueMix") {
     pipeline.push(
+      {$match: {
+        "ulb.state" : stateId ? ObjectId(stateId) : ""
+      }}
+      ,
       {
         $lookup: {
           from: "lineitems",
@@ -525,6 +529,22 @@ exports.nationalDashRevenuePipeline = (
       },
       {
         $facet: {
+          state: [
+            {
+              $group: {
+                _id: { lineItem: "$lineItem" },
+                amount: {
+                  $sum: "$amount",
+                },
+                colour: {
+                  $first: "$lineitem.colour",
+                },
+                lineName: {
+                  $first: "$lineitem.name",
+                },
+              },
+            },
+          ],
           national: [
             {
               $group: {
@@ -1782,6 +1802,36 @@ exports.nationalDashExpensePipeline = (
   } else if (type == "expenditureMix") {
     pipeline.push({
       $facet: {
+        state: [
+          {$match:{
+            "ulb.state":stateId ? ObjectId(stateId):""
+          }},
+          {
+            $lookup: {
+              from: "lineitems",
+              localField: "lineItem",
+              foreignField: "_id",
+              as: "lineitems",
+            },
+          },
+          {
+            $unwind: "$lineitems",
+          },
+          {
+            $group: {
+              _id: { lineItem: "$lineItem" },
+              amount: {
+                $sum: "$amount",
+              },
+              colour: {
+                $first: "$lineitems.colour",
+              },
+              lineName: {
+                $first: "$lineitems.name",
+              },
+            },
+          },
+        ],
         national: [
           {
             $lookup: {
@@ -2725,6 +2775,38 @@ exports.nationalDashOwnRevenuePipeline = (
   } else if (type == "OwnrevenueMix") {
     pipeline.push({
       $facet: {
+        state:  [
+          {
+            $match : {
+              "ulb.state" :stateId ?  ObjectId(stateId) : ""
+            }
+          },
+          {
+            $lookup: {
+              from: "lineitems",
+              localField: "lineItem",
+              foreignField: "_id",
+              as: "lineitems",
+            },
+          },
+          {
+            $unwind: "$lineitems",
+          },
+          {
+            $group: {
+              _id: { lineItem: "$lineItem" },
+              amount: {
+                $sum: "$amount",
+              },
+              colour: {
+                $first: "$lineitems.colour",
+              },
+              lineName: {
+                $first: "$lineitems.name",
+              },
+            },
+          },
+        ],
         national: [
           {
             $lookup: {

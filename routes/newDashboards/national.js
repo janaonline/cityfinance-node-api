@@ -509,7 +509,8 @@ exports.nationalDashRevenue = async (req, res) => {
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
-          individualArr = responsePayload.data.individual;
+          individualArr = responsePayload.data.individual,
+           stateArr = responsePayload.data?.state;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -522,7 +523,7 @@ exports.nationalDashRevenue = async (req, res) => {
           ulbTypeMap.set(each._id.toString(), each.name);
           return each;
         });
-        let national_Format = {},
+        let national_Format = {}, state_Format = {}
           individual_Format = {
             Municipality: {},
             "Municipal Corporation": {},
@@ -539,6 +540,19 @@ exports.nationalDashRevenue = async (req, res) => {
           if (national_Format[lineName] > 1) {
             national_Format[lineName] += each.amount;
           } else national_Format[lineName] = each.amount;
+          return each;
+        });
+        stateArr.map((each) => {
+          let lineName = lineItemMap.get(each._id.lineItem.toString());
+          if (ownRevenueLineItems.includes(lineName)) {
+            lineName = "Own Revenue";
+          }
+          if (otherReceiptsLineItem.includes(lineName)) {
+            lineName = "Other Receipts";
+          }
+          if (state_Format[lineName] > 1) {
+            state_Format[lineName] += each.amount;
+          } else state_Format[lineName] = each.amount;
           return each;
         });
         individualArr.map((each, idx) => {
@@ -558,6 +572,7 @@ exports.nationalDashRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
         responsePayload.data.individual = individual_Format;
+        responsePayload.data.state = state_Format;
       } else {
         let lineItemMap = new Map();
         const lineItems = await LineItem.find();
@@ -606,6 +621,23 @@ exports.nationalDashRevenue = async (req, res) => {
           return each;
         });
         responsePayload.data.national = national_Format;
+        let state_Format = {};
+        responsePayload.data.state.map((each) => {
+          let currLineItem = lineItemMap.get(each._id.lineItem.toString());
+          if (ownRevenueLineItems.includes(currLineItem)) {
+            currLineItem = "Own Revenue";
+          }
+          if (otherReceiptsLineItem.includes(currLineItem)) {
+            currLineItem = "Other Receipts";
+          }
+          if (state_Format[currLineItem] > 1) {
+            state_Format[currLineItem] += each.amount;
+          } else {
+            state_Format[currLineItem] = each.amount;
+          }
+          return each;
+        });
+        responsePayload.data.state = state_Format;
       }
       if (csv)
         await specifiedRowColumn(
@@ -813,7 +845,8 @@ exports.nationalDashExpenditure = async (req, res) => {
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
-          individualArr = responsePayload.data.individual;
+          individualArr = responsePayload.data.individual,
+          stateArr = responsePayload.data?.state ;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -826,7 +859,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           ulbTypeMap.set(each._id.toString(), each.name);
           return each;
         });
-        let national_Format = {},
+        let national_Format = {},  state_Format = {},
           individual_Format = {
             Municipality: {},
             "Municipal Corporation": {},
@@ -840,6 +873,17 @@ exports.nationalDashExpenditure = async (req, res) => {
           if (national_Format[lineName] > 1) {
             national_Format[lineName] += each.amount;
           } else national_Format[lineName] = each.amount;
+          return each;
+        });
+
+        stateArr.map((each) => {
+          let lineName = lineItemMap.get(each._id.lineItem.toString());
+          if (!includeInExpenditure.includes(lineName)) {
+            lineName = "Other Expenditure";
+          }
+          if (state_Format[lineName] > 1) {
+            state_Format[lineName] += each.amount;
+          } else state_Format[lineName] = each.amount;
           return each;
         });
         individualArr.map((each, idx) => {
@@ -856,6 +900,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
         responsePayload.data.individual = individual_Format;
+        responsePayload.data.state = state_Format;
       } else {
         let lineItemMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -884,7 +929,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           });
         });
         responsePayload.data.individual = dataMapper;
-        let national_Format = {};
+        let national_Format = {}, state_Format = {};
         responsePayload.data.national.map((each) => {
           let lineName = lineItemMap.get(each._id.lineItem.toString());
           if (!includeInExpenditure.includes(lineName)) {
@@ -894,6 +939,15 @@ exports.nationalDashExpenditure = async (req, res) => {
           return each;
         });
         responsePayload.data.national = national_Format;
+        responsePayload.data.state.map((each) => {
+          let lineName = lineItemMap.get(each._id.lineItem.toString());
+          if (!includeInExpenditure.includes(lineName)) {
+            lineName = "Other Expenditure";
+          }
+          state_Format[lineName] = each.amount;
+          return each;
+        });
+        responsePayload.data.state = state_Format;
       }
       if (csv)
         await specifiedRowColumn(
@@ -1289,7 +1343,8 @@ exports.nationalDashOwnRevenue = async (req, res) => {
       if (formType == "ulbType") {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
-          individualArr = responsePayload.data.individual;
+          individualArr = responsePayload.data.individual,
+           stateArr = responsePayload.data?.state;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -1302,7 +1357,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
           ulbTypeMap.set(each._id.toString(), each.name);
           return each;
         });
-        let national_Format = {},
+        let national_Format = {},state_Format = {},
           individual_Format = {
             Municipality: {},
             "Municipal Corporation": {},
@@ -1310,6 +1365,11 @@ exports.nationalDashOwnRevenue = async (req, res) => {
           };
         nationalArr.map((each) => {
           national_Format[lineItemMap.get(each._id.lineItem.toString())] =
+            each.amount;
+          return each;
+        });
+        stateArr.map((each) => {
+          state_Format[lineItemMap.get(each._id.lineItem.toString())] =
             each.amount;
           return each;
         });
@@ -1323,6 +1383,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         });
         responsePayload.data.national = national_Format;
         responsePayload.data.individual = individual_Format;
+        responsePayload.data.state = state_Format;
       } else {
         let lineItemMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -1354,7 +1415,14 @@ exports.nationalDashOwnRevenue = async (req, res) => {
             each.amount;
           return each;
         });
+        let state_Format = {};
+        responsePayload.data.state.map((each) => {
+          state_Format[lineItemMap.get(each._id.lineItem.toString())] =
+            each.amount;
+          return each;
+        });
         responsePayload.data.national = national_Format;
+        responsePayload.data.state = state_Format;
       }
       if (csv)
         await specifiedRowColumn(
