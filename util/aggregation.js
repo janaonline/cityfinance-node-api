@@ -512,10 +512,8 @@ exports.nationalDashRevenuePipeline = (
     }
   } else if (type == "revenueMix") {
     pipeline.push(
-      {$match: {
-        "ulb.state" : stateId ? ObjectId(stateId) : ""
-      }}
-      ,
+    
+      
       {
         $lookup: {
           from: "lineitems",
@@ -530,6 +528,9 @@ exports.nationalDashRevenuePipeline = (
       {
         $facet: {
           state: [
+            {$match: {
+              "ulb.state" : stateId ? ObjectId(stateId) : ""
+            }},
             {
               $group: {
                 _id: { lineItem: "$lineItem" },
