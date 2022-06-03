@@ -2156,6 +2156,20 @@ exports.nationalDashExpensePipeline = (
                   },
                   {
                     $project: {
+                      "<100K_revenue": {$divide: ["$<100K_revenue", 1e7]} ,
+                      "<100K_expense":{$divide: ["$<100K_expense", 1e7]},
+                      "100K-500K_revenue":{$divide: ["$100K-500K_revenue", 1e7]},
+                      "100K-500K_expense":{$divide: ["$100K-500K_expense", 1e7]},
+                      "500K-1M_revenue":{$divide: ["$500K-1M_revenue", 1e7]},
+                      "500K-1M_expense":{$divide: ["$500K-1M_expense", 1e7]},
+                      "1M-4M_revenue":{$divide: ["$1M-4M_revenue", 1e7]},
+                      "1M-4M_expense":{$divide: ["$1M-4M_expense", 1e7]},
+                      "4M+_revenue":{$divide: ["$4M+_revenue", 1e7]},
+                      "4M+_expense":{$divide: ["$4M+_expense", 1e7]}
+                    }
+                  },
+                  {
+                    $project: {
                       "<100K": {
                         revenue: "$<100K_revenue",
                         expense: "$<100K_expense",

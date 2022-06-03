@@ -14,6 +14,19 @@ const ExcelJS = require("exceljs");
 // ObjectId("5dd10c2485c951b54ec1d74a"),
 // ObjectId("5dd10c2885c951b54ec1d77e"),
 // ObjectId("5dd10c2385c951b54ec1d748"),
+
+
+// all revenue
+// ObjectId("5dd10c2685c951b54ec1d761"),
+// ObjectId("5dd10c2785c951b54ec1d776"),
+// ObjectId("5dd10c2585c951b54ec1d75b"),
+// ObjectId("5dd10c2885c951b54ec1d77e"),
+// ObjectId("5dd10c2485c951b54ec1d74b"),
+// ObjectId("5dd10c2385c951b54ec1d748"),
+// ObjectId("5dd10c2685c951b54ec1d762"),
+// ObjectId("5dd10c2485c951b54ec1d74f"),
+// ObjectId("5dd10c2785c951b54ec1d778"),
+// ObjectId("5dd10c2485c951b54ec1d74a"),
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
   "5dd10c2685c951b54ec1d762",
