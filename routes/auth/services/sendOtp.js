@@ -12,7 +12,7 @@ const State = require('../../../models/State')
 const Ulb = require('../../../models/Ulb')
 const { isValidObjectId } = require('mongoose');
 const ObjectId = require('mongoose').Types.ObjectId;
-
+const axios = require('axios')
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         let user = await getUSer(req.body);
@@ -56,7 +56,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 })
             }
         }
-        let msg = `Otp for your login request is ${otp}, Please do not share it with anybody.`;
+        let msg = `Your OTP to login into CityFinance.in is ${otp}. Do not share this code. If not requested, please contact us at contact@cityfinance.in - City Finance`;
         let mobile = user.accountantConatactNumber
         if (OtpMethods.validatePhoneNumber(mobile) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
@@ -73,14 +73,20 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             })
             await Otp.save();
             if (mobile) {
-                sendOtp.send(`${countryCode}${mobile}`, process.env.SENDER_ID, otp, function (error, data) {
-                    if (error) {
-                        res.status(500).json({
-                            success: false,
-                            message: error.message
-                        })
-                    }
-                });
+                axios.get(`https://api.msg91.com/api/v5/otp?template_id=${process.env.TEMPLATE_ID}&mobile=${mobile}&authkey=${process.env.MSG91_AUTH_KEY}&otp=${otp}`).then(function (response) {
+                console.log('OTP SENT');
+                  })
+                  .catch(function (error) {
+                    console.log('OTP NOT SENT');
+                  })
+                // sendOtp.send(`${countryCode}${mobile}`, process.env.SENDER_ID, otp, function (error, data) {
+                //     if (error) {
+                //         res.status(500).json({
+                //             success: false,
+                //             message: error.message
+                //         })
+                //     }
+                // });
             }
             if (user.email) {
                 let mailOptions =     {
