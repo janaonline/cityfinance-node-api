@@ -861,7 +861,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         let national_Format = {},  state_Format = {},
           individual_Format = {
-            Municipality: {},
+            "Municipality": {},
             "Municipal Corporation": {},
             "Town Panchayat": {},
           };
@@ -929,12 +929,15 @@ exports.nationalDashExpenditure = async (req, res) => {
           });
         });
         responsePayload.data.individual = dataMapper;
-        let national_Format = {}, state_Format = {};
+        let national_Format = {}, state_Format = {}, otherAmount = 0;
         responsePayload.data.national.map((each) => {
           let lineName = lineItemMap.get(each._id.lineItem.toString());
           if (!includeInExpenditure.includes(lineName)) {
             lineName = "Other Expenditure";
+            otherAmount += each.amount
+            national_Format[lineName] = otherAmount ;
           }
+          if(lineName != "Other Expenditure" )
           national_Format[lineName] = each.amount;
           return each;
         });
@@ -943,7 +946,10 @@ exports.nationalDashExpenditure = async (req, res) => {
           let lineName = lineItemMap.get(each._id.lineItem.toString());
           if (!includeInExpenditure.includes(lineName)) {
             lineName = "Other Expenditure";
+            otherAmount += each.amount
+            state_Format[lineName] = otherAmount ;
           }
+          if(lineName != "Other Expenditure" )
           state_Format[lineName] = each.amount;
           return each;
         });
