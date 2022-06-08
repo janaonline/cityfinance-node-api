@@ -8,7 +8,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
 const { from } = require("form-data");
 const LineItem = require("../../models/LineItem");
-
+const util = require('util')
 const headOfAccountDeficit = [
   ObjectId("5dd10c2885c951b54ec1d77e"),
   ObjectId("5dd10c2785c951b54ec1d77c"),
@@ -91,6 +91,23 @@ const headOfAccountIds = {
     ObjectId("5dd10c2385c951b54ec1d748"),
     ObjectId("5dd10c2385c951b54ec1d743"),
   ],
+};
+
+const Capital_Expenditure = [
+  "5dd10c2785c951b54ec1d779",
+  "5dd10c2785c951b54ec1d774",
+];
+
+const calculateStateAvg = (data) => {
+  let numerator = 0,
+    denominator = 0;
+
+  data.forEach((el) => {
+    numerator +=
+      (el.value || el.value == 0 ? el.value : el.amount) * el.population;
+    denominator = el.population + denominator;
+  });
+  return Number((numerator / denominator).toFixed(2));
 };
 
 const indicator = async (req, res) => {
@@ -263,6 +280,448 @@ const indicator = async (req, res) => {
         );
         break;
       case "capital_expenditure":
+       
+    // for capital expenditure and capex per capita
+//     let ulbIDs = [],
+//     AllULBs = [];
+
+//   AllULBs = await Ulb.find({ state: ObjectId(stateId) })
+//     .select("_id")
+//     .lean();
+//   AllULBs = AllULBs.map((each) => {
+//     HashTable.set(each._id.toString(), true);
+//     return each._id;
+//   });
+//   if (!ulb.length) {
+//     ulbIDs = AllULBs;
+//   } else {
+//     ulb = ulb.map((value) => {
+//       return ObjectId(value);
+//     });
+//     ulbIDs = ulb;
+//   }
+//   let base_query = [
+//     {
+//       $match: {
+//         financialYear: financialYear,
+//         ulb: {
+//           $in: [...ulbIDs],
+//         },
+//       },
+//     },
+//   ];
+//   // state Avg is calculatd separately to handle the ulb specific searches
+//   let state_avg_base_query = [
+//     {
+//       $match: {
+//         financialYear: financialYear,
+//         ulb: {
+//           $in: [...AllULBs],
+//         },
+//       },
+//     },
+//   ];
+
+//     let financialYearArr = [];
+//     financialYear.forEach((el, index)=> {
+//       financialYearArr.push(el,financialYear[index+1] );
+       
+      
+
+//     })
+   
+  
+//  let ulbIds_query = [
+//   {
+//       $match: {
+//   $or : [{financialYear:financialYearArr[0]},{financialYear:financialYearArr[1]}],
+//           lineItem: {
+//               $in: [
+//               ObjectId("5dd10c2785c951b54ec1d779"),
+//               ObjectId("5dd10c2785c951b54ec1d774")
+//               ]
+//               }
+//           }
+//       },
+//       {
+//           $group: {
+//               _id : "$financialYear",
+//               ulbs: {$addToSet: "$ulb"}
+//               }
+//           },
+//           {
+//               $group: {
+//                   _id: null,
+//                   ulbPrev : {
+//                       $addToSet: {
+//                            $cond: [
+//                       {$eq: ["$_id", financialYearArr[1]]},
+//                       "$ulbs",
+//                       null
+//                       ]
+//                           }
+                     
+//                       },
+//                         ulbNew : {
+//                       $addToSet: {
+//                            $cond: [
+//                       {$eq: ["$_id", financialYearArr[0]]},
+//                       "$ulbs",
+//                       null
+//                       ]
+//                           }
+                     
+//                       }
+                      
+//                   }
+//               },
+//               {
+//                   $project: {
+//                       ulbPrev: {$arrayElemAt: ["$ulbPrev", 0]},
+//                                           ulbNew: {$arrayElemAt: ["$ulbNew", 1]},
+//                       }
+//                   },
+//                    { $project: { commonToBoth: { $setIntersection: [ "$ulbPrev", "$ulbNew" ] }} }
+//   ]
+
+// let output =   await UlbLedger.aggregate(ulbIds_query)
+// let ulbID = output[0]?.commonToBoth
+// ulbID = ulbID.map((value) => {
+//   return ObjectId(value);
+// });
+// if(!ulbID.includes(ulb[0])){
+//   return res.json({
+//     success: false,
+//     message: "ULB previous year data not found"
+//   })
+//     }
+//   state_avg_base_query = [
+//     {
+//       $match: {
+//         financialYear: { $in: [...financialYearArr] },
+//         ulb: {
+//           $in: [...AllULBs],
+//         },
+//       },
+//     },
+//   ];
+
+//   let query = [
+//     {
+//       $match: {
+//          $or: [{financialYear: financialYearArr[0]},{financialYear: financialYearArr[1]}],
+//         lineItem: {
+//           $in: [...Capital_Expenditure.map((value) => ObjectId(value))],
+//         },
+// ulb: {
+// $in: ulb
+// }
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "ulbs",
+//         localField: "ulb",
+//         foreignField: "_id",
+//         as: "ulb",
+//       },
+//     },
+//     {
+//       $unwind: "$ulb",
+//     },
+//     {
+//       $match: {
+
+//         "ulb.state": ObjectId(stateId)
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "ulbtypes",
+//         localField: "ulb.ulbType",
+//         foreignField: "_id",
+//         as: "ulbType",
+//       },
+//     },
+//     {
+//       $unwind: "$ulbType",
+//     },
+//     {
+//       $group: {
+//         _id: "$ulb._id",
+//         ulbName: { $first: "$ulb.name" },
+//         ulbId: { $first: "$ulb._id" },
+//         ulbType: { $first: "$ulbType.name" },
+//         population: { $first: "$ulb.population" },
+//         capitalWorkPrevYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[1]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//         capitalWorkCurrYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[0]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//         grossBlockPrevYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[1]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//         grossBlockCurrYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[0]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//       },
+//     },
+//     {
+//       $project: {
+//         ulbName: 1,
+//         ulbType: 1,
+//         ulbId: 1,
+//         population: 1,
+//         amount: {
+//           $add: [
+//             { $subtract: ["$grossBlockCurrYear", "$grossBlockPrevYear"] },
+//             { $subtract: ["$capitalWorkCurrYear", "$capitalWorkPrevYear"] },
+//           ],
+//         },
+//       },
+//     },
+//     {
+//       $sort: {
+//         amount: -1,
+//       },
+//     },
+//   ];
+//   let query_s = [
+//     {
+//       $match: {
+//          $or: [{financialYear: financialYearArr[0]},{financialYear: financialYearArr[1]}],
+//         lineItem: {
+//           $in: [...Capital_Expenditure.map((value) => ObjectId(value))],
+//         },
+// ulb: {
+// $in: ulbID
+// }
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "ulbs",
+//         localField: "ulb",
+//         foreignField: "_id",
+//         as: "ulb",
+//       },
+//     },
+//     {
+//       $unwind: "$ulb",
+//     },
+//     {
+//       $match: {
+
+//         "ulb.state": ObjectId(stateId)
+//       }
+//     },
+//     {
+//       $lookup: {
+//         from: "ulbtypes",
+//         localField: "ulb.ulbType",
+//         foreignField: "_id",
+//         as: "ulbType",
+//       },
+//     },
+//     {
+//       $unwind: "$ulbType",
+//     },
+//     {
+//       $group: {
+//         _id: "$ulb._id",
+//         ulbName: { $first: "$ulb.name" },
+//         ulbId: { $first: "$ulb._id" },
+//         ulbType: { $first: "$ulbType.name" },
+//         population: { $first: "$ulb.population" },
+//         capitalWorkPrevYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[1]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//         capitalWorkCurrYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[0]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d774")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//         grossBlockPrevYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[1]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//         grossBlockCurrYear: {
+//           $sum: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$financialYear", financialYearArr[0]] },
+//                   {
+//                     $eq: ["$lineItem", ObjectId("5dd10c2785c951b54ec1d779")],
+//                   },
+//                 ],
+//               },
+//               "$amount",
+//               0,
+//             ],
+//           },
+//         },
+//       },
+//     },
+//     {
+//       $project: {
+//         ulbName: 1,
+//         ulbType: 1,
+//         ulbId: 1,
+//         population: 1,
+//         amount: {
+//           $add: [
+//             { $subtract: ["$grossBlockCurrYear", "$grossBlockPrevYear"] },
+//             { $subtract: ["$capitalWorkCurrYear", "$capitalWorkPrevYear"] },
+//           ],
+//         },
+//       },
+//     },
+//     {
+//       $sort: {
+//         amount: -1,
+//       },
+//     },
+//   ];
+  
+//   finalQuery = query;
+//   finalQuery_stateAvg = [...state_avg_base_query, ...query_s];
+//   console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+//   if (getQuery)
+//     return res.status(200).json({ finalQuery, finalQuery_stateAvg });
+//     console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+//   let tenData = [];
+//   // console.log(util.inspect(finalQuery, { showHidden: false, depth: null }));
+//   // is per capita attachment code
+//   if (isPerCapita) {
+//     let perCapitaQuery = [
+//       {
+//         $project: {
+//           ulbName: 1,
+//           population: 1,
+//           ulbType: 1,
+//           amount: {
+//             $cond: [
+//               { $eq: ["$population", 0] },
+//               0,
+//               { $divide: ["$amount", "$population"] },
+//             ],
+//           },
+//         },
+//       },
+//     ];
+//     finalQuery.push(...perCapitaQuery);
+//     finalQuery_stateAvg.push(...perCapitaQuery);
+//   }
+
+//   let data = await Promise.all([
+//     UlbLedger.aggregate(finalQuery),
+//     UlbLedger.aggregate(finalQuery_stateAvg),
+//   ]);
+  
+//   // calculating State Avg
+//   let stateAvg = calculateStateAvg(data[1]);
+  
+
+
+//     // scatter plot api called
+//     return res.status(200).json({
+//       success: true,
+//       data: data[0],
+//       stateAvg : stateAvg
+//     });
+  
+
+//         break;
       case "capital_expenditure_per_capita":
         matchObj["lineItem"].$in = headOfAccountIds["capital_expenditure"];
         let group2 = {

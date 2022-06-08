@@ -1882,10 +1882,10 @@ const indicatorDump = async (req, res) => {};
 const fetchTen = (data, sortBy) => {
   let topTen = data.slice(0, 10);
   let bottomTen = data.slice(-10);
-  if (sortBy.includes("top")) {
+  if (sortBy && sortBy.includes("top")) {
     return topTen;
   }
-  if (sortBy.includes("bottom") ){
+  if (sortBy && sortBy.includes("bottom") ){
     return bottomTen;
   }
 };
