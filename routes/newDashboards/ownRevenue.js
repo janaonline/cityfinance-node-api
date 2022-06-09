@@ -502,6 +502,7 @@ const chartData2 = async (req, res) => {
           },
           population: { $sum: "$ulb.population" },
           amount: { $sum: "$amount" },
+          color: {$first: "$lineItem.colour"}
         },
       }
     );
