@@ -493,12 +493,12 @@ exports.nationalDashRevenue = async (req, res) => {
           if (ownRevenueLineItems.includes(val.lineName)) {
             if (f1) {
               f1 = false;
-              return { colour: "#00ffff", lineitem: "Own Revenue" };
+              return { colour: "#25c7ce", lineitem: "Own Revenue" };
             } else return f1;
           } else if (otherReceiptsLineItem.includes(val.lineName)) {
             if (f2) {
               f2 = false;
-              return { colour: "#ff00bf", lineitem: "Other Receipts" };
+              return { colour: "#00ff80", lineitem: "Other Receipts" };
             } else {
               return f2;
             }
