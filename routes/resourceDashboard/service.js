@@ -35,7 +35,7 @@ module.exports.get = async function (req, res) {
     } else if (state) {
       Object.assign(query, { state });
     }
-    if (year) {
+    if (year && year != 'All Years') {
       Object.assign(query, { publishedYear: year });
     }
     if (globalName) {
