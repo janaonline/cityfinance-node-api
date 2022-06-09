@@ -2697,7 +2697,8 @@ async function expenseQueryCompare(
           tempQ.push(
             {
               $group: {
-                _id: { financialYear: "$financialYear" },
+                _id: {             year:"$financialYear",
+                ulb:"$ulb._id" },
                 revenue: {
                   $sum: {
                     $cond: {
@@ -2716,18 +2717,61 @@ async function expenseQueryCompare(
                     },
                   },
                 },
-                ulbName: { $first: "National" },
+                "ulbName": {
+                  "$first": "$ulb.name"
+              },
+               "population": {
+                  "$first": "$ulb.population"
+              },
+                              "year": {
+                  "$first": "$financialYear"
+              }
               },
             },
             {
               $project: {
-                _id: 1,
-                amount: { $subtract: ["$revenue", "$expense"] },
-                revenue: 1,
-                expense: 1,
-                ulbName: 1,
+                "_id": 0,
+                "amount": {
+                    "$subtract": [
+                        "$revenue",
+                        "$expense"
+                    ]
+                },
+       
+                "ulbName": 1,
+                "year":1,
+                "population":1,
+                "expense":1,
+                "revenue":1
               },
-            }
+            },
+            {
+              $group: {
+                  _id: "$year",
+  
+                  numer1 : {
+                      $sum: {  $multiply : ["$population", "$expense"] }
+                     
+                      },
+                        numer2 : {
+                      $sum: {  $multiply : ["$population", "$revenue"] }
+                     
+                      },
+                          numer3 : {
+                      $sum: {  $multiply : ["$population", "$amount"] }
+                     
+                      },
+                      denom : {$sum : "$population"}
+                  }
+              },
+              {
+                  $project: {
+                      expense : {$divide: ["$numer1", "$denom"]},
+                       revenue : {$divide: ["$numer2", "$denom"]},
+                        amount : {$divide: ["$numer3", "$denom"]},
+                        ulbName:"National"
+                      }
+                  }
           );
         } else if (from.includes("capital")) {
           tempQ = await capitalLogic(tempQ);
