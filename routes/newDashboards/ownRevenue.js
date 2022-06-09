@@ -502,7 +502,7 @@ const chartData2 = async (req, res) => {
           },
           population: { $sum: "$ulb.population" },
           amount: { $sum: "$amount" },
-          color: {$first: "$lineItem.colour"}
+          colour: {$first: "$lineItem.colour"}
         },
       }
     );
@@ -515,6 +515,7 @@ const chartData2 = async (req, res) => {
       _id: {
         revenueName: "Other Tax Revenue",
       },
+      colour:"#29A6A6",
       amount:
         data.find((value) => value._id.revenueName == "Tax Revenue")?.amount -
         data.find((value) => value._id.revenueName == "Property Tax")?.amount,
