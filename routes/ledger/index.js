@@ -39,5 +39,5 @@ router.post('/log/addLogByToken', verifyToken, (req, res, next) => {
 router.post('/log/getAll', ledgerService.getAllLogs);
 
 // Download Documents
-router.get('/ulb-financial-data/files/:_id', ufdService.findFiles,ufdService.sourceFiles);
+router.get('/ulb-financial-data/files/:_id',ufdService.sourceFiles);
 module.exports = router;
