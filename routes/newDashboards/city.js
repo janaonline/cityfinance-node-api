@@ -983,11 +983,11 @@ const comparator = async (compareFrom, query, ulb, isPerCapita, from, body) => {
     case "ULB Population Category Average":
     case "ULB Type Average":
     case "National Average":
-    case "State Average":
+    case "State ":
       if (compareFrom == "National Average") delete newData[0]?.$match?.ulb;
       else {
         let ids;
-        if (compareFrom == "State Average")
+        if (compareFrom == "State ")
           ids = await Ulb.find({ state: ulbData.state })
             .select({ _id: 1 })
             .lean();
@@ -1124,7 +1124,7 @@ async function revenueExpenditureQueryCompare(
   let ulbId;
   let tempQ;
   switch (compareFrom) {
-    case "State Average":
+    case "State ":
       ulbData = await ULB.findOne({ _id: ulb }).lean();
       ulbId = await ULB.find({ state: ulbData.state }).lean();
       tempQ = [
@@ -1514,7 +1514,7 @@ async function revenueQueryCompare(
     lineItemIds = await LINEITEM.find({ headOfAccount: "Revenue" });
   }
   switch (compareFrom) {
-    case "State Average":
+    case "State ":
       ulbData = await ULB.findOne({ _id: ulb });
       ulbId = await ULB.find({ state: ulbData.state });
       tempQ = [
@@ -2249,7 +2249,7 @@ async function expenseQueryCompare(
     });
   } else lineItemIds = await LINEITEM.find({ headOfAccount: "Expense" });
   switch (compareFrom) {
-    case "State Average":
+    case "State ":
       ulbData = await ULB.findOne({ _id: ulb }).lean();
       ulbId = await ULB.find({ state: ulbData.state }).lean();
       ulbId = ulbId.map((val) => val._id);
@@ -3362,7 +3362,7 @@ const revenueIndicator = async (req, res) => {
     let compQuery = JSON.parse(JSON.stringify(query));
     if (compareType) {
       switch (compareType) {
-        case "State Average":
+        case "State ":
           compQuery.map(async (value) => {
             if (value["$match"]) {
               delete value["$match"].ulb;
