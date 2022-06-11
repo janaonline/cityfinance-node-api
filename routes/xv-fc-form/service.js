@@ -28,6 +28,7 @@ const UA = require("../../models/UA");
 const util = require("util");
 const { isNull } = require("util");
 const statusTypes = require('../../util/statusTypes')
+const FORM_STATUS = require("../../util/newStatusList");
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -1296,6 +1297,148 @@ module.exports.get = catchAsync(async (req, res) => {
     return Response.BadRequest(res, {}, "Action not allowed.");
   }
 });
+
+module.exports.slbDownload = catchAsync(async (req, res) => {
+  let filename = "SLB-Report.csv";
+
+  res.setHeader("Content-disposition", "attachment; filename=" + filename)
+  res.flushHeaders();
+  let headers = [
+    'Design Year',
+    'ULB Name',
+    'ULB Code',
+    'State',
+    'SLB Form Status',
+
+    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2020-21',
+    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2021-22',
+    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2022-23',
+    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2023-24',
+    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2024-25',
+
+    '% of Non-revenue water * - Actual Indicator 2020-21',
+    '% of Non-revenue water * - Actual Indicator 2021-22',
+    '% of Non-revenue water * - Actual Indicator 2022-23',
+    '% of Non-revenue water * - Actual Indicator 2023-24',
+    '% of Non-revenue water * - Actual Indicator 2024-25',
+
+    '% of households covered with sewerage/septage services * - Actual Indicator 2020-21',
+    '% of households covered with sewerage/septage services * - Actual Indicator 2021-22',
+    '% of households covered with sewerage/septage services * - Actual Indicator 2022-23',
+    '% of households covered with sewerage/septage services * - Actual Indicator 2023-24',
+    '% of households covered with sewerage/septage services * - Actual Indicator 2024-25',
+
+    '% of households covered with piped water supply * - Actual Indicator 2020-21',
+    '% of households covered with piped water supply * - Actual Indicator 2021-22',
+    '% of households covered with piped water supply * - Actual Indicator 2022-23',
+    '% of households covered with piped water supply * - Actual Indicator 2023-24',
+    '% of households covered with piped water supply * - Actual Indicator 2024-25'
+  ];
+  let headersKey = [
+    'design_year.year',
+    'ulb.name',
+    'ulb.code',
+    'ulb.state.name',
+    'status',
+
+    'waterManagement.waterSuppliedPerDay.baseline.2021',
+    'waterManagement.waterSuppliedPerDay.target.2122',
+    'waterManagement.waterSuppliedPerDay.target.2223',
+    'waterManagement.waterSuppliedPerDay.target.2324',
+    'waterManagement.waterSuppliedPerDay.target.2425',
+
+    'waterManagement.reduction.baseline.2021',
+    'waterManagement.reduction.target.2122',
+    'waterManagement.reduction.target.2223',
+    'waterManagement.reduction.target.2324',
+    'waterManagement.reduction.target.2425',
+
+    'waterManagement.houseHoldCoveredWithSewerage.baseline.2021',
+    'waterManagement.houseHoldCoveredWithSewerage.target.2122',
+    'waterManagement.houseHoldCoveredWithSewerage.target.2223',
+    'waterManagement.houseHoldCoveredWithSewerage.target.2324',
+    'waterManagement.houseHoldCoveredWithSewerage.target.2425',
+
+    'waterManagement.houseHoldCoveredPipedSupply.baseline.2021',
+    'waterManagement.houseHoldCoveredPipedSupply.target.2122',
+    'waterManagement.houseHoldCoveredPipedSupply.target.2223',
+    'waterManagement.houseHoldCoveredPipedSupply.target.2324',
+    'waterManagement.houseHoldCoveredPipedSupply.target.2425'
+  ];
+  try {
+    const cursor = await XVFCGrantULBData.find({},{waterManagement : 1,status : 1,actionTakenByRole : 1})
+    .populate([
+      {
+        path: "ulb",
+        select: "_id name code state",
+        populate: {
+          path: "state",
+          select: "_id name code",
+        },
+      },
+      {
+        path: "design_year",
+        select: "year"
+      }
+    ]);
+    let mainArr = [];
+    if(cursor.length > 0){
+      new Promise(async (resolve,reject) => {
+        await cursor.forEach(async (result) => {
+          let arr = [];
+          for (resData of headersKey) {
+            if(resData == 'status'){
+              if (result.actionTakenByRole == "ULB") {
+                arr.push(FORM_STATUS.In_Progress);
+              } else if (result.actionTakenByRole == "ULB") {
+                arr.push(FORM_STATUS.Submitted);
+              } else if (result.actionTakenByRole == "STATE") {
+                arr.push(FORM_STATUS.Under_Review_By_State);
+              } else if (result.actionTakenByRole == "STATE") {
+                if (result.status == "APPROVED") {
+                  arr.push(FORM_STATUS.Approved_By_State);
+                } else if (result.status == "REJECTED") {
+                  arr.push(FORM_STATUS.Rejected_By_State);
+                }
+              } else if (result.actionTakenByRole == "MoHUA") {
+                arr.push(FORM_STATUS.Under_Review_By_MoHUA);
+              } else if (result.actionTakenByRole == "MoHUA") {
+                if (result.status == "APPROVED") {
+                  arr.push(FORM_STATUS.Approved_By_MoHUA);
+                } else if (result.status == "REJECTED") {
+                  arr.push(FORM_STATUS.Rejected_By_MoHUA);
+                }
+              }else{
+                arr.push("NA");
+              }
+            }else{
+              let ineerdData = await innerListGet(result,resData);
+              arr.push(ineerdData);
+            }
+          }
+          mainArr.push(arr.toString());
+          if(mainArr.length === cursor.length){
+            resolve(mainArr);
+          }
+        });
+      }).then(resultDataIs => {
+        res.write(headers.toString() + "\r\n");
+        for (stringVal of resultDataIs) {
+          res.write(stringVal + "\r\n");
+        }
+        res.end();
+      });
+    }
+  } catch (e) {
+    console.log("Exception:", e);
+    return Response.DbError(res, e, e.message);
+  }
+});
+
+async function innerListGet(t, path) {
+  return await path.split(".").reduce((r, k) => r?.[k], t);
+}
+
 module.exports.getAll = catchAsync(async (req, res) => {
   try {
     /**
