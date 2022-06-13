@@ -1283,6 +1283,13 @@ module.exports.sourceFiles = async (req, res) => {
            'audited.provisional_data.inc_exp_schedules.pdf.url':1,
            'audited.provisional_data.cash_flow.pdf.url':1,
            'audited.provisional_data.auditor_report.pdf.url':1,
+           
+           'audited.provisional_data.bal_sheet.excel.url':1,
+           'audited.provisional_data.bal_sheet_schedules.excel.url':1,
+           'audited.provisional_data.inc_exp.excel.url':1,
+           'audited.provisional_data.inc_exp_schedules.excel.url':1,
+           'audited.provisional_data.cash_flow.excel.url':1,
+           'audited.provisional_data.auditor_report.excel.url':1,
           
         };
            if(year == '2020-21')
@@ -1293,6 +1300,13 @@ module.exports.sourceFiles = async (req, res) => {
             'unAudited.provisional_data.inc_exp_schedules.pdf.url':1,
             'unAudited.provisional_data.cash_flow.pdf.url':1,
             'unAudited.provisional_data.auditor_report.pdf.url':1,
+
+            'unAudited.provisional_data.bal_sheet.excel.url':1,
+            'unAudited.provisional_data.bal_sheet_schedules.excel.url':1,
+            'unAudited.provisional_data.inc_exp.excel.url':1,
+            'unAudited.provisional_data.inc_exp_schedules.excel.url':1,
+            'unAudited.provisional_data.cash_flow.excel.url':1,
+            'unAudited.provisional_data.auditor_report.excel.url':1,
           
         };
       
