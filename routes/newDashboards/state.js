@@ -339,7 +339,7 @@ const revenue = catchAsync(async (req, res) => {
     getQuery,
     sortBy,
   } = req.body;
-
+let ulbIdArr = ulb;
   if (!state || !financialYear || !headOfAccount || !filterName) {
     return res.status(400).json({
       success: false,
@@ -1266,12 +1266,15 @@ const revenue = catchAsync(async (req, res) => {
                         }
                     },
                      { $project: { commonToBoth: { $setIntersection: [ "$ulbPrev", "$ulbNew" ] }} }
+                     
     ]
   let output =   await UlbLedger.aggregate(ulbIds_query)
  let ulbID = output[0]?.commonToBoth
+ 
  ulbID = ulbID.map((value) => {
     return ObjectId(value);
   });
+ 
     state_avg_base_query = [
       {
         $match: {
@@ -1416,8 +1419,22 @@ ulb: {
         },
       },
     ];
-    
-    finalQuery = query;
+    if(ulb.length){
+      query.push({
+        $match: {
+          ulbId: {
+            $in: ulbIDs
+          }
+        }
+
+        
+      })
+    }
+    finalQuery = query.slice();
+    let query_dup = []
+    if(ulb.length){
+      query.pop()
+    }
     finalQuery_stateAvg = [...state_avg_base_query, ...query];
     if (getQuery)
       return res.status(200).json({ finalQuery, finalQuery_stateAvg });
