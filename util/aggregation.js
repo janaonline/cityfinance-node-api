@@ -776,7 +776,7 @@ exports.stateDashRevenueTabs = async (
             $sum: "$amount",
           },
           population: {
-            $sum: "$ulb.population",
+            $first: "$ulb.population",
           },
         },
       },
@@ -872,7 +872,7 @@ exports.stateDashRevenueTabs = async (
             $sum: "$amount",
           },
           population: {
-            $sum: "$ulb.population",
+            $first: "$ulb.population",
           },
         },
       },
@@ -962,7 +962,7 @@ exports.stateDashRevenueTabs = async (
             $sum: "$amount",
           },
           population: {
-            $sum: "$ulb.population",
+            $first: "$ulb.population",
           },
         },
       },
