@@ -1,8 +1,11 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
 const ObjectId = require("mongoose").Types.ObjectId;
-const Year = require('../../models/Year')
+const Year = require('../../models/Year');
+const { ULBMASTER } = require('../../_helper/constants');
 module.exports.get = catchAsync(async(req,res)=> {
+    let user = req.decoded;
+    console.log(user)
 let role = req.query.role;
 let year = req.query.year;
 
