@@ -28,7 +28,7 @@ exports.nationalDashRevenuePipeline = (
       },
     },
   ];
-  if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
   pipeline.push(
     {
       $lookup: {
@@ -1318,7 +1318,7 @@ exports.nationalDashExpensePipeline = (
       $match: matchObj,
     },
   ];
-  if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
   pipeline.push(
     {
       $lookup: {
@@ -2291,7 +2291,7 @@ exports.nationalDashOwnRevenuePipeline = (
       },
     },
   ];
-  if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
   pipeline.push(
     {
       $lookup: {
