@@ -2,16 +2,24 @@ const passport = require('passport');
 const express = require('express');
 const router = express.Router();
 const Ulb = require('./service')
-const verifyToken = require('../auth/services/verifyToken').verifyToken;
+const multer = require("multer");
+const upload = multer({ dest: "uploads/resource" });
+const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
-router.get('/ulb/filtered', Ulb.getFilteredUlb);  // ulb have no questionnaire
+router.get("/ulb/filtered", Ulb.getFilteredUlb); // ulb have no questionnaire
 
-router.get('/ulb', Ulb.get);
-router.get('/ulbName', Ulb.getName);
-router.get('/getAllULBS/csv', Ulb.getAllULBSCSV);
-router.put('/ulb/:_id', verifyToken, Ulb.put);
-router.put('/ulb', Ulb.renameUlb);
-router.post('/Ulb', verifyToken, Ulb.post);
+router.get("/ulb", Ulb.get);
+router.get("/ulbName", Ulb.getName);
+router.get("/getAllULBS/csv", Ulb.getAllULBSCSV);
+router.put("/ulb/:_id", verifyToken, Ulb.put);
+router.put("/ulb", Ulb.renameUlb);
+router.post("/Ulb", verifyToken, Ulb.post);
+router.post(
+  "/multi-Ulb",
+  verifyToken,
+  upload.single("excel"),
+  Ulb.multiUlbPost
+);
 router.delete('/Ulb/:_id', verifyToken, Ulb.delete);
 router.delete('/Ulb', Ulb.delete_permanent);
 router.get('/ulblist', Ulb.getPopulate);

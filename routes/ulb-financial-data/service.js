@@ -6,6 +6,8 @@ const Response = require('../../service').response;
 const Service = require('../../service');
 const ObjectId = require('mongoose').Types.ObjectId;
 const moment = require('moment');
+const AnnualAccountData = require('../../models/AnnualAccounts')
+const Year = require('../../models/Year')
 module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
@@ -1223,10 +1225,37 @@ module.exports.getApprovedFinancialData = async (req, res) => {
         return Response.BadRequest(res, e, e.message);
     }
 };
+
+/* Checking if the ulbId is valid or not. and send to next for getting documents*/
+module.exports.findFiles = async (req, res, next) => {
+    let _id = ObjectId(req.params._id);
+    try { 
+        let ulbId = await UlbFinancialData.find({ ulb: _id },{_id : 1}).exec();
+        if(!ulbId) throw new Error("Ulb Id is invalid!");
+        
+        req.params._id = ulbId.map(l => l._id).join(",");
+        next();
+    } catch (error) {
+        return Response.BadRequest(res, error, error.message);
+    }
+}
+
 module.exports.sourceFiles = async (req, res) => {
     try {
-        let lh_id = ObjectId(req.decoded.lh_id); // Login history id
-        let _id = ObjectId(req.params._id);
+        if(req.decoded){
+            let lh_id = ObjectId(req.decoded.lh_id); // Login history id
+        }
+     
+        let allId = req.params._id.split(",");
+      let  ulbId = allId.map(el => ObjectId(el))
+        let condition = {ulb : {$in : allId}};
+        let obj = {}
+        let year = req.query.financialYear;
+       Object.assign(obj, {ulb: ulbId})
+        if(req.query.financialYear){
+            condition['financialYear'] = req.query.financialYear;
+            
+        }
         let select = {
             'balanceSheet.pdfUrl': 1,
             'balanceSheet.excelUrl': 1,
@@ -1243,22 +1272,77 @@ module.exports.sourceFiles = async (req, res) => {
             'overallReport.pdfUrl': 1,
             'overallReport.excelUrl': 1,
         };
-        let data = await UlbFinancialData.find({ _id: _id }, select).exec();
-        let lh = await LoginHistory.update(
-            { _id: lh_id },
-            { $push: { reports: _id } }
-        );
-        return Response.OK(res, data.length ? getSourceFiles(data[0]) : {});
+        let select_ann = {
+           
+        };
+        if(year == '2019-20')
+        select_ann = {
+           'audited.provisional_data.bal_sheet.pdf.url':1,
+           'audited.provisional_data.bal_sheet_schedules.pdf.url':1,
+           'audited.provisional_data.inc_exp.pdf.url':1,
+           'audited.provisional_data.inc_exp_schedules.pdf.url':1,
+           'audited.provisional_data.cash_flow.pdf.url':1,
+           'audited.provisional_data.auditor_report.pdf.url':1,
+           
+           'audited.provisional_data.bal_sheet.excel.url':1,
+           'audited.provisional_data.bal_sheet_schedules.excel.url':1,
+           'audited.provisional_data.inc_exp.excel.url':1,
+           'audited.provisional_data.inc_exp_schedules.excel.url':1,
+           'audited.provisional_data.cash_flow.excel.url':1,
+           'audited.provisional_data.auditor_report.excel.url':1,
+          
+        };
+           if(year == '2020-21')
+        select_ann = {
+            'unAudited.provisional_data.bal_sheet.pdf.url':1,
+            'unAudited.provisional_data.bal_sheet_schedules.pdf.url':1,
+            'unAudited.provisional_data.inc_exp.pdf.url':1,
+            'unAudited.provisional_data.inc_exp_schedules.pdf.url':1,
+            'unAudited.provisional_data.cash_flow.pdf.url':1,
+            'unAudited.provisional_data.auditor_report.pdf.url':1,
+
+            'unAudited.provisional_data.bal_sheet.excel.url':1,
+            'unAudited.provisional_data.bal_sheet_schedules.excel.url':1,
+            'unAudited.provisional_data.inc_exp.excel.url':1,
+            'unAudited.provisional_data.inc_exp_schedules.excel.url':1,
+            'unAudited.provisional_data.cash_flow.excel.url':1,
+            'unAudited.provisional_data.auditor_report.excel.url':1,
+          
+        };
+      
+        let data
+        if(year != '2019-20' && year != '2020-21' && year != '2021-22'){
+            data = await UlbFinancialData.find(condition, select).exec();
+        }else {
+         
+            data = await AnnualAccountData.find(obj, select_ann).lean().exec();
+        }
+        
+        
+         
+        if(req.decoded){
+            let lh = await LoginHistory.update(
+                { _id: lh_id },
+                { $push: { reports: allId[0] } }
+            );
+        }
+        let result = [];
+        for (const objectData of data) {
+            result.push(getSourceFiles(objectData, year))
+        }
+        return Response.OK(res, data.length ? result : {});
     } catch (e) {
         return Response.DbError(res, e);
     }
 };
-function getSourceFiles(obj) {
+
+function getSourceFiles(obj, year) {
     let o = {
         pdf: [],
         excel: [],
     };
-    obj.balanceSheet && obj.balanceSheet.pdfUrl
+    if(year != '2019-20' && year != '2020-21'){
+        obj.balanceSheet && obj.balanceSheet.pdfUrl
         ? o.pdf.push({ name: 'Balance Sheet', url: obj.balanceSheet.pdfUrl })
         : '';
     obj.balanceSheet && obj.balanceSheet.excelUrl
@@ -1335,6 +1419,54 @@ function getSourceFiles(obj) {
             url: obj.overallReport.excelUrl,
         })
         : '';
+    }else {
+        let data = (year == '2019-20') ? obj.audited.provisional_data : obj.unAudited.provisional_data;
+       
+        data.bal_sheet && data.bal_sheet.pdf.url
+        ? o.pdf.push({ name: 'Balance Sheet', url: data.bal_sheet.pdf?.url })
+        : '';
+        data.bal_sheet && data.bal_sheet?.excel?.url
+        ? o.excel.push({ name: 'Balance Sheet', url: data.bal_sheet?.excel?.url })
+        : '';
+        
+        data.bal_sheet_schedules && data.bal_sheet_schedules.pdf.url
+        ? o.pdf.push({ name: 'Schedules To Balance Sheet', url: data.bal_sheet_schedules.pdf?.url })
+        : '';
+        data.bal_sheet_schedules && data.bal_sheet_schedules?.excel?.url
+        ? o.excel.push({ name: 'Schedules To Balance Sheet', url: data.bal_sheet_schedules?.excel?.url })
+        : '';
+
+        data.inc_exp && data.inc_exp.pdf.url
+        ? o.pdf.push({ name: 'Income And Expenditure', url: data.inc_exp.pdf?.url })
+        : '';
+        data.inc_exp && data.inc_exp?.excel?.url
+        ? o.excel.push({ name: 'Income And Expenditure', url: data.inc_exp?.excel?.url })
+        : '';
+
+        data.inc_exp_schedules && data.inc_exp_schedules.pdf.url
+        ? o.pdf.push({ name: 'Schedules To Income And Expenditure', url: data.inc_exp_schedules.pdf?.url })
+        : '';
+        data.inc_exp_schedules && data.inc_exp_schedules?.excel?.url
+        ? o.excel.push({ name: 'Schedules To Income And Expenditure', url: data.inc_exp_schedules?.excel?.url })
+        : '';
+
+        data.cash_flow && data.cash_flow.pdf.url
+        ? o.pdf.push({ name: 'Cash Flow Statement', url: data.cash_flow.pdf?.url })
+        : '';
+        data.cash_flow && data.cash_flow?.excel?.url
+        ? o.excel.push({ name: 'Cash Flow Statement', url: data.cash_flow?.excel?.url })
+        : '';
+
+
+        data?.auditor_report && data?.auditor_report.pdf.url
+        ? o.pdf.push({ name: 'Auditor Report', url: data.auditor_report.pdf?.url })
+        : '';
+      
+
+    
+        
+    }
+   
 
     return o;
 }
