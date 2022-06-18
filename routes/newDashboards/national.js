@@ -1545,15 +1545,16 @@ exports.nationalDashCapexpense = async (req, res) => {
           (value) => value.ulbType == val.ulbType
         );
         newData.amount = Math.round(
-          val.amount_410 -
+          (val.amount_410 -
             oldYearValues.amount_410 +
             (val.amount_412 - oldYearValues.amount_412)
-        );
-        newData.perCapita = Math.round(newData.amount / val.population);
+        )/1e7);
+        newData.perCapita = Math.round(newData.amount *1e7 / val.population);
         newData.percentage =
           Math.round((val.noOfUlbs / HashTable[val.ulbType]) * 100) + "%";
         return newData;
       });
+
     }
     if (formType == "populationCategory") {
       columns = [
@@ -1617,7 +1618,7 @@ exports.nationalDashCapexpense = async (req, res) => {
         }
         let newData = {
           ulb_pop_category: key,
-          amount: Math.round(element["410"] + element["412"]),
+          amount: Math.round((element["410"] + element["412"])/1e7),
           perCapita: Math.round(
             (element["410"] + element["412"]) / element["pop"]
           ),
@@ -1627,7 +1628,14 @@ exports.nationalDashCapexpense = async (req, res) => {
         rows.push(newData);
       }
     }
-
+rows.unshift({
+  "amount":0,
+  "perCapita":0,
+  "percentage": "0%",
+  "ulb_pop_category": "Average"})
+  let temp = rows[2];
+  rows[2] = rows[3];
+  rows[3] = temp ;
     responsePayload.data = { rows, columns, keys: ["amount", "perCapita"] };
 
     if (csv) {
