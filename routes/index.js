@@ -169,4 +169,17 @@ router.use(fileUpload);
 const resourceDashboard = require("./resourceDashboard");
 router.use("/resourceDashboard", resourceDashboard);
 
+//ODF-form
+const OdfForm = require('./OdfForm');
+router.use('/odf-form', OdfForm);
+
+//Gfc- Form
+const GfcForm = require('./GfcForm');
+router.use('/gfc-form', GfcForm);
+
+//Gfc-form-Collection
+const GfcFormCollection = require('./GfcFormCollection');
+router.use('/gfc-form-collection', GfcFormCollection);
+
+
 module.exports = router;
