@@ -136,6 +136,11 @@ router.use(ActionPlans);
 const LinkPfmsState = require("./LinkPfmsState");
 router.use(LinkPfmsState);
 
+
+//SideMenu
+const Sidemenu = require("./sidemenu");
+router.use(Sidemenu);
+
 const StateMasterForm = require("./stateMasterForm");
 router.use('/stateMasterForm', StateMasterForm);
 
