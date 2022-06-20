@@ -4,6 +4,7 @@ const Ulb = require('../../../models/Ulb');
 const BondIssuerItem = require('../../../models/BondIssuerItem');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../../service/redis");
+const util = require('util')
 module.exports = (req, res) => {
 
     let query = {};
@@ -62,6 +63,7 @@ module.exports = (req, res) => {
 
         }
         try {
+            console.log(util.inspect(query, {showHidden: false, depth: null}))
             let count = await UlbLedger.aggregate(query).exec();
             rslv(count)
         }

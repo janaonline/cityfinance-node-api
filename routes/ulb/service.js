@@ -9,8 +9,9 @@ const service = require("../../service");
 const Response = require("../../service").response;
 const moment = require("moment");
 const ObjectId = require("mongoose").Types.ObjectId;
-const axios = require('axios')
+const axios = require("axios");
 const Redis = require("../../service/redis");
+const ExcelJS = require("exceljs");
 
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
@@ -276,6 +277,42 @@ module.exports.post = async function (req, res) {
     });
   }
 };
+
+module.exports.multiUlbPost = async function (req, res) {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    let file = await workbook.xlsx.readFile(req.file.path);
+    let worksheet = file.getWorksheet(1);
+    let rowData = worksheet.getRows(1, worksheet.rowCount);
+    let ulbData = [],
+      allPromises = [];
+    rowData.forEach((ele, index) => {
+      if (index == 0) return true;
+      let value = ele.values;
+      let temObj = {
+        name: value[2],
+        code: value[3],
+        censusCode: value[4],
+        type: value[5],
+        state: value[6],
+        amrut: value[8],
+        isMillionPlus: value[9],
+      };
+      ulbData.push(temObj);
+    });
+    ulbData.forEach((val) => {
+      let tempPromise = axios.post(`${process.env.BASEURL}/ulb`, val, {
+        headers: req.headers,
+      });
+      allPromises.push(tempPromise);
+    });
+
+    let result = await Promise.all(allPromises);
+    return res.status(200).json({ msg: "success", ulbData, result });
+  } catch (error) {
+    return Response.InternalError(res, error);
+  }
+};
 module.exports.delete = async function (req, res) {
   // Delete ulb based
   let condition = {
@@ -344,7 +381,7 @@ module.exports.getByState = async function (req, res) {
           state: { $first: "$state.name" },
           ulbs: {
             $push: {
-              _id:"$_id",
+              _id: "$_id",
               state: "$state.name",
               code: "$code",
               name: "$name",
@@ -606,8 +643,8 @@ module.exports.getAllULBSCSV = function (req, res) {
         code: 1,
         wards: 1,
         location: 1,
-        createdAt:1,
-        modifiedAt:1,
+        createdAt: 1,
+        modifiedAt: 1,
         isMillionPlus: 1,
         censusCode: 1,
         sbCode: 1,
@@ -629,13 +666,13 @@ module.exports.getAllULBSCSV = function (req, res) {
         wards: 1,
         location: 1,
         isMillionPlus: 1,
-        createdAt:1,
-        modifiedAt:1,
+        createdAt: 1,
+        modifiedAt: 1,
         censusCode: { $cond: ["$censusCode", "$censusCode", "NA"] },
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
-        UA: { $cond: ["$UA", "$UA.name", "NA"] }
+        UA: { $cond: ["$UA", "$UA.name", "NA"] },
       },
-    }
+    },
   ]).exec((err, data) => {
     if (err) {
       res.json({
@@ -650,42 +687,41 @@ module.exports.getAllULBSCSV = function (req, res) {
         el.location = el.location ? el.location : { lat: "NA", lng: "NA" };
         res.write(
           el.name +
-          "," +
-          el.code +
-          "," +
-          el.censusCode +
-          "," +
-          el.sbCode +
-          "," +
-          el.ulbtypes.name +
-          "," +
-          el.state.name +
-          "," +
-          el.state.code +
-          "," +
-          el.natureOfUlb +
-          "," +
-          el.area +
-          "," +
-          el.wards +
-          "," +
-          el.population +
-          "," +
-          el.amrut +
-          "," +
-          el.location.lat +
-          "," +
-          el.location.lng +
-          "," +
-          el.isMillionPlus +
-          "," +
-          el.UA +
-          "," +
-          el.createdAt +
-          "," +
-          el.modifiedAt +
-
-          "\r\n"
+            "," +
+            el.code +
+            "," +
+            el.censusCode +
+            "," +
+            el.sbCode +
+            "," +
+            el.ulbtypes.name +
+            "," +
+            el.state.name +
+            "," +
+            el.state.code +
+            "," +
+            el.natureOfUlb +
+            "," +
+            el.area +
+            "," +
+            el.wards +
+            "," +
+            el.population +
+            "," +
+            el.amrut +
+            "," +
+            el.location.lat +
+            "," +
+            el.location.lng +
+            "," +
+            el.isMillionPlus +
+            "," +
+            el.UA +
+            "," +
+            el.createdAt +
+            "," +
+            el.modifiedAt +
+            "\r\n"
         );
       }
       res.end();
@@ -894,7 +930,7 @@ const getUlbs = (yrs) => {
 
 module.exports.getUlbInUas = async function (req, res) {
   try {
-    let { state_id } = req.query
+    let { state_id } = req.query;
     let state = req.decoded.state ?? state_id;
     let response = await Ulb.find({ state: ObjectId(state) }).select({
       name: 1,
@@ -928,68 +964,70 @@ module.exports.getUlbInUas = async function (req, res) {
   }
 };
 module.exports.getUlbDatafromGeoUrban = async (req, res) => {
-  const params = new URLSearchParams()
-  params.append('UserName', 'SBM')
-  params.append('Password', '123456')
-  params.append('StateCode', '0')
+  const params = new URLSearchParams();
+  params.append("UserName", "SBM");
+  params.append("Password", "123456");
+  params.append("StateCode", "0");
 
   const config = {
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    }
-  }
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  };
 
-  axios.post('http://swachhbharaturban.gov.in/sbmgis/api/CensusULBCode', params, config)
+  axios
+    .post(
+      "http://swachhbharaturban.gov.in/sbmgis/api/CensusULBCode",
+      params,
+      config
+    )
     .then(async (result) => {
-      console.log((result.data.length))
+      console.log(result.data.length);
 
       let field = csvTableData();
 
       let xlsData = await service.dataFormating(result.data, field);
-      let filename =
-        "ULB List.xlsx";
+      let filename = "ULB List.xlsx";
       return res.xls(filename, xlsData);
       // Do somthing
     })
     .catch((err) => {
-      console.log(err.message)
-    })
-
-
-}
+      console.log(err.message);
+    });
+};
 function csvTableData() {
   return (field = {
     UlbName: "ULB Name",
     UlbCode: "ULB Code",
     Lat: "Latitude",
     Lng: "Longitude",
-    StateName: "State"
+    StateName: "State",
   });
 }
 module.exports.eligibleULBForms = async function (req, res) {
   let user = req.decoded;
-  let { ulb_id } = req.query
-  let ulb = user.ulb ?? ulb_id
+  let { ulb_id } = req.query;
+  let ulb = user.ulb ?? ulb_id;
   if (!ulb) {
     return res.status(400).json({
       success: false,
-      message: 'ULB ID NOT FOUND'
-    })
+      message: "ULB ID NOT FOUND",
+    });
   }
-  let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) })
+  let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) });
 
   let output = {
-    "pfms": 0,
-    "gtc": 1,
-    "utilReport": 1,
-    "annualAccounts": 1,
-    "slbs": 1,
-    "slbWaterSupplySanitation": 1,
-    "plansWaterSupplySanitation": 0
-  }
+    pfms: 0,
+    gtc: 1,
+    utilReport: 1,
+    annualAccounts: 1,
+    slbs: 1,
+    slbWaterSupplySanitation: 1,
+    plansWaterSupplySanitation: 0,
+  };
 
   return res.status(200).json({
     success: true,
-    data: output
-  })
-}
+    data: output,
+  });
+};

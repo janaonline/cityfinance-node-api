@@ -38,186 +38,199 @@ async function getAddScoreQuestion(req, res) {
     }
 } 
 
-async function postQuestionAnswer( req, res ) {
-try{
-  const ulb = req.body.ulb;
-  const data = req.body.scorePerformance;
-  let totalCount = 0;
-  let totalval = 0;
-  let particularQuestions = 0;
-  let partcularAnswerValues = [];
-  if (!ulb) {
-    return res.status(404).json({
-      success: false,
-      message: "ULB Missing",
-    });
-  }
-  for (const key in data) {
-    const element = data[key];
-    particularQuestions = element.length;
-    totalCount += element.length;
-    element.map((value) => {
-      if (value.answer) {
-        totalval++;
-      }
-    });
-
-    let filterValue = element.filter((value) => value.answer == true);
-
-    let answerValuesPercentage =
-      (filterValue.length / particularQuestions) * 100;
-    partcularAnswerValues.push({ value: answerValuesPercentage.toFixed(1) });
-  }
-
-  const keys = [
-    "Enumeration",
-    "Valuation",
-    "Assesment",
-    "Billing & Collection",
-    "Reporting",
-  ];
-  keys.forEach((k, index) => {
-    partcularAnswerValues[index].name = k;
-  });
-
-  let total = ((totalval / totalCount) * 10).toFixed(1);
-
-  let finalAnswers = Object.assign(
-    { scorePerformance: data },
-    { ulb },
-    { total },
-    { partcularAnswerValues }
-  );
-
-  const answers = new scorePerformance(finalAnswers);
-
+async function postQuestionAnswer(req, res) {
   try {
-    await answers.save();
-    return res.status(201).json(answers);
-  } catch (err) {
-    return res.status(400).json(err);
-  }
-}catch(e){
-    return res.json({
+    const ulb = req.body.ulb;
+    const data = req.body.scorePerformance;
+    let totalCount = 0;
+    let totalVal = 0;
+    let particularQuestions = 0;
+    let partcularAnswerValues = [];
+    if (!ulb) {
+      return res.status(404).json({
         success: false,
-        message:e.message
-    })
-}
-  
+        message: "ULB Missing",
+      });
+    }
+    for (const key in data) {
+      const element = data[key];
+      particularQuestions = element.length;
+      totalCount += element.length;
+      element.map((value) => {
+        if (value.answer) {
+          totalVal++;
+        }
+      });
+
+      let filterValue = element.filter((value) => value.answer == true);
+
+      let answerValuesPercentage =
+        (filterValue.length / particularQuestions) * 100;
+      partcularAnswerValues.push({ value: answerValuesPercentage.toFixed(1) });
+    }
+
+    const keys = [
+      "Enumeration",
+      "Valuation",
+      "Assesment",
+      "Billing & Collection",
+      "Reporting",
+    ];
+    keys.forEach((k, index) => {
+      partcularAnswerValues[index].name = k;
+    });
+
+    let total = ((totalVal / totalCount) * 10).toFixed(1);
+
+    let finalAnswers = Object.assign(
+      { scorePerformance: data },
+      { ulb },
+      { total },
+      { partcularAnswerValues }
+    );
+
+    const answers = new scorePerformance(finalAnswers);
+    await answers.save();
+    return res.status(200).json(answers);
+  } catch (e) {
+    return res.json({
+      success: false,
+      message: e.message,
+    });
+  }
 }
 
 async function getPostedAnswer(req, res) {
-    try {
-        let getQuestionAnswer = await scorePerformance.find( {} ).lean()
+  try {
+    let getQuestionAnswer = await scorePerformance.find({}).lean();
 
-      return  res.status( 201 ).json( getQuestionAnswer );
-    } catch (err) {
-      return  res.status( 400 ).json(err)
-    }
+    return res.status(201).json(getQuestionAnswer);
+  } catch (err) {
+    return res.status(400).json(err);
+  }
 }
 
-async function getAnswerByUlb( req, res ) {
-    try{
-        let {ulbId} = req.params;
-   
-    if ( ulbId ) {
-        let prescription = [
-          {
-            name: "enumeration",
-            value:
-              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
-          },
-          {
-            name: "valuation",
-            value:
-              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
-          },
-          {
-            name: "assessment",
-            value:
-              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
-          },
-          {
-            name: "Billing & Collection",
-            value:
-              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
-          },
-          {
-            name: "reporting",
-            value:
-              "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
-          },
-        ];
-        let findAnswerByUlb = await scorePerformance
-          .findOne({ ulb: ObjectId(ulbId) })
-          .lean();
-        if (!findAnswerByUlb) {
-          return res.status(200).json({
-            success: false,
-            data: null,
-          });
+async function getAnswerByUlb(req, res) {
+  try {
+    let { ulbId } = req.params;
+
+    if (!ulbId) {
+      return res.status(400).json({
+        success: false,
+        message: "ULB ID MIssing",
+      });
+    }
+    let prescription = [
+      {
+        name: "enumeration",
+        value:
+          "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+      },
+      {
+        name: "valuation",
+        value:
+          "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+      },
+      {
+        name: "assessment",
+        value:
+          "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+      },
+      {
+        name: "Billing & Collection",
+        value:
+          "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+      },
+      {
+        name: "reporting",
+        value:
+          "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est.",
+      },
+    ];
+    let findAnswerByUlb = (
+      await scorePerformance
+        .find({ ulb: ObjectId(ulbId) })
+        .sort({ _id: -1 })
+        .limit(1)
+        .lean()
+    )[0];
+    if (!findAnswerByUlb) {
+      return res.status(200).json({
+        success: false,
+        data: null,
+      });
+    }
+    findAnswerByUlb.partcularAnswerValues.map((elem) => {
+      prescription.map((elem2) => {
+        if (elem.name.toLowerCase() == elem2.name.toLowerCase()) {
+          Object.assign(elem, { prescription: elem2.value });
         }
-        findAnswerByUlb.partcularAnswerValues.map((elem) => {
-          prescription.map((elem2) => {
-            if (elem.name.toLowerCase() == elem2.name.toLowerCase()) {
-              Object.assign(elem, { prescription: elem2.value });
-            }
-          });
-        });
-        let query = [
-          [
-            {
-              $lookup: {
-                from: "ulbs",
-                localField: "ulb",
-                foreignField: "_id",
-                as: "ulb",
-              },
-            },
-            {
-              $unwind: "$ulb",
-            },
-            {
-              $sort: {
-                total: 1,
-              },
-            },
-            {
-              $limit: 3,
-            },
-            {
-              $project: {
-                ulb: "$ulb._id",
-                ulbName: "$ulb.name",
-                scorePerformance: 1,
-                total: 1,
-                partcularAnswerValues: 1,
-              },
-            },
-          ],
-        ];
-        let topThreeData = await scorePerformance.aggregate(query);
-
-        return res.status(201).json({
-          data: {
-            currentUlb: findAnswerByUlb,
-            top3: topThreeData,
+      });
+    });
+    let query = [
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb",
+        },
+      },
+      {
+        $unwind: "$ulb",
+      },
+      {
+        $sort: {
+          _id: -1,
+        },
+      },
+      {
+        $group: {
+          _id: "$ulb._id",
+          ulb: {
+            $first: "$ulb._id",
           },
-        });
-        } else {
-       return res.status( 400 ).json({
-            success: false,
-            message:"ULB ID MIssing"
-        });
-    }
+          ulbName: {
+            $first: "$ulb.name",
+          },
+          scorePerformance: {
+            $first: "$scorePerformance",
+          },
+          total: {
+            $first: "$total",
+          },
+          partcularAnswerValues: {
+            $first: "$partcularAnswerValues",
+          },
+          createdAt: {
+            $first: "$createdAt",
+          },
+        },
+      },
+      {
+        $sort: {
+          total: -1,
+          createdAt: -1,
+        },
+      },
+      {
+        $limit: 3,
+      },
+    ];
+    let topThreeData = await scorePerformance.aggregate(query);
 
-    } catch(e){
-        return res.json({
-            success: false,
-            message:e.message
-        })
-    }
-    
+    return res.status(200).json({
+      data: {
+        currentUlb: findAnswerByUlb,
+        top3: topThreeData,
+      },
+    });
+  } catch (e) {
+    return res.status(400).json({
+      success: false,
+      message: e.message,
+    });
+  }
 }
 
 

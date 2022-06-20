@@ -3,6 +3,7 @@ const router = express.Router();
 const passport = require('passport');
 const ledgerService = require('./service');
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
+const ufdService = require('../ulb-financial-data/service');
 // Route to download all the existing ledgers in the system
 router.get('/getAllLegdersCsv', ledgerService.getAllLedgersCsv);
 router.get('/lastUpdated', ledgerService.lastUpdated);
@@ -36,4 +37,7 @@ router.post('/log/addLogByToken', verifyToken, (req, res, next) => {
 
 // Get all logs
 router.post('/log/getAll', ledgerService.getAllLogs);
+
+// Download Documents
+router.get('/ulb-financial-data/files/:_id',ufdService.sourceFiles);
 module.exports = router;

@@ -1,16 +1,32 @@
 const Ulb = require("../../models/Ulb");
 const UlbLedger = require("../../models/UlbLedger");
-const LineItem = require("../../models/LineItem")
 const Indicator = require("../../models/indicators");
-const Sate = require("../../models/State");
+const IndicatorLineItems = require("../../models/indicatorLineItems");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
-const Redis = require("../../service/redis");
 const catchAsync = require("../../util/catchAsync");
 const util = require("util");
-const { response } = require("../../service");
-const axios = require('axios').default;
+const axios = require("axios").default;
+const ExcelJS = require("exceljs");
+// own revenue
+//  ObjectId("5dd10c2485c951b54ec1d74b"),
+// ObjectId("5dd10c2685c951b54ec1d762"),
+// ObjectId("5dd10c2485c951b54ec1d74a"),
+// ObjectId("5dd10c2885c951b54ec1d77e"),
+// ObjectId("5dd10c2385c951b54ec1d748"),
 
+
+// all revenue
+// ObjectId("5dd10c2685c951b54ec1d761"),
+// ObjectId("5dd10c2785c951b54ec1d776"),
+// ObjectId("5dd10c2585c951b54ec1d75b"),
+// ObjectId("5dd10c2885c951b54ec1d77e"),
+// ObjectId("5dd10c2485c951b54ec1d74b"),
+// ObjectId("5dd10c2385c951b54ec1d748"),
+// ObjectId("5dd10c2685c951b54ec1d762"),
+// ObjectId("5dd10c2485c951b54ec1d74f"),
+// ObjectId("5dd10c2785c951b54ec1d778"),
+// ObjectId("5dd10c2485c951b54ec1d74a"),
 const ObjectIdOfRevenueList = [
   "5dd10c2485c951b54ec1d74b",
   "5dd10c2685c951b54ec1d762",
@@ -19,44 +35,45 @@ const ObjectIdOfRevenueList = [
   "5dd10c2385c951b54ec1d748",
 ];
 
-const All_Revenue_ObjectIDs = [       
-   "5dd10c2685c951b54ec1d761", 
-"5dd10c2785c951b54ec1d776", 
-"5dd10c2585c951b54ec1d75b", 
-"5dd10c2885c951b54ec1d77e", 
-"5dd10c2485c951b54ec1d74b", 
-"5dd10c2385c951b54ec1d748", 
-"5dd10c2685c951b54ec1d762", 
-"5dd10c2485c951b54ec1d74f", 
-"5dd10c2785c951b54ec1d778", 
-"5dd10c2485c951b54ec1d74a"]
+const All_Revenue_ObjectIDs = [
+  "5dd10c2685c951b54ec1d761",
+  "5dd10c2785c951b54ec1d776",
+  "5dd10c2585c951b54ec1d75b",
+  "5dd10c2885c951b54ec1d77e",
+  "5dd10c2485c951b54ec1d74b",
+  "5dd10c2385c951b54ec1d748",
+  "5dd10c2685c951b54ec1d762",
+  "5dd10c2485c951b54ec1d74f",
+  "5dd10c2785c951b54ec1d778",
+  "5dd10c2485c951b54ec1d74a",
+];
 const All_Expense_ObjectIDs = [
-  "5dd10c2385c951b54ec1d743", 
-  "5dd10c2685c951b54ec1d760", 
-  "5dd10c2585c951b54ec1d75e", 
-  "5dd10c2585c951b54ec1d755", 
-  "5dd10c2585c951b54ec1d75f", 
-  "5dd10c2585c951b54ec1d756", 
-  "5dd10c2585c951b54ec1d75a", 
-  "5dd10c2585c951b54ec1d753", 
-  "5dd10c2485c951b54ec1d74e", 
-  "5dd10c2385c951b54ec1d744", 
-  "5dd10c2785c951b54ec1d77c", 
-  "5dd10c2385c951b54ec1d746"
-]
+  "5dd10c2385c951b54ec1d743",
+  "5dd10c2685c951b54ec1d760",
+  "5dd10c2585c951b54ec1d75e",
+  "5dd10c2585c951b54ec1d755",
+  "5dd10c2585c951b54ec1d75f",
+  "5dd10c2585c951b54ec1d756",
+  "5dd10c2585c951b54ec1d75a",
+  "5dd10c2585c951b54ec1d753",
+  "5dd10c2485c951b54ec1d74e",
+  "5dd10c2385c951b54ec1d744",
+  "5dd10c2785c951b54ec1d77c",
+  "5dd10c2385c951b54ec1d746",
+];
 
 const Revenue_Expenditure = [
   "5dd10c2385c951b54ec1d743",
   "5dd10c2585c951b54ec1d753",
   "5dd10c2585c951b54ec1d75a",
   "5dd10c2585c951b54ec1d756",
-  "5dd10c2685c951b54ec1d760"
-]
+  "5dd10c2685c951b54ec1d760",
+];
 
 const Capital_Expenditure = [
   "5dd10c2785c951b54ec1d779",
-  "5dd10c2785c951b54ec1d774"
-]
+  "5dd10c2785c951b54ec1d774",
+];
 
 const scatterMap = async (req, res) => {
   try {
@@ -220,8 +237,8 @@ const scatterMap = async (req, res) => {
 };
 
 const getFYsSLB = catchAsync(async (req, res) => {
-  let arr = await Indicator.distinct("year").sort();
-  let reversedArr = arr.reverse();
+  let arr = await Indicator.distinct("year");
+  let reversedArr = arr.sort().reverse();
 
   return res.status(200).json({
     success: true,
@@ -229,34 +246,85 @@ const getFYsSLB = catchAsync(async (req, res) => {
   });
 });
 
-const calData = (data) => {
-  let copyData = [];
-  copyData = data.slice();
-  let ownRev = 0;
-  for (let el of data) {
-    if (
-      el.code == "110" ||
-      el.code == "130" ||
-      el.code == "140" ||
-      el.code == "150" ||
-      el.code == "180"
-    ) {
-      ownRev = ownRev + el.amount;
-      let index = copyData.indexOf(el);
-      if (index > -1 && index != copyData.length - 1) copyData.splice(index, 1);
-      if (index == copyData.length - 1) {
-        copyData.pop(el);
+const calData = (data, filterName = "") => {
+  if (
+    filterName == "own revenue mix" ||
+    filterName == "revenue expenditure mix"
+  ) {
+    return data;
+  } else if (filterName == "expenditure mix") {
+    let copyData = [];
+    copyData = data.slice();
+    let otherExp = 0;
+    for (let el of data) {
+      if (
+        el.code == "250" ||
+        el.code == "260" ||
+        el.code == "271" ||
+        el.code == "270" ||
+        el.code == "280" ||
+        el.code == "272" ||
+        el.code == "290"
+      ) {
+        otherExp = otherExp + el.amount;
+        let index = copyData.indexOf(el);
+        if (index > -1 && index != copyData.length - 1)
+          copyData.splice(index, 1);
+        if (index == copyData.length - 1) {
+          copyData.pop(el);
+        }
+      } else {
+        continue;
       }
-    }else{
-      continue
     }
+    copyData.push({
+      _id: "Other Expenditure",
+      code: ["250", "260", "271", "270", "280", "272", "290"],
+      amount: otherExp,
+    });
+    return copyData;
+  } else {
+    let copyData = [
+      {
+        _id: "Own Revenue",
+        code: ["110", "130", "140", "150", "180"],
+        amount: 0,
+        colour: "#25C7CE",
+      },
+      {
+        _id: "Assigned Revenues & Compensation",
+        code: ["120"],
+        amount: 0,
+        colour: "",
+      },
+      {
+        _id: "Grants",
+        code: ["160"],
+        amount: 0,
+        colour: "",
+      },
+      {
+        _id: "Interest Income",
+        code: ["171"],
+        amount: 0,
+        colour: "",
+      },
+      {
+        _id: "Other Receipts",
+        code: ["170", "100"],
+        amount: 0,
+        colour: "#00ff80",
+      },
+    ];
+    for (let el of data) {
+      let temp = copyData.find((value) => value.code.includes(el.code));
+      if (temp) {
+        temp.amount += el.amount;
+        if (!temp.colour) temp.colour = el.colour;
+      }
+    }
+    return copyData;
   }
-  copyData.push({
-    _id: "Own Revenue",
-    code:["110","130","140","150","180"],
-    amount: ownRev,
-  });
-  return copyData;
 };
 
 const revenue = catchAsync(async (req, res) => {
@@ -271,7 +339,7 @@ const revenue = catchAsync(async (req, res) => {
     getQuery,
     sortBy,
   } = req.body;
-
+let ulbIdArr = ulb;
   if (!state || !financialYear || !headOfAccount || !filterName) {
     return res.status(400).json({
       success: false,
@@ -419,7 +487,10 @@ const revenue = catchAsync(async (req, res) => {
         data: groupedData,
       });
     }
-  } else if (filterName.includes("own revenue") && !filterName.includes("mix")) {
+  } else if (
+    filterName.includes("own revenue") &&
+    !filterName.includes("mix")
+  ) {
     // total own revenue and revenue per capita Tabs
     let query = [
       {
@@ -623,12 +694,7 @@ const revenue = catchAsync(async (req, res) => {
       });
     }
   } else if (filterName.includes("mix")) {
-    if (compareType && ulb.length) {
-      return res.status(400).json({
-        success: false,
-        message: "Both Compare Type and ULB ID are not allowed",
-      });
-    }
+   
     let idArray = [];
     switch (filterName) {
       case "revenue mix":
@@ -695,22 +761,63 @@ const revenue = catchAsync(async (req, res) => {
           _id: "$lineItem.name",
           code: { $first: "$lineItem.code" },
           amount: { $sum: "$amount" },
+          colour: { $first: "$lineItem.colour" },
         },
       },
     ];
 
-    if (compareType == "" && !ulb.length) {
+    if ((compareType == "default" || compareType == "") && !ulb.length) {
       finalQuery = [...base_query, ...query];
       let tenData = [];
       // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
       let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
-      data = calData(data[0]);
+      data = calData(data[0], filterName);
+     Object.assign(data, )
       return res.status(200).json({
         success: true,
         data: data,
       });
     } else if (compareType == "" && ulb) {
+      finalQuery = [...base_query, ...query];
+      finalQuery_state = [ {
+        $match: {
+          financialYear: financialYear,
+          ulb: {
+            $in: [...AllULBs],
+          },
+        },
+      }, ...query];
+      let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
+      let data_state = await Promise.all([UlbLedger.aggregate(finalQuery_state)]);
+      data_state = calData(data_state[0], filterName);
+      data = calData(data[0], filterName);
+      return res.status(200).json({
+        success: true,
+        state: data_state,
+        ulb: data
+      });
     } else if (compareType == "ulbType") {
+   let data =[]
+      if(ulb.length == 1){
+        finalQuery_ulb = [...base_query, ...query];
+         data = await Promise.all([UlbLedger.aggregate(finalQuery_ulb)]);
+         data = calData(data[0], filterName);
+      }
+     
+     let finalQuery_state = [
+      {
+        $match: {
+          financialYear: financialYear,
+          ulb: {
+            $in: [...AllULBs],
+          },
+        },
+      }
+    , ...query];
+  
+      // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+      let rawData = await Promise.all([UlbLedger.aggregate(finalQuery_state)]);
+      let stateData = calData(rawData[0], filterName);
       let ulbIDArr = await Ulb.aggregate([
         {
           $group: {
@@ -725,48 +832,64 @@ const revenue = catchAsync(async (req, res) => {
         mData: [],
       };
       let finalArr = [];
-      let prms1 = new Promise(async (rslv, rjct) => {
-        for await (let el of ulbIDArr) {
-          base_query = [
-            {
-              $match: {
-                financialYear: financialYear,
-                ulb: {
-                  $in: [...el.ulb],
-                },
+      for (let el of ulbIDArr) {
+        base_query = [
+          {
+            $match: {
+              financialYear: financialYear,
+              ulb: {
+                $in: [...el.ulb],
               },
             },
-          ];
-          finalQuery = [...base_query, ...query];
-          let tenData = [];
-          // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
-          let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
-          console.log(el._id);
-          data = calData(data[0]);
-          if (el._id.valueOf() == "5dcfa66b43263a0e75c71696") {
-            // town Panchayat
-            obj.tpData.push(data);
-          } else if (el._id.valueOf() == "5dcfa67543263a0e75c71697") {
-            // town Panchayat
-            obj.mcData.push(data);
-          } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
-            // town Panchayat
-            obj.mData.push(data);
-          }
-
-          finalArr.push(obj);
+          },
+        ];
+        finalQuery = [...base_query, ...query];
+       console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+        let tenData = [];
+        // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+        let data = await UlbLedger.aggregate(finalQuery);
+        console.log(el._id);
+        data = calData(data, filterName);
+        if (el._id.valueOf() == "5dcfa66b43263a0e75c71696") {
+          // town Panchayat
+          obj.tpData.push(data);
+        } else if (el._id.valueOf() == "5dcfa67543263a0e75c71697") {
+          // municipal corporation
+          obj.mcData.push(data);
+        } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
+          // Municipality
+          obj.mData.push(data);
         }
 
-        rslv(finalArr);
-      });
-      prms1.then((values) => {
-        console.log(values);
-        return res.status(200).json({
-          success: true,
-          data: values[0],
-        });
+        finalArr.push(obj);
+      }
+    Object.assign(  finalArr[0], {ulb:data, state: stateData})
+      return res.status(200).json({
+        success: true,
+        data: finalArr[0]
+        
       });
     } else if (compareType == "popType") {
+      let data =[]
+      if(ulb.length == 1){
+        finalQuery_ulb = [...base_query, ...query];
+         data = await Promise.all([UlbLedger.aggregate(finalQuery_ulb)]);
+         data = calData(data[0], filterName);
+      }
+      let finalQuery_state = [
+        {
+          $match: {
+            financialYear: financialYear,
+            ulb: {
+              $in: [...AllULBs],
+            },
+          },
+        }
+      , ...query];
+  
+      // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
+      let rawData = await Promise.all([UlbLedger.aggregate(finalQuery_state)]);
+      let stateData = calData(rawData[0], filterName);
       let ulbIDObj = await Ulb.aggregate([
         {
           $group: {
@@ -869,7 +992,7 @@ const revenue = catchAsync(async (req, res) => {
           // console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
           let data = await Promise.all([UlbLedger.aggregate(finalQuery)]);
           console.log(el._id);
-          data = calData(data[0]);
+          data = calData(data[0], filterName);
           let key = keyArr[i];
           Object.assign(output, { [key]: data });
           i++;
@@ -877,8 +1000,10 @@ const revenue = catchAsync(async (req, res) => {
 
         rslv(output);
       });
+     
       prms1.then((values) => {
         console.log(values);
+        Object.assign(  values, {ulb:data, state: stateData})
         return res.status(200).json({
           success: true,
           data: values,
@@ -927,6 +1052,7 @@ const revenue = catchAsync(async (req, res) => {
           _id: "$lineItem.name",
           amount: { $sum: "$amount" },
           code: { $first: "$lineItem.code" },
+          colour: { $first: "$lineItem.colour" },
         },
       },
     ];
@@ -1089,17 +1215,66 @@ const revenue = catchAsync(async (req, res) => {
       .map((value) => Number(value) - 1)
       .join("-");
     let financialYearArr = [financialYear, tempYear];
-    base_query = [
-      {
+   let ulbIds_query = [
+    {
         $match: {
-          financialYear: { $in: [...financialYearArr] },
-          ulb: {
-            $in: [...ulbIDs],
-          },
+    $or : [{financialYear:financialYear},{financialYear:tempYear}],
+            lineItem: {
+                $in: [
+                ObjectId("5dd10c2785c951b54ec1d779"),
+                ObjectId("5dd10c2785c951b54ec1d774")
+                ]
+                }
+            }
         },
-      },
-    ];
-
+        {
+            $group: {
+                _id : "$financialYear",
+                ulbs: {$addToSet: "$ulb"}
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    ulbPrev : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", tempYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        },
+                          ulbNew : {
+                        $addToSet: {
+                             $cond: [
+                        {$eq: ["$_id", financialYear]},
+                        "$ulbs",
+                        null
+                        ]
+                            }
+                       
+                        }
+                        
+                    }
+                },
+                {
+                    $project: {
+                        ulbPrev: {$arrayElemAt: ["$ulbPrev", 0]},
+                                            ulbNew: {$arrayElemAt: ["$ulbNew", 1]},
+                        }
+                    },
+                     { $project: { commonToBoth: { $setIntersection: [ "$ulbPrev", "$ulbNew" ] }} }
+                     
+    ]
+  let output =   await UlbLedger.aggregate(ulbIds_query)
+ let ulbID = output[0]?.commonToBoth
+ 
+ ulbID = ulbID.map((value) => {
+    return ObjectId(value);
+  });
+ 
     state_avg_base_query = [
       {
         $match: {
@@ -1114,9 +1289,13 @@ const revenue = catchAsync(async (req, res) => {
     let query = [
       {
         $match: {
+           $or: [{financialYear: financialYear},{financialYear: tempYear}],
           lineItem: {
             $in: [...Capital_Expenditure.map((value) => ObjectId(value))],
           },
+ulb: {
+  $in: ulbID
+}
         },
       },
       {
@@ -1129,6 +1308,12 @@ const revenue = catchAsync(async (req, res) => {
       },
       {
         $unwind: "$ulb",
+      },
+      {
+        $match: {
+
+          "ulb.state": ObjectId(state)
+        }
       },
       {
         $lookup: {
@@ -1149,7 +1334,7 @@ const revenue = catchAsync(async (req, res) => {
           ulbType: { $first: "$ulbType.name" },
           population: { $first: "$ulb.population" },
           capitalWorkPrevYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1165,7 +1350,7 @@ const revenue = catchAsync(async (req, res) => {
             },
           },
           capitalWorkCurrYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1181,7 +1366,7 @@ const revenue = catchAsync(async (req, res) => {
             },
           },
           grossBlockPrevYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1197,7 +1382,7 @@ const revenue = catchAsync(async (req, res) => {
             },
           },
           grossBlockCurrYear: {
-            $addToSet: {
+            $sum: {
               $cond: [
                 {
                   $and: [
@@ -1212,18 +1397,6 @@ const revenue = catchAsync(async (req, res) => {
               ],
             },
           },
-        },
-      },
-      {
-        $project: {
-          ulbName: 1,
-          ulbType: 1,
-          ulbId: 1,
-          population: 1,
-          grossBlockPrevYear: { $arrayElemAt: ["$grossBlockPrevYear", 0] },
-          grossBlockCurrYear: { $arrayElemAt: ["$grossBlockCurrYear", 0] },
-          capitalWorkPrevYear: { $arrayElemAt: ["$capitalWorkPrevYear", 0] },
-          capitalWorkCurrYear: { $arrayElemAt: ["$capitalWorkCurrYear", 0] },
         },
       },
       {
@@ -1246,10 +1419,28 @@ const revenue = catchAsync(async (req, res) => {
         },
       },
     ];
-    finalQuery = [...base_query, ...query];
+    if(ulb.length){
+      query.push({
+        $match: {
+          ulbId: {
+            $in: ulbIDs
+          }
+        }
+
+        
+      })
+    }
+    finalQuery = query.slice();
+    let query_dup = []
+    if(ulb.length){
+      query.pop()
+    }
     finalQuery_stateAvg = [...state_avg_base_query, ...query];
+    if (getQuery)
+      return res.status(200).json({ finalQuery, finalQuery_stateAvg });
+      console.log(util.inspect(finalQuery, {showHidden: false, depth: null}))
     let tenData = [];
-    console.log(util.inspect(finalQuery, { showHidden: false, depth: null }));
+    // console.log(util.inspect(finalQuery, { showHidden: false, depth: null }));
     // is per capita attachment code
     if (isPerCapita) {
       let perCapitaQuery = [
@@ -1307,30 +1498,10 @@ const listOfIndicators = async (req, res) => {
     let response = { success: true, data: null };
     const { type } = req.query;
     if (!type) throw { message: "Type is missing." };
-    response.data = await Indicator.aggregate([
-      {
-        $match: {
-          type,
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          names: {
-            $addToSet: "$name",
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          type,
-          names: "$names",
-        },
-      },
-    ]);
-    if (response.data.length) response.data = response.data[0];
-    else throw { message: "no matching values found." };
+    response.data = await IndicatorLineItems.find({ type }).lean();
+    if (response.data.length) {
+      response.data = { type, obj : response.data  , names: response.data.map((val) => val.name) };
+    } else throw { message: "no matching values found." };
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1338,7 +1509,7 @@ const listOfIndicators = async (req, res) => {
 };
 const stateRevenueTabs = async (req, res) => {
   try {
-    const { tabType, financialYear, stateId, sortBy, code, getQuery } =
+    const { tabType, financialYear, stateId, sortBy, code, getQuery, csv } =
       req.query;
     if (!tabType) throw { message: "Type of tab is missing." };
     let response = { success: true, data: null };
@@ -1358,10 +1529,56 @@ const stateRevenueTabs = async (req, res) => {
     response.data = await UlbLedger.aggregate(
       await stateDashRevenueTabs(financialYear, tabType, stateId, sortBy, code)
     );
+    if (csv) {
+      let columns = [
+        { display_name: "ULB Name", key: "ulbName" },
+        { display_name: "Amount", key: "sum" },
+      ];
+      return getExcel(req, res, { columns, rows: response.data });
+    }
     res.status(200).json(response);
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+let getExcel = async (req, res, data) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Data");
+    // const imageId2 = workbook.addImage({
+    //   buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
+    //   extension: "png",
+    // });
+    // worksheet.addImage(imageId2, "A1:F3");
+    data.columns.unshift({ display_name: "S.no", key: "sno" });
+    worksheet.columns = data.columns.map((value) => {
+      let temp = {
+        header: value.display_name,
+        key: value.key,
+      };
+      return temp;
+    });
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    data.rows.map((value, i) => {
+      value.sno = i + 1;
+      worksheet.addRow(value);
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=" + "data.xlsx");
+    return workbook.xlsx.write(res).then(function () {
+      res.status(200).end();
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(400).json(err);
   }
 };
 
@@ -1392,6 +1609,12 @@ const getFYsWithSpecification = async (req, res) => {
     if (getQuery) return res.status(200).json(query);
     response.data = await UlbLedger.aggregate(query);
     response.data = response.data.length ? response.data[0] : null;
+    if (response.data)
+      response.data?.FYs.sort((a, b) => {
+        let year1 = a.split("-")[0];
+        let year2 = b.split("-")[0];
+        return year2 - year1;
+      });
     res.status(200).json(response);
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1403,11 +1626,11 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     stateId,
     financialYear,
     filterName,
+    filterId,
     sortBy,
-    isPerCapita,
     ulb,
-    compareType,
     getQuery,
+    csv,
   } = req.body;
 
   if (!stateId || !financialYear || !filterName) {
@@ -1416,14 +1639,20 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       message: "Missing Information",
     });
   }
-
-  let query = [
-    {
-      $match: {
-        name: filterName,
-        year: financialYear,
-      },
+  let matchId =
+    filterId ??
+    (await IndicatorLineItems.findOne({ name: filterName }).lean())._id;
+  let matchObj = {
+    $match: {
+      indicatorLineItem: ObjectId(matchId),
+      year: financialYear,
     },
+  };
+  if (ulb?.length > 0) {
+    matchObj.$match.ulb = ObjectId(ulb[0]);
+  }
+  let query = [
+    matchObj,
     {
       $lookup: {
         from: "ulbs",
@@ -1469,29 +1698,94 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     m_data = [],
     mc_data = [],
     tenData = [];
-  let data = await Indicator.aggregate(query);
+  if (getQuery) return res.status(200).json(query);
+  let data = Indicator.aggregate(query);
+  let data2 = Indicator.aggregate([
+    {
+      $match: {
+        indicatorLineItem: ObjectId(matchId),
+        year: financialYear,
+      },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb",
+      },
+    },
+    {
+      $unwind: "$ulb",
+    },
+    {
+      $match: {
+        "ulb.state": ObjectId(stateId),
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        average: { $avg: "$value" },
+      },
+    },
+  ]);
+  let tempArr = await Promise.all([data, data2]);
+  data = tempArr[0];
+  data2 = tempArr[1];
   // console.log(data)
+  let unit = data[0]?.unitType
   let stateAvg = [{ average: 0 }];
   if (data.length > 0) {
     if (sortBy) {
       tenData = fetchTen(data, sortBy);
+      if (csv) {
+        let columns = [
+          {
+            display_name: "ULB",
+            key: "ulbName",
+          },
+          {
+            display_name: "Value",
+            key: "value",
+          },
+          {
+            display_name: "Bench Mark Value",
+            key: "benchMarkValue",
+          },
+          {
+            display_name: "Unit Type",
+            key: "unitType",
+          },
+          {
+            display_name: "ULB Type",
+            key: "ulbType",
+          },
+          {
+            display_name: "Population",
+            key: "population",
+          },
+        ];
+        let data = { columns, rows: tenData };
+        return getExcel(req, res, data);
+      }
     } else {
-      stateAvg[0].average = calculateStateAvg(data);
+      stateAvg[0].average = Math.round(data2[0]?.average);
       tp_data = data.filter((el) => {
         if (el.ulbType == "Town Panchayat") {
-          el.value = (el.value / el.benchMarkValue) * 100;
+          el.value = el.value;
           return el;
         }
       });
       m_data = data.filter((el) => {
         if (el.ulbType == "Municipality") {
-          el.value = (el.value / el.benchMarkValue) * 100;
+          el.value = el.value;
           return el;
         }
       });
       mc_data = data.filter((el) => {
         if (el.ulbType == "Municipal Corporation") {
-          el.value = (el.value / el.benchMarkValue) * 100;
+          el.value = el.value;
           return el;
         }
       });
@@ -1505,6 +1799,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       mc_data: mc_data,
       stateAvg: stateAvg,
       tenData: tenData,
+      unitType: unit
     },
   };
 
@@ -1538,7 +1833,8 @@ const calculateStateAvg = (data) => {
     denominator = 0;
 
   data.forEach((el) => {
-    numerator = (el.value ? el.value : el.amount) * el.population + numerator;
+    numerator +=
+      (el.value || el.value == 0 ? el.value : el.amount) * el.population;
     denominator = el.population + denominator;
   });
   return Number((numerator / denominator).toFixed(2));
@@ -1570,14 +1866,16 @@ const stateDashAvgs = async (req, res) => {
       noOfUlbs,
       TabType,
       stateId,
-      code
+      code,
+      isPerCapita
     );
     if (getQuery) return res.send(query);
+    console.log(util.inspect(query, {showHidden: false, depth: null}))
     let otherApiData = axios.post(`${process.env.BASEURL}/state-revenue`, {
       ...req.body,
       k: 90,
     });
-    const data = UlbLedger.aggregate(query);
+    const data =  await UlbLedger.aggregate(query);
     let newData = await Promise.all([data, otherApiData]);
 
     function roundOffy2(obj) {
@@ -1601,10 +1899,10 @@ const indicatorDump = async (req, res) => {};
 const fetchTen = (data, sortBy) => {
   let topTen = data.slice(0, 10);
   let bottomTen = data.slice(-10);
-  if (sortBy.includes("top")) {
+  if (sortBy && sortBy.includes("top")) {
     return topTen;
   }
-  if (sortBy.includes("bottom") ){
+  if (sortBy && sortBy.includes("bottom") ){
     return bottomTen;
   }
 };

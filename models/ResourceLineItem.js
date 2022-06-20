@@ -3,11 +3,11 @@ var ResourceLineItemSchema = new Schema(
   {
     name: { type: String, required: true },
     code: { type: String },
-    downloadUrl: { type: String, unique: true },
+    downloadUrl: { type: String },
     imageUrl: { type: String, default: "" },
     header: {
       type: String,
-      enum: ["learning center", "datasets", "reports & publications"],
+      enum: ["learning_center", "datasets", "reports_&_publications"],
       required: true,
       index: true,
     },
@@ -18,14 +18,24 @@ var ResourceLineItemSchema = new Schema(
       enum: [
         "toolkit",
         "blog",
-        "best practices",
+        "best_practices",
         "videos",
-        "e-learning modules",
+        "e-learning_modules",
         "podcasts",
       ],
     },
-    inType: { type: String },
+    toolKitVisible: {
+      type: String,
+      enum: [
+        "assessment",
+        "billing_and_collection",
+        "enumeration",
+        "reporting",
+      ],
+    },
+    publishedYear: { type: String },
     ulb: { type: Schema.Types.ObjectId, ref: "ulb", default: null },
+    state: { type: Schema.Types.ObjectId, ref: "state", default: null },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
@@ -33,13 +43,11 @@ var ResourceLineItemSchema = new Schema(
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 
-ResourceLineItemSchema.index(
-  {
-    code: 1,
-    isActive: 1,
-  },
-  {
-    unique: true,
-  }
-);
+ResourceLineItemSchema.index({
+  name: 1,
+  header: 1,
+  subHeader: 1,
+  toolKitVisible: 1,
+  isActive: 1,
+});
 module.exports = mongoose.model("ResourceLineItem", ResourceLineItemSchema);

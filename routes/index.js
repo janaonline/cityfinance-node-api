@@ -181,5 +181,7 @@ router.use('/gfc-form', GfcForm);
 const GfcFormCollection = require('./GfcFormCollection');
 router.use('/gfc-form-collection', GfcFormCollection);
 
+const indicatorLineItem = require("./indicatorLineItem");
+router.use("/indicatorLineItem", indicatorLineItem);
 
 module.exports = router;
