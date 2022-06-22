@@ -9,53 +9,53 @@ module.exports.get = catchAsync(async(req,res)=> {
     console.log(user)
 let role = req.query.role;
 let year = req.query.year;
-let _id =  req.query._id;
+// let _id =  req.query._id;
 
-if(!role || !year || !_id )
+if(!role || !year  )
 return res.status(400).json({
     success: false,
     message:"Data missing"
 })
 let isUA;
-let yearData = await Year.findOne({_id: ObjectId(year)}).lean()
-let ulbStatusObj = {
-    "annualAcc" : {
-        "tick": "",
-        "tooltip": ""
-    },
-    "pfms" : {
-        "tick": "",
-        "tooltip": ""
-    },
-    "dur" : {
-        "tick": "",
-        "tooltip": ""
-    },
-    "slb" : {
-        "tick": "",
-        "tooltip": ""
-    },
-    "ptax" : {
-        "tick": "",
-        "tooltip": ""
-    },
-    "gfc" : {
-        "tick": "",
-        "tooltip": ""
-    },
-    "odf" : {
-        "tick": "",
-        "tooltip": ""
-    },
+// let yearData = await Year.findOne({_id: ObjectId(year)}).lean()
+// let ulbStatusObj = {
+//     "annualAcc" : {
+//         "tick": "",
+//         "tooltip": ""
+//     },
+//     "pfms" : {
+//         "tick": "",
+//         "tooltip": ""
+//     },
+//     "dur" : {
+//         "tick": "",
+//         "tooltip": ""
+//     },
+//     "slb" : {
+//         "tick": "",
+//         "tooltip": ""
+//     },
+//     "ptax" : {
+//         "tick": "",
+//         "tooltip": ""
+//     },
+//     "gfc" : {
+//         "tick": "",
+//         "tooltip": ""
+//     },
+//     "odf" : {
+//         "tick": "",
+//         "tooltip": ""
+//     },
 
-}
+// }
 if(role == 'ULB'){
-    let ulbInfo = await Ulb.findOne({_id: ObjectId(_id)}).lean();
-isUA = ulbInfo?.isUA
+    // let ulbInfo = await Ulb.findOne({_id: ObjectId(_id)}).lean();
+isUA = req.query.isUa
 
 let allFormData = []
 
-findStatus(isDraft, status, actionTakenByRole )
+// findStatus(isDraft, status, actionTakenByRole )
 }
 
 let data  = await Sidemenu.find({year:ObjectId(year), role : role}).lean()
