@@ -41,7 +41,8 @@ const waterManagementSchema = new Schema({
     },
     houseHoldCoveredPipedSupply: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: { 2021: { type: String },
+    2122: {type: String} },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },

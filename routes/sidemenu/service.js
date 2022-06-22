@@ -3,33 +3,67 @@ const Sidemenu = require('../../models/Sidemenu')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Year = require('../../models/Year');
 const { ULBMASTER } = require('../../_helper/constants');
+
 module.exports.get = catchAsync(async(req,res)=> {
     let user = req.decoded;
     console.log(user)
 let role = req.query.role;
 let year = req.query.year;
+let _id =  req.query._id;
 
-let isUA = req.query?.isUa == "true";
-if(!role || !year)
+if(!role || !year || !_id )
 return res.status(400).json({
     success: false,
     message:"Data missing"
 })
-if(role == 'ULB'){
-if( isUA == null || isUA == undefined ){
-    return res.status(400).json({
-        success: false,
-        message:" isUA missing"
-    })
+let isUA;
+let yearData = await Year.findOne({_id: ObjectId(year)}).lean()
+let ulbStatusObj = {
+    "annualAcc" : {
+        "tick": "",
+        "tooltip": ""
+    },
+    "pfms" : {
+        "tick": "",
+        "tooltip": ""
+    },
+    "dur" : {
+        "tick": "",
+        "tooltip": ""
+    },
+    "slb" : {
+        "tick": "",
+        "tooltip": ""
+    },
+    "ptax" : {
+        "tick": "",
+        "tooltip": ""
+    },
+    "gfc" : {
+        "tick": "",
+        "tooltip": ""
+    },
+    "odf" : {
+        "tick": "",
+        "tooltip": ""
+    },
+
 }
+if(role == 'ULB'){
+    let ulbInfo = await Ulb.findOne({_id: ObjectId(_id)}).lean();
+isUA = ulbInfo?.isUA
+
+let allFormData = []
+
+findStatus(isDraft, status, actionTakenByRole )
 }
 
 let data  = await Sidemenu.find({year:ObjectId(year), role : role}).lean()
 if(data.length){
-    
-    data = groupByKey(data, "category" )
-    
+    data = groupByKey(data, "category" ) 
 }
+
+
 
 if(role == 'ULB'){
 if(isUA){
@@ -44,41 +78,6 @@ res.status(200).json({
     success: true,
     data: data
 })
-// sort according to position
-
-// [
-//     {
-//         categoryName:"",
-//         forms: [
-//             {
-//                     name:"",
-//                     url:"",
-//                     code:"",
-//                 },
-//                 {
-//                     name:"",
-//                     url:"",
-//                     code:"",
-//                 },
-//             ]
-// },
-// {
-//     categoryName:"",
-//     forms: [
-//         {
-//                 name:"",
-//                 url:"",
-//                 code:"",
-//             },
-//             {
-//                 name:"",
-//                 url:"",
-//                 code:"",
-//             },
-//         ]
-// }
-// ]
-
 })
 
 module.exports.post = catchAsync(async(req,res)=> {
