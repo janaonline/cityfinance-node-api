@@ -2,10 +2,10 @@ require('./dbConnect');
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-const GfcFormCollectionSchema = new Schema({
+const OdfFormCollectionSchema = new Schema({
     rating:{
         type: Schema.Types.ObjectId,
-        ref: 'Gfc',
+        ref: 'Odf',
         required: [true,'Rating is required.'],
     },
     cert:{
@@ -50,9 +50,11 @@ const GfcFormCollectionSchema = new Schema({
     history:{
         type: Array,
         default: [],
-    }
-},{
+    },
+ }
+,{
     timestamps:{createdAt: "createdAt", updatedAt:"modifiedAt"}
-});
-GfcFormCollectionSchema.index({ ulb: 1, year: 1 }, { unique: true });
-module.exports = mongoose.model('GfcFormCollection', GfcFormCollectionSchema)
+}
+);
+OdfFormCollectionSchema.index({ ulb: 1, year: 1 }, { unique: true });
+module.exports = mongoose.model('OdfFormCollection', OdfFormCollectionSchema)

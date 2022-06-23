@@ -178,13 +178,17 @@ router.use("/resourceDashboard", resourceDashboard);
 const Rating = require('./Ratings');
 router.use('/ratings', Rating);
 
-// //Gfc-form-Collection
-// const GfcOdfFormCollection = require('./gfc-odf-form-collection');
-// router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
+//Gfc-form-Collection
+const GfcOdfFormCollection = require('./gfc-odf-form-collection');
+router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 
 // //Link-PFMS
 // const LinkPFMS = require('./LinkPfms');
 // router.use('/link-pfms', LinkPFMS);
+
+// //form-master
+// const FormMaster = require('./FormMaster');
+// router.use('/form-master', FormMaster);
 
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
