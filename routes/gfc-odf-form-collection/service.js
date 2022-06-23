@@ -106,12 +106,12 @@ module.exports.createorUpdateForm = async (req, res) => {
 
 module.exports.getForm = async (req, res) => {
     try {
-        const { ulbId, year } = req.body;
-        const isGfc = data.isGfc;
+        const { isGfc } = req.body;
+        const ulb = ObjectId(req.body.ulb);
+        const year = ObjectId(req.body.year);
         let collection = isGfc ? GfcFormCollection : OdfFormCollection;
-
-        if (ulbId && year) {
-            const form = await collection.findOne({ ulb: ulbId, year });
+        if (ulb && year) {
+            const form = await collection.findOne({ulb, year});
             return res.status(200).json({
                 success: true,
                 data: form
