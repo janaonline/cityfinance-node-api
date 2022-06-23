@@ -41,8 +41,10 @@ const waterManagementSchema = new Schema({
     },
     houseHoldCoveredPipedSupply: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String },
-    2122: {type: String} },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
@@ -55,7 +57,10 @@ const waterManagementSchema = new Schema({
     },
     waterSuppliedPerDay: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
@@ -68,7 +73,10 @@ const waterManagementSchema = new Schema({
     },
     reduction: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
@@ -81,7 +89,10 @@ const waterManagementSchema = new Schema({
     },
     houseHoldCoveredWithSewerage: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
