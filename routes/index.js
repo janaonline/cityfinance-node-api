@@ -174,17 +174,17 @@ router.use(fileUpload);
 const resourceDashboard = require("./resourceDashboard");
 router.use("/resourceDashboard", resourceDashboard);
 
-//ODF-form
-const OdfForm = require('./OdfForm');
-router.use('/odf-form', OdfForm);
+//form-ratings
+const Rating = require('./Ratings');
+router.use('/ratings', Rating);
 
-//Gfc- Form
-const GfcForm = require('./GfcForm');
-router.use('/gfc-form', GfcForm);
+// //Gfc-form-Collection
+// const GfcOdfFormCollection = require('./gfc-odf-form-collection');
+// router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 
-//Gfc-form-Collection
-const GfcFormCollection = require('./GfcFormCollection');
-router.use('/gfc-form-collection', GfcFormCollection);
+// //Link-PFMS
+// const LinkPFMS = require('./LinkPfms');
+// router.use('/link-pfms', LinkPFMS);
 
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
