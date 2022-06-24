@@ -10,21 +10,36 @@ module.exports.createorUpdateForm = async (req, res) => {
         let collection = isGfc ? GfcFormCollection : OdfFormCollection;
         const { role: actionTakenByRole, _id: actionTakenBy, } = user;
         let formData = {}; //Object to store form data
-        formData['rating'] = ObjectId(data.rating);
-        formData['cert'] = data.cert;
-        formData['certDate'] = new Date(data.certDate);
-        formData['ulb'] = ObjectId(data.ulb);
-        formData['year'] = ObjectId(data.year);
-        formData['isDraft'] = data.isDraft;
-        formData['status'] = data.status;
+        // formData['rating'] = ObjectId(data.rating);
+        // formData['cert'] = data.cert;
+        // formData['certDate'] = new Date(data.certDate);
+        // formData['ulb'] = ObjectId(data.ulb);
+        // formData['design_year'] = ObjectId(data.design_year);
+        // formData['isDraft'] = data.isDraft;
+        // formData['status'] = data.status;
+        formData = {...data}
+        if(formData.rating){
+            formData.rating = ObjectId(formData.rating);
+        }
+        if(formData.certDate){
+            formData.certDate = new Date(formData.certDate);
+            formData.certDate.toISOString();
+        }
+        if(formData.ulb){
+            formData.ulb = ObjectId(formData.ulb);
+        }
+        if(formData.design_year){
+            formData.design_year = ObjectId(formData.design_year);
+        }
+
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
-        
-        let condition = {}; // condition to find a document using ulb and year
+
+        let condition = {}; // condition to find a document using ulb and design_year
         condition['ulb'] = ObjectId(data.ulb);
-        condition['year'] = ObjectId(data.year);
+        condition['design_year'] = ObjectId(data.design_year);
         let savedBody = new collection(formData);
-        if (data.ulb && data.year) {
+        if (data.ulb && data.design_year) {
             const form = await collection.findOne(condition);
             if (form && (form.isDraft === false)) {//check if already exist and submitted
                 return res.status(200).json({
@@ -67,8 +82,8 @@ module.exports.createorUpdateForm = async (req, res) => {
             }
         }
         if (data.isDraft){ // save as draft
-            savedBody.save((err, data) => {
-                if (err) {
+            const savedForm = await collection.create(savedBody);
+                if (!savedForm) {
                     return res.status(400).send({
                         success: false,
                         message: "Data not saved.",
@@ -77,11 +92,10 @@ module.exports.createorUpdateForm = async (req, res) => {
                     return res.status(200).json({
                         success: true,
                         message: "Data saved.",
-                        data,
+                        data: savedForm,
                     });
                 }
-            })
-        }
+            }
         delete formData["history"]
         if (!data.isDraft){ //when form is submitted, save history
             const formSubmit = await collection.findOne(condition);
@@ -99,19 +113,19 @@ module.exports.createorUpdateForm = async (req, res) => {
     } catch (error) {
         return res.status(400).json({
             success: false,
-            message: error.message,
+            message: "failed.",
         });
     }
 }
 
 module.exports.getForm = async (req, res) => {
     try {
-        const { isGfc } = req.body;
-        const ulb = ObjectId(req.body.ulb);
-        const year = ObjectId(req.body.year);
-        let collection = isGfc ? GfcFormCollection : OdfFormCollection;
-        if (ulb && year) {
-            const form = await collection.findOne({ulb, year});
+        const { isGfc } = req.query;
+        const ulb = ObjectId(req.query.ulb);
+        const design_year = ObjectId(req.query.design_year);
+        let collection = (isGfc=== 'true') ? GfcFormCollection : OdfFormCollection;
+        if (ulb && design_year) {
+            const form = await collection.findOne({ulb, design_year});
             return res.status(200).json({
                 success: true,
                 data: form
@@ -135,7 +149,7 @@ module.exports.action = async ( req, res)=>{
    
     let condition = {};
     condition['ulb'] = ObjectId(data.ulb);
-    condition['year'] = ObjectId(data.year);
+    condition['design_year'] = ObjectId(data.design_year);
     
     const submittedForm = await collection.findOne(condition)
     if (!submittedForm){//if submitted form is not found
