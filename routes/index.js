@@ -182,13 +182,13 @@ router.use('/ratings', Rating);
 const GfcOdfFormCollection = require('./gfc-odf-form-collection');
 router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 
-// //Link-PFMS
-// const LinkPFMS = require('./LinkPfms');
-// router.use('/link-pfms', LinkPFMS);
+//Link-PFMS
+const LinkPFMS = require('./LinkPfms');
+router.use('/link-pfms', LinkPFMS);
 
-// //form-master
-// const FormMaster = require('./FormMaster');
-// router.use('/form-master', FormMaster);
+//form-master
+const FormsMaster = require('./FormsMaster');
+router.use('/form-master', FormsMaster);
 
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
