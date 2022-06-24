@@ -90,38 +90,6 @@ module.exports.get = catchAsync(async (req, res) => {
             message: "Data missing"
         })
     let isUA;
-    let yearData = await Year.findOne({ _id: ObjectId(year) }).lean()
-    let ulbStatusObj = {
-        "annualAcc": {
-            "tick": "",
-            "tooltip": ""
-        },
-        "pfms": {
-            "tick": "",
-            "tooltip": ""
-        },
-        "dur": {
-            "tick": "",
-            "tooltip": ""
-        },
-        "slb": {
-            "tick": "",
-            "tooltip": ""
-        },
-        "ptax": {
-            "tick": "",
-            "tooltip": ""
-        },
-        "gfc": {
-            "tick": "",
-            "tooltip": ""
-        },
-        "odf": {
-            "tick": "",
-            "tooltip": ""
-        },
-
-    }
     let output = []
     if (role == 'ULB') {
         let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
@@ -148,13 +116,6 @@ module.exports.get = catchAsync(async (req, res) => {
                 output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName']))
             }
         }
-
-        console.log(output)
-
-
-
-
-        // findStatus(isDraft, status, actionTakenByRole )
     }
 
     let data = await Sidemenu.find({ year: ObjectId(year), role: role }).lean()
@@ -169,28 +130,18 @@ module.exports.get = catchAsync(async (req, res) => {
         // add the formStatus and tooltip
 data.forEach((el,)=> {
     output.forEach(el2 => {
-        console.log(ObjectId(el._id))
-        console.log(ObjectId(Object.keys(el2)[0]))
-        if(ObjectId(el._id) == ObjectId(Object.keys(el2)[0])){
+        console.log((el._id).toString())
+        console.log((Object.keys(el2)[0]))
+        if((el._id).toString() == (Object.keys(el2)[0])){
+            console.log(el2[Object.keys(el2)[0]])
             Object.assign(el, el2[Object.keys(el2)[0]])
         }
     })
     
-  
-    // Object.assign(el,output[(el._id).valueOf()] )
-})
-
-        
-    
-        //group the data 
+})        
+    //group the data 
         data = groupByKey(data, "category")
     }
-
-
-
-  
-
-
     res.status(200).json({
         success: true,
         data: data
