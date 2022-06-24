@@ -6,22 +6,19 @@ const GfcFormCollectionSchema = new Schema({
     rating:{
         type: Schema.Types.ObjectId,
         ref: 'Gfc',
-        required: [true,'Rating is required.'],
     },
     cert:{
         type: String,
-        required: [true, 'cert is required.'],
     },
     certDate:{
         type: Date,
-        required: [true, 'certDate is required.'],
     },
     ulb:{
         type: Schema.Types.ObjectId,
         ref: 'Ulb',
         required: true,
     },
-    year:{
+    design_year: {
         type: Schema.Types.ObjectId,
         ref: 'Year',
         required: true,
