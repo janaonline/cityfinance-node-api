@@ -17,14 +17,12 @@ const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
     "red": "../../../assets/form-icon/cancel.svg"
 }
-const FormModelMapping = {
-    AnnualAccounts: ObjectId("62b3f7b29bac122d28cf7e25"),
-    DUR: ObjectId("62b3f79e9bac122d28cf7e23"),
-    GFC: "",
-    ODF: "",
-    SLB: "",
-    PFMS: ObjectId("62b3f7c49bac122d28cf7e27"),
-    PropTax: ObjectId("62b3f7d79bac122d28cf7e29"),
+
+let FormModelMapping = {
+    "AnnualAccountData": ObjectId("62aa1b04729673217e5ca3aa"),
+    "UtilizationReport": ObjectId("62aa1c96c9a98b2254632a8a"),
+    "PFMSAccount": ObjectId("62aa1cc9c9a98b2254632a8e"),
+    
 }
 
 const calculateTick = (tooltip) => {
@@ -63,13 +61,11 @@ const calculateStatus = (status, actionTakenByRole, isDraft) => {
     }
 }
 
-const findStatusAndTooltip = (formData, formId) => {
-    if (formId == ObjectId("62b3f7fe9bac122d28cf7e2b") || formId == ObjectId("62b3f8a29bac122d28cf7e33")) {
-
-    }
-    let status = formData.status;
+const findStatusAndTooltip = (formData, formId, modelName) => {
+    
+    let status = modelName == 'XVFcGrantULBForm' ? formData?.waterManagement?.status  : formData.status;
     let actionTakenByRole = formData.actionTakenByRole;
-    let isDraft = formData.isDraft;
+    let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
     let tooltip = calculateStatus(status, actionTakenByRole, isDraft);
     let tick = calculateTick(tooltip)
 
@@ -87,7 +83,7 @@ module.exports.get = catchAsync(async (req, res) => {
     let role = req.query.role;
     let year = req.query.year;
     let _id = req.query._id;
-
+    
     if (!role || !year || !_id)
         return res.status(400).json({
             success: false,
@@ -130,15 +126,15 @@ module.exports.get = catchAsync(async (req, res) => {
     if (role == 'ULB') {
         let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
         isUA = ulbInfo.isUA
-        FormModelMapping[GFC] = isUA == 'Yes' ? ObjectId("62b3f8569bac122d28cf7e2f") : ObjectId("62b3f8c29bac122d28cf7e37")
-        FormModelMapping[ODF] = isUA == 'Yes' ? ObjectId("62b3f8489bac122d28cf7e2d") : ObjectId("62b3f8b59bac122d28cf7e35")
-        FormModelMapping[SLB] = isUA == 'Yes' ? ObjectId("62b3f7fe9bac122d28cf7e2b") : ObjectId("62b3f8a29bac122d28cf7e33")
+        FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
+        FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
+        FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1cc9c9a98b2254632a8e") : ObjectId("62aa1dadc9a98b2254632aa6")
 
         let condition = {
             ulb: ObjectId(_id),
         }
-        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS, PropTax]
-        formArr.forEach(async el => {
+        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS]
+       for(el of formArr) {
             if (el == DUR) {
                 delete condition['design_year'];
                 condition['designYear'] = ObjectId(year)
@@ -149,9 +145,9 @@ module.exports.get = catchAsync(async (req, res) => {
             let formData = await el.findOne(condition).lean()
             if (formData) {
 
-                output.push(findStatusAndTooltip(formData, FormModelMapping[el]))
+                output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName']))
             }
-        })
+        }
 
         console.log(output)
 
@@ -163,18 +159,36 @@ module.exports.get = catchAsync(async (req, res) => {
 
     let data = await Sidemenu.find({ year: ObjectId(year), role: role }).lean()
     if (data.length) {
+        // delete the non applicable entries
+        if(isUA == 'Yes'){
+           data = data.filter(el => el.category != 'Performance Conditions')
+        }else{
+            data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
+        }
+
+        // add the formStatus and tooltip
+data.forEach((el,)=> {
+    output.forEach(el2 => {
+        console.log(ObjectId(el._id))
+        console.log(ObjectId(Object.keys(el2)[0]))
+        if(ObjectId(el._id) == ObjectId(Object.keys(el2)[0])){
+            Object.assign(el, el2[Object.keys(el2)[0]]])
+        }
+    })
+    
+    console.log(output[index][(el._id).valueOf()])
+    // Object.assign(el,output[(el._id).valueOf()] )
+})
+
+        
+    
+        //group the data 
         data = groupByKey(data, "category")
     }
 
 
 
-    if (role == 'ULB') {
-        if (isUA) {
-            delete data['Performance Conditions']
-        } else {
-            delete data['Million Plus City Challenge Fund']
-        }
-    }
+  
 
 
     res.status(200).json({
