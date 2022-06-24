@@ -172,11 +172,11 @@ data.forEach((el,)=> {
         console.log(ObjectId(el._id))
         console.log(ObjectId(Object.keys(el2)[0]))
         if(ObjectId(el._id) == ObjectId(Object.keys(el2)[0])){
-            Object.assign(el, el2[Object.keys(el2)[0]]])
+            Object.assign(el, el2[Object.keys(el2)[0]])
         }
     })
     
-    console.log(output[index][(el._id).valueOf()])
+  
     // Object.assign(el,output[(el._id).valueOf()] )
 })
 
