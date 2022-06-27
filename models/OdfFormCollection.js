@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const OdfFormCollectionSchema = new Schema({
     rating:{
         type: Schema.Types.ObjectId,
-        ref: 'Odf',
+        ref: 'Rating',
     },
     cert:{
         type: String,
@@ -53,5 +53,5 @@ const OdfFormCollectionSchema = new Schema({
     timestamps:{createdAt: "createdAt", updatedAt:"modifiedAt"}
 }
 );
-OdfFormCollectionSchema.index({ ulb: 1, year: 1 }, { unique: true });
+OdfFormCollectionSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
 module.exports = mongoose.model('OdfFormCollection', OdfFormCollectionSchema)
