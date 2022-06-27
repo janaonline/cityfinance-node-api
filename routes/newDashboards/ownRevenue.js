@@ -316,10 +316,10 @@ async function getExcelForAvailability(res, query, stateId) {
     let ulbMap = data.map((value) => value._id);
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Data Availability");
-    // const imageId2 = workbook.addImage({
-    //   buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
-    //   extension: "png",
-    // });
+    const imageId2 = workbook.addImage({
+      buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
+      extension: "png",
+    });
     // worksheet.addImage(imageId2, "A1:F3");
     worksheet.columns = [
       { header: "S.no", key: "sno" },
@@ -327,9 +327,9 @@ async function getExcelForAvailability(res, query, stateId) {
       // { header: "State Name", key: "state" },
       { header: "Data Availability", key: "status" },
     ];
-    // worksheet.insertRow(1, {});
-    // worksheet.insertRow(1, {});
-    // worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
     ulbCount.map((value, i) => {
       value = JSON.parse(JSON.stringify(value));
       let obj = {
