@@ -2,7 +2,7 @@ const GfcFormCollection = require('../../models/GfcFormCollection');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const ObjectId = require("mongoose").Types.ObjectId;
 
-module.exports.createorUpdateForm = async (req, res) => {
+module.exports.createOrUpdateForm = async (req, res) => {
     try {
         const data = req.body;
         let user = req.decoded;
@@ -60,7 +60,6 @@ module.exports.createorUpdateForm = async (req, res) => {
                         return res.status(200).json({
                             success: true,
                             message: "Data saved.",
-                            data: updateData,
                         });
                     } else {
                             return res.status(400).send({
@@ -77,7 +76,7 @@ module.exports.createorUpdateForm = async (req, res) => {
             if(updateForm.n){
                 return res.status(201).json({
                     success: true,
-                    data: updateForm
+                    message: "Form updated"
                 })
             }
         }
@@ -107,7 +106,7 @@ module.exports.createorUpdateForm = async (req, res) => {
             
             return res.status(201).json({
                 success: true,
-                data: updateData
+                message: "Form saved"
             });
         }
     } catch (error) {

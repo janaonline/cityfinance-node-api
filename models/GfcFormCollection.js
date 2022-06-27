@@ -51,5 +51,5 @@ const GfcFormCollectionSchema = new Schema({
 },{
     timestamps:{createdAt: "createdAt", updatedAt:"modifiedAt"}
 });
-GfcFormCollectionSchema.index({ ulb: 1, year: 1 }, { unique: true });
+GfcFormCollectionSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
 module.exports = mongoose.model('GfcFormCollection', GfcFormCollectionSchema)
