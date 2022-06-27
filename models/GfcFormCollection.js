@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const GfcFormCollectionSchema = new Schema({
     rating:{
         type: Schema.Types.ObjectId,
-        ref: 'Gfc',
+        ref: 'Rating',
     },
     cert:{
         type: String,

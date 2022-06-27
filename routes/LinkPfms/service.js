@@ -72,13 +72,13 @@ module.exports.createForm = async(req, res) =>{
                 formData.createdAt.toISOString();
                 formData['modifiedAt'] = new Date();
                 formData.modifiedAt.toISOString();
-                const updatedForm = await LinkPFMS.updateOne(condition,
+                const updatedForm = await LinkPFMS.findOneAndUpdate(condition,
                     {$set: formData, $push: {"history":formData}},
-                    {returnDocument: "after"});
+                    {new: true});
                 if(updatedForm){
                     return res.status(200).json({
                         status: true,
-                        data: "Form saved"
+                        data: updatedForm
                     })
                 }
             }else{
@@ -133,7 +133,6 @@ module.exports.updateForm = async (req, res)=>{
         formData['PFMSAccountNumber'] = data.PFMSAccountNumber || "";
         formData['cert'] = data.cert || "";
         formData['otherDocs'] = data.otherDocs || "";
-                
         if(formData.ulb){
             formData.ulb = ObjectId(formData.ulb);
         }
@@ -156,15 +155,16 @@ module.exports.updateForm = async (req, res)=>{
                     message: "Form already submitted."
                 })
             }
-        }else{
+        } else {
             return res.status(400).json({
                 status: false,
                 message: "Form not found."
             })
         }
         if(formData.isDraft){
-            const form = await LinkPFMS.updateOne(condition,
-                 formData );
+            const form = await LinkPFMS.findOneAndUpdate(condition,
+                 formData,
+                 {new: true} );
             if (!form){
                 return res.status(400).json({
                     success: false,
@@ -173,7 +173,7 @@ module.exports.updateForm = async (req, res)=>{
             } else {
                 return res.status(200).json({
                     success: true,
-                    message: "Form updated"
+                    data: form
                 });
             }
         } else {
@@ -181,11 +181,12 @@ module.exports.updateForm = async (req, res)=>{
             formData['modifiedAt'] = new Date();
             formData.modifiedAt.toISOString();
 
-            const form = await LinkPFMS.updateOne(condition,
+            const form = await LinkPFMS.findOneAndUpdate(condition,
                 { 
                     $set: formData,
                     $push: {history: formData}
-                });
+                },
+                {new: true});
             if (!form){
                 return res.status(400).json({
                     success: false,
@@ -194,7 +195,8 @@ module.exports.updateForm = async (req, res)=>{
             } else {
                 return res.status(200).json({
                     success: true,
-                    message: "Form updated"
+                    message: "Form updated",
+                    data: form
                 });
         } 
             }

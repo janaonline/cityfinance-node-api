@@ -10,14 +10,8 @@ module.exports.createOrUpdateForm = async (req, res) => {
         let collection = isGfc ? GfcFormCollection : OdfFormCollection;
         const { role: actionTakenByRole, _id: actionTakenBy, } = user;
         let formData = {}; //Object to store form data
-        // formData['rating'] = ObjectId(data.rating);
-        // formData['cert'] = data.cert;
-        // formData['certDate'] = new Date(data.certDate);
-        // formData['ulb'] = ObjectId(data.ulb);
-        // formData['design_year'] = ObjectId(data.design_year);
-        // formData['isDraft'] = data.isDraft;
-        // formData['status'] = data.status;
         formData = {...data}
+        
         if(formData.rating){
             formData.rating = ObjectId(formData.rating);
         }
@@ -31,10 +25,10 @@ module.exports.createOrUpdateForm = async (req, res) => {
         if(formData.design_year){
             formData.design_year = ObjectId(formData.design_year);
         }
-
+        
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
-
+        
         let condition = {}; // condition to find a document using ulb and design_year
         condition['ulb'] = ObjectId(data.ulb);
         condition['design_year'] = ObjectId(data.design_year);
@@ -51,15 +45,16 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 formData['createdAt'] = formSubmit.createdAt;
                 formData['modifiedAt'] = formSubmit.modifiedAt;
                     if (formSubmit) {//add history
-                        let updateData = await collection.updateOne(condition, 
+                        let updateData = await collection.findOneAndUpdate(condition, 
                             {
                                 $push: { history: formData},
                                 $set: formData,  
                             },
-                            { returnDocument: "after" } );
+                            { new: true } );
                         return res.status(200).json({
                             success: true,
                             message: "Data saved.",
+                            data: updateData
                         });
                     } else {
                             return res.status(400).send({
@@ -69,14 +64,16 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     }
             }
         }
-        if (data.isDraft){//update fields when isDraft===true 
-            const updateForm = await collection.updateOne(condition,
+        if (data.isDraft){//update fields when isDraft===true
+
+            const updateForm = await collection.findOneAndUpdate(condition,
                 formData,
-                { returnDocument: "after" });
-            if(updateForm.n){
+                { new: true });
+            if(updateForm){
                 return res.status(201).json({
                     success: true,
-                    message: "Form updated"
+                    message: "Form updated",
+                    data: updateForm
                 })
             }
         }
@@ -100,13 +97,14 @@ module.exports.createOrUpdateForm = async (req, res) => {
             const formSubmit = await collection.findOne(condition);
             formData['createdAt'] = formSubmit.createdAt;
                 formData['modifiedAt'] = new Date();
-            let updateData = await collection.updateOne(condition, 
+            let updateData = await collection.findOneAndUpdate(condition, 
                 { $push: { history: formData}, $set: formData },//todo
                 { returnDocument: "after" });
             
             return res.status(201).json({
                 success: true,
-                message: "Form saved"
+                message: "Form saved",
+                data: updateData
             });
         }
     } catch (error) {

@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const OdfFormCollectionSchema = new Schema({
     rating:{
         type: Schema.Types.ObjectId,
-        ref: 'Odf',
+        ref: 'Rating',
     },
     cert:{
         type: String,
