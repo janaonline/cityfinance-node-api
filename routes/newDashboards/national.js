@@ -1135,10 +1135,10 @@ let getExcel = async (req, res, data) => {
   try {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Data");
-    // const imageId2 = workbook.addImage({
-    //   buffer: fs.readFileSync("uploads/logos/cityFinanceLogoPdf.png"),
-    //   extension: "png",
-    // });
+    const imageId2 = workbook.addImage({
+      buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
+      extension: "jpeg",
+    });
     // worksheet.addImage(imageId2, "A1:F3");
     data.columns.unshift({ display_name: "S.no", key: "sno" });
     worksheet.columns = data.columns.map((value) => {
@@ -1148,14 +1148,14 @@ let getExcel = async (req, res, data) => {
       };
       return temp;
     });
-    // worksheet.insertRow(1, {});
-    // worksheet.insertRow(1, {});
-    // worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
     data.rows.map((value, i) => {
       value.sno = i + 1;
       worksheet.addRow(value);
     });
-
+// worksheet.addRow("Can't find what you are looking for? Reach out to us at contact@cityfinance.in")
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
