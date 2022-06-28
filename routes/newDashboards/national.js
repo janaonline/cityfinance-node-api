@@ -1137,7 +1137,11 @@ let getExcel = async (req, res, data) => {
     const worksheet = workbook.addWorksheet("Data");
     const imageId2 = workbook.addImage({
       buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
-      extension: "jpeg",
+      extension: "png",
+    });
+    worksheet.addImage(imageId2, {
+      tl: { col: 0, row: 0 },
+      br: { col: 8, row: 2 }
     });
     // worksheet.addImage(imageId2, "A1:F3");
     data.columns.unshift({ display_name: "S.no", key: "sno" });
@@ -1155,7 +1159,7 @@ let getExcel = async (req, res, data) => {
       value.sno = i + 1;
       worksheet.addRow(value);
     });
-// worksheet.addRow("Can't find what you are looking for? Reach out to us at contact@cityfinance.in")
+    worksheet.addRow({sno: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in"});
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
