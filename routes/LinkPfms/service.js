@@ -98,7 +98,7 @@ module.exports.createForm = async(req, res) =>{
 
 module.exports.getForm = async (req, res) =>{
     try {
-        const data = req.body;
+        const data = req.query;
         const condition = {};
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;

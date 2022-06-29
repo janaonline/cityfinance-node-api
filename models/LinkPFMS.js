@@ -96,6 +96,8 @@ const PFMSAccountSchema = new Schema(
             type: String,
             default: ""
         },
+        rejectReason: { type: String, default: "" },
+        responseFile: {type: String,  default: ""},
         isDraft: {
             type: Boolean,
             required: [true, "draft key is required."],
