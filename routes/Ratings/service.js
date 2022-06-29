@@ -116,7 +116,7 @@ module.exports.getFormRatings = async (req, res)=>{
 module.exports.updateFormRating = async (req, res)=>{
     try {
         const {formId} = req.params;
-        const {name, formName} = req.body;
+        const {name, formName, marks} = req.body;
         //if formId not given
         if(!formId){
             return res.status(400)
@@ -135,7 +135,7 @@ module.exports.updateFormRating = async (req, res)=>{
             }
             const newRating = await Rating.findOneAndUpdate(
                 {_id:formId},
-                {name, rating, formName},
+                {name, rating, formName, marks},
                 {
                 returnDocument: "after",
             });

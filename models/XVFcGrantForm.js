@@ -37,7 +37,9 @@ const waterManagementSchema = new Schema({
 
         },
         status: statusType(),
-        rejectReason: { type: String, default: '' },
+        rejectReason: { type: String, default: "" },
+        responseFile:{type: String, default:""},
+
     },
     houseHoldCoveredPipedSupply: {
         baseline: { 2021: { type: String, required: true } },

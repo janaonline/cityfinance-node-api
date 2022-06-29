@@ -38,6 +38,12 @@ const { Schema } = mongoose;
 //     { timestamp: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 // );
 
+const pdfSchema = () => {
+    return {
+        url: { type: String},
+        name: { type: String}
+    }
+}
 const PFMSAccountSchema = new Schema(
     {
         ulb: {
@@ -71,10 +77,7 @@ const PFMSAccountSchema = new Schema(
             type: Number,
             default: "",
         },
-        cert:{
-            type: String,
-            default:""
-        },
+        cert: pdfSchema(),
         actionTakenByRole:{
             type: String,
             enum:["ULB","MoHUA","STATE"],
@@ -92,10 +95,7 @@ const PFMSAccountSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             }
         },
-        otherDocs:{
-            type: String,
-            default: ""
-        },
+        otherDocs: pdfSchema(),
         rejectReason: { type: String, default: "" },
         responseFile: {type: String,  default: ""},
         isDraft: {

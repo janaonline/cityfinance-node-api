@@ -16,6 +16,9 @@ const ratingSchema = new Schema({
         },
         required: true,
     },
+    marks:{
+        type: Number
+    },
     isActive: {type: Boolean, default: true},
     value: {type: Number, required: true},
     createdAt: { type: Date },
