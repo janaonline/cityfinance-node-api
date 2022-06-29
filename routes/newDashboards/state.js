@@ -282,6 +282,7 @@ const calData = (data, filterName = "") => {
       _id: "Other Expenditure",
       code: ["250", "260", "271", "270", "280", "272", "290"],
       amount: otherExp,
+      colour: "#0FA386"
     });
     return copyData;
   } else {
