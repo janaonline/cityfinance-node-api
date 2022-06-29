@@ -181,9 +181,20 @@ router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 const LinkPFMS = require('./LinkPfms');
 router.use('/link-pfms', LinkPFMS);
 
-// //form-master
-// const FormsMaster = require('./FormsMaster');
-// router.use('/form-master', FormsMaster);
+//Common-Action API
+const CommonActionAPI = require('./CommonActionAPI');
+router.use('/common-action', CommonActionAPI);
+
+//forms-master
+const FormsMaster = require('./FormsMaster');
+router.use('/forms-master', FormsMaster);
+//forms-master category
+const FormsMasterCategory = require('./FormsMasterCategory');
+router.use('/forms-master-category', FormsMasterCategory);
+
+// //temp
+// const temp = require('./temp');
+// router.use('/temp', temp);
 
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
