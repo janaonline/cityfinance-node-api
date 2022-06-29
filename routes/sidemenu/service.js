@@ -130,11 +130,10 @@ module.exports.get = catchAsync(async (req, res) => {
         // add the formStatus and tooltip
 data.forEach((el,)=> {
     output.forEach(el2 => {
-        console.log((el._id).toString())
-        console.log((Object.keys(el2)[0]))
         if((el._id).toString() == (Object.keys(el2)[0])){
-            console.log(el2[Object.keys(el2)[0]])
             Object.assign(el, el2[Object.keys(el2)[0]])
+        }else{
+            Object.assign(el, {tooltip: "Not Started", tick: ticks["red"]})
         }
     })
     
