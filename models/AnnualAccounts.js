@@ -16,14 +16,16 @@ const ContentSchema = new Schema({
   pdf: { url: { type: String }, name: { type: String } },
   excel: { url: { type: String }, name: { type: String } },
   status: statusType(),
-  rejectReason: { type: String },
+  rejectReason: { type: String, default:"" },
+  responseFile:{type: String, default: ""},
   _id: false,
 });
 
 const ContentPDFSchema = new Schema({
   pdf: { url: { type: String }, name: { type: String } },
   status: statusType(),
-  rejectReason: { type: String },
+  rejectReason: { type: String, default:"" },
+  responseFile:{type: String, default: ""},
   _id: false,
 });
 
