@@ -44,6 +44,8 @@ const OdfFormCollectionSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    rejectReason: { type: String, default: "" },
+    responseFile: {type: String,  default: ""},
     history:{
         type: Array,
         default: [],

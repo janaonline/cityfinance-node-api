@@ -68,6 +68,7 @@ const UtilizationReportSchema = new Schema(
       default: null,
     },
     rejectReason: { type: String, default: "" },
+    responseFile: {type: String,  default: ""},
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
