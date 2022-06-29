@@ -31,8 +31,14 @@ const ContentPDFSchema = new Schema({
 
 const provisionalDataSchema = new Schema({
   bal_sheet: { type: ContentSchema },
+  assets: {type: Number},
+  f_assets: {type: Number},
+  s_grant: {type: Number},
+  c_grant: {type: Number},
   bal_sheet_schedules: { type: ContentSchema },
   inc_exp: { type: ContentSchema },
+  revenue: {type: Number},
+  expense: {type: Number},
   inc_exp_schedules: { type: ContentSchema },
   cash_flow: { type: ContentSchema },
   auditor_report: { type: ContentPDFSchema },

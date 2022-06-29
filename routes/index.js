@@ -136,6 +136,11 @@ router.use(ActionPlans);
 const LinkPfmsState = require("./LinkPfmsState");
 router.use(LinkPfmsState);
 
+
+//SideMenu
+const Sidemenu = require("./sidemenu");
+router.use(Sidemenu);
+
 const StateMasterForm = require("./stateMasterForm");
 router.use('/stateMasterForm', StateMasterForm);
 
@@ -177,7 +182,7 @@ router.use('/ratings', Rating);
 const GfcOdfFormCollection = require('./gfc-odf-form-collection');
 router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 
-//Link-PFMS
+// Link-PFMS
 const LinkPFMS = require('./LinkPfms');
 router.use('/link-pfms', LinkPFMS);
 
