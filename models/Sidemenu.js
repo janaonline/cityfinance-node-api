@@ -11,6 +11,8 @@ const SidemenuSchema = new Schema({
     createdAt : { type: Date },
     position: {type: Number},
     icon: {type: String },
+    collection: {type: String},
+    optional: {type: Boolean},
     year: {type : Schema.Types.ObjectId, ref: "Year", required: true }
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 

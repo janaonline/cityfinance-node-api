@@ -193,4 +193,7 @@ router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
+const review = require("./review");
+router.use(review);
+
 module.exports = router;
