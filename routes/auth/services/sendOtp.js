@@ -75,7 +75,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             if (mobile) {
                 axios.get(`https://api.msg91.com/api/v5/otp?template_id=${process.env.TEMPLATE_ID}&mobile=91${mobile}&authkey=${process.env.MSG91_AUTH_KEY}&otp=${otp}`).then(function (response) {
                 console.log('OTP SENT');
-                console.log(response.message)
+                
                   })
                   .catch(function (error) {
                     console.log('OTP NOT SENT');
