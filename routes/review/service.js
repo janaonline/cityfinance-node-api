@@ -17,8 +17,8 @@ module.exports.get = catchAsync( async(req,res) => {
         })
     }
     let formTab = await Sidemenu.findOne({_id: ObjectId(form)});
-
- const model = require(`../../models/${formTab.collection}`)
+let path = formTab.collectionName
+ const model = require(`../../models/${path}`)
 
  let data = await model.aggregate(query)
 

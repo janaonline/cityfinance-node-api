@@ -6,6 +6,8 @@ const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
+const Year = require('../../models/Year')
+const catchAsync = require('../../util/catchAsync')
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -441,3 +443,42 @@ exports.report = async (req, res) => {
     res.end();
   }
 };
+
+module.exports.read2223 = catchAsync(async(req,res)=> {
+  let ulb = req.query.ulb;
+  let design_year = req.query.design_year;
+  if(!ulb || !design_year){
+    return res.status(400).json({
+      success: false,
+      message: "Data Missing"
+    })
+  }
+  let currentYear = await Year.findOne({_id: ObjectId(design_year)}).lean()
+  // current year
+  let currentYearVal = currentYear['year']
+  // find Previous year
+  let prevYearVal = currentYearVal.split("-");
+    prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
+     
+    prevYear = await Year.findOne({year: prevYearVal}).lean()
+
+  let condition = {
+    ulb : ObjectId(ulb),
+    designYear: ObjectId(currentYear._id)
+  }
+  let fetchedData = await UtilizationReport.findOne(condition).lean()
+  if(fetchedData){
+    return res.status(200).json({
+      success: true,
+      data:fetchedData
+    })
+  }else{
+    condition['designYear'] = ObjectId(prevYear._id)
+    fetchedData = await UtilizationReport.findOne(condition).lean()
+    return res.status(200).json({
+      success: true,
+      unUtilizedPrevYr: fetchedData.grantPosition.closingBal
+    })
+  }
+
+})
