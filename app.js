@@ -19,6 +19,7 @@ const port = config.APP.PORT;
 
 app.use(logger("dev"));
 
+
 // CORS middleware
 app.use(cors());
 app.use(expressSanitizer());
