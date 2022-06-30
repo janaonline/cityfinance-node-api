@@ -29,20 +29,24 @@ module.exports.createOrUpdate = async (req, res) => {
     req.body.modifiedAt = new Date();
     //
     let currentSavedUtilRep;
-    if (req.body?.status == "REJECTED") {
+  
       req.body.status = "PENDING";
       req.body.rejectReason = null;
       currentSavedUtilRep = await UtilizationReport.findOne(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
         { history: 0 }
       );
-    }
+    
 
     let savedData;
     if (currentSavedUtilRep) {
+      let obj = { $set: req.body}
+      if(!req.body.isDraft){
+Object.assign(obj, {$push: { history: currentSavedUtilRep } })
+      }
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep } }
+        obj
       );
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(
@@ -473,11 +477,10 @@ module.exports.read2223 = catchAsync(async(req,res)=> {
       data:fetchedData
     })
   }else{
-    condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     return res.status(200).json({
       success: true,
-      unUtilizedPrevYr: fetchedData.grantPosition.closingBal
+      data: fetchedData.grantPosition.closingBal
     })
   }
 
