@@ -20,7 +20,18 @@ const port = config.APP.PORT;
 app.use(logger("dev"));
 
 // CORS middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+
+  methods: [
+    'GET',
+    'POST',
+  ],
+
+  allowedHeaders: [
+    'Content-Type',
+  ],
+}));
 app.use(expressSanitizer());
 
 app.use(express.static(path.join(__dirname, "public")));
