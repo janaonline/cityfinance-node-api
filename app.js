@@ -18,7 +18,13 @@ app.use(json2xls.middleware);
 const port = config.APP.PORT;
 
 app.use(logger("dev"));
-
+app.use(function(req, res, next) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  next();
+});
 // CORS middleware
 app.use(cors({
   origin: '*',
