@@ -834,7 +834,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           if (!includeInExpenditure.includes(lineName)) {
             if (!flag) {
               flag = true;
-              return { colour: val.colour, lineitem: "Other Expenditure" };
+              return { colour: "#0FA386", lineitem: "Other Expenditure" };
             } else {
               return false;
             }
