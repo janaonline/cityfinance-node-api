@@ -60,21 +60,21 @@ const PFMSAccountSchema = new Schema(
         linkPFMS:{
             type: String, 
             enum: {
-                values: ['yes', 'no'],
-                message: 'ERROR: ANSWER CAN BE EITHER yes/no.'
+                values: ['Yes', 'No'],
+                message: 'ERROR: ANSWER CAN BE EITHER Yes/No.'
             },
-            default: 'no',
+            default: 'No',
         },
         isUlbLinkedWithPFMS:{
             type: String, 
             enum: {
-                values: ['yes', 'no'],
-                message: 'ERROR: ANSWER CAN BE EITHER yes/no.'
+                values: ['Yes', 'No'],
+                message: 'ERROR: ANSWER CAN BE EITHER Yes/No.'
             },
-            default: "no"
+            default: 'No'
         },
         PFMSAccountNumber: {
-            type: Number,
+            type: String,
             default: "",
         },
         cert: pdfSchema(),
