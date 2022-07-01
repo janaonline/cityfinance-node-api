@@ -204,4 +204,7 @@ router.use('/calculate-recommendation', calculateRecommendation);
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
+const review = require("./review");
+router.use(review);
+
 module.exports = router;

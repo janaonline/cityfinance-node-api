@@ -129,13 +129,18 @@ module.exports.get = catchAsync(async (req, res) => {
 
         // add the formStatus and tooltip
 data.forEach((el,)=> {
+  let  flag = 0;
     output.forEach(el2 => {
         if((el._id).toString() == (Object.keys(el2)[0])){
             Object.assign(el, el2[Object.keys(el2)[0]])
-        }else{
-            Object.assign(el, {tooltip: "Not Started", tick: ticks["red"]})
+            flag = 1;
         }
     })
+if(!flag){
+    
+        Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
+    
+}
     
 })        
     //group the data 

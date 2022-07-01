@@ -98,7 +98,7 @@ const AnnualAccountDataSchema = new Schema(
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 AnnualAccountDataSchema.index(
-  { ulb: 1, design_year: 1, year: 1 },
+  { ulb: 1, design_year: 1},
   { unique: true }
 );
 module.exports = mongoose.model("AnnualAccountData", AnnualAccountDataSchema);

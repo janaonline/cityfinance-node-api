@@ -84,7 +84,7 @@ exports.createUpdate = async (req, res) => {
       );
     }
 
-    await UpdateMasterSubmitForm(req, "annualAccounts");
+    // await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
       msg: "AnnualAccountData Submitted!",
