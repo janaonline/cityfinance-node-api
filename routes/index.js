@@ -183,8 +183,8 @@ const GfcOdfFormCollection = require('./gfc-odf-form-collection');
 router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 
 //Link-PFMS
-// const LinkPFMS = require('./LinkPfms');
-// router.use('/link-pfms', LinkPFMS);
+const LinkPFMS = require('./LinkPfms');
+router.use('/link-pfms', LinkPFMS);
 
 // //form-master
 // const FormsMaster = require('./FormsMaster');
