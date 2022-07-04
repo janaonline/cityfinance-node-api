@@ -97,7 +97,7 @@ module.exports.updateForm = async (req, res) =>{
         }
         return res.status(200).json({
             status: true,
-            data: `${numberOfFormsUpdated} forms updated`
+            data: `${numberOfFormsUpdated} forms ${data.status}`
         });
     } catch (error) {
         console.log(error)

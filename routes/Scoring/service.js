@@ -46,13 +46,13 @@ let test1Data ={
         }, 
         "houseHoldCoveredPipedSupply" : {
             "baseline" : {
-                "2021" : "85.00"
+                "2021" : "88.00"
             }, 
             "actual":{
-                "2122" : "86"
+                "2122" : "90"
             },
             "target" : {
-                "2122" : "90.00", 
+                "2122" : "99.00", 
                 "2223" : "92.00", 
                 "2324" : "95.00", 
                 "2425" : "100.00"
@@ -184,22 +184,24 @@ function decrementFormula(x, y, z, minMarks, maxMarks){
     } else if(z>=x){
         marks = minMarks;
     } else if(z<x && z>y){
-        marks = ((y-z)/(y-x))*maxMarks;
+        marks = ((x-z)/(x-y))*maxMarks;
     }
     return marks;
 }
 
 function calculateRecommendationPercentage(score){
     let percent = 0;
-    if(score>=0 && score<= 30){ 
+    score = Math.round(score);
+    console.log( "-->Rounded score",score);
+    if(score>=0 && score<=29){ 
         percent = 0 
-    }else if(score>30 && score<=45){
+    }else if(score>=30 && score<=45){
         percent = 60;
-    }else if(score>46 && score<=60){
+    }else if(score>=46 && score<=60){
         percent = 75;
-    }else if(score>60 && score<=80){
+    }else if(score>=60 && score<=80){
         percent = 90;
-    }else if(score>80 && score<=100){
+    }else if(score>=80 && score<=100){
         percent = 100;
     }
     return percent;
@@ -217,12 +219,12 @@ module.exports.calculateRecommendation = async (req, res) => {
 
         const slbForm = await XVFcGrantForm.findOne(condition);
         if(slbForm.status === "APPROVED"){
-            slbMarks = calculateSlbMarks(test1Data.waterManagement);
+            slbMarks = calculateSlbMarks(slbForm.waterManagement);
         }else{
             return res.status(200).json({
                 status: true,
                 message: `SlbForm is still in ${slbForm.status}!`
-            })
+            });
         }
         
         const gfcForm = await GfcFormCollection.findOne(condition);
@@ -251,20 +253,18 @@ module.exports.calculateRecommendation = async (req, res) => {
         for(let i=0; i < slbMarks.length; i++){
             totalSlbMarks = slbMarks[i] + totalSlbMarks;
         }
-        const totalScore =  (totalSlbMarks + gfcMark + odfMark);
+        const totalScore = totalSlbMarks + gfcMark + odfMark;
         const recommendation = calculateRecommendationPercentage(totalScore);
         console.log(gfcMark, "---gfcMark",'\n',odfMark,"-----odfMark",'\n',
             totalScore,"----totalScore---")
         return res.status(200).json({
             status: "true",
-            data: recommendation
+            data: `${recommendation} % recommended.`
         });
     } catch (error) {
-        console.log(error);
         return res.status(400).json({
             status: false,
             message: "failed"
         })
     }
 }
-

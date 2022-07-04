@@ -197,9 +197,13 @@ router.use('/forms-master', FormsMaster);
 const FormsMasterCategory = require('./FormsMasterCategory');
 router.use('/forms-master-category', FormsMasterCategory);
 
-//calculate-recommendation
-const calculateRecommendation = require('./Scoring');
-router.use('/calculate-recommendation', calculateRecommendation);
+// //property-tax-floor-rate
+// const PropertyTaxFloorRate = require('./PropertyTaxFloorRate');
+// router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
+
+// //calculate-recommendation
+// const calculateRecommendation = require('./Scoring');
+// router.use('/calculate-recommendation', calculateRecommendation);
 
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);

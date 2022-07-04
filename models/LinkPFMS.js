@@ -68,10 +68,9 @@ const PFMSAccountSchema = new Schema(
         isUlbLinkedWithPFMS:{
             type: String, 
             enum: {
-                values: ['Yes', 'No'],
+                values: ['Yes', 'No', ""],
                 message: 'ERROR: ANSWER CAN BE EITHER Yes/No.'
             },
-            default: 'No'
         },
         PFMSAccountNumber: {
             type: String,
