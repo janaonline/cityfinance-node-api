@@ -96,7 +96,7 @@ module.exports.createForm = async(req, res) =>{
     }catch(error){
         return res.status(400).json({
             status: false,
-            message: "failed."
+            message: error.message
        })
     }
 }
@@ -123,7 +123,7 @@ module.exports.getForm = async (req, res) =>{
     } catch (error) {
         return res.status(400).json({
             success: false,
-            message: "Failed."
+            message: error.message
         })
     } 
 }
@@ -208,7 +208,7 @@ module.exports.updateForm = async (req, res)=>{
         } catch (error) {
             return res.status(400).json({
                 success: false,
-                message: "Failed"
+                message: error.message
             })
     } 
 }
