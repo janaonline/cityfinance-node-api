@@ -80,11 +80,16 @@ module.exports.createForm = async(req, res) =>{
                         status: true,
                         data: updatedForm
                     })
+                }else{
+                    return res.status(400).json({
+                        status: false,
+                        message: "History not added."
+                    })
                 }
             }else{
                 return res.status(400).json({
                     status: false,
-                    message:'Not saved.'
+                    message:'Form not submitted.'
                 })
             }
         }   
@@ -98,7 +103,7 @@ module.exports.createForm = async(req, res) =>{
 
 module.exports.getForm = async (req, res) =>{
     try {
-        const data = req.body;
+        const data = req.query;
         const condition = {};
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;

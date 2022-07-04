@@ -2,14 +2,19 @@ require('./dbConnect');
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+const pdfSchema = () => {
+    return {
+        url: { type: String},
+        name: { type: String}
+    }
+}
+
 const GfcFormCollectionSchema = new Schema({
     rating:{
         type: Schema.Types.ObjectId,
         ref: 'Rating',
     },
-    cert:{
-        type: String,
-    },
+    cert: pdfSchema(),
     certDate:{
         type: Date,
     },
@@ -44,6 +49,9 @@ const GfcFormCollectionSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    
+    rejectReason: { type: String, default: "" },
+    responseFile: {type: String,  default: ""},
     history:{
         type: Array,
         default: [],
