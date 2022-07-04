@@ -168,11 +168,30 @@ const attachPrescription = (data) => {
   data.scorePerformance = scorePerformance;
   
   // Find the Combined Prescription for Each Tab
+let overallPrescription = ''
+  for(let el in scorePerformance ){
+    for(let el2 of scorePerformance[el] ){
+        overallPrescription = overallPrescription + `- ${el2.prescription}<br>`;
+    }
 
-  
+    for(let key of data.partcularAnswerValues){
+      if(key.name == 'Enumeration' && el == 'enumeration'){
+key['prescription'] = overallPrescription;
+      }else if(key.name == 'Valuation' && el == 'valuation'){
+        key['prescription'] = overallPrescription;
+      }else if(key.name == 'Assesment' && el == 'assessment'){
+        key['prescription'] = overallPrescription;
+      }else if(key.name == 'Billing & Collection' && el == 'billing_collection'){
+        key['prescription'] = overallPrescription;
+      }else if(key.name == 'Reporting' && el == 'reporting'){
+        key['prescription'] = overallPrescription;
+      }
+    }
+  }
 
 
 
+return data;
 }
 
 async function getAnswerByUlb(req, res) {
@@ -225,17 +244,17 @@ async function getAnswerByUlb(req, res) {
         data: null,
       });
     }
-
-   let output =  attachPrescription(findAnswerByUlb);
+    console.log(findAnswerByUlb)
+    findAnswerByUlb =  attachPrescription(findAnswerByUlb);
 
     console.log(findAnswerByUlb)
-    findAnswerByUlb.partcularAnswerValues.map((elem) => {
-      prescription.map((elem2) => {
-        if (elem.name.toLowerCase() == elem2.name.toLowerCase()) {
-          Object.assign(elem, { prescription: elem2.value });
-        }
-      });
-    });
+    // findAnswerByUlb.partcularAnswerValues.map((elem) => {
+    //   prescription.map((elem2) => {
+    //     if (elem.name.toLowerCase() == elem2.name.toLowerCase()) {
+    //       Object.assign(elem, { prescription: elem2.value });
+    //     }
+    //   });
+    // });
     let query = [
       {
         $lookup: {
