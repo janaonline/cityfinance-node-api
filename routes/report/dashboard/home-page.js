@@ -112,13 +112,44 @@ module.exports = (req, res) => {
         }
     })
 
-    Promise.all([totalULB, munciapalBond, financialStatement, coveredUlbCount]).then((values) => {
+    let ulbDataCount = new Promise(async (rslv, rjct) => {
+        try {
+           
+                let query = [
+                    {
+                        $group: {
+                            _id: "$financialYear",
+                            ulbs: {$addToSet:"$ulb"}
+                            }
+                        },
+                        {
+                            $project: {
+                                _id:0,
+                                year: "$_id",
+                                ulbs: {$size:"$ulbs"}
+                                }
+                            },
+                            {
+                                $sort: {ulbs:-1}
+                                }
+                    ]
+                let count = await UlbLedger.aggregate(query).exec();
+                count.length > 0 ? rslv(count) : rslv(0);
+            
+        }
+        catch (err) {
+            rjct(err)
+        }
+    })
+
+    Promise.all([totalULB, munciapalBond, financialStatement, coveredUlbCount, ulbDataCount]).then((values) => {
 
         let data = {
             totalULB: values[0],
             financialStatements: values[2].length > 0 ? values[2][0].count : 0,
             totalMunicipalBonds: values[1],
-            coveredUlbCount: values[3]
+            coveredUlbCount: values[3],
+            ulbDataCount: values[4]
         };
         //Redis.set(req.redisKey,JSON.stringify(data))
         return res.status(200).json({ success: true, message: "Data fetched", data: data });

@@ -4,7 +4,13 @@ const Sate = require("../../../models/State");
 const Response = require("../../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require("../../../models/State");
-
+const OwnRevenueObjectIDs = [
+   ObjectId("5dd10c2485c951b54ec1d74b"),
+ObjectId("5dd10c2685c951b54ec1d762"),
+ObjectId("5dd10c2485c951b54ec1d74a"),
+ObjectId("5dd10c2885c951b54ec1d77e"),
+ObjectId("5dd10c2385c951b54ec1d748"),
+]
 let filterType = ["Town Panchayat", "Municipality", "Municipal Corporation"];
 
 const peopleInformation = async (req, res) => {
@@ -174,7 +180,46 @@ const moneyInformation = async (req, res) => {
         },
       },
     ]);
+  let ownRevenue =  await UlbLedger.aggregate([
+      { $match: { ulb: { $in: ulbId }, 
+      financialYear: req.query.year,
+    lineItem: {
+        $in: OwnRevenueObjectIDs
 
+    }
+    } },
+    {
+      $group: {
+        _id: null,
+        ownRevenue: { $sum: "$amount" },
+      }
+    },
+    {
+      $project:{
+        _id: "OwnRevenue",
+        amount:"$ownRevenue"
+      }
+    }
+
+    ])
+    console.log(ownRevenue)
+    let revenue = data.find(el => el._id == 'Revenue') ;
+    let assets = data.find(el => el._id == 'Asset') ;
+    
+    let taxRevenueObj = {
+      _id: 'TaxRevenue',
+      amount: revenue.amount - ownRevenue[0].amount
+    }
+    let grantObj = {
+      _id: 'Grant',
+      amount: revenue.totalGrant
+    }
+    let balanceSheet = {
+      _id: 'BalanceSheetSize',
+      amount: assets.amount
+    }
+  
+data.push(ownRevenue[0],taxRevenueObj, grantObj, balanceSheet )
     return Response.OK(res, data);
   } catch (err) {
     console.error(err.message);
