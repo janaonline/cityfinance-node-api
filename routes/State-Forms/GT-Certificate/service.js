@@ -6,6 +6,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../../service')
 const Year = require('../../../models/Year')
 const User = require('../../../models/User')
+const STATUS_LIST = require('../../../util/newStatusList')
 const {
   UpdateStateMasterForm,
 } = require("../../../service/updateStateMasterForm");
@@ -232,15 +233,43 @@ exports.action = async (req, res) => {
   }
 };
 
+const calculateStatus = (data) => {
+  data.map((el)=> {
+    if(el.million_tied_status == 'PENDING' && el.million_tied_isDraft ){
+      el.million_tied_status = STATUS_LIST.In_Progress
+    }else if(el.million_tied_status == 'PENDING' && !el.million_tied_isDraft ){
+      el.million_tied_status = STATUS_LIST.Under_Review_By_MoHUA
+    }else if(el.million_tied_status == 'APPROVED'){
+      el.million_tied_status = STATUS_LIST.Approved_By_MoHUA
+    }else if(el.million_tied_status == 'REJECTED'){
+      el.million_tied_status = STATUS_LIST.Rejected_By_MoHUA
+    }
+
+    if(el.nonMillion_tied_status == 'PENDING' && el.nonMillion_tied_isDraft ){
+      el.nonMillion_tied_status = STATUS_LIST.In_Progress
+    }else if(el.nonMillion_tied_status == 'PENDING' && !el.nonMillion_tied_isDraft ){
+      el.nonMillion_tied_status = STATUS_LIST.Under_Review_By_MoHUA
+    }else if(el.nonMillion_tied_status == 'APPROVED'){
+      el.nonMillion_tied_status = STATUS_LIST.Approved_By_MoHUA
+    }else if(el.nonMillion_tied_status == 'REJECTED'){
+      el.nonMillion_tied_status = STATUS_LIST.Rejected_By_MoHUA
+    }
+
+    if(el.nonMillion_untied_status == 'PENDING' && el.nonMillion_untied_isDraft ){
+      el.nonMillion_untied_status = STATUS_LIST.In_Progress
+    }else if(el.nonMillion_untied_status == 'PENDING' && !el.nonMillion_untied_isDraft ){
+      el.nonMillion_untied_status = STATUS_LIST.Under_Review_By_MoHUA
+    }else if(el.nonMillion_untied_status == 'APPROVED'){
+      el.nonMillion_untied_status = STATUS_LIST.Approved_By_MoHUA
+    }else if(el.nonMillion_untied_status == 'REJECTED'){
+      el.nonMillion_untied_status = STATUS_LIST.Rejected_By_MoHUA
+    }
+  })
+  return data;
+} 
+
 module.exports.report = async (req,res) => {
-// year
-// type
-// installment
-// link
-// state
-// role
-// isDraft
-// status
+
 let year = req.query.year
 let yearData = await Year.findOne({year: year }).lean()
 
@@ -277,29 +306,55 @@ let query = [
       state:"$state.name",
       installment:1,
       date:"$modifiedAt",
-      million_tied:"$million_tied.pdfUrl",
+      million_tied:{$ifNull: ["$million_tied.pdfUrl","Not Submitted"]},
       million_tied_status:"$million_tied.status",
-      nonMillion_tied:"$nonmillion_tied.pdfUrl",
+      million_tied_isDraft:"$million_tied.isDraft",
+      nonMillion_tied:{$ifNull: ["$nonmillion_tied.pdfUrl","Not Submitted"]},
       nonMillion_tied_status:"$nonmillion_tied.status",
-      nonMillion_untied:"$nonmillion_untied.pdfUrl",
+      nonMillion_tied_isDraft:"$nonmillion_tied.isDraft",
+      nonMillion_untied:{$ifNull: ["$nonmillion_untied.pdfUrl","Not Submitted"]},
       nonMillion_untied_status:"$nonmillion_untied.status",
+      nonMillion_untied_isDraft:"$nonmillion_untied.isDraft",
 
     }
   }
 
 ]
 let data = await StateGTCertificate.aggregate(query);
-
+data = calculateStatus(data);
 let filename = "GTC_REPORT.csv";
-
-
 res.setHeader("Content-disposition", "attachment; filename=" + filename);
 res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
 res.write(
-  "State, Date Updated , Million Tied URL, Million Tied Status, Non-Million Tied URL, Non-Million Tied Status , Non-Million Untied URL,  Non-Million Untied Status   \r\n"
+  "State, Date Updated, Installment , Million Tied URL, Million Tied Status, Non-Million Tied URL, Non-Million Tied Status , Non-Million Untied URL,  Non-Million Untied Status   \r\n"
 );
 // Flush the headers before we start pushing the CSV content
 res.flushHeaders();
+
+for (el of data) {
+  res.write(
+    el.state +
+    "," +
+    el.date +
+    "," +
+    el.installment +
+    "," +
+    el.million_tied +
+    "," +
+    el.million_tied_status +
+    "," +
+    el.nonMillion_tied +
+    "," +
+    el.nonMillion_tied_status +
+    "," +
+    el.nonMillion_untied +
+    "," +
+    el.nonMillion_untied_status +
+    "," +
+    "\r\n"
+  );
+}
+res.end();
 
 }
 

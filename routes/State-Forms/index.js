@@ -9,6 +9,6 @@ router.get('/state/gtc/get/:design_year', verifyToken, get)
 router.get('/state/condition', verifyToken, showGTCform)
 router.post('/state/gtc/create', verifyToken, create)
 router.post('/state/gtc/action', verifyToken, action)
-router.get('/state/gtc/report', verifyToken, report)
+router.get('/state/gtc/report', report)
 
 module.exports = router;
