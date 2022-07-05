@@ -25,6 +25,12 @@ const ContentPDFSchema = new Schema({
     message: { type: String, default: '' },
 });
 
+const pdfSchema = ()=>{
+    return {
+    name: { type: String},
+    url: { type: String}
+    }
+}
 const waterManagementSchema = new Schema({
     serviceLevel: {
         baseline: { 2021: { type: String, required: true } },
@@ -38,7 +44,7 @@ const waterManagementSchema = new Schema({
         },
         status: statusType(),
         rejectReason: { type: String, default: "" },
-        responseFile:{type: String, default:""},
+        responseFile:pdfSchema(),
 
     },
     houseHoldCoveredPipedSupply: {

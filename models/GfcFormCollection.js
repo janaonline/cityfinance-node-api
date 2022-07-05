@@ -51,7 +51,7 @@ const GfcFormCollectionSchema = new Schema({
     },
     
     rejectReason: { type: String, default: "" },
-    responseFile: {type: String,  default: ""},
+    responseFile: pdfSchema(),
     history:{
         type: Array,
         default: [],

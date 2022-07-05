@@ -1,104 +1,19 @@
 const LinkPFMS = require('../../models/LinkPFMS');
 const ObjectId = require("mongoose").Types.ObjectId;
 
-function response(form, res){
+function response(form, res, successMsg ,ErrMsg){
     if(form){
-        return res.status(201).json({
+        return res.status(200).json({
             status: true,
+            message: successMsg,
             data: form,
         });
     }else{
         return res.status(400).json({
             status: false,
-            message: 'Form not saved.'
+            message: ErrMsg
         });
    }
-}
-module.exports.createForm = async(req, res) =>{
-   try{
-        const data = req.body;
-        const user = req.decoded;
-        // formData['ulb'] = ObjectId(data.ulb);
-        // formData['design_year'] = ObjectId(data.design_year);
-        // formData['linkPFMS'] = data.linkPFMS;
-        // formData['isUlbLinkedWithPFMS'] = data.isUlbLinkedWithPFMS;
-        // formData['PFMSAccountNumber'] = data.PFMSAccountNumber;
-        // formData['cert'] = data.cert;
-        // formData['otherDocs'] = data.otherDocs;
-        // formData['isDraft'] = data.isDraft;
-        // formData['status'] = data.status;
-        let formData = {};
-        formData = {...req.body};
-
-        if(formData.ulb){
-            formData.ulb = ObjectId(formData.ulb);
-        }
-        if(formData.design_year){
-            formData.design_year = ObjectId(formData.design_year);
-        }
-
-        const { role: actionTakenByRole, _id: actionTakenBy } = user;
-        formData['actionTakenByRole'] = actionTakenByRole;
-        formData['actionTakenBy'] = ObjectId(actionTakenBy);
-        let condition = {};
-        condition['ulb'] = data.ulb;
-        condition['design_year'] = data.design_year;
-
-        const submittedForm = await LinkPFMS.findOne(condition);
-    
-        if(submittedForm !== null){
-            if(!submittedForm.isDraft){ //Check if form already submitted
-                return res.status(200).json({
-                    status: true,
-                    message: "Form already submitted."
-                })
-            } else {
-                return res.status(200).json({
-                    status: true,
-                    message: "Form already created."
-                })
-            }
-        }
-
-        if(data.isDraft){ // create form with isDraft = true
-            const form  = LinkPFMS(formData);
-            const savedForm = await LinkPFMS.create(form);
-            response(savedForm, res);
-        }else{ //final Submit
-            const form = LinkPFMS(formData);
-            const savedForm = await LinkPFMS.create(form);
-            if(savedForm){
-                formData['createdAt'] = new Date();
-                formData.createdAt.toISOString();
-                formData['modifiedAt'] = new Date();
-                formData.modifiedAt.toISOString();
-                const updatedForm = await LinkPFMS.findOneAndUpdate(condition,
-                    {$set: formData, $push: {"history":formData}},
-                    {new: true});
-                if(updatedForm){
-                    return res.status(200).json({
-                        status: true,
-                        data: updatedForm
-                    })
-                }else{
-                    return res.status(400).json({
-                        status: false,
-                        message: "History not added."
-                    })
-                }
-            }else{
-                return res.status(400).json({
-                    status: false,
-                    message:'Form not submitted.'
-                })
-            }
-        }   
-    }catch(error){
-        return res.status(400).json({
-            status: false,
-            message: error.message
-       })
-    }
 }
 
 module.exports.getForm = async (req, res) =>{
@@ -111,104 +26,107 @@ module.exports.getForm = async (req, res) =>{
         const form = await LinkPFMS.findOne(condition);
         if (form){
             return res.status(200).json({
-                success: true,
+                status: true,
+                message: "Form found.",
                 data:form
             });
         } else {
             return res.status(400).json({
-                success: true,
+                status: true,
                 message: "Form not found"
             });
         }
     } catch (error) {
         return res.status(400).json({
-            success: false,
+            status: false,
             message: error.message
         })
     } 
 }
 
-module.exports.updateForm = async (req, res)=>{
+module.exports.createOrUpdateForm = async (req, res) =>{
     try {
+        
         const data = req.body;
         const user = req.decoded;
         let formData = {};
         formData = {...data};
-        formData['isUlbLinkedWithPFMS'] = data.isUlbLinkedWithPFMS || "";
-        formData['PFMSAccountNumber'] = data.PFMSAccountNumber || "";
-        formData['cert'] = data.cert || "";
-        formData['otherDocs'] = data.otherDocs || "";
+        const {_id: actionTakenBy, role: actionTakenByRole} = user;
+        formData['actionTakenBy'] = ObjectId(actionTakenBy);
+        formData['actionTakenByRole'] = actionTakenByRole;
+    
         if(formData.ulb){
-            formData.ulb = ObjectId(formData.ulb);
+            formData['ulb'] = ObjectId(formData.ulb);
         }
         if(formData.design_year){
-            formData.design_year = ObjectId(formData.design_year);
+            formData['design_year'] = ObjectId(formData.design_year);
         }
-
-        const { role: actionTakenByRole, _id: actionTakenBy } = user;
-        formData['actionTakenByRole'] = actionTakenByRole;
-        formData['actionTakenBy'] = ObjectId(actionTakenBy);
-        let condition = {};
-        condition['ulb'] = data.ulb;
-        condition['design_year'] = data.design_year;
     
-        const submittedForm  = await LinkPFMS.findOne(condition);
-        if(submittedForm !== null){
-            if(!submittedForm.isDraft){
+        const condition ={};
+        condition['design_year'] =  data.design_year;
+        condition['ulb'] = data.ulb;
+    
+        if(data.ulb && data.design_year){
+            const submittedForm = await LinkPFMS.findOne(condition);
+            if ( (submittedForm) && submittedForm.isDraft === false ){//Form already submitted
                 return res.status(200).json({
                     status: true,
                     message: "Form already submitted."
                 })
+            } else {
+                if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    const form = await LinkPFMS.create(formData);
+                    formData.createdAt = form.createdAt;
+                    formData.modifiedAt = form.modifiedAt;
+                    if(form){
+                        const addedHistory = await LinkPFMS.findOneAndUpdate(
+                            condition,
+                            {$push: {"history": formData}},
+                            {new: true, runValidators: true}
+                        )
+                        response(addedHistory, res,"Form created.", "Form not created")
+                    } else {
+                        return res.status(400).json({
+                            status: false,
+                            message: "Form not created."
+                        })
+                    }
+                } else {
+                    if( (!submittedForm) && formData.isDraft === true){ // create as draft
+                        const form = await LinkPFMS.create(formData);
+                        response(form, res,"Form created", "Form not created");
+                    }
+                }           
             }
-        } else {
-            return res.status(400).json({
-                status: false,
-                message: "Form not found."
-            })
+    
+            if ( submittedForm && submittedForm.isDraft === true) {
+                if(formData.isDraft === true){
+                    const updatedForm = await LinkPFMS.findOneAndUpdate(
+                        condition,
+                        {$set: formData},
+                        {new: true, runValidators: true}
+                    );
+                    response(updatedForm, res, "Form created." , "Form not updated");
+                } else {
+                    formData.createdAt = submittedForm.createdAt;
+                    formData.modifiedAt = new Date();
+                    formData.modifiedAt.toISOString();
+                    const updatedForm = await LinkPFMS.findOneAndUpdate(
+                        condition,
+                        {
+                            $push:{"history":formData},
+                            $set: formData
+                        },
+                        {new: true, runValidators: true}
+                    );
+                    response( updatedForm, res, "Form updated.","Form not updated.")
+                }
+            } 
         }
-        if(formData.isDraft){
-            const form = await LinkPFMS.findOneAndUpdate(condition,
-                 formData,
-                 {new: true} );
-            if (!form){
-                return res.status(400).json({
-                    success: false,
-                    message: "Failed to update."
-                })
-            } else {
-                return res.status(200).json({
-                    success: true,
-                    data: form
-                });
-            }
-        } else {
-            formData['createdAt'] = submittedForm.createdAt;
-            formData['modifiedAt'] = new Date();
-            formData.modifiedAt.toISOString();
-
-            const form = await LinkPFMS.findOneAndUpdate(condition,
-                { 
-                    $set: formData,
-                    $push: {history: formData}
-                },
-                {new: true});
-            if (!form){
-                return res.status(400).json({
-                    success: false,
-                    message: "Failed to update."
-                })
-            } else {
-                return res.status(200).json({
-                    success: true,
-                    message: "Form updated",
-                    data: form
-                });
-        } 
-            }
-        } catch (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.message
-            })
-    } 
+    } catch (error) {
+        return res.status(400).json({
+            status: false,
+            message: error.message
+        })
+    }
 }

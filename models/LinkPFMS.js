@@ -96,7 +96,7 @@ const PFMSAccountSchema = new Schema(
         },
         otherDocs: pdfSchema(),
         rejectReason: { type: String, default: "" },
-        responseFile: {type: String,  default: ""},
+        responseFile: pdfSchema(),
         isDraft: {
             type: Boolean,
             required: [true, "draft key is required."],

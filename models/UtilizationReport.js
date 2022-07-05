@@ -1,6 +1,13 @@
 require("./dbConnect");
 const moment = require("moment");
 
+const pdfSchema = () =>{
+  return {
+    url:{type: String},
+    name: {type: String}
+  }
+}
+
 const UtilizationReportProjectSchema = new Schema({
   category: {
     type: Schema.Types.ObjectId,
@@ -68,7 +75,7 @@ const UtilizationReportSchema = new Schema(
       default: null,
     },
     rejectReason: { type: String, default: "" },
-    responseFile: {type: String,  default: ""},
+    responseFile: pdfSchema(),
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },

@@ -50,7 +50,7 @@ const OdfFormCollectionSchema = new Schema({
         default: false,
     },
     rejectReason: { type: String, default: "" },
-    responseFile: {type: String,  default: ""},
+    responseFile: pdfSchema(),
     history:{
         type: Array,
         default: [],
