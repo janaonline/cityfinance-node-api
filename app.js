@@ -26,18 +26,7 @@ app.use(function(req, res, next) {
   next();
 });
 // CORS middleware
-app.use(cors({
-  origin: '*',
-
-  methods: [
-    'GET',
-    'POST',
-  ],
-
-  allowedHeaders: [
-    'Content-Type',
-  ],
-}));
+app.use(cors());
 app.use(expressSanitizer());
 
 app.use(express.static(path.join(__dirname, "public")));
