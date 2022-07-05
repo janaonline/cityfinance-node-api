@@ -231,3 +231,75 @@ exports.action = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+module.exports.report = async (req,res) => {
+// year
+// type
+// installment
+// link
+// state
+// role
+// isDraft
+// status
+let year = req.query.year
+let yearData = await Year.findOne({year: year }).lean()
+
+let query = [
+  {
+    $match: {
+      design_year: ObjectId(yearData._id)
+    }
+  },
+  {
+    $lookup: {
+      from:"states",
+      localField:"state",
+      foreignField:"_id",
+      as:"state"
+    }
+  },
+  {
+    $unwind:"$state"
+  },
+  {
+    $lookup: {
+      from:"users",
+      localField:"actionTakenBy",
+      foreignField:"_id",
+      as:"user"
+    }
+  },
+  {
+    $unwind:"$user"
+  },
+  {
+    $project: {
+      state:"$state.name",
+      installment:1,
+      date:"$modifiedAt",
+      million_tied:"$million_tied.pdfUrl",
+      million_tied_status:"$million_tied.status",
+      nonMillion_tied:"$nonmillion_tied.pdfUrl",
+      nonMillion_tied_status:"$nonmillion_tied.status",
+      nonMillion_untied:"$nonmillion_untied.pdfUrl",
+      nonMillion_untied_status:"$nonmillion_untied.status",
+
+    }
+  }
+
+]
+let data = await StateGTCertificate.aggregate(query);
+
+let filename = "GTC_REPORT.csv";
+
+
+res.setHeader("Content-disposition", "attachment; filename=" + filename);
+res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+res.write(
+  "State, Date Updated , Million Tied URL, Million Tied Status, Non-Million Tied URL, Non-Million Tied Status , Non-Million Untied URL,  Non-Million Untied Status   \r\n"
+);
+// Flush the headers before we start pushing the CSV content
+res.flushHeaders();
+
+}
+
