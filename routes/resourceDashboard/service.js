@@ -46,7 +46,7 @@ module.exports.get = async function (req, res) {
       query = { toolKitVisible };
     }
     if (getQuery) return res.status(200).json(query);
-    let data = await ResourceLineItem.find(query).lean();
+    let data = await ResourceLineItem.find(query).sort({modifiedAt:-1});
     if (data.length < 1) throw Error("No Resource Found");
     return Response.OK(res, data);
   } catch (error) {
