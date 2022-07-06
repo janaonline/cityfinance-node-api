@@ -34,7 +34,7 @@ const calculateTick = (tooltip) => {
 
 }
 
-const calculateStatus = (status, actionTakenByRole, isDraft) => {
+module.exports.calculateStatus = (status, actionTakenByRole, isDraft) => {
     switch (true) {
         case status == 'PENDING' && actionTakenByRole == 'ULB' && isDraft:
             return StatusList.In_Progress
