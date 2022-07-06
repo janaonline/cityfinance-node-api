@@ -110,7 +110,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
     } catch (error) {
         return res.status(400).json({
             success: false,
-            message: "failed.",
+            message: error.message
         });
     }
 }
@@ -131,7 +131,7 @@ module.exports.getForm = async (req, res) => {
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error
+            message: error.message
         });
     }
 }
