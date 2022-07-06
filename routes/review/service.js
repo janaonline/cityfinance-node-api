@@ -1,6 +1,6 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
-const CollectionNames = require('../../util/c')
+const CollectionNames = require('../../util/Collections')
 module.exports.get = catchAsync( async(req,res) => {
 let loggedInUserRole = req.decoded.role
     let review = req.query.review;
