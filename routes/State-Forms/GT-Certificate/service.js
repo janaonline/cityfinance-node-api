@@ -235,6 +235,8 @@ exports.action = async (req, res) => {
 
 const calculateStatus = (data) => {
   data.map((el)=> {
+   el.date = (new Date(el.date)).toDateString();
+
     if(el.million_tied_status == 'PENDING' && el.million_tied_isDraft ){
       el.million_tied_status = STATUS_LIST.In_Progress
     }else if(el.million_tied_status == 'PENDING' && !el.million_tied_isDraft ){
@@ -270,14 +272,17 @@ const calculateStatus = (data) => {
 
 module.exports.report = async (req,res) => {
 
-let year = req.query.year
-let yearData = await Year.findOne({year: year }).lean()
-
 let query = [
   {
-    $match: {
-      design_year: ObjectId(yearData._id)
+    $lookup: {
+      from:"years",
+      localField:"design_year",
+      foreignField:"_id",
+      as:"design_year"
     }
+  },
+  {
+    $unwind:"$design_year"
   },
   {
     $lookup: {
@@ -305,15 +310,34 @@ let query = [
     $project: {
       state:"$state.name",
       installment:1,
+      year:"$design_year.year",
       date:"$modifiedAt",
       million_tied:{$ifNull: ["$million_tied.pdfUrl","Not Submitted"]},
-      million_tied_status:"$million_tied.status",
+      million_tied_status:  {
+        $cond: {
+          if: { $ne: ["$million_tied.pdfUrl", ""] },
+          then: "$million_tied.status",
+          else: "Not Submitted",
+        },
+      },
       million_tied_isDraft:"$million_tied.isDraft",
       nonMillion_tied:{$ifNull: ["$nonmillion_tied.pdfUrl","Not Submitted"]},
-      nonMillion_tied_status:"$nonmillion_tied.status",
+      nonMillion_tied_status: {
+        $cond: {
+          if: { $ne: ["$nonmillion_tied.pdfUrl", ""] },
+          then: "$nonmillion_tied.status",
+          else: "Not Submitted",
+        },
+      },
       nonMillion_tied_isDraft:"$nonmillion_tied.isDraft",
       nonMillion_untied:{$ifNull: ["$nonmillion_untied.pdfUrl","Not Submitted"]},
-      nonMillion_untied_status:"$nonmillion_untied.status",
+      nonMillion_untied_status: {
+        $cond: {
+          if: { $ne: ["$nonmillion_untied.pdfUrl", ""] },
+          then:  "$nonmillion_untied.status",
+          else: "Not Submitted",
+        },
+      },
       nonMillion_untied_isDraft:"$nonmillion_untied.isDraft",
 
     }
@@ -326,7 +350,7 @@ let filename = "GTC_REPORT.csv";
 res.setHeader("Content-disposition", "attachment; filename=" + filename);
 res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
 res.write(
-  "State, Date Updated, Installment , Million Tied URL, Million Tied Status, Non-Million Tied URL, Non-Million Tied Status , Non-Million Untied URL,  Non-Million Untied Status   \r\n"
+  "State, Year, Date Updated, Installment , Million Tied URL, Million Tied Status, Non-Million Tied URL, Non-Million Tied Status , Non-Million Untied URL,  Non-Million Untied Status   \r\n"
 );
 // Flush the headers before we start pushing the CSV content
 res.flushHeaders();
@@ -334,6 +358,8 @@ res.flushHeaders();
 for (el of data) {
   res.write(
     el.state +
+    "," +
+    el.year +
     "," +
     el.date +
     "," +
