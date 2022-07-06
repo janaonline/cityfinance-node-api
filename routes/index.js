@@ -197,9 +197,9 @@ router.use('/forms-master', FormsMaster);
 const FormsMasterCategory = require('./FormsMasterCategory');
 router.use('/forms-master-category', FormsMasterCategory);
 
-// //property-tax-floor-rate
-// const PropertyTaxFloorRate = require('./PropertyTaxFloorRate');
-// router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
+//property-tax-floor-rate
+const PropertyTaxFloorRate = require('./PropertyTaxFloorRate');
+router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
 
 // //calculate-recommendation
 // const calculateRecommendation = require('./Scoring');
