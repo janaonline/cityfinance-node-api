@@ -1,8 +1,8 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
-
+const CollectionNames = require('../../util/c')
 module.exports.get = catchAsync( async(req,res) => {
-
+let loggedInUserRole = req.decoded.role
     let review = req.query.review;
     let design_year = req.query.review;
     let form = req.query.formId
@@ -19,7 +19,7 @@ module.exports.get = catchAsync( async(req,res) => {
     let formTab = await Sidemenu.findOne({_id: ObjectId(form)});
 let path = formTab.collectionName
  const model = require(`../../models/${path}`)
-
+let query = computeQuery(path, loggedInUserRole);
  let data = await model.aggregate(query)
 
 
@@ -32,3 +32,14 @@ let path = formTab.collectionName
 
 
 })
+
+const computeQuery = (formName, userRole) => {
+ switch (formName) {
+     case "":
+         
+         break;
+ 
+     default:
+         break;
+ }
+}
