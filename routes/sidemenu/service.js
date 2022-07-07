@@ -14,6 +14,7 @@ const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
 const {calculateStatus} = require('../CommonActionAPI/service')
+const USER_TYPES = require('../../util/userTypes')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
     "red": "../../../assets/form-icon/cancel.svg"
@@ -26,24 +27,39 @@ let FormModelMapping = {
     
 }
 
-const calculateTick = (tooltip) => {
-    if (tooltip == StatusList.Not_Started || tooltip == StatusList.In_Progress || tooltip == StatusList.Rejected_By_State || tooltip == StatusList.Rejected_By_MoHUA) {
-        return ticks['red']
-    } else {
-        return ticks['green']
+const calculateTick = (tooltip, loggedInUserRole) => {
+    if(loggedInUserRole == USER_TYPES.ulb){
+        if (tooltip == StatusList.Not_Started || tooltip == StatusList.In_Progress || tooltip == StatusList.Rejected_By_State || tooltip == StatusList.Rejected_By_MoHUA) {
+            return ticks['red']
+        } else {
+            return ticks['green']
+        }
+    }else if(loggedInUserRole == USER_TYPES.state){
+        if (tooltip == StatusList.Not_Started || tooltip == StatusList.In_Progress || tooltip == StatusList.Under_Review_By_State ) {
+            return ticks['red']
+        } else if(tooltip == StatusList.Rejected_By_State || tooltip == StatusList.Rejected_By_MoHUA || tooltip == StatusList.Under_Review_By_MoHUA || tooltip == StatusList.Approved_By_MoHUA ) {
+            return ticks['green']
+        }
+    }else if(loggedInUserRole == USER_TYPES.mohua || loggedInUserRole == USER_TYPES.admin  ){
+        if (tooltip == StatusList.Not_Started || tooltip == StatusList.In_Progress || tooltip == StatusList.Under_Review_By_State || tooltip == StatusList.Rejected_By_State || tooltip == StatusList.Under_Review_By_MoHUA  ) {
+            return ticks['red']
+        } else if( tooltip == StatusList.Rejected_By_MoHUA  || tooltip == StatusList.Approved_By_MoHUA ) {
+            return ticks['green']
+        }
     }
+   
 
 }
 
 
 
-const findStatusAndTooltip = (formData, formId, modelName) => {
+const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole) => {
     
     let status = modelName == 'XVFcGrantULBForm' ? formData?.waterManagement?.status  : formData.status;
     let actionTakenByRole = formData.actionTakenByRole;
     let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
     let tooltip = calculateStatus(status, actionTakenByRole, isDraft);
-    let tick = calculateTick(tooltip)
+    let tick = calculateTick(tooltip,loggedInUserRole)
 
     return {
         [formId]: {
@@ -89,7 +105,7 @@ module.exports.get = catchAsync(async (req, res) => {
             let formData = await el.findOne(condition).lean()
             if (formData) {
 
-                output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName']))
+                output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role))
             }
         }
     }
