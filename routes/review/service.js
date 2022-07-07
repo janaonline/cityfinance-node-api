@@ -12,7 +12,7 @@ let loggedInUserRole = req.decoded.role
     let form = req.query.formId
     let skip = req.query.skip
     let limit = req.query.limit
-    let csv = req.query.csv
+    let csv = req.query.csv == "true"
     let state = req.query.state ?? req.decoded.state
     let getQuery = req.query.getQuery == 'true'
 
@@ -39,6 +39,82 @@ let data = await model.aggregate(query)
   el['formStatus'] =  calculateStatus(el.status, el.actionTakenByRole, el.isDraft);   
 })
  
+
+if(csv){
+    let filename = `Review_ULB-${collectionName}.csv`;
+
+    // Set approrpiate download headers
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    if(collectionName != CollectionNames.annual){
+        res.write(
+            "ULB Name, City Finance Code, Census Code, ULB Type, State Name, Population, UA, Form Status, Form Filled Status \r\n"
+          );
+          
+          res.flushHeaders();
+        for(let el of data){
+            res.write(
+                el.ulbName +
+                "," +
+                el.ulbCode + 
+                "," +
+                el.censusCode + 
+                "," +
+                el.ulbType +
+                "," +
+                el.stateName +
+                "," +
+                el.population +
+                "," +
+                el.UA +
+                "," +
+                el.formStatus +
+                "," +
+                el.filled +
+                "\r\n"
+    
+            )
+        
+        }
+        res.end();
+      return
+    } else{
+        res.write(
+            "ULB Name, City Finance Code, Census Code, ULB Type, State Name, Population, UA, Form Status, Provisional Filled Status, Audited Filled Status \r\n"
+          );
+          
+          res.flushHeaders();
+        for(let el of data){
+            res.write(
+                el.ulbName +
+                "," +
+                el.ulbCode + 
+                "," +
+                el.censusCode + 
+                "," +
+                el.ulbType +
+                "," +
+                el.stateName +
+                "," +
+                el.population +
+                "," +
+                el.UA +
+                "," +
+                el.formStatus +
+                "," +
+                el.filled_provisional +
+                "," +
+                el.filled_audited +
+                "\r\n"
+            )
+           
+        }
+        res.end();
+        return
+    }
+  
+   
+}
 
  console.log(data)
  return res.status(200).json({
