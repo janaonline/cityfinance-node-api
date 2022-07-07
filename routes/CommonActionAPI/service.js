@@ -5,7 +5,36 @@ const GfcFormCollection = require('../../models/GfcFormCollection');
 const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const FormsMaster = require('../../models/FormsMaster');
+const StatusList = require('../../util/newStatusList')
 // debugger
+
+module.exports.calculateStatus = (status, actionTakenByRole, isDraft) => {
+    switch (true) {
+        case status == 'PENDING' && actionTakenByRole == 'ULB' && isDraft:
+            return StatusList.In_Progress
+            break;
+        case status == 'PENDING' && actionTakenByRole == 'ULB' && !isDraft:
+            return StatusList.Under_Review_By_State
+            break;
+        case status == 'APPROVED' && actionTakenByRole == 'STATE' && !isDraft:
+            return StatusList.Under_Review_By_MoHUA
+            break;
+        case status == 'REJECTED' && actionTakenByRole == 'STATE' && !isDraft:
+            return StatusList.Rejected_By_State
+            break;
+        case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+            return StatusList.Approved_By_MoHUA
+            break;
+        case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
+            return StatusList.Rejected_By_MoHUA
+            break;
+
+        default:
+            return StatusList.Not_Started
+            break;
+    }
+}
+
 function getCollectionName(formName){
     let collection="";
     switch(formName){
