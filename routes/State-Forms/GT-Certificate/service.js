@@ -311,7 +311,7 @@ let query = [
       state:"$state.name",
       installment:1,
       year:"$design_year.year",
-      date:"$modifiedAt",
+      date:"$createdAt",
       million_tied:{$ifNull: ["$million_tied.pdfUrl","Not Submitted"]},
       million_tied_status:  {
         $cond: {
