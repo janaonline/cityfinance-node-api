@@ -1,7 +1,7 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
 const CollectionNames = require('../../util/collectionName')
-const {calculateStatus} = require('../sidemenu/service')
+const {calculateStatus} = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 
 

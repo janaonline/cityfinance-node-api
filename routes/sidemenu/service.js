@@ -13,6 +13,7 @@ const GFC = require('../../models/GfcFormCollection')
 const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
+const {calculateStatus} = require('../CommonActionAPI/service')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
     "red": "../../../assets/form-icon/cancel.svg"
@@ -34,32 +35,7 @@ const calculateTick = (tooltip) => {
 
 }
 
-module.exports.calculateStatus = (status, actionTakenByRole, isDraft) => {
-    switch (true) {
-        case status == 'PENDING' && actionTakenByRole == 'ULB' && isDraft:
-            return StatusList.In_Progress
-            break;
-        case status == 'PENDING' && actionTakenByRole == 'ULB' && !isDraft:
-            return StatusList.Under_Review_By_State
-            break;
-        case status == 'APPROVED' && actionTakenByRole == 'STATE' && !isDraft:
-            return StatusList.Under_Review_By_MoHUA
-            break;
-        case status == 'REJECTED' && actionTakenByRole == 'STATE' && !isDraft:
-            return StatusList.Rejected_By_State
-            break;
-        case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
-            return StatusList.Approved_By_MoHUA
-            break;
-        case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
-            return StatusList.Rejected_By_MoHUA
-            break;
 
-        default:
-            return StatusList.Not_Started
-            break;
-    }
-}
 
 const findStatusAndTooltip = (formData, formId, modelName) => {
     
