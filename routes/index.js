@@ -178,7 +178,7 @@ router.use("/resourceDashboard", resourceDashboard);
 const Rating = require('./Ratings');
 router.use('/ratings', Rating);
 
-//Gfc-form-Collection
+//Gfc-odf-form-Collection
 const GfcOdfFormCollection = require('./gfc-odf-form-collection');
 router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
 
@@ -208,6 +208,10 @@ router.use('/state-finance-commission-formation', StateFinanceCommissionFormatio
 //calculate-recommendation
 const calculateRecommendation = require('./Scoring');
 router.use('/calculate-recommendation', calculateRecommendation);
+
+//grant-transfer-certificate
+const GrantTransferCertificate = require('./GrantTransferCertificate');
+router.use('/grant-transfer-certificate', GrantTransferCertificate);
 
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);

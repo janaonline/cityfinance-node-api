@@ -62,5 +62,5 @@ const stateFinanceCommissionFormationSchema = new Schema({
 
 stateFinanceCommissionFormationSchema.index({state:1, design_year: 1},{unique: true});
 
-module.exports = mongoose.model("StateFinanceCommissionFormationSchema",
+module.exports = mongoose.model("StateFinanceCommissionFormation",
  stateFinanceCommissionFormationSchema);
