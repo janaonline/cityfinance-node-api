@@ -3,7 +3,7 @@ const Sidemenu = require('../../models/Sidemenu')
 const CollectionNames = require('../../util/collectionName')
 const {calculateStatus} = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const STATUS_LIST = require('../../util/newStatusList')
 
 module.exports.get = catchAsync( async(req,res) => {
 let loggedInUserRole = req.decoded.role
@@ -52,15 +52,63 @@ let data = await model.aggregate(query)
 
 const computeQuery = (formName, userRole, isFormOptional,state, design_year) => {
  let query_1 = [], query_2 = [], year;
+ //handling the cases where filled/not filled status is to be calculated
+ let filledQueryExpression = {}, filledProvisionalExpression = {}, filledAuditedExpression = {}
+
+ if(isFormOptional){
+     switch (formName) {
+         case CollectionNames.slb:
+filledQueryExpression = {
+    $cond: {
+      if: { $eq: ["$blank", true] },
+      then: STATUS_LIST.Not_Submitted,
+      else: STATUS_LIST.Submitted,
+    },
+  }
+             break;
+             case CollectionNames.pfms:
+filledQueryExpression = {
+    $cond: {
+      if:  {$eq: ["$linkPFMS", "Yes" ] },
+      then: STATUS_LIST.Submitted,
+      else: STATUS_LIST.Not_Submitted,
+    },
+  }
+             break;
+             case CollectionNames.propTaxUlb:
+                filledQueryExpression = {
+                    $cond: {
+                      if:  {$eq: ["$submit", "Yes" ]},
+                      then: STATUS_LIST.Submitted,
+                      else: STATUS_LIST.Not_Submitted,
+                    },
+                  }
+                             break;
+     case CollectionNames.annual:
+        filledProvisionalExpression = {
+            $cond: {
+              if: { $eq: ["$unAudited.submit_annual_accounts", true] },
+              then: STATUS_LIST.Submitted,
+              else: STATUS_LIST.Not_Submitted,
+            },
+          };
+          filledAuditedExpression = {
+            $cond: {
+              if: { $eq: ["$audited.submit_annual_accounts", true] },
+              then: STATUS_LIST.Submitted,
+              else: STATUS_LIST.Not_Submitted,
+            },
+          }
+
+         default:
+             break;
+     }
+ }
+ //query1 and query2 are 2 parts of a single query. They are broken so that state Match can be added at appropriate place
  year = "design_year"
  if(formName == CollectionNames.dur)
  year = "designYear"
-    switch (formName) {
-     case CollectionNames.dur:
-        case CollectionNames.slb:
-            case CollectionNames.gfc:
-                case CollectionNames.odf:
-query_1 = [
+ query_1 = [
     {
         $match: {
             [year]: ObjectId(design_year)
@@ -83,7 +131,7 @@ if(state) query_1.push({
         "ulb.state":ObjectId(state)
     }
 })
-    let query_2= [
+     query_2= [
     {
         $lookup: {
 
@@ -149,15 +197,30 @@ $match:{
         status:"$status",
         actionTakenByRole:"$actionTakenByRole",
         actionTakenBy:"$actionTakenBy",
-        lasUpdatedAt:"$modifiedAt"
+        lasUpdatedAt:"$modifiedAt",
+        filled: Object.keys(filledQueryExpression).length>0 ? filledQueryExpression : "NA"
     }
 }
 ]
 query_1.push(...query_2)
+    switch (formName) {
+        //  currently, the above query can  uniformly work for all the commented forms. 
+        // If later, these forms have to be modified, then handle the cases here
+
+    //  case CollectionNames.dur:
+    //     case CollectionNames.slb:
+    //         case CollectionNames.gfc:
+    //             case CollectionNames.odf:
+    //                 case CollectionName.propTaxUlb:
+    //                     case CollectionNames.pfms:
+
 
 
          
-         break;
+    //      break;
+         case CollectionNames.annual:
+             delete query_1.at(-1)['$project']['filled']
+           Object.assign(  query_1.at(-1)['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
  
      default:
          break;

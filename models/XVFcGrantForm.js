@@ -225,6 +225,7 @@ const XVFcGrantULBFormSchema = new Schema(
             default: null
         },
         history: { type: Array, default: [] },
+        population_slb: {type: Number},
         modifiedAt: { type: Date, default: Date.now },
         createdAt: { type: Date, default: Date.now },
         isActive: { type: Boolean, default: 1 },
