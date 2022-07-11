@@ -110,7 +110,7 @@ module.exports.get = catchAsync(async (req, res) => {
         }
     }
 
-    let data = await Sidemenu.find({ year: ObjectId(year), role: role }).lean()
+    let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean()
     if (data.length) {
         // delete the non applicable entries
         if(isUA == 'Yes'){
