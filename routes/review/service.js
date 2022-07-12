@@ -7,12 +7,23 @@ const STATUS_LIST = require('../../util/newStatusList')
 
 module.exports.get = catchAsync( async(req,res) => {
 let loggedInUserRole = req.decoded.role
-   
+   let filter = {};
     let design_year = req.query.design_year;
     let form = req.query.formId
-    let skip = req.query.skip
-    let limit = req.query.limit
+    let skip = req.query.skip ? parseInt(req.query.skip) : 0
+    let limit = req.query.limit ? parseInt(req.query.limit) : 10
     let csv = req.query.csv == "true"
+    filter['ulbName'] = req.query.ulbName
+    filter['censusCode'] = req.query.censusCode
+    filter['ulbCode'] = req.query.ulbCode
+    filter['state'] = req.query.state
+    filter['UA'] = req.query.UA
+    filter['status'] = req.query.status
+    filter['filled1'] = req.query.filled1
+    filter['filled2'] = req.query.filled2
+
+
+
     let state = req.query.state ?? req.decoded.state
     let getQuery = req.query.getQuery == 'true'
 
@@ -28,10 +39,12 @@ let path = formTab.path
 let collectionName = formTab.collectionName
 let isFormOptional = formTab.optional
  const model = require(`../../models/${path}`)
-let query = computeQuery(collectionName, loggedInUserRole, isFormOptional,state,design_year);
+let query = computeQuery(collectionName, loggedInUserRole, isFormOptional,state,design_year,csv,skip, limit);
 if(getQuery) return res.json({
     query: query
 })
+
+// if csv - then no skip and limit, else with skip and limit
 let data = await model.aggregate(query)
 
  if(collectionName == CollectionNames.dur || path == CollectionNames.gfc || path == CollectionNames.odf || path == CollectionNames.slb )
@@ -39,7 +52,7 @@ let data = await model.aggregate(query)
   el['formStatus'] =  calculateStatus(el.status, el.actionTakenByRole, el.isDraft);   
 })
  
-
+// if users clicks on Download Button - the data gets downloaded as per the applied filter
 if(csv){
     let filename = `Review_ULB-${collectionName}.csv`;
 
@@ -126,7 +139,7 @@ if(csv){
 
 })
 
-const computeQuery = (formName, userRole, isFormOptional,state, design_year) => {
+const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,skip, limit) => {
  let query_1 = [], query_2 = [], year;
  //handling the cases where filled/not filled status is to be calculated
  let filledQueryExpression = {}, filledProvisionalExpression = {}, filledAuditedExpression = {}
@@ -180,16 +193,28 @@ filledQueryExpression = {
              break;
      }
  }
- //query1 and query2 are 2 parts of a single query. They are broken so that state Match can be added at appropriate place
+ //query1 and query2 anfd query3 are different parts of a single query. 
+//  They are broken so that state Match can be added at appropriate place
  year = "design_year"
  if(formName == CollectionNames.dur)
  year = "designYear"
+ let paginate = [
+    {$skip: skip},
+    {$limit: limit},
+]
+
  query_1 = [
     {
         $match: {
             [year]: ObjectId(design_year)
         }
-    },
+    }]
+    if(!csv){
+        query_1.push(...paginate)
+        }
+        
+
+    query_2 = [
     {
         $lookup: {
 
@@ -202,12 +227,13 @@ filledQueryExpression = {
         $unwind:"$ulb"
     }
 ]
+query_1.push(...query_2)
 if(state) query_1.push({
     $match: {
         "ulb.state":ObjectId(state)
     }
 })
-     query_2= [
+     query_3= [
     {
         $lookup: {
 
@@ -278,7 +304,9 @@ $match:{
     }
 }
 ]
-query_1.push(...query_2)
+query_1.push(...query_3)
+
+
     switch (formName) {
         //  currently, the above query can  uniformly work for all the commented forms. 
         // If later, these forms have to be modified, then handle the cases here
