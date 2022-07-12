@@ -8,6 +8,7 @@ const STATUS_LIST = require('../../util/newStatusList')
 module.exports.get = catchAsync( async(req,res) => {
 let loggedInUserRole = req.decoded.role
    let filter = {};
+   let total;
     let design_year = req.query.design_year;
     let form = req.query.formId
     let skip = req.query.skip ? parseInt(req.query.skip) : 0
@@ -22,6 +23,14 @@ let loggedInUserRole = req.decoded.role
     filter['filled1'] = req.query.filled1
     filter['filled2'] = req.query.filled2
 
+    if (filter["censusCode"]) {
+        let code = filter["censusCode"];
+        var digit = code.toString()[0];
+        if (digit == "9") {
+          delete filter["censusCode"];
+          filter["sbCode"] = code;
+        }
+      }
 
 
     let state = req.query.state ?? req.decoded.state
@@ -41,12 +50,17 @@ let isFormOptional = formTab.optional
  const model = require(`../../models/${path}`)
 let query = computeQuery(collectionName, loggedInUserRole, isFormOptional,state,design_year,csv,skip, limit);
 if(getQuery) return res.json({
-    query: query
+    query: query[0]
 })
 
 // if csv - then no skip and limit, else with skip and limit
-let data = await model.aggregate(query)
+let data =  model.aggregate(query[0])
+total =  model.aggregate(query[1])
+let allData = await Promise.all([data, total]);
 
+data = allData[0]
+total = allData[1][0]['total']
+console.log(total,data)
  if(collectionName == CollectionNames.dur || path == CollectionNames.gfc || path == CollectionNames.odf || path == CollectionNames.slb )
  data.forEach(el => {
   el['formStatus'] =  calculateStatus(el.status, el.actionTakenByRole, el.isDraft);   
@@ -132,7 +146,8 @@ if(csv){
  console.log(data)
  return res.status(200).json({
      success: true,
-     data: data
+     data: data,
+     total: total
  })
 
 
@@ -203,14 +218,16 @@ filledQueryExpression = {
     {$limit: limit},
 ]
 
- query_1 = [
+ query_filter_pagination = [
     {
         $match: {
             [year]: ObjectId(design_year)
         }
     }]
+    query_1_filter_total = query_filter_pagination.slice();
+
     if(!csv){
-        query_1.push(...paginate)
+        query_filter_pagination.push(...paginate)
         }
         
 
@@ -227,12 +244,20 @@ filledQueryExpression = {
         $unwind:"$ulb"
     }
 ]
-query_1.push(...query_2)
-if(state) query_1.push({
-    $match: {
-        "ulb.state":ObjectId(state)
-    }
-})
+query_filter_pagination.push(...query_2);
+query_1_filter_total.push(...query_2)
+if(state){
+    query_filter_pagination.push({
+        $match: {
+            "ulb.state":ObjectId(state)
+        }
+    });
+    query_1_filter_total.push({
+        $match: {
+            "ulb.state":ObjectId(state)
+        }
+    })
+} 
      query_3= [
     {
         $lookup: {
@@ -304,9 +329,12 @@ $match:{
     }
 }
 ]
-query_1.push(...query_3)
+query_filter_pagination.push(...query_3)
 
-
+query_1_filter_total.push(...query_3)
+query_1_filter_total.push({
+    $count:"total"
+})
     switch (formName) {
         //  currently, the above query can  uniformly work for all the commented forms. 
         // If later, these forms have to be modified, then handle the cases here
@@ -323,12 +351,12 @@ query_1.push(...query_3)
          
     //      break;
          case CollectionNames.annual:
-             delete query_1.at(-1)['$project']['filled']
-           Object.assign(  query_1.at(-1)['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
+             delete query_filter_pagination.at(-1)['$project']['filled']
+           Object.assign(  query_filter_pagination.at(-1)['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
  
      default:
          break;
  }
- return query_1;
+ return [query_filter_pagination, query_1_filter_total ];
 }
 
