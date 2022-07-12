@@ -4,6 +4,7 @@ const CollectionNames = require('../../util/collectionName')
 const {calculateStatus} = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
+const Service = require('../../service')
 
 module.exports.get = catchAsync( async(req,res) => {
 let loggedInUserRole = req.decoded.role
@@ -17,7 +18,8 @@ let loggedInUserRole = req.decoded.role
     filter['ulbName'] = req.query.ulbName
     filter['censusCode'] = req.query.censusCode
     filter['ulbCode'] = req.query.ulbCode
-    filter['state'] = req.query.state
+    filter['state'] = req.query.stateName
+    filter['ulbType'] = req.query.ulbType
     filter['UA'] = req.query.UA
     filter['status'] = req.query.status
     filter['filled1'] = req.query.filled1
@@ -48,7 +50,8 @@ let path = formTab.path
 let collectionName = formTab.collectionName
 let isFormOptional = formTab.optional
  const model = require(`../../models/${path}`)
-let query = computeQuery(collectionName, loggedInUserRole, isFormOptional,state,design_year,csv,skip, limit);
+ let newFilter = await Service.mapFilterNew(filter);
+let query = computeQuery(collectionName, loggedInUserRole, isFormOptional,state,design_year,csv,skip, limit, newFilter);
 if(getQuery) return res.json({
     query: query[0]
 })
@@ -57,9 +60,8 @@ if(getQuery) return res.json({
 let data =  model.aggregate(query[0])
 total =  model.aggregate(query[1])
 let allData = await Promise.all([data, total]);
-
 data = allData[0]
-total = allData[1][0]['total']
+total = allData[1].length ? allData[1][0]['total'] : 0
 console.log(total,data)
  if(collectionName == CollectionNames.dur || path == CollectionNames.gfc || path == CollectionNames.odf || path == CollectionNames.slb )
  data.forEach(el => {
@@ -154,12 +156,13 @@ if(csv){
 
 })
 
-const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,skip, limit) => {
- let query_1 = [], query_2 = [], year;
+const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,skip, limit, filter) => {
+ let query_notFilter_pagination = [], query_Filter_total = [], query_Filter_total_count= [], query_3 = [] , query_2 = [], year;
  //handling the cases where filled/not filled status is to be calculated
  let filledQueryExpression = {}, filledProvisionalExpression = {}, filledAuditedExpression = {}
+//  query_notFilter_pagination - this query is only for showing data in the table , it will be paginated and it will work when no filter is there
 
- if(isFormOptional){
+if(isFormOptional){
      switch (formName) {
          case CollectionNames.slb:
 filledQueryExpression = {
@@ -218,16 +221,16 @@ filledQueryExpression = {
     {$limit: limit},
 ]
 
- query_filter_pagination = [
+ query_notFilter_pagination = [
     {
         $match: {
             [year]: ObjectId(design_year)
         }
     }]
-    query_1_filter_total = query_filter_pagination.slice();
+    query_Filter_total_count = query_notFilter_pagination.slice();
 
     if(!csv){
-        query_filter_pagination.push(...paginate)
+        query_notFilter_pagination.push(...paginate)
         }
         
 
@@ -244,15 +247,15 @@ filledQueryExpression = {
         $unwind:"$ulb"
     }
 ]
-query_filter_pagination.push(...query_2);
-query_1_filter_total.push(...query_2)
+query_notFilter_pagination.push(...query_2);
+query_Filter_total_count.push(...query_2)
 if(state){
-    query_filter_pagination.push({
+    query_notFilter_pagination.push({
         $match: {
             "ulb.state":ObjectId(state)
         }
     });
-    query_1_filter_total.push({
+    query_Filter_total_count.push({
         $match: {
             "ulb.state":ObjectId(state)
         }
@@ -329,10 +332,21 @@ $match:{
     }
 }
 ]
-query_filter_pagination.push(...query_3)
+query_notFilter_pagination.push(...query_3)
 
-query_1_filter_total.push(...query_3)
-query_1_filter_total.push({
+query_Filter_total_count.push(...query_3)
+query_Filter_total = query_Filter_total_count;
+let filterApplied = Object.keys(filter).length > 0
+if(Object.keys(filter).length>0){
+    query_Filter_total.push({
+        $match: filter
+    },
+    {
+        $skip:skip
+    },
+    {$limit: limit}) 
+}
+query_Filter_total_count.push({
     $count:"total"
 })
     switch (formName) {
@@ -351,12 +365,13 @@ query_1_filter_total.push({
          
     //      break;
          case CollectionNames.annual:
-             delete query_filter_pagination.at(-1)['$project']['filled']
-           Object.assign(  query_filter_pagination.at(-1)['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
+             delete query_notFilter_pagination.at(-1)['$project']['filled']
+           Object.assign(  query_notFilter_pagination.at(-1)['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
  
      default:
          break;
  }
- return [query_filter_pagination, query_1_filter_total ];
+ 
+ return [!filterApplied ?  query_notFilter_pagination: query_Filter_total , query_Filter_total_count  ];
 }
 
