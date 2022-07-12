@@ -110,7 +110,7 @@ module.exports.get = catchAsync(async (req, res) => {
         }
     }
 
-    let data = await Sidemenu.find({ year: ObjectId(year), role: role }).lean()
+    let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean()
     if (data.length) {
         // delete the non applicable entries
         if(isUA == 'Yes'){
@@ -121,18 +121,22 @@ module.exports.get = catchAsync(async (req, res) => {
 
         // add the formStatus and tooltip
 data.forEach((el,)=> {
-  let  flag = 0;
-    output.forEach(el2 => {
-        if((el._id).toString() == (Object.keys(el2)[0])){
-            Object.assign(el, el2[Object.keys(el2)[0]])
-            flag = 1;
-        }
-    })
-if(!flag){
-    
-        Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
-    
-}
+    if(el.category){
+        let  flag = 0;
+        output.forEach(el2 => {
+            if((el._id).toString() == (Object.keys(el2)[0])){
+                Object.assign(el, el2[Object.keys(el2)[0]])
+                flag = 1;
+            }
+        })
+    if(!flag){
+            Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
+    }
+    }else{
+        // where tick /cross logic is not applicable
+        Object.assign(el, {tooltip: "", tick: ""})
+    }
+  
     
 })        
     //group the data 
