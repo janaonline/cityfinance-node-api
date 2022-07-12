@@ -12,6 +12,9 @@ module.exports.createOrUpdateForm = async (req, res) => {
         let formData = {}; //Object to store form data
         formData = {...data}
         
+        if(formData.rating === "") {
+            formData.rating = null;
+        }
         if(formData.rating){
             formData.rating = ObjectId(formData.rating);
         }
