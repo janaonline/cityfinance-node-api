@@ -4,6 +4,7 @@ const UlbLedger = require("../../models/UlbLedger");
 const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
 const mongoose = require("mongoose");
+const Indicators = require('../../models/indicators')
 const { response, common } = require("../../service");
 const {
   sendProfileUpdateStatusEmail,
@@ -17,7 +18,7 @@ const { query } = require("express");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
-    const { financialYear, stateId, population, ulbType, csv } = req.query;
+    const { financialYear, stateId, population, ulbType, csv, dashboard } = req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     let filterCondition = {},
       ulbLedgers;
@@ -34,11 +35,20 @@ exports.dataAvailabilityState = async (req, res) => {
     let temp = await Promise.all([ulbs, totalUlbs]);
     ulbs = temp[0];
     totalUlbs = temp[1];
+    
     filterCondition = {
       ulb: { $in: ulbs.map((ech) => ObjectId(ech._id)) },
-      financialYear,
     };
-    ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
+    if(dashboard == 'slb'){
+      Object.assign(filterCondition, {year: financialYear})
+      ulbLedgers = await Indicators.distinct("ulb", filterCondition).lean();
+    }else{
+      Object.assign(filterCondition, {financialYear: financialYear})
+        ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
+    }
+  
+
+
 
     let responsePayload = {
       data: null,
