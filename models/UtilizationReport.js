@@ -81,6 +81,7 @@ const UtilizationReportSchema = new Schema(
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
     isDraft: { type: Boolean, default: 0 },
+    declaration:{ type: Boolean, default: 0 },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
