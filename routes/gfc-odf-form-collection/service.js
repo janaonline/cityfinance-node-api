@@ -1,7 +1,7 @@
 const GfcFormCollection = require('../../models/GfcFormCollection');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const dateFormatter = require('../../util/dateformatter')
 module.exports.createOrUpdateForm = async (req, res) => {
     try {
         const data = req.body;
@@ -125,7 +125,8 @@ module.exports.getForm = async (req, res) => {
         const design_year = ObjectId(req.query.design_year);
         let collection = (isGfc=== 'true') ? GfcFormCollection : OdfFormCollection;
         if (ulb && design_year) {
-            const form = await collection.findOne({ulb, design_year});
+            let form = await collection.findOne({ulb, design_year}).lean();
+  form.certDate = dateFormatter(form?.certDate);
             return res.status(200).json({
                 success: true,
                 data: form
