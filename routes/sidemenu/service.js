@@ -75,7 +75,16 @@ module.exports.get = catchAsync(async (req, res) => {
     let role = req.query.role;
     let year = req.query.year;
     let _id = req.query._id;
-    
+    let cardArr = [], tempData;
+    let cardObj =     {
+        label: "",
+        key: "",
+        link: "",
+        title: "",
+        message: '',
+        tooltip: "",
+        image: "",
+      }
     if (!role || !year || !_id)
         return res.status(400).json({
             success: false,
@@ -139,12 +148,36 @@ data.forEach((el,)=> {
   
     
 })        
+
+
     //group the data 
-        data = groupByKey(data, "category")
+     tempData = groupByKey(data, "category")
     }
+
+    data.forEach(el => {
+        cardObj.image = el?.icon;
+        cardObj.key = el?.collectionName;
+        cardObj.label = el?.name;
+        cardObj.title = el?.cardLabel;
+        cardObj.message = el?.cardMessage;
+        cardObj.tooltip = el?.tooltip;
+        cardObj.link = el?.url;
+        cardArr.push(cardObj)
+        cardObj =     {
+            label: "",
+            key: "",
+            link: "",
+            title: "",
+            message: '',
+            tooltip: "",
+            image: "",
+          }
+    
+    })
     res.status(200).json({
         success: true,
-        data: data
+        data: tempData,
+        card: cardArr
     })
 })
 
