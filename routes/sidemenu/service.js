@@ -75,7 +75,16 @@ module.exports.get = catchAsync(async (req, res) => {
     let role = req.query.role;
     let year = req.query.year;
     let _id = req.query._id;
-    
+    let cardArr = [], tempData;
+    let cardObj =     {
+        label: "",
+        key: "",
+        link: "",
+        title: "",
+        message: '',
+        tooltip: "",
+        image: "",
+      }
     if (!role || !year || !_id)
         return res.status(400).json({
             success: false,
@@ -139,12 +148,40 @@ data.forEach((el,)=> {
   
     
 })        
+
     //group the data 
-        data = groupByKey(data, "category")
+     tempData = groupByKey(data, "category")
     }
+//sorting the data as per sequence no;
+tempData = sortByPosition(tempData);
+//creating card Data
+    data.forEach(el => {
+        if(el.name.toLowerCase() != 'overview' && el.name.toLowerCase() != 'resources' ){
+            cardObj.image = el?.icon;
+            cardObj.key = el?.collectionName;
+            cardObj.label = el?.name;
+            cardObj.title = el?.cardLabel;
+            cardObj.message = el?.cardMessage;
+            cardObj.tooltip = el?.tooltip;
+            cardObj.link = el?.url;
+            cardArr.push(cardObj)
+            cardObj =     {
+                label: "",
+                key: "",
+                link: "",
+                title: "",
+                message: '',
+                tooltip: "",
+                image: "",
+              }
+        }
+        
+    
+    })
     res.status(200).json({
         success: true,
-        data: data
+        data: tempData,
+        card: cardArr
     })
 })
 
@@ -197,6 +234,14 @@ module.exports.delete = catchAsync(async (req, res) => {
 
 })
 
+const sortByPosition = (data) => {
+ for(let key in data){
+    data[key].sort((a, b) => {
+        return a.position - b.position;
+    });
+ }
+    return data 
+}
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
 

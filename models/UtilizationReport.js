@@ -35,10 +35,10 @@ const UtilizationReportProjectSchema = new Schema({
   isActive: { type: Boolean, default: 1 },
 });
 const CategoryWiseDataSchema = new Schema({
-  category_name: { type: String },
-  grantUtilised: { type: String },
-  numberOfProjects: { type: String },
-  totalProjectCost: { type: String }
+  category_name: { type: String, default:'' },
+  grantUtilised: { type: String , default:''},
+  numberOfProjects: { type: String, default:'' },
+  totalProjectCost: { type: String, default:'' }
 });
 
 const UtilizationReportSchema = new Schema(
@@ -51,13 +51,27 @@ const UtilizationReportSchema = new Schema(
       unUtilizedPrevYr: { type: Number, default: 0 },
       receivedDuringYr: { type: Number, default: 0 },
       expDuringYr: {
-        type: Number,
+        type: Number, default: 0
       },
-      closingBal: { type: String },
+      closingBal: { type: String, default:0 },
     },
-    projects: { type: [UtilizationReportProjectSchema], default: [] },
-    categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [] },
-    categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [] },
+    projects: { type: [UtilizationReportProjectSchema] },
+    categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [
+      {
+        category_name: 0 ,
+        grantUtilised : 0 ,
+        numberOfProjects : 0 ,
+        totalProjectCost: 0 
+      }
+    ] },
+    categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [
+      {
+        category_name: 0 ,
+        grantUtilised : 0 ,
+        numberOfProjects : 0 ,
+        totalProjectCost: 0 
+      }
+    ] },
     // asked year from ulb
     financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
@@ -80,7 +94,7 @@ const UtilizationReportSchema = new Schema(
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
-    isDraft: { type: Boolean, default: 0 },
+    isDraft: { type: Boolean, default: true },
     declaration:{ type: Boolean, default: 0 },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
