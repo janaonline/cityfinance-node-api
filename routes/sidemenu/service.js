@@ -155,23 +155,26 @@ data.forEach((el,)=> {
     }
 
     data.forEach(el => {
-        cardObj.image = el?.icon;
-        cardObj.key = el?.collectionName;
-        cardObj.label = el?.name;
-        cardObj.title = el?.cardLabel;
-        cardObj.message = el?.cardMessage;
-        cardObj.tooltip = el?.tooltip;
-        cardObj.link = el?.url;
-        cardArr.push(cardObj)
-        cardObj =     {
-            label: "",
-            key: "",
-            link: "",
-            title: "",
-            message: '',
-            tooltip: "",
-            image: "",
-          }
+        if(el.name.toLowerCase() != 'overview' && el.name.toLowerCase() != 'resources' ){
+            cardObj.image = el?.icon;
+            cardObj.key = el?.collectionName;
+            cardObj.label = el?.name;
+            cardObj.title = el?.cardLabel;
+            cardObj.message = el?.cardMessage;
+            cardObj.tooltip = el?.tooltip;
+            cardObj.link = el?.url;
+            cardArr.push(cardObj)
+            cardObj =     {
+                label: "",
+                key: "",
+                link: "",
+                title: "",
+                message: '',
+                tooltip: "",
+                image: "",
+              }
+        }
+        
     
     })
     res.status(200).json({
