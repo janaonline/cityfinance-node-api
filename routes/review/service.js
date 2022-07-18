@@ -12,9 +12,7 @@ function createDynamicColumns(collectionName){
         
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            columns = `Action Taken By Role,Rating,Cert URL,Cert Name,
-            Cert Date, Design year, Status, Draft, Reject Reason, Response File Name,
-            Response File URL, Created On, Modified On `;
+            columns = `Action Taken By Role,Rating,Cert URL,Cert Name, Cert Date, Design year, Status, Draft, Reject Reason, Response File Name, Response File URL, Created On, Modified On `;
         break;
 
 
@@ -26,30 +24,17 @@ function createDynamicColumns(collectionName){
 }
 
 function createDynamicElements(collectionName, entity) {
-    console.log(entity);
     switch(collectionName){
 
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            entity = ` ${entity.actionTakenByRole} ,
-                      ${entity.rating} ,
-                      ${entity.certUrl}  ,
-                      ${entity.certName}  ,
-                      ${entity.certDate}  ,
-                      ${entity.design_year}  ,
-                      ${entity.status}  ,
-                      ${entity.isDraft}  ,
-                      ${entity.rejectReason}  ,
-                      ${entity.responseFileName}  ,
-                      ${entity.responseFileUrl}  ,
-                      ${entity.createdAt}  ,
-                      ${entity.modifiedAt} `   
+            entity = ` ${entity.actionTakenByRole} , ${entity.rating} , ${entity.certUrl}  , ${entity.certName}  , ${entity.certDate}  , ${entity.design_year}  , ${entity.status}  , ${entity.isDraft}  , ${entity.rejectReason}  , ${entity.responseFileName}  , ${entity.responseFileUrl}  , ${entity.createdAt}  , ${entity.modifiedAt} `   
             break;
     }
     return entity;
 }
 
-function createDynamicQuery(collectionName, query3) {
+function createDynamicQuery(collectionName, oldQuery) {
     let query = {};
     switch(collectionName){
         case CollectionNames.odf: 
@@ -73,9 +58,9 @@ function createDynamicQuery(collectionName, query3) {
             query={};
             break;
     }
-
-    Object.assign(query3[query3.length -1].$project, query)
-    return query3;
+    //append the above query object to oldQuery object
+    Object.assign(oldQuery[oldQuery.length -1].$project, query)
+    return oldQuery;
 }
 
 module.exports.get = catchAsync( async(req,res) => {
@@ -153,8 +138,7 @@ if(csv){
     // Set approrpiate download headers
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    let fixedColumns = `ULB Name, City Finance Code, Census Code, ULB Type, State Name,
-                         Population, UA, Form Status, Form Filled Status,`;
+    let fixedColumns = `ULB Name, City Finance Code, Census Code, ULB Type, State Name, Population, UA, Form Status, Form Filled Status,`;
     let dynamicColumns = createDynamicColumns(collectionName);
 
 
@@ -186,7 +170,7 @@ if(csv){
                 "," +
                 el.filled +","+
 
-                dynamicElementData +","+
+                dynamicElementData +
                 
                 "\r\n"
             )
