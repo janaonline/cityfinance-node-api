@@ -1,6 +1,8 @@
 const GfcFormCollection = require('../../models/GfcFormCollection');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const ObjectId = require("mongoose").Types.ObjectId;
+const moment = require("moment");
+
 
 module.exports.createOrUpdateForm = async (req, res) => {
     try {
@@ -139,35 +141,83 @@ module.exports.getForm = async (req, res) => {
     }
 }
 
-module.exports.action = async ( req, res)=>{
-    const user = req.decoded,
-        data = req.body;
-    data['actionTakenBy'] = user._id;
-    data['actionTakenByRole'] = user.role;
-    const isGfc = data.isGfc;  // flag to check which collection to use 
-    let collection = isGfc ? GfcFormCollection : OdfFormCollection;
-   
-    let condition = {};
-    condition['ulb'] = ObjectId(data.ulb);
-    condition['design_year'] = ObjectId(data.design_year);
-    
-    const submittedForm = await collection.findOne(condition)
-    if (!submittedForm){//if submitted form is not found
-        res.status(404).json({
-            success: false,
-            message: "Form not found."
-        });
-    }
-    if (submittedForm.isDraft === false){
-        if (submittedForm.status !== 'PENDING'){
-            //TODO
-        } else {
+module.exports.getCSV = async (req, res)=>{
+    const { isGfc } = req.query;
+    let collection = (isGfc=== 'true') ? GfcFormCollection : OdfFormCollection;
+    let filename = "All Ulbs " + moment().format("DD-MMM-YY HH:MM:SS") + ".csv";
+    // Set approrpiate download headers
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
 
+    res.write(
+    `ULB Name,Census Code, Action Taken By Role,Rating,Cert URL,Cert Name,
+    Cert Date, Design year, Status, Draft, Reject Reason, Response File Name,
+    Response File URL, Created On, Modified On \r\n`
+    );
+    // Flush the headers before we start pushing the CSV content
+    res.flushHeaders();
+
+    let pipeline = [
+        {
+            $lookup:{
+                from:"ulbs",
+                localField: "ulb",
+                foreignField: "_id",
+                as:"ulbData"
+                }
+        },
+        {$unwind:"$ulbData"
         }
-    } else {
-        res.status(200).json({
-            status: true,
-            message: "Form not submitted."
-        })
-    }
+    ];
+
+    collection.aggregate(pipeline).exec((err, data) => {
+        if (err) {
+          res.json({
+            success: false,
+            msg: "Invalid Payload",
+            data: err.message,
+          });
+        } else {
+          for (let el of data) {
+            // el.natureOfUlb = el.natureOfUlb ? el.natureOfUlb : "";
+            // el.name = el.name ? el.name.toString().replace(/[,]/g, " | ") : "";
+            // el.location = el.location ? el.location : { lat: "NA", lng: "NA" };
+            
+            res.write(
+                el.ulbData.name +
+                "," +
+                el.ulbData.censusCode +
+                "," +
+                el.actionTakenByRole +
+                "," +
+                el.rating +
+                "," +
+                el.cert.url +
+                "," +
+                el.cert.name +
+                "," +
+                el.certDate +
+                "," +
+                el.design_year +
+                "," +
+                el.status +
+                "," +
+                el.isDraft +
+                "," +
+                el.rejectReason +
+                "," +
+                el.responseFile.name +
+                "," +
+                el.responseFile.url +
+                "," +
+                el.createdAt +
+                "," +
+                el.modifiedAt +
+                "\r\n"
+           );
+          }
+          res.end();
+        }
+      });
+
 }

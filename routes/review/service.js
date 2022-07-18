@@ -4,11 +4,84 @@ const CollectionNames = require('../../util/collectionName')
 const {calculateStatus} = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
-const Service = require('../../service')
+const Service = require('../../service');
+
+function createDynamicColumns(collectionName){
+    let columns = ``;
+    switch(collectionName){
+        
+        case CollectionNames.odf: 
+        case CollectionNames.gfc:
+            columns = `Action Taken By Role,Rating,Cert URL,Cert Name,
+            Cert Date, Design year, Status, Draft, Reject Reason, Response File Name,
+            Response File URL, Created On, Modified On `;
+        break;
+
+
+        default:
+            columns = '';
+            break;
+    }
+    return columns;
+}
+
+function createDynamicElements(collectionName, entity) {
+    console.log(entity);
+    switch(collectionName){
+
+        case CollectionNames.odf: 
+        case CollectionNames.gfc:
+            entity = ` ${entity.actionTakenByRole} ,
+                      ${entity.rating} ,
+                      ${entity.certUrl}  ,
+                      ${entity.certName}  ,
+                      ${entity.certDate}  ,
+                      ${entity.design_year}  ,
+                      ${entity.status}  ,
+                      ${entity.isDraft}  ,
+                      ${entity.rejectReason}  ,
+                      ${entity.responseFileName}  ,
+                      ${entity.responseFileUrl}  ,
+                      ${entity.createdAt}  ,
+                      ${entity.modifiedAt} `   
+            break;
+    }
+    return entity;
+}
+
+function createDynamicQuery(collectionName, query3) {
+    let query = {};
+    switch(collectionName){
+        case CollectionNames.odf: 
+        case CollectionNames.gfc:
+            query.actionTakenByRole = "$actionTakenByRole",
+            query.rating = "$rating",
+            query.certUrl = "$cert.url",
+            query.certName = "$cert.name",
+            query.certDate = "$certDate",
+            query.design_year = "$design_year",
+            query.status = "$status",
+            query.draft = "$isDraft",
+            query.rejectReason = "$rejectReason",
+            query.responseFileUrl = "$responseFile.url",
+            query.responseFileName = "$responseFile.name",
+            query.createdAt = "$createdAt",
+            query.modifiedAt = "$modifiedAt";
+            break;
+
+        default:
+            query={};
+            break;
+    }
+
+    Object.assign(query3[query3.length -1].$project, query)
+    return query3;
+}
 
 module.exports.get = catchAsync( async(req,res) => {
 let loggedInUserRole = req.decoded.role
    let filter = {};
+//    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
    let total;
     let design_year = req.query.design_year;
     let form = req.query.formId
@@ -22,9 +95,12 @@ let loggedInUserRole = req.decoded.role
     filter['ulbType'] = req.query.ulbType
     filter['UA'] = req.query.UA
     filter['status'] = req.query.status
+
+    // filled1 -> will be used for all the forms and Provisional of Annual accounts
+    // filled2 -> only for annual accounts -> audited section
     filter['filled1'] = req.query.filled1
     filter['filled2'] = req.query.filled2
-
+//filter
     if (filter["censusCode"]) {
         let code = filter["censusCode"];
         var digit = code.toString()[0];
@@ -46,6 +122,8 @@ let loggedInUserRole = req.decoded.role
         })
     }
     let formTab = await Sidemenu.findOne({_id: ObjectId(form)}).lean();
+    //path -> file of models
+    console.log(formTab, "----formTab");
 let path = formTab.path
 let collectionName = formTab.collectionName
 let isFormOptional = formTab.optional
@@ -75,13 +153,20 @@ if(csv){
     // Set approrpiate download headers
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    let fixedColumns = `ULB Name, City Finance Code, Census Code, ULB Type, State Name,
+                         Population, UA, Form Status, Form Filled Status,`;
+    let dynamicColumns = createDynamicColumns(collectionName);
+
+
     if(collectionName != CollectionNames.annual){
         res.write(
-            "ULB Name, City Finance Code, Census Code, ULB Type, State Name, Population, UA, Form Status, Form Filled Status \r\n"
+            `${fixedColumns} ${dynamicColumns} \r\n`
           );
-          
-          res.flushHeaders();
+        
+        res.flushHeaders();
         for(let el of data){
+            let dynamicElementData = createDynamicElements(collectionName,el);
+            
             res.write(
                 el.ulbName +
                 "," +
@@ -99,9 +184,11 @@ if(csv){
                 "," +
                 el.formStatus +
                 "," +
-                el.filled +
+                el.filled +","+
+
+                dynamicElementData +","+
+                
                 "\r\n"
-    
             )
         
         }
@@ -332,6 +419,9 @@ $match:{
     }
 }
 ]
+//appending dynamic query based on collectionName
+query_3 = createDynamicQuery(formName, query_3);
+
 query_notFilter_pagination.push(...query_3)
 
 query_Filter_total_count.push(...query_3)
