@@ -149,11 +149,12 @@ data.forEach((el,)=> {
     
 })        
 
-
     //group the data 
      tempData = groupByKey(data, "category")
     }
-
+//sorting the data as per sequence no;
+tempData = sortByPosition(tempData);
+//creating card Data
     data.forEach(el => {
         if(el.name.toLowerCase() != 'overview' && el.name.toLowerCase() != 'resources' ){
             cardObj.image = el?.icon;
@@ -233,6 +234,14 @@ module.exports.delete = catchAsync(async (req, res) => {
 
 })
 
+const sortByPosition = (data) => {
+ for(let key in data){
+    data[key].sort((a, b) => {
+        return a.position - b.position;
+    });
+ }
+    return data 
+}
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
 
