@@ -58,19 +58,44 @@ const UtilizationReportSchema = new Schema(
     projects: { type: [UtilizationReportProjectSchema] },
     categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [
       {
-        category_name: 0 ,
-        grantUtilised : 0 ,
-        numberOfProjects : 0 ,
-        totalProjectCost: 0 
-      }
+        category_name: "Sanitation",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Solid Waste Management",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
     ] },
     categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [
       {
-        category_name: 0 ,
-        grantUtilised : 0 ,
-        numberOfProjects : 0 ,
-        totalProjectCost: 0 
-      }
+        category_name: "Rejuvenation of Water Bodies",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Drinking Water",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Rainwater Harvesting",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Water Recycling",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+
     ] },
     // asked year from ulb
     financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },

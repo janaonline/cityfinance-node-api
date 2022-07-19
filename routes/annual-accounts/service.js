@@ -14,6 +14,7 @@ const UlbFinancialData = require('../../models/UlbFinancialData')
 const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
+const findPreviousYear = require('../../util/findPreviousYear')
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -866,6 +867,15 @@ waterRej: waterRejSubmit
 exports.getAccounts = async (req, res) => {
   try {
     let { design_year, ulb } = req.query;
+    let currYearData = await Year.findOne({_id: ObjectId(design_year)}).lean();
+    let prevYearVal;
+     prevYearVal = findPreviousYear(currYearData.year);
+     let prevYearData = await Year.findOne({year: prevYearVal }).lean();
+await AnnualAccountData.findOne({
+  ulb: ObjectId(ulb),
+  design_year: prevYearData._id
+}).select({})
+    
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
     let annualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
