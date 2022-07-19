@@ -476,7 +476,7 @@ module.exports.read2223 = catchAsync(async(req,res)=> {
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
-    sampleData.grantPosition.closingBal = fetchedData?.grantPosition?.closingBal
+    sampleData.grantPosition.unUtilizedPrevYr = fetchedData?.grantPosition?.closingBal
     console.log(sampleData)
     return res.status(200).json({
       success: true,
