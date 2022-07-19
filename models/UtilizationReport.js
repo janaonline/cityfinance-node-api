@@ -48,12 +48,12 @@ const UtilizationReportSchema = new Schema(
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
     grantType: { type: String, required: true, enum: ["Tied", "Untied"] },
     grantPosition: {
-      unUtilizedPrevYr: { type: Number, default: 0 },
-      receivedDuringYr: { type: Number, default: 0 },
+      unUtilizedPrevYr: { type: Number, default: null },
+      receivedDuringYr: { type: Number, default: null },
       expDuringYr: {
-        type: Number, default: 0
+        type: Number, default: null
       },
-      closingBal: { type: String, default:0 },
+      closingBal: { type: String, default:null },
     },
     projects: { type: [UtilizationReportProjectSchema] },
     categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [
