@@ -872,7 +872,6 @@ exports.getAccounts = async (req, res) => {
       design_year,
       isActive: true,
     }).select({ history: 0 });
-
     if (!annualAccountData) {
       return res.status(400).json({ msg: "No AnnualAccountData found" });
     }
