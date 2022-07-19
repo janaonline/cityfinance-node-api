@@ -4,6 +4,7 @@ const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const DUR = require('../../models/UtilizationReport')
 const SLB = require('../../models/XVFcGrantForm')
 const Ulb = require("../../models/Ulb");
+const User = require('../../models/User')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const catchAsync = require('../../util/catchAsync')
@@ -15,6 +16,8 @@ const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const findPreviousYear = require('../../util/findPreviousYear')
+const {calculateStatus} =require('../CommonActionAPI/service')
+const STATUS_LIST = require('../../util/newStatusList')
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -866,26 +869,49 @@ waterRej: waterRejSubmit
 })
 exports.getAccounts = async (req, res) => {
   try {
+    
     let { design_year, ulb } = req.query;
+    let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
     let currYearData = await Year.findOne({_id: ObjectId(design_year)}).lean();
     let prevYearVal;
      prevYearVal = findPreviousYear(currYearData.year);
      let prevYearData = await Year.findOne({year: prevYearVal }).lean();
-await AnnualAccountData.findOne({
+let prevStatus = await AnnualAccountData.findOne({
   ulb: ObjectId(ulb),
   design_year: prevYearData._id
-}).select({})
+}).select({status:1, isDraft:1, actionTakenByRole:1}).lean()
+
+let status = '' ;
+if(prevStatus){
+  status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft)
+}
+console.log(status)
     
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
-    let annualAccountData = await AnnualAccountData.findOne({
+    let annualAccountData = {}
+    annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year,
       isActive: true,
     }).select({ history: 0 });
+    if(!annualAccountData) {
+      annualAccountData = {}
+    
+      if(status == STATUS_LIST.In_Progress || status == STATUS_LIST.Rejected_By_MoHUA || status == STATUS_LIST.Rejected_By_State ){
+        annualAccountData['action'] = 'redirect'
+        annualAccountData['url'] = `Kindly submit Annual Accounts for the previous year at - ${req.currentUrl}/oldhome in order to Proceed. `;
+      }else if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Approved_By_MoHUA  ){
+        annualAccountData['action'] = 'not_show';
+        annualAccountData['url'] = ``;
+      }else if(status == STATUS_LIST.Under_Review_By_State ){
+        let nodalOfficerData = await User.findOne({role:"STATE", isNodalOfficer: true, state: ulbData.state}).lean()
+        annualAccountData['action'] = 'note';
+        annualAccountData['url'] = `Your Annual Accounts Form is not yet approved by your State Nodal Officer. Kindly contact on Phone - ${nodalOfficerData.mobile ?? N/A} or Email - ${nodalOfficerData.email}.`;
+      }
+      return res.status(200).json(annualAccountData);
 
-    if (!annualAccountData) {
-      return res.status(400).json({ msg: "No AnnualAccountData found" });
     }
+  
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
@@ -910,6 +936,7 @@ await AnnualAccountData.findOne({
       }
     }
 
+    
     return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);
