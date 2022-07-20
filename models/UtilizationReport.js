@@ -48,29 +48,54 @@ const UtilizationReportSchema = new Schema(
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
     grantType: { type: String, required: true, enum: ["Tied", "Untied"] },
     grantPosition: {
-      unUtilizedPrevYr: { type: Number, default: 0 },
-      receivedDuringYr: { type: Number, default: 0 },
+      unUtilizedPrevYr: { type: Number, default: null },
+      receivedDuringYr: { type: Number, default: null },
       expDuringYr: {
-        type: Number, default: 0
+        type: Number, default: null
       },
-      closingBal: { type: String, default:0 },
+      closingBal: { type: String, default:null },
     },
     projects: { type: [UtilizationReportProjectSchema] },
     categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [
       {
-        category_name: 0 ,
-        grantUtilised : 0 ,
-        numberOfProjects : 0 ,
-        totalProjectCost: 0 
-      }
+        category_name: "Sanitation",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Solid Waste Management",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
     ] },
     categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [
       {
-        category_name: 0 ,
-        grantUtilised : 0 ,
-        numberOfProjects : 0 ,
-        totalProjectCost: 0 
-      }
+        category_name: "Rejuvenation of Water Bodies",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Drinking Water",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Rainwater Harvesting",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Water Recycling",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+
     ] },
     // asked year from ulb
     financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
