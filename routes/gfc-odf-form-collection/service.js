@@ -129,7 +129,13 @@ module.exports.getForm = async (req, res) => {
         let collection = (isGfc=== 'true') ? GfcFormCollection : OdfFormCollection;
         if (ulb && design_year) {
             let form = await collection.findOne({ulb, design_year}).lean();
-  form.certDate = dateFormatter(form?.certDate);
+            if(!form){
+                return res.status(400).json({
+                    status: false,
+                    message: "Form not found!"
+                })
+            }
+            form.certDate = dateFormatter(form?.certDate);
             return res.status(200).json({
                 success: true,
                 data: form

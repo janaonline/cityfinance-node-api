@@ -6,5 +6,8 @@ module.exports = {
     "pfms":"PFMS",
     "propTaxUlb":"PTAX",
     "slb":"SLB",
-    "dur":"DUR"
+    "dur":"DUR",
+    "sfc":"SFC",
+    "propTaxState":"PTAXState"
+
 } 
