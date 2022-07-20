@@ -55,6 +55,10 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
     
+        if(formData["isUlbLinkedWithPFMS"] === null){
+            formData["isUlbLinkedWithPFMS"] = "";
+        }
+
         if(formData.ulb){
             formData['ulb'] = ObjectId(formData.ulb);
         }

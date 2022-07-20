@@ -28,8 +28,86 @@ module.exports.createOrUpdate = async (req, res) => {
     req.body.actionTakenByRole = req.decoded?.role;
     req.body.modifiedAt = new Date();
     //
+    let formData = {};
+    let data = req.body;
+    formData = {...data};
+    formData["actionTakenByRole"] = req.body.actionTakenByRole;
+    formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
+    
+    let condition = {};
+    condition.designYear = designYear;
+    condition.financialYear = financialYear;
+    condition.ulb = ulb;
+
+    if(req.body.ulb){
+      formData["ulb"] = ObjectId(ulb);
+    }
+    if(financialYear){
+      formData["financialYear"] = ObjectId(financialYear);
+    }
+    if(designYear){
+      formData["designYear"]  = ObjectId(designYear);
+    }
+    
+    
+    const submittedForm  = await UtilizationReport.findOne(condition);
+    if( submittedForm && !submittedForm.isDraft){// form already submitted
+      return res.status(200).json({
+        status: true,
+        message: "Form already submitted."
+      })
+    }
+    if(!submittedForm && !isDraft){// final submit in first attempt
+      const form = await UtilizationReport.create(formData);
+      if(form){
+        formData.createdAt = form.createdAt;
+        formData.modifiedAt = form.modifiedAt;
+
+        if(formData.projects.length >0){
+          for(let i=0; i< formData.projects.length; i++){
+            let project = formData.projects[i];
+            
+            project.modifiedAt = form.projects[i].modifiedAt;
+            project.createdAt =  form.projects[i].createdAt;
+            
+            if(project.category){
+              project.category = ObjectId(project.category)
+            }
+            if(project._id){
+              project._id = ObjectId(project._id);
+            }
+    
+          }
+        }
+    
+        const addedHistory = await UtilizationReport.findOneAndUpdate(
+          condition,
+          {$push: {"history": formData}},
+          {new: true, runValidators: true}
+        );
+        if(!addedHistory){
+          return res.status(400).json({
+            status: false,
+            message: "Form history not added"
+          })
+        } else {
+          return res.status(200).json({
+            status: true,
+            data: addedHistory
+          })
+        }
+      } else {
+        return res.status(400).json({
+          status: false,
+          message: "Form not submitted"
+        })
+      }
+    }
+
+
+
     let currentSavedUtilRep;
-    if (req.body?.status == "REJECTED") {
+    if (req.body?.isDraft === false) {
       req.body.status = "PENDING";
       req.body.rejectReason = null;
       currentSavedUtilRep = await UtilizationReport.findOne(
@@ -38,11 +116,14 @@ module.exports.createOrUpdate = async (req, res) => {
       );
     }
 
+
+
     let savedData;
     if (currentSavedUtilRep) {
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep } }
+        { $set: req.body, $push: { history: currentSavedUtilRep }},
+        {new: true, runValidators: true}
       );
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(
@@ -60,7 +141,7 @@ module.exports.createOrUpdate = async (req, res) => {
       await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
         msg: "Utilization Report Submitted Successfully!",
-        isCompleted: savedData.isDraft ? !savedData.isDraft : true,
+        isCompleted: !savedData.isDraft ,
       });
     } else {
       return res.status(400).json({
