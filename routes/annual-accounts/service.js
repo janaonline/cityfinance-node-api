@@ -899,7 +899,7 @@ if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Approved
   annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
 }else{
   annualAccountData['action'] = 'redirect'
-  annualAccountData['url'] = `Your previous Year's form status is - ${status} .Kindly submit Annual Accounts for the previous year at - <a href=${req.currentUrl}/oldhome>Click Here!</a> . `;
+  annualAccountData['url'] = `Your previous Year's form status is - ${status} .Kindly submit Annual Accounts for the previous year at - <a href=http://${ req.headers.host}/oldhome>Click Here!</a> . `;
 }
 let obj = annualAccountData;
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
