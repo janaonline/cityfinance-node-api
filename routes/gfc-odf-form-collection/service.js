@@ -3,8 +3,16 @@ const OdfFormCollection = require('../../models/OdfFormCollection');
 const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
 
+function dateFormatter(input){
+    console.log(input)
+    const t = new Date(input);
+    const date = ('0' + t.getDate()).slice(-2);
+    const month = ('0' + (t.getMonth() + 1)).slice(-2);
+    const year = t.getFullYear();
+    return `${year}-${month}-${date}`;
+}
 
-const dateFormatter = require('../../util/dateformatter')
+// const dateFormatter = require('../../util/dateformatter')
 module.exports.createOrUpdateForm = async (req, res) => {
     try {
         const data = req.body;
