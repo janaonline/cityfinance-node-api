@@ -883,21 +883,23 @@ let prevStatus = await AnnualAccountData.findOne({
 
 let status = '' ;
 if(prevStatus){
-  status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft)
+  status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft, "ULB")
 }
  let annualAccountData = {}
 console.log(status)
-let dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
+let dataCollection = {}
+ dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
 let dataSubmittedByOpenPage = false
-if(dataCollection.documents.hasOwnProperty("financial_year_2019_20") && (dataCollection.documents?.financial_year_2019_20?.pdf).length > 0){
+if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
   dataSubmittedByOpenPage = true
+  status = 'Submitted through Open Page'
 }
 if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Approved_By_MoHUA || dataSubmittedByOpenPage ){
   annualAccountData['action'] = 'not_show';
-  annualAccountData['url'] = ``;
+  annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
 }else{
   annualAccountData['action'] = 'redirect'
-  annualAccountData['url'] = `Kindly submit Annual Accounts for the previous year at - <a href=${req.currentUrl}/oldhome>Click Here!</a> . `;
+  annualAccountData['url'] = `Your previous Year's form status is - ${status} .Kindly submit Annual Accounts for the previous year at - <a href=${req.currentUrl}/oldhome>Click Here!</a> . `;
 }
 let obj = annualAccountData;
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
