@@ -12,6 +12,10 @@ router.get(
 );
 
 router.put('/financial-year/:_id', verifyToken, FinancialYear.put);
+
+router.get('/access', verifyToken, FinancialYear.access);
+
+
 router.post('/financial-year', verifyToken, FinancialYear.post);
 router.delete('/financial-year/:_id', verifyToken, FinancialYear.delete);
 module.exports = router;
