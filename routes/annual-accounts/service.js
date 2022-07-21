@@ -938,7 +938,7 @@ let obj = annualAccountData;
         }
       }
     }
-
+Object.assign(annualAccountData, obj)
     
     return res.status(200).json(annualAccountData);
   } catch (err) {
