@@ -122,7 +122,7 @@ module.exports.access = async function(req,res)  {
                 },
                 {
                     year:yearList[2],
-                    url: ulbProfileVerified ? "/ulbform2223/overview" : "/ulbform2223/profile-update"
+                    url: ulbProfileVerified ? "/ulbform2223/overview" : "/profile-update"
                 },
         
             ]
