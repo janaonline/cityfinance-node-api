@@ -4,7 +4,6 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
 
 function dateFormatter(input){
-    console.log(input)
     const t = new Date(input);
     const date = ('0' + t.getDate()).slice(-2);
     const month = ('0' + (t.getMonth() + 1)).slice(-2);
@@ -143,7 +142,9 @@ module.exports.getForm = async (req, res) => {
                     message: "Form not found!"
                 })
             }
-            form.certDate = dateFormatter(form?.certDate);
+            if(form.certDate !== null && form.certDate !== ""){
+                form.certDate = dateFormatter(form?.certDate);
+            }
             return res.status(200).json({
                 success: true,
                 data: form
