@@ -57,6 +57,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 const formSubmit = await collection.create(savedBody);
                 formData['createdAt'] = formSubmit.createdAt;
                 formData['modifiedAt'] = formSubmit.modifiedAt;
+                formData['certDate'] = formSubmit.certDate;
                     if (formSubmit) {//add history
                         let updateData = await collection.findOneAndUpdate(condition, 
                             {
@@ -109,7 +110,10 @@ module.exports.createOrUpdateForm = async (req, res) => {
         if (!data.isDraft){ //when form is submitted, save history
             const formSubmit = await collection.findOne(condition);
             formData['createdAt'] = formSubmit.createdAt;
-                formData['modifiedAt'] = new Date();
+            formData['modifiedAt'] = new Date();
+            if(formData['certDate'] === ""){
+                formData['certDate'] = null;
+            }
             let updateData = await collection.findOneAndUpdate(condition, 
                 { $push: { history: formData}, $set: formData },//todo
                 { returnDocument: "after" });
