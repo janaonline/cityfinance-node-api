@@ -33,8 +33,66 @@ exports.createUpdate = async (req, res) => {
     const ulb = req?.decoded.ulb;
     req.body.modifiedAt = new Date();
 
+
+    let formData = {};
+    let data = req.body;
+    formData = {...data};
+    formData["actionTakenByRole"] = req.body.actionTakenByRole;
+    formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
+    
+    let condition = {};
+    condition.design_year = design_year;
+    condition.ulb = ulb;
+
+    if(req.body.ulb){
+      formData["ulb"] = ObjectId(ulb);
+    }
+   
+    if(design_year){
+      formData["design_year"]  = ObjectId(design_year);
+    }
+    
+    const submittedForm  = await AnnualAccountData.findOne(condition);
+    if( submittedForm && !submittedForm.isDraft){// form already submitted
+      return res.status(200).json({
+        status: true,
+        message: "Form already submitted."
+      })
+    }
+    if(!submittedForm && !isDraft){// final submit in first attempt
+      const form = await AnnualAccountData.create(formData);
+      if(form){
+        formData.createdAt = form.createdAt;
+        formData.modifiedAt = form.modifiedAt;
+    
+        const addedHistory = await AnnualAccountData.findOneAndUpdate(
+          condition,
+          {$push: {"history": formData}},
+          {new: true, runValidators: true}
+        );
+        if(!addedHistory){
+          return res.status(400).json({
+            status: false,
+            message: "Form history not added."
+          })
+        } else {
+          return res.status(200).json({
+            status: true,
+            message: "form submitted",
+            data: addedHistory
+          })
+        }
+      } else {
+        return res.status(400).json({
+          status: false,
+          message: "Form not submitted"
+        })
+      }
+    }
+
+
     let currentAnnualAccounts;
-    if (req.body?.status == "REJECTED") {
+    if (req.body?.isDraft === false) {
       if (req.body.unAudited.submit_annual_accounts) {
         let proData = req.body.unAudited.provisional_data;
         for (const key in proData) {
@@ -74,7 +132,8 @@ exports.createUpdate = async (req, res) => {
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true },
-        { $set: req.body, $push: { history: currentAnnualAccounts } }
+        { $set: req.body, $push: { history: currentAnnualAccounts } },
+        {new: true, runValidators: true}
       );
     } else {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
