@@ -564,10 +564,10 @@ if(status == FORM_STATUS.Under_Review_By_MoHUA || status == FORM_STATUS.Approved
   obj['url'] = ``;
 }else if(status == FORM_STATUS.Under_Review_By_State){
   obj['action'] = 'note';
-  obj['url'] = `Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}`;
+  obj['url'] = `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}`;
 } else{
   obj['action'] = 'note'
-  obj['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=${req.get("origin")}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
+  obj['url'] = `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=${req.get("origin")}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
 }
   let condition = {
     ulb : ObjectId(ulb),
