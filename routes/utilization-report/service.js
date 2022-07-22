@@ -8,6 +8,7 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
+const {calculateStatus} = require('../CommonActionAPI/service')
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -528,12 +529,16 @@ exports.report = async (req, res) => {
 module.exports.read2223 = catchAsync(async(req,res)=> {
   let ulb = req.query.ulb;
   let design_year = req.query.design_year;
+
+  
   if(!ulb || !design_year){
     return res.status(400).json({
       success: false,
       message: "Data Missing"
     })
   }
+  let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+  let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
   let currentYear = await Year.findOne({_id: ObjectId(design_year)}).lean()
   // current year
   let currentYearVal = currentYear['year']
@@ -543,6 +548,27 @@ module.exports.read2223 = catchAsync(async(req,res)=> {
      
     prevYear = await Year.findOne({year: prevYearVal}).lean()
 
+    let prevData = await UtilizationReport.findOne({
+      ulb: ObjectId(ulb),
+      designYear: prevYear._id
+    }).select({status:1, isDraft:1, actionTakenByRole:1}).lean()
+    let status = ''
+if(!prevData){
+  status = 'Not Started'
+}else{
+  status = calculateStatus(prevData.status, prevData.actionTakenByRole, prevData.isDraft, "ULB")
+}
+let obj = {}
+if(status == FORM_STATUS.Under_Review_By_MoHUA || status == FORM_STATUS.Approved_By_MoHUA ){
+  obj['action'] = 'not_show';
+  obj['url'] = ``;
+}else if(status == FORM_STATUS.Under_Review_By_State){
+  obj['action'] = 'note';
+  obj['url'] = `Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}`;
+} else{
+  obj['action'] = 'note'
+  obj['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=${req.get("origin")}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
+}
   let condition = {
     ulb : ObjectId(ulb),
     designYear: ObjectId(currentYear._id)
@@ -559,6 +585,11 @@ module.exports.read2223 = catchAsync(async(req,res)=> {
     let sampleData = new UtilizationReport();
     sampleData.grantPosition.unUtilizedPrevYr = fetchedData?.grantPosition?.closingBal
     console.log(sampleData)
+    sampleData = sampleData.toObject()
+    // sampleData = sampleData.lean()
+    sampleData['url'] = obj['url']
+    sampleData['action'] = obj['action']
+    // Object.assign(sampleData,obj )
     return res.status(200).json({
       success: true,
       data: sampleData

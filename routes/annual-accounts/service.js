@@ -24,6 +24,7 @@ const time = () => {
   dt.setMinutes(dt.getMinutes() + 30);
   return dt;
 };
+
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
@@ -899,7 +900,7 @@ if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Approved
   annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
 }else{
   annualAccountData['action'] = 'redirect'
-  annualAccountData['url'] = `Your previous Year's form status is - ${status} .Kindly submit Annual Accounts for the previous year at - <a href=http://${ req.headers.host}/oldhome>Click Here!</a> . `;
+  annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${req.get("origin")}/upload-annual-accounts target="_blank">Click Here!</a> . `;
 }
 let obj = annualAccountData;
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
