@@ -4,7 +4,6 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
 
 function dateFormatter(input){
-    console.log(input)
     const t = new Date(input);
     const date = ('0' + t.getDate()).slice(-2);
     const month = ('0' + (t.getMonth() + 1)).slice(-2);
@@ -58,6 +57,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 const formSubmit = await collection.create(savedBody);
                 formData['createdAt'] = formSubmit.createdAt;
                 formData['modifiedAt'] = formSubmit.modifiedAt;
+                formData['certDate'] = formSubmit.certDate;
                     if (formSubmit) {//add history
                         let updateData = await collection.findOneAndUpdate(condition, 
                             {
@@ -110,7 +110,10 @@ module.exports.createOrUpdateForm = async (req, res) => {
         if (!data.isDraft){ //when form is submitted, save history
             const formSubmit = await collection.findOne(condition);
             formData['createdAt'] = formSubmit.createdAt;
-                formData['modifiedAt'] = new Date();
+            formData['modifiedAt'] = new Date();
+            if(formData['certDate'] === ""){
+                formData['certDate'] = null;
+            }
             let updateData = await collection.findOneAndUpdate(condition, 
                 { $push: { history: formData}, $set: formData },//todo
                 { returnDocument: "after" });
@@ -143,7 +146,9 @@ module.exports.getForm = async (req, res) => {
                     message: "Form not found!"
                 })
             }
-            form.certDate = dateFormatter(form?.certDate);
+            if(form.certDate !== null && form.certDate !== ""){
+                form.certDate = dateFormatter(form?.certDate);
+            }
             return res.status(200).json({
                 success: true,
                 data: form
