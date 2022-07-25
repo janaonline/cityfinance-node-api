@@ -24,6 +24,7 @@ const time = () => {
   dt.setMinutes(dt.getMinutes() + 30);
   return dt;
 };
+
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
@@ -942,32 +943,35 @@ let prevStatus = await AnnualAccountData.findOne({
 
 let status = '' ;
 if(prevStatus){
-  status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft)
+  status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft, "ULB")
 }
+ let annualAccountData = {}
 console.log(status)
-    
+let dataCollection = {}
+ dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
+let dataSubmittedByOpenPage = false
+if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
+  dataSubmittedByOpenPage = true
+  status = 'Submitted through Open Page'
+}
+if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Under_Review_By_State  || status == STATUS_LIST.Approved_By_MoHUA || dataSubmittedByOpenPage ){
+  annualAccountData['action'] = 'not_show';
+  annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
+}else{
+  annualAccountData['action'] = 'redirect'
+  annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${req.get("origin")}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+}
+let obj = annualAccountData;
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
-    let annualAccountData = {}
+   
     annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year,
       isActive: true,
     }).select({ history: 0 });
     if(!annualAccountData) {
-      annualAccountData = {}
-    
-      if(status == STATUS_LIST.In_Progress || status == STATUS_LIST.Rejected_By_MoHUA || status == STATUS_LIST.Rejected_By_State ){
-        annualAccountData['action'] = 'redirect'
-        annualAccountData['url'] = `Kindly submit Annual Accounts for the previous year at - ${req.currentUrl}/oldhome in order to Proceed. `;
-      }else if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Approved_By_MoHUA  ){
-        annualAccountData['action'] = 'not_show';
-        annualAccountData['url'] = ``;
-      }else if(status == STATUS_LIST.Under_Review_By_State ){
-        let nodalOfficerData = await User.findOne({role:"STATE", isNodalOfficer: true, state: ulbData.state}).lean()
-        annualAccountData['action'] = 'note';
-        annualAccountData['url'] = `Your Annual Accounts Form is not yet approved by your State Nodal Officer. Kindly contact on Phone - ${nodalOfficerData.mobile ?? N/A} or Email - ${nodalOfficerData.email}.`;
-      }
-      return res.status(400).json(annualAccountData);
+
+      return res.status(400).json(obj);
 
     }
   
@@ -994,7 +998,7 @@ console.log(status)
         }
       }
     }
-
+Object.assign(annualAccountData, obj)
     
     return res.status(200).json(annualAccountData);
   } catch (err) {

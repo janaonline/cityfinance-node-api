@@ -12,10 +12,10 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
     switch(formType){
         case "ULB":
             switch (true) {
-                case status == 'PENDING' && actionTakenByRole == 'ULB' && isDraft:
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
                     return StatusList.In_Progress
                     break;
-                case status == 'PENDING' && actionTakenByRole == 'ULB' && !isDraft:
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
                     return StatusList.Under_Review_By_State
                     break;
                 case status == 'APPROVED' && actionTakenByRole == 'STATE' && !isDraft:

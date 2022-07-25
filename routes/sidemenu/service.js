@@ -58,7 +58,7 @@ const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole) => 
     let status = modelName == 'XVFcGrantULBForm' ? formData?.waterManagement?.status  : formData.status;
     let actionTakenByRole = formData.actionTakenByRole;
     let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
-    let tooltip = calculateStatus(status, actionTakenByRole, isDraft);
+    let tooltip = calculateStatus(status, actionTakenByRole, isDraft,loggedInUserRole );
     let tick = calculateTick(tooltip,loggedInUserRole)
 
     return {
