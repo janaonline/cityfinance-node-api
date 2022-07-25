@@ -84,7 +84,8 @@ module.exports.get = catchAsync(async (req, res) => {
         message: '',
         tooltip: "",
         image: "",
-        background_image:""
+        background_image:"",
+        color:{}
       }
     if (!role || !year || !_id)
         return res.status(400).json({
@@ -166,6 +167,7 @@ tempData = sortByPosition(tempData);
             cardObj.tooltip = el?.tooltip;
             cardObj.link = el?.url;
             cardObj.background_image = el?.background_image;
+            cardObj.color = el?.color;
             cardArr.push(cardObj)
             cardObj =     {
                 label: "",
@@ -175,6 +177,8 @@ tempData = sortByPosition(tempData);
                 message: '',
                 tooltip: "",
                 image: "",
+                background_image:"",
+                color:{},
               }
         }
         

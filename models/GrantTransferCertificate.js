@@ -32,7 +32,7 @@ const grantTransferCertificateSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Year" 
     },
-    cert: pdfSchema(),
+    file: pdfSchema(),
     isDraft:{ type: Boolean, default: false },
     status:{
         type: String,
@@ -66,6 +66,6 @@ const grantTransferCertificateSchema = new Schema({
     timestamps:{createdAt:"createdAt", updatedAt:"modifiedAt"}
 })
 
-grantTransferCertificateSchema.index({state: 1, design_year:1},{unique: true});
+grantTransferCertificateSchema.index({state: 1, design_year:1, year:1, installment: 1, type: 1},{unique: true});
 
 module.exports = mongoose.model('GrantTransferCertificate', grantTransferCertificateSchema);
