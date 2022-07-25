@@ -895,7 +895,7 @@ if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollecti
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
-if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Approved_By_MoHUA || dataSubmittedByOpenPage ){
+if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Under_Review_By_State  || status == STATUS_LIST.Approved_By_MoHUA || dataSubmittedByOpenPage ){
   annualAccountData['action'] = 'not_show';
   annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
 }else{
