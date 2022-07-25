@@ -271,7 +271,8 @@ if(csv){
  return res.status(200).json({
      success: true,
      data: data,
-     total: total
+     total: total,
+     title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
  })
 
 

@@ -11,6 +11,12 @@ router.get(
     Sidemenu.get
 );
 
+router.get(
+    '/menulist',
+    verifyToken,
+    Sidemenu.list
+);
+
 
 //post
 router.post(

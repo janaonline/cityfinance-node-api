@@ -187,6 +187,29 @@ tempData = sortByPosition(tempData);
     })
 })
 
+module.exports.list = catchAsync(async (req,res) => {
+    let role = req.query.role;
+    let design_year = req.query.design_year;
+
+    let condition = {
+        role: role,
+        year: ObjectId(design_year),
+        isForm: true,
+        isActive: true
+
+    }
+    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1});
+    data = data.filter((value, index, self) =>
+  index === self.findIndex((t) => (
+    t.collectionName === value.collectionName
+  ))
+)
+    res.status(200).json({
+        success: true,
+        data: data
+    })
+} )
+
 module.exports.post = catchAsync(async (req, res) => {
     let data = req.body;
     if (!data.name || !data.url || !data.role || !data.position || !data.year) {
