@@ -5,7 +5,7 @@ const {calculateStatus} = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
-
+const List = require('../../util/15thFCstatus')
 function createDynamicColumns(collectionName){
     let columns = ``;
     switch(collectionName){
@@ -77,10 +77,32 @@ function createDynamicQuery(collectionName, oldQuery) {
 module.exports.get = catchAsync( async(req,res) => {
     let loggedInUserRole = req.decoded.role
     let filter = {};
+    const ulbColumnNames = {
+        sNo: "S No.",
+        ulbName:"ULB Name",
+        stateName:"State Name",
+        censusCode:"Census/SB Code",
+        ulbType:"ULB Type",
+        populationType: "Population Type",
+        UA:"UA",
+        formStatus:"Form Status",
+    }
+    const stateColumnNames = {
+        sNo: "S No.",
+        stateName:"State Name",
+        formStatus:"Form Status"
+
+    }
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
     let total;
     let design_year = req.query.design_year;
     let form = req.query.formId
+    if(!design_year || !form){
+        return res.status(400).json({
+            success: false,
+            message:"Missing FormId or Design Year"
+        })
+    }
     let skip = req.query.skip ? parseInt(req.query.skip) : 0
     let limit = req.query.limit ? parseInt(req.query.limit) : 10
     let csv = req.query.csv == "true"
@@ -272,6 +294,10 @@ if(csv){
      success: true,
      data: data,
      total: total,
+     columnNames: formType =='ULB' ? ulbColumnNames : stateColumnNames,
+     statusList: formType =='ULB' ? List.ulbFormStatus : List.stateFormStatus,
+     ulbType : formType =='ULB' ? List.ulbType : {},
+     populationType : formType =='ULB' ? List.populationType : {},
      title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
  })
 
@@ -451,6 +477,13 @@ switch(userRole){
                     state_id:"$state._id",
                     stateName:"$state.name",
                     formId:"$_id",
+                    populationType: {
+                        $cond: {
+                        if: { $gt: ["$ulb.population", 1000000] },
+                        then: "Million Plus" ,
+                        else: "Non Million",
+                        },
+                    },
                     isDraft: formName == CollectionNames.slb ? {$not: ["$isCompleted"]} : "$isDraft",
                     status:"$status",
                     actionTakenByRole:"$actionTakenByRole",
