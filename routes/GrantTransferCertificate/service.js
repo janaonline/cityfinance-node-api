@@ -1,5 +1,7 @@
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
+const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
+
 
 function response(form, res, successMsg, errMsg){
     if(form){
@@ -23,12 +25,90 @@ module.exports.getForm = async (req, res) =>{
         condition.design_year = data.design_year;
         condition.state = data.state;
 
-    
-        const form = await GrantTransferCertificate.find(condition,{history:0});
+        const prevFormData = await StateGTCCertificate.findOne({
+            state:data.state,
+            design_year: ObjectId("606aaf854dff55e6c075d219"),
+            installment:1
+        }).lean();
+        let obj = {
+                type: "",
+                file:{
+                    name:"",
+                    url:""
+                },
+                year:"",
+                state:"",
+                design_year:"",
+                rejectReason:"",
+                status:"",
+                installment:""
+            };
+        let result = [];
+        if(prevFormData){
+            
+            if(prevFormData.hasOwnProperty("million_tied")){
+                obj["type"] = "million_tied";
+                obj["file"]["name"] = prevFormData["million_tied"]["pdfName"];
+                obj["file"]["url"] = prevFormData["million_tied"]["pdfUrl"];
+                obj["year"] = prevFormData["design_year"];
+                obj["state"] = prevFormData["state"];
+                obj["design_year"] = "606aafb14dff55e6c075d3ae";
+                obj["rejectReason"] = prevFormData["million_tied"]["rejectReason"];
+                obj["status"] = prevFormData["million_tied"]["status"];
+                obj["installment"] = 2;
+                obj["key"] = `million_tied_2021-22_2`
+                result.push(JSON.parse(JSON.stringify(obj)));    
+            } 
+            if(prevFormData.hasOwnProperty("nonmillion_tied")) {
+                obj["type"] = "nonmillion_tied";
+                obj["file"]["name"] = prevFormData["nonmillion_tied"]["pdfName"];
+                obj["file"]["url"] = prevFormData["nonmillion_tied"]["pdfUrl"];
+                obj["year"] = prevFormData["design_year"];
+                obj["state"] = prevFormData["state"];
+                obj["design_year"] = "606aafb14dff55e6c075d3ae";
+                obj["rejectReason"] = prevFormData["nonmillion_tied"]["rejectReason"];
+                obj["status"] = prevFormData["nonmillion_tied"]["status"];
+                obj["installment"] = 2;
+                obj["key"] = `nonmillion_tied_2021-22_2`
+                result.push(JSON.parse(JSON.stringify(obj)))
+            } 
+            if(prevFormData.hasOwnProperty("nonmillion_untied")) {
+                obj["type"] = "nonmillion_untied";
+                obj["file"]["name"] = prevFormData["nonmillion_untied"]["pdfName"];
+                obj["file"]["url"] = prevFormData["nonmillion_untied"]["pdfUrl"];
+                obj["year"] = prevFormData["design_year"];
+                obj["state"] = prevFormData["state"];
+                obj["design_year"] = "606aafb14dff55e6c075d3ae";
+                obj["rejectReason"] = prevFormData["nonmillion_untied"]["rejectReason"];
+                obj["status"] = prevFormData["nonmillion_untied"]["status"];
+                obj["installment"] = 2;
+                obj["key"] = `nonmillion_untied_2021-22_2`
+                result.push(JSON.parse(JSON.stringify(obj)))
+            }
+        
+        }
+        let form = await GrantTransferCertificate.find(condition,{history:0}).lean();
+        form = JSON.parse(JSON.stringify(form))
+        form.forEach((entity)=>{
+
+            if(entity.year.toString() == "606aadac4dff55e6c075c507"){
+                entity.key = `${entity.type}_2020-21_${entity.installment}`
+            } 
+
+            if(entity.year.toString() == ObjectId("606aaf854dff55e6c075d219")){
+                entity.key = `${entity.type}_2021-22_${entity.installment}`
+            } 
+            
+            if(entity.year.toString() == "606aafb14dff55e6c075d3ae"){
+                entity.key = `${entity.type}_2022-23_${entity.installment}`
+            }
+            
+        })
         if (form) {
+            let data = [...form,...result]
             return res.status(200).json({
                 status: true,
-                data: form
+                data,
             });
         } else {
             return res.status(200).json({
