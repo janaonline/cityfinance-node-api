@@ -954,13 +954,19 @@ if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollecti
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
-if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Under_Review_By_State  || status == STATUS_LIST.Approved_By_MoHUA || dataSubmittedByOpenPage ){
-  annualAccountData['action'] = 'not_show';
-  annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
+if(!ulbData.access_2122){
+  obj['action'] = 'not_show';
+  obj['url'] = ``;
 }else{
-  annualAccountData['action'] = 'redirect'
-  annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${req.get("origin")}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+  if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Under_Review_By_State  || status == STATUS_LIST.Approved_By_MoHUA || dataSubmittedByOpenPage ){
+    annualAccountData['action'] = 'not_show';
+    annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
+  }else{
+    annualAccountData['action'] = 'redirect'
+    annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${req.get("origin")}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+  }
 }
+
 let obj = annualAccountData;
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
    
