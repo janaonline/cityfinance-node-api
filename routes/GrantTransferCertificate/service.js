@@ -28,7 +28,7 @@ module.exports.getForm = async (req, res) =>{
         const prevFormData = await StateGTCCertificate.findOne({
             state:data.state,
             design_year: ObjectId("606aaf854dff55e6c075d219"),
-            installment:1
+            installment:2
         }).lean();
         let obj = {
                 type: "",
@@ -46,7 +46,7 @@ module.exports.getForm = async (req, res) =>{
         let result = [];
         if(prevFormData){
             
-            if(prevFormData.hasOwnProperty("million_tied")){
+            if(prevFormData?.million_tied){
                 obj["type"] = "million_tied";
                 obj["file"]["name"] = prevFormData["million_tied"]["pdfName"];
                 obj["file"]["url"] = prevFormData["million_tied"]["pdfUrl"];
@@ -59,7 +59,7 @@ module.exports.getForm = async (req, res) =>{
                 obj["key"] = `million_tied_2021-22_2`
                 result.push(JSON.parse(JSON.stringify(obj)));    
             } 
-            if(prevFormData.hasOwnProperty("nonmillion_tied")) {
+            if(prevFormData?.nonmillion_tied) {
                 obj["type"] = "nonmillion_tied";
                 obj["file"]["name"] = prevFormData["nonmillion_tied"]["pdfName"];
                 obj["file"]["url"] = prevFormData["nonmillion_tied"]["pdfUrl"];
@@ -72,7 +72,7 @@ module.exports.getForm = async (req, res) =>{
                 obj["key"] = `nonmillion_tied_2021-22_2`
                 result.push(JSON.parse(JSON.stringify(obj)))
             } 
-            if(prevFormData.hasOwnProperty("nonmillion_untied")) {
+            if(prevFormData?.nonmillion_untied) {
                 obj["type"] = "nonmillion_untied";
                 obj["file"]["name"] = prevFormData["nonmillion_untied"]["pdfName"];
                 obj["file"]["url"] = prevFormData["nonmillion_untied"]["pdfUrl"];
