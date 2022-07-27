@@ -3,6 +3,7 @@ const ulbledgers = require('../../models/UlbLedger');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
 const User = require('../../models/User')
+const Ulb = require('../../models/Ulb')
 module.exports.get = async function (req, res) {
     let query = {};
     query['isActive'] = true;
@@ -102,16 +103,22 @@ module.exports.access = async function(req,res)  {
         },
 
     ]
-   
+ 
     const entity_id = req.decoded._id;
     let arr = []
     switch (role) {
         case "ULB":
           
             let userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
-            // let ulbData = await Ulb.findOne({_id: userData.ulb}).lean();
+            let ulbData = await Ulb.findOne({_id: userData.ulb}).lean();
+            let access_2021 =  ulbData?.access_2021,
+              access_2122 =  ulbData?.access_2122,
+               access_2223 =  ulbData?.access_2223,
+                access_2324 =  ulbData?.access_2324,
+                 access_2425 =  ulbData?.access_2425
+            
             let ulbProfileVerified = userData.isVerified2223;
-            let ULB_arr = [
+            const ULB_arr = [
                 {
                     year:yearList[0],
                     url:"/fc_grant"
@@ -126,7 +133,12 @@ module.exports.access = async function(req,res)  {
                 },
         
             ]
-            arr = ULB_arr 
+          let outputArr = []
+          if(access_2021) outputArr.push(ULB_arr[0])
+          if(access_2122) outputArr.push(ULB_arr[1])
+          if(access_2223) outputArr.push(ULB_arr[2])
+          
+            arr = outputArr 
             break;
             case "STATE":
             arr = STATE_arr
