@@ -165,14 +165,13 @@ data.forEach((el,)=> {
 
             if(entity.sequence === 1){//first entry
                 entity.prevUrl = null;
-                entity.nextUrl = tempData[i+1].url;
+                entity.nextUrl = `../${tempData[i+1].url}`;
             } else if(i === (tempData.length-1)){//last entry
-                entity.prevUrl =  tempData[i-1].url;
+                entity.prevUrl =  `../${tempData[i-1].url}`;
                 entity.nextUrl = null;
             } else {
-                entity.prevUrl = tempData[i-1].url;
-                entity.nextUrl = tempData[i+1].url;
-    
+                entity.prevUrl = `../${tempData[i-1].url}`;
+                entity.nextUrl = `../${tempData[i+1].url}`;
             }
             result2.push(entity);
             
@@ -300,6 +299,4 @@ const sortByPosition = (data) => {
 }
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
-const sortBySequence = (data) =>{
-    
-}
+
