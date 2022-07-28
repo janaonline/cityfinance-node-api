@@ -28,7 +28,12 @@ module.exports.getForm = async (req, res) =>{
         const prevFormData = await StateGTCCertificate.findOne({
             state:data.state,
             design_year: ObjectId("606aaf854dff55e6c075d219"),
-            installment:2
+            installment:"2"
+        }).lean();
+        const prevFormDataMillionTied = await StateGTCCertificate.findOne({
+                state: data.state,
+                design_year: ObjectId("606aaf854dff55e6c075d219"),
+                installment: "1"
         }).lean();
         let obj = {
                 type: "",
@@ -44,21 +49,36 @@ module.exports.getForm = async (req, res) =>{
                 installment:""
             };
         let result = [];
+        if(prevFormDataMillionTied){
+            if(prevFormDataMillionTied?.million_tied){
+                obj["type"] = "million_tied";
+                obj["file"]["name"] = prevFormDataMillionTied["million_tied"]["pdfName"];
+                obj["file"]["url"] = prevFormDataMillionTied["million_tied"]["pdfUrl"];
+                obj["year"] = prevFormDataMillionTied["design_year"];
+                obj["state"] = prevFormDataMillionTied["state"];
+                obj["design_year"] = "606aafb14dff55e6c075d3ae";
+                obj["rejectReason"] = prevFormDataMillionTied["million_tied"]["rejectReason"];
+                obj["status"] = prevFormDataMillionTied["million_tied"]["status"];
+                obj["installment"] = 1;
+                obj["key"] = `million_tied_2021-22_1`
+                result.push(JSON.parse(JSON.stringify(obj)));    
+            }
+        }
         if(prevFormData){
             
-            if(prevFormData?.million_tied){
-                obj["type"] = "million_tied";
-                obj["file"]["name"] = prevFormData["million_tied"]["pdfName"];
-                obj["file"]["url"] = prevFormData["million_tied"]["pdfUrl"];
-                obj["year"] = prevFormData["design_year"];
-                obj["state"] = prevFormData["state"];
-                obj["design_year"] = "606aafb14dff55e6c075d3ae";
-                obj["rejectReason"] = prevFormData["million_tied"]["rejectReason"];
-                obj["status"] = prevFormData["million_tied"]["status"];
-                obj["installment"] = 2;
-                obj["key"] = `million_tied_2021-22_2`
-                result.push(JSON.parse(JSON.stringify(obj)));    
-            } 
+            // if(prevFormData?.million_tied){
+            //     obj["type"] = "million_tied";
+            //     obj["file"]["name"] = prevFormData["million_tied"]["pdfName"];
+            //     obj["file"]["url"] = prevFormData["million_tied"]["pdfUrl"];
+            //     obj["year"] = prevFormData["design_year"];
+            //     obj["state"] = prevFormData["state"];
+            //     obj["design_year"] = "606aafb14dff55e6c075d3ae";
+            //     obj["rejectReason"] = prevFormData["million_tied"]["rejectReason"];
+            //     obj["status"] = prevFormData["million_tied"]["status"];
+            //     obj["installment"] = 2;
+            //     obj["key"] = `million_tied_2021-22_2`
+            //     result.push(JSON.parse(JSON.stringify(obj)));    
+            // } 
             if(prevFormData?.nonmillion_tied) {
                 obj["type"] = "nonmillion_tied";
                 obj["file"]["name"] = prevFormData["nonmillion_tied"]["pdfName"];
