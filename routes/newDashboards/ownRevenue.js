@@ -1013,7 +1013,7 @@ const tableData = async (req, res) => {
 
       {
         $project:{
-          totalRevenue: propertyTax ? "$totalProperty" : "$totalOwnRevenue",
+          totalRevenue: propertyTax ? "$totalProperty" :  {$divide:["$totalOwnRevenue","$totalExpense"]},
           totalProperty:1,
           totalOwnRevenue:1,
           totalExpense:1,
