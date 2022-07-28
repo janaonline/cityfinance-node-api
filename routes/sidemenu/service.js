@@ -85,7 +85,10 @@ module.exports.get = catchAsync(async (req, res) => {
         tooltip: "",
         image: "",
         background_image:"",
-        color:{}
+        color:{
+            color_1:"",
+            color_2:""
+        }
       }
     if (!role || !year || !_id)
         return res.status(400).json({
@@ -150,7 +153,31 @@ data.forEach((el,)=> {
   
     
 })        
+// adding previous and next url
+// data.sort() sequence
+    tempData = data.sort((a, b)=>{
+        return a.sequence - b.sequence;
+    })
+    let result2=[];
+    for(let i =0 ; i< tempData.length; i++){
+        let entity = tempData[i];
+        if(entity?.sequence){
 
+            if(entity.sequence === 1){//first entry
+                entity.prevUrl = null;
+                entity.nextUrl = tempData[i+1].url;
+            } else if(i === (tempData.length-1)){//last entry
+                entity.prevUrl =  tempData[i-1].url;
+                entity.nextUrl = null;
+            } else {
+                entity.prevUrl = tempData[i-1].url;
+                entity.nextUrl = tempData[i+1].url;
+    
+            }
+            result2.push(entity);
+            
+        }
+    }
     //group the data 
      tempData = groupByKey(data, "category")
     }
@@ -273,4 +300,6 @@ const sortByPosition = (data) => {
 }
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
-
+const sortBySequence = (data) =>{
+    
+}

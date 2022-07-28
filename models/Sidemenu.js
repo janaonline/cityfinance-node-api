@@ -14,6 +14,13 @@ const SidemenuSchema = new Schema({
     collectionName: {type: String},
     path: {type: String},
     optional: {type: Boolean},
+    color:{
+        color_1: {type:String},
+        color_2: {type:String}, 
+    },
+    prevUrl: {type: String},
+    nextUrl: {type: String},
+    sequence:{type: Number},
     year: {type : Schema.Types.ObjectId, ref: "Year", required: true }
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 
