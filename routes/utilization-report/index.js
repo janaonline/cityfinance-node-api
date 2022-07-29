@@ -35,7 +35,7 @@ router.get("/utilization-report", verifyToken, read);
 router.get("/utilization-report/:financialYear/:designYear", verifyToken, readById);
 router.get("/utilization-report/:financialYear/:designYear/:ulb_id", verifyToken, readById);
 //update by id
-router.put("/utilization-report/:financialYear", verifyToken, update);
+router.put("/utilization-reutilization-reportport/:financialYear", verifyToken, update);
 //delete by id
 router.delete("/utilization-report/:financialYear", verifyToken, remove);
 //action

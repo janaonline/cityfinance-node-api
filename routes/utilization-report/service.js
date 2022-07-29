@@ -34,7 +34,9 @@ module.exports.createOrUpdate = async (req, res) => {
     formData = {...data};
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
-    
+    if(req.decoded.role == 'ULB'){
+      formData['status'] = 'PENDING'
+    }
     let condition = {};
     condition.designYear = designYear;
     condition.financialYear = financialYear;
@@ -292,9 +294,7 @@ exports.readById = async (req, res) => {
 exports.update = async (req, res) => {
   const { financialYear } = req.params;
   const ulb = req.decoded?._id;
-  if(req.decoded.role == 'ULB'){
-    req.body['status'] = 'PENDING'
-  }
+ 
   try {
     const report = await UtilizationReport.findOneAndUpdate(
       { ulb, financialYear, isActive: true },
