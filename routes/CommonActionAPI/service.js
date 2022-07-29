@@ -6,7 +6,9 @@ const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const FormsMaster = require('../../models/FormsMaster');
 const StatusList = require('../../util/newStatusList')
-// debugger
+
+const ObjectId = require("mongoose").Types.ObjectId;
+const Sidemenu = require('../../models/Sidemenu');
 
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch(formType){
@@ -94,7 +96,7 @@ function getCollectionName(formName){
 module.exports.getForms = async (req, res)=>{
     try {
         const data = req.body;
-        const masterForm = await FormsMaster.findOne({_id: data.formId});
+        const masterForm = await Sidemenu.findOne({_id: data.formId});
         const collection = getCollectionName(masterForm.name);
         const forms = await collection.find({ulb :{$in : data.ulb}, design_year: data.design_year})
         if(!forms){
@@ -122,7 +124,16 @@ module.exports.updateForm = async (req, res) =>{
         const data = req.body;
         const user = req.decoded;
         let ulb="";
-        const masterForm = await FormsMaster.findOne({_id: data.formId});
+        let singleUlb; //to return updated response for single ulb
+        const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)});
+
+        if(!masterForm){
+            return res.status(400).json({
+                status: false,
+                message: "Form not found"
+            })
+        }
+        
         const collection = getCollectionName(masterForm.name);
         const formData = {};
         const { role: actionTakenByRole, _id: actionTakenBy } = user;
@@ -130,9 +141,21 @@ module.exports.updateForm = async (req, res) =>{
         formData['actionTakenBy'] = actionTakenBy;
         formData['status'] = data.status;
         
+        if(data.ulb.length === 1){
+            formData['rejectReason'] = data.rejectReason;
+            formData['responseFile'] = data.responseFile;
+            // formData['responseFile']['url'] = data.responseFile.url;
+        }
+        //Check if role is other than STATE or MoHUA
+        if(actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA"){
+            return res.status(401).json({
+                status: false,
+                message: "Not authorized"
+            })
+        }
         const forms = await collection.find({ulb :{$in : data.ulb}, design_year: data.design_year})
         let form={}, numberOfFormsUpdated=0;
-        for(let i=0; i < data.ulb.length; i++){
+        for(let i=0; i < data.ulb.length; i++){//update status and add history
             ulb = data.ulb[i];
             form = forms[i];
             if(form === undefined) break;
@@ -140,18 +163,38 @@ module.exports.updateForm = async (req, res) =>{
             form['actionTakenBy'] = formData.actionTakenBy;
             form['status'] = formData.status;
             form['modifiedAt'] = new Date();
-         
+            if(data.ulb.length === 1){//add reject reason for single ulb entry
+                form['rejectReason'] = formData.rejectReason;
+                form['responseFile'] = formData.responseFile;
+                // form['responseFile']['name'] = formData.responseFile.name;
+            }
             form['history'] = undefined;
             let updatedForm = await collection.findOneAndUpdate(
                 {ulb , design_year: data.design_year},
-                {$set: formData, $push: {history: form }}
-            );
+                {$set: formData, $push: {history: form }},
+                {new: true, runValidators: true}
+                );
             numberOfFormsUpdated++;
+            singleUlb = updatedForm;
         }
-        return res.status(200).json({
-            status: true,
-            data: `${numberOfFormsUpdated} forms ${data.status}`
-        });
+        if(numberOfFormsUpdated === 1){
+            return res.status(200).json({
+                status: true,
+                message: `${numberOfFormsUpdated} form ${data.status}`,
+                data: singleUlb
+
+            });
+        } else if(numberOfFormsUpdated>1){
+            return res.status(200).json({
+                status: true,
+                message: `${numberOfFormsUpdated} forms ${data.status}`,
+            })
+        } else {
+            return res.status(200).json({
+                status: false,
+                message: "No forms updated"
+            })
+        }
     } catch (error) {
         console.log(error)
         return res.status(400).json({
