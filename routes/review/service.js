@@ -74,6 +74,42 @@ function createDynamicQuery(collectionName, oldQuery) {
     return oldQuery;
 }
 
+function canTakeActionOrViewOnly(data, userRole) {
+    let status = data['formStatus'];
+switch (true) {
+    case status == STATUS_LIST.Not_Started:
+        return false;
+        break;
+        case status == STATUS_LIST.In_Progress:
+        return false;
+        break;
+        case status == STATUS_LIST.Under_Review_By_State && userRole == 'STATE':
+            return true;
+            break;
+            case status == STATUS_LIST.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+                return false;
+                break;
+                case status == STATUS_LIST.Rejected_By_State:
+                return false;
+                break;
+                case status == STATUS_LIST.Rejected_By_MoHUA:
+                return false;
+                break;
+                case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'STATE' :
+                return false;
+                break;
+                case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'MoHUA' :
+                return true;
+                break;
+                case status == STATUS_LIST.Approved_By_MoHUA  :
+                    return false;
+                    break;
+
+    default:
+        break;
+}
+}
+
 module.exports.get = catchAsync( async(req,res) => {
     let loggedInUserRole = req.decoded.role
     let filter = {};
@@ -169,9 +205,10 @@ total = allData[1].length ? allData[1][0]['total'] : 0
 console.log(total,data)
  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
-    collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState )
+    collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
  data.forEach(el => {
   el['formStatus'] =  calculateStatus(el.status, el.actionTakenByRole, el.isDraft, formType);   
+  el['cantakeAction'] = canTakeActionOrViewOnly(el, loggedInUserRole)
 })
  
 // if users clicks on Download Button - the data gets downloaded as per the applied filter
