@@ -98,7 +98,10 @@ module.exports.getForms = async (req, res)=>{
         const data = req.body;
         const masterForm = await Sidemenu.findOne({_id: data.formId});
         const collection = getCollectionName(masterForm.name);
-        const forms = await collection.find({ulb :{$in : data.ulb}, design_year: data.design_year})
+        const forms = await collection.find(
+            {ulb :{$in : data.ulb}, design_year: data.design_year},
+            {history:0}
+            )
         if(!forms){
             return res.status(400).json({
                 status: false,
