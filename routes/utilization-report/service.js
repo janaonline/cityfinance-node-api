@@ -292,6 +292,9 @@ exports.readById = async (req, res) => {
 exports.update = async (req, res) => {
   const { financialYear } = req.params;
   const ulb = req.decoded?._id;
+  if(req.decoded.role == 'ULB'){
+    req.body['status'] = 'PENDING'
+  }
   try {
     const report = await UtilizationReport.findOneAndUpdate(
       { ulb, financialYear, isActive: true },
