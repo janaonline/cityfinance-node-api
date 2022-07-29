@@ -40,7 +40,7 @@ exports.createUpdate = async (req, res) => {
     formData = {...data};
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
-    
+    formData['status'] = 'PENDING'
     let condition = {};
     condition.design_year = design_year;
     condition.ulb = ulb;
