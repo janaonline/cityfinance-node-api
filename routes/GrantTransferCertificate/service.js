@@ -66,19 +66,6 @@ module.exports.getForm = async (req, res) =>{
         }
         if(prevFormData){
             
-            // if(prevFormData?.million_tied){
-            //     obj["type"] = "million_tied";
-            //     obj["file"]["name"] = prevFormData["million_tied"]["pdfName"];
-            //     obj["file"]["url"] = prevFormData["million_tied"]["pdfUrl"];
-            //     obj["year"] = prevFormData["design_year"];
-            //     obj["state"] = prevFormData["state"];
-            //     obj["design_year"] = "606aafb14dff55e6c075d3ae";
-            //     obj["rejectReason"] = prevFormData["million_tied"]["rejectReason"];
-            //     obj["status"] = prevFormData["million_tied"]["status"];
-            //     obj["installment"] = 2;
-            //     obj["key"] = `million_tied_2021-22_2`
-            //     result.push(JSON.parse(JSON.stringify(obj)));    
-            // } 
             if(prevFormData?.nonmillion_tied) {
                 obj["type"] = "nonmillion_tied";
                 obj["file"]["name"] = prevFormData["nonmillion_tied"]["pdfName"];
@@ -124,18 +111,30 @@ module.exports.getForm = async (req, res) =>{
             }
             
         })
-        if (form) {
-            let data = [...form,...result]
-            return res.status(200).json({
-                status: true,
-                data,
-            });
-        } else {
-            return res.status(200).json({
-                status: true,
-                message: "Form not found"
-            });
+        //remove old form data if present in new form using key
+        for(let i = 0; i< result.length; i++){
+            for( let j = 0; j< form.length; j++){
+                if(result[i]?.key === form[j]?.key){
+                    result.splice(i,1);
+                }
+            }
         }
+
+        let forms = [...form,...result]
+            if(forms){
+                return res.status(200).json({
+                    status: true,
+                    data: forms,
+                });
+
+            } else{
+                return res.status(200).json({
+                    status: true,
+                    message: "Form not found"
+                
+                })
+            }
+    
     } catch (error) {
         return res.status(400).json({
             status: false,
