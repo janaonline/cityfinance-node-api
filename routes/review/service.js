@@ -122,6 +122,10 @@ module.exports.get = catchAsync( async(req,res) => {
         populationType: "Population Type",
         UA:"UA",
         formStatus:"Form Status",
+        filled:"Filled Status",
+        filled_audited:"Audited Filled Status",
+        filled_provisional:"Provisional Filled Status",
+        action: "Action"
     }
     const stateColumnNames = {
         sNo: "S No.",
@@ -187,7 +191,13 @@ module.exports.get = catchAsync( async(req,res) => {
     //path -> file of models
     console.log(formTab, "----formTab");
 let path = formTab.path
-let collectionName = formTab.collectionName
+let collectionName = formTab.collectionName;
+if(collectionName == CollectionNames.annual){
+    delete ulbColumnNames['filled']
+}else{
+    delete ulbColumnNames.filled_audited
+    delete ulbColumnNames.filled_provisional
+}
 let isFormOptional = formTab.optional
  const model = require(`../../models/${path}`)
  let newFilter = await Service.mapFilterNew(filter);
