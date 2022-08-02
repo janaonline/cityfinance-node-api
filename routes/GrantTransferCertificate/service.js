@@ -46,7 +46,8 @@ module.exports.getForm = async (req, res) =>{
                 design_year:"",
                 rejectReason:"",
                 status:"",
-                installment:""
+                installment:"",
+                createdAt:"",
             };
         let result = [];
         if(prevFormDataMillionTied){
@@ -60,6 +61,7 @@ module.exports.getForm = async (req, res) =>{
                 obj["rejectReason"] = prevFormDataMillionTied["million_tied"]["rejectReason"];
                 obj["status"] = prevFormDataMillionTied["million_tied"]["status"];
                 obj["installment"] = 1;
+                obj['createdAt'] = prevFormDataMillionTied['createdAt'];
                 obj["key"] = `million_tied_2021-22_1`
                 result.push(JSON.parse(JSON.stringify(obj)));    
             }
@@ -76,6 +78,7 @@ module.exports.getForm = async (req, res) =>{
                 obj["rejectReason"] = prevFormData["nonmillion_tied"]["rejectReason"];
                 obj["status"] = prevFormData["nonmillion_tied"]["status"];
                 obj["installment"] = 2;
+                obj['createdAt'] = prevFormData['createdAt'];
                 obj["key"] = `nonmillion_tied_2021-22_2`
                 result.push(JSON.parse(JSON.stringify(obj)))
             } 
@@ -89,6 +92,7 @@ module.exports.getForm = async (req, res) =>{
                 obj["rejectReason"] = prevFormData["nonmillion_untied"]["rejectReason"];
                 obj["status"] = prevFormData["nonmillion_untied"]["status"];
                 obj["installment"] = 2;
+                obj['createdAt'] = prevFormData['createdAt'];
                 obj["key"] = `nonmillion_untied_2021-22_2`
                 result.push(JSON.parse(JSON.stringify(obj)))
             }
