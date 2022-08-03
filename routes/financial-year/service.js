@@ -2,6 +2,8 @@ const FinancialYear = require('../../models/FinancialYear');
 const ulbledgers = require('../../models/UlbLedger');
 const Response = require('../../service').response;
 const ObjectId = require('mongoose').Types.ObjectId;
+const User = require('../../models/User')
+const Ulb = require('../../models/Ulb')
 module.exports.get = async function (req, res) {
     let query = {};
     query['isActive'] = true;
@@ -75,3 +77,86 @@ module.exports.delete = async function (req, res) {
         return Response.DbError(res, e, e.message);
     }
 };
+
+module.exports.access = async function(req,res)  {
+  const yearList = ['2020-21','2021-22','2022-23','2023-24','2024-25']
+    const role = req.decoded.role;
+    const MoHUA_arr = [
+        {
+            year:yearList[0],
+            url:"/fc_grant"
+        },
+        {
+            year:yearList[1],
+            url:"/mohua"
+        },
+
+    ]
+    const STATE_arr = [
+        {
+            year:yearList[0],
+            url:"/fc_grant"
+        },
+        {
+            year:yearList[1],
+            url:"/stateform/dashboard"
+        },
+        {
+            year:yearList[2],
+            url:"/stateform2223/dashboard"
+        },
+
+    ]
+ 
+    const entity_id = req.decoded._id;
+    let arr = []
+    switch (role) {
+        case "ULB":
+          
+            let userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
+            let ulbData = await Ulb.findOne({_id: userData.ulb}).lean();
+            let access_2021 =  ulbData?.access_2021,
+              access_2122 =  ulbData?.access_2122,
+               access_2223 =  ulbData?.access_2223,
+                access_2324 =  ulbData?.access_2324,
+                 access_2425 =  ulbData?.access_2425
+            
+            let ulbProfileVerified = userData.isVerified2223;
+            const ULB_arr = [
+                {
+                    year:yearList[0],
+                    url:"/fc_grant"
+                },
+                {
+                    year:yearList[1],
+                    url:"/ulbform/overview"
+                },
+                {
+                    year:yearList[2],
+                    url: ulbProfileVerified ? "/ulbform2223/overview" : "/profile-update"
+                },
+        
+            ]
+          let outputArr = []
+          if(access_2021) outputArr.push(ULB_arr[0])
+          if(access_2122) outputArr.push(ULB_arr[1])
+          if(access_2223) outputArr.push(ULB_arr[2])
+          
+            arr = outputArr 
+            break;
+            case "STATE":
+            arr = STATE_arr
+                break;
+                case "MoHUA":
+                    case "ADMIN":
+            arr = MoHUA_arr
+                    break;
+    
+        default:
+            break;
+    }
+   return res.status(200).json({
+    success: true,
+    data: arr
+   })
+}

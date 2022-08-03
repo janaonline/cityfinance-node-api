@@ -4,6 +4,7 @@ const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const DUR = require('../../models/UtilizationReport')
 const SLB = require('../../models/XVFcGrantForm')
 const Ulb = require("../../models/Ulb");
+const User = require('../../models/User')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const catchAsync = require('../../util/catchAsync')
@@ -14,12 +15,16 @@ const UlbFinancialData = require('../../models/UlbFinancialData')
 const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
+const findPreviousYear = require('../../util/findPreviousYear')
+const {calculateStatus} =require('../CommonActionAPI/service')
+const STATUS_LIST = require('../../util/newStatusList')
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
   dt.setMinutes(dt.getMinutes() + 30);
   return dt;
 };
+
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
@@ -29,8 +34,66 @@ exports.createUpdate = async (req, res) => {
     const ulb = req?.decoded.ulb;
     req.body.modifiedAt = new Date();
 
+
+    let formData = {};
+    let data = req.body;
+    formData = {...data};
+    formData["actionTakenByRole"] = req.body.actionTakenByRole;
+    formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
+    formData['status'] = 'PENDING'
+    let condition = {};
+    condition.design_year = design_year;
+    condition.ulb = ulb;
+
+    if(req.body.ulb){
+      formData["ulb"] = ObjectId(ulb);
+    }
+   
+    if(design_year){
+      formData["design_year"]  = ObjectId(design_year);
+    }
+    
+    const submittedForm  = await AnnualAccountData.findOne(condition);
+    if( submittedForm && !submittedForm.isDraft){// form already submitted
+      return res.status(200).json({
+        status: true,
+        message: "Form already submitted."
+      })
+    }
+    if(!submittedForm && !isDraft){// final submit in first attempt
+      const form = await AnnualAccountData.create(formData);
+      if(form){
+        formData.createdAt = form.createdAt;
+        formData.modifiedAt = form.modifiedAt;
+    
+        const addedHistory = await AnnualAccountData.findOneAndUpdate(
+          condition,
+          {$push: {"history": formData}},
+          {new: true, runValidators: true}
+        );
+        if(!addedHistory){
+          return res.status(400).json({
+            status: false,
+            message: "Form history not added."
+          })
+        } else {
+          return res.status(200).json({
+            status: true,
+            message: "form submitted",
+            data: addedHistory
+          })
+        }
+      } else {
+        return res.status(400).json({
+          status: false,
+          message: "Form not submitted"
+        })
+      }
+    }
+
+
     let currentAnnualAccounts;
-    if (req.body?.status == "REJECTED") {
+    if (req.body?.isDraft === false) {
       if (req.body.unAudited.submit_annual_accounts) {
         let proData = req.body.unAudited.provisional_data;
         for (const key in proData) {
@@ -70,7 +133,8 @@ exports.createUpdate = async (req, res) => {
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true },
-        { $set: req.body, $push: { history: currentAnnualAccounts } }
+        { $set: req.body, $push: { history: currentAnnualAccounts } },
+        {new: true, runValidators: true}
       );
     } else {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
@@ -84,7 +148,7 @@ exports.createUpdate = async (req, res) => {
       );
     }
 
-    await UpdateMasterSubmitForm(req, "annualAccounts");
+    // await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
       msg: "AnnualAccountData Submitted!",
@@ -865,17 +929,58 @@ waterRej: waterRejSubmit
 })
 exports.getAccounts = async (req, res) => {
   try {
+    
     let { design_year, ulb } = req.query;
+    let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+    let currYearData = await Year.findOne({_id: ObjectId(design_year)}).lean();
+    let prevYearVal;
+     prevYearVal = findPreviousYear(currYearData.year);
+     let prevYearData = await Year.findOne({year: prevYearVal }).lean();
+let prevStatus = await AnnualAccountData.findOne({
+  ulb: ObjectId(ulb),
+  design_year: prevYearData._id
+}).select({status:1, isDraft:1, actionTakenByRole:1}).lean()
+
+let status = '' ;
+if(prevStatus){
+  status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft, "ULB")
+}
+ let annualAccountData = {}
+console.log(status)
+let dataCollection = {}
+ dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
+let dataSubmittedByOpenPage = false
+if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
+  dataSubmittedByOpenPage = true
+  status = 'Submitted through Open Page'
+}
+if(!ulbData.access_2122){
+  obj['action'] = 'not_show';
+  obj['url'] = ``;
+}else{
+  if(status == STATUS_LIST.Under_Review_By_MoHUA || status == STATUS_LIST.Under_Review_By_State  || status == STATUS_LIST.Approved_By_MoHUA || dataSubmittedByOpenPage ){
+    annualAccountData['action'] = 'not_show';
+    annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
+  }else{
+    annualAccountData['action'] = 'redirect'
+    annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${req.get("origin")}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+  }
+}
+
+let obj = annualAccountData;
     if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
-    let annualAccountData = await AnnualAccountData.findOne({
+   
+    annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year,
       isActive: true,
     }).select({ history: 0 });
+    if(!annualAccountData) {
 
-    if (!annualAccountData) {
-      return res.status(400).json({ msg: "No AnnualAccountData found" });
+      return res.status(400).json(obj);
+
     }
+  
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
@@ -899,7 +1004,8 @@ exports.getAccounts = async (req, res) => {
         }
       }
     }
-
+Object.assign(annualAccountData, obj)
+    
     return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);

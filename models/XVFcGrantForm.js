@@ -25,6 +25,12 @@ const ContentPDFSchema = new Schema({
     message: { type: String, default: '' },
 });
 
+const pdfSchema = ()=>{
+    return {
+    name: { type: String},
+    url: { type: String}
+    }
+}
 const waterManagementSchema = new Schema({
     serviceLevel: {
         baseline: { 2021: { type: String, required: true } },
@@ -37,11 +43,16 @@ const waterManagementSchema = new Schema({
 
         },
         status: statusType(),
-        rejectReason: { type: String, default: '' },
+        rejectReason: { type: String, default: "" },
+        responseFile:pdfSchema(),
+
     },
     houseHoldCoveredPipedSupply: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
@@ -54,7 +65,10 @@ const waterManagementSchema = new Schema({
     },
     waterSuppliedPerDay: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
@@ -67,7 +81,10 @@ const waterManagementSchema = new Schema({
     },
     reduction: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
@@ -80,7 +97,10 @@ const waterManagementSchema = new Schema({
     },
     houseHoldCoveredWithSewerage: {
         baseline: { 2021: { type: String, required: true } },
-        actual: { 2021: { type: String } },
+        actual: {
+            2021: { type: String },
+            2122: { type: String }
+        },
         target: {
             2122: { type: String, required: true },
             2223: { type: String, required: true },
@@ -205,6 +225,7 @@ const XVFcGrantULBFormSchema = new Schema(
             default: null
         },
         history: { type: Array, default: [] },
+        population_slb: {type: Number},
         modifiedAt: { type: Date, default: Date.now },
         createdAt: { type: Date, default: Date.now },
         isActive: { type: Boolean, default: 1 },

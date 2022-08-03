@@ -12,25 +12,40 @@ const statusType = () => {
   };
 };
 
+const pdfSchema = ()=>{
+  return {
+    url: { type: String},
+    name: { type: String}
+  }
+}
+
 const ContentSchema = new Schema({
   pdf: { url: { type: String }, name: { type: String } },
   excel: { url: { type: String }, name: { type: String } },
   status: statusType(),
-  rejectReason: { type: String },
+  rejectReason: { type: String, default:"" },
+  responseFile: pdfSchema(),
   _id: false,
 });
 
 const ContentPDFSchema = new Schema({
   pdf: { url: { type: String }, name: { type: String } },
   status: statusType(),
-  rejectReason: { type: String },
+  rejectReason: { type: String, default:"" },
+  responseFile: pdfSchema(),
   _id: false,
 });
 
 const provisionalDataSchema = new Schema({
   bal_sheet: { type: ContentSchema },
+  assets: {type: Number},
+  f_assets: {type: Number},
+  s_grant: {type: Number},
+  c_grant: {type: Number},
   bal_sheet_schedules: { type: ContentSchema },
   inc_exp: { type: ContentSchema },
+  revenue: {type: Number},
+  expense: {type: Number},
   inc_exp_schedules: { type: ContentSchema },
   cash_flow: { type: ContentSchema },
   auditor_report: { type: ContentPDFSchema },
@@ -90,7 +105,7 @@ const AnnualAccountDataSchema = new Schema(
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 AnnualAccountDataSchema.index(
-  { ulb: 1, design_year: 1, year: 1 },
+  { ulb: 1, design_year: 1},
   { unique: true }
 );
 module.exports = mongoose.model("AnnualAccountData", AnnualAccountDataSchema);

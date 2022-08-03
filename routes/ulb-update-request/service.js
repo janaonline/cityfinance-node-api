@@ -362,6 +362,7 @@ module.exports.create = async (req, res) => {
         try {
             let dulb, du;
             pObj['isRegistered'] = true;
+            pObj['isVerified2223'] = true;
             if (Object.keys(obj).length) {
                 dulb = await Ulb.update({ _id: ObjectId(ulb) }, { $set: obj });
             }
@@ -376,7 +377,7 @@ module.exports.create = async (req, res) => {
             mailOptions =     {
                 Destination: {
                   /* required */
-                  ToAddresses: [pObj.email]
+                  ToAddresses: [userData.email]
                 },
                 Message: {
                   /* required */

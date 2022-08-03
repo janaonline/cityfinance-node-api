@@ -136,6 +136,11 @@ router.use(ActionPlans);
 const LinkPfmsState = require("./LinkPfmsState");
 router.use(LinkPfmsState);
 
+
+//SideMenu
+const Sidemenu = require("./sidemenu");
+router.use(Sidemenu);
+
 const StateMasterForm = require("./stateMasterForm");
 router.use('/stateMasterForm', StateMasterForm);
 
@@ -169,7 +174,49 @@ router.use(fileUpload);
 const resourceDashboard = require("./resourceDashboard");
 router.use("/resourceDashboard", resourceDashboard);
 
+//form-ratings
+const Rating = require('./Ratings');
+router.use('/ratings', Rating);
+
+//Gfc-odf-form-Collection
+const GfcOdfFormCollection = require('./gfc-odf-form-collection');
+router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
+
+// Link-PFMS
+const LinkPFMS = require('./LinkPfms');
+router.use('/link-pfms', LinkPFMS);
+
+//Common-Action API
+const CommonActionAPI = require('./CommonActionAPI');
+router.use('/common-action', CommonActionAPI);
+
+//forms-master
+const FormsMaster = require('./FormsMaster');
+router.use('/forms-master', FormsMaster);
+//forms-master category
+const FormsMasterCategory = require('./FormsMasterCategory');
+router.use('/forms-master-category', FormsMasterCategory);
+
+//property-tax-floor-rate
+const PropertyTaxFloorRate = require('./PropertyTaxFloorRate');
+router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
+
+//state-finance-commission-formation
+const StateFinanceCommissionFormation = require('./state-finance-commission-formation');
+router.use('/state-finance-commission-formation', StateFinanceCommissionFormation);
+
+//calculate-recommendation
+const calculateRecommendation = require('./Scoring');
+router.use('/calculate-recommendation', calculateRecommendation);
+
+//grant-transfer-certificate
+const GrantTransferCertificate = require('./GrantTransferCertificate');
+router.use('/grant-transfer-certificate', GrantTransferCertificate);
+
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
+
+const review = require("./review");
+router.use(review);
 
 module.exports = router;
