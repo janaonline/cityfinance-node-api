@@ -252,7 +252,7 @@ module.exports.createForm = async (req, res) =>{
         
         const {_id:actionTakenBy, role: actionTakenByRole} = user;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
-        formData['actionTakenByRole'] = actionTakenByRole;
+        formData['actionTakenByRole'] = "STATE";
         
         const condition = {};
         condition.state = data.state;
