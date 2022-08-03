@@ -190,33 +190,10 @@ router.use('/link-pfms', LinkPFMS);
 const CommonActionAPI = require('./CommonActionAPI');
 router.use('/common-action', CommonActionAPI);
 
-//forms-master
-const FormsMaster = require('./FormsMaster');
-router.use('/forms-master', FormsMaster);
-//forms-master category
-const FormsMasterCategory = require('./FormsMasterCategory');
-router.use('/forms-master-category', FormsMasterCategory);
-
-//property-tax-floor-rate
-const PropertyTaxFloorRate = require('./PropertyTaxFloorRate');
-router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
-
-//state-finance-commission-formation
-const StateFinanceCommissionFormation = require('./state-finance-commission-formation');
-router.use('/state-finance-commission-formation', StateFinanceCommissionFormation);
-
-//calculate-recommendation
-const calculateRecommendation = require('./Scoring');
-router.use('/calculate-recommendation', calculateRecommendation);
-
-//grant-transfer-certificate
-const GrantTransferCertificate = require('./GrantTransferCertificate');
-router.use('/grant-transfer-certificate', GrantTransferCertificate);
 
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
-const review = require("./review");
-router.use(review);
+
 
 module.exports = router;
