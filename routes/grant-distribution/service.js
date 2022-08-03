@@ -30,6 +30,7 @@ exports.getGrantDistribution = async (req, res) => {
 };
 
 exports.getTemplate = async (req, res) => {
+  let formData = req.query;
   let { state } = req?.decoded;
   try {
     const ulbs = await ULB.find({
@@ -40,6 +41,18 @@ exports.getTemplate = async (req, res) => {
     if (ulbs.length === 0) {
       return Response.BadRequest(res, "No ULB found");
     }
+    if(formData.year === "606aafb14dff55e6c075d3ae"){
+      formData.year = '2022-23';
+    }else if( formData.year === "606aaf854dff55e6c075d219"){
+      formData.year = '2021-22';
+    }
+    let typeInstallmentYear = `${formData.type}_${formData.year}_${formData.installment}`;
+    let field = {
+      
+      code: "ULB Census Code/ULB Code",
+      name: "ULB Name",
+      amount: `Grant Amount - ${typeInstallmentYear} `,
+    };
 
     let data = [];
     ulbs.forEach((element) => {
@@ -51,12 +64,10 @@ exports.getTemplate = async (req, res) => {
         data.push(obj);
       }
     });
-    let field = {
-      code: "ULB Census Code/ULB Code",
-      name: "ULB Name",
-      amount: "Grant Amount",
-    };
+    
+
     let xlsData = await Service.dataFormating(data, field);
+    
     return res.xls("grant_template.xlsx", xlsData);
   } catch (err) {
     console.error(err.message);
@@ -66,6 +77,7 @@ exports.getTemplate = async (req, res) => {
 
 exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
+  let formData = req.query;
   let state = req.decoded?.state;
   try {
     downloadFileToDisk(url, async (err, file) => {
@@ -81,7 +93,7 @@ exports.uploadTemplate = async (req, res) => {
       if (XslData.length == 0)
         return Response.BadRequest(res, "No File Found/Data");
       // validate data
-      const notValid = await validate(XslData);
+      const notValid = await validate(XslData, formData);
       if (notValid) {
         let field = {
           ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
@@ -164,17 +176,23 @@ function readXlsxFile(file) {
   });
 }
 
-async function validate(data) {
+async function validate(data, formData) {
   let ulbCodes = [],
     ulbNames = [];
   const code = "ulb census code/ulb code";
   const name = "ulb name";
   const amount = "grant amount";
+  if(formData.year === "606aafb14dff55e6c075d3ae"){
+    formData.year = '2022-23';
+  }else if( formData.year === "606aaf854dff55e6c075d219"){
+    formData.year = '2021-22';
+  }
+  const type = `${formData.type}_${formData.year}_${formData.installment}`
 
   const keys = Object.keys(data[0]);
   if (
-    !(keys.includes(code) && keys.includes(name) && keys.includes(amount)) ||
-    keys.length !== 3
+    !(keys.includes(code) && keys.includes(name) && keys.includes(amount) &&
+     keys.includes(type)) || keys.length !== 4
   ) {
     data.forEach((element) => {
       element.Errors = "Incorrect Format,";
