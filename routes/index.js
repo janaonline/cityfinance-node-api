@@ -213,6 +213,10 @@ router.use('/calculate-recommendation', calculateRecommendation);
 const GrantTransferCertificate = require('./GrantTransferCertificate');
 router.use('/grant-transfer-certificate', GrantTransferCertificate);
 
+//28-slbs
+const TwentyEightSlbsForm = require('./TwentyEightSlbsForm');
+router.use('/28-slbs', TwentyEightSlbsForm);
+
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
