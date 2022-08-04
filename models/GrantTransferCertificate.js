@@ -53,10 +53,12 @@ const grantTransferCertificateSchema = new Schema({
         required: true
     },
     createdAt:{
-        type: Date
+        type: Date,
+        default: Date.now
     },
     modifiedAt:{
-        type: Date
+        type: Date,
+        default: Date.now
     },
     history:{
         type: Array,
