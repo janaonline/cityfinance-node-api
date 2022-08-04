@@ -37,7 +37,15 @@ var DataCollectionFormSchema = new Schema({
                 excel :[{name:{ type : String,required : true},url:{type : String,required : true}}]        
             },
             default:null
-        },   
+        }, 
+        financial_year_2019_20:{
+            type:{
+                pdf :[{name:{ type : String,required : true},url:{type : String,required : true}}],
+                excel :[{name:{ type : String,required : true},url:{type : String,required : true}}]        
+            },
+            default:null
+        }, 
+   
     },
     state:{type: Schema.Types.ObjectId, ref: 'State',required : true},
     modifiedAt : { type: Date, default : Date.now },

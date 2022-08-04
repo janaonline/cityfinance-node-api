@@ -1154,7 +1154,7 @@ let getExcel = async (req, res, data) => {
       br: { col: 8, row: 2 }
     });
     // worksheet.addImage(imageId2, "A1:F3");
-    data.columns.unshift({ display_name: "S.no", key: "sno" });
+    data.columns.push({ display_name: "S.no", key: "sno" });
     worksheet.columns = data.columns.map((value) => {
       let temp = {
         header: value.display_name,

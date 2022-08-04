@@ -1,6 +1,13 @@
 require("./dbConnect");
 const moment = require("moment");
 
+const pdfSchema = () =>{
+  return {
+    url:{type: String},
+    name: {type: String}
+  }
+}
+
 const UtilizationReportProjectSchema = new Schema({
   category: {
     type: Schema.Types.ObjectId,
@@ -28,10 +35,10 @@ const UtilizationReportProjectSchema = new Schema({
   isActive: { type: Boolean, default: 1 },
 });
 const CategoryWiseDataSchema = new Schema({
-  category_name: { type: String },
-  grantUtilised: { type: String },
-  numberOfProjects: { type: String },
-  totalProjectCost: { type: String }
+  category_name: { type: String, default:'' },
+  grantUtilised: { type: String , default:''},
+  numberOfProjects: { type: String, default:'' },
+  totalProjectCost: { type: String, default:'' }
 });
 
 const UtilizationReportSchema = new Schema(
@@ -41,16 +48,55 @@ const UtilizationReportSchema = new Schema(
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
     grantType: { type: String, required: true, enum: ["Tied", "Untied"] },
     grantPosition: {
-      unUtilizedPrevYr: { type: Number, default: 0 },
-      receivedDuringYr: { type: Number, default: 0 },
+      unUtilizedPrevYr: { type: Number, default: null },
+      receivedDuringYr: { type: Number, default: null },
       expDuringYr: {
-        type: Number,
+        type: Number, default: null
       },
-      closingBal: { type: String },
+      closingBal: { type: String, default:null },
     },
-    projects: { type: [UtilizationReportProjectSchema], default: [] },
-    categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [] },
-    categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [] },
+    projects: { type: [UtilizationReportProjectSchema] },
+    categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [
+      {
+        category_name: "Sanitation",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Solid Waste Management",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    ] },
+    categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [
+      {
+        category_name: "Rejuvenation of Water Bodies",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Drinking Water",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Rainwater Harvesting",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+    {
+        category_name: "Water Recycling",
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
+    },
+
+    ] },
     // asked year from ulb
     financialYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
@@ -68,11 +114,13 @@ const UtilizationReportSchema = new Schema(
       default: null,
     },
     rejectReason: { type: String, default: "" },
+    responseFile: pdfSchema(),
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
-    isDraft: { type: Boolean, default: 0 },
+    isDraft: { type: Boolean, default: true },
+    declaration:{ type: Boolean, default: 0 },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

@@ -46,6 +46,7 @@ module.exports.login = async (req, res) => {
           ulb: user.ulb,
           isUA: role === "ULB" ? ulb.isUA : null,
           isMillionPlus: role === "ULB" ? ulb.isMillionPlus : null,
+          isUserVerified2223: user.isVerified2223
         },
         allYears,
       });

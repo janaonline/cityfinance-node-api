@@ -822,6 +822,27 @@ module.exports.updatepopulation = catchAsync(async(req,res)=> {
 }
 res.send('Done');
 })
+
+module.exports.updateyearkeys = catchAsync(async(req,res)=> {
+    const jsonArray = req.body.jsonArray; 
+    for(let el of jsonArray){
+        let ulbData = await Ulb.findOne({code:el['City Finance Code'] }).lean()  
+        if(ulbData){
+            ulbData['access_2122'] = false;
+             Ulb.updateOne({code:el['City Finance Code']}, ulbData, function (err, docs) {
+                if (err){
+                    console.log(err)
+                }
+                else{
+                    console.log("Updated Docs : ", docs);
+                }
+            })
+        }
+        
+    }
+    res.send('Done')
+
+})
 var download = function(data, _cb) {
     let url = data['Link'];
     let fileName = data['State'] + '_' + data['Year'] + '_' + data['Type'] + '_' + data['Installment'] + '.pdf' ;
