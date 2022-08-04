@@ -575,7 +575,7 @@ else{
     obj['url'] = `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}`;
   } else{
     obj['action'] = 'note'
-    obj['url'] = `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=${req.get("origin")}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
+    obj['url'] = `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=${req.headers.referer}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
   }
 }
 
