@@ -6,7 +6,7 @@ const statusType = () => {
   return {
     type: String,
     enum: {
-      values: ["PENDING", "APPROVED", "REJECTED","N/A"],
+      values: ["PENDING", "APPROVED", "REJECTED","N/A", null],
       message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
     },
   };
