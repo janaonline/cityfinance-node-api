@@ -935,6 +935,9 @@ exports.getAccounts = async (req, res) => {
   try {
     
     let { design_year, ulb } = req.query;
+    if(!ulb || ulb == null || ulb == 'null'){
+      ulb = req.decoded.ulb;
+    }
     let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
     let currYearData = await Year.findOne({_id: ObjectId(design_year)}).lean();
     let prevYearVal;
