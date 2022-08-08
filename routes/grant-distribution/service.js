@@ -179,21 +179,21 @@ function readXlsxFile(file) {
 async function validate(data, formData) {
   let ulbCodes = [],
     ulbNames = [];
-  const code = "ulb census code/ulb code";
-  const name = "ulb name";
-  const amount = "grant amount";
+  const code = "ULB Census Code/ULB Code";
+  const name = "ULB Name";
+  let amount = "Grant Amount";
   if(formData.year === "606aafb14dff55e6c075d3ae"){
     formData.year = '2022-23';
   }else if( formData.year === "606aaf854dff55e6c075d219"){
     formData.year = '2021-22';
   }
   const type = `${formData.type}_${formData.year}_${formData.installment}`
-
+  amount = `${amount} - ${type}`
   const keys = Object.keys(data[0]);
   if (
-    !(keys.includes(code) && keys.includes(name) && keys.includes(amount) &&
-     keys.includes(type)) || keys.length !== 4
-  ) {
+    !(keys.includes(code) && keys.includes(name) && keys.includes(amount) 
+       || keys.length !== 3
+  )) {
     data.forEach((element) => {
       element.Errors = "Incorrect Format,";
     });
