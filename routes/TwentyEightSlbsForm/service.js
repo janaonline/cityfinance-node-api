@@ -196,6 +196,19 @@ obj['type'] = el['type'];
 obj['actual']['value'] = "";
 obj['target_1']['value'] = "";
 dataArr.push(el)
+obj = {
+    _id: "",
+    question:"",
+    actual: {
+        year:prevYearData._id,
+        value:""
+    },
+    target_1: {
+        year:ObjectId(data.design_year),
+        value:""
+    },
+
+}
 })
            let output =  new TwentyEightSlbsForm();
            output['data'] = dataArr;
