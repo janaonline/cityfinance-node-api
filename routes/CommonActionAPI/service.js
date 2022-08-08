@@ -129,6 +129,12 @@ module.exports.updateForm = async (req, res) =>{
         let ulb="";
         let singleUlb; //to return updated response for single ulb
         const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)});
+        if(user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA'){
+          return  res.status(403).json({
+                success: false,
+                message:"Not AUthorized to perform this action"
+            })
+        }
 
         if(!masterForm){
             return res.status(400).json({
