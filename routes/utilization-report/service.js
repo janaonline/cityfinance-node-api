@@ -6,6 +6,9 @@ const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
+const Year = require('../../models/Year')
+const catchAsync = require('../../util/catchAsync')
+const {calculateStatus} = require('../CommonActionAPI/service')
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -26,8 +29,88 @@ module.exports.createOrUpdate = async (req, res) => {
     req.body.actionTakenByRole = req.decoded?.role;
     req.body.modifiedAt = new Date();
     //
+    let formData = {};
+    let data = req.body;
+    formData = {...data};
+    formData["actionTakenByRole"] = req.body.actionTakenByRole;
+    formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
+    if(req.decoded.role == 'ULB'){
+      formData['status'] = 'PENDING'
+    }
+    let condition = {};
+    condition.designYear = designYear;
+    condition.financialYear = financialYear;
+    condition.ulb = ulb;
+
+    if(req.body.ulb){
+      formData["ulb"] = ObjectId(ulb);
+    }
+    if(financialYear){
+      formData["financialYear"] = ObjectId(financialYear);
+    }
+    if(designYear){
+      formData["designYear"]  = ObjectId(designYear);
+    }
+    
+    
+    const submittedForm  = await UtilizationReport.findOne(condition);
+    if( submittedForm && !submittedForm.isDraft){// form already submitted
+      return res.status(200).json({
+        status: true,
+        message: "Form already submitted."
+      })
+    }
+    if(!submittedForm && !isDraft){// final submit in first attempt
+      const form = await UtilizationReport.create(formData);
+      if(form){
+        formData.createdAt = form.createdAt;
+        formData.modifiedAt = form.modifiedAt;
+
+        if(formData.projects.length >0){
+          for(let i=0; i< formData.projects.length; i++){
+            let project = formData.projects[i];
+            
+            project.modifiedAt = form.projects[i].modifiedAt;
+            project.createdAt =  form.projects[i].createdAt;
+            
+            if(project.category){
+              project.category = ObjectId(project.category)
+            }
+            if(project._id){
+              project._id = ObjectId(project._id);
+            }
+    
+          }
+        }
+    
+        const addedHistory = await UtilizationReport.findOneAndUpdate(
+          condition,
+          {$push: {"history": formData}},
+          {new: true, runValidators: true}
+        );
+        if(!addedHistory){
+          return res.status(400).json({
+            status: false,
+            message: "Form history not added"
+          })
+        } else {
+          return res.status(200).json({
+            status: true,
+            data: addedHistory
+          })
+        }
+      } else {
+        return res.status(400).json({
+          status: false,
+          message: "Form not submitted"
+        })
+      }
+    }
+
+
+
     let currentSavedUtilRep;
-    if (req.body?.status == "REJECTED") {
+    if (req.body?.isDraft === false) {
       req.body.status = "PENDING";
       req.body.rejectReason = null;
       currentSavedUtilRep = await UtilizationReport.findOne(
@@ -36,11 +119,14 @@ module.exports.createOrUpdate = async (req, res) => {
       );
     }
 
+
+
     let savedData;
     if (currentSavedUtilRep) {
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep } }
+        { $set: req.body, $push: { history: currentSavedUtilRep }},
+        {new: true, runValidators: true}
       );
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(
@@ -58,7 +144,7 @@ module.exports.createOrUpdate = async (req, res) => {
       await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
         msg: "Utilization Report Submitted Successfully!",
-        isCompleted: savedData.isDraft ? !savedData.isDraft : true,
+        isCompleted: !savedData.isDraft ,
       });
     } else {
       return res.status(400).json({
@@ -208,6 +294,7 @@ exports.readById = async (req, res) => {
 exports.update = async (req, res) => {
   const { financialYear } = req.params;
   const ulb = req.decoded?._id;
+ 
   try {
     const report = await UtilizationReport.findOneAndUpdate(
       { ulb, financialYear, isActive: true },
@@ -441,3 +528,82 @@ exports.report = async (req, res) => {
     res.end();
   }
 };
+
+module.exports.read2223 = catchAsync(async(req,res)=> {
+  let ulb = req.query.ulb;
+  let design_year = req.query.design_year;
+
+  
+  if(!ulb || !design_year){
+    return res.status(400).json({
+      success: false,
+      message: "Data Missing"
+    })
+  }
+  let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+  let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
+  let currentYear = await Year.findOne({_id: ObjectId(design_year)}).lean()
+  // current year
+  let currentYearVal = currentYear['year']
+  // find Previous year
+  let prevYearVal = currentYearVal.split("-");
+    prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
+     
+    prevYear = await Year.findOne({year: prevYearVal}).lean()
+
+    let prevData = await UtilizationReport.findOne({
+      ulb: ObjectId(ulb),
+      designYear: prevYear._id
+    }).select({status:1, isDraft:1, actionTakenByRole:1}).lean()
+    let status = ''
+if(!prevData){
+  status = 'Not Started'
+}else{
+  status = calculateStatus(prevData.status, prevData.actionTakenByRole, prevData.isDraft, "ULB")
+}
+let obj = {}
+if(!ulbData.access_2122){
+  obj['action'] = 'not_show';
+  obj['url'] = ``;
+}
+else{
+  if(status == FORM_STATUS.Under_Review_By_MoHUA || status == FORM_STATUS.Approved_By_MoHUA ){
+    obj['action'] = 'not_show';
+    obj['url'] = ``;
+  }else if(status == FORM_STATUS.Under_Review_By_State){
+    obj['action'] = 'note';
+    obj['url'] = `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}`;
+  } else{
+    obj['action'] = 'note'
+    obj['url'] = `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
+  }
+}
+
+  let condition = {
+    ulb : ObjectId(ulb),
+    designYear: ObjectId(currentYear._id)
+  }
+  let fetchedData = await UtilizationReport.findOne(condition).lean()
+  if(fetchedData){
+    return res.status(200).json({
+      success: true,
+      data:fetchedData
+    })
+  }else{
+    condition['designYear'] = ObjectId(prevYear._id)
+    fetchedData = await UtilizationReport.findOne(condition).lean()
+    let sampleData = new UtilizationReport();
+    sampleData.grantPosition.unUtilizedPrevYr = fetchedData?.grantPosition?.closingBal
+    console.log(sampleData)
+    sampleData = sampleData.toObject()
+    // sampleData = sampleData.lean()
+    sampleData['url'] = obj['url']
+    sampleData['action'] = obj['action']
+    // Object.assign(sampleData,obj )
+    return res.status(200).json({
+      success: true,
+      data: sampleData
+    })
+  }
+
+})

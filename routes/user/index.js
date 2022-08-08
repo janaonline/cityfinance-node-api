@@ -22,6 +22,9 @@ router.get('/nodal/:_id', userService.getNodalOfficers)
 router.put('/profile', verifyToken, userService.profileUpdate)
 router.put('/profile/:_id', verifyToken, userService.profileUpdate)
 
+
+router.post('/verify', verifyToken,userService.userVerification2223)
+
 //Profile
 router.get('/profile', verifyToken, userService.profileGet);
 

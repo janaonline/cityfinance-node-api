@@ -136,6 +136,11 @@ router.use(ActionPlans);
 const LinkPfmsState = require("./LinkPfmsState");
 router.use(LinkPfmsState);
 
+
+//SideMenu
+const Sidemenu = require("./sidemenu");
+router.use(Sidemenu);
+
 const StateMasterForm = require("./stateMasterForm");
 router.use('/stateMasterForm', StateMasterForm);
 
@@ -169,7 +174,26 @@ router.use(fileUpload);
 const resourceDashboard = require("./resourceDashboard");
 router.use("/resourceDashboard", resourceDashboard);
 
+//form-ratings
+const Rating = require('./Ratings');
+router.use('/ratings', Rating);
+
+//Gfc-odf-form-Collection
+const GfcOdfFormCollection = require('./gfc-odf-form-collection');
+router.use('/gfc-odf-form-collection', GfcOdfFormCollection);
+
+// Link-PFMS
+const LinkPFMS = require('./LinkPfms');
+router.use('/link-pfms', LinkPFMS);
+
+//Common-Action API
+const CommonActionAPI = require('./CommonActionAPI');
+router.use('/common-action', CommonActionAPI);
+
+
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
+
+
 
 module.exports = router;

@@ -894,6 +894,15 @@ module.exports.ulbSignupAction = async (req, res) => {
     }
 };
 
+module.exports.userVerification2223 = async(req,res)=> {
+    let user = req.body.user;
+    await User.findOneAndUpdate({_id: ObjectId(user)}, {isVerified2223: true})
+return res.json({
+    success: true,
+    message:"User Verified"
+})
+}
+
 module.exports.getNodalOfficers = async (req, res) => {
 
     try {

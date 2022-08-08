@@ -105,11 +105,15 @@ module.exports.get = async function (req, res) {
         t["financial_year_2016_17_pdf"] = "";
         t["financial_year_2017_18_pdf"] = "";
         t["financial_year_2018_19_pdf"] = "";
+        t["financial_year_2019_20_pdf"] = "";
+        
 
         t["financial_year_2015_16_excel"] = "";
         t["financial_year_2016_17_excel"] = "";
         t["financial_year_2017_18_excel"] = "";
         t["financial_year_2018_19_excel"] = "";
+        t["financial_year_2019_20_excel"] = "";
+        
 
         if (t.documents.financial_year_2015_16) {
           t["financial_year_2015_16_pdf"] = "";
@@ -140,6 +144,15 @@ module.exports.get = async function (req, res) {
           }
         }
 
+        if (t.documents.financial_year_2019_20) {
+          t["financial_year_2019_20_pdf"] = "";
+          if (t.documents.financial_year_2019_20.pdf.length > 0) {
+            t["financial_year_2019_20_pdf"] =
+              t.documents.financial_year_2019_20.pdf[0].url;
+          }
+        }
+       
+
         if (t.documents.financial_year_2015_16) {
           t["financial_year_2015_16_excel"] = "";
           if (t.documents.financial_year_2015_16.excel.length > 0) {
@@ -168,6 +181,14 @@ module.exports.get = async function (req, res) {
               t.documents.financial_year_2018_19.excel[0].url;
           }
         }
+        if (t.documents.financial_year_2019_20) {
+          t["financial_year_2019_20_excel"] = "";
+          if (t.documents.financial_year_2019_20.excel.length > 0) {
+            t["financial_year_2019_20_excel"] =
+              t.documents.financial_year_2019_20.excel[0].url;
+          }
+        }
+     
       }
       let xlsData = await service.dataFormating(total, {
         stateName: "State Name",
@@ -182,10 +203,15 @@ module.exports.get = async function (req, res) {
         financial_year_2016_17_pdf: "Financial Year 2016-17 - PDF",
         financial_year_2017_18_pdf: "Financial Year 2017-18 - PDF",
         financial_year_2018_19_pdf: "Financial Year 2018-19 - PDF",
+        financial_year_2019_20_pdf: "Financial Year 2019-20 - PDF",
+        
+
         financial_year_2015_16_excel: "Financial Year 2015-16 - Excel",
         financial_year_2016_17_excel: "Financial Year 2016-17 - Excel",
         financial_year_2017_18_excel: "Financial Year 2017-18 - Excel",
         financial_year_2018_19_excel: "Financial Year 2018-19 - Excel",
+        financial_year_2019_20_excel: "Financial Year 2019-20 - Excel",
+       
       });
       return res.xls("financial-data.xlsx", xlsData);
     }

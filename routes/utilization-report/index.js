@@ -8,7 +8,8 @@ const {
   remove,
   readById,
   action,
-  report
+  report,
+  read2223,
 } = require("./service");
 
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
@@ -42,4 +43,7 @@ router.post("/utilization-report/action", verifyToken, userAuth, action);
 
 //custom report 
 router.get("/dur/report", report);
+//2223
+router.get("/utilReport", verifyToken, read2223);
+
 module.exports = router;
