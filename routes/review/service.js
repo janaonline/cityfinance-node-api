@@ -12,7 +12,7 @@ function createDynamicColumns(collectionName){
         
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            columns = `Action Taken By Role,Rating,Cert URL,Cert Name, Cert Date, Design year, Status, Draft, Reject Reason, Response File Name, Response File URL, Created On, Modified On `;
+            columns = `Rating,Cert URL,Cert Name, Cert Date, Design year,  Approve/Reject Comment, Response File Name, Response File URL, Created On, Modified On `;
             break;
         case CollectionNames.propTaxState:
             columns =  `Act Page,Floor Rate Url, Floor Rate Name, Status`
@@ -29,7 +29,7 @@ function createDynamicElements(collectionName, entity) {
 
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            entity = ` ${entity.actionTakenByRole} , ${entity.rating} , ${entity.certUrl}  , ${entity.certName}  , ${entity.certDate}  , ${entity.design_year}  , ${entity.status}  , ${entity.isDraft}  , ${entity.rejectReason}  , ${entity.responseFileName}  , ${entity.responseFileUrl}  , ${entity.createdAt}  , ${entity.modifiedAt} `   
+            entity = ` ${entity.rating} , ${entity.certUrl}  , ${entity.certName}  , ${entity.certDate}  , ${entity.design_year}  ,  ${entity.rejectReason}  , ${entity.responseFileName}  , ${entity.responseFileUrl}  , ${entity.createdAt}  , ${entity.modifiedAt} `   
             break;
         
         case CollectionNames.propTaxState:
@@ -44,14 +44,11 @@ function createDynamicQuery(collectionName, oldQuery) {
     switch(collectionName){
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            query.actionTakenByRole = "$actionTakenByRole",
             query.rating = "$rating",
             query.certUrl = "$cert.url",
             query.certName = "$cert.name",
             query.certDate = "$certDate",
             query.design_year = "$design_year",
-            query.status = "$status",
-            query.draft = "$isDraft",
             query.rejectReason = "$rejectReason",
             query.responseFileUrl = "$responseFile.url",
             query.responseFileName = "$responseFile.name",
