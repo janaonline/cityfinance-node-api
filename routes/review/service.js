@@ -210,9 +210,9 @@ let allData = await Promise.all([data, total]);
 data = allData[0]
 total = allData[1].length ? allData[1][0]['total'] : 0
 console.log(total,data)
- if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
-    collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
-    collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
+//  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
+//     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
+//     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
  data.forEach(el => {
   el['formStatus'] =  calculateStatus(el.status, el.actionTakenByRole, el.isDraft, formType);   
   el['cantakeAction'] = canTakeActionOrViewOnly(el, loggedInUserRole)
@@ -574,8 +574,8 @@ switch(userRole){
             
         //      break;
             case CollectionNames.annual:
-                delete query_notFilter_pagination.at(-1)['$project']['filled']
-            Object.assign(  query_notFilter_pagination.at(-1)['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
+                delete query_notFilter_pagination[query_notFilter_pagination.length-1]['$project']['filled']
+            Object.assign(  query_notFilter_pagination[query_notFilter_pagination.length -1]['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
     
         default:
             break;
