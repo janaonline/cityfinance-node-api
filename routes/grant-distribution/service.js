@@ -179,15 +179,15 @@ function readXlsxFile(file) {
 async function validate(data, formData) {
   let ulbCodes = [],
     ulbNames = [];
-  const code = "ULB Census Code/ULB Code";
-  const name = "ULB Name";
-  let amount = "Grant Amount";
-  if(formData.year === "606aafb14dff55e6c075d3ae"){
-    formData.year = '2022-23';
-  }else if( formData.year === "606aaf854dff55e6c075d219"){
-    formData.year = '2021-22';
+  const code = "ulb census code/ulb code";
+  const name = "ulb name";
+  let amount = "grant amount";
+  if(formData.design_year === "606aafb14dff55e6c075d3ae"){
+    formData.design_year = '2022-23';
+  }else if( formData.design_year === "606aaf854dff55e6c075d219"){
+    formData.design_year = '2021-22';
   }
-  const type = `${formData.type}_${formData.year}_${formData.installment}`
+  const type = `${formData.type}_${formData.design_year}_${formData.installment}`
   amount = `${amount} - ${type}`
   const keys = Object.keys(data[0]);
   if (
