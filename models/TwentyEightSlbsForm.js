@@ -20,27 +20,32 @@ const TwentyEightSlbFormSchema = new Schema({
         ref: 'Ulb',
         required: true
     },
-    indicatorLineItem:{
-        type: Schema.Types.ObjectId,
-        ref:"indicatorLineItem",
-        required: true
-    },
-    actual:{
-        year:{
+    data: [{
+        indicatorLineItem:{
             type: Schema.Types.ObjectId,
-            ref: 'Year',
+            ref:"indicatorLineItem",
             required: true
         },
-        value:{ type: Number,}
-    },
-    target_1:{
-        year:{
-            type: Schema.Types.ObjectId,
-            ref: 'Year',
-            required: true
+        actual:{
+            year:{
+                type: Schema.Types.ObjectId,
+                ref: 'Year',
+                required: true
+            },
+            value:{ type: Number,}
         },
-         value:{ type: Number,}
-    },
+        target_1:{
+            year:{
+                type: Schema.Types.ObjectId,
+                ref: 'Year',
+                required: true
+            },
+             value:{ type: Number,}
+        },
+    }
+      
+    ],
+    
 
     createdAt:{
         type: Date, 
@@ -81,7 +86,7 @@ const TwentyEightSlbFormSchema = new Schema({
     timestamps:{createdAt:"createdAt", updatedAt:"modifiedAt"}
 })
 
-TwentyEightSlbFormSchema.index({design_year:1,ulb:1,indicatorLineItem:1},{unique:true});
+TwentyEightSlbFormSchema.index({design_year:1,ulb:1},{unique:true});
 
 module.exports = mongoose.model('TwentyEightSlbForm', TwentyEightSlbFormSchema);
 

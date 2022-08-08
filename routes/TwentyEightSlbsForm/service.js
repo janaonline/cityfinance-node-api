@@ -1,6 +1,8 @@
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const ObjectId = require('mongoose').Types.ObjectId;
-
+const IndicatorLineItem = require('../../models/indicatorLineItems')
+const {findPreviousYear} = require('../../util/findPreviousYear')
+const Year = require('../../models/Year')
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -158,7 +160,50 @@ module.exports.getForm = async (req, res) => {
         }
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
-        
+      let yearData =   await Year.findOne({
+            _id : ObjectId(data.design_year)
+        }).lean()
+        let prevYearVal = findPreviousYear(yearData.year);
+        let prevYearData =   await Year.findOne({
+            year : prevYearVal
+        }).lean()
+        let formData = await TwentyEightSlbsForm.findOne(condition).lean()
+        if(formData){
+            res.status(200).json({
+                success: true,
+                data: formData
+               })
+        }else{
+let lineItems = await IndicatorLineItem.find().lean();
+let obj = {
+    _id: "",
+    question:"",
+    actual: {
+        year:prevYearData._id,
+        value:""
+    },
+    target_1: {
+        year:ObjectId(data.design_year),
+        value:""
+    },
+
+}
+let dataArr = []
+lineItems.forEach(el => {
+obj[_id] = el['_id'];
+obj['question'] = el['name'];
+obj['type'] = el['type'];
+obj['actual']['value'] = "";
+obj['target_1']['value'] = "";
+dataArr.push(el)
+})
+           let output =  new TwentyEightSlbsForm();
+           output['data'] = dataArr;
+           res.status(200).json({
+            success: true,
+            data: output
+           })
+        }
         let pipeline = [
             { 
                 $match:{
