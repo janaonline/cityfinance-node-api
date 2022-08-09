@@ -6,13 +6,26 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
 const List = require('../../util/15thFCstatus')
+
+function padTo2Digits(num) {
+    return num.toString().padStart(2, '0');
+  }
+  
+  function formatDate(date) {
+    return [
+      padTo2Digits(date.getDate()),
+      padTo2Digits(date.getMonth() + 1),
+      date.getFullYear(),
+    ].join('/');
+  }
+
 function createDynamicColumns(collectionName){
     let columns = ``;
     switch(collectionName){
         
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            columns = `Rating,Cert URL,Cert Name, Cert Date, Design year,  Approve/Reject Comment, Response File Name, Response File URL, Created On, Modified On `;
+            columns = `Rating,Cert URL,Cert Name, Cert Date, Approve/Reject Comment, Response File Name, Response File URL `;
             break;
         case CollectionNames.propTaxState:
             columns =  `Act Page,Floor Rate Url, Floor Rate Name, Status`
@@ -29,7 +42,12 @@ function createDynamicElements(collectionName, entity) {
 
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            entity = ` ${entity.rating} , ${entity.certUrl}  , ${entity.certName}  , ${entity.certDate}  , ${entity.design_year}  ,  ${entity.rejectReason}  , ${entity.responseFileName}  , ${entity.responseFileUrl}  , ${entity.createdAt}  , ${entity.modifiedAt} `   
+            if(entity.certDate){
+                entity.certDate = formatDate(entity.certDate);
+            }else if( entity.certDate === null){
+                entity.certDate = "NA"
+            }            
+            entity = ` ${entity.rating} , ${entity.certUrl}  , ${entity.certName}  , ${entity.certDate}  ,  ${entity.rejectReason}  , ${entity.responseFileName}  , ${entity.responseFileUrl} `   
             break;
         
         case CollectionNames.propTaxState:
@@ -41,19 +59,30 @@ function createDynamicElements(collectionName, entity) {
 
 function createDynamicQuery(collectionName, oldQuery) {
     let query = {};
+    let query_2 = {};
+    query_2 = {
+        $lookup:{
+            from: "ratings",
+            localField:"rating",
+            foreignField: "_id",
+            as: "rating"
+        },
+    }
+    query_3 = { $unwind:{ path:"$rating"  } }
+
     switch(collectionName){
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            query.rating = "$rating",
+            oldQuery.splice(oldQuery.length-2,0,query_2);
+        
+            oldQuery.splice(oldQuery.length-2,0,query_3);
+            query.rating = "$rating.name",
             query.certUrl = "$cert.url",
             query.certName = "$cert.name",
             query.certDate = "$certDate",
-            query.design_year = "$design_year",
             query.rejectReason = "$rejectReason",
             query.responseFileUrl = "$responseFile.url",
-            query.responseFileName = "$responseFile.name",
-            query.createdAt = "$createdAt",
-            query.modifiedAt = "$modifiedAt";
+            query.responseFileName = "$responseFile.name"
             break;
 
         case CollectionNames.propTaxState:
@@ -66,6 +95,7 @@ function createDynamicQuery(collectionName, oldQuery) {
             query={};
             break;
     }
+    
     //append the above query object to oldQuery object
     Object.assign(oldQuery[oldQuery.length -1].$project, query)
     return oldQuery;
@@ -240,7 +270,9 @@ if(csv){
             res.flushHeaders();
             for(let el of data){
                 let dynamicElementData = createDynamicElements(collectionName,el);
-                
+                if(el.UA === "null"){
+                    el.UA = "NA"
+                }
                 res.write(
                     el.ulbName +
                     "," +
