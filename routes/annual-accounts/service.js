@@ -15,7 +15,7 @@ const UlbFinancialData = require('../../models/UlbFinancialData')
 const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
-const findPreviousYear = require('../../util/findPreviousYear')
+const {findPreviousYear} = require('../../util/findPreviousYear')
 const {calculateStatus} =require('../CommonActionAPI/service')
 const STATUS_LIST = require('../../util/newStatusList')
 const time = () => {
