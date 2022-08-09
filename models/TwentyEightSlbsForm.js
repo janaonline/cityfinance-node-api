@@ -26,6 +26,9 @@ const TwentyEightSlbFormSchema = new Schema({
             ref:"indicatorLineItem",
             required: true
         },
+        question : {type: String, default : ""}, 
+        type : {type: String, default : ""}, 
+
         actual:{
             year:{
                 type: Schema.Types.ObjectId,
@@ -49,15 +52,15 @@ const TwentyEightSlbFormSchema = new Schema({
 
     createdAt:{
         type: Date, 
-        default: Date.now
+        default: Date.now()
     },
     modifiedAt:{
         type: Date,
-        default: Date.now
+        default: Date.now()
     },
     isDraft:{ 
         type: Boolean, 
-        default: false 
+        default: true 
     },
     status:{
         type: String,
