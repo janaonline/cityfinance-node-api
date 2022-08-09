@@ -28,10 +28,15 @@ const stateFinanceCommissionFormationSchema = new Schema({
     stateNotification: pdfSchema(),
     isDraft: {
         type: Boolean,
-        default: false
+        default: true
     },
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
+    
+    responseFile_state:pdfSchema(),
+    responseFile_mohua:pdfSchema(),
+    rejectReason_state:{ type: String, default: "" },
+    rejectReason_mohua: { type: String, default: "" },
     history:{
         type: Array,
         default:[]
