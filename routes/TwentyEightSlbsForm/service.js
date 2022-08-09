@@ -193,7 +193,7 @@ obj = {
 let groupedData = groupByKey(dataArr, "type")
 
           let output = {}
-           output['data'] = groupedData;
+           output = groupedData;
        return     res.status(200).json({
             success: true,
             data: output
