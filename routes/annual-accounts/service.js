@@ -15,7 +15,7 @@ const UlbFinancialData = require('../../models/UlbFinancialData')
 const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
-const findPreviousYear = require('../../util/findPreviousYear')
+const {findPreviousYear} = require('../../util/findPreviousYear')
 const {calculateStatus} =require('../CommonActionAPI/service')
 const STATUS_LIST = require('../../util/newStatusList')
 const time = () => {
@@ -40,7 +40,39 @@ exports.createUpdate = async (req, res) => {
     formData = {...data};
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
-    formData['status'] = 'PENDING'
+    formData['status'] = 'PENDING';
+    let proData , audData
+      if (req.body.unAudited.submit_annual_accounts) {
+        proData = req.body.unAudited.provisional_data;
+        for (const key in proData) {
+          if (key == "auditor_report") continue;
+   
+            proData[key].status = "PENDING";
+            proData[key].rejectReason = null;
+          
+        }
+      }
+      if (req.body.audited.submit_annual_accounts) {
+         audData = req.body.audited.provisional_data;
+        for (const key in audData) {
+          
+            audData[key].status = "PENDING";
+            audData[key].rejectReason = null;
+          
+        }
+      }
+      formData['unAudited']['provisional_data'] = proData;
+      formData['audited']['provisional_data'] = audData;
+
+      req.body.status = "PENDING";
+      currentAnnualAccounts = await AnnualAccountData.findOne({
+        ulb: ObjectId(ulb),
+        design_year: ObjectId(design_year),
+        isActive: true,
+      }).select({
+        history: 0,
+      });
+    
     let condition = {};
     condition.design_year = design_year;
     condition.ulb = ulb;
@@ -92,36 +124,8 @@ exports.createUpdate = async (req, res) => {
     }
 
 
-    let currentAnnualAccounts;
-    if (req.body?.isDraft === false) {
-      if (req.body.unAudited.submit_annual_accounts) {
-        let proData = req.body.unAudited.provisional_data;
-        for (const key in proData) {
-          if (key == "auditor_report") continue;
-          if (proData[key]?.status == "REJECTED") {
-            proData[key].status = "PENDING";
-            proData[key].rejectReason = null;
-          }
-        }
-      }
-      if (req.body.audited.submit_annual_accounts) {
-        let proData = req.body.audited.provisional_data;
-        for (const key in proData) {
-          if (proData[key]?.status == "REJECTED") {
-            proData[key].status = "PENDING";
-            proData[key].rejectReason = null;
-          }
-        }
-      }
-      req.body.status = "PENDING";
-      currentAnnualAccounts = await AnnualAccountData.findOne({
-        ulb: ObjectId(ulb),
-        design_year: ObjectId(design_year),
-        isActive: true,
-      }).select({
-        history: 0,
-      });
-    }
+    
+  
 
     let annualAccountData;
     if (
@@ -931,6 +935,9 @@ exports.getAccounts = async (req, res) => {
   try {
     
     let { design_year, ulb } = req.query;
+    if(!ulb || ulb == null || ulb == 'null'){
+      ulb = req.decoded.ulb;
+    }
     let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
     let currYearData = await Year.findOne({_id: ObjectId(design_year)}).lean();
     let prevYearVal;

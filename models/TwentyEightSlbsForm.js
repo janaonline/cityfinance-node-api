@@ -28,6 +28,8 @@ const TwentyEightSlbFormSchema = new Schema({
         },
         question : {type: String, default : ""}, 
         type : {type: String, default : ""}, 
+        unit : {type: String, default : ""}, 
+        range : {type: String, default : ""}, 
 
         actual:{
             year:{

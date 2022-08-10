@@ -169,6 +169,8 @@ let obj = {
 }
 let dataArr = []
 lineItems.forEach(el => {
+obj['unit'] = el['unit'];
+obj['range'] = el['range'];
 obj['indicatorLineItem'] = el['_id'];
 obj['question'] = el['name'];
 obj['type'] = el['type'];
@@ -178,6 +180,8 @@ dataArr.push(obj)
 obj = {
     _id: "",
     question:"",
+    unit:"",
+    range:"",
     type : "",
     actual: {
         year:prevYearData._id,
