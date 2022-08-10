@@ -14,6 +14,7 @@ const IndicatorsSchema = new Schema(
       },
       required: true,
     },
+    sequence:{ type: Number},
     range:{
       type: String
     },
