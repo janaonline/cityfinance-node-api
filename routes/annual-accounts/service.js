@@ -86,11 +86,34 @@ exports.createUpdate = async (req, res) => {
     }
     
     const submittedForm  = await AnnualAccountData.findOne(condition);
-    if( submittedForm && !submittedForm.isDraft){// form already submitted
+    if( submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB' ){// form already submitted
       return res.status(200).json({
         status: true,
         message: "Form already submitted."
       })
+    }else{
+      let addedHistory;
+      if(!formData?.isDraft)  {
+        
+         addedHistory = await AnnualAccountData.findOneAndUpdate(
+          condition,
+          {$push: {"history": formData}},
+          {new: true, runValidators: true}
+        );
+      }else{
+         addedHistory = await AnnualAccountData.findOneAndUpdate(
+          condition,
+          formData,
+          {new: true, runValidators: true}
+        );
+      }
+      return res.status(200).json({
+        success: true,
+        message:"Form Saved",
+        data: addedHistory
+      })
+   
+
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
       const form = await AnnualAccountData.create(formData);
