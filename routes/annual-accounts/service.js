@@ -607,7 +607,8 @@ exports.dataset = catchAsync (async (req,res)=>{
     });
   }
   if (getCount) {
-    finalData = finalData.length;
+    
+    finalData = finalData.length() ?? [];
   }
 return res.status(200).json({
   success: true,
