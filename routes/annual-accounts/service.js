@@ -971,7 +971,7 @@ console.log(status)
 let dataCollection = {}
  dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
 let dataSubmittedByOpenPage = false
-if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
+if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
