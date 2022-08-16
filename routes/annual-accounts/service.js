@@ -86,7 +86,21 @@ exports.createUpdate = async (req, res) => {
     }
     
     const submittedForm  = await AnnualAccountData.findOne(condition);
-    if( submittedForm && !submittedForm.isDraft){// form already submitted
+    if(submittedForm && formData['design_year'] == '606aaf854dff55e6c075d219'){
+      formData.modifiedAt = Date.now();
+      const addedHistory = await AnnualAccountData.findOneAndUpdate(
+        condition,
+        formData,
+        {new: true, runValidators: true}
+      );
+      return res.status(200).json({
+        status: true,
+        message: "form submitted",
+        data: addedHistory
+      })
+
+    }
+    if( formData['design_year'] != '606aaf854dff55e6c075d219' &&  submittedForm && !submittedForm.isDraft){// form already submitted
       return res.status(200).json({
         status: true,
         message: "Form already submitted."
