@@ -15,7 +15,7 @@ const UlbFinancialData = require('../../models/UlbFinancialData')
 const DataCollection = require('../../models/DataCollectionForm')
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
-const findPreviousYear = require('../../util/findPreviousYear')
+const {findPreviousYear} = require('../../util/findPreviousYear')
 const {calculateStatus} =require('../CommonActionAPI/service')
 const STATUS_LIST = require('../../util/newStatusList')
 const time = () => {
@@ -86,34 +86,25 @@ exports.createUpdate = async (req, res) => {
     }
     
     const submittedForm  = await AnnualAccountData.findOne(condition);
-    if( submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB' ){// form already submitted
+    if(submittedForm && formData['design_year'] == '606aaf854dff55e6c075d219'){
+      formData.modifiedAt = Date.now();
+      const addedHistory = await AnnualAccountData.findOneAndUpdate(
+        condition,
+        formData,
+        {new: true, runValidators: true}
+      );
+      return res.status(200).json({
+        status: true,
+        message: "form submitted",
+        data: addedHistory
+      })
+
+    }
+    if( formData['design_year'] != '606aaf854dff55e6c075d219' &&  submittedForm && !submittedForm.isDraft){// form already submitted
       return res.status(200).json({
         status: true,
         message: "Form already submitted."
       })
-    }else{
-      let addedHistory;
-      if(!formData?.isDraft)  {
-        
-         addedHistory = await AnnualAccountData.findOneAndUpdate(
-          condition,
-          {$push: {"history": formData}},
-          {new: true, runValidators: true}
-        );
-      }else{
-         addedHistory = await AnnualAccountData.findOneAndUpdate(
-          condition,
-          formData,
-          {new: true, runValidators: true}
-        );
-      }
-      return res.status(200).json({
-        success: true,
-        message:"Form Saved",
-        data: addedHistory
-      })
-   
-
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
       const form = await AnnualAccountData.create(formData);
@@ -607,8 +598,7 @@ exports.dataset = catchAsync (async (req,res)=>{
     });
   }
   if (getCount) {
-    
-    finalData = finalData.length() ?? [];
+    finalData = finalData.length;
   }
 return res.status(200).json({
   success: true,
@@ -981,7 +971,7 @@ console.log(status)
 let dataCollection = {}
  dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
 let dataSubmittedByOpenPage = false
-if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length() > 0){
+if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
