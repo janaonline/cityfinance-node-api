@@ -90,7 +90,7 @@ module.exports.get = catchAsync(async (req, res) => {
             color_2:""
         }
       }
-    if (!role || !year || !_id)
+    if ((role == 'ULB' || role == 'STATE') && ( !role || !year || !_id))
         return res.status(400).json({
             success: false,
             message: "Data missing"
