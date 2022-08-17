@@ -39,6 +39,7 @@ const propertyTaxFloorRateSchema = new Schema({
     },
     status:{
         type: String,
+        default:"PENDING",
         enum: {
             values: ['APPROVED','PENDING', 'REJECTED'],
             message: "ERROR: STATUS BE EITHER 'PENDING'/'APPROVED' / 'REJECTED'",

@@ -50,6 +50,7 @@ const stateFinanceCommissionFormationSchema = new Schema({
     },
     status: {
         type: String,
+        default:"PENDING",
         enum: {
             values: ["PENDING", "APPROVED", "REJECTED"],
             message: "values can be either PENDING/APPROVED/REJECTED"
