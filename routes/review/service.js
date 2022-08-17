@@ -159,21 +159,21 @@ module.exports.get = catchAsync( async(req,res) => {
         // filled2 -> only for annual accounts -> audited section
         filter['filled1'] = req.query.filled1
         filter['filled2'] = req.query.filled2
+        if (filter["censusCode"]) {
+            let code = filter["censusCode"];
+            var digit = code.toString()[0];
+            if (digit == "9") {
+              delete filter["censusCode"];
+              filter["sbCode"] = code;
+            }
+          }
 
     }
-    if(formType === "ULB"){
-        //filter
-            if (filter["censusCode"]) {
-                let code = filter["censusCode"];
-                var digit = code.toString()[0];
-                if (digit == "9") {
-                  delete filter["censusCode"];
-                  filter["sbCode"] = code;
-                }
-              }
-
-    }
-
+  
+if(formType == 'STATE'){
+    filter['state'] = req.query.stateName
+    filter['status'] = req.query.status 
+}
 
     let state = req.query.state ?? req.decoded.state
     let getQuery = req.query.getQuery == 'true'

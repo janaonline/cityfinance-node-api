@@ -20,6 +20,10 @@ const TwentyEightSlbFormSchema = new Schema({
         ref: 'Ulb',
         required: true
     },
+    population : {
+        type: Number,
+        default:0
+    },
     data: [{
         indicatorLineItem:{
             type: Schema.Types.ObjectId,
