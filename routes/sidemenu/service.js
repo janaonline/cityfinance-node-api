@@ -135,7 +135,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
         // add the formStatus and tooltip
 data.forEach((el,)=> {
-    if(el.category){
+    if(el.category && el.collectionName != 'GTC'){
         let  flag = 0;
         output.forEach(el2 => {
             if((el._id).toString() == (Object.keys(el2)[0])){
