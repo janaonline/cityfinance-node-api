@@ -14,11 +14,27 @@ exports.getGrantDistribution = async (req, res) => {
   let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
   try {
-    const grantDistribution = await GrantDistribution.findOne({
+    let grantDistribution = await GrantDistribution.find({
       state: ObjectId(state),
       design_year,
       isActive: true,
     }).select({ history: 0 });
+
+    grantDistribution = JSON.parse(JSON.stringify(grantDistribution))
+    grantDistribution.forEach((entity)=>{
+
+            if(entity.design_year.toString() == "606aadac4dff55e6c075c507"){
+                entity.key = `${entity.type}_2020-21_${entity.installment}`
+            } 
+
+            if(entity.design_year.toString() == ObjectId("606aaf854dff55e6c075d219")){
+                entity.key = `${entity.type}_2021-22_${entity.installment}`
+            } 
+            
+            if(entity.design_year.toString() == "606aafb14dff55e6c075d3ae"){
+                entity.key = `${entity.type}_2022-23_${entity.installment}`
+            }
+        })
     if (!grantDistribution) {
       return Response.BadRequest(res, null, "No GrantDistribution found");
     }
@@ -95,10 +111,18 @@ exports.uploadTemplate = async (req, res) => {
       // validate data
       const notValid = await validate(XslData, formData);
       if (notValid) {
+        let amount = "grant amount";
+        if(formData.design_year === "606aafb14dff55e6c075d3ae"){
+          formData.design_year = '2022-23';
+        }else if( formData.design_year === "606aaf854dff55e6c075d219"){
+          formData.design_year = '2021-22';
+        }
+        const type = `${formData.type}_${formData.design_year}_${formData.installment}`
+        amount = `${amount} - ${type}`
         let field = {
           ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
           ["ulb name"]: "ULB Name",
-          ["grant amount"]: "Grant Amount",
+          ["grant amount"]: amount,
           Errors: "Errors",
         };
         let xlsDatas = await Service.dataFormating(notValid, field);
