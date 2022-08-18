@@ -53,12 +53,12 @@ const calculateTick = (tooltip, loggedInUserRole) => {
 
 
 
-const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole) => {
+const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole, viewFor) => {
     
     let status = modelName == 'XVFcGrantULBForm' ? formData?.waterManagement?.status  : formData.status;
     let actionTakenByRole = formData.actionTakenByRole;
     let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
-    let tooltip = calculateStatus(status, actionTakenByRole, isDraft,loggedInUserRole );
+    let tooltip = calculateStatus(status, actionTakenByRole, isDraft, viewFor  );
     let tick = calculateTick(tooltip,loggedInUserRole)
 
     return {
@@ -119,7 +119,7 @@ module.exports.get = catchAsync(async (req, res) => {
             let formData = await el.findOne(condition).lean()
             if (formData) {
 
-                output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role))
+                output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role, role))
             }
         }
     }

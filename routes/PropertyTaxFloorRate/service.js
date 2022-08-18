@@ -59,7 +59,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         const {_id:actionTakenBy, role: actionTakenByRole} = user;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
-        
+        formData['status'] = 'PENDING';
         const condition = {};
         condition.state = data.state;
         condition.design_year = data.design_year;
