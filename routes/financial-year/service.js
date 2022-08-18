@@ -110,10 +110,11 @@ module.exports.access = async function(req,res)  {
  
     const entity_id = req.decoded._id;
     let arr = []
+    let userData
     switch (role) {
         case "ULB":
           
-            let userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
+             userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
             let ulbData = await Ulb.findOne({_id: userData.ulb}).lean();
             let access_2021 =  ulbData?.access_2021,
               access_2122 =  ulbData?.access_2122,
