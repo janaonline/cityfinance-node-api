@@ -98,8 +98,14 @@ module.exports.getForms = async (req, res)=>{
         const data = req.body;
         const masterForm = await Sidemenu.findOne({_id: data.formId});
         const collection = getCollectionName(masterForm.name);
+        let condition = {};
+        if (collection === UtilizationReport ){
+            condition.design_year = "designYear"
+        } else {
+            condition.design_year = "design_year"
+        }
         const forms = await collection.find(
-            {ulb :{$in : data.ulb}, design_year: data.design_year},
+            {ulb :{$in : data.ulb}, [condition.design_year]: data.design_year},
             {history:0}
             )
         if(!forms){
@@ -167,7 +173,13 @@ module.exports.updateForm = async (req, res) =>{
                 formData['responseFile_mohua'] = data.responseFile;     
             }
         }
-        const forms = await collection.find({ulb :{$in : data.ulb}, design_year: data.design_year}).lean();
+        let condition = {};
+        if (collection === UtilizationReport ){
+            condition.design_year = "designYear"
+        } else {
+            condition.design_year = "design_year"
+        }
+        const forms = await collection.find({ulb :{$in : data.ulb}, [condition.design_year]: data.design_year}).lean();
         let form={}, numberOfFormsUpdated=0;
         for(let i=0; i < data.ulb.length; i++){//update status and add history
             ulb = data.ulb[i];
@@ -188,7 +200,7 @@ module.exports.updateForm = async (req, res) =>{
             }
             form['history'] = undefined;
             let updatedForm = await collection.findOneAndUpdate(
-                {ulb , design_year: data.design_year},
+                {ulb , [condition.design_year]: data.design_year},
                 {$set: formData, $push: {history: form }},
                 {new: true, runValidators: true}
                 );
