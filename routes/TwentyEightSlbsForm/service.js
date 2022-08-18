@@ -4,6 +4,7 @@ const IndicatorLineItem = require('../../models/indicatorLineItems')
 const {findPreviousYear} = require('../../util/findPreviousYear')
 const Year = require('../../models/Year')
 const {groupByKey} = require('../../util/group_list_by_key')
+const SLB = require('../../models/XVFcGrantForm')
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -33,6 +34,8 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         formData = {...data};
        
         formData['actionTakenBy'] = ObjectId(user._id);
+        formData['actionTakenByRole'] = "ULB";
+        formData['status'] = "PENDING"
 
         if(!(data.ulb && data.design_year )){
             return res.status(400).json({
@@ -71,13 +74,18 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     formData.modifiedAt = new Date();
                     formData.modifiedAt.toISOString();
                  if(formData.data.length == 28){
+                    let currentData = {}
+                    Object.assign(currentData,formData ) 
+
+                    formData['history'] = submittedForm['history']
+                    formData['history'].push(currentData)
+                    // formData['history'].push(formData) 
+                    
+delete formData['_id']
                     const updatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
                         condition,
-                        {
-                            $push:{"history":formData},
-                            $set: formData
-                        },
-                        {new: true, runValidators: true}
+                        formData,
+                        
                     );
                     if(!updatedForm) rejectResponse(res, "form not created")
                     return res.status(200).json({
@@ -125,6 +133,7 @@ message:"Data Saved"
 
 module.exports.getForm = async (req, res) => {
     try {
+        let userRole = req.decoded.role
         const data = req.query;
         const condition = {};
         if(!(data.ulb && data.design_year)){
@@ -142,9 +151,19 @@ module.exports.getForm = async (req, res) => {
         let prevYearData =   await Year.findOne({
             year : prevYearVal
         }).lean()
-        let formData = await TwentyEightSlbsForm.findOne(condition).lean()
+        let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
         
         if(formData){
+            formData['data'].forEach(el=>{
+                if(!formData['isDraft']){
+                    el['targetDisable'] = true;
+                    el['actualDisable'] = true;
+                }
+                if(userRole != 'ULB'){
+                    el['targetDisable'] = true;
+                    el['actualDisable'] = true;
+                }
+            })
             let groupedData = groupByKey(formData['data'], "type")
         formData['data'] = groupedData;
           return  res.status(200).json({
@@ -152,9 +171,18 @@ module.exports.getForm = async (req, res) => {
                 data: formData
                })
         }else{
+      let slbData =       await SLB.findOne({ulb: ObjectId(data.ulb), design_year: ObjectId("606aaf854dff55e6c075d219") }).lean()
+      let pipedSupply, waterSuppliedPerDay, reduction, houseHoldCoveredWithSewerage
+      if(slbData){
+        pipedSupply =slbData.waterManagement.houseHoldCoveredPipedSupply.target['2223']
+        waterSuppliedPerDay =slbData.waterManagement.waterSuppliedPerDay.target['2223']
+        reduction =slbData.waterManagement.reduction.target['2223']
+        houseHoldCoveredWithSewerage =slbData.waterManagement.houseHoldCoveredWithSewerage.target['2223']
+      }
 let lineItems = await IndicatorLineItem.find().lean();
 let obj = {
-    
+   targetDisable: false, 
+   actualDisable: false, 
     question:"",
     type:"",
     actual: {
@@ -169,16 +197,37 @@ let obj = {
 }
 let dataArr = []
 lineItems.forEach(el => {
+    let targ = null ;
+    switch (el['_id'].toString()) {
+        case "6284d6f65da0fa64b423b52a":
+            targ = houseHoldCoveredWithSewerage ?? null
+            break;
+            case "6284d6f65da0fa64b423b53a":
+                targ = pipedSupply ?? null
+                break;
+                case "6284d6f65da0fa64b423b53c":
+                    targ = waterSuppliedPerDay
+                    break;
+                    case "6284d6f65da0fa64b423b540":
+                        targ = reduction
+                        break;
+    
+        default:
+            break;
+    }
 obj['unit'] = el['unit'];
 obj['range'] = el['range'];
 obj['indicatorLineItem'] = el['_id'];
 obj['question'] = el['name'];
 obj['type'] = el['type'];
 obj['actual']['value'] = "";
-obj['target_1']['value'] = "";
+obj['target_1']['value'] = targ ?? "" ;
+obj['targetDisable'] = targ || userRole != 'ULB' ? true : false
+obj['actualDisable'] = userRole != 'ULB' ? true : false
 dataArr.push(obj)
 obj = {
-    _id: "",
+targetDisable : false,
+actualDisable : false,
     question:"",
     unit:"",
     range:"",
@@ -200,7 +249,10 @@ let groupedData = groupByKey(dataArr, "type")
            output = groupedData;
        return     res.status(200).json({
             success: true,
-            data: output
+            data: {
+                data :  output,
+                population: 0
+            } 
            })
         }
     } catch (error) {

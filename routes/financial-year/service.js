@@ -92,7 +92,7 @@ module.exports.access = async function(req,res)  {
         },
 
     ]
-    const STATE_arr = [
+    let STATE_arr = [
         {
             year:yearList[0],
             url:"/fc_grant"
@@ -145,7 +145,13 @@ module.exports.access = async function(req,res)  {
             arr = outputArr 
             break;
             case "STATE":
-            arr = STATE_arr
+                 userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
+                 let profileVerified = userData.isVerified2223;
+                 STATE_arr[2]['url'] = profileVerified ? '/stateform2223/dashboard' : '/profile-update' ;
+                 arr = STATE_arr
+
+
+
                 break;
                 case "MoHUA":
                     case "ADMIN":

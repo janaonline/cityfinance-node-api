@@ -34,7 +34,8 @@ const TwentyEightSlbFormSchema = new Schema({
         type : {type: String, default : ""}, 
         unit : {type: String, default : ""}, 
         range : {type: String, default : ""}, 
-
+actualDisable : {type: Boolean, default: false},
+targetDisable : {type: Boolean, default: false},
         actual:{
             year:{
                 type: Schema.Types.ObjectId,
