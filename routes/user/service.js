@@ -596,6 +596,7 @@ module.exports.profileUpdate = async (req, res) => {
                     userInfo._id.toString() == user._id)
             ) {
                 try {
+                    obj['isVerified2223'] = true;
                     let out = await User.updateOne(
                         { _id: userInfo._id },
                         { $set: obj }
