@@ -154,7 +154,7 @@ exports.saveData = async (req, res) => {
     if(!form){
       let formData = req.body;
       formData["state"] = state;
-      let data = await GrantDistribution.create(formData).lean();
+      let data = await GrantDistribution.create(formData);
       if(!data){
         return res.status(400).json({
           status: false,
