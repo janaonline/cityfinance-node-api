@@ -17,8 +17,7 @@ exports.getGrantDistribution = async (req, res) => {
     let grantDistribution = await GrantDistribution.find({
       state: ObjectId(state),
       design_year,
-      isActive: true,
-    }).select({ history: 0 });
+    }).select({ history: 0 }).lean();
 
     grantDistribution = JSON.parse(JSON.stringify(grantDistribution))
     grantDistribution.forEach((entity)=>{
