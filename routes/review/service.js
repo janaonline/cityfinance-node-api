@@ -187,8 +187,8 @@ module.exports.get = catchAsync( async(req,res) => {
     
         // filled1 -> will be used for all the forms and Provisional of Annual accounts
         // filled2 -> only for annual accounts -> audited section
-        filter['filled1'] = req.query.filled1
-        filter['filled2'] = req.query.filled2
+        filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1  : ""
+        filter['filled2'] = req.query.filled2  != 'null' ? req.query.filled2  : ""
         if (filter["censusCode"]) {
             let code = filter["censusCode"];
             var digit = code.toString()[0];
