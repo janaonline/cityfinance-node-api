@@ -22,15 +22,15 @@ exports.getGrantDistribution = async (req, res) => {
     grantDistribution = JSON.parse(JSON.stringify(grantDistribution))
     grantDistribution.forEach((entity)=>{
 
-            if(entity.design_year.toString() == "606aadac4dff55e6c075c507"){
+            if(entity.year.toString() == "606aadac4dff55e6c075c507"){
                 entity.key = `${entity.type}_2020-21_${entity.installment}`
             } 
 
-            if(entity.design_year.toString() == ObjectId("606aaf854dff55e6c075d219")){
+            if(entity.year.toString() == ObjectId("606aaf854dff55e6c075d219")){
                 entity.key = `${entity.type}_2021-22_${entity.installment}`
             } 
             
-            if(entity.design_year.toString() == "606aafb14dff55e6c075d3ae"){
+            if(entity.year.toString() == "606aafb14dff55e6c075d3ae"){
                 entity.key = `${entity.type}_2022-23_${entity.installment}`
             }
         })
