@@ -179,7 +179,7 @@ module.exports.get = catchAsync( async(req,res) => {
     if(formType === "ULB"){
         filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName  : ""
         filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode  : ""
-        filter['ulbCode'] = req.query.ulbCode != 'null' ? req.query.ulbCode  : ""
+        filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType  : ""
         filter['state'] = req.query.stateName != 'null' ? req.query.stateName  : ""
         filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType  : ""
         filter['UA'] = req.query.UA != 'null' ? req.query.UA  : ""
