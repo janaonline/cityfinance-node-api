@@ -137,17 +137,35 @@ exports.uploadTemplate = async (req, res) => {
 
 exports.saveData = async (req, res) => {
   try {
-    let { design_year } = req.body;
+    let { design_year, type, installment ,year} = req.body;
     let state = req.decoded?.state;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
 
+    let condition = {}
+    condition["state"] = state;
+    condition["design_year"] =  design_year;
+    condition["type"] = type;
+    condition['installment'] = installment;
+    condition['year'] = year;
+
+    let form = await GrantDistribution.findOne(condition).lean();
+    
+    if(!form){
+      let formData = req.body;
+      formData["state"] = state;
+      let data = await GrantDistribution.create(formData).lean();
+      if(!data){
+        return res.status(400).json({
+          status: false,
+          message: "Form not saved."
+        })
+      }
+      return Response.OK(res, data, "file submitted");
+    }
+
     let data = await GrantDistribution.findOneAndUpdate(
-      {
-        state: ObjectId(state),
-        isActive: true,
-        design_year,
-      },
+      condition,
       req.body,
       {
         upsert: true,
@@ -155,8 +173,10 @@ exports.saveData = async (req, res) => {
         new: true,
       }
     );
-    await UpdateStateMasterForm(req, "grantAllocation");
-    return Response.OK(res, data, "file submitted");
+    if(design_year === "606aaf854dff55e6c075d219"){
+      await UpdateStateMasterForm(req, "grantAllocation");
+    }
+    return Response.OK(res, data, "file updated");
   } catch (err) {
     console.error(err.message);
     return Response.DbError(res, err.message, "server error");
