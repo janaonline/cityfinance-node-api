@@ -177,18 +177,18 @@ module.exports.get = catchAsync( async(req,res) => {
     let formTab = await Sidemenu.findOne({_id: ObjectId(form)}).lean();
     let formType = formTab.role
     if(formType === "ULB"){
-        filter['ulbName'] = req.query.ulbName
-        filter['censusCode'] = req.query.censusCode
-        filter['ulbCode'] = req.query.ulbCode
-        filter['state'] = req.query.stateName
-        filter['ulbType'] = req.query.ulbType
-        filter['UA'] = req.query.UA
-        filter['status'] = req.query.status
+        filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName  : ""
+        filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode  : ""
+        filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType  : ""
+        filter['state'] = req.query.stateName != 'null' ? req.query.stateName  : ""
+        filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType  : ""
+        filter['UA'] = req.query.UA != 'null' ? req.query.UA  : ""
+        filter['status'] = req.query.status != 'null' ? req.query.status  : ""
     
         // filled1 -> will be used for all the forms and Provisional of Annual accounts
         // filled2 -> only for annual accounts -> audited section
-        filter['filled1'] = req.query.filled1
-        filter['filled2'] = req.query.filled2
+        filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1  : ""
+        filter['filled2'] = req.query.filled2  != 'null' ? req.query.filled2  : ""
         if (filter["censusCode"]) {
             let code = filter["censusCode"];
             var digit = code.toString()[0];
@@ -576,7 +576,7 @@ switch(userRole){
         query_notFilter_pagination.push(...query_3)
 
         query_Filter_total_count.push(...query_3)
-        query_Filter_total = query_Filter_total_count;
+        query_Filter_total = query_Filter_total_count.slice();
         filterApplied = Object.keys(filter).length > 0
         if(Object.keys(filter).length>0){
             query_Filter_total.push({
