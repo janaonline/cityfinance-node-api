@@ -158,10 +158,12 @@ module.exports.getForm = async (req, res) => {
                 if(!formData['isDraft']){
                     el['targetDisable'] = true;
                     el['actualDisable'] = true;
+                    formData['popDisable'] = true;
                 }
                 if(userRole != 'ULB'){
                     el['targetDisable'] = true;
                     el['actualDisable'] = true;
+                    formData['popDisable'] = true;
                 }
             })
             let groupedData = groupByKey(formData['data'], "type")
