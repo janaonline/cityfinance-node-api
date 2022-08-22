@@ -96,12 +96,12 @@ function getCollections(type, installment){
 function getFormData(formCategory, modelName){
     let formData = {};
     if(formCategory === 'ULB'){
-        formData["approvedColor"] = '#E67E1566';
-        formData['submittedColor'] = '#E67E15';
+        formData["approvedColor"] = '#E67E15';
+        formData['submittedColor'] = '#E67E1566';
         formData['border'] ='#E67E15';
     } else if( formCategory === 'STATE'){
         formData["approvedColor"] = '#059B05';
-        formData['submittedColor'] = '#059B05';
+        formData['submittedColor'] = '#ffffff';
         formData['border'] ='#059B05'
     }
 
@@ -376,7 +376,7 @@ module.exports.dashboard = async (req, res) => {
             if(submittedFormPercent[modelName] <= 0){
                 formData.status = "Not started"
             } else if (approvedFormPercent === 100){
-                formData.status = "Completed"
+                formData.status = "Submitted"
             } else {
                 formData.status = "In Progress"
             }
