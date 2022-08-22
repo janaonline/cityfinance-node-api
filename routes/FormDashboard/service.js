@@ -6,25 +6,27 @@ const StatusList = require('../../util/newStatusList');
 const StateFinanceCommission = require('../../models/StateFinanceCommissionFormation');
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const DUR = require('../../models/UtilizationReport');
-const PropTax = require('../../models/PropertyTaxOp');
+const PropertyTaxOp = require('../../models/PropertyTaxOp');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const GfcFormCollection = require('../../models/GfcFormCollection');
 const SLB = require('../../models/XVFcGrantForm');
+const State = require('../../models/State');
 const ObjectId = require('mongoose').Types.ObjectId;
-
-const CollectionNames = {
-    annualAcc: "AnnualAccounts",
-    linkPFMS: "LinkPFMS",
+        
+const ModelNames = {
+    annualAcc: "AnnualAccountData",
+    linkPFMS: "PFMSAccount",
     gtc: "GrantTransferCertificate",
     sfc: "StateFinanceCommissionFormation",
     pTAX: "PropertyTaxFloorRate",
-    dur: "DUR",
+    dur: "UtilizationReport",
     propTax:"PropTax",
-    twentyEightSlbs: "TwentyEightSlbsForm",
+    twentyEightSlbs: "TwentyEightSlbForm",
     odf: "OdfFormCollection",
     gfc: "GfcFormCollection",
-    slb: "SLB"
+    slb: "XVFcGrantULBForm",
+    
 }
 const CUTOFF =  {
     STATE:{
@@ -35,31 +37,27 @@ const CUTOFF =  {
             
         },
         mpc_tied: {
-            scoring: 100
         }
     },
     ULB:{
         nmpc_untied: {
-            annualAccount: 25,
+            [ModelNames.annualAcc]: 25,
             linkPFMS: 100,
             
         },
         nmpc_tied : {
-            annualAccount: 25,
-            linkPFMS: 100,
-            dur: 100,
-            pTax: 100
+            [ModelNames.annualAcc]: 25,
+            [ModelNames.linkPFMS]: 100,
+            [ModelNames.dur]: 100,
         },
         mpc_tied: {
-            annualAccount: 25,
-            linkPFMS: 100,
-            dur: 100,
-            pTax: 100,
-            twentyEightSlbs: 100,
-            slb:100,
-            odf:100,
-            gfc:100,
-
+            [ModelNames.annualAcc]: 25,
+            [ModelNames.linkPFMS]: 100,
+            [ModelNames.dur]: 100,
+            [ModelNames.twentyEightSlbs]: 100,
+            [ModelNames.slb]:100,
+            [ModelNames.odf]:100,
+            [ModelNames.gfc]:100,
         }
     }
 }
@@ -83,22 +81,96 @@ function getCollections(type, installment){
             break;
         case "nmpc_tied_2":
             collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
-                PropertyTaxFloorRate,StateFinanceCommission, DUR, PropTax];
+                PropertyTaxFloorRate,StateFinanceCommission, DUR];
             break;
         case "mpc_1":
             collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
-                PropertyTaxFloorRate,StateFinanceCommission, DUR, PropTax, 
+                PropertyTaxFloorRate,StateFinanceCommission, DUR, 
                 TwentyEightSlbsForm, OdfFormCollection, GfcFormCollection, SLB
             ]
-            break;
-                    
+            break;            
     }
     return collections;
-}
+}            
 
+function getFormData(formCategory, modelName){
+    let formData = {};
+    if(formCategory === 'ULB'){
+        formData["approvedColor"] = '#E67E1566';
+        formData['submittedColor'] = '#E67E15';
+        formData['border'] ='#E67E15';
+    } else if( formCategory === 'STATE'){
+        formData["approvedColor"] = '#059B05';
+        formData['submittedColor'] = '#059B05';
+        formData['border'] ='#059B05'
+    }
+
+    if(formCategory === 'ULB'){
+        switch(modelName){
+            case ModelNames.annualAcc:
+                formData["formName"] = "Annual Accounts";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+            case ModelNames.linkPFMS:
+                formData["formName"] = "Linking of PFMS Account";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+            case ModelNames.dur:
+                formData["formName"] = "Detailed Utilisation Report";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+            case ModelNames.gtc:
+                formData["formName"] = "Grant Transfer Certificate";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;  
+            case ModelNames.twentyEightSlbs:
+                formData["formName"] = "28 SLBs";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;      
+            case ModelNames.slb:
+                formData["formName"] = "SLBs for Water Supply and Sanitation";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+            case ModelNames.odf:
+                formData["formName"] = "Open Defecation Free (ODF)";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+            case ModelNames.gfc:
+                formData["formName"] = "Garbage Free City (GFC)";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+        }
+    } else if(formCategory === "STATE"){
+        switch(modelName){
+            case ModelNames.sfc:
+                formData["formName"] = "SFC Notification";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+            case ModelNames.pTAX:
+                formData["formName"] = "Property Tax Floor Rate";
+                formData['icon'] = '';
+                formData['link'] = '';
+                break;
+        }
+    }
+    return formData;
+}
 function approvedForms(forms,formCategory){
     let numOfApprovedForms = 0;
-    forms.forEach((element) => {
+    for(let i =0 ; i < forms.length; i++){
+        let element = forms[i];
+        if(!element){ 
+            break;
+        }
         let {status, actionTakenByRole: role, isDraft} = element
         switch(formCategory){
             case "ULB":
@@ -113,159 +185,241 @@ function approvedForms(forms,formCategory){
                     numOfApprovedForms++;
                 }
                 break;
-        }
-    })
-    
+        } 
+    }
     return numOfApprovedForms;
 }
 
-function getQuery(collection, designYear){
-    let query = {}
-    let submitCondition = {
-        isDraft:false,
-        actionTakenByRole:{$ne:"ULB"},
-        status: {$ne:"REJECTED"}
-    };
+function getQuery(modelName, designYear){
+    let query = [];
+    let condition = {};
 
-    switch(collection){
+    let submitConditionUlb = [{
+        isDraft: false,
+        actionTakenByRole: "ULB",
+        status: "PENDING"
+    },{
+        isDraft: false,
+        actionTakenByRole: "STATE",
+        status: "APPROVED"
+    },{
+        isDraft: false,
+        actionTakenByRole: "MoHUA",
+        status:"APPROVED"
+    }]
+
+    let submitConditionState = [
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING", 
+        },
+        {
+            isDraft: false,
+            actionTakenByRole: "MoHUA",
+            status: "APPROVED"
+        }
+    ]
+
+    switch(modelName){
         case "AnnualAccountData":
-            query["$match"] = {
-                design_year: ObjectId(designYear),
-                $or:[submitCondition]
-            }  
-            break;
-        case "LinkPFMS":
-            query["$match"] = {
-                design_year: ObjectId(designYear),
-                $or: [submitCondition]
-
-            }
+            condition = {
+                audited :{
+                    submit_annual_accounts: true
+                },
+                unAudited: {
+                    submit_annual_accounts: true
+                },
+                isDraft: false
+            };
+            query.push({
+                $match: {
+                    design_year: ObjectId(designYear),
+                    $or:[...submitConditionUlb,condition]
+                }
+            });
             break;
         case "GrantTransferCertificate":
 
-            break;
+        case "PFMSAccount":
+            condition = {
+                linkPFMS:'Yes',
+                isUlbLinkedWithPFMS: 'Yes',
+                isDraft: false
+            }
+        case "TwentyEightSlbForm":
         case "GfcFormCollection":
-            break;
-        case "OdfFormCollection":
-            break;
-        case "StateFinanceCommissionFormation":
+        case "OdfFormCollection": 
+        case "XVFcGrantULBForm":
+            query.push({
+                $match:{
+                    design_year: ObjectId(designYear),
+                    $or:[...submitConditionUlb]
+            }
+            });
             break;
         case "UtilizationReport":
+            query.push({
+                $match:{
+                    designYear: ObjectId(designYear),
+                    $or:[...submitConditionUlb]
+            }
+            });
             break;
-        case "TwentyEightSlbForm":
-            break;
-        case "XVFcGrantULBForm":
-            break;
+        case "StateFinanceCommissionFormation":
         case "PropertyTaxFloorRate":
+            query.push({
+                $match:{
+                    design_year: ObjectId(designYear),
+                    $or:[...submitConditionState]
+            }
+            })  
             break;
-        
     }
     return query;
 }
 module.exports.dashboard = async (req, res) => {
     try {
-        
         let data = req.query;
         let user = req.decoded;
-        const {_id:actionTakenBy, role: actionTakenByRole} = user;
-        
-        let outputResponse = [
-            {
-              formHeader:'ULB Forms',
-              approvedColor:'#E67E15',
-              submittedColor:'#E67E1566',
-              formData :[{
-                 formName: 'Annual Account Upload',
-                 approvedColor:'#E67E1566',
-                 submittedColor:'#E67E15',
-                 submittedValue:0,
-                 approvedValue: 0,
-                 cutOff: `${CUTOFF[actionTakenByRole][data.formType]}`,
-                 icon: '',
-                 link: '',
-                 border:'#E67E15',
-                 status:'Not Started'
-              },
-              {
-                formName: 'PFMS Linkage',
-                approvedColor:'#E67E1566',
-                submittedColor:'#E67E15',
-                submittedValue:40,
-                approvedValue: 30,
-                cutOff:`${CUTOFF[actionTakenByRole][data.formType]}` ,
-                icon:'',
-                link:'',
-                border:'#E67E15',
-                status:'Not Started'
-              }]
-            },
-            {
-              formHeader:'State Forms',
-              approvedColor:'#059B05',
-              submittedColor:'#E67E1566',
-              formData :[{
-                formName: 'SFC Notification',
-                approvedColor:'#059B05',
-                submittedColor:'#059B05',
-                submittedValue:100,
-                approvedValue: 0,
-                cutOff: `${CUTOFF[actionTakenByRole][data.formType]}`,
-                icon:'',
-                link:'',
-                border:'#059B05',
-                status:'Approved'
-             },
-             {
-               formName: 'Property Tax',
-               approvedColor:'#059B05',
-               submittedColor:'#059B05',
-               submittedValue:100,
-               approvedValue: 0,
-               cutOff: `${CUTOFF[actionTakenByRole][data.formType]}`,
-               icon:'',
-               link:'',
-               border:'#059B05',
-               status:'Approved'
-             }]
-            }
-          ] 
-    
+        const {_id:actionTakenBy, role: actionTakenByRole, state } = user;
+        let stateResponseArray = [], ulbResponseArray = [];
         let collectionArr = getCollections(data.formType, data.installment);
     
-        let numOfApprovedForms = {} ,
-            numOfSubmittedForms = {};
-        collectionArr.forEach(async (collection) => {
-            let formCategory = "";
-            let collectionName = collection.collection.modelName;
-            let pipeline = getQuery(collectionName, data.design_year);
-            pipeline2 = {
+        let approvedFormPercent = {} ,
+            submittedFormPercent = {};
+        let totalUlbPipeline = [
+            {
                 $match:{
-                design_year: ObjectId("606aafb14dff55e6c075d3ae"),
-                $or:[
-                {
-                    isDraft:false,
-                    actionTakenByRole:{$ne:"ULB"},
-                    status: {$ne:"REJECTED"}
-                }]
+                    _id: ObjectId(state)
+                }
+            },
+            {
+                $lookup:{
+                    from: "ulbs",
+                    localField: "_id",
+                    foreignField: "state",
+                    as: "ulb",
+                }
+            },
+            {$unwind: "$ulb" },
+            {
+                $group:{
+                    _id: null,
+                    totalUlb: {$sum:1}
+                }
             }
-            }
-            let submittedForms = await collection.aggregate([pipeline2]);
-            numOfSubmittedForms[collectionName] = submittedForms.length;
+           
+            ]
+        const totalUlbs = await State.aggregate(totalUlbPipeline);
+        let totalForms = totalUlbs[0]["totalUlb"];
+        for(let i =0; i < collectionArr.length; i++){
+            let stateResponse = {
+                formName: '',
+                approvedColor:'',
+                submittedColor:'',
+                submittedValue:0,
+                approvedValue: 0,
+                cutOff: ``,
+                icon:'',
+                link:'',
+                border:'',
+                status:''
+            };
+            let ulbResponse = {
+                formName: '',
+                approvedColor:'',
+                submittedColor:'',
+                submittedValue:0,
+                approvedValue: 0,
+                cutOff: ``,
+                icon: '',
+                link: '',
+                border:'',
+                status:''
+            };
+            let collection = collectionArr[i];
+            let formCategory = "";
+            let submitPercent = 0;
+            let cutOff = 0;
+            let totalApprovedForm = 0;
+            let modelName = collection.collection.modelName;
+            //Get pipeline query, using modelName
+            let pipeline = getQuery(modelName, data.design_year);
+            //Get submitted forms 
+            let submittedForms = await collection.aggregate(pipeline);
+            submitPercent = Math.round((submittedForms.length/totalForms)*100);
+            submittedFormPercent[modelName] = submitPercent;
 
-            if(collectionName !== CollectionNames.gtc && collectionName !== CollectionNames.sfc && 
-                collectionName !== CollectionNames.pTax){
+            if(modelName !== ModelNames.pTAX && modelName !== ModelNames.sfc){
                 formCategory = "ULB";
             } else {
-                formCategory = "STATE"
+                formCategory = "STATE";
             }
-            numOfApprovedForms[collectionName] = approvedForms(submittedForms, formCategory);
-        });
+            //Get Approved forms percent
+            totalApprovedForm = approvedForms(submittedForms, formCategory);
+            approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100)
 
+            let formData = getFormData(formCategory, modelName);
+            //Adding status to formData
+            if(submittedFormPercent[modelName] <= 0){
+                formData.status = "Not started"
+            } else if (approvedFormPercent === 100){
+                formData.status = "Completed"
+            } else {
+                formData.status = "In Progress"
+            }
+            if(!(CUTOFF[formCategory][data.formType][modelName])){
+                cutOff = "NA"
+            } else {
+                cutOff = CUTOFF[formCategory][data.formType][modelName]
+            }
+            if(formCategory === "ULB"){
+                ulbResponse = {
+                    formName: formData.formName,
+                    approvedColor:formData.approvedColor,
+                    submittedColor: formData.submittedColor,
+                    submittedValue: submittedFormPercent[modelName],
+                    approvedValue: approvedFormPercent[modelName],
+                    cutOff,
+                    icon: '',
+                    link: '',
+                    border:formData.border,
+                    status:formData.status
+                };
+                ulbResponseArray.push(ulbResponse);
+            } else if( formCategory === "STATE") {
+                stateResponse = {
+                    formName: formData.formName,
+                    approvedColor: formData.approvedColor,
+                    submittedColor: formData.submittedColor,
+                    submittedValue: submittedFormPercent[modelName],
+                    approvedValue: approvedFormPercent[modelName],
+                    cutOff,
+                    icon:'',
+                    link:'',
+                    border: formData.border,
+                    status: formData.status
+                };
+                stateResponseArray.push(stateResponse);
+            }
+        };
         return res. status(200).json({
             status: true,
-            
-            numOfApprovedForms,
-            numOfSubmittedForms
+            data: [{
+                formHeader:'ULB Forms',
+                approvedColor:'#E67E15',
+                submittedColor:'#E67E1566',
+                formData: ulbResponseArray
+            },
+            {
+                formHeader:'State Forms',
+                approvedColor:'#059B05',
+                submittedColor:'#E67E1566',
+                formData : stateResponseArray
+            }],
+            approvedFormPercent,
+            submittedFormPercent
         })
 
     } catch (error) {
