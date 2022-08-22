@@ -246,11 +246,17 @@ function getQuery(modelName, designYear){
                 linkPFMS:'Yes',
                 isUlbLinkedWithPFMS: 'Yes',
                 isDraft: false
-            }
+            };
+            query.push({
+                $match: {
+                    design_year: ObjectId(designYear),
+                    $or:[...submitConditionUlb,condition]
+                }
+            });
+            break;
         case "TwentyEightSlbForm":
         case "GfcFormCollection":
         case "OdfFormCollection": 
-        case "XVFcGrantULBForm":
             query.push({
                 $match:{
                     design_year: ObjectId(designYear),
@@ -258,14 +264,19 @@ function getQuery(modelName, designYear){
             }
             });
             break;
-        case "UtilizationReport":
+        case "XVFcGrantULBForm":
+            condition = {
+                blank: false,
+                isDraft: false
+            }
             query.push({
                 $match:{
-                    designYear: ObjectId(designYear),
-                    $or:[...submitConditionUlb]
+                    design_year: ObjectId(designYear),
+                    $or:[...submitConditionUlb, condition]
             }
             });
             break;
+        case "UtilizationReport":
         case "StateFinanceCommissionFormation":
         case "PropertyTaxFloorRate":
             query.push({
@@ -417,9 +428,7 @@ module.exports.dashboard = async (req, res) => {
                 approvedColor:'#059B05',
                 submittedColor:'#E67E1566',
                 formData : stateResponseArray
-            }],
-            approvedFormPercent,
-            submittedFormPercent
+            }]
         })
 
     } catch (error) {
