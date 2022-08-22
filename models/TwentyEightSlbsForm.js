@@ -24,6 +24,10 @@ const TwentyEightSlbFormSchema = new Schema({
         type: Number,
         default:0
     },
+    popDisable: {
+        type: Boolean,
+        default: 0
+    },
     data: [{
         indicatorLineItem:{
             type: Schema.Types.ObjectId,

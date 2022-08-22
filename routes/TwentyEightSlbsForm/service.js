@@ -158,10 +158,12 @@ module.exports.getForm = async (req, res) => {
                 if(!formData['isDraft']){
                     el['targetDisable'] = true;
                     el['actualDisable'] = true;
+                    formData['popDisable'] = true;
                 }
                 if(userRole != 'ULB'){
                     el['targetDisable'] = true;
                     el['actualDisable'] = true;
+                    formData['popDisable'] = true;
                 }
             })
             let groupedData = groupByKey(formData['data'], "type")
@@ -246,7 +248,11 @@ actualDisable : false,
 let groupedData = groupByKey(dataArr, "type")
 
           let output = {}
-           output = groupedData;
+
+         
+          Object.assign(output,{"water supply" : groupedData['water supply'],"sanitation": groupedData['sanitation'], "solid waste": groupedData['solid waste'], "storm water" : groupedData['storm water']}   )
+          
+           
        return     res.status(200).json({
             success: true,
             data: {
