@@ -83,7 +83,7 @@ function getCollections(type, installment){
             collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
                 PropertyTaxFloorRate,StateFinanceCommission, DUR];
             break;
-        case "mpc_1":
+        case "mpc_tied_1":
             collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
                 PropertyTaxFloorRate,StateFinanceCommission, DUR, 
                 TwentyEightSlbsForm, OdfFormCollection, GfcFormCollection, SLB
