@@ -309,7 +309,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
-                            state: stateId,
+                            state: ObjectId(stateId),
                             $or:[...submitConditionState]
                     }
                     })  
