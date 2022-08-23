@@ -165,8 +165,8 @@ exports.createUpdate = async (req, res) => {
         }
       );
     }
-
-    // await UpdateMasterSubmitForm(req, "annualAccounts");
+    if(formData['design_year'] == '606aaf854dff55e6c075d219')
+    await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
       msg: "AnnualAccountData Submitted!",
