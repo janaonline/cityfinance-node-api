@@ -1,8 +1,8 @@
 const User = require("../models/User");
 const UlbFinancialData = require("../models/UlbFinancialData");
 const XVFCGrantULBData = require("../models/XVFcGrantForm");
-
-const Email = require("./email");
+const sendEmail = require("./email");
+const Service = require('../service');
 const emailVericationLink = require("./email-verification-link");
 const ObjectId = require("mongoose").Types.ObjectId;
 const userSignup = (userName, name, link) => {
@@ -756,7 +756,7 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
           let templateUlb = fdUploadUlb(data.ulbUser.name);
           mailOptionUlb.subject = templateUlb.subject;
           mailOptionUlb.html = templateUlb.body;
-          Email(mailOptionUlb);
+          sendEmail(mailOptionUlb);
           /*    
           let partner = await User.find({
               isActive: true,
@@ -780,7 +780,7 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
                       subject: template.subject,
                       html: template.body
                   };
-                  Email(mailOptions);
+                  sendEmail(mailOptions);
               }
           }
           */
@@ -802,7 +802,7 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
             mailOptionState.to = stateEmails.join();
             mailOptionState.subject = templateState.subject;
             mailOptionState.html = templateState.body;
-            Email(mailOptionState);
+            sendEmail(mailOptionState);
           }
         } else if (type == "ACTION") {
           if (data.status == "APPROVED") {
@@ -814,7 +814,7 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
             );
             mailOptionUlb.subject = templateUlb.subject;
             mailOptionUlb.html = templateUlb.body;
-            Email(mailOptionUlb);
+            sendEmail(mailOptionUlb);
 
             for (let d of data.stateUser) {
               d.email ? stateEmails.push(d.email) : "";
@@ -830,7 +830,7 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
               mailOptionState.to = stateEmails.join();
               mailOptionState.subject = templateState.subject;
               mailOptionState.html = templateState.body;
-              Email(mailOptionState);
+              sendEmail(mailOptionState);
             }
           } else if (data.status == 'REJECTED') {
             let reportsStr = ``;
@@ -848,7 +848,7 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
             );
             mailOptionUlb.subject = templateUlb.subject;
             mailOptionUlb.html = templateUlb.body;
-            Email(mailOptionUlb);
+            sendEmail(mailOptionUlb);
 
             for (let d of data.stateUser) {
               d.email ? stateEmails.push(d.email) : '';
@@ -866,7 +866,7 @@ const sendFinancialDataStatusEmail = (_id, type = "UPLOAD") => {
               mailOptionState.to = stateEmails.join();
               mailOptionState.subject = templateState.subject;
               mailOptionState.html = templateState.body;
-              Email(mailOptionState);
+              sendEmail(mailOptionState);
             }
           }
         }
@@ -1035,7 +1035,7 @@ const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
           // console.log(`email to`, mailOptionUlb.to);
           mailOptionUlb.subject = templateUlb.subject;
           mailOptionUlb.html = templateUlb.body;
-          Email(mailOptionUlb);
+          sendEmail(mailOptionUlb);
 
           let partner = await User.find({
             isActive: true,
@@ -1061,7 +1061,7 @@ const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
               };
               // console.log(`email to`, mailOptions.to);
 
-              Email(mailOptions);
+              sendEmail(mailOptions);
             }
           }
 
@@ -1086,7 +1086,7 @@ const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
             mailOptionState.html = templateState.body;
             // console.log(`email to`, mailOptionState.to);
 
-            Email(mailOptionState);
+            sendEmail(mailOptionState);
           }
         } else if (type == 'ACTION') {
           if (data.status == 'APPROVED') {
@@ -1098,7 +1098,7 @@ const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
             );
             mailOptionUlb.subject = templateUlb.subject;
             mailOptionUlb.html = templateUlb.body;
-            Email(mailOptionUlb);
+            sendEmail(mailOptionUlb);
 
             for (let d of data.stateUser) {
               d.email ? stateEmails.push(d.email) : '';
@@ -1116,7 +1116,7 @@ const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
               mailOptionState.to = stateEmails.join();
               mailOptionState.subject = templateState.subject;
               mailOptionState.html = templateState.body;
-              Email(mailOptionState);
+              sendEmail(mailOptionState);
             }
           } else if (data.status == 'REJECTED') {
             let reportsStr = ``;
@@ -1135,7 +1135,7 @@ const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
             );
             mailOptionUlb.subject = templateUlb.subject;
             mailOptionUlb.html = templateUlb.body;
-            Email(mailOptionUlb);
+            sendEmail(mailOptionUlb);
 
             for (let d of data.stateUser) {
               d.email ? stateEmails.push(d.email) : "";
@@ -1151,12 +1151,12 @@ const sendULBFinancialDataStatusEmail = (_id, type = 'UPLOAD') => {
               mailOptionState.to = stateEmails.join();
               mailOptionState.subject = templateState.subject;
               mailOptionState.html = templateState.body;
-              Email(mailOptionState);
+              sendEmail(mailOptionState);
             }
           }
         }
-        //Email(mailOptionUlb);
-        //Email(mailOptionState);
+        //sendEmail(mailOptionUlb);
+        //sendEmail(mailOptionState);
         resolve("send");
       } else {
         reject(`Record not found.`);
@@ -1273,7 +1273,7 @@ const sendUlbSignupStatusEmmail = (_id, link, edit = false) => {
                     mailOptionUlb.subject = templateUlb.subject;
                     mailOptionUlb.html = templateUlb.body;
                 }*/
-        Email(mailOptionUlb);
+        sendEmail(mailOptionUlb);
         resolve("email sent.");
       } else {
         reject("user not found.");
@@ -1300,7 +1300,7 @@ const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl) => {
           subject: template.subject,
           html: template.body,
         };
-        Email(mailOptions);
+        sendEmail(mailOptions);
       } else {
         emails.push(userInfo.email);
       }
@@ -1318,7 +1318,7 @@ const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl) => {
           subject: template.subject,
           html: template.body,
         };
-        Email(mailOptions);
+        // sendEmail(mailOptions);
       }
       resolve("done");
     } catch (e) {

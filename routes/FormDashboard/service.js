@@ -110,7 +110,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
         let element = sidemenuForms[i];
         let flag = false;
         
-        //First 3 cases where ModelName is not equal to path in sidemenu form
+        //First 4 cases where ModelName is not equal to path in sidemenu form
         if( modelName === ModelNames.annualAcc && element._id === "AnnualAccounts"){
             flag = true;
             formData["formName"] = element.name;
@@ -128,6 +128,12 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.slb]}`;
+        }else if(modelName === ModelNames.twentyEightSlbs && element._id === "TwentyEightSlbsForm"){
+            flag = true;
+            formData["formName"] = element.name;
+            formData['icon'] = element.icon;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.twentyEightSlbs]}`;
+
         } else if (modelName === ModelNames.dur && element._id === ModelNames.dur){
             flag = true;
             formData["formName"] = element.name;
@@ -303,7 +309,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
-                            state: stateId,
+                            state: ObjectId(stateId),
                             $or:[...submitConditionState]
                     }
                     })  
