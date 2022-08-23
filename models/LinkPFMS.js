@@ -97,10 +97,15 @@ const PFMSAccountSchema = new Schema(
         otherDocs: pdfSchema(),
         rejectReason: { type: String, default: "" },
         responseFile: pdfSchema(),
+        
+        responseFile_state:pdfSchema(),
+        responseFile_mohua:pdfSchema(),
+        rejectReason_state:{ type: String, default: "" },
+        rejectReason_mohua: { type: String, default: "" },
         isDraft: {
             type: Boolean,
             required: [true, "draft key is required."],
-            default: false
+            default: true
         },
         history:{
             type: Array,

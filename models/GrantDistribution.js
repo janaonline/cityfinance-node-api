@@ -19,10 +19,17 @@ const GrantDistributionSchema = new Schema(
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
+
 GrantDistributionSchema.index(
   {
     state: 1,
     design_year: 1,
+<<<<<<< HEAD
+=======
+    type:1,
+    installment:1,
+    year:1
+>>>>>>> 9622482fd51fcda1ef2b54cc37145caad93251cc
   },
   {
     unique: true,

@@ -7,6 +7,6 @@ module.exports = {
     'Rejected_By_State': 'Returned By State',
     'Approved_By_MoHUA': 'Approved By MoHUA',
     'Rejected_By_MoHUA': 'Returned By MoHUA',
-    'Submitted': 'Filled',
-    'Not_Submitted': 'Not Filled'
+    'Submitted': 'Yes',
+    'Not_Submitted': 'No'
 }
