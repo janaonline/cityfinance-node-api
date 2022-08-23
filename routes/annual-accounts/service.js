@@ -61,8 +61,8 @@ exports.createUpdate = async (req, res) => {
           
         }
       }
-      formData['unAudited']['provisional_data'] = proData;
-      formData['audited']['provisional_data'] = audData;
+      formData['unAudited']['provisional_data'] = proData ?? req.body.unAudited.provisional_data ;
+      formData['audited']['provisional_data'] = audData ?? req.body.audited.provisional_data ;
 
       req.body.status = "PENDING";
       currentAnnualAccounts = await AnnualAccountData.findOne({
