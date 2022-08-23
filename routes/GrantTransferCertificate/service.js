@@ -1,7 +1,7 @@
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const Ulb = require('../../models/Ulb')
 
 function response(form, res, successMsg, errMsg){
     if(form){
@@ -20,11 +20,17 @@ function response(form, res, successMsg, errMsg){
 
 module.exports.getForm = async (req, res) =>{
     try {
+
         const data = req.query;
         const condition = {};
+        const ulb = req.decoded.ulb;
         condition.design_year = data.design_year;
         condition.state = data.state;
-
+let mpc = false;
+let isUA = false
+        let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+mpc = ulbData?.population > 1000000 ? true : false;
+isUA = ulbData?.isUA == 'Yes' ? true : false
         const prevFormData = await StateGTCCertificate.findOne({
             state:data.state,
             design_year: ObjectId("606aaf854dff55e6c075d219"),
@@ -125,10 +131,26 @@ module.exports.getForm = async (req, res) =>{
         }
 
         let forms = [...form,...result]
+        let output = []
+        if(forms.length){
+            forms.forEach(el => {
+if(mpc){
+    if(el['type']  == 'million_tied')
+    output.push(el)
+}else if(!mpc && isUA){
+    if(el['type']  == 'million_tied' || el['type']  == 'nonmillion_tied' || el['type']  == 'nonmillion_untied'  )
+    output.push(el)
+}else if(!mpc && !isUA){
+    if(el['type']  == 'nonmillion_tied' || el['type']  == 'nonmillion_untied'  )
+    output.push(el)   
+}
+            })
+        }
+        
             if(forms){
                 return res.status(200).json({
                     status: true,
-                    data: forms,
+                    data: output,
                 });
 
             } else{
