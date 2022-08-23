@@ -141,6 +141,7 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 
     if (savedData) {
+      if(designYear == "606aaf854dff55e6c075d219")
       await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
         msg: "Utilization Report Submitted Successfully!",
@@ -361,7 +362,7 @@ exports.action = async (req, res) => {
       if (!updatedRecord) {
         return res.status(400).json({ msg: "No Record Found" });
       }
-
+if(designYear == "606aaf854dff55e6c075d219")
       await UpdateMasterSubmitForm(req, "utilReport");
       let newUtil = {
         status: data?.status,
