@@ -159,16 +159,16 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.odf]}`;
                     
         }else if (modelName === ModelNames.gfc && element._id === ModelNames.gfc){
-                flag = true;
-                formData["formName"] = element.name;
-                formData['icon'] = element.icon;
-                formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.gfc]}`;
+            flag = true;
+            formData["formName"] = element.name;
+            formData['icon'] = element.icon;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.gfc]}`;
                 
         }else if (modelName === ModelNames.sfc && element._id === ModelNames.sfc){
-                    flag = true;
-                    formData["formName"] = element.name;
-                    formData['icon'] = element.icon;
-                    formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.sfc]}`;
+            flag = true;
+            formData["formName"] = element.name;
+            formData['icon'] = element.icon;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.sfc]}`;
                     
         }else if (modelName === ModelNames.pTAX && element._id === ModelNames.pTAX ){
             flag = true;
@@ -256,20 +256,19 @@ function getQuery(modelName, designYear, formCategory, stateId){
                         }
                     });
                     break;
-                case "GrantTransferCertificate":
-                case "PFMSAccount":
-                    condition = {
-                        linkPFMS:'Yes',
-                        isUlbLinkedWithPFMS: 'Yes',
-                        isDraft: false
-                    };
-                    query.push({
-                        $match: {
-                            design_year: ObjectId(designYear),
-                            $or:[...submitConditionUlb,condition]
-                        }
-                    });
-                    break;
+                    case "PFMSAccount":
+                        condition = {
+                            linkPFMS:'Yes',
+                            isUlbLinkedWithPFMS: 'Yes',
+                            isDraft: false
+                        };
+                        query.push({
+                            $match: {
+                                design_year: ObjectId(designYear),
+                                $or:[...submitConditionUlb,condition]
+                            }
+                        });
+                        break;
                 case "TwentyEightSlbForm":
                 case "GfcFormCollection":
                 case "OdfFormCollection": 
@@ -306,6 +305,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
             switch(modelName){
                 case "StateFinanceCommissionFormation":
                 case "PropertyTaxFloorRate":
+                case "GrantTransferCertificate":
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
@@ -405,7 +405,8 @@ module.exports.dashboard = async (req, res) => {
             let cutOff = 0;
             let totalApprovedForm = 0;
             let modelName = collection.collection.modelName;
-            if(modelName !== ModelNames.pTAX && modelName !== ModelNames.sfc){
+            if(modelName !== ModelNames.pTAX && modelName !== ModelNames.sfc &&
+                modelName !== ModelNames.gtc){
                 formCategory = "ULB";
             } else {
                 formCategory = "STATE";
