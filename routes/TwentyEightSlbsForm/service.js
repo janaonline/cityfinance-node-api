@@ -176,10 +176,10 @@ module.exports.getForm = async (req, res) => {
       let slbData =       await SLB.findOne({ulb: ObjectId(data.ulb), design_year: ObjectId("606aaf854dff55e6c075d219") }).lean()
       let pipedSupply, waterSuppliedPerDay, reduction, houseHoldCoveredWithSewerage
       if(slbData){
-        pipedSupply =slbData.waterManagement.houseHoldCoveredPipedSupply.target['2223']
-        waterSuppliedPerDay =slbData.waterManagement.waterSuppliedPerDay.target['2223']
-        reduction =slbData.waterManagement.reduction.target['2223']
-        houseHoldCoveredWithSewerage =slbData.waterManagement.houseHoldCoveredWithSewerage.target['2223']
+        pipedSupply =slbData.waterManagement.houseHoldCoveredPipedSupply.target['2223'] ?? ""
+        waterSuppliedPerDay =slbData.waterManagement.waterSuppliedPerDay.target['2223'] ?? ""
+        reduction =slbData.waterManagement.reduction.target['2223'] ?? ""
+        houseHoldCoveredWithSewerage =slbData.waterManagement.houseHoldCoveredWithSewerage.target['2223'] ?? ""
       }
 let lineItems = await IndicatorLineItem.find().lean();
 let obj = {
