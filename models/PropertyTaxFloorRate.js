@@ -1,26 +1,18 @@
 require('./dbConnect');
 const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const {Schema} = mongoose;
 
-const pdfSchema = () => {
+const pdfSchema = ()=>{
     return {
-        url: { type: String},
-        name: { type: String}
+        url: {type: String},
+        name: {type: String},
     }
 }
 
-const GfcFormCollectionSchema = new Schema({
-    rating:{
+const propertyTaxFloorRateSchema = new Schema({
+    state:{
         type: Schema.Types.ObjectId,
-        ref: 'Rating',
-    },
-    cert: pdfSchema(),
-    certDate:{
-        type: Date,
-    },
-    ulb:{
-        type: Schema.Types.ObjectId,
-        ref: 'Ulb',
+        ref: 'State',
         required: true,
     },
     design_year: {
@@ -28,9 +20,17 @@ const GfcFormCollectionSchema = new Schema({
         ref: 'Year',
         required: true,
     },
+    stateNotification: pdfSchema(),
+    actPage:{
+        type: Number,
+        default:""
+    },
+    floorRate: pdfSchema(),
+    comManual: pdfSchema(),
+
     actionTakenByRole:{
         type: String,
-        enum:["ULB","MoHUA","STATE"],
+        enum:["MoHUA","STATE"],
         required: true,
     },
     actionTakenBy: {
@@ -40,18 +40,19 @@ const GfcFormCollectionSchema = new Schema({
     },
     status:{
         type: String,
+        default:"PENDING",
         enum: {
-            values: ['APPROVED', 'REJECTED', 'PENDING'],
-            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+            values: ['APPROVED','PENDING', 'REJECTED'],
+            message: "ERROR: STATUS BE EITHER 'PENDING'/'APPROVED' / 'REJECTED'",
         }
     },
     isDraft:{
         type: Boolean,
         default: true,
     },
-    
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
+    
     responseFile_state:pdfSchema(),
     responseFile_mohua:pdfSchema(),
     rejectReason_state:{ type: String, default: "" },
@@ -63,5 +64,7 @@ const GfcFormCollectionSchema = new Schema({
 },{
     timestamps:{createdAt: "createdAt", updatedAt:"modifiedAt"}
 });
-GfcFormCollectionSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
-module.exports = mongoose.model('GfcFormCollection', GfcFormCollectionSchema)
+
+propertyTaxFloorRateSchema.index({state: 1, design_year: 1}, {unique: true});
+
+module.exports = mongoose.model('PropertyTaxFloorRate', propertyTaxFloorRateSchema)

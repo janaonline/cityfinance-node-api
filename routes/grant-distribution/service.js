@@ -14,11 +14,26 @@ exports.getGrantDistribution = async (req, res) => {
   let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
   try {
-    const grantDistribution = await GrantDistribution.findOne({
+    let grantDistribution = await GrantDistribution.find({
       state: ObjectId(state),
       design_year,
-      isActive: true,
-    }).select({ history: 0 });
+    }).select({ history: 0 }).lean();
+
+    grantDistribution = JSON.parse(JSON.stringify(grantDistribution))
+    grantDistribution.forEach((entity)=>{
+
+            if(entity.year.toString() == "606aadac4dff55e6c075c507"){
+                entity.key = `${entity.type}_2020-21_${entity.installment}`
+            } 
+
+            if(entity.year.toString() == ObjectId("606aaf854dff55e6c075d219")){
+                entity.key = `${entity.type}_2021-22_${entity.installment}`
+            } 
+            
+            if(entity.year.toString() == "606aafb14dff55e6c075d3ae"){
+                entity.key = `${entity.type}_2022-23_${entity.installment}`
+            }
+        })
     if (!grantDistribution) {
       return Response.BadRequest(res, null, "No GrantDistribution found");
     }
@@ -83,10 +98,18 @@ exports.uploadTemplate = async (req, res) => {
       // validate data
       const notValid = await validate(XslData);
       if (notValid) {
+        let amount = "grant amount";
+        if(formData.design_year === "606aafb14dff55e6c075d3ae"){
+          formData.design_year = '2022-23';
+        }else if( formData.design_year === "606aaf854dff55e6c075d219"){
+          formData.design_year = '2021-22';
+        }
+        const type = `${formData.type}_${formData.design_year}_${formData.installment}`
+        amount = `${amount} - ${type}`
         let field = {
           ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
           ["ulb name"]: "ULB Name",
-          ["grant amount"]: "Grant Amount",
+          ["grant amount"]: amount,
           Errors: "Errors",
         };
         let xlsDatas = await Service.dataFormating(notValid, field);
@@ -102,17 +125,35 @@ exports.uploadTemplate = async (req, res) => {
 
 exports.saveData = async (req, res) => {
   try {
-    let { design_year } = req.body;
+    let { design_year, type, installment ,year} = req.body;
     let state = req.decoded?.state;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
 
+    let condition = {}
+    condition["state"] = state;
+    condition["design_year"] =  design_year;
+    condition["type"] = type;
+    condition['installment'] = installment;
+    condition['year'] = year;
+
+    let form = await GrantDistribution.findOne(condition).lean();
+    
+    if(!form){
+      let formData = req.body;
+      formData["state"] = state;
+      let data = await GrantDistribution.create(formData);
+      if(!data){
+        return res.status(400).json({
+          status: false,
+          message: "Form not saved."
+        })
+      }
+      return Response.OK(res, data, "file submitted");
+    }
+
     let data = await GrantDistribution.findOneAndUpdate(
-      {
-        state: ObjectId(state),
-        isActive: true,
-        design_year,
-      },
+      condition,
       req.body,
       {
         upsert: true,
@@ -120,8 +161,10 @@ exports.saveData = async (req, res) => {
         new: true,
       }
     );
-    await UpdateStateMasterForm(req, "grantAllocation");
-    return Response.OK(res, data, "file submitted");
+    if(design_year === "606aaf854dff55e6c075d219"){
+      await UpdateStateMasterForm(req, "grantAllocation");
+    }
+    return Response.OK(res, data, "file updated");
   } catch (err) {
     console.error(err.message);
     return Response.DbError(res, err.message, "server error");
@@ -169,13 +212,19 @@ async function validate(data) {
     ulbNames = [];
   const code = "ulb census code/ulb code";
   const name = "ulb name";
-  const amount = "grant amount";
-
+  let amount = "grant amount";
+  if(formData.design_year === "606aafb14dff55e6c075d3ae"){
+    formData.design_year = '2022-23';
+  }else if( formData.design_year === "606aaf854dff55e6c075d219"){
+    formData.design_year = '2021-22';
+  }
+  const type = `${formData.type}_${formData.design_year}_${formData.installment}`
+  amount = `${amount} - ${type}`
   const keys = Object.keys(data[0]);
   if (
-    !(keys.includes(code) && keys.includes(name) && keys.includes(amount)) ||
-    keys.length !== 3
-  ) {
+    !(keys.includes(code) && keys.includes(name) && keys.includes(amount) 
+       || keys.length !== 3
+  )) {
     data.forEach((element) => {
       element.Errors = "Incorrect Format,";
     });

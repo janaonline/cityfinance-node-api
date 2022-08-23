@@ -92,7 +92,7 @@ module.exports.access = async function(req,res)  {
         },
 
     ]
-    const STATE_arr = [
+    let STATE_arr = [
         {
             year:yearList[0],
             url:"/fc_grant"
@@ -100,16 +100,21 @@ module.exports.access = async function(req,res)  {
         {
             year:yearList[1],
             url:"/stateform/dashboard"
-        }
+        },
+        {
+            year:yearList[2],
+            url:"/stateform2223/dashboard"
+        },
 
     ]
  
     const entity_id = req.decoded._id;
     let arr = []
+    let userData
     switch (role) {
         case "ULB":
           
-            let userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
+             userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
             let ulbData = await Ulb.findOne({_id: userData.ulb}).lean();
             let access_2021 =  ulbData?.access_2021,
               access_2122 =  ulbData?.access_2122,
@@ -141,7 +146,13 @@ module.exports.access = async function(req,res)  {
             arr = outputArr 
             break;
             case "STATE":
-            arr = STATE_arr
+                 userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
+                 let profileVerified = userData.isVerified2223;
+                 STATE_arr[2]['url'] = profileVerified ? '/stateform2223/dashboard' : '/profile-update' ;
+                 arr = STATE_arr
+
+
+
                 break;
                 case "MoHUA":
                     case "ADMIN":
