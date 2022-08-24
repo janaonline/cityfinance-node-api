@@ -50,6 +50,60 @@ const CUTOFF =  {
     }
 }
 
+function gtcSubmitCondition(type, installment, state, designYear){
+    let condition = {};
+    let query = [];
+    installment =  Number(installment);
+    if(type === "nmpc_untied" ){
+        if(installment ===1){
+            condition ={
+                state,
+                design_year: designYear,
+                year: "606aaf854dff55e6c075d219",
+                type:"nonmillion_untied",
+                installment
+            }
+        } else if( installment ===2){
+            condition ={
+                state,
+                design_year: designYear,
+                year: "606aafb14dff55e6c075d3ae",
+                type:"nonmillion_untied",
+                installment
+            }
+        }
+    } else if( type === "nmpc_tied"){
+        if(installment ===1){
+            condition ={
+                state,
+                design_year: designYear,
+                year: "606aaf854dff55e6c075d219",
+                type:"nonmillion_tied",
+                installment
+            }
+        } else if( installment ===2){
+            condition ={
+                state,
+                design_year: designYear,
+                year: "606aafb14dff55e6c075d3ae",
+                type:"nonmillion_tied",
+                installment
+            }
+        }
+    }else if(type === "mpc_tied"){
+        if(installment === 1 ){
+            condition = {
+                type:"million_tied",
+                installment
+            }
+        }
+    }
+    query.push({
+        $match: condition
+    });
+    return query;
+}
+
 const FormObjectIds = {
     [ModelNames.annualAcc]: ObjectId("62aa1b04729673217e5ca3aa"),
     [ModelNames.gtc]: ObjectId("62aa1bbec9a98b2254632a86"),
@@ -144,7 +198,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.gtc]}`;
+            formData['link'] = `/${element.url}`;
                     
         }else if (modelName === ModelNames.twentyEightSlbs && element._id === ModelNames.twentyEightSlbs){
             flag = true;
@@ -168,13 +222,13 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.sfc]}`;
+            formData['link'] = `/${element.url}`;
                     
         }else if (modelName === ModelNames.pTAX && element._id === ModelNames.pTAX ){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.pTAX]}`;        
+            formData['link'] = `/${element.url}`;
         }
         if (flag) break;
     }
@@ -305,6 +359,14 @@ function getQuery(modelName, designYear, formCategory, stateId){
             switch(modelName){
                 case "StateFinanceCommissionFormation":
                 case "PropertyTaxFloorRate":
+                    query.push({
+                        $match:{
+                            design_year: ObjectId(designYear),
+                            state: ObjectId(stateId),
+                            $or:[...submitConditionState]
+                    }
+                    })  
+                    break;
                 case "GrantTransferCertificate":
                     query.push({
                         $match:{
@@ -328,7 +390,9 @@ module.exports.dashboard = async (req, res) => {
         let collectionArr = getCollections(data.formType, data.installment);
     
         let approvedFormPercent = {} ,
-            submittedFormPercent = {};
+            submittedFormPercent = {},
+            totalApprovedUlbForm = {},
+            totalSubmittedUlbForm = {};
         let totalUlbPipeline = [
             {
                 $match:{
@@ -391,6 +455,8 @@ module.exports.dashboard = async (req, res) => {
                 formName: '',
                 approvedColor:'',
                 submittedColor:'',
+                totalApprovedUlb: 0,
+                totalSubmittedUlb: 0,
                 submittedValue:0,
                 approvedValue: 0,
                 cutOff: ``,
@@ -413,6 +479,11 @@ module.exports.dashboard = async (req, res) => {
             }
             //Get pipeline query, using modelName
             let pipeline = getQuery(modelName, data.design_year, formCategory, state);
+            //condition for Grant transfer cetificate
+            if(modelName === ModelNames.gtc){
+                pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
+                console.log(pipeline,"pipeline-----------")
+            }
             //Get submitted forms            
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
@@ -420,14 +491,16 @@ module.exports.dashboard = async (req, res) => {
                 submitPercent = Math.round((submittedForms.length/totalForms)*100);
                 submittedFormPercent[modelName] = submitPercent;
                 totalApprovedForm = approvedForms(submittedForms, formCategory);
-                approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100)
+                approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100);
+                totalApprovedUlbForm[modelName] = totalApprovedForm;
+                totalSubmittedUlbForm[modelName] = submittedForms.length;
             } else if(formCategory === "STATE"){
                 if(submittedForms.length === 0){
                     submitPercent = 0;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
                     approvedFormPercent[modelName] = 0
-                } else if(submittedForms.length ===1){
+                } else if(submittedForms.length === 1){
                     submitPercent = 100;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
@@ -439,7 +512,7 @@ module.exports.dashboard = async (req, res) => {
             //Adding status to formData
             if(submittedFormPercent[modelName] <= 0){
                 formData.status = "Not started"
-            } else if (approvedFormPercent === 100){
+            } else if (approvedFormPercent[modelName] === 100){
                 formData.status = "Submitted"
             } else {
                 formData.status = "In Progress"
@@ -456,6 +529,8 @@ module.exports.dashboard = async (req, res) => {
                     submittedColor: formData["submittedColor"],
                     submittedValue: submittedFormPercent[modelName],
                     approvedValue: approvedFormPercent[modelName],
+                    totalApprovedUlb: totalApprovedUlbForm[modelName],
+                    totalSubmittedUlb: totalSubmittedUlbForm[modelName],
                     cutOff,
                     icon: formData["icon"],
                     link: formData["link"],
