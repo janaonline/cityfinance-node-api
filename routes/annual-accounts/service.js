@@ -86,32 +86,64 @@ exports.createUpdate = async (req, res) => {
     }
     
     const submittedForm  = await AnnualAccountData.findOne(condition);
-    if(submittedForm && formData['design_year'] == '606aaf854dff55e6c075d219'){
-      formData.modifiedAt = Date.now();
+  if(formData['design_year'] == '606aaf854dff55e6c075d219'){
+    formData.modifiedAt = Date.now();
       const addedHistory = await AnnualAccountData.findOneAndUpdate(
         condition,
         formData,
         {new: true, runValidators: true}
       );
+      await UpdateMasterSubmitForm(req, "annualAccounts");
       return res.status(200).json({
         status: true,
         message: "form submitted",
         data: addedHistory
       })
-
-    }
-    if( formData['design_year'] != '606aaf854dff55e6c075d219' &&  submittedForm && !submittedForm.isDraft){// form already submitted
+  }
+ 
+    if(  submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB'){// form already submitted
       return res.status(200).json({
         status: true,
         message: "Form already submitted."
       })
+    } else if( submittedForm && submittedForm.isDraft ){
+if(formData.isDraft){
+  formData.modifiedAt = Date.now();
+  const addedHistory = await AnnualAccountData.findOneAndUpdate(
+    condition,
+    formData,
+    {new: true, runValidators: true}
+  );
+  return res.status(200).json({
+    status: true,
+    message: "form submitted",
+    data: addedHistory
+  })
+}else if(!formData.isDraft){
+  let currentData = {}
+  Object.assign(currentData,formData ) 
+
+  formData['history'] = submittedForm['history']
+  formData['history'].push(currentData)
+  delete formData['_id']
+const addedHistory = await AnnualAccountData.findOneAndUpdate(
+  condition,
+  formData
+);
+return res.status(200).json({
+  status: true,
+  message: "form submitted",
+  data: addedHistory
+})
+
+}
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
       const form = await AnnualAccountData.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
         formData.modifiedAt = form.modifiedAt;
-    
+    await form.save();
         const addedHistory = await AnnualAccountData.findOneAndUpdate(
           condition,
           {$push: {"history": formData}},
@@ -129,16 +161,27 @@ exports.createUpdate = async (req, res) => {
             data: addedHistory
           })
         }
-      } else {
-        return res.status(400).json({
-          status: false,
-          message: "Form not submitted"
-        })
       }
+      } else if(!submittedForm && isDraft){
+      const form = await AnnualAccountData.create(formData);
+      if(form){
+        formData.createdAt = form.createdAt;
+       await form.save()
+      formData.modifiedAt = Date.now();
+      const addedHistory = await AnnualAccountData.findOneAndUpdate(
+        condition,
+        formData,
+        {new: true, runValidators: true}
+      );
+      return res.status(200).json({
+        status: true,
+        message: "form submitted",
+        data: addedHistory
+      })
     }
 
 
-    
+  }
   
 
     let annualAccountData;
@@ -165,8 +208,8 @@ exports.createUpdate = async (req, res) => {
         }
       );
     }
-
-    // await UpdateMasterSubmitForm(req, "annualAccounts");
+    
+    
 
     return res.status(200).json({
       msg: "AnnualAccountData Submitted!",
