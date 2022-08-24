@@ -18,7 +18,7 @@ const { query } = require("express");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
-    const { financialYear, stateId, population, ulbType, csv, dashboard } = req.query;
+    const { financialYear, stateId, population, ulbType, csv, value } = req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     let filterCondition = {},
       ulbLedgers;
@@ -39,7 +39,7 @@ exports.dataAvailabilityState = async (req, res) => {
     filterCondition = {
       ulb: { $in: ulbs.map((ech) => ObjectId(ech._id)) },
     };
-    if(dashboard == 'slb'){
+    if(value == 'slb'){
       Object.assign(filterCondition, {year: financialYear})
       ulbLedgers = await Indicators.distinct("ulb", filterCondition).lean();
     }else{
