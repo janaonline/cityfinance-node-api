@@ -108,7 +108,7 @@ module.exports.getForms = async (req, res)=>{
             {ulb :{$in : data.ulb}, [condition.design_year]: data.design_year},
             {history:0}
             )
-        if(!forms){
+        if(!forms || forms.length === 0){
             return res.status(400).json({
                 status: false,
                 message: 'Form not found.'
@@ -118,8 +118,7 @@ module.exports.getForms = async (req, res)=>{
             status: true,
             message: 'Success',
             data: forms
-        })
-            
+        }) 
     } catch (error) {
         return res.status(400).json({
             status: false,
