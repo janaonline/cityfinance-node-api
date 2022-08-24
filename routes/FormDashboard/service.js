@@ -277,9 +277,67 @@ function approvedForms(forms,formCategory){
     return numOfApprovedForms;
 }
 
-function getQuery(modelName, designYear, formCategory, stateId){
+function getQuery(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
+    let nmpcConditionUlb = [],
+        mpcConditionUlb = [],
+        nmpcConditionState = [],
+        mpcConditionState = [];
+
+        nmpcConditionUlb =[
+            {
+                $lookup:{
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb",
+                }
+            },
+            {$unwind: "$ulb" },
+            {
+                $match:{
+                    "ulb.isMillionPlus":"No",
+                }
+            }
+        ];
+        mpcConditionUlb = [
+            {
+                $lookup:{
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb",
+                }
+            },
+            {$unwind: "$ulb" },
+            {
+                $match:{
+                    $or:[
+                        {
+                            "ulb.isMillionPlus":"Yes",
+                        },
+                        {
+                            "ulb.isMillionPlus":"No",
+                            "ulb.isUA": "Yes"
+                        }
+                    ]     
+                }
+            } 
+        ]
+    if(formType === "nmpc_untied" || formType === "nmpc_tied"){
+        if(formCategory === "STATE"){
+            
+        }  else if( formCategory === "ULB"){
+            query.push(...nmpcConditionUlb);
+        }
+    } else if( formType === "mpc_tied"){
+        if(formCategory === "STATE"){
+
+        }else if( formCategory === "ULB"){
+            query.push(...mpcConditionUlb)
+        }
+    }
 
     let submitConditionUlb = [{
         isDraft: false,
@@ -405,7 +463,7 @@ module.exports.dashboard = async (req, res) => {
             totalSubmittedStateForm = {},
             totalUlbs = {};
 
-        let totalUlbMillionPlusPipeline = [
+        let totalUlbMpcAndNmpcUAPipeline = [
             {
                 $match:{
                     _id: ObjectId(state)
@@ -422,7 +480,13 @@ module.exports.dashboard = async (req, res) => {
             {$unwind: "$ulb" },
             {
                 $match:{
-                    "ulb.isMillionPlus":"Yes"
+                    $or:[
+                        {"ulb.isMillionPlus":"Yes"},
+                        {
+                            "ulb.isMillionPlus": "No",
+                            "ulb.isUA":"Yes"
+                        }
+                    ]
                     }
             },
             {
@@ -431,36 +495,6 @@ module.exports.dashboard = async (req, res) => {
                     totalUlb: {$sum:1}
                 }
             }
-           
-            ]
-        let totalUlbNonMillionPlusUAPipeline = [
-            {
-                $match:{
-                    _id: ObjectId(state)
-                }
-            },
-            {
-                $lookup:{
-                    from: "ulbs",
-                    localField: "_id",
-                    foreignField: "state",
-                    as: "ulb",
-                }
-            },
-            {$unwind: "$ulb" },
-            {
-                $match:{
-                    "ulb.isMillionPlus":"No",
-                    "ulb.isUA": "Yes"
-                    }
-            },
-            {
-                $group:{
-                    _id: null,
-                    totalUlb: {$sum:1}
-                }
-            }
-            
             ]
             let totalUlbNonMillionPlusPipeline = [
                 {
@@ -508,14 +542,7 @@ module.exports.dashboard = async (req, res) => {
         if(data.formType !== "mpc_tied"){
             totalUlbs = await State.aggregate(totalUlbNonMillionPlusPipeline);
         }else{
-            let [totalMpc, totalNmpcUA] = await Promise.all([
-             State.aggregate(totalUlbMillionPlusPipeline),
-             State.aggregate(totalUlbNonMillionPlusUAPipeline)
-            ]);
-             let total = totalMpc[0]["totalUlb"] + totalNmpcUA[0]["totalUlb"]
-             totalUlbs = [{_id: null, 
-                totalUlb: total 
-            }];
+            totalUlbs = await State.aggregate(totalUlbMpcAndNmpcUAPipeline);
         }
         let [sidemenuForms, reviewSidemenuForm] = await Promise.all([
             Sidemenu.aggregate(sidemenuPipeline),
@@ -565,7 +592,7 @@ module.exports.dashboard = async (req, res) => {
                 formCategory = "STATE";
             }
             //Get pipeline query, using modelName
-            let pipeline = getQuery(modelName, data.design_year, formCategory, state);
+            let pipeline = getQuery(modelName,data.formType, data.design_year, formCategory, state);
             //Pipeline query condition for Grant transfer cetificate
             if(modelName === ModelNames.gtc){
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
