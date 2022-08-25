@@ -229,13 +229,7 @@ return res.status(200).json({
 exports.datasetDownload = catchAsync(async (req,res)=> {
   let data = [], columns = [], rows = [];
   data = Array.isArray(req.body.data) ? req.body.data : []
-  data = [
-    {
-      ulb:"5dd24728437ba31f7eb42e7a",
-      year:"2016-17",
-      category:"income"
-    }
-  ]
+
   let output ={}
   columns = [
     {
