@@ -53,39 +53,51 @@ const CUTOFF =  {
 function gtcSubmitCondition(type, installment, state, designYear){
     let condition = {};
     let query = [];
+    let submitConditionState = [
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING", 
+        },
+        {
+            isDraft: false,
+            actionTakenByRole: "MoHUA",
+            status: "APPROVED"
+        }
+    ]
     installment =  Number(installment);
     if(type === "nmpc_untied" ){
         if(installment ===1){
             condition ={
-                state,
-                design_year: designYear,
-                year: "606aaf854dff55e6c075d219",
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aaf854dff55e6c075d219"),
                 type:"nonmillion_untied",
                 installment
             }
         } else if( installment ===2){
             condition ={
-                state,
-                design_year: designYear,
-                year: "606aafb14dff55e6c075d3ae",
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aafb14dff55e6c075d3ae"),
                 type:"nonmillion_untied",
                 installment
             }
         }
     } else if( type === "nmpc_tied"){
-        if(installment ===1){
+        if(installment === 1){
             condition ={
-                state,
-                design_year: designYear,
-                year: "606aaf854dff55e6c075d219",
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aaf854dff55e6c075d219"),
                 type:"nonmillion_tied",
                 installment
             }
         } else if( installment ===2){
             condition ={
-                state,
-                design_year: designYear,
-                year: "606aafb14dff55e6c075d3ae",
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aafb14dff55e6c075d3ae"),
                 type:"nonmillion_tied",
                 installment
             }
@@ -94,10 +106,15 @@ function gtcSubmitCondition(type, installment, state, designYear){
         if(installment === 1 ){
             condition = {
                 type:"million_tied",
-                installment
+                installment,
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aaf854dff55e6c075d219")
             }
         }
     }
+    
+    condition.$or = [...submitConditionState]
     query.push({
         $match: condition
     });
@@ -260,9 +277,67 @@ function approvedForms(forms,formCategory){
     return numOfApprovedForms;
 }
 
-function getQuery(modelName, designYear, formCategory, stateId){
+function getQuery(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
+    let nmpcConditionUlb = [],
+        mpcConditionUlb = [],
+        nmpcConditionState = [],
+        mpcConditionState = [];
+
+        nmpcConditionUlb =[
+            {
+                $lookup:{
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb",
+                }
+            },
+            {$unwind: "$ulb" },
+            {
+                $match:{
+                    "ulb.isMillionPlus":"No",
+                }
+            }
+        ];
+        mpcConditionUlb = [
+            {
+                $lookup:{
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb",
+                }
+            },
+            {$unwind: "$ulb" },
+            {
+                $match:{
+                    $or:[
+                        {
+                            "ulb.isMillionPlus":"Yes",
+                        },
+                        {
+                            "ulb.isMillionPlus":"No",
+                            "ulb.isUA": "Yes"
+                        }
+                    ]     
+                }
+            } 
+        ]
+    if(formType === "nmpc_untied" || formType === "nmpc_tied"){
+        if(formCategory === "STATE"){
+            
+        }  else if( formCategory === "ULB"){
+            query.push(...nmpcConditionUlb);
+        }
+    } else if( formType === "mpc_tied"){
+        if(formCategory === "STATE"){
+
+        }else if( formCategory === "ULB"){
+            query.push(...mpcConditionUlb)
+        }
+    }
 
     let submitConditionUlb = [{
         isDraft: false,
@@ -310,19 +385,19 @@ function getQuery(modelName, designYear, formCategory, stateId){
                         }
                     });
                     break;
-                    case "PFMSAccount":
-                        condition = {
-                            linkPFMS:'Yes',
-                            isUlbLinkedWithPFMS: 'Yes',
-                            isDraft: false
-                        };
-                        query.push({
-                            $match: {
-                                design_year: ObjectId(designYear),
-                                $or:[...submitConditionUlb,condition]
-                            }
-                        });
-                        break;
+                case "PFMSAccount":
+                    condition = {
+                        linkPFMS:'Yes',
+                        isUlbLinkedWithPFMS: 'Yes',
+                        isDraft: false
+                    };
+                    query.push({
+                        $match: {
+                            design_year: ObjectId(designYear),
+                            $or:[...submitConditionUlb,condition]
+                        }
+                    });
+                    break;
                 case "TwentyEightSlbForm":
                 case "GfcFormCollection":
                 case "OdfFormCollection": 
@@ -367,16 +442,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     }
                     })  
                     break;
-                case "GrantTransferCertificate":
-                    query.push({
-                        $match:{
-                            design_year: ObjectId(designYear),
-                            state: ObjectId(stateId),
-                            $or:[...submitConditionState]
-                    }
-                    })  
-                    break;
-            }
+                }
             break;
     }
     return query;
@@ -392,8 +458,12 @@ module.exports.dashboard = async (req, res) => {
         let approvedFormPercent = {} ,
             submittedFormPercent = {},
             totalApprovedUlbForm = {},
-            totalSubmittedUlbForm = {};
-        let totalUlbPipeline = [
+            totalSubmittedUlbForm = {},
+            totalApprovedStateForm = {},
+            totalSubmittedStateForm = {},
+            totalUlbs = {};
+
+        let totalUlbMpcAndNmpcUAPipeline = [
             {
                 $match:{
                     _id: ObjectId(state)
@@ -409,13 +479,51 @@ module.exports.dashboard = async (req, res) => {
             },
             {$unwind: "$ulb" },
             {
+                $match:{
+                    $or:[
+                        {"ulb.isMillionPlus":"Yes"},
+                        {
+                            "ulb.isMillionPlus": "No",
+                            "ulb.isUA":"Yes"
+                        }
+                    ]
+                    }
+            },
+            {
                 $group:{
                     _id: null,
                     totalUlb: {$sum:1}
                 }
             }
-           
             ]
+            let totalUlbNonMillionPlusPipeline = [
+                {
+                    $match:{
+                        _id: ObjectId(state)
+                    }
+                },
+                {
+                    $lookup:{
+                        from: "ulbs",
+                        localField: "_id",
+                        foreignField: "state",
+                        as: "ulb",
+                    }
+                },
+                {$unwind: "$ulb" },
+                {
+                    $match:{
+                        "ulb.isMillionPlus":"No"
+                        }
+                },
+                {
+                    $group:{
+                        _id: null,
+                        totalUlb: {$sum:1}
+                    }
+                }
+                
+                ]
         let sidemenuPipeline = [
                 {
                     $match:{
@@ -431,7 +539,11 @@ module.exports.dashboard = async (req, res) => {
                     }
                 },
         ]
-        const totalUlbs = await State.aggregate(totalUlbPipeline);
+        if(data.formType !== "mpc_tied"){
+            totalUlbs = await State.aggregate(totalUlbNonMillionPlusPipeline);
+        }else{
+            totalUlbs = await State.aggregate(totalUlbMpcAndNmpcUAPipeline);
+        }
         let [sidemenuForms, reviewSidemenuForm] = await Promise.all([
             Sidemenu.aggregate(sidemenuPipeline),
             Sidemenu.findOne({_id:ObjectId("62c55f9c3671152ee4198dc5")}).lean()
@@ -445,6 +557,8 @@ module.exports.dashboard = async (req, res) => {
                 submittedColor:'',
                 submittedValue:0,
                 approvedValue: 0,
+                totalApproved:0,
+                totalSubmitted: 0,
                 cutOff: ``,
                 icon:'',
                 link:'',
@@ -455,8 +569,8 @@ module.exports.dashboard = async (req, res) => {
                 formName: '',
                 approvedColor:'',
                 submittedColor:'',
-                totalApprovedUlb: 0,
-                totalSubmittedUlb: 0,
+                totalApproved: 0,
+                totalSubmitted: 0,
                 submittedValue:0,
                 approvedValue: 0,
                 cutOff: ``,
@@ -478,11 +592,10 @@ module.exports.dashboard = async (req, res) => {
                 formCategory = "STATE";
             }
             //Get pipeline query, using modelName
-            let pipeline = getQuery(modelName, data.design_year, formCategory, state);
-            //condition for Grant transfer cetificate
+            let pipeline = getQuery(modelName,data.formType, data.design_year, formCategory, state);
+            //Pipeline query condition for Grant transfer cetificate
             if(modelName === ModelNames.gtc){
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
-                console.log(pipeline,"pipeline-----------")
             }
             //Get submitted forms            
             //Get Approved forms percent
@@ -499,12 +612,17 @@ module.exports.dashboard = async (req, res) => {
                     submitPercent = 0;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
-                    approvedFormPercent[modelName] = 0
+                    approvedFormPercent[modelName] = 0;
+                    totalApprovedStateForm[modelName] = totalApprovedForm;
+                    totalSubmittedStateForm[modelName] = submittedForms.length;
+
                 } else if(submittedForms.length === 1){
                     submitPercent = 100;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
                     approvedFormPercent[modelName] = 100 
+                    totalApprovedStateForm[modelName] = totalApprovedForm;
+                    totalSubmittedStateForm[modelName] = submittedForms.length;
                 }
             }
 
@@ -529,8 +647,8 @@ module.exports.dashboard = async (req, res) => {
                     submittedColor: formData["submittedColor"],
                     submittedValue: submittedFormPercent[modelName],
                     approvedValue: approvedFormPercent[modelName],
-                    totalApprovedUlb: totalApprovedUlbForm[modelName],
-                    totalSubmittedUlb: totalSubmittedUlbForm[modelName],
+                    totalApproved: totalApprovedUlbForm[modelName],
+                    totalSubmitted: totalSubmittedUlbForm[modelName],
                     cutOff,
                     icon: formData["icon"],
                     link: formData["link"],
@@ -545,6 +663,8 @@ module.exports.dashboard = async (req, res) => {
                     submittedColor: formData["submittedColor"],
                     submittedValue: submittedFormPercent[modelName],
                     approvedValue: approvedFormPercent[modelName],
+                    totalApproved: totalApprovedStateForm[modelName],
+                    totalSubmitted: totalSubmittedStateForm[modelName],
                     cutOff,
                     icon: formData["icon"],
                     link: formData["link"],
