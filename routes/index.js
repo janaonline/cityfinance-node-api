@@ -221,6 +221,10 @@ router.use('/28-slbs', TwentyEightSlbsForm);
 const FormDashboard =  require('./FormDashboard');
 router.use('/dashboard', FormDashboard);
 
+//Property Tax Operationalisation
+const PropertyTaxOp = require('./PropertyTaxOp');
+router.use('/propTaxOp', PropertyTaxOp);
+
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
