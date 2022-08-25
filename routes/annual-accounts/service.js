@@ -17,6 +17,7 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const {findPreviousYear} = require('../../util/findPreviousYear')
 const {calculateStatus} =require('../CommonActionAPI/service')
+const UlbLedger = require('../../models/UlbLedger')
 const STATUS_LIST = require('../../util/newStatusList')
 const time = () => {
   var dt = new Date();
@@ -246,12 +247,77 @@ exports.dataset = catchAsync (async (req,res)=>{
     type = "pdf";
   } else if (type == "Raw Data Excel") {
     type = "excel";
-  } else if (type == "Standardised Excel" || type == "Standardised PDF") {
-    if (type == "Standardised Excel") {
-      type = "excel";
-    } else if (type == "Standardised PDF") {
-      type = "pdf";
+  } else if (type == "Standardised Excel") {
+    if(!category)
+    category = "income"
+    let query = [
+      {
+          $match: {
+              financialYear:year
+              }
+          },
+          {
+              $group: {
+                  _id:"$ulb",
+                  modifiedAt : {$addToSet: "$modifiedAt"}
+                  }
+              },
+              {
+                  $lookup: {
+                      from:"ulbs",
+                      localField:"_id",
+                      foreignField:"_id",
+                      as:"ulb"
+                      }
+                  },
+                  {
+                      $unwind:"$ulb"
+                      },
+                         {
+                  $lookup: {
+                      from:"states",
+                      localField:"ulb.state",
+                      foreignField:"_id",
+                      as:"state"
+                      }
+                  },
+                  {
+                      $unwind:"$state"
+                      },
+                      {
+                          $project: {
+                            type:"excel",
+                            modifiedAt:{$arrayElemAt:["$modifiedAt", 0] },
+                            state : "$state._id",
+                            ulb : "$ulb.name",
+                              fileName: {
+                                                      $concat: ["$state.name", "_", "$ulb.name", "_", category, "_", year]
+                                  }
+      
+                              }
+                          }
+      ]
+      if(ulb){
+        query.push({
+          $match:{
+            ulb: ulb
+          }
+        })
+      }
+      if(state){
+        query.push({$match: {
+          "state" : ObjectId(state)
+        }})
+      }
+    let data = await UlbLedger.aggregate(query)
+    if(data.length){
+      return res.status(200).json({
+        success: true,
+        data: data
+      })
     }
+    
+  }
     let query = [
       {
         $match: {
@@ -356,7 +422,7 @@ exports.dataset = catchAsync (async (req,res)=>{
       success: true,
       data: finalData,
     });
-  }
+  
 
   if (year != "2019-20" && year != "2020-21") {
     let query_dataCollection = [
