@@ -81,7 +81,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                             {$push: {"history": formData}},
                             {new: true, runValidators: true}
                         )
-                        response(addedHistory, res,"Form created.", "Form not created")
+                        return response(addedHistory, res,"Form created.", "Form not created")
                     } else {
                         return res.status(400).json({
                             status: false,
@@ -91,7 +91,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 } else {
                     if( (!submittedForm) && formData.isDraft === true){ // create as draft
                         const form = await StateFinanceCommissionFormation.create(formData);
-                        response(form, res,"Form created.", "Form not created");
+                        return response(form, res,"Form created.", "Form not created");
                     }
                 }           
             }
@@ -102,7 +102,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                         {$set: formData},
                         {new: true, runValidators: true}
                     );
-                    response(updatedForm, res, "Form created." , "Form not updated");
+                    return response(updatedForm, res, "Form created." , "Form not updated");
                 } else { // submit form i.e. isDraft=false
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
@@ -115,7 +115,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                         },
                         {new: true, runValidators: true}
                     );
-                    response( updatedForm, res, "Form updated.","Form not updated.")
+                    return response( updatedForm, res, "Form updated.","Form not updated.")
                 }
             }
         }

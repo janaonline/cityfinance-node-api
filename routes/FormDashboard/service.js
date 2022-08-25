@@ -281,9 +281,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
     let nmpcConditionUlb = [],
-        mpcConditionUlb = [],
-        nmpcConditionState = [],
-        mpcConditionState = [];
+        mpcConditionUlb = [];
 
         nmpcConditionUlb =[
             {
@@ -324,17 +322,13 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     ]     
                 }
             } 
-        ]
+        ];
     if(formType === "nmpc_untied" || formType === "nmpc_tied"){
-        if(formCategory === "STATE"){
-            
-        }  else if( formCategory === "ULB"){
+        if( formCategory === "ULB"){
             query.push(...nmpcConditionUlb);
         }
     } else if( formType === "mpc_tied"){
-        if(formCategory === "STATE"){
-
-        }else if( formCategory === "ULB"){
+        if( formCategory === "ULB"){
             query.push(...mpcConditionUlb)
         }
     }
