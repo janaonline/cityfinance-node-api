@@ -336,7 +336,7 @@ let getExcel = async (req, res, data) => {
       tl: { col: 0, row: 0 },
       br: { col: 8, row: 2 }
     });
-    worksheet.addImage(imageId2, "A1:F3");
+    // worksheet.addImage(imageId2, "A1:F3");
     // data.columns.push({ header: "S.no", key: "sno" });
     worksheet.columns = data.columns.map((value) => {
       let temp = {
@@ -353,7 +353,7 @@ let getExcel = async (req, res, data) => {
       console.log(value)
       worksheet.addRow(value);
     });
-
+worksheet.addRow({headOfAccount: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in"});
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
