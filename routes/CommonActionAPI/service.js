@@ -61,6 +61,99 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
     }
 }
 
+module.exports.calculateKeys = (formStatus, formType) => {
+    let keys = {
+        status:"",
+        actionTakenByRole:"",
+        isDraft: ""
+    };
+    switch(formType){
+        case "ULB":
+            switch(formStatus){
+                case StatusList.In_Progress:
+                    keys = {
+                        isDraft: true,
+                        actionTakenByRole: "ULB",
+                        status: "PENDING"
+                    }
+                    break;
+                case StatusList.Under_Review_By_State:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "ULB",
+                        status: "PENDING"
+                    }
+                    break;
+                case StatusList.Under_Review_By_MoHUA:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "STATE",
+                        status: "APPROVED"
+                    }
+                    break;
+                case StatusList.Rejected_By_State:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "STATe",
+                        status: "REJECTED"
+                    }
+                    break;
+                case StatusList.Approved_By_MoHUA:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "MoHUA",
+                        status: "APPROVED"
+                    }
+                    break;
+                case StatusList.Rejected_By_MoHUA:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "MoHUA",
+                        status: "REJECTED"
+                    }
+                    break;
+                default:  
+                    break;
+            }
+            break;
+        case "STATE":
+            switch(formStatus){
+                case StatusList.In_Progress:
+                    keys = {
+                        isDraft: true,
+                        actionTakenByRole: "STATE",
+                        status: "PENDING"
+                    }
+                    break;
+                case StatusList.Under_Review_By_MoHUA:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "STATE",
+                        status: "PENDING"
+                    }
+                    break;
+                case StatusList.Approved_By_MoHUA:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "MoHUA",
+                        status: "APPROVED"
+                    }
+                    break;
+                case StatusList.Rejected_By_MoHUA:
+                    keys = {
+                        isDraft: false,
+                        actionTakenByRole: "MoHUA",
+                        status: "REJECTED"
+                    }
+                    break;
+                default:  
+                    break;
+            }
+            break;    
+        }
+        return keys;
+}
+
 function getCollectionName(formName){
     let collection="";
     switch(formName){
