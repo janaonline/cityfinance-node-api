@@ -14,6 +14,7 @@ const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
 const {calculateStatus} = require('../CommonActionAPI/service')
+const SLB28 = require('../../models/TwentyEightSlbsForm')
 const USER_TYPES = require('../../util/userTypes')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
@@ -107,7 +108,7 @@ module.exports.get = catchAsync(async (req, res) => {
         let condition = {
             ulb: ObjectId(_id),
         }
-        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS]
+        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS, SLB28]
        for(el of formArr) {
             if (el == DUR) {
                 delete condition['design_year'];
