@@ -454,9 +454,6 @@ filledQueryExpression = {
     ]
     query_Filter_total_count = query_notFilter_pagination.slice();
 
-    if(!csv){
-        query_notFilter_pagination.push(...paginate)
-    }
     let filterApplied;
 switch(userRole){
     case "ULB":
@@ -574,6 +571,9 @@ switch(userRole){
         query_3 = createDynamicQuery(formName, query_3);
 
         query_notFilter_pagination.push(...query_3)
+        if(!csv){
+            query_notFilter_pagination.push(...paginate)
+        }
 
         query_Filter_total_count.push(...query_3)
         query_Filter_total = query_Filter_total_count.slice();
@@ -585,7 +585,11 @@ switch(userRole){
             {
                 $skip:skip
             },
-            {$limit: limit}) 
+            {$limit: limit})
+            query_Filter_total_count.push({
+                $match: filter
+            },
+            )
         }
         query_Filter_total_count.push({
             $count:"total"
@@ -606,9 +610,8 @@ switch(userRole){
             
         //      break;
             case CollectionNames.annual:
-                delete query_notFilter_pagination[query_notFilter_pagination.length-1]['$project']['filled']
-            Object.assign(  query_notFilter_pagination[query_notFilter_pagination.length -1]['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
-    
+                delete query_notFilter_pagination[query_notFilter_pagination.length-3]['$project']['filled']
+            Object.assign(  query_notFilter_pagination[query_notFilter_pagination.length -3]['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
         default:
             break;
         }
