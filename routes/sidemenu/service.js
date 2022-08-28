@@ -14,6 +14,7 @@ const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
 const {calculateStatus} = require('../CommonActionAPI/service')
+const SLB28 = require('../../models/TwentyEightSlbsForm')
 const USER_TYPES = require('../../util/userTypes')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
@@ -24,6 +25,7 @@ let FormModelMapping = {
     "AnnualAccountData": ObjectId("62aa1b04729673217e5ca3aa"),
     "UtilizationReport": ObjectId("62aa1c96c9a98b2254632a8a"),
     "PFMSAccount": ObjectId("62aa1cc9c9a98b2254632a8e"),
+    "TwentyEightSlbForm" : ObjectId("62f0dbbf596298da6d3f4076")
     
 }
 
@@ -103,11 +105,12 @@ module.exports.get = catchAsync(async (req, res) => {
         FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
         FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
         FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1cc9c9a98b2254632a8e") : ObjectId("62aa1dadc9a98b2254632aa6")
+        
 
         let condition = {
             ulb: ObjectId(_id),
         }
-        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS]
+        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS, SLB28]
        for(el of formArr) {
             if (el == DUR) {
                 delete condition['design_year'];
