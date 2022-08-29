@@ -6,7 +6,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
 const List = require('../../util/15thFCstatus')
-
+const {calculateKeys} = require('../CommonActionAPI/service')
 function padTo2Digits(num) {
     return num.toString().padStart(2, '0');
   }
@@ -173,7 +173,7 @@ module.exports.get = catchAsync( async(req,res) => {
     let skip = req.query.skip ? parseInt(req.query.skip) : 0
     let limit = req.query.limit ? parseInt(req.query.limit) : 10
     let csv = req.query.csv == "true"
-    
+    let keys;
     let formTab = await Sidemenu.findOne({_id: ObjectId(form)}).lean();
     let formType = formTab.role
     if(formType === "ULB"){
@@ -184,7 +184,7 @@ module.exports.get = catchAsync( async(req,res) => {
         filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType  : ""
         filter['UA'] = req.query.UA != 'null' ? req.query.UA  : ""
         filter['status'] = req.query.status != 'null' ? req.query.status  : ""
-    
+      keys =  calculateKeys(filter['status'], formType);
         // filled1 -> will be used for all the forms and Provisional of Annual accounts
         // filled2 -> only for annual accounts -> audited section
         filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1  : ""
