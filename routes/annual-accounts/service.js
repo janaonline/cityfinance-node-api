@@ -279,7 +279,7 @@ let lineItems  = await LineItem.aggregate([{
  ledgerData = await UlbLedger.aggregate([
   {
     $match: {
-    ulb: ObjectId(el.ulb),
+    ulb: ObjectId(el.ulbId),
     financialYear: el.year,
     lineItem : {$in : lineItems[0]['id'] }
     }
@@ -300,7 +300,8 @@ let lineItems  = await LineItem.aggregate([{
       headOfAccount:"$lineItem.headOfAccount",
       code:"$lineItem.code",
       lineIteName:"$lineItem.name",
-      amount:"$amount"
+      amount:"$amount",
+      
     }
   },
   {$sort: {"code":1}}
@@ -429,6 +430,10 @@ exports.dataset = catchAsync (async (req,res)=>{
                             modifiedAt:{$arrayElemAt:["$modifiedAt", 0] },
                             state : "$state._id",
                             ulb : "$ulb.name",
+                            ulbId: "$ulb._id",
+                            section:"standardised",
+                            category : category,
+                            year:year,
                               fileName: {
                                                       $concat: ["$state.name", "_", "$ulb.name", "_", category, "_", year]
                                   }
