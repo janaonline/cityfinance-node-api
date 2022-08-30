@@ -105,7 +105,6 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     }
                 }           
             }
-    //not appproved
             if ( submittedForm && submittedForm.status !== "APPROVED") {
                 if(formData.isDraft === true){
                     const updatedForm = await LinkPFMS.findOneAndUpdate(
