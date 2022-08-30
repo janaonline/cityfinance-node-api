@@ -126,11 +126,11 @@ module.exports = (req, res) => {
                             $project: {
                                 _id:0,
                                 year: "$_id",
-                                ulbs: {$size:"$year"}
+                                ulbs: {$size:"$ulbs"}
                                 }
                             },
                             {
-                                $sort: {ulbs:-1}
+                                $sort: {year:-1}
                                 }
                     ]
                 let count = await UlbLedger.aggregate(query).exec();
