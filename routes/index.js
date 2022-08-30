@@ -225,6 +225,10 @@ router.use('/dashboard', FormDashboard);
 const PropertyTaxOp = require('./PropertyTaxOp');
 router.use('/propTaxOp', PropertyTaxOp);
 
+//Property Tax Operationalisation DropDown
+const PropertyTaxOpDropDown = require('./PropertyTaxOpDropdown');
+router.use('/propTaxOpDropDown', PropertyTaxOpDropDown);
+
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 

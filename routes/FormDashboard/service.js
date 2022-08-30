@@ -314,6 +314,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     $or:[
                         {
                             "ulb.isMillionPlus":"Yes",
+                            "ulb.isUA":"Yes"
                         },
                         {
                             "ulb.isMillionPlus":"No",
@@ -375,6 +376,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb,condition]
                         }
                     });
@@ -388,6 +390,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb,condition]
                         }
                     });
@@ -398,6 +401,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb]
                     }
                     });
@@ -410,6 +414,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb, condition]
                     }
                     });
@@ -418,6 +423,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             designYear: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or: [...submitConditionUlb]
                     }
                     })  
@@ -474,8 +480,11 @@ module.exports.dashboard = async (req, res) => {
             {$unwind: "$ulb" },
             {
                 $match:{
+                    "ulb.state":ObjectId(state),
                     $or:[
-                        {"ulb.isMillionPlus":"Yes"},
+                        {"ulb.isMillionPlus":"Yes",
+                        "ulb.isUA": "Yes"
+                        },
                         {
                             "ulb.isMillionPlus": "No",
                             "ulb.isUA":"Yes"
@@ -483,6 +492,7 @@ module.exports.dashboard = async (req, res) => {
                     ]
                     }
             },
+            
             {
                 $group:{
                     _id: null,
@@ -507,8 +517,9 @@ module.exports.dashboard = async (req, res) => {
                 {$unwind: "$ulb" },
                 {
                     $match:{
+                        "ulb.state":ObjectId(state),
                         "ulb.isMillionPlus":"No"
-                        }
+                    }
                 },
                 {
                     $group:{
@@ -591,6 +602,13 @@ module.exports.dashboard = async (req, res) => {
             if(modelName === ModelNames.gtc){
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
             }
+
+            // if(modelName === ModelNames.linkPFMS){
+            //     return res.status(200).json({
+            //         status: true,
+            //         query: pipeline
+            //     })
+            // }
             //Get submitted forms            
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
