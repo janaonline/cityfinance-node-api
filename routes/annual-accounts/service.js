@@ -97,7 +97,8 @@ exports.createUpdate = async (req, res) => {
       return res.status(200).json({
         status: true,
         message: "form submitted",
-        data: addedHistory
+        data: addedHistory,
+        isCompleted : formData.isDraft ? false : true
       })
   }
  
