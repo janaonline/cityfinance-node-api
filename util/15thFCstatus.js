@@ -32,3 +32,17 @@ module.exports.populationType = {
     'nonMillion': 'Non Million'
 }
 
+module.exports.ModelNames = {
+    annualAcc: "AnnualAccountData",
+    linkPFMS: "PFMSAccount",
+    gtc: "GrantTransferCertificate",
+    sfc: "StateFinanceCommissionFormation",
+    pTAX: "PropertyTaxFloorRate",
+    dur: "UtilizationReport",
+    propTax:"PropertyTax",
+    twentyEightSlbs: "TwentyEightSlbForm",
+    odf: "OdfFormCollection",
+    gfc: "GfcFormCollection",
+    slb: "XVFcGrantULBForm"
+}
+

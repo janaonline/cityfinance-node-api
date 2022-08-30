@@ -14,7 +14,10 @@ const IndicatorsSchema = new Schema(
       },
       required: true,
     },
-
+    sequence:{ type: Number},
+    range:{
+      type: String
+    },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },

@@ -1697,7 +1697,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
         benchMarkValue: "$benchMarkValue",
         unitType: "$unitType",
         ulbType: "$ulbType.name",
-        population: "$ulb.population",
+
       },
     },
   ];
@@ -1745,7 +1745,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
   let stateAvg = [{ average: 0 }];
   if (data.length > 0) {
     if (sortBy) {
-      tenData = fetchTen(data, sortBy);
+      tenData = data;
       if (csv) {
         let columns = [
           {
@@ -1767,10 +1767,6 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
           {
             display_name: "ULB Type",
             key: "ulbType",
-          },
-          {
-            display_name: "Population",
-            key: "population",
           },
         ];
         let data = { columns, rows: tenData };

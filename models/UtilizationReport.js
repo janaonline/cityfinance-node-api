@@ -114,6 +114,11 @@ const UtilizationReportSchema = new Schema(
       default: null,
     },
     rejectReason: { type: String, default: "" },
+    responseFile_state:pdfSchema(),
+    responseFile_mohua:pdfSchema(),
+    rejectReason_state:{ type: String, default: "" },
+    rejectReason_mohua: { type: String, default: "" },
+
     responseFile: pdfSchema(),
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },

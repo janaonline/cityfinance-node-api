@@ -53,12 +53,12 @@ const calculateTick = (tooltip, loggedInUserRole) => {
 
 
 
-const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole) => {
+const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole, viewFor) => {
     
     let status = modelName == 'XVFcGrantULBForm' ? formData?.waterManagement?.status  : formData.status;
     let actionTakenByRole = formData.actionTakenByRole;
     let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
-    let tooltip = calculateStatus(status, actionTakenByRole, isDraft,loggedInUserRole );
+    let tooltip = calculateStatus(status, actionTakenByRole, isDraft, viewFor  );
     let tick = calculateTick(tooltip,loggedInUserRole)
 
     return {
@@ -90,7 +90,7 @@ module.exports.get = catchAsync(async (req, res) => {
             color_2:""
         }
       }
-    if (!role || !year || !_id)
+    if ((role == 'ULB' || role == 'STATE') && ( !role || !year || !_id))
         return res.status(400).json({
             success: false,
             message: "Data missing"
@@ -119,7 +119,7 @@ module.exports.get = catchAsync(async (req, res) => {
             let formData = await el.findOne(condition).lean()
             if (formData) {
 
-                output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role))
+                output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role, role))
             }
         }
     }
@@ -135,7 +135,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
         // add the formStatus and tooltip
 data.forEach((el,)=> {
-    if(el.category){
+    if(el.category && el.collectionName != 'GTC'){
         let  flag = 0;
         output.forEach(el2 => {
             if((el._id).toString() == (Object.keys(el2)[0])){
@@ -228,7 +228,7 @@ module.exports.list = catchAsync(async (req,res) => {
         isActive: true
 
     }
-    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1});
+    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1});
     data = data.filter((value, index, self) =>
   index === self.findIndex((t) => (
     t.collectionName === value.collectionName

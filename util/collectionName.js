@@ -8,6 +8,11 @@ module.exports = {
     "slb":"SLB",
     "dur":"DUR",
     "sfc":"SFC",
-    "propTaxState":"PTAXState"
+    "propTaxState":"PTAXState",
+    "state_gtc" :"GTC",
+    "state_action_plan" :"ActionPlan",
+    "state_grant_alloc" : "GrantAllocation",
+    "state_grant_claim" : "GrantClaim"
+
 
 } 
