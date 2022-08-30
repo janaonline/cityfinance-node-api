@@ -65,7 +65,8 @@ module.exports.createOrUpdateForm = async (req, res)=>{
     
         if(data.ulb && data.design_year){
             const submittedForm = await PropertyTaxOp.findOne(condition);
-            if ( (submittedForm) && submittedForm.isDraft === false ){//Form already submitted
+            if ( (submittedForm) && submittedForm.isDraft === false &&
+                submittedForm.actionTakenByRole === "ULB" ){//Form already submitted    
                 return res.status(200).json({
                     status: true,
                     message: "Form already submitted."
@@ -96,7 +97,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
                 }           
             }
     
-            if ( submittedForm && submittedForm.isDraft === true) { 
+            if ( submittedForm && submittedForm.status !== "APPROVED") { 
                 if(formData.isDraft === true){           //save form as draft to already created form
                     const updatedForm = await PropertyTaxOp.findOneAndUpdate(
                         condition,
@@ -118,6 +119,13 @@ module.exports.createOrUpdateForm = async (req, res)=>{
                     );
                     return response( updatedForm, res, "Form updated.","Form not updated.")
                 }
+            }
+            if(submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB" 
+                && submittedForm.isDraft === false){
+                    return res.status(200).json({
+                        status: true,
+                        message: "Form already submitted"
+                    })
             } 
         }
         return res.status(400).json({

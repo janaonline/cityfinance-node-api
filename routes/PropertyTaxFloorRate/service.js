@@ -65,7 +65,8 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         condition.design_year = data.design_year;
         if(data.state && data.design_year){
             const submittedForm = await PropertyTaxFloorRate.findOne(condition)
-            if ( (submittedForm) && submittedForm.isDraft === false ){//Form already submitted
+            if ( (submittedForm) && submittedForm.isDraft === false &&
+                submittedForm.actionTakenByRole === "STATE" ){//Form already submitted
                 return res.status(200).json({
                     status: true,
                     message: "Form already submitted."
@@ -95,7 +96,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     }
                 }           
             }
-            if ( submittedForm && submittedForm.isDraft === true) { //form exists and saved as draft
+            if ( submittedForm && submittedForm.status !== "APPROVED") { //form exists and saved as draft
                 if(formData.isDraft === true){ //  update form as draft
                     const updatedForm = await PropertyTaxFloorRate.findOneAndUpdate(
                         condition,
@@ -117,6 +118,13 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     );
                     return response( updatedForm, res, "Form updated.","Form not updated.")
                 }
+            }
+            if(submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole === "MoHUA" 
+                && submittedForm.isDraft === false){
+                    return res.status(200).json({
+                        status: true,
+                        message: "Form already submitted"
+                    })
             }
         }
     } catch (error) {
