@@ -22,7 +22,7 @@ const TwentyEightSlbFormSchema = new Schema({
     },
     population : {
         type: Number,
-        default:0
+        default:null
     },
     popDisable: {
         type: Boolean,
