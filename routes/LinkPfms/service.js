@@ -72,11 +72,14 @@ module.exports.createOrUpdateForm = async (req, res) =>{
     
         if(data.ulb && data.design_year){
             const submittedForm = await LinkPFMS.findOne(condition);
-            if ( (submittedForm) && submittedForm.isDraft === false ){//Form already submitted
+            if ( (submittedForm) && submittedForm.isDraft === false &&
+                submittedForm.actionTakenByRole === "ULB" ){//Form already submitted
                 return res.status(200).json({
                     status: true,
                     message: "Form already submitted."
                 }) 
+            //if actionTakenByRole !== ULB && isDraft=== false && status !== "APPROVED"
+
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
                     const form = await LinkPFMS.create(formData);
@@ -102,15 +105,15 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     }
                 }           
             }
-    
-            if ( submittedForm && submittedForm.isDraft === true) {
+    //not appproved
+            if ( submittedForm && submittedForm.status !== "APPROVED") {
                 if(formData.isDraft === true){
                     const updatedForm = await LinkPFMS.findOneAndUpdate(
                         condition,
                         {$set: formData},
                         {new: true, runValidators: true}
                     );
-                    return response(updatedForm, res, "Form created." , "Form not updated");
+                    return response(updatedForm, res, "Form updated." , "Form not updated");
                 } else {
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
@@ -126,7 +129,15 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     return response( updatedForm, res, "Form updated.","Form not updated.")
                 }
             }
+            if(submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB" 
+                && submittedForm.isDraft === false){
+                    return res.status(200).json({
+                        status: true,
+                        message: "Form already submitted"
+                    })
+            }
         }
+
     } catch (error) {
         return res.status(400).json({
             status: false,
