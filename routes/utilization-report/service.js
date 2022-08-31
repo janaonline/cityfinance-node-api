@@ -54,7 +54,26 @@ module.exports.createOrUpdate = async (req, res) => {
     
     
     const submittedForm  = await UtilizationReport.findOne(condition);
-    if( submittedForm && !submittedForm.isDraft){// form already submitted
+  if(designYear=="606aaf854dff55e6c075d219"){
+    let utiData = await UtilizationReport.findOneAndUpdate(
+      { ulb: ObjectId(ulb), financialYear, designYear },
+      { $set: req.body },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+    if(utiData){
+      await UpdateMasterSubmitForm(req, "utilReport");
+      return res.status(200).json({
+        success: true,
+        isCompleted : formData['isDraft'] ? false : true,
+        message:"Form Submitted"
+      })
+    }
+  }else{
+    if( submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == "ULB" ){// form already submitted
       return res.status(200).json({
         status: true,
         message: "Form already submitted."
@@ -141,8 +160,8 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 
     if (savedData) {
-      if(designYear == "606aaf854dff55e6c075d219")
-      await UpdateMasterSubmitForm(req, "utilReport");
+      
+      
       return res.status(200).json({
         msg: "Utilization Report Submitted Successfully!",
         isCompleted: !savedData.isDraft ,
@@ -152,6 +171,8 @@ module.exports.createOrUpdate = async (req, res) => {
         msg: "Failed to Submit Data",
       });
     }
+  }
+   
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
