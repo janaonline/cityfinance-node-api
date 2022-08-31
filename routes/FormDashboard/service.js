@@ -10,6 +10,7 @@ const PropertyTaxOp = require('../../models/PropertyTaxOp');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const GfcFormCollection = require('../../models/GfcFormCollection');
+const StateGTCCertificate = require('../../models/StateGTCertificate');
 const SLB = require('../../models/XVFcGrantForm');
 const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
@@ -117,6 +118,59 @@ function gtcSubmitCondition(type, installment, state, designYear){
     condition.$or = [...submitConditionState]
     query.push({
         $match: condition
+    });
+    return query;
+}
+
+function stateGtcCertificateSubmmitedForms(type, installment, state){
+    let condition = {};
+    let cond = {};
+    conditionLookup = {
+        $lookup:{
+        from: "users",
+        foreignField: "_id",
+        localField: "actionTakenBy",
+        as:"user"}
+    }
+    conditionUnwind = {$unwind: "$user"}
+   
+    let query = [];
+    let submitConditionState = [
+        {
+            isDraft: false,
+            "user.role": "STATE",
+            status: "PENDING", 
+        },
+        {
+            isDraft: false,
+            "user.role": "MoHUA",
+            status: "APPROVED"
+        }
+    ]
+    installment =  Number(installment);
+    if(type === "nmpc_untied" || type === "nmpc_tied"){
+        if( installment === 1)
+            cond ={
+                state: ObjectId(state),
+                design_year: ObjectId("606aaf854dff55e6c075d219"),
+                installment:"2"
+            }
+    }else if(type === "mpc_tied"){
+        if(installment === 1 ){
+            cond = {
+                installment: "1",
+                state: ObjectId(state),
+                design_year: ObjectId("606aaf854dff55e6c075d219")
+            }
+        }
+    }
+    
+    cond.$or = [...submitConditionState]
+    query.push(
+        conditionLookup,
+        conditionUnwind,
+        {
+        $match: cond
     });
     return query;
 }
@@ -603,7 +657,7 @@ module.exports.dashboard = async (req, res) => {
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
             }
 
-            // if(modelName === ModelNames.linkPFMS){
+            // if(modelName === ModelNames.gtc){
             //     return res.status(200).json({
             //         status: true,
             //         query: pipeline
@@ -612,6 +666,21 @@ module.exports.dashboard = async (req, res) => {
             //Get submitted forms            
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
+
+            if(modelName === ModelNames.gtc && data.installment === '1'){
+                let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
+                let forms = await StateGTCCertificate.aggregate(query);
+                if(forms && submittedForms.length === 0 && forms.length>0){
+                    submittedForms.push(forms[0]);
+                }
+
+            //     if(modelName === ModelNames.gtc){
+            //     return res.status(200).json({
+            //         status: true,
+            //         query: query
+            //     })
+            // }
+            }
             if(formCategory === "ULB"){
                 submitPercent = Math.round((submittedForms.length/totalForms)*100);
                 submittedFormPercent[modelName] = submitPercent;
