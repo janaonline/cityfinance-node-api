@@ -558,7 +558,7 @@ filledQueryExpression = {
                                                         stateName:"$state.name",
                                                         populationType: {
                                                             $cond: {
-                                                            if: { $gt: ["$isMillionPlus", "Yes"] },
+                                                            if: { $eq: ["$isMillionPlus", "Yes"] },
                                                             then: "Million Plus" ,
                                                             else: "Non Million",
                                                             },

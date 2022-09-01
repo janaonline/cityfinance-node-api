@@ -585,8 +585,9 @@ else{
     designYear: ObjectId(currentYear._id)
   }
   let fetchedData = await UtilizationReport.findOne(condition).lean()
-  Object.assign(fetchedData, {canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB",role ) })
+  
   if(fetchedData){
+    Object.assign(fetchedData, {canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB",role ) })
     return res.status(200).json({
       success: true,
       data:fetchedData
