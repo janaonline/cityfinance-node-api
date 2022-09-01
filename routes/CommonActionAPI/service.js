@@ -73,7 +73,7 @@ module.exports.calculateKeys = (formStatus, formType) => {
                 case StatusList.In_Progress:
                     keys = {
 
-                        [`formData.status`]: "PENDING_N/A",
+                        [`formData.status`]: "PENDING",
                         [`formData.actionTakenByRole`]:"ULB",
                         [`formData.isDraft`]: true
                     }

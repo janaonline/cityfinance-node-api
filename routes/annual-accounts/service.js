@@ -228,7 +228,7 @@ return res.status(200).json({
 
 exports.datasetDownload = catchAsync(async (req,res)=> {
   let data = [], columns = [], rows = [];
-  data = Array.isArray(req.body.data) ? req.body.data : []
+  data = Array.isArray(req.body) ? req.body : []
 
   let output ={}
   columns = [
