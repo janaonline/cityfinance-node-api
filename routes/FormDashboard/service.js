@@ -20,19 +20,25 @@ const {ModelNames} = require('../../util/15thFCstatus')
 const CUTOFF =  {
     STATE:{
         nmpc_untied: {
-            
+            [ModelNames.gtc]: 100,
+            [ModelNames.sfc]: 100,
+            [ModelNames.pTAX]:100
         },
         nmpc_tied : {
-            
+            [ModelNames.gtc]: 100,
+            [ModelNames.sfc]: 100,
+            [ModelNames.pTAX]:100
         },
         mpc_tied: {
+            [ModelNames.gtc]: 100,
+            [ModelNames.sfc]: 100,
+            [ModelNames.pTAX]:100
         }
     },
     ULB:{
         nmpc_untied: {
             [ModelNames.annualAcc]: 25,
-            linkPFMS: 100,
-            
+            [ModelNames.linkPFMS]: 100,
         },
         nmpc_tied : {
             [ModelNames.annualAcc]: 25,
@@ -324,8 +330,7 @@ function approvedForms(forms,formCategory){
                 }
                 break;
             case "STATE":
-                if((calculateStatus(status, role, isDraft, formCategory) === StatusList.Approved_By_MoHUA) ||
-                    (calculateStatus(status, role, isDraft, formCategory) === StatusList.Under_Review_By_MoHUA)){
+                if((calculateStatus(status, role, isDraft, formCategory) === StatusList.Approved_By_MoHUA) ){
                     numOfApprovedForms++;
                 }
                 break;
