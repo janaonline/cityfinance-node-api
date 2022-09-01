@@ -24,7 +24,7 @@ module.exports.getForm = async (req, res) =>{
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
     
-        const form = await LinkPFMS.findOne(condition);
+        const form = await LinkPFMS.findOne(condition).lean();
         if (form){
             Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
             return res.status(200).json({
