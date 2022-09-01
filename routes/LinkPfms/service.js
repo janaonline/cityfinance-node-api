@@ -28,7 +28,7 @@ module.exports.getForm = async (req, res) =>{
             return res.status(200).json({
                 status: true,
                 message: "Form found.",
-                data:form
+                data:form,
             });
         } else {
             return res.status(400).json({

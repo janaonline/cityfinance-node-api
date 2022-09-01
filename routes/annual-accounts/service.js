@@ -22,6 +22,7 @@ const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const {groupByKey} = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
+const {canTakenAction} = require('../CommonActionAPI/service')
 const fs = require("fs");
 const time = () => {
   var dt = new Date();
@@ -1200,7 +1201,7 @@ waterRej: waterRejSubmit
 })
 exports.getAccounts = async (req, res) => {
   try {
-    
+    let role = req.decoded.role;
     let { design_year, ulb } = req.query;
     if(!ulb || ulb == null || ulb == 'null'){
       ulb = req.decoded.ulb;
@@ -1254,7 +1255,7 @@ let obj = annualAccountData;
       return res.status(400).json(obj);
 
     }
-  
+    
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
@@ -1279,7 +1280,8 @@ let obj = annualAccountData;
       }
     }
 Object.assign(annualAccountData, obj)
-    
+Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+
     return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);
