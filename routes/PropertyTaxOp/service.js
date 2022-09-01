@@ -1,16 +1,17 @@
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const {response} = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
-
+const {canTakenAction} = require('../CommonActionAPI/service')
 module.exports.getForm = async (req, res)=>{
     try{
         const data = req.query;
         const condition = {};
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
-    
-        const form = await PropertyTaxOp.findOne(condition);
+    let role = req.decoded.role
+        const form = await PropertyTaxOp.findOne(condition).lean();
         if (form){
+            Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
             return res.status(200).json({
                 status: true,
                 message: "Form found.",

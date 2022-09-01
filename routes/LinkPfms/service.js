@@ -1,6 +1,6 @@
 const LinkPFMS = require('../../models/LinkPFMS');
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const {canTakenAction} = require('../CommonActionAPI/service')
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -19,16 +19,18 @@ function response(form, res, successMsg ,errMsg){
 module.exports.getForm = async (req, res) =>{
     try {
         const data = req.query;
+        let role = req.decoded.role
         const condition = {};
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
     
-        const form = await LinkPFMS.findOne(condition);
+        const form = await LinkPFMS.findOne(condition).lean();
         if (form){
+            Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
             return res.status(200).json({
                 status: true,
                 message: "Form found.",
-                data:form
+                data:form,
             });
         } else {
             return res.status(400).json({

@@ -3,6 +3,7 @@ const OdfFormCollection = require('../../models/OdfFormCollection');
 const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
 const {response} = require('../../util/response');
+const {canTakenAction} = require('../CommonActionAPI/service')
 
 function dateFormatter(input){
     const t = new Date(input);
@@ -138,6 +139,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
 module.exports.getForm = async (req, res) => {
     try {
         const { isGfc } = req.query;
+        let role = req.decoded.role;
         const ulb = ObjectId(req.query.ulb);
         const design_year = ObjectId(req.query.design_year);
         let collection = (isGfc=== 'true') ? GfcFormCollection : OdfFormCollection;
@@ -149,6 +151,7 @@ module.exports.getForm = async (req, res) => {
                     message: "Form not found!"
                 })
             }
+            Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
             if(form.certDate !== null && form.certDate !== ""){
                 form.certDate = dateFormatter(form?.certDate);
             }

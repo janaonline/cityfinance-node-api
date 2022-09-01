@@ -8,6 +8,7 @@ const Service = require('../../service');
 const List = require('../../util/15thFCstatus')
 const {calculateKeys} = require('../CommonActionAPI/service')
 const Ulb = require('../../models/Ulb')
+const State = require('../../models/State')
 function padTo2Digits(num) {
     return num.toString().padStart(2, '0');
   }
@@ -239,8 +240,8 @@ if(getQuery) return res.json({
 })
 
 // if csv - then no skip and limit, else with skip and limit
-let data =  Ulb.aggregate(query[0])
-total =  Ulb.aggregate(query[1])
+let data = formType == "ULB" ? Ulb.aggregate(query[0]) : State.aggregate(query[0])
+total =  formType == "ULB" ?  Ulb.aggregate(query[1]) : State.aggregate(query[1])
 let allData = await Promise.all([data, total]);
 data = allData[0]
 total = allData[1].length ? allData[1][0]['total'] : 0
@@ -447,37 +448,164 @@ filledQueryExpression = {
 
 
    }
-    let query = [
-        {
-            $match:{
-                "access_2223": true
+   switch (userRole) {
+    case "ULB":
+        let query = [
+            {
+                $match:{
+                    "access_2223": true
+                }
+            },
+            {
+                                $lookup: {
+                        
+                                    from:"states",
+                                    localField:"state",
+                                    foreignField:"_id",
+                                    as:"state"
+                                }
+                            },{
+                                $unwind:"$state"
+                            },
+                            {
+                                $match: {
+                                    "state.accessToXVFC" : true
+                                }
+                            }]
+    if(state){
+        query.push({
+            $match: {
+    "state._id": ObjectId(state)
             }
-        },
-        {
-                            $lookup: {
-                    
-                                from:"states",
-                                localField:"state",
-                                foreignField:"_id",
-                                as:"state"
-                            }
-                        },{
-                            $unwind:"$state"
+            
+        })
+    }
+                 let query_2 =           [{
+                    $lookup: {
+                        from: dbCollectionName,
+                        let: {
+                          firstUser: ObjectId(design_year),
+                          secondUser: "$_id",
                         },
-                        {
+                        pipeline: [
+                          {
                             $match: {
-                                "state.accessToXVFC" : true
+                              $expr: {
+                                $and: [
+                                  {
+                                    $eq: ["$design_year", "$$firstUser"],
+                                  },
+                                  {
+                                    $eq: ["$ulb", "$$secondUser"],
+                                  },
+                                ],
+                              },
+                            },
+                          },
+                        ],
+                        as: dbCollectionName,
+                      }
+                            },{
+                                $unwind:{
+                                    path:`$${dbCollectionName}`,
+                                    preserveNullAndEmptyArrays:true
+                                }
+                            },
+                            {
+                                $lookup: {
+                        
+                                    from:"uas",
+                                    localField:"UA",
+                                    foreignField:"_id",
+                                    as:"UA"
+                                }
+                            },
+                            {
+                                $lookup: {
+                        
+                                    from:"ulbtypes",
+                                    localField:"ulbType",
+                                    foreignField:"_id",
+                                    as:"ulbType"
+                                }
+                            },{
+                                $unwind:"$ulbType"
+                            },
+                            {
+                                $project: {
+                                    ulbName:"$name",
+                                                        ulbId:"$_id",
+                                                        ulbCode:"$code",
+                                                        censusCode: {$ifNull: ["$censusCode","$sbCode"]},
+                                                        UA: {
+                                                            $cond: {
+                                                            if: { $eq: ["$isUA", "Yes"] },
+                                                            then: { $arrayElemAt: ["$UA.name", 0] },
+                                                            else: "NA",
+                                                            },
+                                                        },
+                                                        UA_id:{
+                                                            $cond: {
+                                                            if: { $eq: ["$isUA", "Yes"] },
+                                                            then: { $arrayElemAt: ["$UA._id", 0] },
+                                                            else: "NA",
+                                                            },
+                                                        },
+                                                        ulbType:"$ulbType.name",
+                                                        ulbType_id:"$ulbType._id",
+                                                        population:"$population",
+                                                        state_id:"$state._id",
+                                                        stateName:"$state.name",
+                                                        populationType: {
+                                                            $cond: {
+                                                            if: { $eq: ["$isMillionPlus", "Yes"] },
+                                                            then: "Million Plus" ,
+                                                            else: "Non Million",
+                                                            },
+                                                        },
+                                                      formData:{$ifNull: [`$${dbCollectionName}`, "" ]} ,
+                                                        filled: Object.keys(filledQueryExpression).length>0 ? filledQueryExpression : "Yes"
+    
+                                }
+                            },
+                            {
+                                $sort: {formData: -1}
                             }
-                        }]
-if(state){
-    query.push({
-        $match: {
-"state._id": ObjectId(state)
+    
+        ]
+        query.push(...query_2)
+        if(formName == CollectionNames.annual){
+                            delete query[query.length-2]['$project']['filled']
+                Object.assign(  query[query.length -2]['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
         }
-        
-    })
-}
-             let query_2 =           [{
+               let  filterApplied = Object.keys(filter).length > 0
+            if(filterApplied){
+                query.push({
+                    $match: filter
+                },
+               ) 
+            }
+            let countQuery = query.slice()
+            countQuery.push({
+                $count:"total"
+            })
+            let paginator = [
+                {
+                    $skip:skip
+                },
+                {$limit: limit}
+            ]
+            query.push(...paginator)
+            return [query,countQuery ]
+        break;
+        case "STATE":
+        let query_s = [
+            {
+                $match: {
+                    "accessToXVFC" : true
+                }
+            },
+            {
                 $lookup: {
                     from: dbCollectionName,
                     let: {
@@ -493,7 +621,7 @@ if(state){
                                 $eq: ["$design_year", "$$firstUser"],
                               },
                               {
-                                $eq: ["$ulb", "$$secondUser"],
+                                $eq: ["$state", "$$secondUser"],
                               },
                             ],
                           },
@@ -509,91 +637,38 @@ if(state){
                             }
                         },
                         {
-                            $lookup: {
-                    
-                                from:"uas",
-                                localField:"UA",
-                                foreignField:"_id",
-                                as:"UA"
+                            $project:{
+                                stateName  :"$name",
+                                    formData:{$ifNull: [`$${dbCollectionName}`, "" ]} ,
                             }
-                        },
-                        {
-                            $lookup: {
-                    
-                                from:"ulbtypes",
-                                localField:"ulbType",
-                                foreignField:"_id",
-                                as:"ulbType"
-                            }
-                        },{
-                            $unwind:"$ulbType"
-                        },
-                        {
-                            $project: {
-                                ulbName:"$name",
-                                                    ulbId:"$_id",
-                                                    ulbCode:"$code",
-                                                    censusCode: {$ifNull: ["$censusCode","$sbCode"]},
-                                                    UA: {
-                                                        $cond: {
-                                                        if: { $eq: ["$isUA", "Yes"] },
-                                                        then: { $arrayElemAt: ["$UA.name", 0] },
-                                                        else: "NA",
-                                                        },
-                                                    },
-                                                    UA_id:{
-                                                        $cond: {
-                                                        if: { $eq: ["$isUA", "Yes"] },
-                                                        then: { $arrayElemAt: ["$UA._id", 0] },
-                                                        else: "NA",
-                                                        },
-                                                    },
-                                                    ulbType:"$ulbType.name",
-                                                    ulbType_id:"$ulbType._id",
-                                                    population:"$population",
-                                                    state_id:"$state._id",
-                                                    stateName:"$state.name",
-                                                    populationType: {
-                                                        $cond: {
-                                                        if: { $gt: ["$isMillionPlus", "Yes"] },
-                                                        then: "Million Plus" ,
-                                                        else: "Non Million",
-                                                        },
-                                                    },
-                                                  formData:{$ifNull: [`$${dbCollectionName}`, "" ]} ,
-                                                    filled: Object.keys(filledQueryExpression).length>0 ? filledQueryExpression : "Yes"
-
-                            }
-                        },
-                        {
-                            $sort: {formData: -1}
                         }
 
-    ]
-    query.push(...query_2)
-    if(formName == CollectionNames.annual){
-                        delete query[query.length-2]['$project']['filled']
-            Object.assign(  query[query.length -2]['$project'], {filled_provisional: filledProvisionalExpression, filled_audited:filledAuditedExpression})
-    }
-           let  filterApplied = Object.keys(filter).length > 0
-        if(filterApplied){
-            query.push({
+        ]
+        let  filterApplied_s = Object.keys(filter).length > 0
+        if(filterApplied_s){
+            query_s.push({
                 $match: filter
             },
            ) 
         }
-        let countQuery = query.slice()
-        countQuery.push({
+        let countQuery_s = query_s.slice()
+        countQuery_s.push({
             $count:"total"
         })
-        let paginator = [
+        let paginator_s = [
             {
                 $skip:skip
             },
             {$limit: limit}
         ]
-        query.push(...paginator)
-        return [query,countQuery ]
+        query_s.push(...paginator_s)
+        return [query_s,countQuery_s ]
+        break;
+   
+    default:
+        break;
+   }
+ 
 //  let query_notFilter_pagination = [], query_Filter_total = [], query_Filter_total_count= [], query_3 = [] , query_2 = [], year;
 //  //handling the cases where filled/not filled status is to be calculated
 //  let filledQueryExpression = {}, filledProvisionalExpression = {}, filledAuditedExpression = {}
