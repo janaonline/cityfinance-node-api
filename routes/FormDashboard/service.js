@@ -313,6 +313,9 @@ function approvedForms(forms,formCategory){
             break;
         }
         let {status, actionTakenByRole: role, isDraft} = element
+        if(!role){
+            role = element?.["user"]["role"];
+        }
         switch(formCategory){
             case "ULB":
                 if( (calculateStatus(status, role, isDraft, formCategory) === StatusList.Approved_By_MoHUA) ||
