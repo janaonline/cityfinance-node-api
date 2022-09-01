@@ -227,7 +227,7 @@ module.exports.updateForm = async (req, res) =>{
         const user = req.decoded;
         let ulb="";
         let singleUlb; //to return updated response for single ulb
-        const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)});
+        const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)}).lean();
         if(user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA'){
           return  res.status(403).json({
                 success: false,
@@ -256,15 +256,14 @@ module.exports.updateForm = async (req, res) =>{
                 message: "Not authorized"
             })
         }
-        if(data.ulb.length === 1 ){//add reject reason and response file based on role
-            if(actionTakenByRole === "STATE"){
-                formData['rejectReason_state'] = data.rejectReason;
-                formData['responseFile_state'] = data.responseFile;
-                // formData['responseFile']['url'] = data.responseFile.url;
-            }else if (actionTakenByRole === "MoHUA"){
-                formData['rejectReason_mohua'] = data.rejectReason;
-                formData['responseFile_mohua'] = data.responseFile;     
-            }
+        //add reject reason and response file based on role
+        if(actionTakenByRole === "STATE"){
+            formData['rejectReason_state'] = data.rejectReason;
+            formData['responseFile_state'] = data.responseFile;
+            // formData['responseFile']['url'] = data.responseFile.url;
+        }else if (actionTakenByRole === "MoHUA"){
+            formData['rejectReason_mohua'] = data.rejectReason;
+            formData['responseFile_mohua'] = data.responseFile;     
         }
         let condition = {};
         if (collection === UtilizationReport ){
@@ -277,20 +276,20 @@ module.exports.updateForm = async (req, res) =>{
         for(let i=0; i < data.ulb.length; i++){//update status and add history
             ulb = data.ulb[i];
             form = forms[i];
-            if(form === undefined) break;
+            if(form === undefined) continue;
             form['actionTakenByRole'] = formData.actionTakenByRole;
             form['actionTakenBy'] = formData.actionTakenBy;
             form['status'] = formData.status;
             form['modifiedAt'] = new Date();
-            if(data.ulb.length === 1){//add reject reason/responseFile for single ulb entry
-                if(actionTakenByRole === 'STATE'){
-                    form['rejectReason_state'] = data.rejectReason;
-                    form['responseFile_state'] = data.responseFile;
-                }else if (actionTakenByRole === 'MoHUA'){
-                    form['rejectReason_mohua'] = data.rejectReason;
-                    form['responseFile_mohua'] = data.responseFile;
-                }
+            //add reject reason/responseFile for single ulb entry
+            if(actionTakenByRole === 'STATE'){
+                form['rejectReason_state'] = data.rejectReason;
+                form['responseFile_state'] = data.responseFile;
+            }else if (actionTakenByRole === 'MoHUA'){
+                form['rejectReason_mohua'] = data.rejectReason;
+                form['responseFile_mohua'] = data.responseFile;
             }
+            
             form['history'] = undefined;
             let updatedForm = await collection.findOneAndUpdate(
                 {ulb , [condition.design_year]: data.design_year},
