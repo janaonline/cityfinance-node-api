@@ -63,7 +63,7 @@ module.exports.mapFilterNew = async(obj) => {
                         filter[key] = obj[key];
                     }
                     else if (typeof obj[key] == "string") {
-                        filter[key] = { $regex: `^${obj[key]}`, $options: 'i' };
+                        filter[key] = { $regex: `^${obj[key]}`, $options: 'x' };
                     }
                     else {
                         filter[key] = obj[key];
