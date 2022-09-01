@@ -57,7 +57,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
            
 
             if ( submittedForm && submittedForm.isDraft) {//update already existing form
-                if(formData.isDraft){
+                if(formData.isDraft){//save as draft 
                     const updatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
                         condition,
                         {$set: formData},

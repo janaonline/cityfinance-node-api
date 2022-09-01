@@ -26,10 +26,10 @@ function createDynamicColumns(collectionName){
         
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            columns = `Rating,Cert URL,Cert Name, Cert Date, Approve/Reject Comment, Response File Name, Response File URL `;
+            columns = `Financial Year,Form Status, Submission Date and Time, Filled Status, Rating, Score, Certificate URL,Certificate Name, Certificate Issue Date,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `;
             break;
         case CollectionNames.propTaxState:
-            columns =  `Act Page,Floor Rate Url, Floor Rate Name, Status`
+            columns =  `Financial Year, Form Status, Submission Date and Time, Filled Status, Act Page,Floor Rate Url, Floor Rate Name, Status`
             break;
         default:
             columns = '';
@@ -270,7 +270,7 @@ if(csv){
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
     if(formType === 'ULB'){
 
-        let fixedColumns = `ULB Name, City Finance Code, Census Code, ULB Type, State Name, Population, UA, Form Status, Form Filled Status,`;
+        let fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA,`;
         let dynamicColumns = createDynamicColumns(collectionName);
     
         
@@ -286,6 +286,8 @@ if(csv){
                     el.UA = "NA"
                 }
                 res.write(
+                    el.stateName +
+                    "," +
                     el.ulbName +
                     "," +
                     el.ulbCode + 
@@ -293,8 +295,6 @@ if(csv){
                     el.censusCode + 
                     "," +
                     el.ulbType +
-                    "," +
-                    el.stateName +
                     "," +
                     el.population +
                     "," +
