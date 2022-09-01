@@ -15,6 +15,7 @@ const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
 const {calculateStatus} = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
+const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const USER_TYPES = require('../../util/userTypes')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
@@ -25,7 +26,8 @@ let FormModelMapping = {
     "AnnualAccountData": ObjectId("62aa1b04729673217e5ca3aa"),
     "UtilizationReport": ObjectId("62aa1c96c9a98b2254632a8a"),
     "PFMSAccount": ObjectId("62aa1cc9c9a98b2254632a8e"),
-    "TwentyEightSlbForm" : ObjectId("62f0dbbf596298da6d3f4076")
+    "TwentyEightSlbForm" : ObjectId("62f0dbbf596298da6d3f4076"),
+    "PropertyTaxOp" : ObjectId("62aa1ceac9a98b2254632a92")
     
 }
 
@@ -110,7 +112,7 @@ module.exports.get = catchAsync(async (req, res) => {
         let condition = {
             ulb: ObjectId(_id),
         }
-        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS, SLB28]
+        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS, SLB28, PropertyTaxOp]
        for(el of formArr) {
             if (el == DUR) {
                 delete condition['design_year'];

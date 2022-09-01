@@ -257,7 +257,7 @@ let groupedData = groupByKey(dataArr, "type")
             success: true,
             data: {
                 data :  output,
-                population: 0
+                population: null
             } 
            })
         }
