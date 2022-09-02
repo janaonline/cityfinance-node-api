@@ -1254,7 +1254,6 @@ let obj = annualAccountData;
       return res.status(400).json(obj);
 
     }
-    
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
@@ -1790,7 +1789,7 @@ exports.action = async (req, res) => {
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
 
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
-      { ulb: ObjectId(ulb), isActive: true },
+      { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
     );
 
