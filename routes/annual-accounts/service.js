@@ -1760,7 +1760,6 @@ exports.action = async (req, res) => {
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: ObjectId(design_year),
-      isActive: true,
     }).select({
       history: 0,
     });
@@ -1803,7 +1802,7 @@ exports.action = async (req, res) => {
         msg: "no AnnualAccountData found",
       });
     }
-
+if(design_year == "606aaf854dff55e6c075d219" )
     await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
