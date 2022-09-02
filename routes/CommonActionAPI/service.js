@@ -6,7 +6,7 @@ const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const FormsMaster = require('../../models/FormsMaster');
 const StatusList = require('../../util/newStatusList')
-
+const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Sidemenu = require('../../models/Sidemenu');
 
@@ -365,3 +365,57 @@ module.exports.updateForm = async (req, res) =>{
         })
     }
 }
+
+module.exports.annualaccount = catchAsync(async (req,res)=>{
+    const data = req.body;
+    const user = req.decoded;
+    let ulb="";
+    let singleUlb; //to return updated response for single ulb
+    const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)}).lean();
+    if(user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA'){
+      return  res.status(403).json({
+            success: false,
+            message:"Not AUthorized to perform this action"
+        })
+    }
+
+    if(!masterForm){
+        return res.status(400).json({
+            status: false,
+            message: "Form not found"
+        })
+    }
+    
+    const collection = getCollectionName(masterForm.name);
+    const formData = {};
+    const { role: actionTakenByRole, _id: actionTakenBy } = user;
+    formData['actionTakenByRole'] = actionTakenByRole;
+    formData['actionTakenBy'] = actionTakenBy;
+    formData['status'] = data.status;
+    
+    //Check if role is other than STATE or MoHUA
+    if(actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA"){
+        return res.status(401).json({
+            status: false,
+            message: "Not authorized"
+        })
+    }
+    //add reject reason and response file based on role
+    if(actionTakenByRole === "STATE"){
+        formData['rejectReason_state'] = data.rejectReason;
+        formData['responseFile_state'] = data.responseFile;
+        // formData['responseFile']['url'] = data.responseFile.url;
+    }else if (actionTakenByRole === "MoHUA"){
+        formData['rejectReason_mohua'] = data.rejectReason;
+        formData['responseFile_mohua'] = data.responseFile;     
+    }
+    let condition = {};
+    if (collection === UtilizationReport ){
+        condition.design_year = "designYear"
+    } else {
+        condition.design_year = "design_year"
+    }
+    const forms = await collection.find({ulb :{$in : data.ulb}, [condition.design_year]: data.design_year}).lean();
+    let form={}, numberOfFormsUpdated=0;
+    for(let i=0; i < data.ulb.length; i++){}//update status and add history
+})
