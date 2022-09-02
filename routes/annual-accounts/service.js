@@ -97,7 +97,7 @@ exports.createUpdate = async (req, res) => {
       const addedHistory = await AnnualAccountData.findOneAndUpdate(
         condition,
         formData,
-        {new: true, runValidators: true}
+        {new: true, runValidators: true, upsert : true}
       );
       await UpdateMasterSubmitForm(req, "annualAccounts");
       return res.status(200).json({
@@ -1243,12 +1243,11 @@ if(!ulbData.access_2122){
 }
 
 let obj = annualAccountData;
-    if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
+     ulb = req?.decoded.ulb ?? ulb;
    
     annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
-      design_year,
-      isActive: true,
+      design_year
     }).select({ history: 0 });
     if(!annualAccountData) {
 
