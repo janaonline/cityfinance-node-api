@@ -67,8 +67,8 @@ exports.createUpdate = async (req, res) => {
           
         }
       }
-      formData['unAudited']['provisional_data'] = proData;
-      formData['audited']['provisional_data'] = audData;
+      formData['unAudited']['provisional_data'] = proData ?? req.body.unAudited.provisional_data ;
+      formData['audited']['provisional_data'] = audData ?? req.body.audited.provisional_data ;
 
       req.body.status = "PENDING";
       currentAnnualAccounts = await AnnualAccountData.findOne({
@@ -103,7 +103,8 @@ exports.createUpdate = async (req, res) => {
       return res.status(200).json({
         status: true,
         message: "form submitted",
-        data: addedHistory
+        data: addedHistory,
+        isCompleted : formData.isDraft ? false : true
       })
   }
  
@@ -1225,7 +1226,7 @@ console.log(status)
 let dataCollection = {}
  dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
 let dataSubmittedByOpenPage = false
-if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
+if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length() > 0){
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
@@ -1243,7 +1244,12 @@ if(!ulbData.access_2122){
 }
 
 let obj = annualAccountData;
+
+ 
+
      ulb = req?.decoded.ulb ?? ulb;
+
+   
     annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year
