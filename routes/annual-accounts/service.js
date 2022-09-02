@@ -1244,7 +1244,6 @@ if(!ulbData.access_2122){
 
 let obj = annualAccountData;
      ulb = req?.decoded.ulb ?? ulb;
-   
     annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year
