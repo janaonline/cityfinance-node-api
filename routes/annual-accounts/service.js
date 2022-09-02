@@ -1033,7 +1033,7 @@ if(!ulbData.access_2122){
 }
 
 let obj = annualAccountData;
-    if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
+    if (req.decoded.role == "ULB") ulb = req?.decoded.ulb ?? ulb;
    
     annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
