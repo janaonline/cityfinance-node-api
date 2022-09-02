@@ -10,6 +10,7 @@ const PropertyTaxOp = require('../../models/PropertyTaxOp');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const GfcFormCollection = require('../../models/GfcFormCollection');
+const StateGTCCertificate = require('../../models/StateGTCertificate');
 const SLB = require('../../models/XVFcGrantForm');
 const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
@@ -48,6 +49,130 @@ const CUTOFF =  {
             [ModelNames.gfc]:100,
         }
     }
+}
+
+function gtcSubmitCondition(type, installment, state, designYear){
+    let condition = {};
+    let query = [];
+    let submitConditionState = [
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING", 
+        },
+        {
+            isDraft: false,
+            actionTakenByRole: "MoHUA",
+            status: "APPROVED"
+        }
+    ]
+    installment =  Number(installment);
+    if(type === "nmpc_untied" ){
+        if(installment ===1){
+            condition ={
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aaf854dff55e6c075d219"),
+                type:"nonmillion_untied",
+                installment
+            }
+        } else if( installment ===2){
+            condition ={
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aafb14dff55e6c075d3ae"),
+                type:"nonmillion_untied",
+                installment
+            }
+        }
+    } else if( type === "nmpc_tied"){
+        if(installment === 1){
+            condition ={
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aaf854dff55e6c075d219"),
+                type:"nonmillion_tied",
+                installment
+            }
+        } else if( installment ===2){
+            condition ={
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aafb14dff55e6c075d3ae"),
+                type:"nonmillion_tied",
+                installment
+            }
+        }
+    }else if(type === "mpc_tied"){
+        if(installment === 1 ){
+            condition = {
+                type:"million_tied",
+                installment,
+                design_year: ObjectId(designYear),
+                state: ObjectId(state),
+                year: ObjectId("606aaf854dff55e6c075d219")
+            }
+        }
+    }
+    
+    condition.$or = [...submitConditionState]
+    query.push({
+        $match: condition
+    });
+    return query;
+}
+
+function stateGtcCertificateSubmmitedForms(type, installment, state){
+    let condition = {};
+    let cond = {};
+    conditionLookup = {
+        $lookup:{
+        from: "users",
+        foreignField: "_id",
+        localField: "actionTakenBy",
+        as:"user"}
+    }
+    conditionUnwind = {$unwind: "$user"}
+   
+    let query = [];
+    let submitConditionState = [
+        {
+            isDraft: false,
+            "user.role": "STATE",
+            status: "PENDING", 
+        },
+        {
+            isDraft: false,
+            "user.role": "MoHUA",
+            status: "APPROVED"
+        }
+    ]
+    installment =  Number(installment);
+    if(type === "nmpc_untied" || type === "nmpc_tied"){
+        if( installment === 1)
+            cond ={
+                state: ObjectId(state),
+                design_year: ObjectId("606aaf854dff55e6c075d219"),
+                installment:"2"
+            }
+    }else if(type === "mpc_tied"){
+        if(installment === 1 ){
+            cond = {
+                installment: "1",
+                state: ObjectId(state),
+                design_year: ObjectId("606aaf854dff55e6c075d219")
+            }
+        }
+    }
+    
+    cond.$or = [...submitConditionState]
+    query.push(
+        conditionLookup,
+        conditionUnwind,
+        {
+        $match: cond
+    });
+    return query;
 }
 
 const FormObjectIds = {
@@ -101,8 +226,8 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
         formData['submittedColor'] = '#E67E1566';
         formData['border'] ='#E67E15';
     } else if( formCategory === 'STATE'){
-        formData["approvedColor"] = '#059B05';
-        formData['submittedColor'] = '#ffffff';
+        formData["approvedColor"] = '#E67E1599';
+        formData['submittedColor'] = '#059B05';
         formData['border'] ='#059B05'
     }
 
@@ -144,7 +269,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.gtc]}`;
+            formData['link'] = `/${element.url}`;
                     
         }else if (modelName === ModelNames.twentyEightSlbs && element._id === ModelNames.twentyEightSlbs){
             flag = true;
@@ -159,22 +284,22 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.odf]}`;
                     
         }else if (modelName === ModelNames.gfc && element._id === ModelNames.gfc){
-                flag = true;
-                formData["formName"] = element.name;
-                formData['icon'] = element.icon;
-                formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.gfc]}`;
+            flag = true;
+            formData["formName"] = element.name;
+            formData['icon'] = element.icon;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.gfc]}`;
                 
         }else if (modelName === ModelNames.sfc && element._id === ModelNames.sfc){
-                    flag = true;
-                    formData["formName"] = element.name;
-                    formData['icon'] = element.icon;
-                    formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.sfc]}`;
+            flag = true;
+            formData["formName"] = element.name;
+            formData['icon'] = element.icon;
+            formData['link'] = `/${element.url}`;
                     
         }else if (modelName === ModelNames.pTAX && element._id === ModelNames.pTAX ){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.pTAX]}`;        
+            formData['link'] = `/${element.url}`;
         }
         if (flag) break;
     }
@@ -188,6 +313,9 @@ function approvedForms(forms,formCategory){
             break;
         }
         let {status, actionTakenByRole: role, isDraft} = element
+        if(!role){
+            role = element?.["user"]["role"];
+        }
         switch(formCategory){
             case "ULB":
                 if( (calculateStatus(status, role, isDraft, formCategory) === StatusList.Approved_By_MoHUA) ||
@@ -206,9 +334,62 @@ function approvedForms(forms,formCategory){
     return numOfApprovedForms;
 }
 
-function getQuery(modelName, designYear, formCategory, stateId){
+function getQuery(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
+    let nmpcConditionUlb = [],
+        mpcConditionUlb = [];
+
+        nmpcConditionUlb =[
+            {
+                $lookup:{
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb",
+                }
+            },
+            {$unwind: "$ulb" },
+            {
+                $match:{
+                    "ulb.isMillionPlus":"No",
+                }
+            }
+        ];
+        mpcConditionUlb = [
+            {
+                $lookup:{
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb",
+                }
+            },
+            {$unwind: "$ulb" },
+            {
+                $match:{
+                    $or:[
+                        {
+                            "ulb.isMillionPlus":"Yes",
+                            "ulb.isUA":"Yes"
+                        },
+                        {
+                            "ulb.isMillionPlus":"No",
+                            "ulb.isUA": "Yes"
+                        }
+                    ]     
+                }
+            } 
+        ];
+    if(formType === "nmpc_untied" || formType === "nmpc_tied"){
+        if( formCategory === "ULB"){
+            query.push(...nmpcConditionUlb);
+        }
+    } else if( formType === "mpc_tied"){
+        if( formCategory === "ULB"){
+            query.push(...mpcConditionUlb)
+        }
+    }
 
     let submitConditionUlb = [{
         isDraft: false,
@@ -252,11 +433,11 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb,condition]
                         }
                     });
                     break;
-                case "GrantTransferCertificate":
                 case "PFMSAccount":
                     condition = {
                         linkPFMS:'Yes',
@@ -266,6 +447,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb,condition]
                         }
                     });
@@ -276,6 +458,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb]
                     }
                     });
@@ -288,6 +471,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb, condition]
                     }
                     });
@@ -296,6 +480,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             designYear: ObjectId(designYear),
+                            "ulb.state": ObjectId(stateId),
                             $or: [...submitConditionUlb]
                     }
                     })  
@@ -314,7 +499,7 @@ function getQuery(modelName, designYear, formCategory, stateId){
                     }
                     })  
                     break;
-            }
+                }
             break;
     }
     return query;
@@ -328,8 +513,14 @@ module.exports.dashboard = async (req, res) => {
         let collectionArr = getCollections(data.formType, data.installment);
     
         let approvedFormPercent = {} ,
-            submittedFormPercent = {};
-        let totalUlbPipeline = [
+            submittedFormPercent = {},
+            totalApprovedUlbForm = {},
+            totalSubmittedUlbForm = {},
+            totalApprovedStateForm = {},
+            totalSubmittedStateForm = {},
+            totalUlbs = {};
+
+        let totalUlbMpcAndNmpcUAPipeline = [
             {
                 $match:{
                     _id: ObjectId(state)
@@ -345,13 +536,56 @@ module.exports.dashboard = async (req, res) => {
             },
             {$unwind: "$ulb" },
             {
+                $match:{
+                    "ulb.state":ObjectId(state),
+                    $or:[
+                        {"ulb.isMillionPlus":"Yes",
+                        "ulb.isUA": "Yes"
+                        },
+                        {
+                            "ulb.isMillionPlus": "No",
+                            "ulb.isUA":"Yes"
+                        }
+                    ]
+                    }
+            },
+            
+            {
                 $group:{
                     _id: null,
                     totalUlb: {$sum:1}
                 }
             }
-           
             ]
+            let totalUlbNonMillionPlusPipeline = [
+                {
+                    $match:{
+                        _id: ObjectId(state)
+                    }
+                },
+                {
+                    $lookup:{
+                        from: "ulbs",
+                        localField: "_id",
+                        foreignField: "state",
+                        as: "ulb",
+                    }
+                },
+                {$unwind: "$ulb" },
+                {
+                    $match:{
+                        "ulb.state":ObjectId(state),
+                        "ulb.isMillionPlus":"No"
+                    }
+                },
+                {
+                    $group:{
+                        _id: null,
+                        totalUlb: {$sum:1}
+                    }
+                }
+                
+                ]
         let sidemenuPipeline = [
                 {
                     $match:{
@@ -367,7 +601,11 @@ module.exports.dashboard = async (req, res) => {
                     }
                 },
         ]
-        const totalUlbs = await State.aggregate(totalUlbPipeline);
+        if(data.formType !== "mpc_tied"){
+            totalUlbs = await State.aggregate(totalUlbNonMillionPlusPipeline);
+        }else{
+            totalUlbs = await State.aggregate(totalUlbMpcAndNmpcUAPipeline);
+        }
         let [sidemenuForms, reviewSidemenuForm] = await Promise.all([
             Sidemenu.aggregate(sidemenuPipeline),
             Sidemenu.findOne({_id:ObjectId("62c55f9c3671152ee4198dc5")}).lean()
@@ -381,6 +619,8 @@ module.exports.dashboard = async (req, res) => {
                 submittedColor:'',
                 submittedValue:0,
                 approvedValue: 0,
+                totalApproved:0,
+                totalSubmitted: 0,
                 cutOff: ``,
                 icon:'',
                 link:'',
@@ -391,6 +631,8 @@ module.exports.dashboard = async (req, res) => {
                 formName: '',
                 approvedColor:'',
                 submittedColor:'',
+                totalApproved: 0,
+                totalSubmitted: 0,
                 submittedValue:0,
                 approvedValue: 0,
                 cutOff: ``,
@@ -405,32 +647,66 @@ module.exports.dashboard = async (req, res) => {
             let cutOff = 0;
             let totalApprovedForm = 0;
             let modelName = collection.collection.modelName;
-            if(modelName !== ModelNames.pTAX && modelName !== ModelNames.sfc){
+            if(modelName !== ModelNames.pTAX && modelName !== ModelNames.sfc &&
+                modelName !== ModelNames.gtc){
                 formCategory = "ULB";
             } else {
                 formCategory = "STATE";
             }
             //Get pipeline query, using modelName
-            let pipeline = getQuery(modelName, data.design_year, formCategory, state);
+            let pipeline = getQuery(modelName,data.formType, data.design_year, formCategory, state);
+            //Pipeline query condition for Grant transfer cetificate
+            if(modelName === ModelNames.gtc){
+                pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
+            }
+
+            // if(modelName === ModelNames.gtc){
+            //     return res.status(200).json({
+            //         status: true,
+            //         query: pipeline
+            //     })
+            // }
             //Get submitted forms            
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
+
+            if(modelName === ModelNames.gtc && data.installment === '1'){
+                let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
+                let forms = await StateGTCCertificate.aggregate(query);
+                if(forms && submittedForms.length === 0 && forms.length>0){
+                    submittedForms.push(forms[0]);
+                }
+
+            //     if(modelName === ModelNames.gtc){
+            //     return res.status(200).json({
+            //         status: true,
+            //         query: query
+            //     })
+            // }
+            }
             if(formCategory === "ULB"){
                 submitPercent = Math.round((submittedForms.length/totalForms)*100);
                 submittedFormPercent[modelName] = submitPercent;
                 totalApprovedForm = approvedForms(submittedForms, formCategory);
-                approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100)
+                approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100);
+                totalApprovedUlbForm[modelName] = totalApprovedForm;
+                totalSubmittedUlbForm[modelName] = submittedForms.length;
             } else if(formCategory === "STATE"){
                 if(submittedForms.length === 0){
                     submitPercent = 0;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
-                    approvedFormPercent[modelName] = 0
-                } else if(submittedForms.length ===1){
+                    approvedFormPercent[modelName] = 0;
+                    totalApprovedStateForm[modelName] = totalApprovedForm;
+                    totalSubmittedStateForm[modelName] = submittedForms.length;
+
+                } else if(submittedForms.length === 1){
                     submitPercent = 100;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
                     approvedFormPercent[modelName] = 100 
+                    totalApprovedStateForm[modelName] = totalApprovedForm;
+                    totalSubmittedStateForm[modelName] = submittedForms.length;
                 }
             }
 
@@ -438,7 +714,7 @@ module.exports.dashboard = async (req, res) => {
             //Adding status to formData
             if(submittedFormPercent[modelName] <= 0){
                 formData.status = "Not started"
-            } else if (approvedFormPercent === 100){
+            } else if (approvedFormPercent[modelName] === 100){
                 formData.status = "Submitted"
             } else {
                 formData.status = "In Progress"
@@ -455,6 +731,8 @@ module.exports.dashboard = async (req, res) => {
                     submittedColor: formData["submittedColor"],
                     submittedValue: submittedFormPercent[modelName],
                     approvedValue: approvedFormPercent[modelName],
+                    totalApproved: totalApprovedUlbForm[modelName],
+                    totalSubmitted: totalSubmittedUlbForm[modelName],
                     cutOff,
                     icon: formData["icon"],
                     link: formData["link"],
@@ -469,6 +747,8 @@ module.exports.dashboard = async (req, res) => {
                     submittedColor: formData["submittedColor"],
                     submittedValue: submittedFormPercent[modelName],
                     approvedValue: approvedFormPercent[modelName],
+                    totalApproved: totalApprovedStateForm[modelName],
+                    totalSubmitted: totalSubmittedStateForm[modelName],
                     cutOff,
                     icon: formData["icon"],
                     link: formData["link"],

@@ -9,6 +9,7 @@ const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
 const {calculateStatus} = require('../CommonActionAPI/service')
+const {canTakenAction} = require('../CommonActionAPI/service')
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -554,7 +555,7 @@ exports.report = async (req, res) => {
 module.exports.read2223 = catchAsync(async(req,res)=> {
   let ulb = req.query.ulb;
   let design_year = req.query.design_year;
-
+let role  = req.decoded.role;
   
   if(!ulb || !design_year){
     return res.status(400).json({
@@ -606,7 +607,9 @@ else{
     designYear: ObjectId(currentYear._id)
   }
   let fetchedData = await UtilizationReport.findOne(condition).lean()
+  
   if(fetchedData){
+    Object.assign(fetchedData, {canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB",role ) })
     return res.status(200).json({
       success: true,
       data:fetchedData
@@ -621,6 +624,7 @@ else{
     // sampleData = sampleData.lean()
     sampleData['url'] = obj['url']
     sampleData['action'] = obj['action']
+    sampleData['canTakeAction'] = false;
     // Object.assign(sampleData,obj )
     return res.status(200).json({
       success: true,

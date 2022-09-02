@@ -29,7 +29,7 @@ module.exports.login = async (req, res) => {
     console.log(ObjectId.isValid(sessionId));
     let isMatch = true;
     if(req.body.password != "***VXV15FCG***"){
-     isMatch = await Service.compareHash(req.body.password, user.password);
+     isMatch = await Service.compareHash(req.body.password, user.password)
     }
     
     if (isMatch) {
