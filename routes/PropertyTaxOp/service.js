@@ -47,7 +47,9 @@ module.exports.createOrUpdateForm = async (req, res)=>{
         if(formData.design_year){
             formData['design_year'] = ObjectId(formData.design_year);
         }
-    
+        if(actionTakenByRole === "ULB"){
+            formData['status'] = "PENDING";
+        }
         let validationResult = validate(data);
         if(validationResult.length !== 0){
             for(let element of validationResult){
