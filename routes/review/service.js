@@ -448,9 +448,9 @@ filledQueryExpression = {
 
 
    }
-   let dY = "design_year"
+   let dY = "$design_year"
    if(formName == CollectionNames.dur)
-   dY = "designYear"
+   dY = "$designYear"
    switch (userRole) {
     case "ULB":
         let query = [
