@@ -30,7 +30,7 @@ lerna-debug.log*
 .history/
 
 # Uploads
-#/uploads
+/uploads
 # Environment specific
 .env
 .env_bk
