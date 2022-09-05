@@ -146,13 +146,13 @@ function
 validate(data){
     let result = [];
     if(data.collection2019_20){
-        result.push(data.collection2019_20 > 0 && data.collection2019_20 < 9999999999);
+        result.push(data.collection2019_20 >= 0 && data.collection2019_20 < 9999999999);
     } else if(data.collection2020_21){
-        result.push(data.collection2020_21 >0 && data.collection2020_21 < 9999999999);
+        result.push(data.collection2020_21 >= 0 && data.collection2020_21 < 9999999999);
     } else if( data.collection2021_22){
-        result.push(data.collection2021_22>0 && data.collection2021_22 < 9999999999); 
+        result.push(data.collection2021_22 >= 0 && data.collection2021_22 < 9999999999); 
     }else if(data.target2022_23 ){
-        result.push(data.target2022_23 >0 && data.target2022_23 < 9999999999);
+        result.push(data.target2022_23 >= 0 && data.target2022_23 < 9999999999);
     }
     return result;
 }
