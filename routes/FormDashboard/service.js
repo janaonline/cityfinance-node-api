@@ -716,18 +716,18 @@ module.exports.dashboard = async (req, res) => {
             }
 
             let formData = getFormData(formCategory, modelName, sidemenuForms, reviewSidemenuForm);
-            //Adding status to formData
-            if(submittedFormPercent[modelName] <= 0){
-                formData.status = "Not started"
-            } else if (approvedFormPercent[modelName] === 100){
-                formData.status = "Submitted"
-            } else {
-                formData.status = "In Progress"
-            }
+            
+            
             if(!(CUTOFF[formCategory][data.formType][modelName])){
                 cutOff = "NA"
             } else {
                 cutOff = CUTOFF[formCategory][data.formType][modelName]
+            }
+            //Adding status to formData
+            if(approvedFormPercent[modelName] >= cutOff){
+                formData.status = "Eligible for Grant Claim"
+            }else if(approvedFormPercent[modelName] < cutOff){
+                formData.status = "Not yet eligible for Grant Claim"
             }
             if(formCategory === "ULB"){
                 ulbResponse = {
