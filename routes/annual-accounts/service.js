@@ -67,8 +67,8 @@ exports.createUpdate = async (req, res) => {
           
         }
       }
-      formData['unAudited']['provisional_data'] = proData;
-      formData['audited']['provisional_data'] = audData;
+      formData['unAudited']['provisional_data'] = proData ?? req.body.unAudited.provisional_data ;
+      formData['audited']['provisional_data'] = audData ?? req.body.audited.provisional_data ;
 
       req.body.status = "PENDING";
       currentAnnualAccounts = await AnnualAccountData.findOne({
@@ -97,13 +97,14 @@ exports.createUpdate = async (req, res) => {
       const addedHistory = await AnnualAccountData.findOneAndUpdate(
         condition,
         formData,
-        {new: true, runValidators: true}
+        {new: true, runValidators: true, upsert : true}
       );
       await UpdateMasterSubmitForm(req, "annualAccounts");
       return res.status(200).json({
         status: true,
         message: "form submitted",
-        data: addedHistory
+        data: addedHistory,
+        isCompleted : formData.isDraft ? false : true
       })
   }
  
@@ -1225,7 +1226,7 @@ console.log(status)
 let dataCollection = {}
  dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
 let dataSubmittedByOpenPage = false
-if(dataCollection && dataCollection.hasOwnProperty("documents") && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
+if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length() > 0){
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
@@ -1243,19 +1244,21 @@ if(!ulbData.access_2122){
 }
 
 let obj = annualAccountData;
-    if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
+
+ 
+
+     ulb = req?.decoded.ulb ?? ulb;
+
    
     annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
-      design_year,
-      isActive: true,
+      design_year
     }).select({ history: 0 });
     if(!annualAccountData) {
 
       return res.status(400).json(obj);
 
     }
-    
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
@@ -1757,7 +1760,6 @@ exports.action = async (req, res) => {
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: ObjectId(design_year),
-      isActive: true,
     }).select({
       history: 0,
     });
@@ -1791,7 +1793,7 @@ exports.action = async (req, res) => {
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
 
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
-      { ulb: ObjectId(ulb), isActive: true },
+      { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
     );
 
@@ -1800,7 +1802,7 @@ exports.action = async (req, res) => {
         msg: "no AnnualAccountData found",
       });
     }
-
+if(design_year == "606aaf854dff55e6c075d219" )
     await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({

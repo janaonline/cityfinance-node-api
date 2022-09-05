@@ -7,3 +7,4 @@ const verifyToken = require('../auth/services/verifyToken').verifyToken;
 router.get('/review', verifyToken, Review.get)
 
 module.exports = router;
+

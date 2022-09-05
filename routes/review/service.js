@@ -448,6 +448,9 @@ filledQueryExpression = {
 
 
    }
+   let dY = "design_year"
+   if(formName == CollectionNames.dur)
+   dY = "designYear"
    switch (userRole) {
     case "ULB":
         let query = [
@@ -493,7 +496,7 @@ filledQueryExpression = {
                               $expr: {
                                 $and: [
                                   {
-                                    $eq: ["$design_year", "$$firstUser"],
+                                    $eq: [dY, "$$firstUser"],
                                   },
                                   {
                                     $eq: ["$ulb", "$$secondUser"],
