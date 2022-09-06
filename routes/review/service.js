@@ -204,7 +204,12 @@ module.exports.get = catchAsync( async(req,res) => {
           }
 
     }
-  
+  if(formTab.collectionName == CollectionNames.annual){
+    filter['filled_audited'] = filter['filled1']
+    filter['filled_provisional'] = filter['filled2']
+    delete filter['filled1']
+    delete filter['filled2']
+  }
 if(formType == 'STATE'){
     filter['state'] = req.query.stateName
     filter['status'] = req.query.status 
