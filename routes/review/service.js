@@ -209,6 +209,9 @@ module.exports.get = catchAsync( async(req,res) => {
     filter['filled_provisional'] = filter['filled2']
     delete filter['filled1']
     delete filter['filled2']
+  }else{
+    filter['filled'] = filter['filled1']
+    delete filter['filled1']
   }
 if(formType == 'STATE'){
     filter['state'] = req.query.stateName
@@ -572,7 +575,7 @@ filledQueryExpression = {
                                                             },
                                                         },
                                                       formData:{$ifNull: [`$${dbCollectionName}`, "" ]} ,
-                                                        filled1: Object.keys(filledQueryExpression).length>0 ? filledQueryExpression : "Yes"
+                                                        filled: Object.keys(filledQueryExpression).length>0 ? filledQueryExpression : "Yes"
     
                                 }
                             },
