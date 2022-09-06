@@ -288,9 +288,6 @@ module.exports.updateForm = async (req, res) =>{
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['actionTakenBy'] = actionTakenBy;
         formData['status'] = data.status;
-        if(actionTakenByRole === "ULB"){
-            formData['status']  = "PENDING";
-        }
         
         //Check if role is other than STATE or MoHUA
         if(actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA"){
@@ -395,9 +392,6 @@ module.exports.annualaccount = catchAsync(async (req,res)=>{
     formData['actionTakenByRole'] = actionTakenByRole;
     formData['actionTakenBy'] = actionTakenBy;
     formData['status'] = data.status;
-    if(actionTakenByRole === "ULB"){
-        formData['status']  = "PENDING";
-    }
     
     //Check if role is other than STATE or MoHUA
     if(actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA"){
