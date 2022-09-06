@@ -39,7 +39,7 @@ module.exports.ModelNames = {
     sfc: "StateFinanceCommissionFormation",
     pTAX: "PropertyTaxFloorRate",
     dur: "UtilizationReport",
-    propTax:"PropertyTax",
+    propTaxOp:"PropertyTaxOp",
     twentyEightSlbs: "TwentyEightSlbForm",
     odf: "OdfFormCollection",
     gfc: "GfcFormCollection",
