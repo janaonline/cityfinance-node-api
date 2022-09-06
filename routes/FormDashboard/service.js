@@ -702,14 +702,14 @@ module.exports.dashboard = async (req, res) => {
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
                     approvedFormPercent[modelName] = 0;
-                    totalApprovedStateForm[modelName] = totalApprovedForm;
+                    totalApprovedStateForm[modelName] = (totalApprovedForm*100)/1;
                     totalSubmittedStateForm[modelName] = submittedForms.length;
 
                 } else if(submittedForms.length === 1){
                     submitPercent = 100;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
-                    approvedFormPercent[modelName] = 100 
+                    approvedFormPercent[modelName] = (totalApprovedForm*100)/1;
                     totalApprovedStateForm[modelName] = totalApprovedForm;
                     totalSubmittedStateForm[modelName] = submittedForms.length;
                 }
