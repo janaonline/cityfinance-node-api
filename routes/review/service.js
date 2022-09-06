@@ -539,7 +539,7 @@ filledQueryExpression = {
                                     ulbName:"$name",
                                                         ulbId:"$_id",
                                                         ulbCode:"$code",
-                                                        censusCode: {$ifNull: ["$censusCode","$sbCode"]},
+                                                        censusCode: {$ifNull: ["$censusCode","$sbCode", "NA"]},
                                                         UA: {
                                                             $cond: {
                                                             if: { $eq: ["$isUA", "Yes"] },

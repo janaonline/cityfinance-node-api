@@ -39,7 +39,7 @@ exports.createUpdate = async (req, res) => {
     req.body.ulb = req?.decoded.ulb;
     const ulb = req?.decoded.ulb;
     req.body.modifiedAt = new Date();
-
+req.body['status']="PENDING"
 
     let formData = {};
     let data = req.body;
@@ -198,6 +198,7 @@ return res.status(200).json({
     ) {
       req.body.status = "N/A";
     }
+    req.body.status  = "PENDING"
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true },
