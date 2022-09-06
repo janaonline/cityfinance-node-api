@@ -4,7 +4,7 @@ const {updateForm, getForms, annualaccount} = require('./service');
 const { verifyToken} = require('./../auth/services/verifyToken')
 
 router.post('/', verifyToken, getForms);
-router.post('/', verifyToken, annualaccount);
+router.post('/aa', verifyToken, annualaccount);
 router.patch('/', verifyToken, updateForm);
 
 module.exports = router;

@@ -189,7 +189,7 @@ data.forEach((el,)=> {
 tempData = sortByPosition(tempData);
 //creating card Data
     data.forEach(el => {
-        if(el.name.toLowerCase() != 'overview' && el.name.toLowerCase() != 'resources' ){
+        if(el.name.toLowerCase() != 'overview' && el.name.includes('Review Grant') && el.name.toLowerCase() != 'resources' ){
             cardObj.image = el?.icon;
             cardObj.key = el?.collectionName;
             cardObj.label = el?.name;
