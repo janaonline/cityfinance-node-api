@@ -48,7 +48,7 @@ const minMax = require('../../util/minMax')
 //             "baseline" : {
 //                 "2021" : "88.00"
 //             }, 
-//             "actual":{
+//             "achieved":{
 //                 "2122" : "90"
 //             },
 //             "target" : {
@@ -64,7 +64,7 @@ const minMax = require('../../util/minMax')
 //             "baseline" : {
 //                 "2021" : "80.00"
 //             }, 
-//             "actual":{
+//             "achieved":{
 //                 "2122": "95"
 //             },
 //             "target" : {
@@ -80,7 +80,7 @@ const minMax = require('../../util/minMax')
 //             "baseline" : {
 //                 "2021" : "30.00"
 //             }, 
-//             "actual":{
+//             "achieved":{
 //                 "2122": "29"
 //             },
 //             "target" : {
@@ -96,7 +96,7 @@ const minMax = require('../../util/minMax')
 //             "baseline" : {
 //                 "2021" : "70.00"
 //             }, 
-//             "actual":{
+//             "achieved":{
 //                 "2122": "74"
 //             },
 //             "target" : {
@@ -113,13 +113,13 @@ const minMax = require('../../util/minMax')
 //     "design_year" : ("606aadac4dff55e6c075c507")
 // }
 
-function calculateSlbMarks(data){
+module.exports.calculateSlbMarks = (data) => {
     let x,y,z;
     let obtainedMarks =[];
     if(data.waterSuppliedPerDay){
         x = Number(data.waterSuppliedPerDay.baseline['2021']);
         y = Number(data.waterSuppliedPerDay.target['2122']);
-        z = Number(data.waterSuppliedPerDay.actual['2122']);
+        z = Number(data.waterSuppliedPerDay.achieved['2122']);
         obtainedMarks[0] = incrementFormula(
             x, y, z,
             minMax.waterSuppliedPerDay.min,
@@ -130,7 +130,7 @@ function calculateSlbMarks(data){
     if(data.reduction){
         x = Number(data.reduction.baseline['2021']);
         y = Number(data.reduction.target['2122']);
-        z = Number(data.reduction.actual['2122']);
+        z = Number(data.reduction.achieved['2122']);
         obtainedMarks[1] = decrementFormula(
             x, y, z,
             minMax.reduction.min,
@@ -142,7 +142,7 @@ function calculateSlbMarks(data){
     if(data.houseHoldCoveredWithSewerage){
         x = Number(data.houseHoldCoveredWithSewerage.baseline['2021']);
         y = Number(data.houseHoldCoveredWithSewerage.target['2122']);
-        z = Number(data.houseHoldCoveredWithSewerage.actual['2122']);
+        z = Number(data.houseHoldCoveredWithSewerage.achieved['2122']);
         obtainedMarks[2] = incrementFormula(
             x, y, z,
             minMax.houseHoldCoveredWithSewerage.min,
@@ -154,7 +154,7 @@ function calculateSlbMarks(data){
     if(data.houseHoldCoveredPipedSupply){
         x = Number(data.houseHoldCoveredPipedSupply.baseline['2021']);
         y = Number(data.houseHoldCoveredPipedSupply.target['2122']);
-        z = Number(data.houseHoldCoveredPipedSupply.actual['2122']);
+        z = Number(data.houseHoldCoveredPipedSupply.achieved['2122']);
         obtainedMarks[3] = incrementFormula(
             x, y, z,
             minMax.houseHoldCoveredPipedSupply.min,
