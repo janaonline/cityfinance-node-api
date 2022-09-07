@@ -64,7 +64,8 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         condition.design_year = data.design_year;
         if(data.state && data.design_year){
             const submittedForm = await PropertyTaxFloorRate.findOne(condition)
-            if ( (submittedForm) && submittedForm.isDraft === false ){//Form already submitted
+            if ( (submittedForm) && submittedForm.isDraft === false &&
+                submittedForm.actionTakenByRole === "STATE" ){//Form already submitted
                 return res.status(200).json({
                     status: true,
                     message: "Form already submitted."
@@ -80,7 +81,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                             {$push: {"history": formData}},
                             {new: true, runValidators: true}
                         )
-                        response(addedHistory, res,"Form created.", "Form not created")
+                        return response(addedHistory, res,"Form created.", "Form not created")
                     } else {
                         return res.status(400).json({
                             status: false,
@@ -90,18 +91,18 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                 } else {
                     if( (!submittedForm) && formData.isDraft === true){ // create as draft
                         const form = await PropertyTaxFloorRate.create(formData);
-                        response(form, res,"Form created.", "Form not created");
+                        return response(form, res,"Form created.", "Form not created");
                     }
                 }           
             }
-            if ( submittedForm && submittedForm.isDraft === true) { //form exists and saved as draft
+            if ( submittedForm && submittedForm.status !== "APPROVED") { //form exists and saved as draft
                 if(formData.isDraft === true){ //  update form as draft
                     const updatedForm = await PropertyTaxFloorRate.findOneAndUpdate(
                         condition,
                         {$set: formData},
                         {new: true, runValidators: true}
                     );
-                    response(updatedForm, res, "Form created." , "Form not updated");
+                    return response(updatedForm, res, "Form created." , "Form not updated");
                 } else { // submit form i.e. isDraft=false
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
@@ -114,8 +115,15 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                         },
                         {new: true, runValidators: true}
                     );
-                    response( updatedForm, res, "Form updated.","Form not updated.")
+                    return response( updatedForm, res, "Form updated.","Form not updated.")
                 }
+            }
+            if(submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole === "MoHUA" 
+                && submittedForm.isDraft === false){
+                    return res.status(200).json({
+                        status: true,
+                        message: "Form already submitted"
+                    })
             }
         }
     } catch (error) {

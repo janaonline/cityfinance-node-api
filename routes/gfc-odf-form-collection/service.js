@@ -2,6 +2,8 @@ const GfcFormCollection = require('../../models/GfcFormCollection');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
+const {response} = require('../../util/response');
+const {canTakenAction} = require('../CommonActionAPI/service')
 
 function dateFormatter(input){
     const t = new Date(input);
@@ -15,13 +17,16 @@ function dateFormatter(input){
 module.exports.createOrUpdateForm = async (req, res) => {
     try {
         const data = req.body;
-        let user = req.decoded;
-        const isGfc = data.isGfc;  // flag to check which collection to use 
+        const user = req.decoded;
+        let formData = {};
+        formData = {...data};
+	    const isGfc = data.isGfc;  // flag to check which collection to use 
         let collection = isGfc ? GfcFormCollection : OdfFormCollection;
-        const { role: actionTakenByRole, _id: actionTakenBy, } = user;
-        let formData = {}; //Object to store form data
-        formData = {...data}
-        
+       
+        const {_id: actionTakenBy, role: actionTakenByRole} = user;
+        formData['actionTakenBy'] = ObjectId(actionTakenBy);
+        formData['actionTakenByRole'] = actionTakenByRole;
+    
         if(formData.rating === "") {
             formData.rating = null;
         }
@@ -46,18 +51,20 @@ module.exports.createOrUpdateForm = async (req, res) => {
         condition['ulb'] = ObjectId(data.ulb);
         condition['design_year'] = ObjectId(data.design_year);
         let savedBody = new collection(formData);
-        if (data.ulb && data.design_year) {
-            const form = await collection.findOne(condition);
-            if (form && (form.isDraft === false)) {//check if already exist and submitted
+        if(data.ulb && data.design_year){
+            const submittedForm = await collection.findOne(condition);
+            if ( (submittedForm) && submittedForm.isDraft === false &&
+                submittedForm.actionTakenByRole === "ULB" ){//Form already submitted
                 return res.status(200).json({
-                    success: false,
+                    status: true,
                     message: "Form already submitted."
-                });
-            }else if ((form === null) && (formData.isDraft === false)){//final submit in 1st attempt
-                const formSubmit = await collection.create(savedBody);
-                formData['createdAt'] = formSubmit.createdAt;
-                formData['modifiedAt'] = formSubmit.modifiedAt;
-                formData['certDate'] = formSubmit.certDate;
+                }) 
+            } else {
+                if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    const formSubmit = await collection.create(savedBody);
+                    formData['createdAt'] = formSubmit.createdAt;
+                    formData['modifiedAt'] = formSubmit.modifiedAt;
+                    formData['certDate'] = formSubmit.certDate;
                     if (formSubmit) {//add history
                         let updateData = await collection.findOneAndUpdate(condition, 
                             {
@@ -76,55 +83,52 @@ module.exports.createOrUpdateForm = async (req, res) => {
                             message: "Data not saved.",
                         });
                     }
-            }
-        }
-        if (data.isDraft){//update fields when isDraft===true and form already created
-
-            const updateForm = await collection.findOneAndUpdate(condition,
-                formData,
-                { new: true });
-            if(updateForm){
-                return res.status(201).json({
-                    success: true,
-                    message: "Form updated",
-                    data: updateForm
-                })
-            }
-        }
-        if (data.isDraft){ // save as draft when form is not created yet
-            const savedForm = await collection.create(savedBody);
-                if (!savedForm) {
-                    return res.status(400).send({
-                        success: false,
-                        message: "Data not saved.",
-                    });
                 } else {
-                    return res.status(200).json({
+                    if( (!submittedForm) && formData.isDraft === true){ // create as draft
+ 			            const form = await collection.create(savedBody);
+                        return response(form, res,"Form created", "Form not created");
+                    }
+                }           
+            }
+            if ( submittedForm && submittedForm.status !== "APPROVED") {
+                if(formData.isDraft === true){
+                     const updateForm = await collection.findOneAndUpdate(condition,
+                        formData,
+                        { new: true });
+                    if(updateForm){
+                        return res.status(201).json({
+                            success: true,
+                            message: "Form updated",
+                            data: updateForm
+                        })
+                    }
+                } else {
+                    const formSubmit = await collection.findOne(condition);
+                    formData['createdAt'] = formSubmit.createdAt;
+                    formData['modifiedAt'] = new Date();
+                    if(formData['certDate'] === ""){
+                        formData['certDate'] = null;
+                    }
+                    let updateData = await collection.findOneAndUpdate(condition, 
+                        { $push: { history: formData}, $set: formData },//todo
+                        { returnDocument: "after" });
+                    
+                    return res.status(201).json({
                         success: true,
-                        message: "Data saved.",
-                        data: savedForm,
+                        message: "Form saved",
+                        data: updateData
                     });
                 }
-            }
-        delete formData["history"]
-        if (!data.isDraft){ //when form is submitted, save history
-            const formSubmit = await collection.findOne(condition);
-            formData['createdAt'] = formSubmit.createdAt;
-            formData['modifiedAt'] = new Date();
-            if(formData['certDate'] === ""){
-                formData['certDate'] = null;
-            }
-            let updateData = await collection.findOneAndUpdate(condition, 
-                { $push: { history: formData}, $set: formData },//todo
-                { returnDocument: "after" });
-            
-            return res.status(201).json({
-                success: true,
-                message: "Form saved",
-                data: updateData
-            });
         }
-    } catch (error) {
+        if(submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB" 
+                && submittedForm.isDraft === false){
+                    return res.status(200).json({
+                        status: true,
+                        message: "Form already submitted"
+                    })
+            }
+    }
+} catch (error) {
         return res.status(400).json({
             success: false,
             message: error.message
@@ -135,6 +139,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
 module.exports.getForm = async (req, res) => {
     try {
         const { isGfc } = req.query;
+        let role = req.decoded.role;
         const ulb = ObjectId(req.query.ulb);
         const design_year = ObjectId(req.query.design_year);
         let collection = (isGfc=== 'true') ? GfcFormCollection : OdfFormCollection;
@@ -146,6 +151,7 @@ module.exports.getForm = async (req, res) => {
                     message: "Form not found!"
                 })
             }
+            Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
             if(form.certDate !== null && form.certDate !== ""){
                 form.certDate = dateFormatter(form?.certDate);
             }

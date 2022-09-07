@@ -207,7 +207,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                             {$push: {"history": formData}},
                             {new: true, runValidators: true}
                         )
-                        response(addedHistory, res,"Form created.", "Form not created")
+                        return response(addedHistory, res,"Form created.", "Form not created")
                     } else {
                         return res.status(400).json({
                             status: false,
@@ -217,32 +217,32 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 } else {
                     if( (!submittedForm) && formData.isDraft === true){ // create as draft
                         const form = await GrantTransferCertificate.create(formData);
-                        response(form, res,"Form created.", "Form not created");
+                        return response(form, res,"Form created.", "Form not created");
                     }
                 }           
             }
             if ( submittedForm && submittedForm.isDraft === true) { //form exists and saved as draft
-                if(formData.isDraft === true){ //  update form as draft
-                    const updatedForm = await GrantTransferCertificate.findOneAndUpdate(
-                        condition,
-                        {$set: formData},
-                        {new: true, runValidators: true}
-                    );
-                    response(updatedForm, res, "Form created." , "Form not updated");
-                } else { // submit form i.e. isDraft=false
-                    formData.createdAt = submittedForm.createdAt;
-                    formData.modifiedAt = new Date();
-                    formData.modifiedAt.toISOString();
-                    const updatedForm = await GrantTransferCertificate.findOneAndUpdate(
-                        condition,
-                        {
-                            $push:{"history":formData},
-                            $set: formData
-                        },
-                        {new: true, runValidators: true}
-                    );
-                    response( updatedForm, res, "Form updated.","Form not updated.")
-                }
+                    if(formData.isDraft === true){ //  update form as draft
+                        const updatedForm = await GrantTransferCertificate.findOneAndUpdate(
+                            condition,
+                            {$set: formData},
+                            {new: true, runValidators: true}
+                        );
+                        return response(updatedForm, res, "Form created." , "Form not updated");
+                    } else { // submit form i.e. isDraft=false
+                        formData.createdAt = submittedForm.createdAt;
+                        formData.modifiedAt = new Date();
+                        formData.modifiedAt.toISOString();
+                        const updatedForm = await GrantTransferCertificate.findOneAndUpdate(
+                            condition,
+                            {
+                                $push:{"history":formData},
+                                $set: formData
+                            },
+                            {new: true, runValidators: true}
+                        );
+                        return response( updatedForm, res, "Form updated.","Form not updated.")
+                    }
             }
         }
     } catch (error) {
@@ -283,37 +283,56 @@ module.exports.createForm = async (req, res) =>{
         condition.type = data.type;
         if(data.state && data.design_year){
             const submittedForm = await GrantTransferCertificate.findOne(condition)
-            if (submittedForm){//Form already submitted
+            if ( (submittedForm) && submittedForm.isDraft === false &&
+            submittedForm.actionTakenByRole === "STATE"){      //Form already submitted
                 return res.status(200).json({
                     status: true,
                     message: "Form already submitted."
                 })
-            }
-
-            const form = await GrantTransferCertificate.create(formData);
-            if (form) {//add history
-                formData['createdAt'] = form.createdAt;
-                formData['modifiedAt'] = form.modifiedAt;
-                let addedHistory = await GrantTransferCertificate.findOneAndUpdate(
-                    condition,
-                    {$push: { history: formData}  },
-                    {new: true}
-                );
-                if(!addedHistory){
+            }else if (!submittedForm){
+                const form = await GrantTransferCertificate.create(formData);
+                if (form) {//add history
+                    formData['createdAt'] = form.createdAt;
+                    formData['modifiedAt'] = form.modifiedAt;
+                    let addedHistory = await GrantTransferCertificate.findOneAndUpdate(
+                        condition,
+                        {$push: { history: formData}  },
+                        {new: true}
+                    );
+                    if(!addedHistory){
+                        return res.status(400).json({
+                            status: false,
+                            message: "History not saved."
+                        })
+                    }
+                    return res.status(200).json({
+                        status: true,
+                        message: "File saved.",
+                        data: addedHistory
+                    });
+                } else {
                     return res.status(400).json({
                         status: false,
-                        message: "History not saved."
+                        message: "Form not saved."
                     })
                 }
+            }else if (submittedForm && submittedForm.status ===  "REJECTED"){
+                formData['createdAt'] = submittedForm.createdAt;
+                formData['modifiedAt'] = new Date();
+                formData.modifiedAt.toISOString();
+                const form = await GrantTransferCertificate.findOneAndUpdate(
+                    condition,
+                    {
+                        $set: formData,
+                        $push: {"history":formData}
+                    },
+                    {new: true, runValidators: true}
+                );
+                return response(form,res,"Form updated","Form not updated")
+            } else if(submittedForm && submittedForm.status === "APPROVED"){
                 return res.status(200).json({
                     status: true,
-                    message: "File saved.",
-                    data: addedHistory
-                });
-            } else {
-                return res.status(400).json({
-                    status: false,
-                    message: "Form not saved."
+                    message: "Form already submitted"
                 })
             }
         }

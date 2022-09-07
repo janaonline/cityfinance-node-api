@@ -1,36 +1,21 @@
-const LinkPFMS = require('../../models/LinkPFMS');
-const ObjectId = require("mongoose").Types.ObjectId;
+const PropertyTaxOp = require('../../models/PropertyTaxOp')
+const {response} = require('../../util/response');
+const ObjectId = require('mongoose').Types.ObjectId
 const {canTakenAction} = require('../CommonActionAPI/service')
-function response(form, res, successMsg ,errMsg){
-    if(form){
-        return res.status(200).json({
-            status: true,
-            message: successMsg,
-            data: form,
-        });
-    }else{
-        return res.status(400).json({
-            status: false,
-            message: errMsg
-        });
-   }
-}
-
-module.exports.getForm = async (req, res) =>{
-    try {
+module.exports.getForm = async (req, res)=>{
+    try{
         const data = req.query;
-        let role = req.decoded.role
         const condition = {};
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
-    
-        const form = await LinkPFMS.findOne(condition).lean();
+    let role = req.decoded.role
+        const form = await PropertyTaxOp.findOne(condition).lean();
         if (form){
             Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
             return res.status(200).json({
                 status: true,
                 message: "Form found.",
-                data:form,
+                data:form
             });
         } else {
             return res.status(400).json({
@@ -46,9 +31,8 @@ module.exports.getForm = async (req, res) =>{
     } 
 }
 
-module.exports.createOrUpdateForm = async (req, res) =>{
+module.exports.createOrUpdateForm = async (req, res)=>{
     try {
-        
         const data = req.body;
         const user = req.decoded;
         let formData = {};
@@ -56,10 +40,6 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         const {_id: actionTakenBy, role: actionTakenByRole} = user;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
-    
-        if(formData["isUlbLinkedWithPFMS"] === null){
-            formData["isUlbLinkedWithPFMS"] = "";
-        }
 
         if(formData.ulb){
             formData['ulb'] = ObjectId(formData.ulb);
@@ -68,27 +48,37 @@ module.exports.createOrUpdateForm = async (req, res) =>{
             formData['design_year'] = ObjectId(formData.design_year);
         }
     
+        let validationResult = validate(data);
+        if(validationResult.length !== 0){
+            for(let element of validationResult){
+                if(!element){
+                    return res.status(400).json({
+                        status: false,
+                        message: "Range should be in between 0 and 9999999999"
+                    })
+                }
+            }
+        }
+
         const condition ={};
         condition['design_year'] =  data.design_year;
         condition['ulb'] = data.ulb;
     
         if(data.ulb && data.design_year){
-            const submittedForm = await LinkPFMS.findOne(condition);
+            const submittedForm = await PropertyTaxOp.findOne(condition);
             if ( (submittedForm) && submittedForm.isDraft === false &&
-                submittedForm.actionTakenByRole === "ULB" ){//Form already submitted
+                submittedForm.actionTakenByRole === "ULB" ){//Form already submitted    
                 return res.status(200).json({
                     status: true,
                     message: "Form already submitted."
-                }) 
-            //if actionTakenByRole !== ULB && isDraft=== false && status !== "APPROVED"
-
+                })
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
-                    const form = await LinkPFMS.create(formData);
+                    const form = await PropertyTaxOp.create(formData);
                     formData.createdAt = form.createdAt;
                     formData.modifiedAt = form.modifiedAt;
                     if(form){
-                        const addedHistory = await LinkPFMS.findOneAndUpdate(
+                        const addedHistory = await PropertyTaxOp.findOneAndUpdate(
                             condition,
                             {$push: {"history": formData}},
                             {new: true, runValidators: true}
@@ -102,24 +92,25 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     }
                 } else {
                     if( (!submittedForm) && formData.isDraft === true){ // create as draft
-                        const form = await LinkPFMS.create(formData);
+                        const form = await PropertyTaxOp.create(formData);
                         return response(form, res,"Form created", "Form not created");
                     }
                 }           
             }
-            if ( submittedForm && submittedForm.status !== "APPROVED") {
-                if(formData.isDraft === true){
-                    const updatedForm = await LinkPFMS.findOneAndUpdate(
+    
+            if ( submittedForm && submittedForm.status !== "APPROVED") { 
+                if(formData.isDraft === true){           //save form as draft to already created form
+                    const updatedForm = await PropertyTaxOp.findOneAndUpdate(
                         condition,
                         {$set: formData},
                         {new: true, runValidators: true}
                     );
-                    return response(updatedForm, res, "Form updated." , "Form not updated");
-                } else {
+                    return response(updatedForm, res, "Form created." , "Form not updated");
+                } else { //save form as final submission to already created form
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
                     formData.modifiedAt.toISOString();
-                    const updatedForm = await LinkPFMS.findOneAndUpdate(
+                    const updatedForm = await PropertyTaxOp.findOneAndUpdate(
                         condition,
                         {
                             $push:{"history":formData},
@@ -136,13 +127,32 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                         status: true,
                         message: "Form already submitted"
                     })
-            }
+            } 
         }
-
+        return res.status(400).json({
+            status: true,
+            message: "ulb and design year are mandatory"
+        });
     } catch (error) {
         return res.status(400).json({
             status: false,
             message: error.message
         })
     }
+    
+}
+
+function 
+validate(data){
+    let result = [];
+    if(data.collection2019_20){
+        result.push(data.collection2019_20 > 0 && data.collection2019_20 < 9999999999);
+    } else if(data.collection2020_21){
+        result.push(data.collection2020_21 >0 && data.collection2020_21 < 9999999999);
+    } else if( data.collection2021_22){
+        result.push(data.collection2021_22>0 && data.collection2021_22 < 9999999999); 
+    }else if(data.target2022_23 ){
+        result.push(data.target2022_23 >0 && data.target2022_23 < 9999999999);
+    }
+    return result;
 }

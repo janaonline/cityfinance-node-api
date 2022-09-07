@@ -60,6 +60,140 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
     }
 }
 
+module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, loggedInUser) => {
+    switch (formType) {
+        case "ULB":
+           if(loggedInUser == "STATE"){
+                if(actionTakenByRole == "ULB" && !isDraft){
+                    return true;
+                }else{
+                    
+                } }   else if(loggedInUser == "MoHUA"){
+                    if(actionTakenByRole == "STATE" && status =="APPROVED" && !isDraft){
+                        return true
+                    }else{
+                        return false;
+                    }
+                }else{
+                    return false;
+                }
+            
+            
+            break;
+    
+            case "STATE":
+                if(loggedInUser =="MoHUA"){
+                    if(actionTakenByRole="STATE" && !isDraft){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }else{
+                    return false;
+                }
+            
+                break;
+        
+        default:
+            break;
+    }
+   
+}
+
+module.exports.calculateKeys = (formStatus, formType) => {
+    let keys = {
+        [`formData.status`]:"",
+        [`formData.actionTakenByRole`]:"",
+        [`formData.isDraft`]: ""
+    };
+    switch(formType){
+        case "ULB":
+            switch(formStatus){
+                case StatusList.In_Progress:
+                    keys = {
+
+                        [`formData.status`]: "PENDING",
+                        [`formData.actionTakenByRole`]:"ULB",
+                        [`formData.isDraft`]: true
+                    }
+                    break;
+                case StatusList.Under_Review_By_State:
+                    keys = {
+                        [`formData.status`]:"PENDING_N/A",
+                        [`formData.actionTakenByRole`]:"ULB",
+                        [`formData.isDraft`]: false
+                    }
+                    break;
+                case StatusList.Under_Review_By_MoHUA:
+                    keys = {
+                        [`formData.status`]:"APPROVED",
+                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.isDraft`]: false
+                    }
+                    break;
+                case StatusList.Rejected_By_State:
+                    keys = {
+                        [`formData.status`]:"REJECTED",
+                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.isDraft`]: false
+                    }
+                    break;
+                case StatusList.Approved_By_MoHUA:
+                    keys = {
+                        [`formData.status`]:"APPROVED",
+                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.isDraft`]: false
+                    }
+                    break;
+                case StatusList.Rejected_By_MoHUA:
+                    keys = {
+                        [`formData.status`]:"REJECTED",
+                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.isDraft`]: false
+                    }
+                    break;
+                default:  
+                    break;
+            }
+            break;
+        case "STATE":
+            switch(formStatus){
+                case StatusList.In_Progress:
+                    keys = {
+                        [`${dbCollectionName}.status`]:true,
+                        [`${dbCollectionName}.actionTakenByRole`]:"STATE",
+                        [`${dbCollectionName}.isDraft`]: "PENDING"
+                    }
+                    break;
+                case StatusList.Under_Review_By_MoHUA:
+                    keys = {
+                        [`${dbCollectionName}.status`]:false,
+                        [`${dbCollectionName}.actionTakenByRole`]:"STATE",
+                        [`${dbCollectionName}.isDraft`]: "PENDING"
+                    }
+                    break;
+                case StatusList.Approved_By_MoHUA:
+                    keys = {
+                        [`${dbCollectionName}.status`]:false,
+                        [`${dbCollectionName}.actionTakenByRole`]:"MoHUA",
+                        [`${dbCollectionName}.isDraft`]: "APPROVED"
+                    }
+                    break;
+                case StatusList.Rejected_By_MoHUA:
+                    keys = {
+                        [`${dbCollectionName}.status`]:false,
+                        [`${dbCollectionName}.actionTakenByRole`]:"MoHUA",
+                        [`${dbCollectionName}.isDraft`]: "REJECTED"
+                    }
+                    break;
+                default:  
+                    break;
+            }
+            break;    
+        }
+        return keys;
+}
+
 function getCollectionName(formName){
     let collection="";
     switch(formName){
@@ -107,7 +241,7 @@ module.exports.getForms = async (req, res)=>{
             {ulb :{$in : data.ulb}, [condition.design_year]: data.design_year},
             {history:0}
             )
-        if(!forms){
+        if(!forms || forms.length === 0){
             return res.status(400).json({
                 status: false,
                 message: 'Form not found.'
@@ -117,8 +251,7 @@ module.exports.getForms = async (req, res)=>{
             status: true,
             message: 'Success',
             data: forms
-        })
-            
+        }) 
     } catch (error) {
         return res.status(400).json({
             status: false,
@@ -133,7 +266,7 @@ module.exports.updateForm = async (req, res) =>{
         const user = req.decoded;
         let ulb="";
         let singleUlb; //to return updated response for single ulb
-        const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)});
+        const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)}).lean();
         if(user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA'){
           return  res.status(403).json({
                 success: false,
@@ -162,15 +295,14 @@ module.exports.updateForm = async (req, res) =>{
                 message: "Not authorized"
             })
         }
-        if(data.ulb.length === 1 ){//add reject reason and response file based on role
-            if(actionTakenByRole === "STATE"){
-                formData['rejectReason_state'] = data.rejectReason;
-                formData['responseFile_state'] = data.responseFile;
-                // formData['responseFile']['url'] = data.responseFile.url;
-            }else if (actionTakenByRole === "MoHUA"){
-                formData['rejectReason_mohua'] = data.rejectReason;
-                formData['responseFile_mohua'] = data.responseFile;     
-            }
+        //add reject reason and response file based on role
+        if(actionTakenByRole === "STATE"){
+            formData['rejectReason_state'] = data.rejectReason;
+            formData['responseFile_state'] = data.responseFile;
+            // formData['responseFile']['url'] = data.responseFile.url;
+        }else if (actionTakenByRole === "MoHUA"){
+            formData['rejectReason_mohua'] = data.rejectReason;
+            formData['responseFile_mohua'] = data.responseFile;     
         }
         let condition = {};
         if (collection === UtilizationReport ){
@@ -183,20 +315,20 @@ module.exports.updateForm = async (req, res) =>{
         for(let i=0; i < data.ulb.length; i++){//update status and add history
             ulb = data.ulb[i];
             form = forms[i];
-            if(form === undefined) break;
+            if(form === undefined) continue;
             form['actionTakenByRole'] = formData.actionTakenByRole;
             form['actionTakenBy'] = formData.actionTakenBy;
             form['status'] = formData.status;
             form['modifiedAt'] = new Date();
-            if(data.ulb.length === 1){//add reject reason/responseFile for single ulb entry
-                if(actionTakenByRole === 'STATE'){
-                    form['rejectReason_state'] = data.rejectReason;
-                    form['responseFile_state'] = data.responseFile;
-                }else if (actionTakenByRole === 'MoHUA'){
-                    form['rejectReason_mohua'] = data.rejectReason;
-                    form['responseFile_mohua'] = data.responseFile;
-                }
+            //add reject reason/responseFile for single ulb entry
+            if(actionTakenByRole === 'STATE'){
+                form['rejectReason_state'] = data.rejectReason;
+                form['responseFile_state'] = data.responseFile;
+            }else if (actionTakenByRole === 'MoHUA'){
+                form['rejectReason_mohua'] = data.rejectReason;
+                form['responseFile_mohua'] = data.responseFile;
             }
+            
             form['history'] = undefined;
             let updatedForm = await collection.findOneAndUpdate(
                 {ulb , [condition.design_year]: data.design_year},

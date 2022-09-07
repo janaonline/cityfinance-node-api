@@ -9,6 +9,7 @@ const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
 const {calculateStatus} = require('../CommonActionAPI/service')
+const {canTakenAction} = require('../CommonActionAPI/service')
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -54,7 +55,26 @@ module.exports.createOrUpdate = async (req, res) => {
     
     
     const submittedForm  = await UtilizationReport.findOne(condition);
-    if( submittedForm && !submittedForm.isDraft){// form already submitted
+  if(designYear=="606aaf854dff55e6c075d219"){
+    let utiData = await UtilizationReport.findOneAndUpdate(
+      { ulb: ObjectId(ulb), financialYear, designYear },
+      { $set: req.body },
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+    if(utiData){
+      await UpdateMasterSubmitForm(req, "utilReport");
+      return res.status(200).json({
+        success: true,
+        isCompleted : formData['isDraft'] ? false : true,
+        message:"Form Submitted"
+      })
+    }
+  }else{
+    if( submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == "ULB" ){// form already submitted
       return res.status(200).json({
         status: true,
         message: "Form already submitted."
@@ -141,8 +161,8 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 
     if (savedData) {
-      if(designYear == "606aaf854dff55e6c075d219")
-      await UpdateMasterSubmitForm(req, "utilReport");
+      
+      
       return res.status(200).json({
         msg: "Utilization Report Submitted Successfully!",
         isCompleted: !savedData.isDraft ,
@@ -152,6 +172,8 @@ module.exports.createOrUpdate = async (req, res) => {
         msg: "Failed to Submit Data",
       });
     }
+  }
+   
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
@@ -533,7 +555,7 @@ exports.report = async (req, res) => {
 module.exports.read2223 = catchAsync(async(req,res)=> {
   let ulb = req.query.ulb;
   let design_year = req.query.design_year;
-
+let role  = req.decoded.role;
   
   if(!ulb || !design_year){
     return res.status(400).json({
@@ -585,7 +607,9 @@ else{
     designYear: ObjectId(currentYear._id)
   }
   let fetchedData = await UtilizationReport.findOne(condition).lean()
+  
   if(fetchedData){
+    Object.assign(fetchedData, {canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB",role ) })
     return res.status(200).json({
       success: true,
       data:fetchedData
@@ -600,6 +624,7 @@ else{
     // sampleData = sampleData.lean()
     sampleData['url'] = obj['url']
     sampleData['action'] = obj['action']
+    sampleData['canTakeAction'] = false;
     // Object.assign(sampleData,obj )
     return res.status(200).json({
       success: true,

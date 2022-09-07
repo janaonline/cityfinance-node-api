@@ -17,7 +17,13 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const {findPreviousYear} = require('../../util/findPreviousYear')
 const {calculateStatus} =require('../CommonActionAPI/service')
+const UlbLedger = require('../../models/UlbLedger')
 const STATUS_LIST = require('../../util/newStatusList')
+const LineItem = require('../../models/LineItem')
+const {groupByKey} = require('../../util/group_list_by_key')
+const ExcelJS = require("exceljs");
+const {canTakenAction} = require('../CommonActionAPI/service')
+const fs = require("fs");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -91,13 +97,14 @@ exports.createUpdate = async (req, res) => {
       const addedHistory = await AnnualAccountData.findOneAndUpdate(
         condition,
         formData,
-        {new: true, runValidators: true}
+        {new: true, runValidators: true, upsert : true}
       );
       await UpdateMasterSubmitForm(req, "annualAccounts");
       return res.status(200).json({
         status: true,
         message: "form submitted",
-        data: addedHistory
+        data: addedHistory,
+        isCompleted : formData.isDraft ? false : true
       })
   }
  
@@ -221,6 +228,142 @@ return res.status(200).json({
   }
 };
 
+exports.datasetDownload = catchAsync(async (req,res)=> {
+  let data = [], columns = [], rows = [];
+  data = Array.isArray(req.body) ? req.body : []
+
+  let output ={}
+  columns = [
+    {
+      header:"Head Of Account",
+      key:"headOfAccount"
+    },
+    {
+      header:"Code",
+      key:"code"
+    },
+    {
+      header:"Line Item",
+      key:"lineIteName"
+    },
+    {
+      header:"Amount in INR",
+      key:"amount"
+    }
+  
+  ]
+  let  ledgerData = []
+for(let el of data) {
+    let headofAccounts = [] ;
+if(el.category == "income"){
+headofAccounts.push("Revenue", "Expense")
+}else if(el.category == "balance"){
+  headofAccounts.push("Asset", "Liability")
+}
+let lineItems  = await LineItem.aggregate([{
+  $match: {
+    $or: [{headOfAccount: headofAccounts[0]},{headOfAccount: headofAccounts[1]}]
+    
+  }
+},
+{$group: {
+  _id: null,
+  id : {$addToSet: "$_id"}
+  }},
+  {
+      $project: {
+          "_id":0,
+          "id":1
+          }
+      }
+
+])
+ ledgerData = await UlbLedger.aggregate([
+  {
+    $match: {
+    ulb: ObjectId(el.ulbId),
+    financialYear: el.year,
+    lineItem : {$in : lineItems[0]['id'] }
+    }
+  },
+
+  {
+    $lookup: {
+      from:"lineitems",
+      localField:"lineItem",
+      foreignField:"_id",
+      as:"lineItem"
+    }
+  },
+  {$unwind:"$lineItem"},
+  {
+    $project:{
+      category:el.category,
+      headOfAccount:"$lineItem.headOfAccount",
+      code:"$lineItem.code",
+      lineIteName:"$lineItem.name",
+      amount:"$amount",
+      
+    }
+  },
+  {$sort: {"code":1}}
+])
+// console.log("1")
+  }
+  // console.log("2")
+  // rows = ledgerData
+  // console.log(ledgerData, columns)
+  output ={
+    columns : columns,
+    rows: ledgerData
+  }
+  return  getExcel(req,res, output);
+})
+
+let getExcel = async (req, res, data) => {
+  try {
+    // console.log(data);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Data");
+    const imageId2 = workbook.addImage({
+      buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
+      extension: "png",
+    });
+    worksheet.addImage(imageId2, {
+      tl: { col: 0, row: 0 },
+      br: { col: 8, row: 2 }
+    });
+    // worksheet.addImage(imageId2, "A1:F3");
+    // data.columns.push({ header: "S.no", key: "sno" });
+    worksheet.columns = data.columns.map((value) => {
+      let temp = {
+        header: value.header,
+        key: value.key,
+      };
+      return temp;
+    });
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    worksheet.insertRow(1, {});
+    data.rows.map((value, i) => {
+      // value.sno = i + 1;
+      console.log(value)
+      worksheet.addRow(value);
+    });
+worksheet.addRow({headOfAccount: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in"});
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", "attachment; filename=" + "Vishu.xlsx");
+    return workbook.xlsx.write(res).then(function () {
+      res.status(200).end();
+    });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(400).json(err);
+  }
+};
 
 exports.dataset = catchAsync (async (req,res)=>{
   let {
@@ -246,12 +389,81 @@ exports.dataset = catchAsync (async (req,res)=>{
     type = "pdf";
   } else if (type == "Raw Data Excel") {
     type = "excel";
-  } else if (type == "Standardised Excel" || type == "Standardised PDF") {
-    if (type == "Standardised Excel") {
-      type = "excel";
-    } else if (type == "Standardised PDF") {
-      type = "pdf";
+  } else if (type == "Standardised Excel") {
+    if(!category)
+    category = "income"
+    let query = [
+      {
+          $match: {
+              financialYear:year
+              }
+          },
+          {
+              $group: {
+                  _id:"$ulb",
+                  modifiedAt : {$addToSet: "$modifiedAt"}
+                  }
+              },
+              {
+                  $lookup: {
+                      from:"ulbs",
+                      localField:"_id",
+                      foreignField:"_id",
+                      as:"ulb"
+                      }
+                  },
+                  {
+                      $unwind:"$ulb"
+                      },
+                         {
+                  $lookup: {
+                      from:"states",
+                      localField:"ulb.state",
+                      foreignField:"_id",
+                      as:"state"
+                      }
+                  },
+                  {
+                      $unwind:"$state"
+                      },
+                      {
+                          $project: {
+                            type:"excel",
+                            modifiedAt:{$arrayElemAt:["$modifiedAt", 0] },
+                            state : "$state._id",
+                            ulb : "$ulb.name",
+                            ulbId: "$ulb._id",
+                            section:"standardised",
+                            category : category,
+                            year:year,
+                              fileName: {
+                                                      $concat: ["$state.name", "_", "$ulb.name", "_", category, "_", year]
+                                  }
+      
+                              }
+                          }
+      ]
+      if(ulb){
+        query.push({
+          $match:{
+            ulb: ulb
+          }
+        })
+      }
+      if(state){
+        query.push({$match: {
+          "state" : ObjectId(state)
+        }})
+      }
+    let data = await UlbLedger.aggregate(query)
+    if(data.length){
+      return res.status(200).json({
+        success: true,
+        data: data
+      })
     }
+    
+  }
     let query = [
       {
         $match: {
@@ -356,7 +568,7 @@ exports.dataset = catchAsync (async (req,res)=>{
       success: true,
       data: finalData,
     });
-  }
+  
 
   if (year != "2019-20" && year != "2020-21") {
     let query_dataCollection = [
@@ -990,7 +1202,7 @@ waterRej: waterRejSubmit
 })
 exports.getAccounts = async (req, res) => {
   try {
-    
+    let role = req.decoded.role;
     let { design_year, ulb } = req.query;
     if(!ulb || ulb == null || ulb == 'null'){
       ulb = req.decoded.ulb;
@@ -1032,19 +1244,21 @@ if(!ulbData.access_2122){
 }
 
 let obj = annualAccountData;
-    if (req.decoded.role == "ULB") ulb = req?.decoded.ulb;
+
+ 
+
+     ulb = req?.decoded.ulb ?? ulb;
+
    
     annualAccountData =  await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
-      design_year,
-      isActive: true,
+      design_year
     }).select({ history: 0 });
     if(!annualAccountData) {
 
       return res.status(400).json(obj);
 
     }
-  
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
@@ -1069,7 +1283,8 @@ let obj = annualAccountData;
       }
     }
 Object.assign(annualAccountData, obj)
-    
+Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+
     return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);
@@ -1579,7 +1794,7 @@ exports.action = async (req, res) => {
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
 
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
-      { ulb: ObjectId(ulb), isActive: true },
+      { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
     );
 

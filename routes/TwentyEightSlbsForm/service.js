@@ -5,6 +5,7 @@ const {findPreviousYear} = require('../../util/findPreviousYear')
 const Year = require('../../models/Year')
 const {groupByKey} = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
+const {canTakenAction} = require('../CommonActionAPI/service')
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -154,6 +155,7 @@ module.exports.getForm = async (req, res) => {
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
         
         if(formData){
+            Object.assign(formData, {canTakeAction: canTakenAction(formData['status'], formData['actionTakenByRole'], formData['isDraft'], "ULB",userRole ) })
             formData['data'].forEach(el=>{
                 if(!formData['isDraft']){
                     el['targetDisable'] = true;
@@ -168,6 +170,7 @@ module.exports.getForm = async (req, res) => {
             })
             let groupedData = groupByKey(formData['data'], "type")
         formData['data'] = groupedData;
+        
           return  res.status(200).json({
                 success: true,
                 data: formData
@@ -256,8 +259,9 @@ let groupedData = groupByKey(dataArr, "type")
        return     res.status(200).json({
             success: true,
             data: {
+                canTakeAction: false,
                 data :  output,
-                population: 0
+                population: null
             } 
            })
         }
