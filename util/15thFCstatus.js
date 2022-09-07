@@ -17,8 +17,8 @@ module.exports.stateFormStatus = {
 }
 
 module.exports.filledStatus = {
-    'Submitted': 'Filled',
-    'Not_Submitted': 'Not Filled'
+    'Submitted': 'Yes',
+    'Not_Submitted': 'No'
 }
 
 module.exports.ulbType = {

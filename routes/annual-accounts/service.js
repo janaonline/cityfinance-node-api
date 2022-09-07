@@ -39,7 +39,7 @@ exports.createUpdate = async (req, res) => {
     req.body.ulb = req?.decoded.ulb;
     const ulb = req?.decoded.ulb;
     req.body.modifiedAt = new Date();
-
+req.body['status']="PENDING"
 
     let formData = {};
     let data = req.body;
@@ -198,6 +198,7 @@ return res.status(200).json({
     ) {
       req.body.status = "N/A";
     }
+    req.body.status  = "PENDING"
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true },
@@ -1226,7 +1227,11 @@ console.log(status)
 let dataCollection = {}
  dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
 let dataSubmittedByOpenPage = false
-if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length() > 0){
+
+
+
+if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
+
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
@@ -1760,7 +1765,6 @@ exports.action = async (req, res) => {
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: ObjectId(design_year),
-      isActive: true,
     }).select({
       history: 0,
     });
@@ -1803,7 +1807,7 @@ exports.action = async (req, res) => {
         msg: "no AnnualAccountData found",
       });
     }
-
+if(design_year == "606aaf854dff55e6c075d219" )
     await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({

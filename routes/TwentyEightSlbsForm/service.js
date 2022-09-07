@@ -55,10 +55,54 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         
       
             const submittedForm = await TwentyEightSlbsForm.findOne(condition).lean();
-           
+            if ( (submittedForm) && submittedForm.isDraft === false &&
+            submittedForm.actionTakenByRole === "ULB" ){//Form already submitted
+            return res.status(200).json({
+                status: true,
+                message: "Form already submitted."
+            })}
+            else{
+                if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    const form = await TwentyEightSlbsForm.create(formData);
+                    
+                    formData.createdAt = form.createdAt;
+                    formData.modifiedAt = form.modifiedAt;
+                    formData.population = Number(formData.population);
+                 if(formData.data.length == 28){
+                    if(form){
+                        const addedHistory = await TwentyEightSlbsForm.findOneAndUpdate(
+                            condition,
+                            {$push: {"history": formData}},
+                            {new: true, runValidators: true}
+                        )
+                        return response(addedHistory, res,"Form created.", "Form not created")
+                    } else {
+                        return res.status(400).json({
+                            status: false,
+                            message: "Form not created."
+                        })
+                    }
+                 }else{
+                    return res.status(400).json({
+                        success: false,
+                        message:"Cannot Final Submit with incomplete Data"
+                    })
+                 }
+                  
+                }else{
+                    if( (!submittedForm) && formData.isDraft === true){ // create as draft
 
-            if ( submittedForm && submittedForm.isDraft) {//update already existing form
-                if(formData.isDraft){
+                        let newData = new TwentyEightSlbsForm(formData);
+                        await newData.save()
+                        return res.status(200).json({
+                        success: true,
+                        message:"Data Saved"
+                        })
+                    }
+                }
+            }
+            if ( submittedForm && submittedForm.status !== "APPROVED") {
+                if(formData.isDraft === true){
                     const updatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
                         condition,
                         {$set: formData},
@@ -70,7 +114,8 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     data: updatedForm,
                     message:"Form Updated"
                    })
-                } else {//final submit already existing form
+                } else{
+                    //final submit already existing form
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
                     formData.modifiedAt.toISOString();
@@ -82,7 +127,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     formData['history'].push(currentData)
                     // formData['history'].push(formData) 
                     
-delete formData['_id']
+                    delete formData['_id']
                     const updatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
                         condition,
                         formData,
@@ -102,26 +147,81 @@ delete formData['_id']
                  }
                   
                 }
-            }else {
-                if(!submittedForm){
-let newData = new TwentyEightSlbsForm(formData);
-await newData.save()
-return res.status(200).json({
-success: true,
-message:"Data Saved"
-})
-                }else if(submittedForm && !submittedForm.isDraft){
-                    if(formData['actionTakenByRole'] == submittedForm['actionTakenByRole']){
-                        return res.status(403).json({
-                            success: false,
-                            message:"Form Cannot be Resubmitted after Final Submit"
-                        
-                        })
-                    }else{
-                        // provide code for action
-                    }
-                }
+
             }
+            if(submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB" 
+                && submittedForm.isDraft === false){
+                    return res.status(200).json({
+                        status: true,
+                        message: "Form already submitted"
+                    })
+            }
+
+//             if ( submittedForm && submittedForm.isDraft) {//update already existing form
+//                 if(formData.isDraft){//save as draft 
+//                     const updatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
+//                         condition,
+//                         {$set: formData},
+//                         {new: true, runValidators: true}
+//                     );
+//                     if(!updatedForm) rejectResponse(res, "form not updated")
+//                    return res.status(200).json({
+//                     success: true,
+//                     data: updatedForm,
+//                     message:"Form Updated"
+//                    })
+//                 } else {//final submit already existing form
+//                     formData.createdAt = submittedForm.createdAt;
+//                     formData.modifiedAt = new Date();
+//                     formData.modifiedAt.toISOString();
+//                  if(formData.data.length == 28){
+//                     let currentData = {}
+//                     Object.assign(currentData,formData ) 
+
+//                     formData['history'] = submittedForm['history']
+//                     formData['history'].push(currentData)
+//                     // formData['history'].push(formData) 
+                    
+// delete formData['_id']
+//                     const updatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
+//                         condition,
+//                         formData,
+                        
+//                     );
+//                     if(!updatedForm) rejectResponse(res, "form not created")
+//                     return res.status(200).json({
+//                         success: true,
+//                         data: updatedForm,
+//                         message:"Form Saved"
+//                        })
+//                  }else{
+//                     return res.status(400).json({
+//                         success: false,
+//                         message:"Cannot Final Submit with incomplete Data"
+//                     })
+//                  }
+                  
+//                 }
+//             }else {
+//                 if(!submittedForm){
+// let newData = new TwentyEightSlbsForm(formData);
+// await newData.save()
+// return res.status(200).json({
+// success: true,
+// message:"Data Saved"
+// })
+//                 }else if(submittedForm && !submittedForm.isDraft){
+//                     if(formData['actionTakenByRole'] == submittedForm['actionTakenByRole']){
+//                         return res.status(403).json({
+//                             success: false,
+//                             message:"Form Cannot be Resubmitted after Final Submit"
+                        
+//                         })
+//                     }else{
+//                         // provide code for action
+//                     }
+//                 }
+//             }
             
         } catch (error) {
         return res.status(400).json({

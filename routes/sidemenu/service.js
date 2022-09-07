@@ -189,7 +189,7 @@ data.forEach((el,)=> {
 tempData = sortByPosition(tempData);
 //creating card Data
     data.forEach(el => {
-        if(el.name.toLowerCase() != 'overview' && el.name.toLowerCase() != 'resources' ){
+        if(el.name.toLowerCase() != 'overview' && el.name.includes('Review Grant') && el.name.toLowerCase() != 'resources' ){
             cardObj.image = el?.icon;
             cardObj.key = el?.collectionName;
             cardObj.label = el?.name;
@@ -233,7 +233,7 @@ module.exports.list = catchAsync(async (req,res) => {
         isActive: true
 
     }
-    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1});
+    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1, optional: 1});
     data = data.filter((value, index, self) =>
   index === self.findIndex((t) => (
     t.collectionName === value.collectionName

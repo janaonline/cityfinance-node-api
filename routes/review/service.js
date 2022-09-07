@@ -27,10 +27,10 @@ function createDynamicColumns(collectionName){
         
         case CollectionNames.odf: 
         case CollectionNames.gfc:
-            columns = `Rating,Cert URL,Cert Name, Cert Date, Approve/Reject Comment, Response File Name, Response File URL `;
+            columns = `Financial Year,Form Status, Submission Date and Time, Filled Status, Rating, Score, Certificate URL,Certificate Name, Certificate Issue Date,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `;
             break;
         case CollectionNames.propTaxState:
-            columns =  `Act Page,Floor Rate Url, Floor Rate Name, Status`
+            columns =  `Financial Year, Form Status, Submission Date and Time, Filled Status, Act Page,Floor Rate Url, Floor Rate Name, Status`
             break;
         default:
             columns = '';
@@ -177,6 +177,9 @@ module.exports.get = catchAsync( async(req,res) => {
     let csv = req.query.csv == "true"
     let keys;
     let formTab = await Sidemenu.findOne({_id: ObjectId(form)}).lean();
+    if(!formTab.optional){
+        delete ulbColumnNames['filled']
+    }
     let dbCollectionName = formTab?.dbCollectionName
     let formType = formTab.role
     if(formType === "ULB"){
@@ -206,7 +209,15 @@ module.exports.get = catchAsync( async(req,res) => {
           }
 
     }
-  
+  if(formTab.collectionName == CollectionNames.annual){
+    filter['filled_audited'] = filter['filled1']
+    filter['filled_provisional'] = filter['filled2']
+    delete filter['filled1']
+    delete filter['filled2']
+  }else{
+    filter['filled'] = filter['filled1']
+    delete filter['filled1']
+  }
 if(formType == 'STATE'){
     filter['state'] = req.query.stateName
     filter['status'] = req.query.status 
@@ -252,6 +263,7 @@ console.log(total,data)
 //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
 //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
  data.forEach(el => {
+    
     if(!el.formData){
         el['formStatus']="Not Started";
         el['cantakeAction'] = false;
@@ -273,7 +285,7 @@ if(csv){
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
     if(formType === 'ULB'){
 
-        let fixedColumns = `ULB Name, City Finance Code, Census Code, ULB Type, State Name, Population, UA, Form Status, Form Filled Status,`;
+        let fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA,`;
         let dynamicColumns = createDynamicColumns(collectionName);
     
         
@@ -289,6 +301,8 @@ if(csv){
                     el.UA = "NA"
                 }
                 res.write(
+                    el.stateName +
+                    "," +
                     el.ulbName +
                     "," +
                     el.ulbCode + 
@@ -296,8 +310,6 @@ if(csv){
                     el.censusCode + 
                     "," +
                     el.ulbType +
-                    "," +
-                    el.stateName +
                     "," +
                     el.population +
                     "," +
@@ -450,6 +462,9 @@ filledQueryExpression = {
 
 
    }
+   let dY = "$design_year"
+   if(formName == CollectionNames.dur)
+   dY = "$designYear"
    switch (userRole) {
     case "ULB":
         let query = [
@@ -495,7 +510,7 @@ filledQueryExpression = {
                               $expr: {
                                 $and: [
                                   {
-                                    $eq: ["$design_year", "$$firstUser"],
+                                    $eq: [dY, "$$firstUser"],
                                   },
                                   {
                                     $eq: ["$ulb", "$$secondUser"],

@@ -33,8 +33,6 @@ lerna-debug.log*
 
 /uploads
 
-
-
 # Environment specific
 .env
 .env_bk
