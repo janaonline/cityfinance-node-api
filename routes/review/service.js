@@ -578,8 +578,29 @@ filledQueryExpression = {
                                                             else: "Non Million",
                                                             },
                                                         },
-                                                      formData:{$ifNull: [`$${dbCollectionName}`, "" ]} ,
-                                                        filled: Object.keys(filledQueryExpression).length>0 ? filledQueryExpression : "Yes"
+                                                      formData:{$ifNull: [`$${dbCollectionName}`, "" ]} 
+    
+                                }
+                            },
+                            {
+                                $project: {
+                                    ulbName:1,
+                                                        ulbId:1,
+                                                        ulbCode:1,
+                                                        censusCode: 1,
+                                                        UA: 1,
+                                                        UA_id:1,
+                                                        ulbType:1,
+                                                        ulbType_id:1,
+                                                        population:1,
+                                                        state_id:1,
+                                                        stateName:1,
+                                                        populationType:1,
+                                                      formData:1 ,
+                                                      filled:
+                                                      {
+                                                        $cond: { if: { $eq: [ "$formData", "" ] }, then: "No" , else: isFormOptional ? filledQueryExpression : "Yes" }
+                                                      }
     
                                 }
                             },
