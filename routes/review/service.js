@@ -177,9 +177,9 @@ module.exports.get = catchAsync( async(req,res) => {
     let csv = req.query.csv == "true"
     let keys;
     let formTab = await Sidemenu.findOne({_id: ObjectId(form)}).lean();
-    if(!formTab.optional){
-        delete ulbColumnNames['filled']
-    }
+    // if(!formTab.optional){
+    //     delete ulbColumnNames['filled']
+    // }
     let dbCollectionName = formTab?.dbCollectionName
     let formType = formTab.role
     if(formType === "ULB"){
