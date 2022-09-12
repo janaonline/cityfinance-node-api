@@ -1439,8 +1439,9 @@ filledQueryExpression = {
         query.push(...query_2)
 
         //dynamic query based on condition
-
-        query = createDynamicQuery(formName, query, userRole);
+        if(csv){
+          query = createDynamicQuery(formName, query, userRole);
+        }
 
 
 
