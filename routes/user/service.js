@@ -575,18 +575,18 @@ module.exports.profileUpdate = async (req, res) => {
             ) {
                 obj['email'] = obj.commissionerEmail;
             }
-            if (obj.email != userInfo.email) {
-                let emailExists = await User.findOne({
-                    email: obj.email
-                }).exec();
-                if (emailExists) {
-                    return Response.BadRequest(
-                        res,
-                        obj,
-                        `Email: '${obj.email}' already in use`
-                    );
-                }
-            }
+            // if (obj.email != userInfo.email) {
+            //     let emailExists = await User.findOne({
+            //         email: obj.email
+            //     }).exec();
+            //     if (emailExists) {
+            //         return Response.BadRequest(
+            //             res,
+            //             obj,
+            //             `Email: '${obj.email}' already in use`
+            //         );
+            //     }
+            // }
             if (
                 (Constants.USER.LEVEL_ACCESS[user.role] &&
                     Constants.USER.LEVEL_ACCESS[user.role].indexOf(
@@ -601,10 +601,10 @@ module.exports.profileUpdate = async (req, res) => {
                         { _id: userInfo._id },
                         { $set: obj }
                     );
-                    let mail = await Service.emailTemplate.sendProfileUpdateStatusEmail(
-                        userInfo,
-                        req.currentUrl
-                    );
+                    // let mail = await Service.emailTemplate.sendProfileUpdateStatusEmail(
+                    //     userInfo,
+                    //     req.currentUrl
+                    // );
                     return Response.OK(res, out, `Successfully updated.`);
                 } catch (e) {
                     console.log('Exception', e);
