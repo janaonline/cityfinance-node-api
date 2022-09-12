@@ -165,6 +165,43 @@ const design_year_2122 = ObjectId("606aaf854dff55e6c075d219")
 module.exports.get2223 = catchAsync(async(req,res)=>{
     let uaId = req.query.ua;
     let design_year = req.query.design_year;
+    let slbApproved = {
+        count: 0,
+        ulbs: [
+            {
+                ulbName:"",
+                censusCode:""
+            },
+            {
+                ulbName:"",
+                censusCode:""
+            }
+        ]
+    }, slbPending = {
+        count: 0,
+        ulbs: [
+        ]
+    }, gfcApproved = {
+        count: 0,
+        ulbs: [
+         
+        ]
+    }, gfcPending = {
+        count: 0,
+        ulbs: [
+       
+        ]
+    },odfPending = {
+        count: 0,
+        ulbs: [
+           
+        ]
+    } , odfApproved = {
+        count: 0,
+        ulbs: [
+        
+        ]
+    }
     if(!uaId || !design_year ){
         return res.status(404).json({
             success: false,
@@ -279,7 +316,7 @@ let slbdata = await Ulb.aggregate([
         $lookup: {
           from: "xvfcgrantulbforms",
           let: {
-            firstUser: ObjectId(design_year_2122),
+            firstUser: design_year_2122,
             secondUser: "$_id",
           },
           pipeline: [
@@ -308,6 +345,180 @@ let slbdata = await Ulb.aggregate([
         },
       },
 ])
+console.log('1')
+if(slbdata.length){
+slbdata.forEach(el => {
+    console.log('2')
+    
+    if(el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length >0){
+if(el.xvfcgrantulbforms.waterManagement.status == "APPROVED"){
+    console.log('3')
+    slbApproved.count += 1;
+    slbApproved.ulbs.push({
+        ulbName:el.name,
+        censusCode:el.censusCode ?? el.sbCode
+    })
+}else {
+    slbPending.count += 1
+slbPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+}
+    }else{
+slbPending.count += 1
+slbPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+    }
+    
+});
+}
+
+let gfcData = await Ulb.aggregate([
+    {
+        $match :{
+
+            _id: {$in:ulbs}
+        }
+    },
+    {
+        $lookup: {
+          from: "gfcformcollections",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "gfcformcollections",
+        },
+      },
+      {
+        $unwind: {
+          path: "$gfcformcollections",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+])
+if(gfcData){
+    gfcData.forEach(el => {
+    if(el.hasOwnProperty("gfcformcollections") && Object.keys(el.gfcformcollections).length >0){
+if(el.gfcformcollections.status == "APPROVED"){
+    gfcApproved.count += 1;
+    gfcApproved.ulbs.push({
+        ulbName:el.name,
+        censusCode:el.censusCode ?? el.sbCode
+    })
+}else {
+    gfcPending.count += 1
+gfcPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+}
+    }else{
+gfcPending.count += 1
+gfcPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+    }
+    
+});
+}
+
+let odfData = await Ulb.aggregate([
+    {
+        $match :{
+
+            _id: {$in:ulbs}
+        }
+    },
+    {
+        $lookup: {
+          from: "odfformcollections",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "odfformcollections",
+        },
+      },
+      {
+        $unwind: {
+          path: "$odfformcollections",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+])
+if(odfData){
+    odfData.forEach(el => {
+    if(el.hasOwnProperty("odfformcollections") && Object.keys(el.odfformcollections).length >0){
+if(el.odfformcollections.status == "APPROVED"){
+    odfApproved.count += 1;
+    odfApproved.ulbs.push({
+        ulbName:el.name,
+        censusCode:el.censusCode ?? el.sbCode
+    })
+}else {
+    odfPending.count += 1
+odfPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+}
+    }else{
+odfPending.count += 1
+odfPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+    }
+    
+});
+}
+
+console.log(slbApproved, slbPending, gfcApproved, gfcPending,odfPending, odfApproved )
+responseObj.fourSLB.approved = slbApproved
+responseObj.fourSLB.pending = slbPending
+responseObj.gfc.approved = gfcApproved
+responseObj.gfc.pending = gfcPending
+responseObj.odf.approved = odfApproved
+responseObj.odf.pending = odfPending
+
+
 
     responseObj.totalUlbs = ulbs.length
     
@@ -338,12 +549,12 @@ let slbdata = await Ulb.aggregate([
     //           }).populate("rating")
     //           odfScore = odfData.rating.marks
     // })
-let totalMarks = slbTotalScore + odfScore + gfcScore;
-let recommendation = recommendationSlab(totalMarks);
+// let totalMarks = slbTotalScore + odfScore + gfcScore;
+// let recommendation = recommendationSlab(totalMarks);
 
     return res.status(200).json({
         success: true,
-        data: ""
+        data: responseObj
     })
 })
 

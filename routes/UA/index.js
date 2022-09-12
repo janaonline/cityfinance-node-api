@@ -8,7 +8,7 @@ const { update } = require('./service')
 
 
 router.get('/getAll', verifyToken, getAll)
-router.get('/get2223', verifyToken, get2223)
+router.get('/get2223', get2223)
 router.put('/update', update)
 router.post('/create', verifyToken, create)
 
