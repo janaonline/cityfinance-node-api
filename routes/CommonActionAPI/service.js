@@ -10,6 +10,7 @@ const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Sidemenu = require('../../models/Sidemenu');
+const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch(formType){
@@ -223,7 +224,9 @@ function getCollectionName(formName){
         case "Garbage Free City (GFC)":
             collection = GfcFormCollection;
             break;
-        
+        case "28 SLBs":
+            collection = TwentyEightSlbsForm;
+            break;
     }
     return collection;
 }
