@@ -4,6 +4,7 @@ const OdfFormCollection = require('../../models/OdfFormCollection');
 const GfcFormCollection = require('../../models/GfcFormCollection');
 const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
+const PropertyTaxOp = require('../../models/PropertyTaxOp');
 const FormsMaster = require('../../models/FormsMaster');
 const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
@@ -210,9 +211,9 @@ function getCollectionName(formName){
         case "Linking of PFMS Account":
             collection = LinkPFMS;
             break;
-        // case "Property Tax Operationalisation":
-        //     collection = "PTO";
-        //     break;
+        case "Property Tax Operationalisation":
+            collection = PropertyTaxOp;
+            break;
         case "SLBs for Water Supply and Sanitation":
             collection = XVFcGrantForm;
             break;
