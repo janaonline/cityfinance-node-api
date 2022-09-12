@@ -108,26 +108,26 @@ const validate = (data, role,_id)=>{
                 ],
                 
                 STATE:[
-                    {
-                        key:"mobile",
-                        type:"mobile",
-                        message:"Mobile number already taken."
-                    },
-                    {
-                        key:"email",
-                        type:"email",
-                        message:"Email already taken."
-                    },
-                    {
-                        key:"departmentEmail",
-                        type:"email",
-                        message:"Department email already taken."
-                    },
-                    {
-                        key:"departmentContactNumber",
-                        type:"mobile",
-                        message:"Department contact number already taken."
-                    }
+                    // {
+                    //     key:"mobile",
+                    //     type:"mobile",
+                    //     message:"Mobile number already taken."
+                    // },
+                    // {
+                    //     key:"email",
+                    //     type:"email",
+                    //     message:"Email already taken."
+                    // },
+                    // {
+                    //     key:"departmentEmail",
+                    //     type:"email",
+                    //     message:"Department email already taken."
+                    // },
+                    // {
+                    //     key:"departmentContactNumber",
+                    //     type:"mobile",
+                    //     message:"Department contact number already taken."
+                    // }
                 ],
                 PARTNER:[
                     {
