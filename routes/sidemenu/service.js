@@ -112,7 +112,7 @@ module.exports.get = catchAsync(async (req, res) => {
         let condition = {
             ulb: ObjectId(_id),
         }
-        let formArr = [AnnualAccounts, DUR, ODF, GFC, SLB, PFMS, SLB28, PropertyTaxOp]
+        let formArr = [AnnualAccounts, DUR, ODF, GFC, PFMS, SLB28, PropertyTaxOp]
        for(el of formArr) {
             if (el == DUR) {
                 delete condition['design_year'];
@@ -148,7 +148,7 @@ data.forEach((el,)=> {
                 flag = 1;
             }
         })
-    if(!flag){
+    if(!flag && el.dbCollectionName != "xvfcgrantulbforms"){
             Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
     }
     }else{
@@ -189,7 +189,7 @@ data.forEach((el,)=> {
 tempData = sortByPosition(tempData);
 //creating card Data
     data.forEach(el => {
-        if(el.name.toLowerCase() != 'overview' && el.name.toLowerCase() != "review grant application" && el.name.toLowerCase() != "slbs for water supply and sanitation" &&  el.name.toLowerCase() != 'resources' ){
+        if(el.name.toLowerCase() != 'overview'  &&  el.name.toLowerCase() != 'resources' ){
             cardObj.image = el?.icon;
             cardObj.key = el?.collectionName;
             cardObj.label = el?.name;
