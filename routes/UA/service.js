@@ -9,6 +9,13 @@ const ODF = require('../../models/OdfFormCollection')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const axios = require('axios')
 
+const lineItemIndicatorIDs = [
+    ObjectId("6284d6f65da0fa64b423b52a"),
+    ObjectId("6284d6f65da0fa64b423b53a"),
+    ObjectId("6284d6f65da0fa64b423b53c"),
+    ObjectId("6284d6f65da0fa64b423b540")
+
+]
 const recommendationSlab = (score) => {
     switch (score) {
         case  score >=0 && score <= 29 :
@@ -569,10 +576,21 @@ return res.status(200).json({
 })
     }
 
-let slbWeigthed = await axios.get(`${process.env.BASEURL}xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`)
+let slbWeigthed 
+ await axios.get(`${process.env.BASEURL}xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
+            console.log('Data Fetched');
+             slbWeigthed = response.data[0]
+            
+              })
+              .catch(function (error) {
+                console.log('Not Fetched');
+              })
 
-  
+
+  Object.assign(responseObj.fourSLB.data, slbWeigthed )
+  TEslbdata.forEach(el => {
     
+  })  
     // ulbs.forEach(async el => {
 
     //     // await axios.get(`${process.env.BASEURL}xv-fc-form?design_year=606aaf854dff55e6c075d219&from=2223&ulb=${el}`).then(function (response) {

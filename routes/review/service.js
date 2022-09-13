@@ -1513,6 +1513,7 @@ filledQueryExpression = {
                         },
                         {
                             $project:{
+                              state: "$_id",
                                 stateName  :"$name",
                                     formData:{$ifNull: [`$${dbCollectionName}`, "" ]} ,
                             }
