@@ -10,6 +10,9 @@ const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
 const {calculateStatus} = require('../CommonActionAPI/service')
 const {canTakenAction} = require('../CommonActionAPI/service')
+const Service = require('../../service');
+const {FormNames} = require('../../util/FormNames');
+
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -29,7 +32,69 @@ module.exports.createOrUpdate = async (req, res) => {
     req.body.actionTakenBy = req.decoded?._id;
     req.body.actionTakenByRole = req.decoded?.role;
     req.body.modifiedAt = new Date();
-    //
+    
+    const formName = FormNames["dur"]; 
+    const { name: ulbName } = req.decoded;
+    let userData =  await User.find({
+      $or:[
+      { isDeleted: false, ulb: ObjectId(ulb), role: 'ULB' },
+      {isDeleted: false, state: ObjectId(req?.decoded.state), role: 'STATE', isNodalOfficer: true },
+      ]
+  }
+  ).lean();
+
+  let emailAddress = [];
+  let ulbUserData = {},
+    stateUserData = {};
+  for(let i =0 ; i< userData.length; i++){
+      if(userData[i]){
+          if(userData[i].role === "ULB"){
+              ulbUserData = userData[i];
+          }else if(userData[i].role === "STATE"){
+              stateUserData = userData[i];
+          }
+      }
+      if(ulbUserData && ulbUserData.commissionerEmail){
+          emailAddress.push(ulbUserData.commissionerEmail);
+      }
+      if(stateUserData && stateUserData.email ){
+          emailAddress.push(stateUserData.email);
+      }
+      ulbUserData ={};
+      stateUserData = {};   
+  }
+  //unique email address
+  emailAddress =  Array.from(new Set(emailAddress))
+   let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
+    ulbName,
+    formName
+  );
+  let mailOptions = {
+    Destination: {
+      /* required */
+      ToAddresses: emailAddress,
+    },
+    Message: {
+      /* required */
+      Body: {
+        /* required */
+        Html: {
+          Charset: "UTF-8",
+          Data: ulbTemplate.body,
+        },
+      },
+      Subject: {
+        Charset: "UTF-8",
+        Data: ulbTemplate.subject,
+      },
+    },
+    Source: process.env.EMAIL,
+    /* required */
+    ReplyToAddresses: [process.env.EMAIL],
+  };
+  
+
+
     let formData = {};
     let data = req.body;
     formData = {...data};
@@ -114,6 +179,10 @@ module.exports.createOrUpdate = async (req, res) => {
             message: "Form history not added"
           })
         } else {
+          if(addedHistory){
+            //email trigger after form submission
+           Service.sendEmail(mailOptions);
+           }
           return res.status(200).json({
             status: true,
             data: addedHistory
@@ -148,6 +217,10 @@ module.exports.createOrUpdate = async (req, res) => {
         { $set: req.body, $push: { history: currentSavedUtilRep }},
         {new: true, runValidators: true}
       );
+      if(savedData){
+        //email trigger after form submission
+       Service.sendEmail(mailOptions);
+      }
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), financialYear, designYear },
