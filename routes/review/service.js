@@ -1220,7 +1220,7 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
          case CollectionNames.slb:
 filledQueryExpression = {
     $cond: {
-      if: { $eq: [`$${dbCollectionName}.blank`, true] },
+      if: { $eq: [`$formData.blank`, true] },
       then: STATUS_LIST.Not_Submitted,
       else: STATUS_LIST.Submitted,
     },
@@ -1229,7 +1229,7 @@ filledQueryExpression = {
              case CollectionNames.pfms:
 filledQueryExpression = {
     $cond: {
-      if:  {$eq: [`$${dbCollectionName}.linkPFMS`, "Yes" ] },
+      if:  {$eq: [`$formData.linkPFMS`, "Yes" ] },
       then: STATUS_LIST.Submitted,
       else: STATUS_LIST.Not_Submitted,
     },
@@ -1238,7 +1238,7 @@ filledQueryExpression = {
              case CollectionNames.propTaxUlb:
                 filledQueryExpression = {
                     $cond: {
-                      if:  {$eq: [`$${dbCollectionName}.toCollect`, "Yes" ]},
+                      if:  {$eq: [`$formData.toCollect`, "Yes" ]},
                       then: STATUS_LIST.Submitted,
                       else: STATUS_LIST.Not_Submitted,
                     },
@@ -1247,14 +1247,14 @@ filledQueryExpression = {
      case CollectionNames.annual:
         filledProvisionalExpression = {
             $cond: {
-              if: { $eq: [`$${dbCollectionName}.unAudited.submit_annual_accounts`, true] },
+              if: { $eq: [`$formData.unAudited.submit_annual_accounts`, true] },
               then: STATUS_LIST.Submitted,
               else: STATUS_LIST.Not_Submitted,
             },
           };
           filledAuditedExpression = {
             $cond: {
-              if: { $eq: [`$${dbCollectionName}.audited.submit_annual_accounts`, true] },
+              if: { $eq: [`$formData.audited.submit_annual_accounts`, true] },
               then: STATUS_LIST.Submitted,
               else: STATUS_LIST.Not_Submitted,
             },
