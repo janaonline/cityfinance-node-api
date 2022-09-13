@@ -6,6 +6,10 @@ const Year = require('../../models/Year')
 const {groupByKey} = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
 const {canTakenAction} = require('../CommonActionAPI/service')
+const Service = require('../../service');
+const {FormNames} = require('../../util/FormNames');
+const User = require('../../models/User');
+
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -33,26 +37,87 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         const user = req.decoded;
         let formData = {};
         formData = {...data};
-       
+        const formName = FormNames["slb28"];
+        const {_id: actionTakenBy, role: actionTakenByRole, name: ulbName } = user;
+        
         formData['actionTakenBy'] = ObjectId(user._id);
         formData['actionTakenByRole'] = "ULB";
         formData['status'] = "PENDING"
 
-        if(!(data.ulb && data.design_year )){
-            return res.status(400).json({
-                status: false,
-                message: "Ulb and design year is mandatory"
-            });    
+        if (!(data.ulb && data.design_year)) {
+          return res.status(400).json({
+            status: false,
+            message: "Ulb and design year is mandatory",
+          });
         }
-        
-            formData.ulb = ObjectId(formData.ulb);
-            formData.design_year = ObjectId(formData.design_year);
-        
-        
+
+        formData.ulb = ObjectId(formData.ulb);
+        formData.design_year = ObjectId(formData.design_year);
+
         const condition = {};
         condition.ulb = data.ulb;
         condition.design_year = data.design_year;
         
+        let userData =  await User.find({
+            $or:[
+            { isDeleted: false, ulb: ObjectId(data.ulb), role: 'ULB' },
+            {isDeleted: false, state: ObjectId(user.state), role: 'STATE', isNodalOfficer: true },
+            ]
+        }
+        ).lean();
+
+        let emailAddress = [];
+        let ulbUserData = {},
+          stateUserData = {};
+        for(let i =0 ; i< userData.length; i++){
+            if(userData[i]){
+                if(userData[i].role === "ULB"){
+                    ulbUserData = userData[i];
+                }else if(userData[i].role === "STATE"){
+                    stateUserData = userData[i];
+                }
+            }
+            if(ulbUserData && ulbUserData.commissionerEmail){
+                emailAddress.push(ulbUserData.commissionerEmail);
+            }
+            if(stateUserData && stateUserData.email ){
+                emailAddress.push(stateUserData.email);
+            }
+            ulbUserData ={};
+            stateUserData = {};   
+        }
+        //unique email address
+        emailAddress =  Array.from(new Set(emailAddress))
+       
+        let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
+          ulbName,
+          formName
+        );
+        let mailOptions = {
+          Destination: {
+            /* required */
+            ToAddresses: emailAddress,
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: ulbTemplate.body,
+              },
+            },
+            Subject: {
+              Charset: "UTF-8",
+              Data: ulbTemplate.subject,
+            },
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        };
+        
+
       
             const submittedForm = await TwentyEightSlbsForm.findOne(condition).lean();
             if ( (submittedForm) && submittedForm.isDraft === false &&
@@ -75,6 +140,10 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                             {$push: {"history": formData}},
                             {new: true, runValidators: true}
                         )
+                        if(addedHistory){
+                            //email trigger after form submission
+                           Service.sendEmail(mailOptions);
+                           }
                         return response(addedHistory, res,"Form created.", "Form not created")
                     } else {
                         return res.status(400).json({
@@ -134,6 +203,10 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                         
                     );
                     if(!updatedForm) rejectResponse(res, "form not created")
+                    if(updatedForm){
+                        //email trigger after form submission
+                       Service.sendEmail(mailOptions);
+                       }
                     return res.status(200).json({
                         success: true,
                         data: updatedForm,
