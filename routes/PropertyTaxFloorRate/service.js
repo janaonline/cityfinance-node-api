@@ -1,6 +1,6 @@
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const ObjectId = require('mongoose').Types.ObjectId;
-
+const {canTakenAction} = require('../CommonActionAPI/service')
 function response(form, res, successMsg, errMsg){
     if(form){
         return res.status(200).json({
@@ -22,9 +22,11 @@ module.exports.getForm = async (req,res)=>{
         const condition = {};
         condition.state = data.state;
         condition.design_year = data.design_year;
-
+const role = req.decoded.role
         const form = await PropertyTaxFloorRate.findOne(condition);
+
         if (form) {
+    Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE",role ) })
             return res.status(200).json({
                 status: true,
                 data: form

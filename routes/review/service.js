@@ -729,8 +729,8 @@ function createDynamicElements(collectionName, formType, entity) {
             
             case CollectionNames['28SLB']:
           
-              let actualEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.modifiedAt ?? ""},${entity.filled ?? ""},Actual,${data['actual_year']['year'] ?? ""},${data['data'][0]['actual']['value'] ?? ""},${data['data'][1]['actual']['value'] ?? ""},${data['data'][2]['actual']['value'] ?? ""},${data['data'][3]['actual']['value'] ?? ""},${data['data'][4]['actual']['value'] ?? ""},${data['data'][5]['actual']['value'] ?? ""},${data['data'][6]['actual']['value'] ?? ""},${data['data'][7]['actual']['value'] ?? ""},${data['data'][8]['actual']['value'] ?? ""},${data['data'][9]['actual']['value'] ?? ""},${data['data'][10]['actual']['value'] ?? ""},${data['data'][11]['actual']['value'] ?? ""},${data['data'][12]['actual']['value'] ?? ""},${data['data'][13]['actual']['value'] ?? ""},${data['data'][14]['actual']['value'] ?? ""},${data['data'][15]['actual']['value'] ?? ""},${data['data'][16]['actual']['value'] ?? ""},${data['data'][17]['actual']['value'] ?? ""},${data['data'][18]['actual']['value'] ?? ""},${data['data'][19]['actual']['value'] ?? ""},${data['data'][20]['actual']['value'] ?? ""},${data['data'][21]['actual']['value'] ?? ""},${data['data'][22]['actual']['value'] ?? ""},${data['data'][23]['actual']['value'] ?? ""},${data['data'][24]['actual']['value'] ?? ""},${data['data'][25]['actual']['value'] ?? ""},${data['data'][26]['actual']['value'] ?? ""},${data['data'][27]['actual']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
-              let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.modifiedAt ?? ""},${entity.filled ?? ""},Target,${data['target_1_year']['year'] ?? ""},${data['data'][0]['target_1']['value'] ?? ""},${data['data'][1]['target_1']['value'] ?? ""},${data['data'][2]['target_1']['value'] ?? ""},${data['data'][3]['target_1']['value'] ?? ""},${data['data'][4]['target_1']['value'] ?? ""},${data['data'][5]['target_1']['value'] ?? ""},${data['data'][6]['target_1']['value'] ?? ""},${data['data'][7]['target_1']['value'] ?? ""},${data['data'][8]['target_1']['value'] ?? ""},${data['data'][9]['target_1']['value'] ?? ""},${data['data'][10]['target_1']['value'] ?? ""},${data['data'][11]['target_1']['value'] ?? ""},${data['data'][12]['target_1']['value'] ?? ""},${data['data'][13]['target_1']['value'] ?? ""},${data['data'][14]['target_1']['value'] ?? ""},${data['data'][15]['target_1']['value'] ?? ""},${data['data'][16]['target_1']['value'] ?? ""},${data['data'][17]['target_1']['value'] ?? ""},${data['data'][18]['target_1']['value'] ?? ""},${data['data'][19]['target_1']['value'] ?? ""},${data['data'][20]['target_1']['value'] ?? ""},${data['data'][21]['target_1']['value'] ?? ""},${data['data'][22]['target_1']['value'] ?? ""},${data['data'][23]['target_1']['value'] ?? ""},${data['data'][24]['target_1']['value'] ?? ""},${data['data'][25]['target_1']['value'] ?? ""},${data['data'][26]['target_1']['value'] ?? ""},${data['data'][27]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
+              let actualEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.modifiedAt ?? ""},${entity.filled ?? ""},Actual,${data['actual_year']['year'] ?? ""},${data['data'][0]['actual']['value'] ?? ""},${data['data'][1]['actual']['value'] ?? ""},${data['data'][2]['actual']['value'] ?? ""},${data['data'][3]['actual']['value'] ?? ""},${data['data'][4]['actual']['value'] ?? ""},${data['data'][4]['actual']['value'] ?? ""},${data['data'][6]['actual']['value'] ?? ""},${data['data'][7]['actual']['value'] ?? ""},${data['data'][8]['actual']['value'] ?? ""},${data['data'][9]['actual']['value'] ?? ""},${data['data'][10]['actual']['value'] ?? ""},${data['data'][11]['actual']['value'] ?? ""},${data['data'][12]['actual']['value'] ?? ""},${data['data'][13]['actual']['value'] ?? ""},${data['data'][14]['actual']['value'] ?? ""},${data['data'][15]['actual']['value'] ?? ""},${data['data'][16]['actual']['value'] ?? ""},${data['data'][17]['actual']['value'] ?? ""},${data['data'][18]['actual']['value'] ?? ""},${data['data'][19]['actual']['value'] ?? ""},${data['data'][20]['actual']['value'] ?? ""},${data['data'][21]['actual']['value'] ?? ""},${data['data'][22]['actual']['value'] ?? ""},${data['data'][23]['actual']['value'] ?? ""},${data['data'][24]['actual']['value'] ?? ""},${data['data'][25]['actual']['value'] ?? ""},${data['data'][26]['actual']['value'] ?? ""},${data['data'][27]['actual']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
+              let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.modifiedAt ?? ""},${entity.filled ?? ""},Target,${data['target_1_year']['year'] ?? ""},${data['data'][0]['target_1']['value'] ?? ""},${data['data'][1]['target_1']['value'] ?? ""},${data['data'][2]['target_1']['value'] ?? ""},${data['data'][3]['target_1']['value'] ?? ""},${data['data'][4]['target_1']['value'] ?? ""},${data['data'][4]['target_1']['value'] ?? ""},${data['data'][6]['target_1']['value'] ?? ""},${data['data'][7]['target_1']['value'] ?? ""},${data['data'][8]['target_1']['value'] ?? ""},${data['data'][9]['target_1']['value'] ?? ""},${data['data'][10]['target_1']['value'] ?? ""},${data['data'][11]['target_1']['value'] ?? ""},${data['data'][12]['target_1']['value'] ?? ""},${data['data'][13]['target_1']['value'] ?? ""},${data['data'][14]['target_1']['value'] ?? ""},${data['data'][15]['target_1']['value'] ?? ""},${data['data'][16]['target_1']['value'] ?? ""},${data['data'][17]['target_1']['value'] ?? ""},${data['data'][18]['target_1']['value'] ?? ""},${data['data'][19]['target_1']['value'] ?? ""},${data['data'][20]['target_1']['value'] ?? ""},${data['data'][21]['target_1']['value'] ?? ""},${data['data'][22]['target_1']['value'] ?? ""},${data['data'][23]['target_1']['value'] ?? ""},${data['data'][24]['target_1']['value'] ?? ""},${data['data'][25]['target_1']['value'] ?? ""},${data['data'][26]['target_1']['value'] ?? ""},${data['data'][27]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
 
               return [actualEntity, targetEntity];
               break;
@@ -765,8 +765,8 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
             };
             query_3 = { $unwind: { path: "$rating" } };
 
-            oldQuery[5]["$lookup"]["pipeline"].push(query_2);
-            oldQuery[5]["$lookup"]["pipeline"].push(query_3);
+            oldQuery[4]["$lookup"]["pipeline"].push(query_2);
+            oldQuery[4]["$lookup"]["pipeline"].push(query_3);
             break;
 
           case CollectionNames.pfms:
@@ -803,10 +803,10 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
               }
           }
 
-        oldQuery[5]["$lookup"]["pipeline"].push(query_2);
-        oldQuery[5]["$lookup"]["pipeline"].push(query_3);
-        oldQuery[5]["$lookup"]["pipeline"].push(query_4);
-        oldQuery[5]["$lookup"]["pipeline"].push(query_5);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_2);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_3);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_4);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_5);
 
         break;
         
@@ -835,10 +835,10 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
         $unwind: "$target_1_year"
         };
 
-        oldQuery[5]["$lookup"]["pipeline"].push(query_2);
-        oldQuery[5]["$lookup"]["pipeline"].push(query_3);
-        oldQuery[5]["$lookup"]["pipeline"].push(query_4);
-        oldQuery[5]["$lookup"]["pipeline"].push(query_5);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_2);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_3);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_4);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_5);
         break;
         case CollectionNames.dur:
           query_2 = {
@@ -852,8 +852,8 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
             query_3 = {
                 "$unwind": "$financialYear"
             }
-            oldQuery[5]["$lookup"]["pipeline"].push(query_2);
-        oldQuery[5]["$lookup"]["pipeline"].push(query_3);
+            oldQuery[4]["$lookup"]["pipeline"].push(query_2);
+        oldQuery[4]["$lookup"]["pipeline"].push(query_3);
         break;
           default:
             query = {};
@@ -1426,7 +1426,7 @@ filledQueryExpression = {
                                                       formData:1 ,
                                                       filled:
                                                       {
-                                                        $cond: { if: { $or: [{ $eq: [ "$formData", "" ]},{ $eq: [ "$formData.status", "PENDING" ]}] }, then: "No" , else: isFormOptional ? filledQueryExpression : "Yes" }
+                                                        $cond: { if: { $or: [{ $eq: [ "$formData", "" ]},{ $eq: [ "$formData.isDraft", true ]}] }, then: "No" , else: isFormOptional ? filledQueryExpression : "Yes" }
                                                       }
     
                                 }
@@ -1437,7 +1437,7 @@ filledQueryExpression = {
     
         ]
         query.push(...query_2)
-
+// return query
         //dynamic query based on condition
         if(csv){
           query = createDynamicQuery(formName, query, userRole);
