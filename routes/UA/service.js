@@ -168,14 +168,6 @@ module.exports.get2223 = catchAsync(async(req,res)=>{
     let slbApproved = {
         count: 0,
         ulbs: [
-            {
-                ulbName:"",
-                censusCode:""
-            },
-            {
-                ulbName:"",
-                censusCode:""
-            }
         ]
     }, slbPending = {
         count: 0,
@@ -304,7 +296,7 @@ module.exports.get2223 = catchAsync(async(req,res)=>{
     let slbTotalScore = 0, gfcScore=0, odfScore=0;
 
     ulbs = uaData.ulb;
-
+    responseObj.totalUlbs = ulbs.length
 let slbdata = await Ulb.aggregate([
     {
         $match :{
@@ -345,26 +337,74 @@ let slbdata = await Ulb.aggregate([
         },
       },
 ])
+let TEslbdata = await Ulb.aggregate([
+    {
+        $match :{
+
+            _id: {$in:ulbs}
+        }
+    },
+    {
+        $lookup: {
+          from: "twentyeightslbforms",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "twentyeightslbforms",
+        },
+      },
+      {
+        $unwind: {
+          path: "$twentyeightslbforms",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+])
 console.log('1')
 if(slbdata.length){
 slbdata.forEach(el => {
     console.log('2')
     
     if(el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length >0){
-if(el.xvfcgrantulbforms.waterManagement.status == "APPROVED"){
-    console.log('3')
-    slbApproved.count += 1;
-    slbApproved.ulbs.push({
-        ulbName:el.name,
-        censusCode:el.censusCode ?? el.sbCode
-    })
-}else {
-    slbPending.count += 1
+        if(TEslbdata.length){
+            TEslbdata.forEach(el2 => {
+                if(el2.hasOwnProperty("twentyeightslbforms") && Object.keys(el2.twentyeightslbforms).length >0){
+                    if(el._id == el2._id){
+                        if(el.xvfcgrantulbforms.waterManagement.status == "APPROVED" && el2.twentyeightslbforms.status == "APPROVED"){
+                            slbApproved.count += 1;
+                            slbApproved.ulbs.push({
+                                ulbName:el.name,
+                                censusCode:el.censusCode ?? el.sbCode
+                            }) 
+                        }else{
+                            slbPending.count += 1
 slbPending.ulbs.push({
     ulbName:el.name,
     censusCode:el.censusCode ?? el.sbCode
 })
-}
+                        }
+                    }
+                }
+               
+            })
+        }
     }else{
 slbPending.count += 1
 slbPending.ulbs.push({
@@ -518,9 +558,20 @@ responseObj.gfc.pending = gfcPending
 responseObj.odf.approved = odfApproved
 responseObj.odf.pending = odfPending
 
+if(responseObj.fourSLB.approved.count != ulbs.length ||
+    responseObj.gfc.approved.count != ulbs.length ||
+    responseObj.odf.approved.count != ulbs.length 
+    ){
+return res.status(200).json({
+    data: responseObj,
+    message:"Insufficient Data",
+    ans:0
+})
+    }
 
+let slbWeigthed = await axios.get(`${process.env.BASEURL}xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`)
 
-    responseObj.totalUlbs = ulbs.length
+  
     
     // ulbs.forEach(async el => {
 
