@@ -1426,7 +1426,7 @@ filledQueryExpression = {
                                                       formData:1 ,
                                                       filled:
                                                       {
-                                                        $cond: { if: { $eq: [ "$formData", "" ] }, then: "No" , else: isFormOptional ? filledQueryExpression : "Yes" }
+                                                        $cond: { if: { $or: [{ $eq: [ "$formData", "" ]},{ $eq: [ "$formData.status", "PENDING" ]}] }, then: "No" , else: isFormOptional ? filledQueryExpression : "Yes" }
                                                       }
     
                                 }
