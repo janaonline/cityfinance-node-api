@@ -190,6 +190,9 @@ router.use('/link-pfms', LinkPFMS);
 const CommonActionAPI = require('./CommonActionAPI');
 router.use('/common-action', CommonActionAPI);
 
+//property-tax-floor-rate
+const PropertyTaxFloorRate = require('./PropertyTaxFloorRate');
+router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
 
 //28-slbs
 const TwentyEightSlbsForm = require('./TwentyEightSlbsForm');
