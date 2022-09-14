@@ -8,7 +8,7 @@ const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const axios = require('axios')
-
+const {calculateSlbMarks} = require('../Scoring')
 const lineItemIndicatorIDs = [
     ObjectId("6284d6f65da0fa64b423b52a"),
     ObjectId("6284d6f65da0fa64b423b53a"),
@@ -589,39 +589,45 @@ let slbWeigthed
 
   Object.assign(responseObj.fourSLB.data, slbWeigthed )
   let usableData = []
+  let arr = []
   TEslbdata.forEach(el => {
-el.data
+let filteredData = el.twentyeightslbforms.data.filter(el=>{
+    lineItemIndicatorIDs.includes(el.indicatorLineItem)
+    
+})
+arr.push({
+data: filteredData,
+population: population
+
+})
+let numerator = [0,0,0,0], popData = [0,0,0,0]
+arr.forEach(el => {
+    el.data.forEach(el2, index=> {
+        numerator[index] += el2.actual.value * el.population
+        popData[index] += el.population
+    })
+})
+
+let wtAvgSLB = []
+numerator.forEach(el, index=> {
+    wtAvgSLB.push(numerator[index]/popData[index])
+})
+
   })  
-    // ulbs.forEach(async el => {
-
-    //     // await axios.get(`${process.env.BASEURL}xv-fc-form?design_year=606aaf854dff55e6c075d219&from=2223&ulb=${el}`).then(function (response) {
-    //     //     console.log('Data Fetched');
-    //     //     let slbData = response.data[0].waterManagement
-    //     //     for(let key in slbData ){
-    //     //         slbTotalScore += slbData[key]['score']['2122']
-    //     //     }
-
-    //     //       })
-    //     //       .catch(function (error) {
-    //     //         console.log('Not Fetched');
-    //     //       })
-              
-    //       let gfcData =     await GFC.findOne({
-    //             design_year: ObjectId(design_year),
-    //             ulb: ObjectId(el),
-    //             status:"APPROVED"
-    //           }).populate("rating")
-    //           gfcScore = gfcData.rating.marks
-    //         let odfData =   await ODF.findOne({
-    //             design_year: ObjectId(design_year),
-    //             ulb: ObjectId(el),
-    //             status:"APPROVED"
-    //           }).populate("rating")
-    //           odfScore = odfData.rating.marks
-    // })
-// let totalMarks = slbTotalScore + odfScore + gfcScore;
-// let recommendation = recommendationSlab(totalMarks);
-
+  Object.assign(slbWeigthed, {
+    "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
+    "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
+    "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
+    "reduction_actual2122": wtAvgSLB[3]
+  })
+  let scores = calculateSlbMarks(slbWeigthed)
+Object.assign(slbWeigthed, {
+    "houseHoldCoveredWithSewerage_score": scores[0],
+    "houseHoldCoveredPipedSupply_score": scores[1],
+    "waterSuppliedPerDay_score": scores[2],
+    "reduction_score": scores[3],
+  })
+  responseObj.fourSLB.data = slbWeigthed
     return res.status(200).json({
         success: true,
         data: responseObj

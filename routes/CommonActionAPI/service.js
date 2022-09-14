@@ -88,7 +88,7 @@ module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, l
     
             case "STATE":
                 if(loggedInUser =="MoHUA"){
-                    if(actionTakenByRole="STATE" && !isDraft){
+                    if(actionTakenByRole=="STATE" && !isDraft){
                         return true;
                     }else{
                         return false;
