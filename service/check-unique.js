@@ -20,6 +20,8 @@ const mobile = async (mobile,checkDepartment=true, _id="", role)=>{
                     if(_id && user[0]._id.toString() == _id.toString()){
                         user = null;
                     }
+                }else if (user.length === 0){
+                    user = null
                 }
                 resolve(user);
             }catch (e) {
@@ -75,6 +77,8 @@ const email = async (email, checkDepartment=true, _id, role)=>{
                     if(_id && user[0]._id.toString() == _id.toString()){
                         user = null;
                     }
+                }else if(user.length === 0){
+                    user = null
                 }
                 resolve(user);
             }catch (e) {
