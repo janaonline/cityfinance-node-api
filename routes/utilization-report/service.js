@@ -146,6 +146,7 @@ module.exports.createOrUpdate = async (req, res) => {
       })
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
+      formData['ulbSubmit'] = new Date();
       const form = await UtilizationReport.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
@@ -212,9 +213,10 @@ module.exports.createOrUpdate = async (req, res) => {
 
     let savedData;
     if (currentSavedUtilRep) {
+      req.body['ulbSubmit'] = new Date();
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep }},
+        { $set: req.body, $push: { history: req.body }},
         {new: true, runValidators: true}
       );
       if(savedData){
