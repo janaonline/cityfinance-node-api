@@ -22,7 +22,7 @@ const propertyTaxFloorRateSchema = new Schema({
     },
     stateNotification: pdfSchema(),
     actPage:{
-        type: Number,
+        type: String,
         default:""
     },
     floorRate: pdfSchema(),

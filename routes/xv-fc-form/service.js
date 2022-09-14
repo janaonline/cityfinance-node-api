@@ -29,6 +29,9 @@ const util = require("util");
 const { isNull } = require("util");
 const statusTypes = require('../../util/statusTypes')
 const FORM_STATUS = require("../../util/newStatusList");
+const SLB28 = require('../../models/TwentyEightSlbsForm')
+const IndicatorLineItem = require('../../models/indicatorLineItems')
+const {calculateSlbMarks} = require('../Scoring/service')
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -1059,7 +1062,8 @@ module.exports.create = catchAsync(async (req, res) => {
   }
 });
 
-
+const design_year_2122 = ObjectId("606aaf854dff55e6c075d219") 
+const design_year_2223 = ObjectId("606aafb14dff55e6c075d3ae")
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded,
     filter = req.body.filter,
@@ -1069,12 +1073,139 @@ module.exports.get = catchAsync(async (req, res) => {
     design_year = req.query?.design_year,
     { ulb } = req.params,
     actionAllowed = ["ADMIN", "MoHUA", "PARTNER", "STATE", "ULB"];
-
+let from = req.query?.from
+if(!ulb){
+  ulb = req.decoded.ulb
+}
   if (!design_year || design_year === "") {
     return res.status(400).json({
       success: false,
       message: "Design Year Not Found!",
     });
+  }
+  if(from == "2223"){
+    const lineItems = await IndicatorLineItem.find({
+      isPartOfSLB : true
+    }).select("_id").lean()
+    const lineItemIDs = []
+     lineItems.forEach(el=> {
+      lineItemIDs.push(el._id)
+    })
+let slbData = await XVFCGrantULBData.findOne({
+  design_year: design_year_2122,
+  ulb: ObjectId(ulb),
+}).lean()
+if(!slbData){
+  return res.status(400).json({
+    success: false,
+    message:"Data not Found"
+  })
+}
+let twoEightSlbData = await SLB28.findOne({
+  design_year: design_year_2223,
+  ulb: ObjectId(ulb),
+  status:"APPROVED",
+
+}).lean()
+if(twoEightSlbData){
+  let allData = twoEightSlbData['data'];
+  // let filteredData = allData.filter(el => {
+  //   if (lineItemIDs.includes(el.indicatorLineItem))
+  //   return el
+    
+  // })
+  for(let key in slbData['waterManagement']){
+   let value = {}
+    if(key == "houseHoldCoveredPipedSupply"){
+value = allData.filter(el => {
+  return( el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b53a")
+})
+      Object.assign( slbData['waterManagement'][key], {
+        "achieved": {
+          "2122":String(value[0]['actual']['value'])
+        }
+      })
+     
+    }else if(key == "waterSuppliedPerDay"){
+      value = allData.filter(el => {
+        return el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b53c"
+      })
+            Object.assign( slbData['waterManagement'][key], {
+              "achieved": {
+                "2122":String(value[0]['actual']['value'])
+              }
+            })
+
+    }else if(key == "reduction"){
+      value = allData.filter(el => {
+        return el.indicatorLineItem.toString() ==  "6284d6f65da0fa64b423b540"
+      })
+            Object.assign( slbData['waterManagement'][key], {
+              "achieved": {
+                "2122":String(value[0]['actual']['value'])
+              }
+            })
+    }else if(key == "houseHoldCoveredWithSewerage"){
+      value = allData.filter(el => {
+        return el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b52a"
+      })
+            Object.assign( slbData['waterManagement'][key], {
+              "achieved": {
+                "2122":String(value[0]['actual']['value'])
+              }
+            })
+    }
+  }
+  //calculateScore
+  let scores =  []
+  scores = calculateSlbMarks(slbData.waterManagement)
+  for(let key in slbData['waterManagement']){
+    let value = {}
+     if(key == "houseHoldCoveredPipedSupply"){
+ 
+       Object.assign( slbData['waterManagement'][key], {
+         "score": {
+           "2122":scores[3]
+         }
+       })
+      
+     }else if(key == "waterSuppliedPerDay"){
+      
+             Object.assign( slbData['waterManagement'][key], {
+               "score": {
+                 "2122":scores[0]
+               }
+             })
+ 
+     }else if(key == "reduction"){
+   
+             Object.assign( slbData['waterManagement'][key], {
+               "score": {
+                 "2122":scores[1]
+               }
+             })
+     }else if(key == "houseHoldCoveredWithSewerage"){
+     
+             Object.assign( slbData['waterManagement'][key], {
+               "score": {
+                 "2122":scores[2]
+               }
+             })
+     }
+   }
+  return res.status(200).json({
+    success: true,
+    data: [slbData],
+    message:""
+  })
+}else{
+
+ return res.status(200).json({
+    success: true,
+    data: [slbData],
+    message:"28SLB Forms Not Filled/ Approved Yet"
+  })
+}
   }
   if (user.role != "ULB" && ulb) {
     let query = {

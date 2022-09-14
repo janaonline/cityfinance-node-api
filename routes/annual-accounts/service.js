@@ -24,6 +24,10 @@ const {groupByKey} = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
 const {canTakenAction} = require('../CommonActionAPI/service')
 const fs = require("fs");
+const Service = require('../../service');
+const {FormNames} = require('../../util/FormNames');
+
+
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -34,11 +38,79 @@ const time = () => {
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
+
     req.body.actionTakenBy = req?.decoded._id;
     req.body.actionTakenByRole = req?.decoded.role;
+    const formName = FormNames["annualAcc"];
+    const {name: ulbName} =  req.decoded;
+    
     req.body.ulb = req?.decoded.ulb;
     const ulb = req?.decoded.ulb;
     req.body.modifiedAt = new Date();
+    req.body['status']="PENDING";
+    let userData = await User.find({
+      $or: [
+        { isDeleted: false, 
+          ulb: ObjectId(ulb), 
+          role: "ULB"
+        },
+        {
+          isDeleted: false,
+          state: ObjectId(req?.decoded.state),
+          role: "STATE",
+          isNodalOfficer: true,
+        },
+      ],
+    }).lean();
+
+    let emailAddress = [];
+    let ulbUserData = {},
+      stateUserData = {};
+    for (let i = 0; i < userData.length; i++) {
+      if (userData[i]) {
+        if (userData[i].role === "ULB") {
+          ulbUserData = userData[i];
+        } else if (userData[i].role === "STATE") {
+          stateUserData = userData[i];
+        }
+      }
+      if (ulbUserData && ulbUserData.commissionerEmail) {
+        emailAddress.push(ulbUserData.commissionerEmail);
+      }
+      if (stateUserData && stateUserData.email) {
+        emailAddress.push(stateUserData.email);
+      }
+      ulbUserData = {};
+      stateUserData = {};
+    }
+    //unique email address
+    emailAddress = Array.from(new Set(emailAddress));
+ 
+    let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(ulbName, formName);
+    let mailOptions = {
+      Destination: {
+        /* required */
+        ToAddresses: emailAddress,
+      },
+      Message: {
+        /* required */
+        Body: {
+          /* required */
+          Html: {
+            Charset: "UTF-8",
+            Data: ulbTemplate.body,
+          },
+        },
+        Subject: {
+          Charset: "UTF-8",
+          Data: ulbTemplate.subject,
+        },
+      },
+      Source: process.env.EMAIL,
+      /* required */
+      ReplyToAddresses: [process.env.EMAIL],
+    };
+  
 
 
     let formData = {};
@@ -131,17 +203,21 @@ if(formData.isDraft){
   Object.assign(currentData,formData ) 
 
   formData['history'] = submittedForm['history']
-  formData['history'].push(currentData)
-  delete formData['_id']
-const addedHistory = await AnnualAccountData.findOneAndUpdate(
-  condition,
-  formData
-);
-return res.status(200).json({
-  status: true,
-  message: "form submitted",
-  data: addedHistory
-})
+  formData["history"].push(currentData);
+  delete formData["_id"];
+  const addedHistory = await AnnualAccountData.findOneAndUpdate(
+    condition,
+    formData
+  );
+  if(addedHistory){//email trigger after form submission
+    Service.sendEmail(mailOptions);
+  }
+
+  return res.status(200).json({
+    status: true,
+    message: "form submitted",
+    data: addedHistory,
+  });
 
 }
     }
@@ -162,6 +238,10 @@ return res.status(200).json({
             message: "Form history not added."
           })
         } else {
+          if(addedHistory){//email trigger after form submission
+            Service.sendEmail(mailOptions);
+          }
+        
           return res.status(200).json({
             status: true,
             message: "form submitted",
@@ -198,6 +278,7 @@ return res.status(200).json({
     ) {
       req.body.status = "N/A";
     }
+    req.body.status  = "PENDING"
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true },
@@ -1226,7 +1307,7 @@ console.log(status)
 let dataCollection = {}
  dataCollection = await DataCollection.findOne({ulb: ObjectId(ulb)}).lean()
 let dataSubmittedByOpenPage = false
-if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length() > 0){
+if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray(dataCollection?.documents?.financial_year_2019_20?.pdf) && (dataCollection?.documents?.financial_year_2019_20?.pdf).length > 0){
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
@@ -1760,7 +1841,6 @@ exports.action = async (req, res) => {
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: ObjectId(design_year),
-      isActive: true,
     }).select({
       history: 0,
     });
@@ -1803,7 +1883,7 @@ exports.action = async (req, res) => {
         msg: "no AnnualAccountData found",
       });
     }
-
+if(design_year == "606aaf854dff55e6c075d219" )
     await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
