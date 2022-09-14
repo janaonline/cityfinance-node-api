@@ -20,19 +20,25 @@ const {ModelNames} = require('../../util/15thFCstatus')
 const CUTOFF =  {
     STATE:{
         nmpc_untied: {
-            
+            [ModelNames.gtc]: 100,
+            [ModelNames.sfc]: 100,
+            [ModelNames.pTAX]:100
         },
         nmpc_tied : {
-            
+            [ModelNames.gtc]: 100,
+            [ModelNames.sfc]: 100,
+            [ModelNames.pTAX]:100
         },
         mpc_tied: {
+            [ModelNames.gtc]: 100,
+            [ModelNames.sfc]: 100,
+            [ModelNames.pTAX]:100
         }
     },
     ULB:{
         nmpc_untied: {
             [ModelNames.annualAcc]: 25,
-            linkPFMS: 100,
-            
+            [ModelNames.linkPFMS]: 100,
         },
         nmpc_tied : {
             [ModelNames.annualAcc]: 25,
@@ -324,8 +330,7 @@ function approvedForms(forms,formCategory){
                 }
                 break;
             case "STATE":
-                if((calculateStatus(status, role, isDraft, formCategory) === StatusList.Approved_By_MoHUA) ||
-                    (calculateStatus(status, role, isDraft, formCategory) === StatusList.Under_Review_By_MoHUA)){
+                if((calculateStatus(status, role, isDraft, formCategory) === StatusList.Approved_By_MoHUA) ){
                     numOfApprovedForms++;
                 }
                 break;
@@ -697,32 +702,32 @@ module.exports.dashboard = async (req, res) => {
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
                     approvedFormPercent[modelName] = 0;
-                    totalApprovedStateForm[modelName] = totalApprovedForm;
+                    totalApprovedStateForm[modelName] = (totalApprovedForm*100)/1;
                     totalSubmittedStateForm[modelName] = submittedForms.length;
 
                 } else if(submittedForms.length === 1){
                     submitPercent = 100;
                     submittedFormPercent[modelName] = submitPercent;
                     totalApprovedForm = approvedForms(submittedForms, formCategory);
-                    approvedFormPercent[modelName] = 100 
+                    approvedFormPercent[modelName] = (totalApprovedForm*100)/1;
                     totalApprovedStateForm[modelName] = totalApprovedForm;
                     totalSubmittedStateForm[modelName] = submittedForms.length;
                 }
             }
 
             let formData = getFormData(formCategory, modelName, sidemenuForms, reviewSidemenuForm);
-            //Adding status to formData
-            if(submittedFormPercent[modelName] <= 0){
-                formData.status = "Not started"
-            } else if (approvedFormPercent[modelName] === 100){
-                formData.status = "Submitted"
-            } else {
-                formData.status = "In Progress"
-            }
+            
+            
             if(!(CUTOFF[formCategory][data.formType][modelName])){
                 cutOff = "NA"
             } else {
                 cutOff = CUTOFF[formCategory][data.formType][modelName]
+            }
+            //Adding status to formData
+            if(approvedFormPercent[modelName] >= cutOff){
+                formData.status = "Eligible for Grant Claim"
+            }else if(approvedFormPercent[modelName] < cutOff){
+                formData.status = "Not yet eligible for Grant Claim"
             }
             if(formCategory === "ULB"){
                 ulbResponse = {

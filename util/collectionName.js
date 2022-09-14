@@ -12,7 +12,8 @@ module.exports = {
     "state_gtc" :"GTC",
     "state_action_plan" :"ActionPlan",
     "state_grant_alloc" : "GrantAllocation",
-    "state_grant_claim" : "GrantClaim"
+    "state_grant_claim" : "GrantClaim",
+    "28SLB": "TwentyEightSlbsForm"
 
 
 } 
