@@ -50,6 +50,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
         
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
+        formData['ulbSubmit'] = "";
         
         let condition = {}; // condition to find a document using ulb and design_year
         condition['ulb'] = ObjectId(data.ulb);
@@ -66,7 +67,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
         let emailAddress = [];
         let ulbUserData = {},
           stateUserData = {};
-        for(let i =0 ; i< userData.length; i++){
+        for(let i =0 ; i< userData.length; i++){//getting email address from the data
             if(userData[i]){
                 if(userData[i].role === "ULB"){
                     ulbUserData = userData[i];
@@ -83,7 +84,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
         }
         //unique email address
         emailAddress =  Array.from(new Set(emailAddress))
-       
+       //importing email template
         let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
           ulbName,
           formName
@@ -123,10 +124,12 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 }) 
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    savedBody["ulbSubmit"] = new Date();
                     const formSubmit = await collection.create(savedBody);
                     formData['createdAt'] = formSubmit.createdAt;
                     formData['modifiedAt'] = formSubmit.modifiedAt;
                     formData['certDate'] = formSubmit.certDate;
+                    formData['ulbSubmit'] = savedBody['ulbSubmit'];
                     if (formSubmit) {//add history
                         let updateData = await collection.findOneAndUpdate(condition, 
                             {
@@ -171,6 +174,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     const formSubmit = await collection.findOne(condition);
                     formData['createdAt'] = formSubmit.createdAt;
                     formData['modifiedAt'] = new Date();
+                    formData['ulbSubmit'] =  new Date();
                     if(formData['certDate'] === ""){
                         formData['certDate'] = null;
                     }
