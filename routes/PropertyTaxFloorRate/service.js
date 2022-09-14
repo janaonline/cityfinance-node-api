@@ -23,7 +23,7 @@ module.exports.getForm = async (req,res)=>{
         condition.state = data.state;
         condition.design_year = data.design_year;
 const role = req.decoded.role
-        const form = await PropertyTaxFloorRate.findOne(condition);
+        const form = await PropertyTaxFloorRate.findOne(condition).lean();
 
         if (form) {
     Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE",role ) })
