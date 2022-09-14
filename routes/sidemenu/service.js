@@ -163,8 +163,14 @@ module.exports.get = catchAsync(async (req, res) => {
     let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean()
     if (data.length ) {
   if(role == "ULB"){
+    if(isUA == 'Yes'){
+        data = data.filter(el => el.category != 'Performance Conditions')
+     }else{
+         data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
+     }
+
     data.forEach((el,)=> {
-        if( el.category){
+        if( el.category && el.collectionName != "GTC"){
             let  flag = 0;
             output.forEach(el2 => {
                 if((el._id).toString() == (Object.keys(el2)[0])){
@@ -172,7 +178,7 @@ module.exports.get = catchAsync(async (req, res) => {
                     flag = 1;
                 }
             })
-        if(!flag && el.collectionName.toLowerCase() != "GTC"){
+        if(!flag && el.collectionName != "GTC"){
                 Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
         }
         }else{
