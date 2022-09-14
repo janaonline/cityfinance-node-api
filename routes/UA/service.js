@@ -588,8 +588,9 @@ let slbWeigthed
 
 
   Object.assign(responseObj.fourSLB.data, slbWeigthed )
+  let usableData = []
   TEslbdata.forEach(el => {
-    
+el.data
   })  
     // ulbs.forEach(async el => {
 
