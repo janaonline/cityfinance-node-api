@@ -5,6 +5,7 @@ const Year = require('../../models/Year');
 const { ULBMASTER } = require('../../_helper/constants');
 const StatusList = require('../../util/newStatusList')
 const Ulb = require('../../models/Ulb.js')
+const State = require('../../models/State')
 //Importing all ULB forms
 const AnnualAccounts = require('../../models/AnnualAccounts')
 const DUR = require('../../models/UtilizationReport')
@@ -16,6 +17,12 @@ const PropTax = require('../../models/PropertyTaxOp')
 const {calculateStatus} = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
+
+//STate Forms
+const SFC = require('../../models/StateFinanceCommissionFormation')
+const PTFR = require('../../models/PropertyTaxFloorRate')
+const GTC_STATE = require('../../models/GrantTransferCertificate')
+const ActionPlan = require('../../models/ActionPlans')
 const USER_TYPES = require('../../util/userTypes')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
@@ -28,6 +35,16 @@ let FormModelMapping = {
     "PFMSAccount": ObjectId("62aa1cc9c9a98b2254632a8e"),
     "TwentyEightSlbForm" : ObjectId("62f0dbbf596298da6d3f4076"),
     "PropertyTaxOp" : ObjectId("62aa1ceac9a98b2254632a92")
+    
+}
+let FormModelMapping_State = {
+    "GrantTransferCertificate": ObjectId("62c552c52954384b44b3c386"),
+    "PropertyTaxFloorRate": ObjectId("62c5534e2954384b44b3c38a"),
+    "StateFinanceCommissionFormation": ObjectId("62c553822954384b44b3c38e"),
+    "ActionPlan" : ObjectId("62c554772954384b44b3c39a"),
+    "GrantAllocation": ObjectId("62c554932954384b44b3c39e"),
+    "GrantClaim": ObjectId("62c554cb2954384b44b3c3a2"),
+
     
 }
 
@@ -127,20 +144,28 @@ module.exports.get = catchAsync(async (req, res) => {
                 output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role, role))
             }
         }
+    }else if (role == 'STATE') {
+        let stateInfo = await State.findOne({ _id: ObjectId(_id) }).lean();
+        let condition = {
+            state: ObjectId(_id),
+            design_year: ObjectId(year)
+        }
+        let formArr = [SFC, PTFR, GTC_STATE, ActionPlan]
+       for(el of formArr) {
+            let formData = await el.findOne(condition).lean()
+            if (formData) {
+
+                output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']] , el['modelName'], user.role, role))
+            }
+        }
     }
 
     let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean()
-    if (data.length) {
-        // delete the non applicable entries
-        if(isUA == 'Yes'){
-           data = data.filter(el => el.category != 'Performance Conditions')
-        }else{
-            data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
-        }
-
+    if (data.length && role == "STATE") {
+  
         // add the formStatus and tooltip
 data.forEach((el,)=> {
-    if(el.category && el.collectionName != 'GTC'){
+    if( el.category.toLowerCase() != "ulb management" ){
         let  flag = 0;
         output.forEach(el2 => {
             if((el._id).toString() == (Object.keys(el2)[0])){
@@ -148,7 +173,7 @@ data.forEach((el,)=> {
                 flag = 1;
             }
         })
-    if(!flag && el.dbCollectionName != "xvfcgrantulbforms"){
+    if(!flag && el.category.toLowerCase() != "ulb management"){
             Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
     }
     }else{
@@ -188,6 +213,7 @@ data.forEach((el,)=> {
 //sorting the data as per sequence no;
 tempData = sortByPosition(tempData);
 //creating card Data
+if(role=="ULB"){
     data.forEach(el => {
         if(el.name.toLowerCase() != 'overview'  &&  el.name.toLowerCase() != 'resources' ){
             cardObj.image = el?.icon;
@@ -215,10 +241,12 @@ tempData = sortByPosition(tempData);
         
     
     })
+}   
+
     res.status(200).json({
         success: true,
         data: tempData,
-        card: cardArr
+        card: role == "ULB" ? cardArr : []
     })
 })
 
