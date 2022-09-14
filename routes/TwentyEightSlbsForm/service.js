@@ -43,6 +43,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         formData['actionTakenBy'] = ObjectId(user._id);
         formData['actionTakenByRole'] = "ULB";
         formData['status'] = "PENDING"
+        formData['ulbSubmit'] = "";
 
         if (!(data.ulb && data.design_year)) {
           return res.status(400).json({
@@ -125,9 +126,11 @@ module.exports.createOrUpdateForm = async (req, res) =>{
             return res.status(200).json({
                 status: true,
                 message: "Form already submitted."
-            })}
+            })
+        }
             else{
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    formData['ulbSubmit'] = new Date();
                     const form = await TwentyEightSlbsForm.create(formData);
                     
                     formData.createdAt = form.createdAt;
@@ -188,6 +191,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
                     formData.modifiedAt.toISOString();
+                    formData['ulbSubmit'] = new Date();
                  if(formData.data.length == 28){
                     let currentData = {}
                     Object.assign(currentData,formData ) 
