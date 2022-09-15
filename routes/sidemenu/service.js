@@ -161,28 +161,56 @@ module.exports.get = catchAsync(async (req, res) => {
     }
 
     let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean()
-    if (data.length && role == "STATE") {
-  
+    if (data.length ) {
+  if(role == "ULB"){
+    if(isUA == 'Yes'){
+        data = data.filter(el => el.category != 'Performance Conditions')
+     }else{
+         data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
+     }
+
+    data.forEach((el,)=> {
+        if( el.category && el.collectionName != "GTC"){
+            let  flag = 0;
+            output.forEach(el2 => {
+                if((el._id).toString() == (Object.keys(el2)[0])){
+                    Object.assign(el, el2[Object.keys(el2)[0]])
+                    flag = 1;
+                }
+            })
+        if(!flag && el.collectionName != "GTC"){
+                Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
+        }
+        }else{
+            // where tick /cross logic is not applicable
+            Object.assign(el, {tooltip: "", tick: ""})
+        }
+      
+        
+    }) 
+  }else if(role == "STATE"){
+    data.forEach((el,)=> {
+        if( el.category.toLowerCase() != "ulb management"){
+            let  flag = 0;
+            output.forEach(el2 => {
+                if((el._id).toString() == (Object.keys(el2)[0])){
+                    Object.assign(el, el2[Object.keys(el2)[0]])
+                    flag = 1;
+                }
+            })
+        if(!flag && el.category.toLowerCase() != "ulb management"){
+                Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
+        }
+        }else{
+            // where tick /cross logic is not applicable
+            Object.assign(el, {tooltip: "", tick: ""})
+        }
+      
+        
+    }) 
+  }
         // add the formStatus and tooltip
-data.forEach((el,)=> {
-    if( el.category.toLowerCase() != "ulb management" ){
-        let  flag = 0;
-        output.forEach(el2 => {
-            if((el._id).toString() == (Object.keys(el2)[0])){
-                Object.assign(el, el2[Object.keys(el2)[0]])
-                flag = 1;
-            }
-        })
-    if(!flag && el.category.toLowerCase() != "ulb management"){
-            Object.assign(el, {tooltip: "Not Started", tick: ticks['red']})
-    }
-    }else{
-        // where tick /cross logic is not applicable
-        Object.assign(el, {tooltip: "", tick: ""})
-    }
-  
-    
-})        
+       
 // adding previous and next url
 // data.sort() sequence
     tempData = data.sort((a, b)=>{
