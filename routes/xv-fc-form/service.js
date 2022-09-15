@@ -214,7 +214,7 @@ const time = () => {
 module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
   let user = req.decoded;
 
-  if (user.role == "STATE" || user.role == "ADMIN" || user.role == "MoHUA") {
+  if (user.role) {
     let { design_year } = req.params;
     let { ua_id } = req.query;
     if (!ua_id) {
