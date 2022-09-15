@@ -146,6 +146,7 @@ module.exports.createOrUpdate = async (req, res) => {
       })
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
+      formData['ulbSubmit'] = new Date();
       const form = await UtilizationReport.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
@@ -181,7 +182,7 @@ module.exports.createOrUpdate = async (req, res) => {
         } else {
           if(addedHistory){
             //email trigger after form submission
-           Service.sendEmail(mailOptions);
+          //  Service.sendEmail(mailOptions);
            }
           return res.status(200).json({
             status: true,
@@ -212,14 +213,15 @@ module.exports.createOrUpdate = async (req, res) => {
 
     let savedData;
     if (currentSavedUtilRep) {
+      req.body['ulbSubmit'] = new Date();
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep }},
+        { $set: req.body, $push: { history: req.body }},
         {new: true, runValidators: true}
       );
       if(savedData){
         //email trigger after form submission
-       Service.sendEmail(mailOptions);
+      //  Service.sendEmail(mailOptions);
       }
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(

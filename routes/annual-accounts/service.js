@@ -119,6 +119,7 @@ exports.createUpdate = async (req, res) => {
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
     formData['status'] = 'PENDING';
+    formData["ulbSubmit"] = "";
     let proData , audData
       if (req.body.unAudited.submit_annual_accounts) {
         proData = req.body.unAudited.provisional_data;
@@ -200,6 +201,7 @@ if(formData.isDraft){
   })
 }else if(!formData.isDraft){
   let currentData = {}
+  formData['ulbSubmit'] = new Date();
   Object.assign(currentData,formData ) 
 
   formData['history'] = submittedForm['history']
@@ -210,7 +212,7 @@ if(formData.isDraft){
     formData
   );
   if(addedHistory){//email trigger after form submission
-    Service.sendEmail(mailOptions);
+    // Service.sendEmail(mailOptions);
   }
 
   return res.status(200).json({
@@ -222,6 +224,7 @@ if(formData.isDraft){
 }
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
+      formData["ulbSubmit"] = new Date();
       const form = await AnnualAccountData.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
@@ -239,7 +242,7 @@ if(formData.isDraft){
           })
         } else {
           if(addedHistory){//email trigger after form submission
-            Service.sendEmail(mailOptions);
+            // Service.sendEmail(mailOptions);
           }
         
           return res.status(200).json({

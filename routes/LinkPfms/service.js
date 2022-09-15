@@ -63,6 +63,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
+        formData['ulbSubmit'] = "";
     
         if(formData["isUlbLinkedWithPFMS"] === null){
             formData["isUlbLinkedWithPFMS"] = "";
@@ -150,7 +151,8 @@ module.exports.createOrUpdateForm = async (req, res) =>{
             //if actionTakenByRole !== ULB && isDraft=== false && status !== "APPROVED"
 
             } else {
-                if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt 
+                    formData["ulbSubmit"] =  new Date();  
                     const form = await LinkPFMS.create(formData);
                     formData.createdAt = form.createdAt;
                     formData.modifiedAt = form.modifiedAt;
@@ -162,7 +164,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                         )
                         if(addedHistory){
                          //email trigger after form submission
-                        Service.sendEmail(mailOptions);
+                        // Service.sendEmail(mailOptions);
                         }
                         return response(addedHistory, res,"Form created.", "Form not created")
                     } else {
@@ -190,6 +192,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
                     formData.modifiedAt.toISOString();
+                    formData['ulbSubmit'] = new Date();
                     const updatedForm = await LinkPFMS.findOneAndUpdate(
                         condition,
                         {
@@ -200,7 +203,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     );
                     if(updatedForm){
                       //email trigger after form submission
-                      Service.sendEmail(mailOptions);
+                    //   Service.sendEmail(mailOptions);
                     }
                     return response( updatedForm, res, "Form updated.","Form not updated.")
                 }

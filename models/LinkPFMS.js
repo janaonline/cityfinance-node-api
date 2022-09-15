@@ -97,7 +97,7 @@ const PFMSAccountSchema = new Schema(
         otherDocs: pdfSchema(),
         rejectReason: { type: String, default: "" },
         responseFile: pdfSchema(),
-        
+        ulbSubmit: {type: Date},
         responseFile_state:pdfSchema(),
         responseFile_mohua:pdfSchema(),
         rejectReason_state:{ type: String, default: "" },

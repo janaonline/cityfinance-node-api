@@ -45,6 +45,9 @@ const OdfFormCollectionSchema = new Schema({
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         }
     },
+    ulbSubmit:{
+        type: Date,
+    },
     isDraft:{
         type: Boolean,
         default: true,
