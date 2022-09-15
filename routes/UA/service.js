@@ -577,6 +577,7 @@ return res.status(200).json({
     }
 
 let slbWeigthed 
+console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
  await axios.get(`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
             console.log('Data Fetched');
              slbWeigthed = response.data[0]
