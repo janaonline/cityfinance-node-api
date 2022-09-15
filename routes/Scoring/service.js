@@ -163,34 +163,35 @@ module.exports.calculateSlbMarks = (data) => {
 
     let x,y,z;
     let obtainedMarks =[];
-    if(Array.isArray(data)){
-      data.forEach(el=> {
-        if(Object.keys(el)[0].includes("waterSuppliedPerDay") && Object.keys(el)[0].includes("2021")){
-         obj.waterSuppliedPerDay.baseline["2021"] = Object.values(el)[0]
-        }else if(Object.keys(el)[0].includes("waterSuppliedPerDay") && Object.keys(el)[0].includes("2122") && !Object.keys(el)[0].includes("actual") ){
-            obj.waterSuppliedPerDay.target["2122"] = Object.values(el)[0]
-        }else if(Object.keys(el)[0].includes("waterSuppliedPerDay") && Object.keys(el)[0].includes("2122") && Object.keys(el)[0].includes("actual")){
-            obj.waterSuppliedPerDay.achieved["2122"] = Object.values(el)[0]
-        } else  if(Object.keys(el)[0].includes("reduction") && Object.keys(el)[0].includes("2021")){
-            obj.reduction.baseline["2021"] = Object.values(el)[0]
-           }else if(Object.keys(el)[0].includes("reduction") && Object.keys(el)[0].includes("2122") && !Object.keys(el)[0].includes("actual") ){
-               obj.reduction.target["2122"] = Object.values(el)[0]
-           }else if(Object.keys(el)[0].includes("reduction") && Object.keys(el)[0].includes("2122") && Object.keys(el)[0].includes("actual")){
-               obj.reduction.achieved["2122"] = Object.values(el)[0]
-           } else  if(Object.keys(el)[0].includes("houseHoldCoveredWithSewerage") && Object.keys(el)[0].includes("2021")){
-            obj.houseHoldCoveredWithSewerage.baseline["2021"] = Object.values(el)[0]
-           }else if(Object.keys(el)[0].includes("houseHoldCoveredWithSewerage") && Object.keys(el)[0].includes("2122") && !Object.keys(el)[0].includes("actual") ){
-               obj.houseHoldCoveredWithSewerage.target["2122"] = Object.values(el)[0]
-           }else if(Object.keys(el)[0].includes("houseHoldCoveredWithSewerage") && Object.keys(el)[0].includes("2122") && Object.keys(el)[0].includes("actual")){
-               obj.houseHoldCoveredWithSewerage.achieved["2122"] = Object.values(el)[0]
-           }  else  if(Object.keys(el)[0].includes("houseHoldCoveredPipedSupply") && Object.keys(el)[0].includes("2021")){
-            obj.houseHoldCoveredPipedSupply.baseline["2021"] = Object.values(el)[0]
-           }else if(Object.keys(el)[0].includes("houseHoldCoveredPipedSupply") && Object.keys(el)[0].includes("2122") && !Object.keys(el)[0].includes("actual") ){
-               obj.houseHoldCoveredPipedSupply.target["2122"] = Object.values(el)[0]
-           }else if(Object.keys(el)[0].includes("houseHoldCoveredPipedSupply") && Object.keys(el)[0].includes("2122") && Object.keys(el)[0].includes("actual")){
-               obj.houseHoldCoveredPipedSupply.achieved["2122"] = Object.values(el)[0]
+    if(data.hasOwnProperty("ua")){
+        for(let el in data){
+      
+        if(el.includes("waterSuppliedPerDay") && el.includes("2021")){
+         obj.waterSuppliedPerDay.baseline["2021"] = data[el]
+        }else if(el.includes("waterSuppliedPerDay") && el.includes("2122") && !el.includes("actual") ){
+            obj.waterSuppliedPerDay.target["2122"] = data[el]
+        }else if(el.includes("waterSuppliedPerDay") && el.includes("2122") && el.includes("actual")){
+            obj.waterSuppliedPerDay.achieved["2122"] = data[el]
+        } else  if(el.includes("reduction") && el.includes("2021")){
+            obj.reduction.baseline["2021"] = data[el]
+           }else if(el.includes("reduction") && el.includes("2122") && !el.includes("actual") ){
+               obj.reduction.target["2122"] = data[el]
+           }else if(el.includes("reduction") && el.includes("2122") && el.includes("actual")){
+               obj.reduction.achieved["2122"] = data[el]
+           } else  if(el.includes("houseHoldCoveredWithSewerage") && el.includes("2021")){
+            obj.houseHoldCoveredWithSewerage.baseline["2021"] = data[el]
+           }else if(el.includes("houseHoldCoveredWithSewerage") && el.includes("2122") && !el.includes("actual") ){
+               obj.houseHoldCoveredWithSewerage.target["2122"] = data[el]
+           }else if(el.includes("houseHoldCoveredWithSewerage") && el.includes("2122") && el.includes("actual")){
+               obj.houseHoldCoveredWithSewerage.achieved["2122"] = data[el]
+           }  else  if(el.includes("houseHoldCoveredPipedSupply") && el.includes("2021")){
+            obj.houseHoldCoveredPipedSupply.baseline["2021"] = data[el]
+           }else if(el.includes("houseHoldCoveredPipedSupply") && el.includes("2122") && !el.includes("actual") ){
+               obj.houseHoldCoveredPipedSupply.target["2122"] = data[el]
+           }else if(el.includes("houseHoldCoveredPipedSupply") && el.includes("2122") && el.includes("actual")){
+               obj.houseHoldCoveredPipedSupply.achieved["2122"] = data[el]
            }
-      })
+      }
     }else{
         obj = {}
         obj = data
@@ -232,8 +233,8 @@ module.exports.calculateSlbMarks = (data) => {
     }
     if(obj.houseHoldCoveredPipedSupply){
         x = Number(obj.houseHoldCoveredPipedSupply.baseline['2021']);
-        y = Number(data.houseHoldCoveredPipedSupply.target['2122']);
-        z = Number(data.houseHoldCoveredPipedSupply.achieved['2122']);
+        y = Number(obj.houseHoldCoveredPipedSupply.target['2122']);
+        z = Number(obj.houseHoldCoveredPipedSupply.achieved['2122']);
         obtainedMarks[3] = incrementFormula(
             x, y, z,
             minMax.houseHoldCoveredPipedSupply.min,

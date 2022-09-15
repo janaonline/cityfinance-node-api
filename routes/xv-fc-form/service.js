@@ -214,7 +214,7 @@ const time = () => {
 module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
   let user = req.decoded;
 
-  if (user.role == "STATE" || user.role == "ADMIN" || user.role == "MoHUA") {
+  
     let { design_year } = req.params;
     let { ua_id } = req.query;
     if (!ua_id) {
@@ -229,7 +229,7 @@ module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
         message: "Design Year Not Found",
       });
     }
-    let state = user.state;
+    // let state = user?.state;
 
     let query1 = [
       {
@@ -941,12 +941,7 @@ houseHoldCoveredPipedSupply2425: {
       message: "Data Found Successfully",
       data: finalOutput,
     });
-  } else {
-    return res.status(403).json({
-      success: false,
-      message: user.role + " Not Authenticated to Perform this Action",
-    });
-  }
+  
 });
 
 extractUlbData = (arr2) => {
