@@ -145,7 +145,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                         )
                         if(addedHistory){
                             //email trigger after form submission
-                           Service.sendEmail(mailOptions);
+                        //    Service.sendEmail(mailOptions);
                            }
                         return response(addedHistory, res,"Form created.", "Form not created")
                     } else {
@@ -209,7 +209,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     if(!updatedForm) rejectResponse(res, "form not created")
                     if(updatedForm){
                         //email trigger after form submission
-                       Service.sendEmail(mailOptions);
+                    //    Service.sendEmail(mailOptions);
                        }
                     return res.status(200).json({
                         success: true,

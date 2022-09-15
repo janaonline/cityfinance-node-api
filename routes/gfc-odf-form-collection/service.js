@@ -138,7 +138,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                             },
                             { new: true } );
                         //email trigger after form submission
-                        Service.sendEmail(mailOptions);
+                        // Service.sendEmail(mailOptions);
 
                         return res.status(200).json({
                             success: true,
@@ -183,7 +183,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                         { returnDocument: "after" });
                     
                     //email trigger after form submission
-                    Service.sendEmail(mailOptions);
+                    // Service.sendEmail(mailOptions);
 
                     return res.status(201).json({
                         success: true,
