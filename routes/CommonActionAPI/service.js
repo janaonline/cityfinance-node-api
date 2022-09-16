@@ -13,6 +13,8 @@ const Sidemenu = require('../../models/Sidemenu');
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
+const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
+const {FormNames} = require('../../util/FormNames');
 
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch(formType){
@@ -203,7 +205,7 @@ function getCollectionName(formName){
     let collection="";
     switch(formName){
         case "Grant Transfer Certificate":
-            collection ="GTC";
+            collection = GrantTransferCertificate;
             break;
         case "Detailed Utilisation Report":
             collection = UtilizationReport;
@@ -288,7 +290,7 @@ module.exports.updateForm = async (req, res) =>{
         const data = req.body;
         const user = req.decoded;
         
-        let ulb="", state = "";
+        let ulb="", state = "", stateData ="";
         let singleForm; //to return updated response for single ulb
         const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)}).lean();
         if(user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA'){
@@ -310,7 +312,9 @@ module.exports.updateForm = async (req, res) =>{
         const { role: actionTakenByRole, _id: actionTakenBy } = user;
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['actionTakenBy'] = actionTakenBy;
-        formData['status'] = data.status;
+        if(masterForm.name !== FormNames.gtc){
+            formData['status'] = data.status;
+        }
         
         //Check if role is other than STATE or MoHUA
         if(actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA"){
@@ -320,7 +324,7 @@ module.exports.updateForm = async (req, res) =>{
             })
         }
         //add reject reason and response file based on role
-       if(masterForm.name != "Annual Accounts" ){
+       if(masterForm.name != FormNames.annualAcc && masterForm.name !== FormNames.gtc){
         if(actionTakenByRole === "STATE"){
             formData['rejectReason_state'] = data.rejectReason;
             formData['responseFile_state'] = data.responseFile;
@@ -378,7 +382,7 @@ module.exports.updateForm = async (req, res) =>{
                     form['responseFile_mohua'] = data.responseFile;
                 }
             }
-                form['history'] = undefined;
+                delete form['history'] ;
                 let updatedForm = await collection.findOneAndUpdate(
                     {ulb , [condition.design_year]: data.design_year},
                     {$set: formData, $push: {history: form }},
@@ -388,28 +392,64 @@ module.exports.updateForm = async (req, res) =>{
                 singleForm = updatedForm;
             }
         }else if( formType === "STATE"){
-            for(let i=0; i < data.state.length; i++){//update status and add history
-                state = data.state[i];
-                form = forms[i];
-                if(form === undefined) continue;
-                form['actionTakenByRole'] = formData.actionTakenByRole;
-                form['actionTakenBy'] = formData.actionTakenBy;
-                form['status'] = formData.status;
-                form['modifiedAt'] = new Date();
-                
-                //add reject reason/responseFile for single ulb entry
-                if (actionTakenByRole === 'MoHUA'){
-                    form['rejectReason_mohua'] = data.rejectReason;
-                    form['responseFile_mohua'] = data.responseFile;
+            if(masterForm.name === FormNames.gtc){
+                // if(data.state.length === 1){
+                    for(let i =0; i< data.statesData.length; i++ ){
+                        form = findTarget(data.statesData[i], forms);
+                        stateData = data.statesData[i];
+                        if(!form) continue;
+                        
+                        form['actionTakenByRole'] = formData.actionTakenByRole;
+                        form['actionTakenBy'] = formData.actionTakenBy;
+                        form['modifiedAt'] = new Date();
+                        form['status'] = stateData["status"];
+                        formData['status'] = stateData["status"];
+                        
+                        //add reject reason/responseFile for single state entry
+                        if(actionTakenByRole === "MoHUA"){
+                            form['rejectReason_mohua'] = stateData["rejectReason"];
+                            form['responseFile_mohua'] = stateData['responseFile'];
+                            formData['rejectReason_mohua'] = stateData["rejectReason"];
+                            formData['responseFile_mohua'] = stateData["responseFile"];
+                        }
+                        delete form['history'];
+                        delete stateData['rejectReason'];
+                        delete stateData['responseFile'];
+                        delete stateData['status'];
+                        let updatedForm = await collection.findOneAndUpdate(
+                            stateData,
+                          { $set: formData, $push: { history: form } },
+                          { new: true, runValidators: true }
+                        ).lean();
+                        numberOfFormsUpdated++;
+                        singleForm = updatedForm;
+                    }
+
+                // }
+            } else {
+                for(let i=0; i < data.state.length; i++){//update status and add history
+                    state = data.state[i];
+                    form = forms[i];
+                    if(form === undefined) continue;
+                    form['actionTakenByRole'] = formData.actionTakenByRole;
+                    form['actionTakenBy'] = formData.actionTakenBy;
+                    form['status'] = formData.status;
+                    form['modifiedAt'] = new Date();
+                    
+                    //add reject reason/responseFile for single ulb entry
+                    if (actionTakenByRole === 'MoHUA'){
+                        form['rejectReason_mohua'] = data.rejectReason;
+                        form['responseFile_mohua'] = data.responseFile;
+                    }
+                    delete form['history'];
+                    let updatedForm = await collection.findOneAndUpdate(
+                        {state , [condition.design_year]: data.design_year},
+                        {$set: formData, $push: {history: form }},
+                        {new: true, runValidators: true}
+                        );
+                    numberOfFormsUpdated++;
+                    singleForm = updatedForm;
                 }
-                form['history'] = undefined;
-                let updatedForm = await collection.findOneAndUpdate(
-                    {state , [condition.design_year]: data.design_year},
-                    {$set: formData, $push: {history: form }},
-                    {new: true, runValidators: true}
-                    );
-                numberOfFormsUpdated++;
-                singleForm = updatedForm;
             }
         }
         if(numberOfFormsUpdated === 1 ){
@@ -504,3 +544,31 @@ module.exports.annualaccount = catchAsync(async (req,res)=>{
     }//update status and add history
 
 })
+
+
+function findTarget(target, arr){
+    let obj ="";
+    let targetArr = arr.filter((element) => {
+        let form = {
+            state: element.state,
+            design_year: element.design_year,
+            type: element.type,
+            installment: element.installment,
+            year: element.year
+        }
+        let targetObj = {
+            state: target.state,
+            design_year: target.design_year,
+            type: target.type,
+            installment: target.installment,
+            year: target.year
+        }
+        if(JSON.stringify(form) === JSON.stringify(targetObj)){
+            return element;
+        }
+    })
+    if(targetArr.length === 1){
+        obj = targetArr[0];
+    }
+    return obj;
+}
