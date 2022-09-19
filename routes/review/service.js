@@ -33,7 +33,7 @@ function createDynamicColumns(collectionName){
             columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Link PFMS, PFMS Account Number, Is Ulb Linked With PFMS, Certificate URL, Certificate Name, Other Doc URL, Other Doc Name,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `
             break;
         case CollectionNames.propTaxUlb:
-           columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Collecting Property Taxes in 2022-23,	Operationalized as per the state notification,	Property Tax Valuation Method,	Property Tax Rate Card Url, Property Tax Rate Card Name,	Property Tax Collection for 2019-20,	Property Tax Collection for 2020-21,	Property Tax Collection for 2021-22,	Property Tax Collection Target for 2022-23,	Proof for Property Tax collection for 2021-22 Url, Proof for Property Tax collection for 2021-22 Name `
+           columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Collecting Property Taxes in 2022-23,	Operationalized as per the state notification,Proof of operationalization of Property Tax Collection Process Url,Proof of operationalization of Property Tax Collection Process Name	,Property Tax Valuation Method,	Property Tax Rate Card Url, Property Tax Rate Card Name,	Property Tax Collection for 2019-20,	Property Tax Collection for 2020-21,	Property Tax Collection for 2021-22,	Property Tax Collection Target for 2022-23,	Proof for Property Tax collection for 2021-22 Url, Proof for Property Tax collection for 2021-22 Name `
            break;
         case CollectionNames.propTaxState:
             columns =  `Financial Year, Form Status, Created, Submitted On, Filled Status, Act Page,Floor Rate Url, Floor Rate Name, Status`
@@ -545,7 +545,7 @@ function createDynamicObject(collectionName, formType){
     return obj;
 }
 
-function actionTakenByResponse(entity){
+function actionTakenByResponse(entity, formStatus){
   let obj = {
     state_status:"",
     mohua_status:"",
@@ -560,48 +560,66 @@ function actionTakenByResponse(entity){
       name: ""
     }
   };
-  if(entity?.formStatus === STATUS_LIST.In_Progress){
+  if (
+    formStatus === STATUS_LIST.In_Progress ||
+    formStatus === STATUS_LIST.Under_Review_By_State ||
+    formStatus === STATUS_LIST.Not_Started
+  ) {
     return obj;
   }
-  
-    let histories = entity["formData"]["history"];
-    if(!histories){
-        return obj;
-    }
-    let stateFlag =true;
+
+    let stateFlag = true;
     let mohuaFlag = true;
-    if(entity?.formStatus === STATUS_LIST.Approved_By_State){
-      stateflag =false;
+
+    if (
+      formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
+      formStatus === STATUS_LIST.Rejected_By_State
+    ) {
+      if (entity["rejectReason_state"]) {
+        obj.rejectReason_state = entity["rejectReason_state"];
+      }
+      if (entity["responseFile_state"]) {
+        obj.responseFile_state = entity["responseFile_state"];
+      }
+      if (entity["status"]) {
+        obj.state_status = entity["status"];
+      }
+      return obj;
     }
-    if(entity?.formStatus === STATUS_LIST.Approved_By_MoHUA){
+    if (
+      formStatus === STATUS_LIST.Approved_By_MoHUA ||
+      formStatus === STATUS_LIST.Rejected_By_MoHUA
+    ) {
+      if (entity["rejectReason_mohua"]) {
+        obj.rejectReason_mohua = entity["rejectReason_mohua"];
+      }
+      if (entity["responseFile_mohua"]) {
+        obj.responseFile_mohua = entity["responseFile_mohua"];
+      }
+      if (entity["status"]) {
+        obj.mohua_status = entity["status"];
+      }
       mohuaFlag = false;
     }
-    for(let i = histories.length -1; i>=0; i--){
+    let histories = entity["history"];
+    if (!histories) {
+      return obj;
+    }
+    for(let i = histories.length -1; i>=0; i--){ // finding state response
       let history = histories[i];
       if(!stateFlag && !mohuaFlag) break;
-      if(history['actionTakenByRole'] === "MoHUA" && mohuaFlag){
-        if(history['rejectReason_mohua']){
-          obj.rejectReason_mohua = history['rejectReason_mohua']; 
-        }
-        if(history['responseFile_mohua']){
-          obj.responseFile_mohua = history['responseFile_state'];
-        }
-        if(history['status']){
-          obj.mohua_status = history['status'];
-        }
-        mohuaFlag = false;
-      } else if(history['actionTakenByRole'] === "STATE" && stateFlag){
-        if(history['rejectReason_state']){
-            obj.rejectReason_state = history['rejectReason_state']; 
-        }
-        if(history['responseFile_state']){
-            obj.responseFile_state = history['responseFile_state'];
-        }
-        if(history['status']){
-            obj.state_status = history['status'];
-        }
-        stateFlag = false;
-      }
+       if (history["actionTakenByRole"] === "STATE" && stateFlag) {
+         if (history["rejectReason_state"]) {
+           obj.rejectReason_state = history["rejectReason_state"];
+         }
+         if (history["responseFile_state"]) {
+           obj.responseFile_state = history["responseFile_state"];
+         }
+         if (history["status"]) {
+           obj.state_status = history["status"];
+         }
+         stateFlag = false;
+       }
     }
     return obj;
 }
@@ -642,7 +660,7 @@ function createDynamicElements(collectionName, formType, entity) {
         entity["filled"] = "No";
         entity['formData'] =  createDynamicObject(collectionName ,formType);
     }    
-    let actions = actionTakenByResponse(entity);
+    let actions = actionTakenByResponse(entity.formData, entity.formStatus);
     
     if(!entity["formData"]["rejectReason_state"]){
         entity["formData"]["rejectReason_state"] = ""
@@ -679,6 +697,11 @@ function createDynamicElements(collectionName, formType, entity) {
           entity?.formData.modifiedAt
         );
       }
+    if(entity?.formData.ulbSubmit){
+      entity["formData"]["ulbSubmit"] = formatDate(
+        entity?.formData.ulbSubmit
+      );
+    }
 
       let data  = entity?.formData;          
       switch(formType){
@@ -730,7 +753,7 @@ function createDynamicElements(collectionName, formType, entity) {
               break;
             
             case CollectionNames.propTaxUlb:
-            entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""}, ${data["toCollect"] ?? ""},${data["operationalize"] ?? ""},${data["method"] ?? ""},${data["rateCard"]["url"] ?? ""},${data["rateCard"]["name"] ?? ""},${data["collection2019_20"] ?? ""},${data["collection2020_21"] ?? ""},${data["collection2021_22"] ?? ""},${data["target2022_23"] ?? ""},${data["ptCollection"]["url"] ?? ""},${data["ptCollection"]["name"] ?? ""},${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `;
+            entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""}, ${data["toCollect"] ?? ""},${data["operationalize"] ?? ""},${data["proof"]["url"] ?? ""}, ${data["proof"]["name"] ?? ""},${data["method"] ?? ""},${data["rateCard"]["url"] ?? ""},${data["rateCard"]["name"] ?? ""},${data["collection2019_20"] ?? ""},${data["collection2020_21"] ?? ""},${data["collection2021_22"] ?? ""},${data["target2022_23"] ?? ""},${data["ptCollection"]["url"] ?? ""},${data["ptCollection"]["name"] ?? ""},${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `;
             break; 
 
             case CollectionNames.dur:
