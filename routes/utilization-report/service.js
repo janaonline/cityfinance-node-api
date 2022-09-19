@@ -72,7 +72,7 @@ module.exports.createOrUpdate = async (req, res) => {
   let mailOptions = {
     Destination: {
       /* required */
-      ToAddresses: emailAddress,
+      ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
     },
     Message: {
       /* required */
@@ -182,7 +182,7 @@ module.exports.createOrUpdate = async (req, res) => {
         } else {
           if(addedHistory){
             //email trigger after form submission
-          //  Service.sendEmail(mailOptions);
+           Service.sendEmail(mailOptions);
            }
           return res.status(200).json({
             status: true,
@@ -221,7 +221,7 @@ module.exports.createOrUpdate = async (req, res) => {
       );
       if(savedData){
         //email trigger after form submission
-      //  Service.sendEmail(mailOptions);
+       Service.sendEmail(mailOptions);
       }
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(

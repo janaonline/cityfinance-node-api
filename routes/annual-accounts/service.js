@@ -90,7 +90,7 @@ exports.createUpdate = async (req, res) => {
     let mailOptions = {
       Destination: {
         /* required */
-        ToAddresses: emailAddress,
+        ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
       },
       Message: {
         /* required */
@@ -212,7 +212,7 @@ if(formData.isDraft){
     formData
   );
   if(addedHistory){//email trigger after form submission
-    // Service.sendEmail(mailOptions);
+    Service.sendEmail(mailOptions);
   }
 
   return res.status(200).json({
@@ -242,7 +242,7 @@ if(formData.isDraft){
           })
         } else {
           if(addedHistory){//email trigger after form submission
-            // Service.sendEmail(mailOptions);
+            Service.sendEmail(mailOptions);
           }
         
           return res.status(200).json({

@@ -108,7 +108,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
         let mailOptions = {
           Destination: {
             /* required */
-            ToAddresses: emailAddress,
+            ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
           },
           Message: {
             /* required */
@@ -156,7 +156,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
                         )
                         if (addedHistory) {
                           //email trigger after form submission
-                        //   Service.sendEmail(mailOptions);
+                          Service.sendEmail(mailOptions);
                         }
                         return response(addedHistory, res,"Form created.", "Form not created")
                     } else {
@@ -196,7 +196,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
                     );
                     if(updatedForm){
                         //email trigger after form submission
-                    //    Service.sendEmail(mailOptions);
+                       Service.sendEmail(mailOptions);
                        }
                     return response( updatedForm, res, "Form updated.","Form not updated.")
                 }
