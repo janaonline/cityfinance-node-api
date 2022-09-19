@@ -213,6 +213,7 @@ router.use('/propTaxOpDropDown', PropertyTaxOpDropDown);
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
-
+const propTaxOpen = require('./propTaxOpen');
+router.use('/pTaxOpen',propTaxOpen )
 
 module.exports = router;
