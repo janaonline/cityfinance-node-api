@@ -25,6 +25,9 @@ if(el.year == "2018-19"){
 } else if(el.year == "2020-21"){
     
     Object.assign(form, {[key+"_2021"]: el.value })
+} else if(el.year == "2021-22"){
+    
+    Object.assign(form, {[key+"_2122"]: el.value })
 }
                     })
                  }else if(key == "noOfPropTaxPaid"){
@@ -38,6 +41,9 @@ if(el.year == "2018-19"){
 } else if(el.year == "2020-21"){
     
     Object.assign(form, {[key+"_2021"]: el.value })
+} else if(el.year == "2021-22"){
+    
+    Object.assign(form, {[key+"_2122"]: el.value })
 }
                     })
                 } else if(key == "noOfPropTaxReg"){
@@ -51,6 +57,9 @@ if(el.year == "2018-19"){
 } else if(el.year == "2020-21"){
     
     Object.assign(form, {[key+"_2021"]: el.value })
+}  else if(el.year == "2021-22"){
+    
+    Object.assign(form, {[key+"_2122"]: el.value })
 }
                     })
                 } else if(key == "noOfProp"){
@@ -64,6 +73,9 @@ if(el.year == "2018-19"){
 } else if(el.year == "2020-21"){
     
     Object.assign(form, {[key+"_2021"]: el.value })
+}  else if(el.year == "2021-22"){
+    
+    Object.assign(form, {[key+"_2122"]: el.value })
 }
                     })
                 } else if(key == "taxCollected"){
@@ -77,6 +89,9 @@ if(el.year == "2018-19"){
 } else if(el.year == "2020-21"){
     
     Object.assign(form, {[key+"_2021"]: el.value })
+}  else if(el.year == "2021-22"){
+    
+    Object.assign(form, {[key+"_2122"]: el.value })
 }
                     })
                 }  else if(key == "taxDemand"){
@@ -90,7 +105,26 @@ if(el.year == "2018-19"){
 } else if(el.year == "2020-21"){
     
     Object.assign(form, {[key+"_2021"]: el.value })
-}
+}  else if(el.year == "2021-22"){
+    
+    Object.assign(form, {[key+"_2122"]: el.value })
+} 
+                    })
+                }  else if(key == "propExempt"){
+                    form[key].forEach(el=>{
+if(el.year == "2018-19"){
+    
+    Object.assign(form, {[key+"_1819"]: el.value })
+} else if(el.year == "2019-20"){
+    
+    Object.assign(form, {[key+"_1920"]: el.value })
+} else if(el.year == "2020-21"){
+    
+    Object.assign(form, {[key+"_2021"]: el.value })
+}  else if(el.year == "2021-22"){
+    
+    Object.assign(form, {[key+"_2122"]: el.value })
+} 
                     })
                 }
 
@@ -233,7 +267,14 @@ formData.noOfPropBilled.push({
         value:formData[key]
     })
         
-}else if(key.includes("noOfPropTaxPaid") && key.includes("1819")){
+ } else if(key.includes("noOfPropBilled") && key.includes("2122")){
+    formData.noOfPropBilled.push({
+        year: "2021-22",
+        value:formData[key]
+    })
+        
+}
+else if(key.includes("noOfPropTaxPaid") && key.includes("1819")){
     formData.noOfPropTaxPaid.push({
         year: "2018-19",
         value:formData[key]
@@ -251,7 +292,14 @@ formData.noOfPropBilled.push({
         value:formData[key]
     })
         
-}else if(key.includes("noOfPropTaxReg") && key.includes("1819")){
+} else if(key.includes("noOfPropTaxPaid") && key.includes("2122")){
+    formData.noOfPropTaxPaid.push({
+        year: "2021-22",
+        value:formData[key]
+    })
+        
+}
+else if(key.includes("noOfPropTaxReg") && key.includes("1819")){
     formData.noOfPropTaxReg.push({
         year: "2018-19",
         value:formData[key]
@@ -269,7 +317,14 @@ formData.noOfPropBilled.push({
         value:formData[key]
     })
         
-}else if(key.includes("noOfProp") && key.includes("1819")){
+}  else if(key.includes("noOfPropTaxReg") && key.includes("2122")){
+    formData.noOfPropTaxReg.push({
+        year: "2021-22",
+        value:formData[key]
+    })
+        
+}
+else if(key.includes("noOfProp") && key.includes("1819")){
     formData.noOfProp.push({
         year: "2018-19",
         value:formData[key]
@@ -287,7 +342,14 @@ formData.noOfPropBilled.push({
         value:formData[key]
     })
         
-}else if(key.includes("taxCollected") && key.includes("1819")){
+}else if(key.includes("noOfProp") && key.includes("2122")){
+    formData.noOfProp.push({
+        year: "2021-22",
+        value:formData[key]
+    })
+        
+}
+else if(key.includes("taxCollected") && key.includes("1819")){
     formData.taxCollected.push({
         year: "2018-19",
         value:formData[key]
@@ -303,7 +365,13 @@ formData.noOfPropBilled.push({
         year: "2020-21",
         value:formData[key]
     })
-}else if(key.includes("taxDemand") && key.includes("1819")){
+} else if(key.includes("taxCollected") && key.includes("2122")){
+    formData.taxCollected.push({
+        year: "2021-22",
+        value:formData[key]
+    })
+}
+else if(key.includes("taxDemand") && key.includes("1819")){
     formData.taxDemand.push({
         year: "2018-19",
         value:formData[key]
@@ -318,7 +386,33 @@ formData.noOfPropBilled.push({
         year: "2020-21",
         value:formData[key]
     })
+} else if(key.includes("taxDemand") && key.includes("2122")){
+    formData.taxDemand.push({
+        year: "2021-22",
+        value:formData[key]
+    })
 }
+ else if(key.includes("propExempt") && key.includes("1819")){
+    formData.taxDemand.push({
+        year: "2018-19",
+        value:formData[key]
+    })
+} else if(key.includes("propExempt") && key.includes("1920")){
+    formData.taxDemand.push({
+        year: "2019-20",
+        value:formData[key]
+    })
+} else if(key.includes("propExempt") && key.includes("2021")){
+    formData.taxDemand.push({
+        year: "2020-21",
+        value:formData[key]
+    })
+} else if(key.includes("propExempt") && key.includes("2122")){
+    formData.taxDemand.push({
+        year: "2021-22",
+        value:formData[key]
+    })
+} 
                     }
 
                     const form = await PropertyTaxOpen.create(formData);

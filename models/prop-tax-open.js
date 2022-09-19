@@ -112,7 +112,16 @@ const PropertyTaxOpenSchema = new Schema(
                 default:""
             }
         }],
-        
+        propExempt : [{
+            year: {
+                    type: String,
+                    default:""
+            },
+            value:{
+                type: Number,
+                default:""
+            }
+        }]
     },{
         timestamps: {createdAt: "createdAt", updatedAt: "modifiedAt"}
     }
