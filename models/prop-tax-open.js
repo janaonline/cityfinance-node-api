@@ -112,7 +112,7 @@ const PropertyTaxOpenSchema = new Schema(
                 default:""
             }
         }],
-        propExempt : [{
+        noOfPropExempt : [{
             year: {
                     type: String,
                     default:""

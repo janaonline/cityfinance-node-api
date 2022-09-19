@@ -110,7 +110,7 @@ if(el.year == "2018-19"){
     Object.assign(form, {[key+"_2122"]: el.value })
 } 
                     })
-                }  else if(key == "propExempt"){
+                }  else if(key == "noOfPropExempt"){
                     form[key].forEach(el=>{
 if(el.year == "2018-19"){
     
@@ -247,7 +247,7 @@ module.exports.createOrUpdateForm = catchAsync( async (req, res)=>{
                 })
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
-                    Object.assign(formData, {noOfPropBilled: []}, {noOfPropTaxPaid: []},{noOfPropTaxReg: []},{noOfProp: []},{taxCollected: []},{taxDemand: []}  )
+                    Object.assign(formData, {noOfPropBilled: []}, {noOfPropTaxPaid: []},{noOfPropTaxReg: []},{noOfProp: []},{ noOfPropExempt: []},{taxCollected: []},{taxDemand: []}  )
                     for(let key in formData){
 if(key.includes("noOfPropBilled") && key.includes("1819")){
 formData.noOfPropBilled.push({
@@ -323,6 +323,26 @@ else if(key.includes("noOfPropTaxReg") && key.includes("1819")){
         value:formData[key]
     })
         
+} else if(key.includes("noOfPropExempt") && key.includes("1819")){
+    formData.noOfPropExempt.push({
+        year: "2018-19",
+        value:formData[key]
+    })
+} else if(key.includes("noOfPropExempt") && key.includes("1920")){
+    formData.noOfPropExempt.push({
+        year: "2019-20",
+        value:formData[key]
+    })
+} else if(key.includes("noOfPropExempt") && key.includes("2021")){
+    formData.noOfPropExempt.push({
+        year: "2020-21",
+        value:formData[key]
+    })
+} else if(key.includes("noOfPropExempt") && key.includes("2122")){
+    formData.noOfPropExempt.push({
+        year: "2021-22",
+        value:formData[key]
+    })
 }
 else if(key.includes("noOfProp") && key.includes("1819")){
     formData.noOfProp.push({
@@ -392,27 +412,7 @@ else if(key.includes("taxDemand") && key.includes("1819")){
         value:formData[key]
     })
 }
- else if(key.includes("propExempt") && key.includes("1819")){
-    formData.taxDemand.push({
-        year: "2018-19",
-        value:formData[key]
-    })
-} else if(key.includes("propExempt") && key.includes("1920")){
-    formData.taxDemand.push({
-        year: "2019-20",
-        value:formData[key]
-    })
-} else if(key.includes("propExempt") && key.includes("2021")){
-    formData.taxDemand.push({
-        year: "2020-21",
-        value:formData[key]
-    })
-} else if(key.includes("propExempt") && key.includes("2122")){
-    formData.taxDemand.push({
-        year: "2021-22",
-        value:formData[key]
-    })
-} 
+  
                     }
 
                     const form = await PropertyTaxOpen.create(formData);
