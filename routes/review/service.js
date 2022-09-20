@@ -1000,9 +1000,14 @@ module.exports.get = catchAsync( async(req,res) => {
         filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType  : ""
         filter['UA'] = req.query.UA != 'null' ? req.query.UA  : ""
         filter['status'] = req.query.status != 'null' ? req.query.status  : ""
-      keys =  calculateKeys(filter['status'], formType);
-      Object.assign(filter,keys )
-      delete filter['status']
+        // if(filter['status'] !== STATUS_LIST.Not_Started){
+          keys =  calculateKeys(filter['status'], formType);
+          Object.assign(filter,keys )
+          delete filter['status']
+        // } else if(filter['status'] ===  STATUS_LIST.Not_Started){
+        //   filter['filled'] = 'No';
+        //   delete filter['status']
+        // }
         // filled1 -> will be used for all the forms and Provisional of Annual accounts
         // filled2 -> only for annual accounts -> audited section
         filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1  : ""
@@ -1339,7 +1344,7 @@ filledQueryExpression = {
                                     "state.accessToXVFC" : true
                                 }
                             }]
-    if(state){
+    if(state && state !== 'null'){
         query.push({
             $match: {
     "state._id": ObjectId(state)
