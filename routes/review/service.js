@@ -1042,7 +1042,6 @@ if(formType == 'STATE'){
         })
     }
     //path -> file of models
-    console.log(formTab, "----formTab");
 let path = formTab.path
 let collectionName = formTab.collectionName;
 if(collectionName == CollectionNames.annual){
@@ -1066,7 +1065,6 @@ total =  formType == "ULB" ?  Ulb.aggregate(query[1]) : State.aggregate(query[1]
 let allData = await Promise.all([data, total]);
 data = allData[0]
 total = allData[1].length ? allData[1][0]['total'] : 0
-console.log(total,data)
 //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
 //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
 //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
@@ -1496,6 +1494,9 @@ filledQueryExpression = {
         }
                let  filterApplied = Object.keys(filter).length > 0
             if(filterApplied){
+              if(filter.sbCode){
+                delete Object.assign(filter, {["censusCode"]: filter["sbCode"] })["sbCode"];
+              }
                 query.push({
                     $match: filter
                 },
