@@ -1059,6 +1059,9 @@ if(collectionName == CollectionNames.annual){
 let isFormOptional = formTab.optional
  const model = require(`../../models/${path}`)
  let newFilter = await Service.mapFilterNew(filter);
+ if(req.query.status === STATUS_LIST.Not_Started){// to apply not started filter
+  Object.assign(newFilter, {formData: ""});
+ }
  
 let query = computeQuery(collectionName, formType, isFormOptional,state,design_year,csv,skip, limit, newFilter, dbCollectionName);
 if(getQuery) return res.json({
