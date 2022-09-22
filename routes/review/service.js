@@ -907,7 +907,70 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
         break;
       case "STATE":
         switch (collectionName) {
-          case CollectionNames.propTaxState:
+          case CollectionNames.state_gtc:
+          //   let facetQuery =  {
+          //     $facet:{
+          //  data: [{
+          //     "$project": {
+          //         "state": "$_id",
+          //         "stateName": "$name",
+          //         "formData": {
+          //             "$ifNull": [
+          //                 "$granttransfercertificates",
+          //                 ""
+          //             ]
+          //         },
+                  
+                  
+          //     }
+          // }],
+          
+          // statusData:[{
+          //     "$project": {
+          //         "state": "$_id",
+          //         "stateName": "$name",
+          //         "formData": {
+          //             "$ifNull": [
+          //                 "$granttransfercertificates",
+          //                 ""
+          //             ]
+          //         },
+                  
+                  
+          //     }
+          // },
+          // {
+          //     $group:{
+          //         _id:{
+          //             state:"$stateName",
+          //             },
+          //            status: {$push:"$formData.status"},
+          //            count: {$sum:1}
+                      
+          //     }
+          // }]
+          // }
+          // },
+            query_2 = {
+              $group:{
+                _id:{
+                    stateName:"$stateName",
+                    },
+                   status: {$push:"$formData.status"},                    
+            }             
+            }
+            oldQuery.push(query_2);
+            break;
+          case CollectionNames.state_grant_alloc:
+            query_2 = {
+              $group:{
+                _id:{
+                  stateName:"$stateName"
+                },
+                draft:{$push:"$formData.isDraft"},
+              }
+            }
+            oldQuery.push(query_2);
             break;
         }
     }
@@ -1246,8 +1309,21 @@ if(csv){
   
    
 }
+  if (
+    collectionName === CollectionNames.state_gtc ||
+    collectionName === CollectionNames.state_grant_alloc
+  ) {
+    data.forEach((element) => {
+      element.stateName = element["_id"]["stateName"];
+      let { status, pending } = countStatusData(element, collectionName);
+      element.formStatus = status;
+      if (pending > 0 && collectionName === CollectionNames.state_gtc) {
+        element.cantakeAction = true;
+      }
+    });
+  }
 
- console.log(data)
+//  console.log(data)
  return res.status(200).json({
      success: true,
      data: data,
@@ -1259,10 +1335,50 @@ if(csv){
      title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
  })
 
-
-
 })
 
+function countStatusData(element, collectionName){
+  let total =  0;
+  let notStarted = 0;
+  let status = "";
+  let arr =  collectionName === CollectionNames.state_gtc ? element.status: element.draft
+  
+  if(collectionName === CollectionNames.state_gtc){
+    total =8;
+    notStarted =8;
+  }else if(collectionName === CollectionNames.state_grant_alloc){
+    total =5;
+    notStarted =5;
+  }
+  let pending =0, rejected =0, approved =0;
+  if(arr.length <= 0  ){
+    status = collectionName === CollectionNames.state_gtc ? `${notStarted} Not Started`: `${notStarted} Not Submitted`;
+    return {status,pending};
+  }else{
+    if(collectionName === CollectionNames.state_gtc){
+      for(let i=0; i<arr.length; i++){
+        if(arr[i] === "PENDING"){
+          pending++;
+        }else if(arr[i]=== "APPROVED"){
+          approved++;
+        }else if(arr[i] === "REJECTED"){
+          rejected++;
+        }
+      }
+      notStarted = total - pending - approved - rejected;
+      status = ` ${approved} Approved, ${rejected} Rejected, ${pending} Pending, ${notStarted} Not Started`
+      return {status, pending};
+    }else if( collectionName === CollectionNames.state_grant_alloc){
+      for(let i =0; i<arr.length; i++){
+        if(arr[i] === false){
+          notStarted--;
+        }
+      }
+      status = `${total - notStarted} submitted`
+      return {status, pending};
+    }
+  }
+}
 const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,skip, limit, filter, dbCollectionName) => {
     let filledQueryExpression ={}
     if(isFormOptional){
@@ -1574,6 +1690,9 @@ filledQueryExpression = {
                         }
 
         ]
+
+        query_s = createDynamicQuery(formName, query_s, userRole);
+
         let  filterApplied_s = Object.keys(filter).length > 0
         if(filterApplied_s){
             query_s.push({
