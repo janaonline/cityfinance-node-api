@@ -476,7 +476,7 @@ exports.report = async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs), Closing balance at the end of year (INR in lakhs), Rejuvenation of Water Bodies/Total Tied Grant Utilised on WM, Rejuvenation of Water Bodies/Total Project Cost Involved, Drinking Water/Total Tied Grant Utilised on WM, Drinking Water/Total Project Cost Involved, Rainwater Harvesting/Total Tied Grant Utilised on WM, Rainwater Harvesting/Total Project Cost Involved, Water Recycling/Total Tied Grant Utilised on WM, Water Recycling/Total Project Cost Involved, Sanitation/Total Tied Grant Utilised on WM, Sanitation/Total Project Cost Involved,  Solid Waste Management/Total Tied Grant Utilised on WM, Solid Waste Management/Total Project Cost Involved \r\n"
+    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs), Closing balance at the end of year (INR in lakhs), Rejuvenation of Water Bodies/Total Tied Grant Utilised on WM, Rejuvenation of Water Bodies/Total Project Cost Involved, Drinking Water/Total Tied Grant Utilised on WM, Drinking Water/Total Project Cost Involved, Rainwater Harvesting/Total Tied Grant Utilised on WM, Rainwater Harvesting/Total Project Cost Involved, Water Recycling/Total Tied Grant Utilised on WM, Water Recycling/Total Project Cost Involved, Sanitation/Total Tied Grant Utilised on WM, Sanitation/Total Project Cost Involved,  Solid Waste Management/Total Tied Grant Utilised on WM, Solid Waste Management/Total Project Cost Involved, Creation Date, Modified Date \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -517,6 +517,8 @@ exports.report = async (req, res) => {
         role: "$actionTakenByRole",
         waterManagement: "$categoryWiseData_wm",
         solidWasteMgt: "$categoryWiseData_swm",
+        createdAt: "$createdAt",
+        modifiedAt: "$modifiedAt",
       },
     },
   ];
@@ -617,6 +619,10 @@ exports.report = async (req, res) => {
           el.swm_grantUtil +
           "," +
           el.swm_totalCost +
+          "," +
+          el.createdAt.toDateString() +
+          "," +
+          el.modifiedAt.toDateString() +
           "," +
           "\r\n"
       );
