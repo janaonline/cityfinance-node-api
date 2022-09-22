@@ -120,6 +120,12 @@ exports.createUpdate = async (req, res) => {
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
     formData['status'] = 'PENDING';
     let proData , audData
+    if(!req.body.unAudited.hasOwnProperty("provisional_data") || !req.body.audited.hasOwnProperty("provisional_data") ){
+return res.json({
+  success: false,
+  message: "Incorrect Format in Req Data"
+})
+    }
       if (req.body.unAudited.submit_annual_accounts) {
         proData = req.body.unAudited.provisional_data;
         for (const key in proData) {
@@ -1364,7 +1370,8 @@ let obj = annualAccountData;
       }
     }
 Object.assign(annualAccountData, obj)
-Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+// Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+Object.assign(annualAccountData, {canTakeAction: false })
 
     return res.status(200).json(annualAccountData);
   } catch (err) {
