@@ -1035,7 +1035,7 @@ console.log(total,data)
         el['cantakeAction'] = false;
     }else{
         el['formStatus'] =  calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);   
-        el['cantakeAction'] = canTakeActionOrViewOnly(el, loggedInUserRole)
+        el['cantakeAction'] = formTab.collectionName == CollectionNames.annual ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
     }
   
 })
