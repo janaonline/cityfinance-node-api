@@ -216,4 +216,7 @@ router.use("/indicatorLineItem", indicatorLineItem);
 const propTaxOpen = require('./propTaxOpen');
 router.use('/pTaxOpen',propTaxOpen )
 
+const review = require("./review");
+router.use(review);
+
 module.exports = router;
