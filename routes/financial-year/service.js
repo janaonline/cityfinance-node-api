@@ -149,7 +149,7 @@ module.exports.access = async function(req,res)  {
             case "STATE":
                  userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
                  let profileVerified = userData.isVerified2223;
-                 STATE_arr[2]['url'] = profileVerified ? '/stateform2223/dashboard' : '/profile-update' ;
+                 STATE_arr[2]['url'] = profileVerified ? '/stateform2223/review-ulb-form' : '/profile-update' ;
                  arr = STATE_arr
 
 
