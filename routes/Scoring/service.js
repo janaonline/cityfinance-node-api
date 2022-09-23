@@ -114,12 +114,92 @@ const minMax = require('../../util/minMax')
 // }
 
 module.exports.calculateSlbMarks = (data) => {
+    let obj = {
+        waterSuppliedPerDay : {
+            baseline : {
+                "2021":""
+            },
+            target : {
+                "2122":""
+            },
+            achieved : {
+                "2122":""
+            }
+        },
+        reduction : {
+            baseline : {
+                "2021":""
+            },
+            target : {
+                "2122":""
+            },
+            achieved : {
+                "2122":""
+            }
+        },
+        houseHoldCoveredWithSewerage : {
+            baseline : {
+                "2021":""
+            },
+            target : {
+                "2122":""
+            },
+            achieved : {
+                "2122":""
+            }
+        },
+        houseHoldCoveredPipedSupply : {
+            baseline : {
+                "2021":""
+            },
+            target : {
+                "2122":""
+            },
+            achieved : {
+                "2122":""
+            }
+        }
+    }
+
     let x,y,z;
     let obtainedMarks =[];
-    if(data.waterSuppliedPerDay){
-        x = Number(data.waterSuppliedPerDay.baseline['2021']);
-        y = Number(data.waterSuppliedPerDay.target['2122']);
-        z = Number(data.waterSuppliedPerDay.achieved['2122']);
+    if(data.hasOwnProperty("ua")){
+        for(let el in data){
+      
+        if(el.includes("waterSuppliedPerDay") && el.includes("2021")){
+         obj.waterSuppliedPerDay.baseline["2021"] = data[el]
+        }else if(el.includes("waterSuppliedPerDay") && el.includes("2122") && !el.includes("actual") ){
+            obj.waterSuppliedPerDay.target["2122"] = data[el]
+        }else if(el.includes("waterSuppliedPerDay") && el.includes("2122") && el.includes("actual")){
+            obj.waterSuppliedPerDay.achieved["2122"] = data[el]
+        } else  if(el.includes("reduction") && el.includes("2021")){
+            obj.reduction.baseline["2021"] = data[el]
+           }else if(el.includes("reduction") && el.includes("2122") && !el.includes("actual") ){
+               obj.reduction.target["2122"] = data[el]
+           }else if(el.includes("reduction") && el.includes("2122") && el.includes("actual")){
+               obj.reduction.achieved["2122"] = data[el]
+           } else  if(el.includes("houseHoldCoveredWithSewerage") && el.includes("2021")){
+            obj.houseHoldCoveredWithSewerage.baseline["2021"] = data[el]
+           }else if(el.includes("houseHoldCoveredWithSewerage") && el.includes("2122") && !el.includes("actual") ){
+               obj.houseHoldCoveredWithSewerage.target["2122"] = data[el]
+           }else if(el.includes("houseHoldCoveredWithSewerage") && el.includes("2122") && el.includes("actual")){
+               obj.houseHoldCoveredWithSewerage.achieved["2122"] = data[el]
+           }  else  if(el.includes("houseHoldCoveredPipedSupply") && el.includes("2021")){
+            obj.houseHoldCoveredPipedSupply.baseline["2021"] = data[el]
+           }else if(el.includes("houseHoldCoveredPipedSupply") && el.includes("2122") && !el.includes("actual") ){
+               obj.houseHoldCoveredPipedSupply.target["2122"] = data[el]
+           }else if(el.includes("houseHoldCoveredPipedSupply") && el.includes("2122") && el.includes("actual")){
+               obj.houseHoldCoveredPipedSupply.achieved["2122"] = data[el]
+           }
+      }
+    }else{
+        obj = {}
+        obj = data
+    }
+    if(obj.waterSuppliedPerDay){
+        x = Number(obj.waterSuppliedPerDay.baseline['2021']);
+        y = Number(obj.waterSuppliedPerDay.target['2122']);
+        z = Number(obj.waterSuppliedPerDay.achieved['2122']);
         obtainedMarks[0] = incrementFormula(
             x, y, z,
             minMax.waterSuppliedPerDay.min,
@@ -127,10 +207,10 @@ module.exports.calculateSlbMarks = (data) => {
             );
         // console.log(x, y, z,obtainedMarks[0], "---x, y, z, obtainedMarks waterSuppliedPerDay-----")
     }
-    if(data.reduction){
-        x = Number(data.reduction.baseline['2021']);
-        y = Number(data.reduction.target['2122']);
-        z = Number(data.reduction.achieved['2122']);
+    if(obj.reduction){
+        x = Number(obj.reduction.baseline['2021']);
+        y = Number(obj.reduction.target['2122']);
+        z = Number(obj.reduction.achieved['2122']);
         obtainedMarks[1] = decrementFormula(
             x, y, z,
             minMax.reduction.min,
@@ -139,10 +219,10 @@ module.exports.calculateSlbMarks = (data) => {
         // console.log(x, y, z,obtainedMarks[1], "---x, y, z obtainedMarks reduction-----")
         
     }
-    if(data.houseHoldCoveredWithSewerage){
-        x = Number(data.houseHoldCoveredWithSewerage.baseline['2021']);
-        y = Number(data.houseHoldCoveredWithSewerage.target['2122']);
-        z = Number(data.houseHoldCoveredWithSewerage.achieved['2122']);
+    if(obj.houseHoldCoveredWithSewerage){
+        x = Number(obj.houseHoldCoveredWithSewerage.baseline['2021']);
+        y = Number(obj.houseHoldCoveredWithSewerage.target['2122']);
+        z = Number(obj.houseHoldCoveredWithSewerage.achieved['2122']);
         obtainedMarks[2] = incrementFormula(
             x, y, z,
             minMax.houseHoldCoveredWithSewerage.min,
@@ -151,10 +231,10 @@ module.exports.calculateSlbMarks = (data) => {
         // console.log(x, y, z,obtainedMarks[2], "---x, y, z, obtainedMarks houseHoldCoveredWithSewerage-----")
 
     }
-    if(data.houseHoldCoveredPipedSupply){
-        x = Number(data.houseHoldCoveredPipedSupply.baseline['2021']);
-        y = Number(data.houseHoldCoveredPipedSupply.target['2122']);
-        z = Number(data.houseHoldCoveredPipedSupply.achieved['2122']);
+    if(obj.houseHoldCoveredPipedSupply){
+        x = Number(obj.houseHoldCoveredPipedSupply.baseline['2021']);
+        y = Number(obj.houseHoldCoveredPipedSupply.target['2122']);
+        z = Number(obj.houseHoldCoveredPipedSupply.achieved['2122']);
         obtainedMarks[3] = incrementFormula(
             x, y, z,
             minMax.houseHoldCoveredPipedSupply.min,

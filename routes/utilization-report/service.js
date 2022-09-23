@@ -72,7 +72,7 @@ module.exports.createOrUpdate = async (req, res) => {
   let mailOptions = {
     Destination: {
       /* required */
-      ToAddresses: emailAddress,
+      ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
     },
     Message: {
       /* required */
@@ -146,6 +146,7 @@ module.exports.createOrUpdate = async (req, res) => {
       })
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
+      formData['ulbSubmit'] = new Date();
       const form = await UtilizationReport.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
@@ -212,9 +213,10 @@ module.exports.createOrUpdate = async (req, res) => {
 
     let savedData;
     if (currentSavedUtilRep) {
+      req.body['ulbSubmit'] = new Date();
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep }},
+        { $set: req.body, $push: { history: req.body }},
         {new: true, runValidators: true}
       );
       if(savedData){
@@ -673,11 +675,13 @@ else{
     obj['action'] = 'not_show';
     obj['url'] = ``;
   }else if(status == FORM_STATUS.Under_Review_By_State){
+    let msg = role == "ULB" ?  `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
     obj['action'] = 'note';
-    obj['url'] = `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}`;
+    obj['url'] = msg;
   } else{
+    let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
     obj['action'] = 'note'
-    obj['url'] = `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
+    obj['url'] = msg ;
   }
 }
 

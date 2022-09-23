@@ -47,6 +47,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
 
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
+        formData['ulbSubmit'] = "";
 
         if(formData.ulb){
             formData['ulb'] = ObjectId(formData.ulb);
@@ -107,7 +108,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
         let mailOptions = {
           Destination: {
             /* required */
-            ToAddresses: emailAddress,
+            ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
           },
           Message: {
             /* required */
@@ -143,6 +144,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
                 })
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    formData["ulbSubmit"] =  new Date();
                     const form = await PropertyTaxOp.create(formData);
                     formData.createdAt = form.createdAt;
                     formData.modifiedAt = form.modifiedAt;
@@ -183,6 +185,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
                     formData.modifiedAt.toISOString();
+                    formData["ulbSubmit"] =  new Date();
                     const updatedForm = await PropertyTaxOp.findOneAndUpdate(
                         condition,
                         {

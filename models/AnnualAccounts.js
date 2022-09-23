@@ -90,6 +90,7 @@ const AnnualAccountDataSchema = new Schema(
     audited: { type: formDataSchema },
     unAudited: { type: formDataSchema },
     modifiedAt: { type: Date, default: Date.now() },
+    ulbSubmit: {type: Date},
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
     actionTakenBy: {

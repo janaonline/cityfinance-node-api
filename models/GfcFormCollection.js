@@ -49,7 +49,9 @@ const GfcFormCollectionSchema = new Schema({
         type: Boolean,
         default: true,
     },
-    
+    ulbSubmit: {
+        type: Date,
+    },
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
     responseFile_state:pdfSchema(),

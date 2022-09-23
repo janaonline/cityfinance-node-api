@@ -90,7 +90,7 @@ exports.createUpdate = async (req, res) => {
     let mailOptions = {
       Destination: {
         /* required */
-        ToAddresses: emailAddress,
+        ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
       },
       Message: {
         /* required */
@@ -119,6 +119,7 @@ exports.createUpdate = async (req, res) => {
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
     formData['status'] = 'PENDING';
+    formData["ulbSubmit"] = "";
     let proData , audData
     if(!req.body.unAudited.hasOwnProperty("provisional_data") || !req.body.audited.hasOwnProperty("provisional_data") ){
 return res.json({
@@ -206,6 +207,7 @@ if(formData.isDraft){
   })
 }else if(!formData.isDraft){
   let currentData = {}
+  formData['ulbSubmit'] = new Date();
   Object.assign(currentData,formData ) 
 
   formData['history'] = submittedForm['history']
@@ -228,6 +230,7 @@ if(formData.isDraft){
 }
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
+      formData["ulbSubmit"] = new Date();
       const form = await AnnualAccountData.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
@@ -1370,7 +1373,8 @@ let obj = annualAccountData;
       }
     }
 Object.assign(annualAccountData, obj)
-Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+// Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+Object.assign(annualAccountData, {canTakeAction: false })
 
     return res.status(200).json(annualAccountData);
   } catch (err) {
