@@ -1098,6 +1098,11 @@ module.exports.get = catchAsync( async(req,res) => {
 if(formType == 'STATE'){
     filter['state'] = req.query.stateName
     filter['status'] = req.query.status 
+    // filter['status'] = req.query.status != 'null' ? req.query.status  : "";
+    // filter['state'] = req.query.state != 'null' ? req.query.state  : ""
+    // keys =  calculateKeys(filter['status'], formType);
+    // Object.assign(filter,keys )
+    // delete filter['status']
 }
 
     let state = req.query.state ?? req.decoded.state
@@ -1309,19 +1314,19 @@ if(csv){
   
    
 }
-  if (
-    collectionName === CollectionNames.state_gtc ||
-    collectionName === CollectionNames.state_grant_alloc
-  ) {
-    data.forEach((element) => {
-      element.stateName = element["_id"]["stateName"];
-      let { status, pending } = countStatusData(element, collectionName);
-      element.formStatus = status;
-      if (pending > 0 && collectionName === CollectionNames.state_gtc) {
-        element.cantakeAction = true;
-      }
-    });
-  }
+  // if (
+  //   collectionName === CollectionNames.state_gtc ||
+  //   collectionName === CollectionNames.state_grant_alloc
+  // ) {
+  //   data.forEach((element) => {
+  //     element.stateName = element["_id"]["stateName"];
+  //     let { status, pending } = countStatusData(element, collectionName);
+  //     element.formStatus = status;
+  //     if (pending > 0 && collectionName === CollectionNames.state_gtc) {
+  //       element.cantakeAction = true;
+  //     }
+  //   });
+  // }
 
 //  console.log(data)
  return res.status(200).json({
@@ -1691,7 +1696,7 @@ filledQueryExpression = {
 
         ]
 
-        query_s = createDynamicQuery(formName, query_s, userRole);
+        // query_s = createDynamicQuery(formName, query_s, userRole);
 
         let  filterApplied_s = Object.keys(filter).length > 0
         if(filterApplied_s){
