@@ -8,12 +8,12 @@ const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const axios = require('axios')
-
+const {calculateSlbMarks} = require('../Scoring/service')
 const lineItemIndicatorIDs = [
-    ObjectId("6284d6f65da0fa64b423b52a"),
-    ObjectId("6284d6f65da0fa64b423b53a"),
-    ObjectId("6284d6f65da0fa64b423b53c"),
-    ObjectId("6284d6f65da0fa64b423b540")
+    "6284d6f65da0fa64b423b52a",
+    "6284d6f65da0fa64b423b53a",
+    "6284d6f65da0fa64b423b53c",
+    "6284d6f65da0fa64b423b540"
 
 ]
 const recommendationSlab = (score) => {
@@ -393,7 +393,7 @@ slbdata.forEach(el => {
         if(TEslbdata.length){
             TEslbdata.forEach(el2 => {
                 if(el2.hasOwnProperty("twentyeightslbforms") && Object.keys(el2.twentyeightslbforms).length >0){
-                    if(el._id == el2._id){
+                    if(el._id.toString() == el2._id.toString()){
                         if(el.xvfcgrantulbforms.waterManagement.status == "APPROVED" && el2.twentyeightslbforms.status == "APPROVED"){
                             slbApproved.count += 1;
                             slbApproved.ulbs.push({
@@ -577,50 +577,57 @@ return res.status(200).json({
     }
 
 let slbWeigthed 
- await axios.get(`${process.env.BASEURL}xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
+// console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
+ await axios.get(`https://democityfinanceapi.dhwaniris.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
             console.log('Data Fetched');
-             slbWeigthed = response.data[0]
+             slbWeigthed = response.data.data[0]
             
-              })
+            })
               .catch(function (error) {
-                console.log('Not Fetched');
+                console.log('Not Fetched', error.message);
               })
 
 
   Object.assign(responseObj.fourSLB.data, slbWeigthed )
+  let usableData = []
+  let arr = []
+  let filteredData = []
   TEslbdata.forEach(el => {
-    
+ filteredData = el.twentyeightslbforms.data.filter(el2=> lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString()))
+arr.push({
+data: filteredData,
+population: el.population
+
+})
+
+
   })  
-    // ulbs.forEach(async el => {
+  let numerator = [0,0,0,0], popData = [0,0,0,0]
+arr.forEach(el => {
+    el.data.forEach((el2, index)=> {
+        numerator[index] += el2.actual.value * el.population
+        popData[index] += el.population
+    })
+})
 
-    //     // await axios.get(`${process.env.BASEURL}xv-fc-form?design_year=606aaf854dff55e6c075d219&from=2223&ulb=${el}`).then(function (response) {
-    //     //     console.log('Data Fetched');
-    //     //     let slbData = response.data[0].waterManagement
-    //     //     for(let key in slbData ){
-    //     //         slbTotalScore += slbData[key]['score']['2122']
-    //     //     }
-
-    //     //       })
-    //     //       .catch(function (error) {
-    //     //         console.log('Not Fetched');
-    //     //       })
-              
-    //       let gfcData =     await GFC.findOne({
-    //             design_year: ObjectId(design_year),
-    //             ulb: ObjectId(el),
-    //             status:"APPROVED"
-    //           }).populate("rating")
-    //           gfcScore = gfcData.rating.marks
-    //         let odfData =   await ODF.findOne({
-    //             design_year: ObjectId(design_year),
-    //             ulb: ObjectId(el),
-    //             status:"APPROVED"
-    //           }).populate("rating")
-    //           odfScore = odfData.rating.marks
-    // })
-// let totalMarks = slbTotalScore + odfScore + gfcScore;
-// let recommendation = recommendationSlab(totalMarks);
-
+let wtAvgSLB = []
+numerator.forEach((el, index)=> {
+    wtAvgSLB.push(numerator[index]/popData[index])
+})
+  Object.assign(slbWeigthed, {
+    "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
+    "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
+    "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
+    "reduction_actual2122": wtAvgSLB[3]
+  })
+  let scores = calculateSlbMarks(slbWeigthed)
+Object.assign(slbWeigthed, {
+    "houseHoldCoveredWithSewerage_score": scores[0],
+    "houseHoldCoveredPipedSupply_score": scores[1],
+    "waterSuppliedPerDay_score": scores[2],
+    "reduction_score": scores[3],
+  })
+  responseObj.fourSLB.data = slbWeigthed
     return res.status(200).json({
         success: true,
         data: responseObj

@@ -6,6 +6,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const ExcelJS = require("exceljs");
 const User = require('../../models/User')
+const {canTakenAction} = require('../CommonActionAPI/service');
 exports.saveActionPlans = async (req, res) => {
   try {
     let { state, _id } = req.decoded;
@@ -22,7 +23,9 @@ exports.saveActionPlans = async (req, res) => {
         setDefaultsOnInsert: true,
       }
     );
-    await UpdateStateMasterForm(req, "actionPlans");
+    if(data.design_year === "606aaf854dff55e6c075d219"){//check for year 2021-22
+      await UpdateStateMasterForm(req, "actionPlans");
+    }
     return Response.OK(res, null, "Submitted!");
   } catch (err) {
     console.error(err.message);
@@ -34,6 +37,7 @@ exports.getActionPlans = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
+  let role = req.decoded.role;
   try {
     const actionPlan = await ActionPlans.findOne({
       state: ObjectId(state),
@@ -45,7 +49,7 @@ exports.getActionPlans = async (req, res) => {
     }
     let userData = await User.findOne({ _id: ObjectId(actionPlan['actionTakenBy']) });
     actionPlan['actionTakenByRole'] = userData['role'];;
-
+    Object.assign(actionPlan, {canTakeAction: canTakenAction(actionPlan['status'], actionPlan['actionTakenByRole'], actionPlan['isDraft'], "STATE",role ) })
     return Response.OK(res, actionPlan, "Success");
   } catch (err) {
     console.error(err.message);
