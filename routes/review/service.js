@@ -953,21 +953,19 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
           // },
             query_2 = {
               $group:{
-                _id:{
-                    stateName:"$stateName",
-                    },
-                   status: {$push:"$formData.status"},                    
-            }             
+                _id:"$state",
+                status: {$push:"$formData.status"}, 
+                stateName: {$first: "$stateName"}
+                  }             
             }
             oldQuery.push(query_2);
             break;
           case CollectionNames.state_grant_alloc:
             query_2 = {
               $group:{
-                _id:{
-                  stateName:"$stateName"
-                },
+                _id:"$state",
                 draft:{$push:"$formData.isDraft"},
+                stateName: {$first: "$stateName"}
               }
             }
             oldQuery.push(query_2);
@@ -1314,19 +1312,19 @@ if(csv){
   
    
 }
-  // if (
-  //   collectionName === CollectionNames.state_gtc ||
-  //   collectionName === CollectionNames.state_grant_alloc
-  // ) {
-  //   data.forEach((element) => {
-  //     element.stateName = element["_id"]["stateName"];
-  //     let { status, pending } = countStatusData(element, collectionName);
-  //     element.formStatus = status;
-  //     if (pending > 0 && collectionName === CollectionNames.state_gtc) {
-  //       element.cantakeAction = true;
-  //     }
-  //   });
-  // }
+  if (
+    collectionName === CollectionNames.state_gtc ||
+    collectionName === CollectionNames.state_grant_alloc
+  ) {
+    data.forEach((element) => {
+      // element.stateName = element["stateName"];
+      let { status, pending } = countStatusData(element, collectionName);
+      element.formStatus = status;
+      if (pending > 0 && collectionName === CollectionNames.state_gtc) {
+        element.cantakeAction = true;
+      }
+    });
+  }
 
 //  console.log(data)
  return res.status(200).json({
@@ -1696,7 +1694,7 @@ filledQueryExpression = {
 
         ]
 
-        // query_s = createDynamicQuery(formName, query_s, userRole);
+        query_s = createDynamicQuery(formName, query_s, userRole);
 
         let  filterApplied_s = Object.keys(filter).length > 0
         if(filterApplied_s){

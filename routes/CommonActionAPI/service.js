@@ -167,30 +167,30 @@ module.exports.calculateKeys = (formStatus, formType) => {
             switch(formStatus){
                 case StatusList.In_Progress:
                     keys = {
-                        [`${dbCollectionName}.status`]:true,
-                        [`${dbCollectionName}.actionTakenByRole`]:"STATE",
-                        [`${dbCollectionName}.isDraft`]: "PENDING"
+                        [`formData.isDraft`]:true,
+                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.status`]: "PENDING"
                     }
                     break;
                 case StatusList.Under_Review_By_MoHUA:
                     keys = {
-                        [`${dbCollectionName}.status`]:false,
-                        [`${dbCollectionName}.actionTakenByRole`]:"STATE",
-                        [`${dbCollectionName}.isDraft`]: "PENDING"
+                        [`formData.isDraft`]:false,
+                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.status`]: "PENDING"
                     }
                     break;
                 case StatusList.Approved_By_MoHUA:
                     keys = {
-                        [`${dbCollectionName}.status`]:false,
-                        [`${dbCollectionName}.actionTakenByRole`]:"MoHUA",
-                        [`${dbCollectionName}.isDraft`]: "APPROVED"
+                        [`formData.isDraft`]:false,
+                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.status`]: "APPROVED"
                     }
                     break;
                 case StatusList.Rejected_By_MoHUA:
                     keys = {
-                        [`${dbCollectionName}.status`]:false,
-                        [`${dbCollectionName}.actionTakenByRole`]:"MoHUA",
-                        [`${dbCollectionName}.isDraft`]: "REJECTED"
+                        [`formData.isDraft`]:false,
+                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.status`]: "REJECTED"
                     }
                     break;
                 default:  
