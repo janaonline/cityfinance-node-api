@@ -1369,7 +1369,10 @@ function countStatusData(element, collectionName){
         }
       }
       notStarted = total - pending - approved - rejected;
-      status = ` ${approved} Approved, ${rejected} Rejected, ${pending} Pending, ${notStarted} Not Started`
+      status = ` ${approved} Approved, ${rejected} Rejected, ${pending} Pending`;
+      if(notStarted>0){
+        status = `${status}, ${notStarted} Not Started`;
+      }
       return {status, pending};
     }else if( collectionName === CollectionNames.state_grant_alloc){
       for(let i =0; i<arr.length; i++){
