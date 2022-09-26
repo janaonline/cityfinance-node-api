@@ -1376,6 +1376,24 @@ const gtcSubmission = (state, financialYear, name, installment) =>{
   };
 }
 
+
+const ulbFormSubmitted = (ulbName, formName) => {
+  return {
+    subject: `${formName} Form Successfully Submitted`,
+    body: `
+              <p>Dear ${ulbName}</p> 
+              <br>
+              <p>
+              Your <strong>${formName}</strong> Form has been successfully submitted.<br>
+              You will receive a confirmation on approval from State and MoHUA.
+              </p>
+              <br>
+              
+              <br>Regards,<br>
+              City Finance Team`,
+  };
+};
+
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -1412,5 +1430,6 @@ module.exports = {
   sendAccountReActivationEmail,
   utilizationRequestAction,
   grantClaimAcknowledgement,
-  gtcSubmission
+  gtcSubmission,
+  ulbFormSubmitted
 };

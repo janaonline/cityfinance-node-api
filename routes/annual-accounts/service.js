@@ -24,6 +24,10 @@ const {groupByKey} = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
 const {canTakenAction} = require('../CommonActionAPI/service')
 const fs = require("fs");
+const Service = require('../../service');
+const {FormNames} = require('../../util/FormNames');
+
+
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -34,12 +38,80 @@ const time = () => {
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
+
     req.body.actionTakenBy = req?.decoded._id;
     req.body.actionTakenByRole = req?.decoded.role;
+    const formName = FormNames["annualAcc"];
+    const {name: ulbName} =  req.decoded;
+    
     req.body.ulb = req?.decoded.ulb;
     const ulb = req?.decoded.ulb;
     req.body.modifiedAt = new Date();
-req.body['status']="PENDING"
+    req.body['status']="PENDING";
+    let userData = await User.find({
+      $or: [
+        { isDeleted: false, 
+          ulb: ObjectId(ulb), 
+          role: "ULB"
+        },
+        {
+          isDeleted: false,
+          state: ObjectId(req?.decoded.state),
+          role: "STATE",
+          isNodalOfficer: true,
+        },
+      ],
+    }).lean();
+
+    let emailAddress = [];
+    let ulbUserData = {},
+      stateUserData = {};
+    for (let i = 0; i < userData.length; i++) {
+      if (userData[i]) {
+        if (userData[i].role === "ULB") {
+          ulbUserData = userData[i];
+        } else if (userData[i].role === "STATE") {
+          stateUserData = userData[i];
+        }
+      }
+      if (ulbUserData && ulbUserData.commissionerEmail) {
+        emailAddress.push(ulbUserData.commissionerEmail);
+      }
+      if (stateUserData && stateUserData.email) {
+        emailAddress.push(stateUserData.email);
+      }
+      ulbUserData = {};
+      stateUserData = {};
+    }
+    //unique email address
+    emailAddress = Array.from(new Set(emailAddress));
+ 
+    let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(ulbName, formName);
+    let mailOptions = {
+      Destination: {
+        /* required */
+        ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
+      },
+      Message: {
+        /* required */
+        Body: {
+          /* required */
+          Html: {
+            Charset: "UTF-8",
+            Data: ulbTemplate.body,
+          },
+        },
+        Subject: {
+          Charset: "UTF-8",
+          Data: ulbTemplate.subject,
+        },
+      },
+      Source: process.env.EMAIL,
+      /* required */
+      ReplyToAddresses: [process.env.EMAIL],
+    };
+  
+
 
     let formData = {};
     let data = req.body;
@@ -47,6 +119,7 @@ req.body['status']="PENDING"
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
     formData['status'] = 'PENDING';
+    formData["ulbSubmit"] = "";
     let proData , audData
       if (req.body.unAudited.submit_annual_accounts) {
         proData = req.body.unAudited.provisional_data;
@@ -128,24 +201,30 @@ if(formData.isDraft){
   })
 }else if(!formData.isDraft){
   let currentData = {}
+  formData['ulbSubmit'] = new Date();
   Object.assign(currentData,formData ) 
 
   formData['history'] = submittedForm['history']
-  formData['history'].push(currentData)
-  delete formData['_id']
-const addedHistory = await AnnualAccountData.findOneAndUpdate(
-  condition,
-  formData
-);
-return res.status(200).json({
-  status: true,
-  message: "form submitted",
-  data: addedHistory
-})
+  formData["history"].push(currentData);
+  delete formData["_id"];
+  const addedHistory = await AnnualAccountData.findOneAndUpdate(
+    condition,
+    formData
+  );
+  if(addedHistory){//email trigger after form submission
+    Service.sendEmail(mailOptions);
+  }
+
+  return res.status(200).json({
+    status: true,
+    message: "form submitted",
+    data: addedHistory,
+  });
 
 }
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
+      formData["ulbSubmit"] = new Date();
       const form = await AnnualAccountData.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
@@ -162,6 +241,10 @@ return res.status(200).json({
             message: "Form history not added."
           })
         } else {
+          if(addedHistory){//email trigger after form submission
+            Service.sendEmail(mailOptions);
+          }
+        
           return res.status(200).json({
             status: true,
             message: "form submitted",

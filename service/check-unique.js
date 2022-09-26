@@ -1,57 +1,118 @@
 const User = require('../models/User');
-const mobile = async (mobile,checkDepartment=true, _id="")=>{
-    return new Promise(async (resolve, reject)=>{
-        try{
-            let query = {
-                isActive:true,
-                isDeleted:false,
-                $or:[
-                    {mobile:mobile},
-                    {commissionerConatactNumber:mobile},
-                    {accountantConatactNumber:mobile}
-                ]
-            };
-            if(checkDepartment){
-                query["$or"].push({departmentContactNumber:mobile})
-            }
-            let user = await User.findOne(query,{_id:1,role:1});
-            if(user){
-                if(_id && user._id.toString() == _id.toString()){
-                    user = null;
+const mobile = async (mobile,checkDepartment=true, _id="", role)=>{
+    if(role === "STATE"){
+        return new Promise(async (resolve, reject)=>{
+            try{
+                let query = {
+                    isActive:true,
+                    isDeleted:false,
+                    $or:[
+                        {mobile:mobile},
+                        {commissionerConatactNumber:mobile},
+                        {accountantConatactNumber:mobile}
+                    ]
+                };
+                if(checkDepartment){
+                    query["$or"].push({departmentContactNumber:mobile})
                 }
+                let user = await User.find(query,{_id:1,role:1}).lean();
+                if(user && user.length === 1){
+                    if(_id && user[0]._id.toString() == _id.toString()){
+                        user = null;
+                    }
+                }else if (user.length === 0){
+                    user = null
+                }
+                resolve(user);
+            }catch (e) {
+                reject(e)
             }
-            resolve(user);
-        }catch (e) {
-            reject(e)
-        }
-    });
+        });
+    }else {
+        return new Promise(async (resolve, reject)=>{
+            try{
+                let query = {
+                    isActive:true,
+                    isDeleted:false,
+                    $or:[
+                        {mobile:mobile},
+                        {commissionerConatactNumber:mobile},
+                        {accountantConatactNumber:mobile}
+                    ]
+                };
+                if(checkDepartment){
+                    query["$or"].push({departmentContactNumber:mobile})
+                }
+                let user = await User.findOne(query,{_id:1,role:1});
+                if(user){
+                    if(_id && user._id.toString() == _id.toString()){
+                        user = null;
+                    }
+                }
+                resolve(user);
+            }catch (e) {
+                reject(e)
+            }
+        });
+    }
 };
-const email = async (email, checkDepartment=true, _id)=>{
-    return new Promise(async (resolve, reject)=>{
-        try{
-            let query = {
-                isActive:true,
-                isDeleted:false,
-                $or:[
-                    {email:email},
-                    {commissionerEmail:email},
-                    {accountantEmail:email}
-                ]
-            };
-            if(checkDepartment){
-                query["$or"].push({departmentEmail:email})
-            }
-            let user = await User.findOne(query,{_id:1,role:1});
-            if(user){
-                if(_id && user._id.toString() == _id.toString()){
-                    user = null;
+const email = async (email, checkDepartment=true, _id, role)=>{
+    if(role === "STATE"){
+        return new Promise(async (resolve, reject)=>{
+            try{
+                let query = {
+                    isActive:true,
+                    isDeleted:false,
+                    $or:[
+                        {email:email},
+                        {commissionerEmail:email},
+                        {accountantEmail:email}
+                    ]
+                };
+                if(checkDepartment){
+                    query["$or"].push({departmentEmail:email})
                 }
+                let user = await User.find(query,{_id:1,role:1}).lean();
+                if(user && user.length === 1){
+                    if(_id && user[0]._id.toString() == _id.toString()){
+                        user = null;
+                    }
+                }else if(user.length === 0){
+                    user = null
+                }
+                resolve(user);
+            }catch (e) {
+                reject(e)
             }
-            resolve(user);
-        }catch (e) {
-            reject(e)
-        }
-    });
+        });
+    } else{
+        return new Promise(async (resolve, reject)=>{
+            try{
+                let query = {
+                    isActive:true,
+                    isDeleted:false,
+                    $or:[
+                        {email:email},
+                        {commissionerEmail:email},
+                        {accountantEmail:email}
+                    ]
+                };
+                if(checkDepartment){
+                    query["$or"].push({departmentEmail:email})
+                }
+                let user = await User.findOne(query,{_id:1,role:1});
+                if(user){
+                    if(_id && user._id.toString() == _id.toString()){
+                        user = null;
+                    }
+                }
+                resolve(user);
+            }catch (e) {
+                reject(e)
+            }
+        });
+    }
+
 };
 const validate = (data, role,_id)=>{
     return new Promise(async (resolve, reject)=>{
@@ -164,9 +225,9 @@ const validate = (data, role,_id)=>{
                     if(data[val.key]){
                         let d; let departmentCheck = val.ignoreDepartment ? false : true
                         if(val.type == "email"){
-                            d = await email(data[val.key], departmentCheck,_id);
+                            d = await email(data[val.key], departmentCheck,_id, role);
                         }else {
-                            d = await mobile(data[val.key], departmentCheck,_id);
+                            d = await mobile(data[val.key], departmentCheck,_id, role);
                         }
                         if(d){
                             errors.push(val.message);

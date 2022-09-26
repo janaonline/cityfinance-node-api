@@ -80,6 +80,7 @@ targetDisable : {type: Boolean, default: false},
             message: "ERROR: status can be either PENDING/APPROVED/REJECTED"
         }
     },
+    ulbSubmit: {type: Date},
     rejectReason: {type: String, default:""},
     
     responseFile_state:pdfSchema(),

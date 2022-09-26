@@ -3,7 +3,10 @@ const OdfFormCollection = require('../../models/OdfFormCollection');
 const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
 const {response} = require('../../util/response');
-const {canTakenAction} = require('../CommonActionAPI/service')
+const {canTakenAction} = require('../CommonActionAPI/service');
+const Service = require('../../service');
+const {FormNames} = require('../../util/FormNames');
+const User = require('../../models/User');
 
 function dateFormatter(input){
     const t = new Date(input);
@@ -22,8 +25,9 @@ module.exports.createOrUpdateForm = async (req, res) => {
         formData = {...data};
 	    const isGfc = data.isGfc;  // flag to check which collection to use 
         let collection = isGfc ? GfcFormCollection : OdfFormCollection;
+        const formName =  isGfc ? FormNames["gfc"]: FormNames["odf"];
        
-        const {_id: actionTakenBy, role: actionTakenByRole} = user;
+        const {_id: actionTakenBy, role: actionTakenByRole, name: ulbName } = user;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
     
@@ -46,10 +50,69 @@ module.exports.createOrUpdateForm = async (req, res) => {
         
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
+        formData['ulbSubmit'] = "";
         
         let condition = {}; // condition to find a document using ulb and design_year
         condition['ulb'] = ObjectId(data.ulb);
         condition['design_year'] = ObjectId(data.design_year);
+
+        let userData =  await User.find({
+            $or:[
+            { isDeleted: false, ulb: ObjectId(data.ulb), role: 'ULB' },
+            {isDeleted: false, state: ObjectId(user.state), role: 'STATE', isNodalOfficer: true },
+            ]
+        }
+        ).lean();
+
+        let emailAddress = [];
+        let ulbUserData = {},
+          stateUserData = {};
+        for(let i =0 ; i< userData.length; i++){//getting email address from the data
+            if(userData[i]){
+                if(userData[i].role === "ULB"){
+                    ulbUserData = userData[i];
+                }else if(userData[i].role === "STATE"){
+                    stateUserData = userData[i];
+                }
+            }
+            if(ulbUserData && ulbUserData.commissionerEmail){
+                emailAddress.push(ulbUserData.commissionerEmail);
+            }
+            if(stateUserData && stateUserData.email ){
+                emailAddress.push(stateUserData.email);
+            }   
+        }
+        //unique email address
+        emailAddress =  Array.from(new Set(emailAddress))
+       //importing email template
+        let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
+          ulbName,
+          formName
+        );
+        let mailOptions = {
+          Destination: {
+            /* required */
+            ToAddresses: ["dalbeer.kaur@dhwaniris.com", "aditya.yadav@dhwaniris.com"],
+          },
+          Message: {
+            /* required */
+            Body: {
+              /* required */
+              Html: {
+                Charset: "UTF-8",
+                Data: ulbTemplate.body,
+              },
+            },
+            Subject: {
+              Charset: "UTF-8",
+              Data: ulbTemplate.subject,
+            },
+          },
+          Source: process.env.EMAIL,
+          /* required */
+          ReplyToAddresses: [process.env.EMAIL],
+        };
+        
         let savedBody = new collection(formData);
         if(data.ulb && data.design_year){
             const submittedForm = await collection.findOne(condition);
@@ -61,10 +124,12 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 }) 
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    savedBody["ulbSubmit"] = new Date();
                     const formSubmit = await collection.create(savedBody);
                     formData['createdAt'] = formSubmit.createdAt;
                     formData['modifiedAt'] = formSubmit.modifiedAt;
                     formData['certDate'] = formSubmit.certDate;
+                    formData['ulbSubmit'] = savedBody['ulbSubmit'];
                     if (formSubmit) {//add history
                         let updateData = await collection.findOneAndUpdate(condition, 
                             {
@@ -72,6 +137,9 @@ module.exports.createOrUpdateForm = async (req, res) => {
                                 $set: formData,  
                             },
                             { new: true } );
+                        //email trigger after form submission
+                        Service.sendEmail(mailOptions);
+
                         return res.status(200).json({
                             success: true,
                             message: "Data saved.",
@@ -106,6 +174,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     const formSubmit = await collection.findOne(condition);
                     formData['createdAt'] = formSubmit.createdAt;
                     formData['modifiedAt'] = new Date();
+                    formData['ulbSubmit'] =  new Date();
                     if(formData['certDate'] === ""){
                         formData['certDate'] = null;
                     }
@@ -113,6 +182,9 @@ module.exports.createOrUpdateForm = async (req, res) => {
                         { $push: { history: formData}, $set: formData },//todo
                         { returnDocument: "after" });
                     
+                    //email trigger after form submission
+                    Service.sendEmail(mailOptions);
+
                     return res.status(201).json({
                         success: true,
                         message: "Form saved",

@@ -109,6 +109,7 @@ const UtilizationReportSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
+    ulbSubmit: { type: Date},
     actionTakenByRole: {
       type: String,
       default: null,

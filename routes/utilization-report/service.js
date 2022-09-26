@@ -10,6 +10,9 @@ const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
 const {calculateStatus} = require('../CommonActionAPI/service')
 const {canTakenAction} = require('../CommonActionAPI/service')
+const Service = require('../../service');
+const {FormNames} = require('../../util/FormNames');
+
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -29,7 +32,69 @@ module.exports.createOrUpdate = async (req, res) => {
     req.body.actionTakenBy = req.decoded?._id;
     req.body.actionTakenByRole = req.decoded?.role;
     req.body.modifiedAt = new Date();
-    //
+    
+    const formName = FormNames["dur"]; 
+    const { name: ulbName } = req.decoded;
+    let userData =  await User.find({
+      $or:[
+      { isDeleted: false, ulb: ObjectId(ulb), role: 'ULB' },
+      {isDeleted: false, state: ObjectId(req?.decoded.state), role: 'STATE', isNodalOfficer: true },
+      ]
+  }
+  ).lean();
+
+  let emailAddress = [];
+  let ulbUserData = {},
+    stateUserData = {};
+  for(let i =0 ; i< userData.length; i++){
+      if(userData[i]){
+          if(userData[i].role === "ULB"){
+              ulbUserData = userData[i];
+          }else if(userData[i].role === "STATE"){
+              stateUserData = userData[i];
+          }
+      }
+      if(ulbUserData && ulbUserData.commissionerEmail){
+          emailAddress.push(ulbUserData.commissionerEmail);
+      }
+      if(stateUserData && stateUserData.email ){
+          emailAddress.push(stateUserData.email);
+      }
+      ulbUserData ={};
+      stateUserData = {};   
+  }
+  //unique email address
+  emailAddress =  Array.from(new Set(emailAddress))
+   let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
+    ulbName,
+    formName
+  );
+  let mailOptions = {
+    Destination: {
+      /* required */
+      ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
+    },
+    Message: {
+      /* required */
+      Body: {
+        /* required */
+        Html: {
+          Charset: "UTF-8",
+          Data: ulbTemplate.body,
+        },
+      },
+      Subject: {
+        Charset: "UTF-8",
+        Data: ulbTemplate.subject,
+      },
+    },
+    Source: process.env.EMAIL,
+    /* required */
+    ReplyToAddresses: [process.env.EMAIL],
+  };
+  
+
+
     let formData = {};
     let data = req.body;
     formData = {...data};
@@ -81,6 +146,7 @@ module.exports.createOrUpdate = async (req, res) => {
       })
     }
     if(!submittedForm && !isDraft){// final submit in first attempt
+      formData['ulbSubmit'] = new Date();
       const form = await UtilizationReport.create(formData);
       if(form){
         formData.createdAt = form.createdAt;
@@ -114,6 +180,10 @@ module.exports.createOrUpdate = async (req, res) => {
             message: "Form history not added"
           })
         } else {
+          if(addedHistory){
+            //email trigger after form submission
+           Service.sendEmail(mailOptions);
+           }
           return res.status(200).json({
             status: true,
             data: addedHistory
@@ -143,11 +213,16 @@ module.exports.createOrUpdate = async (req, res) => {
 
     let savedData;
     if (currentSavedUtilRep) {
+      req.body['ulbSubmit'] = new Date();
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
-        { $set: req.body, $push: { history: currentSavedUtilRep }},
+        { $set: req.body, $push: { history: req.body }},
         {new: true, runValidators: true}
       );
+      if(savedData){
+        //email trigger after form submission
+       Service.sendEmail(mailOptions);
+      }
     } else {
       savedData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), financialYear, designYear },
@@ -594,11 +669,13 @@ else{
     obj['action'] = 'not_show';
     obj['url'] = ``;
   }else if(status == FORM_STATUS.Under_Review_By_State){
+    let msg = role == "ULB" ?  `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
     obj['action'] = 'note';
-    obj['url'] = `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}`;
+    obj['url'] = msg;
   } else{
+    let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
     obj['action'] = 'note'
-    obj['url'] = `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . `;
+    obj['url'] = msg ;
   }
 }
 

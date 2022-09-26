@@ -25,11 +25,13 @@ module.exports.getForm = async (req, res) =>{
         const ulb = req.decoded.ulb;
         condition.design_year = data.design_year;
         condition.state = data.state;
-let mpc = false;
-let isUA = false
-        let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
-mpc = ulbData?.population > 1000000 ? true : false;
-isUA = ulbData?.isUA == 'Yes' ? true : false
+        let mpc = false;
+        let isUA = false
+        if(ulb){
+            let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+            mpc = ulbData?.population > 1000000 ? true : false;
+            isUA = ulbData?.isUA == 'Yes' ? true : false
+        }
         const prevFormData = await StateGTCCertificate.findOne({
             state:data.state,
             design_year: ObjectId("606aaf854dff55e6c075d219"),
@@ -130,26 +132,47 @@ isUA = ulbData?.isUA == 'Yes' ? true : false
         }
 
         let forms = [...form,...result]
-        let output = []
-        if(forms.length){
-            forms.forEach(el => {
-if(mpc){
-    if(el['type']  == 'million_tied')
-    output.push(el)
-}else if(!mpc && isUA){
-    if(el['type']  == 'million_tied' || el['type']  == 'nonmillion_tied' || el['type']  == 'nonmillion_untied'  )
-    output.push(el)
-}else if(!mpc && !isUA){
-    if(el['type']  == 'nonmillion_tied' || el['type']  == 'nonmillion_untied'  )
-    output.push(el)   
-}
-            })
-        }
-        
-            if(forms){
+        let output = [];
+        if(ulb){
+            if (forms.length) {
+              forms.forEach((el) => {
+                if (mpc) {
+                  if (el["type"] == "million_tied") output.push(el);
+                } else if (!mpc && isUA) {
+                  if (
+                    el["type"] == "million_tied" ||
+                    el["type"] == "nonmillion_tied" ||
+                    el["type"] == "nonmillion_untied"
+                  )
+                    output.push(el);
+                } else if (!mpc && !isUA) {
+                  if (
+                    el["type"] == "nonmillion_tied" ||
+                    el["type"] == "nonmillion_untied"
+                  )
+                    output.push(el);
+                }
+              });
+            }
+            if(output){
                 return res.status(200).json({
                     status: true,
                     data: output,
+                });
+            }else{
+                return res.status(200).json({
+                    status: true,
+                    message: "Form not found"
+                
+                })
+            }
+
+        }
+                    
+            if(forms){
+                return res.status(200).json({
+                    status: true,
+                    data: forms,
                 });
 
             } else{

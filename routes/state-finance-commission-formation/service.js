@@ -1,6 +1,6 @@
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const ObjectId = require('mongoose').Types.ObjectId;
-
+const {canTakenAction} = require('../CommonActionAPI/service')
 function response(form, res, successMsg, errMsg){
     if(form){
         return res.status(200).json({
@@ -22,9 +22,10 @@ module.exports.getForm = async (req, res) => {
         const condition = {};
         condition.state = data.state;
         condition.design_year = data.design_year;
-
-        const form = await StateFinanceCommissionFormation.findOne(condition);
+let role = req.decoded.role
+        const form = await StateFinanceCommissionFormation.findOne(condition).lean();
         if (form) {
+            Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE",role ) })
             return res.status(200).json({
                 status: true,
                 data: form
