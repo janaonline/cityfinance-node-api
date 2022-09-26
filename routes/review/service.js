@@ -955,8 +955,9 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
               $group:{
                 _id:"$state",
                 status: {$push:"$formData.status"}, 
-                stateName: {$first: "$stateName"}
-                  }             
+                stateName: {$first: "$stateName"},
+                state: {$first: "$state"},
+              },           
             }
             oldQuery.push(query_2);
             break;
@@ -965,7 +966,8 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
               $group:{
                 _id:"$state",
                 draft:{$push:"$formData.isDraft"},
-                stateName: {$first: "$stateName"}
+                stateName: {$first: "$stateName"},
+                state: {$first: "$state"},
               }
             }
             oldQuery.push(query_2);
@@ -1094,13 +1096,13 @@ module.exports.get = catchAsync( async(req,res) => {
     delete filter['filled1']
   }
 if(formType == 'STATE'){
-    filter['state'] = req.query.stateName
-    filter['status'] = req.query.status 
-    // filter['status'] = req.query.status != 'null' ? req.query.status  : "";
-    // filter['state'] = req.query.state != 'null' ? req.query.state  : ""
-    // keys =  calculateKeys(filter['status'], formType);
-    // Object.assign(filter,keys )
-    // delete filter['status']
+    // filter['state'] = req.query.stateName
+    // filter['status'] = req.query.status 
+    filter['status'] = req.query.status != 'null' ? req.query.status  : "";
+    filter['state'] = req.query.state != 'null' ? req.query.state  : ""
+    keys =  calculateKeys(filter['status'], formType);
+    Object.assign(filter,keys )
+    delete filter['status']
 }
 
     let state = req.query.state ?? req.decoded.state
