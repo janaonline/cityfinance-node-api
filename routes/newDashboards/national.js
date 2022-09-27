@@ -58,7 +58,7 @@ exports.dataAvailabilityState = async (req, res) => {
       responsePayload.data = await createPopulationData(
         JSON.parse(JSON.stringify(ulbs)),
         totalUlbs,
-        financialYear
+        JSON.parse(JSON.stringify(ulbLedgers))
       );
     else if (ulbType)
       responsePayload.data = await createdUlbTypeData(
@@ -188,7 +188,7 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
   }
 }
 
-async function createPopulationData(ulbs, totalUlbs, financialYear) {
+async function createPopulationData(ulbs, totalUlbs, ulbLedgers) {
   let populationMap = {
     Average: {
       numberOfULBs: 0,
@@ -266,12 +266,18 @@ async function createPopulationData(ulbs, totalUlbs, financialYear) {
   for (each of rows) {
     if (each != "Average") {
       const arrr = populationMap[each]["numberOfULBs"];
-      let matched = (
-        await UlbLedger.distinct("ulb", {
-          financialYear,
-          ulb: { $in: populationMap[each].numberOfULBs },
-        }).lean()
-      ).length;
+      let matched = 0 ;
+      for (elem of arrr) {
+        if (ulbLedgers.indexOf(elem._id) > -1) {
+          ++matched;
+        }
+      }
+      // (
+      //   await UlbLedger.distinct("ulb", {
+      //     financialYear,
+      //     ulb: { $in: populationMap[each].numberOfULBs },
+      //   }).lean()
+      // ).length;
       populationMap[each]["numberOfULBs"] = arrr.length;
       populationMap[each]["ulbsWithData"] = matched;
       const multiply = matched * 100;
