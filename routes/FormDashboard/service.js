@@ -652,6 +652,7 @@ module.exports.dashboard = async (req, res) => {
             let cutOff = 0;
             let totalApprovedForm = 0;
             let modelName = collection.collection.modelName;
+            console.log("modelName", modelName)
             if(modelName !== ModelNames.pTAX && modelName !== ModelNames.sfc &&
                 modelName !== ModelNames.gtc){
                 formCategory = "ULB";
@@ -674,7 +675,7 @@ module.exports.dashboard = async (req, res) => {
             //Get submitted forms            
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
-
+console.log( submittedForms.length, pipeline);
             if(modelName === ModelNames.gtc && data.installment === '1'){
                 let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
                 let forms = await StateGTCCertificate.aggregate(query);
