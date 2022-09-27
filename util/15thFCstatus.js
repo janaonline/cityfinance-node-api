@@ -46,3 +46,17 @@ module.exports.ModelNames = {
     slb: "XVFcGrantULBForm"
 }
 
+module.exports.CollectionNames = {
+    annualAcc: "annualaccountdatas",
+    linkPFMS: "pfmsaccounts",
+    gtc: "granttransfercertificates",
+    sfc: "statefinancecommissionformations",
+    pTAX: "propertytaxfloorrates",
+    dur: "utilizationreports",
+    propTaxOp:"propertytaxops",
+    twentyEightSlbs: "twentyeightslbforms",
+    odf: "odfformcollections",
+    gfc: "gfcformcollections",
+    slb: "xvfcgrantulbforms"
+}
+
