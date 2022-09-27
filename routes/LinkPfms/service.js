@@ -110,7 +110,9 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         }
         //unique email address
         emailAddress =  Array.from(new Set(emailAddress))
-       
+        if(process.env.ENV === "demo"){
+            emailAddress = ["dalbeer.kaur@dhwaniris.com"]
+          }
         let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
           ulbName,
           formName
@@ -118,7 +120,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         let mailOptions = {
           Destination: {
             /* required */
-            ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
+            ToAddresses: emailAddress,
           },
           Message: {
             /* required */
