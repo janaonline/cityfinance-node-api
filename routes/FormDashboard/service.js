@@ -265,43 +265,43 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             formData['icon'] = element.icon;
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.twentyEightSlbs]}`;
 
-        } else if (modelName === CollectionNames.dur && element._id === CollectionNames.dur){
+        } else if (modelName === CollectionNames.dur && element._id === "UtilizationReport"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.dur]}`;
             
-        }else if (modelName === CollectionNames.gtc && element._id === CollectionNames.gtc){
+        }else if (modelName === CollectionNames.gtc && element._id === "GrantTransferCertificate"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${element.url}`;
                     
-        }else if (modelName === CollectionNames.twentyEightSlbs && element._id === CollectionNames.twentyEightSlbs){
+        }else if (modelName === CollectionNames.twentyEightSlbs && element._id === "TwentyEightSlbsForm"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.twentyEightSlbs]}`;
                     
-        }else if (modelName ===  CollectionNames.odf && element._id === CollectionNames.odf){
+        }else if (modelName ===  CollectionNames.odf && element._id === "OdfFormCollection"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.odf]}`;
                     
-        }else if (modelName === CollectionNames.gfc && element._id === CollectionNames.gfc){
+        }else if (modelName === CollectionNames.gfc && element._id === "GfcFormCollection"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.gfc]}`;
                 
-        }else if (modelName === CollectionNames.sfc && element._id === CollectionNames.sfc){
+        }else if (modelName === CollectionNames.sfc && element._id === "StateFinanceCommissionFormation"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${element.url}`;
                     
-        }else if (modelName === CollectionNames.pTAX && element._id === CollectionNames.pTAX ){
+        }else if (modelName === CollectionNames.pTAX && element._id === "PropertyTaxFloorRate" ){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
