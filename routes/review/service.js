@@ -45,7 +45,7 @@ function createDynamicColumns(collectionName){
             columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Tied grants for year,	Unutilised Tied Grants from previous installment (INR in lakhs),	15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs)	,Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),	Closing balance at the end of year (INR in lakhs),	WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),	WM Rejuvenation of Water Bodies Number of Projects Undertaken,	WM_Rejuvenation of Water Bodies_Total Project Cost Involved,	WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Drinking Water_Number of Projects Undertaken	,WM_Drinking Water_Total Project Cost Involved,	WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Rainwater Harvesting_Number of Projects Undertaken,	WM_Rainwater Harvesting_Total Project Cost Involved	,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Water Recycling_Number of Projects Undertaken,	WM_Water Recycling_Total Project Cost Involved,	SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Sanitation_Number of Projects Undertaken,	SWM_Sanitation_Total Project Cost Involved(INR in lakhs),	SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Solid Waste Management_Number of Projects Undertaken,	SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),	State_Review Status,	State_Comments,	MoHUA Review Status,	MoHUA_Comments,	State_File URL,	MoHUA_File URL `
             break;
         case CollectionNames['28SLB']:
-          columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year, Coverage of water supply connections,Per capita supply of water(lpcd) ,Extent of metering of water connections ,Extent of non-revenue water (NRW) ,Continuity of water supply ,Efficiency in redressal of customer complaints, Quality of water supplied , Cost recovery in water supply service , Efficiency in collection of water supply-related charges ,Coverage of toilets , Coverage of waste water network services ,Collection efficiency of waste water network , Adequacy of waste water treatment capacity , Extent of reuse and recycling of waste water , Quality of waste water treatment , Efficiency in redressal of customer complaints , Extent of cost recovery in waste water management ,Efficiency in collection of waste water charges ,Household level coverage of solid waste management services , Efficiency of collection of municipal solid waste ,Extent of segregation of municipal solid waste ,Extent of municipal solid waste recovered ,Extent of scientific disposal of municipal solid waste, Extent of cost recovery in SWM services ,Efficiency in collection of SWM related user related charges ,Efficiency in redressal of customer complaints ,Coverage of storm water drainage network ,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
+          columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year, Coverage of water supply connections,Per capita supply of water(lpcd) ,Extent of metering of water connections, Continuity of water supply, Quality of water supplied,Efficiency in redressal of customer complaints, Cost recovery in water supply service , Efficiency in collection of water supply-related charges ,Extent of non-revenue water (NRW),Coverage of toilets , Coverage of waste water network services ,Collection efficiency of waste water network , Adequacy of waste water treatment capacity , Quality of waste water treatment, Extent of reuse and recycling of waste water,Efficiency in collection of waste water charges  , Efficiency in redressal of customer complaints , Extent of cost recovery in waste water management  ,Household level coverage of solid waste management services ,Extent of segregation of municipal solid waste ,Extent of municipal solid waste recovered, Extent of cost recovery in SWM services ,Efficiency in collection of SWM related user related charges, Efficiency of collection of municipal solid waste , Extent of scientific disposal of municipal solid waste  ,Efficiency in redressal of customer complaints ,Incidence of water logging,Coverage of storm water drainage network ,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
           break;
         default:
             columns = '';
@@ -953,21 +953,21 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
           // },
             query_2 = {
               $group:{
-                _id:{
-                    stateName:"$stateName",
-                    },
-                   status: {$push:"$formData.status"},                    
-            }             
+                _id:"$state",
+                status: {$push:"$formData.status"}, 
+                stateName: {$first: "$stateName"},
+                state: {$first: "$state"},
+              },           
             }
             oldQuery.push(query_2);
             break;
           case CollectionNames.state_grant_alloc:
             query_2 = {
               $group:{
-                _id:{
-                  stateName:"$stateName"
-                },
+                _id:"$state",
                 draft:{$push:"$formData.isDraft"},
+                stateName: {$first: "$stateName"},
+                state: {$first: "$state"},
               }
             }
             oldQuery.push(query_2);
@@ -1093,13 +1093,13 @@ module.exports.get = catchAsync( async(req,res) => {
     delete filter['filled1']
   }
 if(formType == 'STATE'){
-    filter['state'] = req.query.stateName
-    filter['status'] = req.query.status 
-    // filter['status'] = req.query.status != 'null' ? req.query.status  : "";
-    // filter['state'] = req.query.state != 'null' ? req.query.state  : ""
-    // keys =  calculateKeys(filter['status'], formType);
-    // Object.assign(filter,keys )
-    // delete filter['status']
+    // filter['state'] = req.query.stateName
+    // filter['status'] = req.query.status 
+    filter['status'] = req.query.status != 'null' ? req.query.status  : "";
+    filter['state'] = req.query.state != 'null' ? req.query.state  : ""
+    keys =  calculateKeys(filter['status'], formType);
+    Object.assign(filter,keys )
+    delete filter['status']
 }
 
     let state = req.query.state ?? req.decoded.state
@@ -1311,19 +1311,19 @@ if(csv){
   
    
 }
-  // if (
-  //   collectionName === CollectionNames.state_gtc ||
-  //   collectionName === CollectionNames.state_grant_alloc
-  // ) {
-  //   data.forEach((element) => {
-  //     element.stateName = element["_id"]["stateName"];
-  //     let { status, pending } = countStatusData(element, collectionName);
-  //     element.formStatus = status;
-  //     if (pending > 0 && collectionName === CollectionNames.state_gtc) {
-  //       element.cantakeAction = true;
-  //     }
-  //   });
-  // }
+  if (
+    collectionName === CollectionNames.state_gtc ||
+    collectionName === CollectionNames.state_grant_alloc
+  ) {
+    data.forEach((element) => {
+      // element.stateName = element["stateName"];
+      let { status, pending } = countStatusData(element, collectionName);
+      element.formStatus = status;
+      if (pending > 0 && collectionName === CollectionNames.state_gtc) {
+        element.cantakeAction = true;
+      }
+    });
+  }
 
 //  console.log(data)
  return res.status(200).json({
@@ -1368,7 +1368,10 @@ function countStatusData(element, collectionName){
         }
       }
       notStarted = total - pending - approved - rejected;
-      status = ` ${approved} Approved, ${rejected} Rejected, ${pending} Pending, ${notStarted} Not Started`
+      status = ` ${approved} Approved, ${rejected} Rejected, ${pending} Pending`;
+      if(notStarted>0){
+        status = `${status}, ${notStarted} Not Started`;
+      }
       return {status, pending};
     }else if( collectionName === CollectionNames.state_grant_alloc){
       for(let i =0; i<arr.length; i++){
@@ -1693,7 +1696,7 @@ filledQueryExpression = {
 
         ]
 
-        // query_s = createDynamicQuery(formName, query_s, userRole);
+        query_s = createDynamicQuery(formName, query_s, userRole);
 
         let  filterApplied_s = Object.keys(filter).length > 0
         if(filterApplied_s){

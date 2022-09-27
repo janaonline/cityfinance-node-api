@@ -11,7 +11,6 @@ exports.saveWaterRejenuvation = async (req, res) => {
     let data = req.body;
     req.body.actionTakenBy = _id;
     req.body.modifiedAt = new Date();
-
     await WaterRejenuvation.findOneAndUpdate(
       { state: ObjectId(state), design_year: ObjectId(data.design_year) },
       data,
