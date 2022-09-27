@@ -462,6 +462,17 @@ let gfcData = await Ulb.aggregate([
           preserveNullAndEmptyArrays: true,
         },
       },
+      {
+        $lookup: {
+
+            from:"ratings",
+            localField:"gfcformcollections.rating",
+            foreignField:"_id",
+            as:"rating"
+        }
+      },{
+        $unwind:"$rating"
+      }
 ])
 if(gfcData){
     gfcData.forEach(el => {
@@ -529,6 +540,17 @@ let odfData = await Ulb.aggregate([
           preserveNullAndEmptyArrays: true,
         },
       },
+      {
+        $lookup: {
+
+            from:"ratings",
+            localField:"odfformcollections.rating",
+            foreignField:"_id",
+            as:"rating"
+        }
+      },{
+        $unwind:"$rating"
+      }
 ])
 if(odfData){
     odfData.forEach(el => {
@@ -610,6 +632,9 @@ arr.forEach(el => {
     })
 })
 
+
+
+
 let wtAvgSLB = []
 numerator.forEach((el, index)=> {
     wtAvgSLB.push(numerator[index]/popData[index])
@@ -627,6 +652,19 @@ Object.assign(slbWeigthed, {
     "waterSuppliedPerDay_score": scores[2],
     "reduction_score": scores[3],
   })
+  let numeratorGFC = 0, popDataGFC = 0
+  gfcData.forEach((el2, index)=> {
+    numeratorGFC += el2.rating.marks * el2.population
+    popDataGFC += el2.population
+})
+responseObj.gfc.score = numeratorGFC / popDataGFC;
+
+let numeratorOdf = 0, popDataOdf = 0
+  odfData.forEach((el2, index)=> {
+    numeratorOdf += el2.rating.marks * el2.population
+    popDataOdf += el2.population
+})
+responseObj.odf.score = numeratorOdf / popDataOdf;
   responseObj.fourSLB.data = slbWeigthed
     return res.status(200).json({
         success: true,
