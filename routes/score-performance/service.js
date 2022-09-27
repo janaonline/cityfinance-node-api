@@ -155,7 +155,7 @@ switch (true) {
 
 const attachPrescription = (data) => {
   let scorePerformance = data.scorePerformance ;
-  let category, question, answer, prescription;
+  let category, question, answer, prescription = '';
   for(let el in scorePerformance ){
     for(let el2 of scorePerformance[el] ){
       category = el;
@@ -164,6 +164,7 @@ const attachPrescription = (data) => {
        prescription =  fetchPrescription(category,question,answer);
        Object.assign(el2, {prescription: prescription })
     }
+  
   }
   data.scorePerformance = scorePerformance;
   
@@ -173,7 +174,7 @@ let overallPrescription = ''
     for(let el2 of scorePerformance[el] ){
         overallPrescription = overallPrescription + `- ${el2.prescription}<br>`;
     }
-
+    
     for(let key of data.partcularAnswerValues){
       if(key.name == 'Enumeration' && el == 'enumeration'){
 key['prescription'] = overallPrescription;
@@ -187,6 +188,7 @@ key['prescription'] = overallPrescription;
         key['prescription'] = overallPrescription;
       }
     }
+    overallPrescription = ''
   }
 
 
