@@ -15,44 +15,44 @@ const SLB = require('../../models/XVFcGrantForm');
 const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
-const {ModelNames} = require('../../util/15thFCstatus')
+const {CollectionNames} = require('../../util/15thFCstatus')
 
 const CUTOFF =  {
     STATE:{
         nmpc_untied: {
-            [ModelNames.gtc]: 100,
-            [ModelNames.sfc]: 100,
-            [ModelNames.pTAX]:100
+            [CollectionNames.gtc]: 100,
+            [CollectionNames.sfc]: 100,
+            [CollectionNames.pTAX]:100
         },
         nmpc_tied : {
-            [ModelNames.gtc]: 100,
-            [ModelNames.sfc]: 100,
-            [ModelNames.pTAX]:100
+            [CollectionNames.gtc]: 100,
+            [CollectionNames.sfc]: 100,
+            [CollectionNames.pTAX]:100
         },
         mpc_tied: {
-            [ModelNames.gtc]: 100,
-            [ModelNames.sfc]: 100,
-            [ModelNames.pTAX]:100
+            [CollectionNames.gtc]: 100,
+            [CollectionNames.sfc]: 100,
+            [CollectionNames.pTAX]:100
         }
     },
     ULB:{
         nmpc_untied: {
-            [ModelNames.annualAcc]: 25,
-            [ModelNames.linkPFMS]: 100,
+            [CollectionNames.annualAcc]: 25,
+            [CollectionNames.linkPFMS]: 100,
         },
         nmpc_tied : {
-            [ModelNames.annualAcc]: 25,
-            [ModelNames.linkPFMS]: 100,
-            [ModelNames.dur]: 100,
+            [CollectionNames.annualAcc]: 25,
+            [CollectionNames.linkPFMS]: 100,
+            [CollectionNames.dur]: 100,
         },
         mpc_tied: {
-            [ModelNames.annualAcc]: 25,
-            [ModelNames.linkPFMS]: 100,
-            [ModelNames.dur]: 100,
-            [ModelNames.twentyEightSlbs]: 100,
-            [ModelNames.slb]:100,
-            [ModelNames.odf]:100,
-            [ModelNames.gfc]:100,
+            [CollectionNames.annualAcc]: 25,
+            [CollectionNames.linkPFMS]: 100,
+            [CollectionNames.dur]: 100,
+            [CollectionNames.twentyEightSlbs]: 100,
+            [CollectionNames.slb]:100,
+            [CollectionNames.odf]:100,
+            [CollectionNames.gfc]:100,
         }
     }
 }
@@ -182,16 +182,16 @@ function stateGtcCertificateSubmmitedForms(type, installment, state){
 }
 
 const FormObjectIds = {
-    [ModelNames.annualAcc]: ObjectId("62aa1b04729673217e5ca3aa"),
-    [ModelNames.gtc]: ObjectId("62aa1bbec9a98b2254632a86"),
-    [ModelNames.dur]: ObjectId("62aa1c96c9a98b2254632a8a"),
-    [ModelNames.linkPFMS]: ObjectId("62aa1cc9c9a98b2254632a8e"),
-    [ModelNames.slb]: ObjectId("62aa1d4fc9a98b2254632a96"),
-    [ModelNames.odf]: ObjectId("62aa1d6ec9a98b2254632a9a"),
-    [ModelNames.gfc]: ObjectId("62aa1d82c9a98b2254632a9e"),
-    [ModelNames.sfc]: ObjectId("62c553822954384b44b3c38e"),
-    [ModelNames.pTAX]: ObjectId("62c5534e2954384b44b3c38a"),
-    [ModelNames.twentyEightSlbs]: ObjectId("62f0dbbf596298da6d3f4076")
+    [CollectionNames.annualAcc]: ObjectId("62aa1b04729673217e5ca3aa"),
+    [CollectionNames.gtc]: ObjectId("62aa1bbec9a98b2254632a86"),
+    [CollectionNames.dur]: ObjectId("62aa1c96c9a98b2254632a8a"),
+    [CollectionNames.linkPFMS]: ObjectId("62aa1cc9c9a98b2254632a8e"),
+    [CollectionNames.slb]: ObjectId("62aa1d4fc9a98b2254632a96"),
+    [CollectionNames.odf]: ObjectId("62aa1d6ec9a98b2254632a9a"),
+    [CollectionNames.gfc]: ObjectId("62aa1d82c9a98b2254632a9e"),
+    [CollectionNames.sfc]: ObjectId("62c553822954384b44b3c38e"),
+    [CollectionNames.pTAX]: ObjectId("62c5534e2954384b44b3c38a"),
+    [CollectionNames.twentyEightSlbs]: ObjectId("62f0dbbf596298da6d3f4076")
 }
 
 function getCollections(type, installment){
@@ -242,66 +242,66 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
         let flag = false;
         
         //First 4 cases where ModelName is not equal to path in sidemenu form
-        if( modelName === ModelNames.annualAcc && element._id === "AnnualAccounts"){
+        if( modelName === CollectionNames.annualAcc && element._id === "AnnualAccounts"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.annualAcc]}`;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.annualAcc]}`;
             
-        }else if(modelName === ModelNames.linkPFMS && element._id === "LinkPFMS"){
+        }else if(modelName === CollectionNames.linkPFMS && element._id === "LinkPFMS"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.linkPFMS]}`;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.linkPFMS]}`;
 
-        }else if( modelName === ModelNames.slb && element._id === "XVFcGrantForm"){
+        }else if( modelName === CollectionNames.slb && element._id === "XVFcGrantForm"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.slb]}`;
-        }else if(modelName === ModelNames.twentyEightSlbs && element._id === "TwentyEightSlbsForm"){
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.slb]}`;
+        }else if(modelName === CollectionNames.twentyEightSlbs && element._id === "TwentyEightSlbsForm"){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.twentyEightSlbs]}`;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.twentyEightSlbs]}`;
 
-        } else if (modelName === ModelNames.dur && element._id === ModelNames.dur){
+        } else if (modelName === CollectionNames.dur && element._id === CollectionNames.dur){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.dur]}`;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.dur]}`;
             
-        }else if (modelName === ModelNames.gtc && element._id === ModelNames.gtc){
+        }else if (modelName === CollectionNames.gtc && element._id === CollectionNames.gtc){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${element.url}`;
                     
-        }else if (modelName === ModelNames.twentyEightSlbs && element._id === ModelNames.twentyEightSlbs){
+        }else if (modelName === CollectionNames.twentyEightSlbs && element._id === CollectionNames.twentyEightSlbs){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.twentyEightSlbs]}`;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.twentyEightSlbs]}`;
                     
-        }else if (modelName ===  ModelNames.odf && element._id === ModelNames.odf){
+        }else if (modelName ===  CollectionNames.odf && element._id === CollectionNames.odf){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.odf]}`;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.odf]}`;
                     
-        }else if (modelName === ModelNames.gfc && element._id === ModelNames.gfc){
+        }else if (modelName === CollectionNames.gfc && element._id === CollectionNames.gfc){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[ModelNames.gfc]}`;
+            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.gfc]}`;
                 
-        }else if (modelName === ModelNames.sfc && element._id === ModelNames.sfc){
+        }else if (modelName === CollectionNames.sfc && element._id === CollectionNames.sfc){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${element.url}`;
                     
-        }else if (modelName === ModelNames.pTAX && element._id === ModelNames.pTAX ){
+        }else if (modelName === CollectionNames.pTAX && element._id === CollectionNames.pTAX ){
             flag = true;
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
@@ -425,7 +425,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
     switch(formCategory){
         case "ULB":
             switch(modelName){
-                case "AnnualAccountData":
+                case CollectionNames.annualAcc:
                     condition = {
                         audited :{
                             submit_annual_accounts: true
@@ -443,7 +443,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                         }
                     });
                     break;
-                case "PFMSAccount":
+                case CollectionNames.linkPFMS:
                     condition = {
                         linkPFMS:'Yes',
                         isUlbLinkedWithPFMS: 'Yes',
@@ -457,9 +457,9 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                         }
                     });
                     break;
-                case "TwentyEightSlbForm":
-                case "GfcFormCollection":
-                case "OdfFormCollection": 
+                case CollectionNames.twentyEightSlbs:
+                case CollectionNames.gfc:
+                case CollectionNames.odf: 
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
@@ -468,7 +468,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     }
                     });
                     break;
-                case "XVFcGrantULBForm":
+                case CollectionNames.slb:
                     condition = {
                         blank: false,
                         isDraft: false
@@ -481,7 +481,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
                     }
                     });
                     break;
-                case "UtilizationReport":
+                case CollectionNames.dur:
                     query.push({
                         $match: {
                             designYear: ObjectId(designYear),
@@ -494,8 +494,8 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
             break;
         case "STATE":
             switch(modelName){
-                case "StateFinanceCommissionFormation":
-                case "PropertyTaxFloorRate":
+                case CollectionNames.sfc:
+                case CollectionNames.pTAX:
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
@@ -651,9 +651,10 @@ module.exports.dashboard = async (req, res) => {
             let submitPercent = 0;
             let cutOff = 0;
             let totalApprovedForm = 0;
-            let modelName = collection.collection.modelName;
-            if(modelName !== ModelNames.pTAX && modelName !== ModelNames.sfc &&
-                modelName !== ModelNames.gtc){
+            let modelName = collection.collection.collectionName;
+            console.log("modelName", modelName)
+            if(modelName !== CollectionNames.pTAX && modelName !== CollectionNames.sfc &&
+                modelName !== CollectionNames.gtc){
                 formCategory = "ULB";
             } else {
                 formCategory = "STATE";
@@ -661,11 +662,11 @@ module.exports.dashboard = async (req, res) => {
             //Get pipeline query, using modelName
             let pipeline = getQuery(modelName,data.formType, data.design_year, formCategory, state);
             //Pipeline query condition for Grant transfer cetificate
-            if(modelName === ModelNames.gtc){
+            if(modelName === CollectionNames.gtc){
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
             }
 
-            // if(modelName === ModelNames.gtc){
+            // if(modelName === CollectionNames.gtc){
             //     return res.status(200).json({
             //         status: true,
             //         query: pipeline
@@ -674,15 +675,15 @@ module.exports.dashboard = async (req, res) => {
             //Get submitted forms            
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
-
-            if(modelName === ModelNames.gtc && data.installment === '1'){
+console.log( submittedForms.length, pipeline);
+            if(modelName === CollectionNames.gtc && data.installment === '1'){
                 let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
                 let forms = await StateGTCCertificate.aggregate(query);
                 if(forms && submittedForms.length === 0 && forms.length>0){
                     submittedForms.push(forms[0]);
                 }
 
-            //     if(modelName === ModelNames.gtc){
+            //     if(modelName === CollectionNames.gtc){
             //     return res.status(200).json({
             //         status: true,
             //         query: query
