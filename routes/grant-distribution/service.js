@@ -2,6 +2,7 @@ const xlstojson = require("xls-to-json-lc");
 const xlsxtojson = require("xlsx-to-json-lc");
 const ObjectId = require("mongoose").Types.ObjectId;
 const ULB = require("../../models/Ulb");
+const STATE = require("../../models/State");
 const Response = require("../../service").response;
 const Service = require("../../service");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
@@ -9,6 +10,7 @@ const GrantDistribution = require("../../models/GrantDistribution");
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
+const { BadRequest } = require("../../service/response");
 exports.getGrantDistribution = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
@@ -104,10 +106,68 @@ exports.uploadTemplate = async (req, res) => {
 
       //read file
       const XslData = await readXlsxFile(file);
-
+      //count empty entries in exel file
+      let emptyCensus = 0;
+      XslData.forEach((el)=>{
+        if (
+          el["ulb census code/ulb code"] === "" &&
+          el["ulb name"] === "" 
+        ) emptyCensus++;
+      })
       if (XslData.length == 0)
         return Response.BadRequest(res, "No File Found/Data");
+      let xslDataCensusCode = XslData[0]["ulb census code/ulb code"];
       // validate data
+      let queryState = [ 
+        {
+              $match:{state: ObjectId(state)}
+        },
+        {
+            $group:{
+                _id: "$state",
+                totalUlbs: {$sum:1}
+            }
+        },
+        {
+            $lookup: {
+                from: "states",
+                localField: "_id",
+                foreignField: "_id",
+                as: "state"
+            }
+        },
+        { $unwind: "$state"}
+      ]
+      let xslDataState = ULB.aggregate([
+        {
+          $match: {
+            $or: [
+              { censusCode: xslDataCensusCode },
+              { sbCode: xslDataCensusCode },
+            ],
+          },
+        },
+        {
+          $lookup:{
+            from: "states",
+            localField: "state",
+            foreignField: "_id",
+            as: "state"
+         }
+        },
+        { $unwind: "$state"}
+
+      ]);
+      let  [xslDataStateInfo,stateInfo] =  await Promise.all([xslDataState ,ULB.aggregate(queryState)]);
+      let ulbCount = stateInfo[0].totalUlbs;
+      let xslDataStateName = xslDataStateInfo[0].state.name;
+      let stateName = stateInfo[0].state.name;
+      if(stateName !== xslDataStateName){
+        return BadRequest(res,null, "Wrong state file");
+      }
+      if(ulbCount != (XslData.length- emptyCensus) ){
+        return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
+      }
       const notValid = await validate(XslData, formData);
       if (notValid) {
         let amount = "grant amount";
@@ -254,15 +314,21 @@ async function validate(data, formData) {
   const compareData = await getUlbData(ulbCodes, ulbNames);
   let errorFlag = false;
   for (let index = 0; index < data.length; index++) {
+    if (
+      data[index][code] === "" ||
+      data[index][name] === "" 
+    ) {
+      errorFlag = true;
+      if (data[index].Errors) data[index].Errors += "Code or Ulb name is blank,";
+      else data[index].Errors = "Code or Ulb name is blank,";
+    }
     if (!compareData[data[index][code]]) {
       errorFlag = true;
       if (data[index].Errors) data[index].Errors += "Code Not Valid,";
       else data[index].Errors = "Code Not Valid,";
     }
     if (
-      data[index][code] === "" ||
-      compareData[data[index][code]] != data[index][name] ||
-      data[index][name] === ""
+      compareData[data[index][code]] != data[index][name] 
     ) {
       errorFlag = true;
       if (data[index].Errors) data[index].Errors += "Name Not Valid,";
