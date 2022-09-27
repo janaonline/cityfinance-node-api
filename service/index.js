@@ -165,7 +165,7 @@ module.exports = {
   compareHash: compareHash,
   incLoginAttempts: incLoginAttempts,
   response: require('./response'),
-  mapFilter: require('./filter'),
+  mapFilter: require('./filter').mapFilter,
   emailTemplate: require('./email-template'),
   mapFilterNew: require('./filter').mapFilterNew,
   emailVerificationLink: require('./email-verification-link'),
