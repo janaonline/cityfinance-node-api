@@ -624,11 +624,13 @@ population: el.population
 
 
   })  
-  let numerator = [0,0,0,0], popData = [0,0,0,0]
+  let numerator = [{id:"",value:0},{id:"",value:0},{id:"",value:0},{id:"",value:0}], popData = [{id:"",value:0},{id:"",value:0},{id:"",value:0},{id:"",value:0}]
 arr.forEach(el => {
     el.data.forEach((el2, index)=> {
-        numerator[index] += el2.actual.value * el.population
-        popData[index] += el.population
+        numerator[index]['id']  = el2.indicatorLineItem.toString()
+        numerator[index]['value'] += el2.actual.value * el.population
+        popData[index]['value'] += el.population
+        popData[index]['id'] = el2.indicatorLineItem.toString()
     })
 })
 
@@ -637,14 +639,32 @@ arr.forEach(el => {
 
 let wtAvgSLB = []
 numerator.forEach((el, index)=> {
-    wtAvgSLB.push(numerator[index]/popData[index])
+    wtAvgSLB.push({value:numerator[index].value/popData[index].value, id:numerator[index].id })
+    if(el.id == lineItemIndicatorIDs[0]){
+        Object.assign(slbWeigthed, {
+            "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[index].value,
+        })
+
+    }else if(el.id == lineItemIndicatorIDs[1]){
+        Object.assign(slbWeigthed, {
+            "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[index].value,
+        })
+    }else if(el.id == lineItemIndicatorIDs[2]){
+        Object.assign(slbWeigthed, {
+            "waterSuppliedPerDay_actual2122": wtAvgSLB[index].value,
+        })
+    }else if(el.id == lineItemIndicatorIDs[3]){
+        Object.assign(slbWeigthed, {
+            "reduction_actual2122": wtAvgSLB[index].value,
+        })
+    }
 })
-  Object.assign(slbWeigthed, {
-    "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
-    "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
-    "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
-    "reduction_actual2122": wtAvgSLB[3]
-  })
+//   Object.assign(slbWeigthed, {
+//     "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
+//     "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
+//     "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
+//     "reduction_actual2122": wtAvgSLB[3]
+//   })
   let scores = calculateSlbMarks(slbWeigthed)
 Object.assign(slbWeigthed, {
     "houseHoldCoveredWithSewerage_score": scores[0],
