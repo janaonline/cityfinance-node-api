@@ -232,8 +232,8 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
         formData['submittedColor'] = '#E67E1566';
         formData['border'] ='#E67E15';
     } else if( formCategory === 'STATE'){
-        formData["approvedColor"] = '#E67E1599';
-        formData['submittedColor'] = '#059B05';
+        formData["approvedColor"] = '#059B05';
+        formData['submittedColor'] = '#E67E1599';
         formData['border'] ='#059B05'
     }
 
