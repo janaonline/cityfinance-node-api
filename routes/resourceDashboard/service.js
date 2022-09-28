@@ -39,7 +39,7 @@ module.exports.get = async function (req, res) {
       Object.assign(query, { publishedYear: year });
     }
     if (globalName) {
-      Object.assign(query, { name: { $regex: globalName, $options: "si" } });
+      Object.assign(query, {$or : [{ name: { $regex: globalName, $options: "si" } },{ tags: { $regex: globalName, $options: "si" } }]} );
     }
     if (toolKitVisible) {
       toolKitVisible = formateName(toolKitVisible);
@@ -168,7 +168,7 @@ module.exports.search = async function (req, res) {
       dataSet: 0,
       reportsAndPublication: 0,
     };
-    let query = { name: new RegExp(searchGlobal, "i") };
+    let query = { $or: [{name: new RegExp(searchGlobal, "i")},{tags: new RegExp(searchGlobal, "i")}] };
 
     fromModelData.dataSet = getDataSetCount(searchGlobal);
     fromModelData.reportsAndPublication = ResourceLineItem.find({
