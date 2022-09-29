@@ -92,7 +92,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
         let mailOptions = {
           Destination: {
             /* required */
-            ToAddresses: ["dalbeer.kaur@dhwaniris.com", "aditya.yadav@dhwaniris.com"],
+            ToAddresses: [emailAddress],
           },
           Message: {
             /* required */
