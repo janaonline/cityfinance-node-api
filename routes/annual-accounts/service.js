@@ -35,6 +35,48 @@ const time = () => {
   return dt;
 };
 
+const calculateTabwiseStatusAndOverallStatus = (formData) => {
+let audited = formData['audited'];
+let unAudited = formData['unAudited'];
+let auditedAns = formData['audited']['submit_annual_accounts']
+let unAuditedAns = formData['unAudited']['submit_annual_accounts']
+let actionTakenByRole = formData['actionTakenByRole']
+if(actionTakenByRole == 'ULB'){
+  formData.audited['status'] = "PENDING"
+  formData.unAudited['status'] = "PENDING"
+}else if(actionTakenByRole != 'ULB'){
+  if(auditedAns){
+  for(let key in audited['provisional_data']){
+    if(typeof key == 'object' && key != null ){
+      if(audited['provisional_data'][key]['status'] == 'REJECTED'){
+        formData.audited['status'] = "REJECTED"
+        break;
+      }
+    }
+  }  
+
+  }
+  if(unAuditedAns){
+    for(let key in unAudited['provisional_data']){
+      if(typeof key == 'object' && key != null ){
+        if(unAudited['provisional_data'][key]['status'] == 'REJECTED'){
+          formData.unAudited['status'] = "REJECTED"
+          break;
+        }
+      }
+    }  
+    
+  }
+}
+if(formData.audited['status'] == "APPROVED" && formData.unAudited['status'] == "APPROVED" ){
+  formData['status'] = "APPROVED"
+}else{
+  formData['status'] = "REJECTED"
+}
+return formData;
+
+}
+
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
@@ -85,15 +127,12 @@ exports.createUpdate = async (req, res) => {
     }
     //unique email address
     emailAddress = Array.from(new Set(emailAddress));
-    if(process.env.ENV === "demo"){
-      emailAddress = ["dalbeer.kaur@dhwaniris.com"]
-    }
  
     let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(ulbName, formName);
     let mailOptions = {
       Destination: {
         /* required */
-        ToAddresses: emailAddress,
+        ToAddresses: [emailAddress],
       },
       Message: {
         /* required */
@@ -124,6 +163,12 @@ exports.createUpdate = async (req, res) => {
     formData['status'] = 'PENDING';
     formData["ulbSubmit"] = "";
     let proData , audData
+    if(!req.body.unAudited.hasOwnProperty("provisional_data") || !req.body.audited.hasOwnProperty("provisional_data") ){
+return res.json({
+  success: false,
+  message: "Incorrect Format in Req Data"
+})
+    }
       if (req.body.unAudited.submit_annual_accounts) {
         proData = req.body.unAudited.provisional_data;
         for (const key in proData) {
@@ -183,7 +228,9 @@ exports.createUpdate = async (req, res) => {
         isCompleted : formData.isDraft ? false : true
       })
   }
- 
+  if(design_year != "606aaf854dff55e6c075d219" )
+ formData = calculateTabwiseStatusAndOverallStatus(formData);
+
     if(  submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB'){// form already submitted
       return res.status(200).json({
         status: true,
@@ -551,110 +598,110 @@ exports.dataset = catchAsync (async (req,res)=>{
     }
     
   }
-    let query = [
-      {
-        $match: {
-          financialYear: year,
-        },
-      },
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
-      },
-      {
-        $unwind: "$ulb",
-      },
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      {
-        $unwind: "$state",
-      },
-    ];
-    if (ulb && ulb != "undefined") {
-      query.push({
-        $match: {
-          "ulb.name": ulb,
-        },
-      });
-    } else if (state && ObjectId.isValid(state)) {
-      query.push({
-        $match: {
-          "state._id": ObjectId(state),
-        },
-      });
-    }
-    let query_extn = [
-      {
-        $project: {
-          ulbId: "$ulb._id",
-          ulbName: "$ulb.name",
-          state: "$state.name",
-          modifiedAt: "$modifiedAt",
-          balance_pdf: "$overallReport.pdfUrl",
-          balance_excel: "$overallReport.excelUrl",
-          income_pdf: "$overallReport.pdfUrl",
-          income_excel: "$overallReport.excelUrl",
-        },
-      },
-      {
-        $project: {
-          ulbId: 1,
-          ulbName: 1,
-          state: 1,
-          modifiedAt: 1,
-          file: `$${category}_${type}`,
-        },
-      },
-      {
-        $match: {
-          file: { $exists: true, $ne: null },
-        },
-      },
-      {
-        $sort: {
-          modifiedAt: -1,
-        },
-      },
-    ];
-    query.push(...query_extn);
-    if (getQuery) return res.status(200).json(query);
-    let fileData = await UlbFinancialData.aggregate(query);
-    fileData.forEach((el) => {
-      let data = {
-        ulbId: null,
-        ulbName: "",
-        state: "",
-        fileName: "",
-        fileUrl: "",
-        modifiedAt: "",
-        type: type,
-        audited: "",
-        year: "",
-      };
-      data.ulbId = el?.ulbId;
-      data.state = el?.state;
-      data.ulbName = el?.ulbName;
-      data.modifiedAt = el?.modifiedAt;
-      data.year = year;
-      data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-      data.fileUrl = el?.file;
+    // let query = [
+    //   {
+    //     $match: {
+    //       financialYear: year,
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "ulbs",
+    //       localField: "ulb",
+    //       foreignField: "_id",
+    //       as: "ulb",
+    //     },
+    //   },
+    //   {
+    //     $unwind: "$ulb",
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "states",
+    //       localField: "ulb.state",
+    //       foreignField: "_id",
+    //       as: "state",
+    //     },
+    //   },
+    //   {
+    //     $unwind: "$state",
+    //   },
+    // ];
+    // if (ulb && ulb != "undefined") {
+    //   query.push({
+    //     $match: {
+    //       "ulb.name": ulb,
+    //     },
+    //   });
+    // } else if (state && ObjectId.isValid(state)) {
+    //   query.push({
+    //     $match: {
+    //       "state._id": ObjectId(state),
+    //     },
+    //   });
+    // }
+    // let query_extn = [
+    //   {
+    //     $project: {
+    //       ulbId: "$ulb._id",
+    //       ulbName: "$ulb.name",
+    //       state: "$state.name",
+    //       modifiedAt: "$modifiedAt",
+    //       balance_pdf: "$overallReport.pdfUrl",
+    //       balance_excel: "$overallReport.excelUrl",
+    //       income_pdf: "$overallReport.pdfUrl",
+    //       income_excel: "$overallReport.excelUrl",
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       ulbId: 1,
+    //       ulbName: 1,
+    //       state: 1,
+    //       modifiedAt: 1,
+    //       file: `$${category}_${type}`,
+    //     },
+    //   },
+    //   {
+    //     $match: {
+    //       file: { $exists: true, $ne: null },
+    //     },
+    //   },
+    //   {
+    //     $sort: {
+    //       modifiedAt: -1,
+    //     },
+    //   },
+    // ];
+    // query.push(...query_extn);
+    // if (getQuery) return res.status(200).json(query);
+    // let fileData = await UlbFinancialData.aggregate(query);
+    // fileData.forEach((el) => {
+    //   let data = {
+    //     ulbId: null,
+    //     ulbName: "",
+    //     state: "",
+    //     fileName: "",
+    //     fileUrl: "",
+    //     modifiedAt: "",
+    //     type: type,
+    //     audited: "",
+    //     year: "",
+    //   };
+    //   data.ulbId = el?.ulbId;
+    //   data.state = el?.state;
+    //   data.ulbName = el?.ulbName;
+    //   data.modifiedAt = el?.modifiedAt;
+    //   data.year = year;
+    //   data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
+    //   data.fileUrl = el?.file;
 
-      finalData.push(data);
-    });
-    return res.status(200).json({
-      success: true,
-      data: finalData,
-    });
+    //   finalData.push(data);
+    // });
+    // return res.status(200).json({
+    //   success: true,
+    //   data: finalData,
+    // });
   
 
   if (year != "2019-20" && year != "2020-21") {
@@ -1370,7 +1417,8 @@ let obj = annualAccountData;
       }
     }
 Object.assign(annualAccountData, obj)
-Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+// Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+Object.assign(annualAccountData, {canTakeAction: false })
 
     return res.status(200).json(annualAccountData);
   } catch (err) {
@@ -1878,7 +1926,8 @@ exports.action = async (req, res) => {
     }
     req.body.status = finalStatus;
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
-
+    if(design_year != "606aaf854dff55e6c075d219" )
+req.body = calculateTabwiseStatusAndOverallStatus(req.body)
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
