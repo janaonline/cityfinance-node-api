@@ -70,6 +70,8 @@ if(actionTakenByRole == 'ULB'){
 }
 if(formData.audited['status'] == "APPROVED" && formData.unAudited['status'] == "APPROVED" ){
   formData['status'] = "APPROVED"
+}else if(formData.audited['status'] == "PENDING" && formData.unAudited['status'] == "PENDING" ){
+  formData['status'] = "PENDING"
 }else{
   formData['status'] = "REJECTED"
 }
@@ -132,7 +134,7 @@ exports.createUpdate = async (req, res) => {
     let mailOptions = {
       Destination: {
         /* required */
-        ToAddresses: [emailAddress],
+        ToAddresses: emailAddress,
       },
       Message: {
         /* required */
