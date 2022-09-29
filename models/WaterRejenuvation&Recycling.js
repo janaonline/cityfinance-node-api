@@ -72,7 +72,7 @@ const projectDetails = () => {
     _id: false,
     dprCompletion:{
       type: String,
-      enum: ["Yes", "No"]
+      enum: ["Yes", "No",""]
     },
     workCompletion: {
       type: Number
@@ -106,7 +106,7 @@ const projectDetails2 = () => {
     _id: false,
     dprCompletion:{
       type: String,
-      enum: ["Yes", "No"]
+      enum: ["Yes", "No",""]
     },
     workCompletion: {
       type: Number
@@ -140,7 +140,7 @@ const projectDetails3 = () => {
     _id: false,
     dprCompletion:{
       type: String,
-      enum: ["Yes", "No"]
+      enum: ["Yes", "No",""]
     },
     workCompletion: {
       type: Number
