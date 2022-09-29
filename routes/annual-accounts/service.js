@@ -35,6 +35,48 @@ const time = () => {
   return dt;
 };
 
+const calculateTabwiseStatusAndOverallStatus = (formData) => {
+let audited = formData['audited'];
+let unAudited = formData['unAudited'];
+let auditedAns = formData['audited']['submit_annual_accounts']
+let unAuditedAns = formData['unAudited']['submit_annual_accounts']
+let actionTakenByRole = formData['actionTakenByRole']
+if(actionTakenByRole == 'ULB'){
+  formData.audited['status'] = "PENDING"
+  formData.unAudited['status'] = "PENDING"
+}else if(actionTakenByRole != 'ULB'){
+  if(auditedAns){
+  for(let key in audited['provisional_data']){
+    if(typeof key == 'object' && key != null ){
+      if(audited['provisional_data'][key]['status'] == 'REJECTED'){
+        formData.audited['status'] = "REJECTED"
+        break;
+      }
+    }
+  }  
+
+  }
+  if(unAuditedAns){
+    for(let key in unAudited['provisional_data']){
+      if(typeof key == 'object' && key != null ){
+        if(unAudited['provisional_data'][key]['status'] == 'REJECTED'){
+          formData.unAudited['status'] = "REJECTED"
+          break;
+        }
+      }
+    }  
+    
+  }
+}
+if(formData.audited['status'] == "APPROVED" && formData.unAudited['status'] == "APPROVED" ){
+  formData['status'] = "APPROVED"
+}else{
+  formData['status'] = "REJECTED"
+}
+return formData;
+
+}
+
 exports.createUpdate = async (req, res) => {
   try {
     let { design_year, isDraft } = req.body;
@@ -186,6 +228,8 @@ return res.json({
         isCompleted : formData.isDraft ? false : true
       })
   }
+  if(design_year != "606aaf854dff55e6c075d219" )
+ formData = calculateTabwiseStatusAndOverallStatus(formData);
  
     if(  submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB'){// form already submitted
       return res.status(200).json({
@@ -1882,7 +1926,8 @@ exports.action = async (req, res) => {
     }
     req.body.status = finalStatus;
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
-
+    if(design_year != "606aaf854dff55e6c075d219" )
+req.body = calculateTabwiseStatusAndOverallStatus(req.body)
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
