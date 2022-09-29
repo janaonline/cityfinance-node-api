@@ -90,7 +90,7 @@ exports.createUpdate = async (req, res) => {
     let mailOptions = {
       Destination: {
         /* required */
-        ToAddresses: [emailAddress],
+        ToAddresses: emailAddress,
       },
       Message: {
         /* required */
