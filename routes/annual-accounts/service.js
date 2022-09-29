@@ -132,7 +132,7 @@ exports.createUpdate = async (req, res) => {
     let mailOptions = {
       Destination: {
         /* required */
-        ToAddresses: ["dalbeer.kaur@dhwaniris.com"],
+        ToAddresses: [emailAddress],
       },
       Message: {
         /* required */
