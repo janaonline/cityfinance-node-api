@@ -76,7 +76,9 @@ exports.saveWaterRejenuvation = async (req, res) => {
               //email trigger after form submission
               // Service.sendEmail(mailOptions);
             }
-            await UpdateStateMasterForm(req, "waterRejuventation");
+            if(data.design_year === "606aaf854dff55e6c075d219"){//check for year 2021-22
+                await UpdateStateMasterForm(req, "waterRejuventation");
+              }
             return response(
               addedHistory,
               res,
@@ -93,6 +95,9 @@ exports.saveWaterRejenuvation = async (req, res) => {
           if (!submittedForm && formData.isDraft === true) {
             // create as draft
             const form = await WaterRejenuvation.create(formData);
+            if(data.design_year === "606aaf854dff55e6c075d219"){//check for year 2021-22
+              await UpdateStateMasterForm(req, "waterRejuventation");
+            }
             return response(form, res, "Form created", "Form not created");
           }
         }
@@ -104,6 +109,10 @@ exports.saveWaterRejenuvation = async (req, res) => {
             { $set: formData },
             { new: true, runValidators: true }
           );
+          if (data.design_year === "606aaf854dff55e6c075d219") {
+            //check for year 2021-22
+            await UpdateStateMasterForm(req, "waterRejuventation");
+          }
           return response(
             updatedForm,
             res,
@@ -123,7 +132,9 @@ exports.saveWaterRejenuvation = async (req, res) => {
             },
             { new: true, runValidators: true }
           );
-          await UpdateStateMasterForm(req, "waterRejuventation");
+          if(data.design_year === "606aaf854dff55e6c075d219"){//check for year 2021-22
+            await UpdateStateMasterForm(req, "waterRejuventation");
+          }
           if (updatedForm) {
             //email trigger after form submission
             // Service.sendEmail(mailOptions);
