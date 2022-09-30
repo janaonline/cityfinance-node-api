@@ -183,8 +183,13 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
   createdAt: { type: Date, default: Date.now() },
   isActive: { type: Boolean, default: 1 },
   declaration: {
-    url:{ type: String },
-    name: {type: String}
+    url: { type: String },
+    name: { type: String },
+  },
+  actionTakenByRole: {
+    type: String,
+    enum: ["ULB", "MoHUA", "STATE"],
+    required: true,
   },
 });
 
