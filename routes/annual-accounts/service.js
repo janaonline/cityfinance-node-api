@@ -173,19 +173,23 @@ return res.json({
         proData = req.body.unAudited.provisional_data;
         for (const key in proData) {
           if (key == "auditor_report") continue;
-   
+          if(proData[key]['status'] == 'REJECTED'){
             proData[key].status = "PENDING";
             proData[key].rejectReason = null;
+          }
+          
+   
+            
           
         }
       }
       if (req.body.audited.submit_annual_accounts) {
          audData = req.body.audited.provisional_data;
         for (const key in audData) {
-          
+          if(audData[key]['status'] == 'REJECTED'){
             audData[key].status = "PENDING";
             audData[key].rejectReason = null;
-          
+          }
         }
       }
       formData['unAudited']['provisional_data'] = proData ?? req.body.unAudited.provisional_data ;
@@ -1417,8 +1421,8 @@ let obj = annualAccountData;
       }
     }
 Object.assign(annualAccountData, obj)
-// Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
-Object.assign(annualAccountData, {canTakeAction: false })
+Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+// Object.assign(annualAccountData, {canTakeAction: false })
 
     return res.status(200).json(annualAccountData);
   } catch (err) {
