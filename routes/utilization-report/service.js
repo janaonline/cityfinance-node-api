@@ -12,8 +12,17 @@ const {calculateStatus} = require('../CommonActionAPI/service')
 const {canTakenAction} = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
-const {FrontendHeaderHost, BackendHeaderHost} = require('../../util/envUrl');
 
+const BackendHeaderHost ={
+  Demo: "democityfinanceapi.dhwaniris.in",
+  Staging: "staging.cityfinance.in",
+  Prod: "cityfinance.in",
+}
+const FrontendHeaderHost ={
+  Demo: "democityfinance.dhwaniris.in",
+  Staging: "staging.cityfinance.in",
+  Prod: "cityfinance.in",
+}
 const {
   emailTemplate: { utilizationRequestAction },
   sendEmail,
@@ -663,6 +672,11 @@ if(!prevData){
 }else{
   status = calculateStatus(prevData.status, prevData.actionTakenByRole, prevData.isDraft, "ULB")
 }
+let host ="";
+if(req.headers.host === BackendHeaderHost.Demo){
+  host = FrontendHeaderHost.Demo;
+}
+req.headers.host = host !== "" ? host: req.headers.host;
 let obj = {}
 if(!ulbData.access_2122){
   obj['action'] = 'not_show';
@@ -677,11 +691,7 @@ else{
     obj['action'] = 'note';
     obj['url'] = msg;
   } else{
-    let host ="";
-    if(req.headers.host === BackendHeaderHost.Demo){
-      host = FrontendHeaderHost.Demo;
-    }
-    req.headers.host = host !== "" ? host: req.headers.host;
+
     let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
     obj['action'] = 'note'
     obj['url'] = msg ;

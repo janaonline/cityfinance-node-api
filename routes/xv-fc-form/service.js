@@ -32,6 +32,16 @@ const FORM_STATUS = require("../../util/newStatusList");
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const IndicatorLineItem = require('../../models/indicatorLineItems')
 const {calculateSlbMarks} = require('../Scoring/service')
+const BackendHeaderHost ={
+  Demo: "democityfinanceapi.dhwaniris.in",
+  Staging: "staging.cityfinance.in",
+  Prod: "cityfinance.in",
+}
+const FrontendHeaderHost ={
+  Demo: "democityfinance.dhwaniris.in",
+  Staging: "staging.cityfinance.in",
+  Prod: "cityfinance.in",
+}
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
