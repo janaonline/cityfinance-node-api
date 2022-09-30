@@ -213,7 +213,8 @@ exports.getWaterRejenuvation = async (req, res) => {
       uaArray = data2122.uaData;
       for (let i = 0; i < uaArray.length; i++) {
         //Number of UAs
-        for (let ua of uaArray) {
+        // for (let ua of uaArray) {
+          let ua = uaArray[i];
           //an entry of ua
           for (let category in ua) {
             //category in ua
@@ -237,26 +238,32 @@ exports.getWaterRejenuvation = async (req, res) => {
               }
             }
           }
-        }
-      }
-      if (data2223) {
-        uaArray2223 = data2223.uaData;
-        //Number of UAs
-        for (let i = 0; i < uaArray2223.length; i++) {
-          for (let ua of uaArray2223) {
-            //category in ua
-            for (let category in ua) {
-              if (category === "waterBodies") {
-                ua2122WaterBodies.push(...uaArray2223[i].waterBodies);
-              } else if (category === "reuseWater") {
-                ua2122ReuseWater.push(...uaArray2223[i].reuseWater);
-              } else if (category === "serviceLevelIndicators") {
-                ua2122ServiceLevelIndicators.push(...uaArray2223[i].serviceLevelIndicators);
-              }
-            }
+
+          if (data2223) {
+            uaArray2223 = data2223.uaData;
+            //Number of UAs
+            // for (let i = 0; i < uaArray2223.length; i++) {
+              let ua = uaArray2223[i];
+              // for (let ua of uaArray2223) {
+                //category in ua
+                for (let category in ua) {
+                  if (category === "waterBodies") {
+                    ua2122WaterBodies.push(...uaArray2223[i].waterBodies);
+                    
+                  } else if (category === "reuseWater") {
+                    ua2122ReuseWater.push(...uaArray2223[i].reuseWater);
+                    
+                  } else if (category === "serviceLevelIndicators") {
+                    ua2122ServiceLevelIndicators.push(...uaArray2223[i].serviceLevelIndicators);
+                    
+                  }
+                }
+              // }
+            // }
           }
-        }
+        // }
       }
+      
       if(data2223.declaration){
         data2122.declaration = data2223.declaration
       }
@@ -271,10 +278,11 @@ exports.getWaterRejenuvation = async (req, res) => {
     }
   
     if(data2122){
+      data2223.uaData = data2122.uaData;
       return res.status(200).json({
         status: true,
-        message: "Data found And appended",
-        data: data2122
+        message: "Data found And Appended",
+        data: data2223
       })
     }else{
       return res.status(400).json({
