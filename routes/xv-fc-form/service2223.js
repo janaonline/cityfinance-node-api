@@ -40,35 +40,9 @@ let condition = {
     design_year: ObjectId(design_year)
 }
 let data = await XVFCGrantULBData.findOne(condition);
-let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
-  let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state }).lean()
-let status = data?.waterManagement?.status;
-let obj = {
-    action:"",
-    url:""
-}
-{
-    if(status == FORM_STATUS.Under_Review_By_MoHUA || status == FORM_STATUS.Approved_By_MoHUA ){
-      obj['action'] = 'not_show';
-      obj['url'] = ``;
-    }else if(status == FORM_STATUS.Under_Review_By_State){
-      let msg = role == "ULB" ?  `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
-      obj['action'] = 'note';
-      obj['url'] = msg;
-    } else{
-      let host ="";
-      if(req.headers.host === BackendHeaderHost.Demo){
-        host = FrontendHeaderHost.Demo;
-      }
-      req.headers.host = host !== "" ? host: req.headers.host;
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
-      obj['action'] = 'note'
-      obj['url'] = msg ;
-    }
-  }
+
 if(data){
     data = data?.waterManagement
-    Object.assign(data, {msg : obj})
 }
 
 return res.status(200).json({

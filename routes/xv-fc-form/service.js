@@ -1068,10 +1068,12 @@ module.exports.get = catchAsync(async (req, res) => {
     design_year = req.query?.design_year,
     { ulb } = req.params,
     actionAllowed = ["ADMIN", "MoHUA", "PARTNER", "STATE", "ULB"];
+    let role = req.decoded.role
 let from = req.query?.from
 if(!ulb){
   ulb = req.decoded.ulb
 }
+let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
   if (!design_year || design_year === "") {
     return res.status(400).json({
       success: false,
@@ -1086,14 +1088,16 @@ if(!ulb){
      lineItems.forEach(el=> {
       lineItemIDs.push(el._id)
     })
+    let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
 let slbData = await XVFCGrantULBData.findOne({
   design_year: design_year_2122,
   ulb: ObjectId(ulb),
 }).lean()
+let status =""
 if(!slbData){
   return res.status(400).json({
     success: false,
-    message:"Data not Found"
+     message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
   })
 }
 let twoEightSlbData = await SLB28.findOne({
@@ -1198,7 +1202,7 @@ value = allData.filter(el => {
  return res.status(200).json({
     success: true,
     data: [slbData],
-    message:"28SLB Forms Not Filled/ Approved Yet"
+    message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
   })
 }
   }
