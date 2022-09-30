@@ -195,7 +195,6 @@ exports.getWaterRejenuvation = async (req, res) => {
       data2122Query = WaterRejenuvation.findOne({
         state: ObjectId(state),
         design_year: ObjectId(year2122Id._id),
-        isActive: true,
       });
     }
     const data2223Query = WaterRejenuvation.findOne({
@@ -257,6 +256,9 @@ exports.getWaterRejenuvation = async (req, res) => {
             }
           }
         }
+      }
+      if(data2223.declaration){
+        data2122.declaration = data2223.declaration
       }
     }else{
       if(data2223){
