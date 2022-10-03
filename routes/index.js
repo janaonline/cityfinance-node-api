@@ -191,11 +191,11 @@ const CommonActionAPI = require('./CommonActionAPI');
 router.use('/common-action', CommonActionAPI);
 
 //forms-master
-const FormsMaster = require('./FormsMaster');
-router.use('/forms-master', FormsMaster);
+// const FormsMaster = require('./FormsMaster');
+// router.use('/forms-master', FormsMaster);
 //forms-master category
-const FormsMasterCategory = require('./FormsMasterCategory');
-router.use('/forms-master-category', FormsMasterCategory);
+// const FormsMasterCategory = require('./FormsMasterCategory');
+// router.use('/forms-master-category', FormsMasterCategory);
 
 //property-tax-floor-rate
 const PropertyTaxFloorRate = require('./PropertyTaxFloorRate');
