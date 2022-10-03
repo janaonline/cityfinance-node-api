@@ -170,7 +170,7 @@ module.exports.get = catchAsync(async (req, res) => {
      }
 
     data.forEach((el,)=> {
-        if( el.category && el.collectionName != "GTC"){
+        if( el.category && el.collectionName != "GTC" && el.collectionName != "SLB"){
             let  flag = 0;
             output.forEach(el2 => {
                 if((el._id).toString() == (Object.keys(el2)[0])){
