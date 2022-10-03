@@ -600,7 +600,7 @@ return res.status(200).json({
 
 let slbWeigthed 
 // console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
- await axios.get(`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
+ await axios.get(`https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
             console.log('Data Fetched');
              slbWeigthed = response.data.data[0]
             
@@ -667,10 +667,10 @@ numerator.forEach((el, index)=> {
 //   })
   let scores = calculateSlbMarks(slbWeigthed)
 Object.assign(slbWeigthed, {
-    "houseHoldCoveredWithSewerage_score": scores[0],
-    "houseHoldCoveredPipedSupply_score": scores[1],
-    "waterSuppliedPerDay_score": scores[2],
-    "reduction_score": scores[3],
+    "houseHoldCoveredWithSewerage_score": scores[2],
+    "houseHoldCoveredPipedSupply_score": scores[3],
+    "waterSuppliedPerDay_score": scores[0],
+    "reduction_score": scores[1],
   })
   let numeratorGFC = 0, popDataGFC = 0
   gfcData.forEach((el2, index)=> {
