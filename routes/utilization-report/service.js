@@ -13,6 +13,10 @@ const {canTakenAction} = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
 
+function update2223from2122(){
+
+}
+
 const BackendHeaderHost ={
   Demo: "democityfinanceapi.dhwaniris.in",
   Staging: "staging.cityfinance.in",
@@ -134,6 +138,7 @@ module.exports.createOrUpdate = async (req, res) => {
     
     const submittedForm  = await UtilizationReport.findOne(condition);
   if(designYear=="606aaf854dff55e6c075d219"){
+
     let utiData = await UtilizationReport.findOneAndUpdate(
       { ulb: ObjectId(ulb), financialYear, designYear },
       { $set: req.body },
@@ -144,6 +149,15 @@ module.exports.createOrUpdate = async (req, res) => {
       }
     );
     if(utiData){
+      await UtilizationReport.findOneAndUpdate(
+        { ulb: ObjectId(ulb), designYear : ObjectId("606aafb14dff55e6c075d3ae") },
+        { $set: {"grantPosition.unUtilizedPrevYr" : utiData?.grantPosition?.closingBal } },
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      )
       await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
         success: true,
