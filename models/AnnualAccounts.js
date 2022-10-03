@@ -68,6 +68,8 @@ const formDataSchema = new Schema({
       message: "ERROR: STATUS CAN BE EITHER 'APPROVED', 'REJECTED', 'PENDING'  ",
     }
   },
+  rejectReason: { type: String, default:"" },
+  responseFile: pdfSchema(),
   audit_status: {
     type: String,
     enum: {
