@@ -32,6 +32,16 @@ const FORM_STATUS = require("../../util/newStatusList");
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const IndicatorLineItem = require('../../models/indicatorLineItems')
 const {calculateSlbMarks} = require('../Scoring/service')
+const BackendHeaderHost ={
+  Demo: "democityfinanceapi.dhwaniris.in",
+  Staging: "staging.cityfinance.in",
+  Prod: "cityfinance.in",
+}
+const FrontendHeaderHost ={
+  Demo: "democityfinance.dhwaniris.in",
+  Staging: "staging.cityfinance.in",
+  Prod: "cityfinance.in",
+}
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -1068,10 +1078,12 @@ module.exports.get = catchAsync(async (req, res) => {
     design_year = req.query?.design_year,
     { ulb } = req.params,
     actionAllowed = ["ADMIN", "MoHUA", "PARTNER", "STATE", "ULB"];
+    let role = req.decoded.role
 let from = req.query?.from
 if(!ulb){
   ulb = req.decoded.ulb
 }
+let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
   if (!design_year || design_year === "") {
     return res.status(400).json({
       success: false,
@@ -1086,16 +1098,25 @@ if(!ulb){
      lineItems.forEach(el=> {
       lineItemIDs.push(el._id)
     })
+    let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
 let slbData = await XVFCGrantULBData.findOne({
   design_year: design_year_2122,
   ulb: ObjectId(ulb),
 }).lean()
+let status =""
+let host ="";
+if(req.headers.host === BackendHeaderHost.Demo){
+  host = FrontendHeaderHost.Demo;
+}
+req.headers.host = host !== "" ? host: req.headers.host;
 if(!slbData){
+
   return res.status(400).json({
     success: false,
-    message:"Data not Found"
+     message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
   })
 }
+status = slbData['waterManagement']['status']
 let twoEightSlbData = await SLB28.findOne({
   design_year: design_year_2223,
   ulb: ObjectId(ulb),
@@ -1198,7 +1219,7 @@ value = allData.filter(el => {
  return res.status(200).json({
     success: true,
     data: [slbData],
-    message:"28SLB Forms Not Filled/ Approved Yet"
+    message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
   })
 }
   }
