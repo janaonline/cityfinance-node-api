@@ -187,12 +187,27 @@ exports.getActionPlans = async (req, res) => {
   condition.state = state;
   condition.design_year = design_year;
   try {
+    if(design_year === "606aaf854dff55e6c075d219"){
+      const actionPlan = await ActionPlans.findOne({
+          state: ObjectId(state),
+          design_year,
+        }).select({ history: 0 }).lean();
+        if (!actionPlan) {
+          return Response.BadRequest(res, null, "No ActionPlans found");
+        }
+        let userData = await User.findOne({ _id: ObjectId(actionPlan['actionTakenBy']) });
+        actionPlan['actionTakenByRole'] = userData['role'];;
+        Object.assign(actionPlan, {canTakeAction: canTakenAction(actionPlan['status'], actionPlan['actionTakenByRole'], actionPlan['isDraft'], "STATE",role ) })
+        return Response.OK(res, actionPlan, "Success");
+    }
+
     const year2122Id = await Year.findOne({year: "2021-22"}).lean();
     let data2122Query;
     if(year2122Id){
       data2122Query = ActionPlans.findOne({
         state: ObjectId(state),
         design_year: ObjectId(year2122Id._id),
+        isDarft: false
       });
     }
     const data2223Query = ActionPlans.findOne({
