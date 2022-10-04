@@ -9,7 +9,7 @@ const util = require('util')
 const catchAsync = require('../../util/catchAsync')
 const revenueList = [ "130", "140", "150", "180", "110"];
 const fs = require("fs");
-
+const Indicator = require('../../models/indicators')
 const ObjectIdOfRevenueList = [
   "5dd10c2285c951b54ec1d737",
   "5dd10c2485c951b54ec1d74b",
@@ -109,12 +109,17 @@ const dataAvailability = async (req, res, reuseOption) => {
       ulbType,
       csv,
       populationCategory,
+      from
+
     } = req.body;
 
     if (!financialYear) {
       return Response.BadRequest(res, null, "financialYear is required");
     }
-
+    let year = "financialYear"
+if(from == 'slb'){
+year = "year"
+}
     let stateUlbs = await Ulb.find(
       stateId && ObjectId.isValid(stateId) ? { state: ObjectId(stateId) } : {}
     )
@@ -130,8 +135,8 @@ const dataAvailability = async (req, res, reuseOption) => {
           //     : ObjectIdOfRevenueList.map((value) => ObjectId(value)),
           // },
           ulb: { $in: stateUlbs.map((val) => val._id) },
-          financialYear: {
-            $in: Array.isArray(financialYear) ? financialYear : [financialYear],
+          [year]: {
+            $in:  [financialYear],
           },
         },
       },
@@ -147,7 +152,18 @@ const dataAvailability = async (req, res, reuseOption) => {
         $unwind: "$ulb",
       },
     ];
-
+if(from == "slb"){
+  query.unshift({
+    $group: {
+      _id: {
+        ulb: "$ulb",
+        year: "$year"
+      },
+      ulb: {$first: "$ulb"},
+      year:{$first: "$year"}
+    }
+  })
+}
     let matchObj = {};
     let matchObjNoData = {};
     if (ulb && ulb != "") {
@@ -206,18 +222,18 @@ const dataAvailability = async (req, res, reuseOption) => {
     });
 
     if (csv) {
-      return getExcelForAvailability(res, query, stateId);
+      return getExcelForAvailability(res, query, stateId, from);
     } else {
       query.push({
         $count: "ulb",
       });
     }
 
-    if (getQuery) return Response.OK(res, query);
+    
     let query_noData = [
       {
         $lookup: {
-          from: "ulbledgers",
+          from: from=='slb' ? "indicators" : "ulbledgers",
           let: {
             firstUser: financialYear,
             secondUser: "$_id",
@@ -269,8 +285,11 @@ const dataAvailability = async (req, res, reuseOption) => {
         $match: matchObjNoData,
       });
     }
+    if (getQuery) return Response.OK(res, query);
     let noData = Ulb.aggregate(query_noData);
-    let data = UlbLedger.aggregate(query);
+
+    let collection = from == "slb" ? Indicator  : UlbLedger
+    let data = collection.aggregate(query);
     let ulbCount = Ulb.aggregate(countQuery);
     let redisKey = JSON.stringify([query_noData, query, countQuery]);
     let redisData = await Redis.getDataPromise(redisKey);
@@ -279,6 +298,8 @@ const dataAvailability = async (req, res, reuseOption) => {
       promiseData = await Promise.all([noData, data, ulbCount]);
       Redis.set(redisKey, JSON.stringify(promiseData));
     } else {
+      // promiseData = await Promise.all([noData, data, ulbCount]);
+      // Redis.set(redisKey, JSON.stringify(promiseData));
       promiseData = JSON.parse(redisData);
     }
     noData = promiseData[0];
@@ -302,7 +323,7 @@ const dataAvailability = async (req, res, reuseOption) => {
   }
 };
 
-async function getExcelForAvailability(res, query, stateId) {
+async function getExcelForAvailability(res, query, stateId, from) {
   try {
     let ulbCount = await Ulb.find(
       ObjectId.isValid(stateId) ? { state: ObjectId(stateId) } : {}
@@ -310,7 +331,8 @@ async function getExcelForAvailability(res, query, stateId) {
       .populate("state")
       .select({ _id: 1, name: 1, state: 1 })
       .lean();
-    let data = await UlbLedger.aggregate(query);
+      let collection = from == "slb" ? Indicator : UlbLedger
+    let data = await collection.aggregate(query);
 
     data = JSON.parse(JSON.stringify(data));
     let ulbMap = data.map((value) => value._id);
@@ -319,6 +341,10 @@ async function getExcelForAvailability(res, query, stateId) {
     const imageId2 = workbook.addImage({
       buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
       extension: "png",
+    });
+    worksheet.addImage(imageId2, {
+      tl: { col: 0, row: 0 },
+      br: { col: 8, row: 2 }
     });
     // worksheet.addImage(imageId2, "A1:F3");
     worksheet.columns = [
@@ -342,6 +368,7 @@ async function getExcelForAvailability(res, query, stateId) {
       };
       worksheet.addRow(obj);
     });
+    worksheet.addRow({sno: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in"});
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

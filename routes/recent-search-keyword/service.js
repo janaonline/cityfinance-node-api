@@ -155,6 +155,7 @@ if(statePromise.length>0){
           .lean();
           let data =   
            ulbPromise.map((value) => {
+            value.name = toTitleCase(value.name)
               value.type = "ulb";
               return value;
             })
@@ -188,6 +189,7 @@ if(statePromise.length>0){
     if (onlyUlb) {
       data = [
         ...data[0].map((value) => {
+          value.name = toTitleCase(value.name)
           value.type = "ulb";
           return value;
         }),
@@ -195,6 +197,7 @@ if(statePromise.length>0){
     } else {
       data = [
         ...data[0].map((value) => {
+          value.name = toTitleCase(value.name)
           value.type = "ulb";
           return value;
         }),
@@ -214,6 +217,16 @@ if(statePromise.length>0){
     return Response.InternalError(res, error);
   }
 })
+
+function toTitleCase(str) {
+  return str.replace(
+    /\w\S*/g,
+    function(txt) {
+      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    }
+  );
+}
+
 module.exports = {
   addKeyword,
   getAllKeyword,

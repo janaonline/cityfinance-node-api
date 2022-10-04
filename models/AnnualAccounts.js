@@ -6,7 +6,7 @@ const statusType = () => {
   return {
     type: String,
     enum: {
-      values: ["PENDING", "APPROVED", "REJECTED","N/A"],
+      values: ["PENDING", "APPROVED", "REJECTED","N/A", null],
       message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
     },
   };
@@ -61,6 +61,15 @@ const standardizedDataSchema = new Schema({
 const formDataSchema = new Schema({
   provisional_data: { type: provisionalDataSchema },
   standardized_data: { type: standardizedDataSchema },
+  status:{
+    type:String,
+    enum:{
+      values:["APPROVED", "REJECTED", "PENDING"],
+      message: "ERROR: STATUS CAN BE EITHER 'APPROVED', 'REJECTED', 'PENDING'  ",
+    }
+  },
+  rejectReason: { type: String, default:"" },
+  responseFile: pdfSchema(),
   audit_status: {
     type: String,
     enum: {

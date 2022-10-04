@@ -8,7 +8,6 @@ const pdfSchema = ()=>{
         url: {type: String}
     }
 }
-
 const grantTransferCertificateSchema = new Schema({
     state:{
         type: Schema.Types.ObjectId,

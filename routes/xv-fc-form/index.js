@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const ufdService = require('./service');
-const ufdService2223 = require('./service2223');
 const ufdDashboardService = require('./fc-grant-service');
 const multer = require('multer');
 const moment = require('moment');
@@ -71,9 +70,5 @@ router.post(
     multerUpload.single('file'),
     ufdService.unzip
 );
-
-
-//22-23
-router.get('/2223', verifyToken, ufdService2223.get2223);
 
 module.exports = router;

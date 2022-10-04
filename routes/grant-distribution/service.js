@@ -47,7 +47,6 @@ exports.getGrantDistribution = async (req, res) => {
 };
 
 exports.getTemplate = async (req, res) => {
-  let formData = req.query;
   let { state } = req?.decoded;
   try {
     const ulbs = await ULB.find({
@@ -58,18 +57,6 @@ exports.getTemplate = async (req, res) => {
     if (ulbs.length === 0) {
       return Response.BadRequest(res, "No ULB found");
     }
-    if(formData.year === "606aafb14dff55e6c075d3ae"){
-      formData.year = '2022-23';
-    }else if( formData.year === "606aaf854dff55e6c075d219"){
-      formData.year = '2021-22';
-    }
-    let typeInstallmentYear = `${formData.type}_${formData.year}_${formData.installment}`;
-    let field = {
-      
-      code: "ULB Census Code/ULB Code",
-      name: "ULB Name",
-      amount: `Grant Amount - ${typeInstallmentYear} `,
-    };
 
     let data = [];
     ulbs.forEach((element) => {
@@ -81,10 +68,12 @@ exports.getTemplate = async (req, res) => {
         data.push(obj);
       }
     });
-    
-
+    let field = {
+      code: "ULB Census Code/ULB Code",
+      name: "ULB Name",
+      amount: "Grant Amount",
+    };
     let xlsData = await Service.dataFormating(data, field);
-    
     return res.xls("grant_template.xlsx", xlsData);
   } catch (err) {
     console.error(err.message);
@@ -94,7 +83,6 @@ exports.getTemplate = async (req, res) => {
 
 exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
-  let formData = req.query;
   let state = req.decoded?.state;
   try {
     downloadFileToDisk(url, async (err, file) => {
@@ -279,7 +267,7 @@ function readXlsxFile(file) {
   });
 }
 
-async function validate(data, formData) {
+async function validate(data) {
   let ulbCodes = [],
     ulbNames = [];
   const code = "ulb census code/ulb code";

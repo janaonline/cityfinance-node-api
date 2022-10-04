@@ -8,6 +8,7 @@ const catchAsync = require("../../util/catchAsync");
 const util = require("util");
 const axios = require("axios").default;
 const ExcelJS = require("exceljs");
+const fs = require("fs");
 // own revenue
 //  ObjectId("5dd10c2485c951b54ec1d74b"),
 // ObjectId("5dd10c2685c951b54ec1d762"),
@@ -281,6 +282,7 @@ const calData = (data, filterName = "") => {
       _id: "Other Expenditure",
       code: ["250", "260", "271", "270", "280", "272", "290"],
       amount: otherExp,
+      colour: "#0FA386"
     });
     return copyData;
   } else {
@@ -1551,6 +1553,10 @@ let getExcel = async (req, res, data) => {
       buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
       extension: "png",
     });
+    worksheet.addImage(imageId2, {
+      tl: { col: 0, row: 0 },
+      br: { col: 8, row: 2 }
+    });
     // worksheet.addImage(imageId2, "A1:F3");
     data.columns.unshift({ display_name: "S.no", key: "sno" });
     worksheet.columns = data.columns.map((value) => {
@@ -1567,7 +1573,8 @@ let getExcel = async (req, res, data) => {
       value.sno = i + 1;
       worksheet.addRow(value);
     });
-
+    worksheet.addRow({sno: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in"});
+    
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -1690,7 +1697,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
         benchMarkValue: "$benchMarkValue",
         unitType: "$unitType",
         ulbType: "$ulbType.name",
-        population: "$ulb.population",
+
       },
     },
   ];
@@ -1738,7 +1745,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
   let stateAvg = [{ average: 0 }];
   if (data.length > 0) {
     if (sortBy) {
-      tenData = fetchTen(data, sortBy);
+      tenData = data;
       if (csv) {
         let columns = [
           {
@@ -1760,10 +1767,6 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
           {
             display_name: "ULB Type",
             key: "ulbType",
-          },
-          {
-            display_name: "Population",
-            key: "population",
           },
         ];
         let data = { columns, rows: tenData };
