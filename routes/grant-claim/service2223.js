@@ -235,7 +235,6 @@ async function getDashboardData(req,stateId, financialYear) {
         for(let inst in category){
             let installment = category[inst];
             for(let i =0; i<installment.length; i++){
-                delete installment[i]["formHeader"];
                 delete installment[i]["approvedColor"];
                 delete installment[i]["submittedColor"];
 
