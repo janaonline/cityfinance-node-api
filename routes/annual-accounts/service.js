@@ -58,7 +58,7 @@ if(actionTakenByRole == 'ULB'){
   }
   if(unAuditedAns){
     for(let key in unAudited['provisional_data']){
-      if(typeof key == 'object' && key != null ){
+      if(typeof unAudited['provisional_data'][key] == 'object' && key != null ){
         if(unAudited['provisional_data'][key]['status'] == 'REJECTED'){
           formData.unAudited['status'] = "REJECTED"
           break;
