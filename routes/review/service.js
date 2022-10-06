@@ -1149,7 +1149,7 @@ total = allData[1].length ? allData[1][0]['total'] : 0
         el['cantakeAction'] = false;
     }else{
         el['formStatus'] =  calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);   
-        el['cantakeAction'] = formTab.collectionName == CollectionNames.annual ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+        el['cantakeAction'] =  canTakeActionOrViewOnly(el, loggedInUserRole)
     }
   
 })
