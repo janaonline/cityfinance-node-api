@@ -188,13 +188,26 @@ exports.getWaterRejenuvation = async (req, res) => {
   let condition = {};
   condition.state = state;
   condition.design_year = design_year;
+  
   try {
+    if(design_year === "606aaf854dff55e6c075d219"){
+      const waterRej = await WaterRejenuvation.findOne({
+        state: ObjectId(state),
+        design_year,
+      }).select({ history: 0 }).lean();
+      if (!waterRej) {
+        return Response.BadRequest(res, null, "No WaterRejenuvation found");
+      }
+       return Response.OK(res, waterRej, "Success");
+      
+    }
     const year2122Id = await Year.findOne({year: "2021-22"}).lean();
     let data2122Query;
     if(year2122Id){
       data2122Query = WaterRejenuvation.findOne({
         state: ObjectId(state),
         design_year: ObjectId(year2122Id._id),
+        isDraft: false
       });
     }
     const data2223Query = WaterRejenuvation.findOne({
@@ -264,7 +277,7 @@ exports.getWaterRejenuvation = async (req, res) => {
         // }
       }
       
-      if(data2223.declaration){
+      if(data2223 && data2122){
         data2122.declaration = data2223.declaration
       }
     }else{
