@@ -13,6 +13,10 @@ const {canTakenAction} = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
 
+function update2223from2122(){
+
+}
+
 const BackendHeaderHost ={
   Demo: "democityfinanceapi.dhwaniris.in",
   Staging: "staging.cityfinance.in",
@@ -134,6 +138,7 @@ module.exports.createOrUpdate = async (req, res) => {
     
     const submittedForm  = await UtilizationReport.findOne(condition);
   if(designYear=="606aaf854dff55e6c075d219"){
+
     let utiData = await UtilizationReport.findOneAndUpdate(
       { ulb: ObjectId(ulb), financialYear, designYear },
       { $set: req.body },
@@ -144,6 +149,15 @@ module.exports.createOrUpdate = async (req, res) => {
       }
     );
     if(utiData){
+      await UtilizationReport.findOneAndUpdate(
+        { ulb: ObjectId(ulb), designYear : ObjectId("606aafb14dff55e6c075d3ae") },
+        { $set: {"grantPosition.unUtilizedPrevYr" : utiData?.grantPosition?.closingBal } },
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      )
       await UpdateMasterSubmitForm(req, "utilReport");
       return res.status(200).json({
         success: true,
@@ -491,11 +505,22 @@ exports.report = async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs), Closing balance at the end of year (INR in lakhs), Rejuvenation of Water Bodies/Total Tied Grant Utilised on WM, Rejuvenation of Water Bodies/Total Project Cost Involved, Drinking Water/Total Tied Grant Utilised on WM, Drinking Water/Total Project Cost Involved, Rainwater Harvesting/Total Tied Grant Utilised on WM, Rainwater Harvesting/Total Project Cost Involved, Water Recycling/Total Tied Grant Utilised on WM, Water Recycling/Total Project Cost Involved, Sanitation/Total Tied Grant Utilised on WM, Sanitation/Total Project Cost Involved,  Solid Waste Management/Total Tied Grant Utilised on WM, Solid Waste Management/Total Project Cost Involved \r\n"
+    "Year, ULB name, ULB Code,STATE , Form Status, Unutilised Tied Grants from previous installment (INR in lakhs), 15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs), Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs), Closing balance at the end of year (INR in lakhs), Rejuvenation of Water Bodies/Total Tied Grant Utilised on WM, Rejuvenation of Water Bodies/Total Project Cost Involved, Drinking Water/Total Tied Grant Utilised on WM, Drinking Water/Total Project Cost Involved, Rainwater Harvesting/Total Tied Grant Utilised on WM, Rainwater Harvesting/Total Project Cost Involved, Water Recycling/Total Tied Grant Utilised on WM, Water Recycling/Total Project Cost Involved, Sanitation/Total Tied Grant Utilised on WM, Sanitation/Total Project Cost Involved,  Solid Waste Management/Total Tied Grant Utilised on WM, Solid Waste Management/Total Project Cost Involved, Creation Date, Modified Date \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
   let query = [
+    {
+      $lookup: {
+        from: "years",
+        localField: "designYear",
+        foreignField: "_id",
+        as: "year",
+      },
+    },
+    {
+      $unwind: "$year",
+    },
     {
       $lookup: {
         from: "ulbs",
@@ -523,6 +548,7 @@ exports.report = async (req, res) => {
         ulbName: "$ulb.name",
         ulbCode: "$ulb.code",
         stateName: "$state.name",
+        year:"$year.year",
         unutilisedTiedGrants: "$grantPosition.unUtilizedPrevYr",
         grantReceived: "$grantPosition.receivedDuringYr",
         expenditureIncurred: "$grantPosition.expDuringYr",
@@ -532,6 +558,8 @@ exports.report = async (req, res) => {
         role: "$actionTakenByRole",
         waterManagement: "$categoryWiseData_wm",
         solidWasteMgt: "$categoryWiseData_swm",
+        createdAt: { $dateToString: { format: "%d/%m/%Y", date: "$createdAt" } } ,
+        modifiedAt: { $dateToString: { format: "%d/%m/%Y", date: "$modifiedAt" } } ,
       },
     },
   ];
@@ -569,30 +597,34 @@ exports.report = async (req, res) => {
           }
         }
       }
-      if (el.role == "ULB" && el.isDraft) {
-        el["formStatus"] = FORM_STATUS.In_Progress;
-      } else if (el.role == "ULB" && !el.isDraft) {
-        el["formStatus"] = FORM_STATUS.Submitted;
-      } else if (el.role == "STATE" && el.isDraft) {
-        el["formStatus"] = FORM_STATUS.Under_Review_By_State;
-      } else if (el.role == "STATE" && !el.isDraft) {
-        if (el.status == "APPROVED") {
-          el["formStatus"] = FORM_STATUS.Approved_By_State;
-        } else if (el.status == "REJECTED") {
-          el["formStatus"] = FORM_STATUS.Rejected_By_State;
-        }
-      } else if (el.role == "MoHUA" && el.isDraft) {
-        el["formStatus"] = FORM_STATUS.Under_Review_By_MoHUA;
-      } else if (el.role == "MoHUA" && !el.isDraft) {
-        if (el.status == "APPROVED") {
-          el["formStatus"] = FORM_STATUS.Approved_By_MoHUA;
-        } else if (el.status == "REJECTED") {
-          el["formStatus"] = FORM_STATUS.Rejected_By_MoHUA;
-        }
-      }
+
+      el["formStatus"] =     calculateStatus(el.status, el.role, el.isDraft, "ULB")
+      // if (el.role == "ULB" && el.isDraft) {
+      //   el["formStatus"] = FORM_STATUS.In_Progress;
+      // } else if (el.role == "ULB" && !el.isDraft) {
+      //   el["formStatus"] = FORM_STATUS.Submitted;
+      // } else if (el.role == "STATE" && el.isDraft) {
+      //   el["formStatus"] = FORM_STATUS.Under_Review_By_State;
+      // } else if (el.role == "STATE" && !el.isDraft) {
+      //   if (el.status == "APPROVED") {
+      //     el["formStatus"] = FORM_STATUS.Approved_By_State;
+      //   } else if (el.status == "REJECTED") {
+      //     el["formStatus"] = FORM_STATUS.Rejected_By_State;
+      //   }
+      // } else if (el.role == "MoHUA" && el.isDraft) {
+      //   el["formStatus"] = FORM_STATUS.Under_Review_By_MoHUA;
+      // } else if (el.role == "MoHUA" && !el.isDraft) {
+      //   if (el.status == "APPROVED") {
+      //     el["formStatus"] = FORM_STATUS.Approved_By_MoHUA;
+      //   } else if (el.status == "REJECTED") {
+      //     el["formStatus"] = FORM_STATUS.Rejected_By_MoHUA;
+      //   }
+      // }
     }
     for (el of data) {
       res.write(
+        el.year +
+          "," +
         el.ulbName +
           "," +
           el.ulbCode +
@@ -632,6 +664,10 @@ exports.report = async (req, res) => {
           el.swm_grantUtil +
           "," +
           el.swm_totalCost +
+          "," +
+          el.createdAt +
+          "," +
+          el.modifiedAt +
           "," +
           "\r\n"
       );

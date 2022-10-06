@@ -8,7 +8,6 @@ const pdfSchema = () => {
         name: { type: String}
     }
 }
-
 const stateFinanceCommissionFormationSchema = new Schema({
     state:{
         type: Schema.Types.ObjectId,

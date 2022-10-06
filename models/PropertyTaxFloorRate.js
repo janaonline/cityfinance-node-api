@@ -8,6 +8,7 @@ const pdfSchema = ()=>{
         name: {type: String},
     }
 }
+
 const propertyTaxFloorRateSchema = new Schema({
     state:{
         type: Schema.Types.ObjectId,

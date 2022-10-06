@@ -92,8 +92,9 @@ module.exports.access = async function(req,res)  {
         },
         {
             year:yearList[2],
-            url:"/mohua2223/mohua-dashboard"
+            url:"/mohua2223"
         },
+      
 
     ]
     let STATE_arr = [
@@ -152,7 +153,7 @@ module.exports.access = async function(req,res)  {
             case "STATE":
                  userData = await User.findOne({_id: ObjectId(entity_id)}).lean();
                  let profileVerified = userData.isVerified2223;
-                 STATE_arr[2]['url'] = profileVerified ? '/stateform2223/dashboard' : '/profile-update' ;
+                 STATE_arr[2]['url'] = profileVerified ? STATE_arr[2]?.url : '/profile-update' ;
                  arr = STATE_arr
 
 

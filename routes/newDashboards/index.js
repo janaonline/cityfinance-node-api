@@ -78,4 +78,5 @@ router.get("/get-statewise-data-availability", getStatewiseDataAvail);
 //slb-specific-metrics
 const {slbFrontPanel} = require('./slb');
 router.get("/slb-specific-metrics",slbFrontPanel);
+
 module.exports = router;

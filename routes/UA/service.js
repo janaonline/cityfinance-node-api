@@ -600,7 +600,7 @@ return res.status(200).json({
 
 let slbWeigthed 
 // console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
- await axios.get(`https://democityfinanceapi.dhwaniris.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
+ await axios.get(`https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
             console.log('Data Fetched');
              slbWeigthed = response.data.data[0]
             
@@ -624,11 +624,13 @@ population: el.population
 
 
   })  
-  let numerator = [0,0,0,0], popData = [0,0,0,0]
+  let numerator = [{id:"",value:0},{id:"",value:0},{id:"",value:0},{id:"",value:0}], popData = [{id:"",value:0},{id:"",value:0},{id:"",value:0},{id:"",value:0}]
 arr.forEach(el => {
     el.data.forEach((el2, index)=> {
-        numerator[index] += el2.actual.value * el.population
-        popData[index] += el.population
+        numerator[index]['id']  = el2.indicatorLineItem.toString()
+        numerator[index]['value'] += el2.actual.value * el.population
+        popData[index]['value'] += el.population
+        popData[index]['id'] = el2.indicatorLineItem.toString()
     })
 })
 
@@ -637,20 +639,38 @@ arr.forEach(el => {
 
 let wtAvgSLB = []
 numerator.forEach((el, index)=> {
-    wtAvgSLB.push(numerator[index]/popData[index])
+    wtAvgSLB.push({value:numerator[index].value/popData[index].value, id:numerator[index].id })
+    if(el.id == lineItemIndicatorIDs[0]){
+        Object.assign(slbWeigthed, {
+            "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[index].value,
+        })
+
+    }else if(el.id == lineItemIndicatorIDs[1]){
+        Object.assign(slbWeigthed, {
+            "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[index].value,
+        })
+    }else if(el.id == lineItemIndicatorIDs[2]){
+        Object.assign(slbWeigthed, {
+            "waterSuppliedPerDay_actual2122": wtAvgSLB[index].value,
+        })
+    }else if(el.id == lineItemIndicatorIDs[3]){
+        Object.assign(slbWeigthed, {
+            "reduction_actual2122": wtAvgSLB[index].value,
+        })
+    }
 })
-  Object.assign(slbWeigthed, {
-    "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
-    "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
-    "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
-    "reduction_actual2122": wtAvgSLB[3]
-  })
+//   Object.assign(slbWeigthed, {
+//     "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
+//     "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
+//     "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
+//     "reduction_actual2122": wtAvgSLB[3]
+//   })
   let scores = calculateSlbMarks(slbWeigthed)
 Object.assign(slbWeigthed, {
-    "houseHoldCoveredWithSewerage_score": scores[0],
-    "houseHoldCoveredPipedSupply_score": scores[1],
-    "waterSuppliedPerDay_score": scores[2],
-    "reduction_score": scores[3],
+    "houseHoldCoveredWithSewerage_score": scores[2],
+    "houseHoldCoveredPipedSupply_score": scores[3],
+    "waterSuppliedPerDay_score": scores[0],
+    "reduction_score": scores[1],
   })
   let numeratorGFC = 0, popDataGFC = 0
   gfcData.forEach((el2, index)=> {

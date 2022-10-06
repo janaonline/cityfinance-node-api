@@ -10,7 +10,8 @@ const mobile = async (mobile,checkDepartment=true, _id="", role)=>{
                         {mobile:mobile},
                         {commissionerConatactNumber:mobile},
                         {accountantConatactNumber:mobile}
-                    ]
+                    ],
+                    role: "STATE"
                 };
                 if(checkDepartment){
                     query["$or"].push({departmentContactNumber:mobile})
@@ -67,7 +68,8 @@ const email = async (email, checkDepartment=true, _id, role)=>{
                         {email:email},
                         {commissionerEmail:email},
                         {accountantEmail:email}
-                    ]
+                    ],
+                    role: "STATE"
                 };
                 if(checkDepartment){
                     query["$or"].push({departmentEmail:email})

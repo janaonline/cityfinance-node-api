@@ -4,6 +4,7 @@ const UlbLedger = require("../../models/UlbLedger");
 const LineItem = require("../../models/LineItem");
 const State = require("../../models/State");
 const mongoose = require("mongoose");
+const Indicators = require('../../models/indicators')
 const { response, common } = require("../../service");
 const {
   sendProfileUpdateStatusEmail,
@@ -17,7 +18,7 @@ const { query } = require("express");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
-    const { financialYear, stateId, population, ulbType, csv } = req.query;
+    const { financialYear, stateId, population, ulbType, csv, value } = req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     let filterCondition = {},
       ulbLedgers;
@@ -34,11 +35,20 @@ exports.dataAvailabilityState = async (req, res) => {
     let temp = await Promise.all([ulbs, totalUlbs]);
     ulbs = temp[0];
     totalUlbs = temp[1];
+    
     filterCondition = {
       ulb: { $in: ulbs.map((ech) => ObjectId(ech._id)) },
-      financialYear,
     };
-    ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
+    if(value == 'slb'){
+      Object.assign(filterCondition, {year: financialYear})
+      ulbLedgers = await Indicators.distinct("ulb", filterCondition).lean();
+    }else{
+      Object.assign(filterCondition, {financialYear: financialYear})
+        ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
+    }
+  
+
+
 
     let responsePayload = {
       data: null,
@@ -48,7 +58,7 @@ exports.dataAvailabilityState = async (req, res) => {
       responsePayload.data = await createPopulationData(
         JSON.parse(JSON.stringify(ulbs)),
         totalUlbs,
-        financialYear
+        JSON.parse(JSON.stringify(ulbLedgers))
       );
     else if (ulbType)
       responsePayload.data = await createdUlbTypeData(
@@ -178,7 +188,7 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
   }
 }
 
-async function createPopulationData(ulbs, totalUlbs, financialYear) {
+async function createPopulationData(ulbs, totalUlbs, ulbLedgers) {
   let populationMap = {
     Average: {
       numberOfULBs: 0,
@@ -256,12 +266,18 @@ async function createPopulationData(ulbs, totalUlbs, financialYear) {
   for (each of rows) {
     if (each != "Average") {
       const arrr = populationMap[each]["numberOfULBs"];
-      let matched = (
-        await UlbLedger.distinct("ulb", {
-          financialYear,
-          ulb: { $in: populationMap[each].numberOfULBs },
-        }).lean()
-      ).length;
+      let matched = 0 ;
+      for (elem of arrr) {
+        if (ulbLedgers.indexOf(elem._id) > -1) {
+          ++matched;
+        }
+      }
+      // (
+      //   await UlbLedger.distinct("ulb", {
+      //     financialYear,
+      //     ulb: { $in: populationMap[each].numberOfULBs },
+      //   }).lean()
+      // ).length;
       populationMap[each]["numberOfULBs"] = arrr.length;
       populationMap[each]["ulbsWithData"] = matched;
       const multiply = matched * 100;
@@ -834,7 +850,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           if (!includeInExpenditure.includes(lineName)) {
             if (!flag) {
               flag = true;
-              return { colour: val.colour, lineitem: "Other Expenditure" };
+              return { colour: "#0FA386", lineitem: "Other Expenditure" };
             } else {
               return false;
             }
@@ -1159,7 +1175,7 @@ let getExcel = async (req, res, data) => {
       value.sno = i + 1;
       worksheet.addRow(value);
     });
-
+    worksheet.addRow({sno: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in"});
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

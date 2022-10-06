@@ -6,4 +6,4 @@ const {verifyToken} = require('../auth/services/verifyToken')
 router.get('/', verifyToken, getForm);
 router.post('/', verifyToken, createOrUpdateForm);
 
-module.exports = router
+module.exports = router;
