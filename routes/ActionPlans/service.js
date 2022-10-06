@@ -8,6 +8,7 @@ const ExcelJS = require("exceljs");
 const User = require('../../models/User')
 const Year = require('../../models/Year');
 const {canTakenAction} = require('../CommonActionAPI/service');
+const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 
 
 function response(form, res, successMsg ,errMsg){
@@ -186,7 +187,13 @@ exports.getActionPlans = async (req, res) => {
   let condition = {};
   condition.state = state;
   condition.design_year = design_year;
+  let host = "";
+  host = req.headers.host;
+  if ((req.headers.host = BackendHeaderHost.Demo)) {
+    host = FrontendHeaderHost.Demo;
+  }
   try {
+    let userData = ""
     if(design_year === "606aaf854dff55e6c075d219"){
       const actionPlan = await ActionPlans.findOne({
           state: ObjectId(state),
@@ -195,95 +202,116 @@ exports.getActionPlans = async (req, res) => {
         if (!actionPlan) {
           return Response.BadRequest(res, null, "No ActionPlans found");
         }
-        let userData = await User.findOne({ _id: ObjectId(actionPlan['actionTakenBy']) });
+        userData = await User.findOne({ _id: ObjectId(actionPlan['actionTakenBy']) });
         actionPlan['actionTakenByRole'] = userData['role'];;
         Object.assign(actionPlan, {canTakeAction: canTakenAction(actionPlan['status'], actionPlan['actionTakenByRole'], actionPlan['isDraft'], "STATE",role ) })
         return Response.OK(res, actionPlan, "Success");
     }
 
-    const year2122Id = await Year.findOne({year: "2021-22"}).lean();
+    const year2122Id = await Year.findOne({ year: "2021-22" })
+      .select({
+        _id: 1,
+      })
+      .lean();
     let data2122Query;
     if(year2122Id){
       data2122Query = ActionPlans.findOne({
         state: ObjectId(state),
         design_year: ObjectId(year2122Id._id),
-        isDarft: false
-      });
+      }).lean();
     }
     const data2223Query = ActionPlans.findOne({
       state: ObjectId(state),
       design_year,
-    });
+    }).lean();
 
     const [ data2122, data2223] = await Promise.all([
       data2122Query,
       data2223Query,
     ]);
+
+    if(data2223 && data2223.isDraft == false){
+      Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
+      return Response.OK(res, data2223, "Success");
+
+    }
     let uaArray;
     let uaArray2223;
     let ua2122projectExecute, ua2122sourceFund, ua2122yearOutlay;
     if (data2122) {
-      uaArray = data2122.uaData;
-      //Number of UAs
-      for (let i = 0; i < uaArray.length; i++) {
-        //an entry of ua
-        // for (let ua of uaArray) {
-          let ua = uaArray[i];
-          //category in ua
-          for (let category in ua) {
-            if (category === "projectExecute")
-              ua2122projectExecute = uaArray[i].projectExecute;
-            if (category === "sourceFund")
-              ua2122sourceFund = uaArray[i].sourceFund;
-            if (category === "yearOutlay")
-              ua2122yearOutlay = uaArray[i].yearOutlay;
-            if (
-              category === "projectExecute" ||
-              category === "sourceFund" ||
-              category === "yearOutlay"
-            ) {
-              for (let project of ua[category]) {
-                //set project isDisable key = true
-                if (project) {
-                  Object.assign(project._doc, {isDisable:true})
+      if(data2122.isDraft === false){
+
+        uaArray = data2122.uaData;
+        //Number of UAs
+        for (let i = 0; i < uaArray.length; i++) {
+          //an entry of ua
+          // for (let ua of uaArray) {
+            let ua = uaArray[i];
+            //category in ua
+            for (let category in ua) {
+              if (category === "projectExecute")
+                ua2122projectExecute = uaArray[i].projectExecute;
+              if (category === "sourceFund")
+                ua2122sourceFund = uaArray[i].sourceFund;
+              if (category === "yearOutlay")
+                ua2122yearOutlay = uaArray[i].yearOutlay;
+              if (
+                category === "projectExecute" ||
+                category === "sourceFund" ||
+                category === "yearOutlay"
+              ) {
+                for (let project of ua[category]) {
+                  //set project isDisable key = true
+                  if (project) {
+                    Object.assign(project, {isDisable:true})
+                  }
                 }
               }
             }
-          }
-     
-        // }
-
-        if (data2223) {
-          uaArray2223 = data2223.uaData;
-          //Number of UAs
-          let ua = uaArray2223[i];
-          // for (let i = 0; i < uaArray2223.length; i++) {
-            // for (let ua of uaArray2223) {
-              //category in ua
-              for (let category in ua) {
-                if (category === "projectExecute") {
-                  ua2122projectExecute.push(...uaArray2223[i].projectExecute);
-                } else if (category === "sourceFund") {
-                  ua2122sourceFund.push(...uaArray2223[i].sourceFund);
-                } else if (category === "yearOutlay") {
-                  ua2122yearOutlay.push(...uaArray2223[i].yearOutlay);
-                }
-              }
-            // }
+       
           // }
+  
+          if (data2223) {
+            uaArray2223 = data2223.uaData;
+            //Number of UAs
+            let ua = uaArray2223[i];
+            // for (let i = 0; i < uaArray2223.length; i++) {
+              // for (let ua of uaArray2223) {
+                //category in ua
+                for (let category in ua) {
+                  if (category === "projectExecute") {
+                    ua2122projectExecute.push(...uaArray2223[i].projectExecute);
+                  } else if (category === "sourceFund") {
+                    ua2122sourceFund.push(...uaArray2223[i].sourceFund);
+                  } else if (category === "yearOutlay") {
+                    ua2122yearOutlay.push(...uaArray2223[i].yearOutlay);
+                  }
+                }
+              // }
+            // }
+          }
         }
-      }
-      
-    }else{
-      if(!data2122){
+        
+      }else{//previous year form not final submitted
+        
         return res.status(200).json({
           status: true,
-          message: "Link to previous year form",
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank>Click here</a> in order to submit form`,
+        })
+      }
+    }else{
+      //previous year form not found 
+      if(!data2122){
+        
+        return res.status(200).json({
+          status: true,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank>Click here</a> in order to submit form`,
         })
       }
     }
     if(data2122){
       data2223.uaData = data2122.uaData;
+      Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
       return res.status(200).json({
         status: true,
         message: "Data found And Appended",
