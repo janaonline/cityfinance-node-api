@@ -40,6 +40,9 @@ exports.saveActionPlans = async (req, res) => {
   
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
     formData["actionTakenByRole"] = actionTakenByRole;
+    formData["uaData"].forEach(entity=>{
+      entity.status = "PENDING"
+    })
     if (formData.state) {
       formData["state"] = ObjectId(formData.state);
     }
@@ -189,7 +192,7 @@ exports.getActionPlans = async (req, res) => {
   condition.design_year = design_year;
   let host = "";
   host = req.headers.host;
-  if ((req.headers.host = BackendHeaderHost.Demo)) {
+  if ((req.headers.host === BackendHeaderHost.Demo)) {
     host = FrontendHeaderHost.Demo;
   }
   try {
@@ -309,14 +312,21 @@ exports.getActionPlans = async (req, res) => {
         })
       }
     }
-    if(data2122){
+    if(data2122 && data2223){
       data2223.uaData = data2122.uaData;
       Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
       return res.status(200).json({
         status: true,
-        message: "Data found And Appended",
+        message: "Data found And Appended in 22-23",
         data: data2223
       })
+    }else if(data2122 && !data2223){
+      return res.status(200).json({
+        status: true,
+        message: "Data for 21-22",
+        data: data2122
+      })
+ 
     }else{
       return res.status(400).json({
         status: false,
