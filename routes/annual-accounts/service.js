@@ -26,14 +26,133 @@ const {canTakenAction} = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
-
+var https = require('https');
+var request = require('request')
 
 const time = () => {
-  var dt = new Date();
-  dt.setHours(dt.getHours() + 5);
-  dt.setMinutes(dt.getMinutes() + 30);
-  return dt;
-};
+   var dt = new Date();
+    dt.setHours(dt.getHours() + 5);
+    dt.setMinutes(dt.getMinutes() + 30);
+    return dt;
+  };
+
+function doRequest(url) {
+  return new Promise(function (resolve, reject) {
+    request(url, function (error, resp, body) {
+      if (!error && resp?.statusCode == 404) {
+        resolve(url)
+
+      }else{
+        reject(url);
+      }
+    });
+  });
+}
+module.exports.fileDeFuncFiles = async(req,res)=> {
+  let query = [
+    {
+        $lookup: {
+            from:"ulbs",
+            localField:"ulb",
+            foreignField:"_id",
+            as:"ulb"
+            }
+        },
+        {
+            $unwind:"$ulb"
+            },
+    {
+        $group: {
+            _id: {
+                ulb: "$ulb._id",
+                year: "$design_year"
+                },
+                ulbName:{$first: "$ulb.name"},
+                 ulbcode:{$first: "$ulb.code"},
+                bal_sheet_aud_pdf : {$first: "$audited.provisional_data.bal_sheet.pdf.url"},
+                bal_sheet_aud_ex : {$first: "$audited.provisional_data.bal_sheet.excel.url"},
+                
+                            bal_sheetSch_aud_pdf : {$first: "$audited.provisional_data.bal_sheet_schedules.pdf.url"},
+                bal_sheetSch_aud_ex : {$first: "$audited.provisional_data.bal_sheet_schedules.excel.url"},
+                
+                            inc_exp_aud_pdf : {$first: "$audited.provisional_data.inc_exp.pdf.url"},
+                inc_exp_aud_ex : {$first: "$audited.provisional_data.inc_exp.excel.url"},
+                
+                            inc_exp_schedules_aud_pdf : {$first: "$audited.provisional_data.inc_exp_schedules.pdf.url"},
+                inc_exp_schedules_aud_ex : {$first: "$audited.provisional_data.inc_exp_schedules.excel.url"},
+                
+                            cash_flow_aud_pdf : {$first: "$audited.provisional_data.cash_flow.pdf.url"},
+                cash_flow_aud_ex : {$first: "$audited.provisional_data.cash_flow.excel.url"},
+                
+                            auditor_report_aud_pdf : {$first: "$audited.provisional_data.auditor_report.pdf.url"},
+                
+                            
+                               bal_sheet_unaud_pdf : {$first: "$unAudited.provisional_data.bal_sheet.pdf.url"},
+                bal_sheet_unaud_ex : {$first: "$unAudited.provisional_data.bal_sheet.excel.url"},
+                
+                            bal_sheetSch_unaud_pdf : {$first: "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"},
+                bal_sheetSch_unaud_ex : {$first: "$unAudited.provisional_data.bal_sheet_schedules.excel.url"},
+                
+                            inc_exp_unaud_pdf : {$first: "$unAudited.provisional_data.inc_exp.pdf.url"},
+                inc_exp_unaud_ex : {$first: "$unAudited.provisional_data.inc_exp.excel.url"},
+                
+                            inc_exp_schedules_unaud_pdf : {$first: "$unAudited.provisional_data.inc_exp_schedules.pdf.url"},
+                inc_exp_schedules_unaud_ex : {$first: "$unAudited.provisional_data.inc_exp_schedules.excel.url"},
+                
+                            cash_flow_unaud_pdf : {$first: "$unAudited.provisional_data.cash_flow.pdf.url"},
+                cash_flow_unaud_ex : {$first: "$unAudited.provisional_data.cash_flow.excel.url"},
+                
+    
+                
+            }
+        },
+     
+       
+    ]
+    let data = await AnnualAccountData.aggregate(query);
+    let documnetcounter = 1;
+    working = 0;
+    notWorking = 0;
+    let arr = []
+for(let el of data){
+ 
+
+  for(let key in el) {
+if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
+  let url = el[key];
+// let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+  try{
+    let response = await doRequest(url);
+    
+    let obj = {
+      ulbName:"",
+      ulbCame:"",
+      key:"",
+      url:"",
+      year: ""
+    }
+    obj.ulbName = el.ulbName;
+    obj.ulbCode = el.ulbcode;
+obj.key = key;
+obj.url = response
+obj.year = el['_id']['year']
+     arr.push(obj);
+
+  } catch (error) {
+     // `error` will be whatever you passed to `reject()` at the top
+  }
+  
+       
+   
+}
+  
+
+}
+}
+
+return res.send(arr);
+
+}
 
 exports.createUpdate = async (req, res) => {
   try {
