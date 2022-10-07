@@ -165,7 +165,7 @@ const attachPrescription = (data) => {
        prescription =  fetchPrescription(category,question,answer);
     
        if(temp != prescription ){
-        temp += prescription
+        temp = prescription
         Object.assign(el2, {prescription: temp })
        }
        
