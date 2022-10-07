@@ -2,7 +2,7 @@ const express = require("express");
 const { verify } = require("jsonwebtoken");
 const router = express.Router();
 const { verifyToken } = require("../auth/services/verifyToken");
-const { getAccounts, action, createUpdate, getCSVAudited, getCSVUnaudited,nmpcEligibility, dashboard, dataset, datasetDownload } = require("./service");
+const { getAccounts, action, createUpdate, getCSVAudited, getCSVUnaudited,nmpcEligibility, dashboard, dataset, datasetDownload, fileDeFuncFiles } = require("./service");
 const { userAuth } = require("../../middlewares/actionUserAuth");
 const statusList = require('../../util/newStatusList')
 // router.get('/get/:ulb', verifyToken, get);
@@ -15,5 +15,8 @@ router.post("/create", verifyToken, createUpdate);
 router.post("/action", verifyToken, userAuth, action);
 router.get("/datasets", dataset);
 router.post("/datasets", datasetDownload);
+
+
+router.get("/findNonFunctionalLinks", fileDeFuncFiles);
 
 module.exports = router;

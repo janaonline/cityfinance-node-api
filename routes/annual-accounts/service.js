@@ -26,6 +26,125 @@ const {canTakenAction} = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
+var https = require('https');
+var request = require('request')
+function doRequest(url) {
+  return new Promise(function (resolve, reject) {
+    request(url, function (error, resp, body) {
+      if (!error && resp?.statusCode == 404) {
+        resolve(url)
+
+      }else{
+        reject(url);
+      }
+    });
+  });
+}
+module.exports.fileDeFuncFiles = async(req,res)=> {
+  let query = [
+    {
+        $lookup: {
+            from:"ulbs",
+            localField:"ulb",
+            foreignField:"_id",
+            as:"ulb"
+            }
+        },
+        {
+            $unwind:"$ulb"
+            },
+    {
+        $group: {
+            _id: {
+                ulb: "$ulb._id",
+                year: "$design_year"
+                },
+                ulbName:{$first: "$ulb.name"},
+                 ulbcode:{$first: "$ulb.code"},
+                bal_sheet_aud_pdf : {$first: "$audited.provisional_data.bal_sheet.pdf.url"},
+                bal_sheet_aud_ex : {$first: "$audited.provisional_data.bal_sheet.excel.url"},
+                
+                            bal_sheetSch_aud_pdf : {$first: "$audited.provisional_data.bal_sheet_schedules.pdf.url"},
+                bal_sheetSch_aud_ex : {$first: "$audited.provisional_data.bal_sheet_schedules.excel.url"},
+                
+                            inc_exp_aud_pdf : {$first: "$audited.provisional_data.inc_exp.pdf.url"},
+                inc_exp_aud_ex : {$first: "$audited.provisional_data.inc_exp.excel.url"},
+                
+                            inc_exp_schedules_aud_pdf : {$first: "$audited.provisional_data.inc_exp_schedules.pdf.url"},
+                inc_exp_schedules_aud_ex : {$first: "$audited.provisional_data.inc_exp_schedules.excel.url"},
+                
+                            cash_flow_aud_pdf : {$first: "$audited.provisional_data.cash_flow.pdf.url"},
+                cash_flow_aud_ex : {$first: "$audited.provisional_data.cash_flow.excel.url"},
+                
+                            auditor_report_aud_pdf : {$first: "$audited.provisional_data.auditor_report.pdf.url"},
+                
+                            
+                               bal_sheet_unaud_pdf : {$first: "$unAudited.provisional_data.bal_sheet.pdf.url"},
+                bal_sheet_unaud_ex : {$first: "$unAudited.provisional_data.bal_sheet.excel.url"},
+                
+                            bal_sheetSch_unaud_pdf : {$first: "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"},
+                bal_sheetSch_unaud_ex : {$first: "$unAudited.provisional_data.bal_sheet_schedules.excel.url"},
+                
+                            inc_exp_unaud_pdf : {$first: "$unAudited.provisional_data.inc_exp.pdf.url"},
+                inc_exp_unaud_ex : {$first: "$unAudited.provisional_data.inc_exp.excel.url"},
+                
+                            inc_exp_schedules_unaud_pdf : {$first: "$unAudited.provisional_data.inc_exp_schedules.pdf.url"},
+                inc_exp_schedules_unaud_ex : {$first: "$unAudited.provisional_data.inc_exp_schedules.excel.url"},
+                
+                            cash_flow_unaud_pdf : {$first: "$unAudited.provisional_data.cash_flow.pdf.url"},
+                cash_flow_unaud_ex : {$first: "$unAudited.provisional_data.cash_flow.excel.url"},
+                
+    
+                
+            }
+        },
+     
+       
+    ]
+    let data = await AnnualAccountData.aggregate(query);
+    let documnetcounter = 1;
+    working = 0;
+    notWorking = 0;
+    let arr = []
+for(let el of data){
+ 
+
+  for(let key in el) {
+if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
+  let url = el[key];
+// let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+  try{
+    let response = await doRequest(url);
+    
+    let obj = {
+      ulbName:"",
+      ulbCame:"",
+      key:"",
+      url:"",
+      year: ""
+    }
+    obj.ulbName = el.ulbName;
+    obj.ulbCode = el.ulbcode;
+obj.key = key;
+obj.url = response
+obj.year = el['_id']['year']
+     arr.push(obj);
+
+  } catch (error) {
+     // `error` will be whatever you passed to `reject()` at the top
+  }
+  
+       
+   
+}
+  
+
+}
+}
+
+return res.send(arr);
+
+}
 
 
 const time = () => {
@@ -34,6 +153,50 @@ const time = () => {
   dt.setMinutes(dt.getMinutes() + 30);
   return dt;
 };
+
+const calculateTabwiseStatusAndOverallStatus = (formData) => {
+let audited = formData['audited'];
+let unAudited = formData['unAudited'];
+let auditedAns = formData['audited']['submit_annual_accounts']
+let unAuditedAns = formData['unAudited']['submit_annual_accounts']
+let actionTakenByRole = formData['actionTakenByRole']
+if(actionTakenByRole == 'ULB'){
+  formData.audited['status'] = "PENDING"
+  formData.unAudited['status'] = "PENDING"
+}else if(actionTakenByRole != 'ULB'){
+  if(auditedAns){
+  for(let key in audited['provisional_data']){
+    if(typeof key == 'object' && key != null ){
+      if(audited['provisional_data'][key]['status'] == 'REJECTED'){
+        formData.audited['status'] = "REJECTED"
+        break;
+      }
+    }
+  }  
+
+  }
+  if(unAuditedAns){
+    for(let key in unAudited['provisional_data']){
+      if(typeof unAudited['provisional_data'][key] == 'object' && key != null ){
+        if(unAudited['provisional_data'][key]['status'] == 'REJECTED'){
+          formData.unAudited['status'] = "REJECTED"
+          break;
+        }
+      }
+    }  
+    
+  }
+}
+if(formData.audited['status'] == "APPROVED" && formData.unAudited['status'] == "APPROVED" ){
+  formData['status'] = "APPROVED"
+}else if(formData.audited['status'] == "PENDING" && formData.unAudited['status'] == "PENDING" ){
+  formData['status'] = "PENDING"
+}else{
+  formData['status'] = "REJECTED"
+}
+return formData;
+
+}
 
 exports.createUpdate = async (req, res) => {
   try {
@@ -131,19 +294,23 @@ return res.json({
         proData = req.body.unAudited.provisional_data;
         for (const key in proData) {
           if (key == "auditor_report") continue;
-   
+          if(proData[key]['status'] == 'REJECTED'){
             proData[key].status = "PENDING";
             proData[key].rejectReason = null;
+          }
+          
+   
+            
           
         }
       }
       if (req.body.audited.submit_annual_accounts) {
          audData = req.body.audited.provisional_data;
         for (const key in audData) {
-          
+          if(audData[key]['status'] == 'REJECTED'){
             audData[key].status = "PENDING";
             audData[key].rejectReason = null;
-          
+          }
         }
       }
       formData['unAudited']['provisional_data'] = proData ?? req.body.unAudited.provisional_data ;
@@ -186,7 +353,8 @@ return res.json({
         isCompleted : formData.isDraft ? false : true
       })
   }
- 
+  if(design_year != "606aaf854dff55e6c075d219" )
+ formData = calculateTabwiseStatusAndOverallStatus(formData);
     if(  submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB'){// form already submitted
       return res.status(200).json({
         status: true,
@@ -290,7 +458,7 @@ if(formData.isDraft){
     req.body.status  = "PENDING"
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
-        { ulb: ObjectId(ulb), isActive: true },
+        { ulb: ObjectId(ulb), design_year: ObjectId(design_year), isActive: true },
         { $set: req.body, $push: { history: currentAnnualAccounts } },
         {new: true, runValidators: true}
       );
@@ -554,112 +722,7 @@ exports.dataset = catchAsync (async (req,res)=>{
     }
     
   }
-    // let query = [
-    //   {
-    //     $match: {
-    //       financialYear: year,
-    //     },
-    //   },
-    //   {
-    //     $lookup: {
-    //       from: "ulbs",
-    //       localField: "ulb",
-    //       foreignField: "_id",
-    //       as: "ulb",
-    //     },
-    //   },
-    //   {
-    //     $unwind: "$ulb",
-    //   },
-    //   {
-    //     $lookup: {
-    //       from: "states",
-    //       localField: "ulb.state",
-    //       foreignField: "_id",
-    //       as: "state",
-    //     },
-    //   },
-    //   {
-    //     $unwind: "$state",
-    //   },
-    // ];
-    // if (ulb && ulb != "undefined") {
-    //   query.push({
-    //     $match: {
-    //       "ulb.name": ulb,
-    //     },
-    //   });
-    // } else if (state && ObjectId.isValid(state)) {
-    //   query.push({
-    //     $match: {
-    //       "state._id": ObjectId(state),
-    //     },
-    //   });
-    // }
-    // let query_extn = [
-    //   {
-    //     $project: {
-    //       ulbId: "$ulb._id",
-    //       ulbName: "$ulb.name",
-    //       state: "$state.name",
-    //       modifiedAt: "$modifiedAt",
-    //       balance_pdf: "$overallReport.pdfUrl",
-    //       balance_excel: "$overallReport.excelUrl",
-    //       income_pdf: "$overallReport.pdfUrl",
-    //       income_excel: "$overallReport.excelUrl",
-    //     },
-    //   },
-    //   {
-    //     $project: {
-    //       ulbId: 1,
-    //       ulbName: 1,
-    //       state: 1,
-    //       modifiedAt: 1,
-    //       file: `$${category}_${type}`,
-    //     },
-    //   },
-    //   {
-    //     $match: {
-    //       file: { $exists: true, $ne: null },
-    //     },
-    //   },
-    //   {
-    //     $sort: {
-    //       modifiedAt: -1,
-    //     },
-    //   },
-    // ];
-    // query.push(...query_extn);
-    // if (getQuery) return res.status(200).json(query);
-    // let fileData = await UlbFinancialData.aggregate(query);
-    // fileData.forEach((el) => {
-    //   let data = {
-    //     ulbId: null,
-    //     ulbName: "",
-    //     state: "",
-    //     fileName: "",
-    //     fileUrl: "",
-    //     modifiedAt: "",
-    //     type: type,
-    //     audited: "",
-    //     year: "",
-    //   };
-    //   data.ulbId = el?.ulbId;
-    //   data.state = el?.state;
-    //   data.ulbName = el?.ulbName;
-    //   data.modifiedAt = el?.modifiedAt;
-    //   data.year = year;
-    //   data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-    //   data.fileUrl = el?.file;
-
-    //   finalData.push(data);
-    // });
-    // return res.status(200).json({
-    //   success: true,
-    //   data: finalData,
-    // });
   
-
   if (year != "2019-20" && year != "2020-21") {
     let query_dataCollection = [
       {
@@ -1373,8 +1436,8 @@ let obj = annualAccountData;
       }
     }
 Object.assign(annualAccountData, obj)
-// Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
-Object.assign(annualAccountData, {canTakeAction: false })
+Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
+// Object.assign(annualAccountData, {canTakeAction: false })
 
     return res.status(200).json(annualAccountData);
   } catch (err) {
@@ -1882,7 +1945,8 @@ exports.action = async (req, res) => {
     }
     req.body.status = finalStatus;
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
-
+    if(design_year != "606aaf854dff55e6c075d219" )
+req.body = calculateTabwiseStatusAndOverallStatus(req.body)
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
