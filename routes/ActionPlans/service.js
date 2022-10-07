@@ -233,7 +233,7 @@ exports.getActionPlans = async (req, res) => {
       data2223Query,
     ]);
 
-    if(data2223 && data2223.isDraft == false){
+    if(data2223){
       Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
       return Response.OK(res, data2223, "Success");
 
@@ -252,12 +252,12 @@ exports.getActionPlans = async (req, res) => {
             let ua = uaArray[i];
             //category in ua
             for (let category in ua) {
-              if (category === "projectExecute")
-                ua2122projectExecute = uaArray[i].projectExecute;
-              if (category === "sourceFund")
-                ua2122sourceFund = uaArray[i].sourceFund;
-              if (category === "yearOutlay")
-                ua2122yearOutlay = uaArray[i].yearOutlay;
+              // if (category === "projectExecute")
+              //   ua2122projectExecute = uaArray[i].projectExecute;
+              // if (category === "sourceFund")
+              //   ua2122sourceFund = uaArray[i].sourceFund;
+              // if (category === "yearOutlay")
+              //   ua2122yearOutlay = uaArray[i].yearOutlay;
               if (
                 category === "projectExecute" ||
                 category === "sourceFund" ||
@@ -274,25 +274,25 @@ exports.getActionPlans = async (req, res) => {
        
           // }
   
-          if (data2223) {
-            uaArray2223 = data2223.uaData;
-            //Number of UAs
-            let ua = uaArray2223[i];
-            // for (let i = 0; i < uaArray2223.length; i++) {
-              // for (let ua of uaArray2223) {
-                //category in ua
-                for (let category in ua) {
-                  if (category === "projectExecute") {
-                    ua2122projectExecute.push(...uaArray2223[i].projectExecute);
-                  } else if (category === "sourceFund") {
-                    ua2122sourceFund.push(...uaArray2223[i].sourceFund);
-                  } else if (category === "yearOutlay") {
-                    ua2122yearOutlay.push(...uaArray2223[i].yearOutlay);
-                  }
-                }
-              // }
-            // }
-          }
+          // if (data2223) {
+          //   uaArray2223 = data2223.uaData;
+          //   //Number of UAs
+          //   let ua = uaArray2223[i];
+          //   // for (let i = 0; i < uaArray2223.length; i++) {
+          //     // for (let ua of uaArray2223) {
+          //       //category in ua
+          //       for (let category in ua) {
+          //         if (category === "projectExecute") {
+          //           ua2122projectExecute.push(...uaArray2223[i].projectExecute);
+          //         } else if (category === "sourceFund") {
+          //           ua2122sourceFund.push(...uaArray2223[i].sourceFund);
+          //         } else if (category === "yearOutlay") {
+          //           ua2122yearOutlay.push(...uaArray2223[i].yearOutlay);
+          //         }
+          //       }
+          //     // }
+          //   // }
+          // }
         }
         
       }else{//previous year form not final submitted
@@ -312,15 +312,16 @@ exports.getActionPlans = async (req, res) => {
         })
       }
     }
-    if(data2122 && data2223){
-      data2223.uaData = data2122.uaData;
-      Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
-      return res.status(200).json({
-        status: true,
-        message: "Data found And Appended in 22-23",
-        data: data2223
-      })
-    }else if(data2122 && !data2223){
+    // if(data2122 && data2223){
+    //   data2223.uaData = data2122.uaData;
+    //   Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
+    //   return res.status(200).json({
+    //     status: true,
+    //     message: "Data found And Appended in 22-23",
+    //     data: data2223
+    //   })
+    // }else 
+    if(data2122){
       return res.status(200).json({
         status: true,
         message: "Data for 21-22",
