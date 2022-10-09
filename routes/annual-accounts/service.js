@@ -118,7 +118,8 @@ module.exports.fileDeFuncFiles = async(req,res)=> {
     working = 0;
     notWorking = 0;
     let arr = []
-let target = 100000;
+let target = data.length;
+console.log(target)
 let skip = 0;
 let batch = 150;
 while(skip<=target){
