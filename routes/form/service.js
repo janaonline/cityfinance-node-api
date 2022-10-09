@@ -67,39 +67,67 @@ module.exports.defunc = async(req,res)=> {
            }     
     ]
     let arr = [];
+
+    let totalCounter = 1;
   let data = await dCForm.aggregate(query);
-  for(let el of data){
-    for(let key in el){
-      if(key != '_id' && key != 'ulbName' && key != 'ulbCode' && el[key] ){
-        let url = el[key];
-     
-        try{
-          let response = await doRequest(url);
-          
-          let obj = {
-            ulbName:"",
-            ulbCode:"",
-            key:"",
-            url:"",
-         
+  let target = data.length;
+console.log(target)
+let skip = 0;
+let batch = 150;
+while(skip<=target){
+  const slice = data.slice(parseInt(skip),parseInt(skip)+batch);
+  await Promise.all(
+    slice.map(async el=>{
+      for(let key in el) {
+        if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
+          let url = el[key];
+        // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+          try{
+            totalCounter++;
+            let response = await doRequest(url);
+            
+            let obj = {
+              ulbName:"",
+              ulbCode:"",
+              key:"",
+              url:"",
+            
+            }
+            obj.ulbName = el.ulbName;
+            obj.ulbCode = el.ulbCode;
+            obj.key = key;
+            obj.url = response
+            
+            console.log(obj)
+            arr.push(obj);
+      
+          } catch (error) {
+            //console.log('working', error)
+            // `error` will be whatever you passed to `reject()` at the top
           }
-          obj.ulbName = el.ulbName;
-          obj.ulbCode = el.ulbCode;
-      obj.key = key;
-      obj.url = response
-      
-           arr.push(obj);
-      
-        } catch (error) {
-           // `error` will be whatever you passed to `reject()` at the top
+          
+              
+          
         }
-        
-             
-         
+          
+      
       }
-    }
-  }
-  return res.send(arr);
+    })
+  )
+  //for(let el of data){
+    
+
+    
+  ///}
+  console.log(skip)
+  skip+=batch;
+}
+
+  return res.send({
+    data:arr,
+    number: arr.length,
+    total: totalCounter
+  });
 }
 
 module.exports.post = function (req, res) {

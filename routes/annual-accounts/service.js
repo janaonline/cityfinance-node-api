@@ -127,6 +127,7 @@ while(skip<=target){
   await Promise.all(
     slice.map(async el=>{
       for(let key in el) {
+        documnetcounter++;
         if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
           let url = el[key];
         // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
@@ -171,7 +172,8 @@ while(skip<=target){
 }
 return res.send({
   data: arr,
-  number: arr.length
+  number: arr.length,
+  total: documnetcounter
 });
 
 }
