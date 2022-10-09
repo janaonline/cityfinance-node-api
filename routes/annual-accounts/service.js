@@ -38,7 +38,11 @@ const time = () => {
 
 function doRequest(url) {
   return new Promise(function (resolve, reject) {
-    request(url, function (error, resp, body) {
+    let options = {
+      url : url,
+      method: 'HEAD'
+    }
+    request(options, function (error, resp, body) {
       if (!error && resp?.statusCode == 404) {
         resolve(url)
 
@@ -114,43 +118,61 @@ module.exports.fileDeFuncFiles = async(req,res)=> {
     working = 0;
     notWorking = 0;
     let arr = []
-for(let el of data){
- 
-
-  for(let key in el) {
-if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
-  let url = el[key];
-// let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
-  try{
-    let response = await doRequest(url);
+let target = data.length;
+console.log(target)
+let skip = 0;
+let batch = 150;
+while(skip<=target){
+  const slice = data.slice(parseInt(skip),parseInt(skip)+batch);
+  await Promise.all(
+    slice.map(async el=>{
+      for(let key in el) {
+        if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
+          let url = el[key];
+        // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+          try{
+            let response = await doRequest(url);
+            
+            let obj = {
+              ulbName:"",
+              ulbCame:"",
+              key:"",
+              url:"",
+              year: ""
+            }
+            obj.ulbName = el.ulbName;
+            obj.ulbCode = el.ulbcode;
+            obj.key = key;
+            obj.url = response
+            obj.year = el['_id']['year']
+            console.log(obj)
+            arr.push(obj);
+      
+          } catch (error) {
+            //console.log('working', error)
+            // `error` will be whatever you passed to `reject()` at the top
+          }
+          
+              
+          
+        }
+          
+      
+      }
+    })
+  )
+  //for(let el of data){
     
-    let obj = {
-      ulbName:"",
-      ulbCame:"",
-      key:"",
-      url:"",
-      year: ""
-    }
-    obj.ulbName = el.ulbName;
-    obj.ulbCode = el.ulbcode;
-obj.key = key;
-obj.url = response
-obj.year = el['_id']['year']
-     arr.push(obj);
 
-  } catch (error) {
-     // `error` will be whatever you passed to `reject()` at the top
-  }
-  
-       
-   
+    
+  ///}
+  console.log(skip)
+  skip+=batch;
 }
-  
-
-}
-}
-
-return res.send(arr);
+return res.send({
+  data: arr,
+  number: arr.length
+});
 
 }
 
