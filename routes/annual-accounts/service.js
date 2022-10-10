@@ -1438,7 +1438,9 @@ let obj = annualAccountData;
 Object.assign(annualAccountData, obj)
 Object.assign(annualAccountData, {canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB",role ) })
 // Object.assign(annualAccountData, {canTakeAction: false })
-
+    if(annualAccountData?.status === "PENDING"){
+      annualAccountData.unAudited.rejectReason = ""
+    }
     return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);
