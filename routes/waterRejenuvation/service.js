@@ -6,6 +6,9 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require("../../service").response;
 const User = require('../../models/User');
 const Year = require('../../models/Year');
+const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
+const {canTakenAction} = require('../CommonActionAPI/service');
+
 
 function response(form, res, successMsg ,errMsg){
   if(form){
@@ -34,7 +37,9 @@ exports.saveWaterRejenuvation = async (req, res) => {
 
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
     formData["actionTakenByRole"] = actionTakenByRole;
-
+    formData["uaData"].forEach(entity=>{
+      entity.status = "PENDING"
+    })
     if (formData.state) {
       formData["state"] = ObjectId(formData.state);
     }
@@ -182,14 +187,20 @@ exports.getWaterRejenuvation = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
   const { design_year } = req.params;
+  let role = req.decoded.role;
   const user = req.decoded;
 
   const {_id: actionTakenBy, role: actionTakenByRole, } = user;
   let condition = {};
   condition.state = state;
   condition.design_year = design_year;
-  
+  let host = "";
+  host = req.headers.host;
+  if (req.headers.host === BackendHeaderHost.Demo) {
+    host = FrontendHeaderHost.Demo;
+  }
   try {
+    let userData = ""
     if(design_year === "606aaf854dff55e6c075d219"){
       const waterRej = await WaterRejenuvation.findOne({
         state: ObjectId(state),
@@ -198,8 +209,11 @@ exports.getWaterRejenuvation = async (req, res) => {
       if (!waterRej) {
         return Response.BadRequest(res, null, "No WaterRejenuvation found");
       }
+      userData = await User.findOne({ _id: ObjectId(waterRej['actionTakenBy']) });
+      waterRej['actionTakenByRole'] = userData['role'];;
+      Object.assign(waterRej, {canTakeAction: canTakenAction(waterRej['status'], waterRej['actionTakenByRole'], waterRej['isDraft'], "STATE",role ) })
        return Response.OK(res, waterRej, "Success");
-      
+    
     }
     const year2122Id = await Year.findOne({year: "2021-22"}).lean();
     let data2122Query;
@@ -207,95 +221,123 @@ exports.getWaterRejenuvation = async (req, res) => {
       data2122Query = WaterRejenuvation.findOne({
         state: ObjectId(state),
         design_year: ObjectId(year2122Id._id),
-        isDraft: false
-      });
+      }).lean();
     }
     const data2223Query = WaterRejenuvation.findOne({
       state: ObjectId(state),
       design_year,
-    });
+    }).lean();
 
     const [ data2122, data2223] = await Promise.all([
       data2122Query,
       data2223Query,
     ]);
+
+    if(data2223){
+      Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
+      return Response.OK(res, data2223, "Success");
+
+    }
     let uaArray;
     let uaArray2223;
     let ua2122WaterBodies, ua2122ReuseWater, ua2122ServiceLevelIndicators;
     if (data2122) {
-      uaArray = data2122.uaData;
-      for (let i = 0; i < uaArray.length; i++) {
-        //Number of UAs
-        // for (let ua of uaArray) {
-          let ua = uaArray[i];
-          //an entry of ua
-          for (let category in ua) {
-            //category in ua
-            if (category === "waterBodies")
-              ua2122WaterBodies = uaArray[i].waterBodies;
-            if (category === "reuseWater")
-              ua2122ReuseWater = uaArray[i].reuseWater;
-            if (category === "serviceLevelIndicators")
-              ua2122ServiceLevelIndicators =
-                uaArray[i].serviceLevelIndicators;
-            if (
-              category === "waterBodies" ||
-              category === "reuseWater" ||
-              category === "serviceLevelIndicators"
-            ) {
-              for (let project of ua[category]) {
-                //set project isDisable key = true
-                if (project) {
-                  Object.assign(project._doc, {isDisable:true})
+      if(data2122.isDraft === false){
+
+        uaArray = data2122.uaData;
+        for (let i = 0; i < uaArray.length; i++) {
+          //Number of UAs
+          // for (let ua of uaArray) {
+            let ua = uaArray[i];
+            //an entry of ua
+            for (let category in ua) {
+              //category in ua
+              // if (category === "waterBodies")
+              //   ua2122WaterBodies = uaArray[i].waterBodies;
+              // if (category === "reuseWater")
+              //   ua2122ReuseWater = uaArray[i].reuseWater;
+              // if (category === "serviceLevelIndicators")
+              //   ua2122ServiceLevelIndicators =
+              //     uaArray[i].serviceLevelIndicators;
+              if (
+                category === "waterBodies" ||
+                category === "reuseWater" ||
+                category === "serviceLevelIndicators"
+              ) {
+                for (let project of ua[category]) {
+                  //set project isDisable key = true
+                  if (project) {
+                    Object.assign(project, {isDisable:true})
+                  }
                 }
               }
             }
-          }
-
-          if (data2223) {
-            uaArray2223 = data2223.uaData;
-            //Number of UAs
-            // for (let i = 0; i < uaArray2223.length; i++) {
-              let ua = uaArray2223[i];
-              // for (let ua of uaArray2223) {
-                //category in ua
-                for (let category in ua) {
-                  if (category === "waterBodies") {
-                    ua2122WaterBodies.push(...uaArray2223[i].waterBodies);
-                    
-                  } else if (category === "reuseWater") {
-                    ua2122ReuseWater.push(...uaArray2223[i].reuseWater);
-                    
-                  } else if (category === "serviceLevelIndicators") {
-                    ua2122ServiceLevelIndicators.push(...uaArray2223[i].serviceLevelIndicators);
-                    
-                  }
-                }
-              // }
+  
+            // if (data2223) {
+            //   uaArray2223 = data2223.uaData;
+            //   //Number of UAs
+            //   // for (let i = 0; i < uaArray2223.length; i++) {
+            //   let ua = uaArray2223[i];
+            //   // for (let ua of uaArray2223) {
+            //   //category in ua
+            //   for (let category in ua) {
+            //     if (category === "waterBodies") {
+            //       ua2122WaterBodies.push(...uaArray2223[i].waterBodies);
+            //     } else if (category === "reuseWater") {
+            //       ua2122ReuseWater.push(...uaArray2223[i].reuseWater);
+            //     } else if (category === "serviceLevelIndicators") {
+            //       ua2122ServiceLevelIndicators.push(
+            //         ...uaArray2223[i].serviceLevelIndicators
+            //       );
+            //     }
+            //   }
+            //   // }
+            //   // }
             // }
-          }
+      }
         // }
-      }
-      
-      if(data2223 && data2122){
-        data2122.declaration = data2223.declaration
-      }
-    }else{
-      if(data2223){
-        return res.status(200).json({
+        // if(data2223 && data2122){
+        //   data2122.declaration = data2223.declaration
+        // }
+      }else if(data2122.isDraft === true){
+         //no final submit
+        return res.status(400).json({
           status: true,
-          message: "Data 2223",
-          data: data2223
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/water-rejenuvation target="_blank">Click here</a> in order to submit form`,
         })
       }
+      
+    }else{
+      if(!data2122){//Not found
+        return res.status(400).json({
+          status: true,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/water-rejenuvation target="_blank">Click here</a> in order to submit form`,
+        })
+      }
+      // if(data2223){
+      //   return res.status(200).json({
+      //     status: true,
+      //     message: "Data 2223",
+      //     data: data2223
+      //   })
+      // }
     }
   
-    if(data2122){
-      data2223.uaData = data2122.uaData;
+    // if(data2122 && data2223){
+    //   data2223.uaData = data2122.uaData;
+    //   return res.status(200).json({
+    //     status: true,
+    //     message: "Data found And Appended for 22-23 ",
+    //     data: data2223
+    //   })
+    // }else
+     if(data2122){
+      data2122.status = null
+      data2122.isDraft = null
       return res.status(200).json({
         status: true,
-        message: "Data found And Appended",
-        data: data2223
+        message: "Data for 21-22",
+        data: data2122
       })
     }else{
       return res.status(400).json({

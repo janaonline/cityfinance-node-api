@@ -1,8 +1,15 @@
 const axios = require('axios');
-const GrantsClaimed = require("../../models/GrantsClaimed");
-const GrantClaim = require("../../models/GrantClaim");
 const ObjectId = require('mongoose').Types.ObjectId;
-const {BackendHeaderHost} =  require('../../util/envUrl')
+const GrantTransferMohua = require('../../models/grantTransferMohua');
+const {BackendHeaderHost} =  require('../../util/envUrl');
+const GrantTypes = require('../../models/GrantType');
+const gtcConstants = {
+    mpc_tied : "Million Plus for Water Supply and SWM",
+    nmpc_untied: "Non-Million Untied",
+    nmpc_tied:"Non-Million Tied"
+}
+
+const LOCALHOST = 'localhost:8080';
 
 module.exports.get2223 = async (req, res)=>{
 
@@ -109,44 +116,92 @@ module.exports.get2223 = async (req, res)=>{
     const { financialYear, stateId } = req.query;
     try {
       let dashboardData = await getDashboardData(req, stateId, financialYear);
-      let grantClaimedData = await GrantsClaimed.findOne({
-        state: ObjectId(stateId),
-        financialYear: ObjectId(financialYear),
-      }).lean();
-      let nmpc_untied_1,
-        nmpc_untied_2,
-        nmpc_tied_1,
-        nmpc_tied_2,
+    //   let grantClaimedData = await GrantsClaimed.findOne({
+    //     state: ObjectId(stateId),
+    //     financialYear: ObjectId(financialYear),
+    //   }).lean();
+      let nmpc_untied_1 ={},
+        nmpc_untied_2 ={},
+        nmpc_tied_1 = {},
+        nmpc_tied_2 = {},
         mpc_tied_1 = {};
-      let nmpc_untied_1_GrantData,
-        nmpc_untied_2_GrantData,
-        nmpc_tied_1_GrantData,
-        nmpc_tied_2_GrantData,
+      let nmpc_untied_1_GrantData= {},
+        nmpc_untied_2_GrantData={},
+        nmpc_tied_1_GrantData={},
+        nmpc_tied_2_GrantData={},
         mpc_tied_1_GrantData = {};
 
-      if (grantClaimedData) {
-        if (grantClaimedData.hasOwnProperty("nmpc_tied")) {
-          if (grantClaimedData["nmpc_tied"][0]["installment"] === "1") {
-            nmpc_tied_1_GrantData = grantClaimedData["nmpc_tied"][0];
-          } else if (grantClaimedData["nmpc_tied"][1]["installment"] === "2") {
-            nmpc_tied_2_GrantData = grantClaimedData["nmpc_tied"][1];
-          }
-        }
-        if (grantClaimedData.hasOwnProperty("nmpc_untied")) {
-          if (grantClaimedData["nmpc_untied"][0]["installment"] === "1") {
-            nmpc_untied_1_GrantData = grantClaimedData["nmpc_untied"][0];
-          } else if (
-            grantClaimedData["nmpc_untied"][1]["installment"] === "2"
-          ) {
-            nmpc_untied_2_GrantData = grantClaimedData["nmpc_untied"][1];
-          }
-        }
-        if (grantClaimedData.hasOwnProperty("mpc")) {
-          if (grantClaimedData["mpc"] !== "NA") {
-            mpc_tied_1_GrantData = grantClaimedData["mpc"];
-          }
+    //   if (grantClaimedData) {
+    //     if (grantClaimedData.hasOwnProperty("nmpc_tied")) {
+    //       if (grantClaimedData["nmpc_tied"][0]["installment"] === "1") {
+    //         nmpc_tied_1_GrantData = grantClaimedData["nmpc_tied"][0];
+    //       } else if (grantClaimedData["nmpc_tied"][1]["installment"] === "2") {
+    //         nmpc_tied_2_GrantData = grantClaimedData["nmpc_tied"][1];
+    //       }
+    //     }
+    //     if (grantClaimedData.hasOwnProperty("nmpc_untied")) {
+    //       if (grantClaimedData["nmpc_untied"][0]["installment"] === "1") {
+    //         nmpc_untied_1_GrantData = grantClaimedData["nmpc_untied"][0];
+    //       } else if (
+    //         grantClaimedData["nmpc_untied"][1]["installment"] === "2"
+    //       ) {
+    //         nmpc_untied_2_GrantData = grantClaimedData["nmpc_untied"][1];
+    //       }
+    //     }
+    //     if (grantClaimedData.hasOwnProperty("mpc")) {
+    //       if (grantClaimedData["mpc"] !== "NA") {
+    //         mpc_tied_1_GrantData = grantClaimedData["mpc"];
+    //       }
+    //     }
+    //   }
+    const grantTypes = await GrantTypes.find({})
+      .select({ _id: 1, name: 1 })
+      .lean();
+    let grantTypesObj = {};
+    for(let i =0 ; i<grantTypes.length; i++){
+        grantTypesObj['nmpc_tied'] = grantTypes[i]['name'] === gtcConstants.nmpc_tied ? grantTypes[i] : grantTypesObj['nmpc_tied'] ;
+        grantTypesObj['nmpc_untied'] = grantTypes[i]['name'] === gtcConstants.nmpc_untied ? grantTypes[i] : grantTypesObj['nmpc_untied'] ;
+        grantTypesObj['mpc_tied'] = grantTypes[i]['name'] === gtcConstants.mpc_tied ? grantTypes[i] : grantTypesObj['mpc_tied'] ;
+    }
+    const grantClaimedData = await GrantTransferMohua.findOne({
+      state: ObjectId(stateId),
+      design_year: ObjectId(financialYear),
+    }).lean();
+    if(!grantClaimedData){
+      throw new Error("Data not found");
+    }
+    for (let i = 0; i < grantClaimedData.stateData.length; i++) {
+      let grantClaim = grantClaimedData.stateData[i];
+
+      if (grantClaim['GrantType'].toString() === grantTypesObj['nmpc_untied']['_id'].toString()) {
+        if (grantClaim["installment"] === 1) {
+          nmpc_untied_1_GrantData = grantClaim;
+          nmpc_untied_1_GrantData.status = getGrantStatus(grantClaim);
+          
+        } else if (grantClaim["installment"] === 2) {
+          nmpc_untied_2_GrantData = grantClaim;
+          nmpc_untied_2_GrantData.status = getGrantStatus(grantClaim);
+
         }
       }
+      if (grantClaim["GrantType"].toString() === grantTypesObj['nmpc_tied']["_id"].toString()) {
+        if (grantClaim["installment"] === 1) {
+          nmpc_tied_1_GrantData = grantClaim;
+          nmpc_tied_1_GrantData.status = getGrantStatus(grantClaim);
+        } else if (grantClaim["installment"] === 2) {
+          nmpc_tied_2_GrantData = grantClaim;
+          nmpc_tied_2_GrantData.status = getGrantStatus(grantClaim);
+
+        }
+      }
+
+      if (grantClaim["GrantType"].toString() === grantTypesObj['mpc_tied']["_id"].toString()) {
+        if (grantClaim["installment"] === 1) {
+          mpc_tied_1_GrantData = grantClaim;
+          mpc_tied_1_GrantData.status = getGrantStatus(grantClaim);
+        }
+      }
+    }
       nmpc_untied_1 = {
         conditions: conditions_nmpc_untied_1st,
         nmpc_untied_1_GrantData,
@@ -206,7 +261,7 @@ async function getDashboardData(req,stateId, financialYear) {
     };
     let host= "";
     host = req.headers.host
-    if(host = "localhost:8080"){
+    if(host === LOCALHOST){
         host = BackendHeaderHost.Demo
     }
     for(let key in formType){
@@ -250,4 +305,18 @@ async function getDashboardData(req,stateId, financialYear) {
         }
     }
     return dashboardData;
+}
+
+function getGrantStatus(grantClaim){
+  let status = "";
+if (!grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
+  status = `Claim yet to be Submitted. `;
+} else if (grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
+  status = `Claim for grant Submitted. Date - ${grantClaim.submissionDate}`;
+} else if (grantClaim.submissionDate && grantClaim.recommendationDate && !grantClaim.releaseDate) {
+  status = `Claim Recommended to Ministry of Finance.`;
+} else if (grantClaim.submissionDate && grantClaim.recommendationDate && grantClaim.releaseDate) {
+  status = `Claim released to State by Ministry of Finance.`;
+}
+  return status;
 }

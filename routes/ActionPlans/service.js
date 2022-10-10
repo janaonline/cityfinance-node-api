@@ -40,6 +40,9 @@ exports.saveActionPlans = async (req, res) => {
   
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
     formData["actionTakenByRole"] = actionTakenByRole;
+    formData["uaData"].forEach(entity=>{
+      entity.status = "PENDING"
+    })
     if (formData.state) {
       formData["state"] = ObjectId(formData.state);
     }
@@ -189,7 +192,7 @@ exports.getActionPlans = async (req, res) => {
   condition.design_year = design_year;
   let host = "";
   host = req.headers.host;
-  if ((req.headers.host = BackendHeaderHost.Demo)) {
+  if ((req.headers.host === BackendHeaderHost.Demo)) {
     host = FrontendHeaderHost.Demo;
   }
   try {
@@ -230,7 +233,7 @@ exports.getActionPlans = async (req, res) => {
       data2223Query,
     ]);
 
-    if(data2223 && data2223.isDraft == false){
+    if(data2223){
       Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
       return Response.OK(res, data2223, "Success");
 
@@ -249,12 +252,12 @@ exports.getActionPlans = async (req, res) => {
             let ua = uaArray[i];
             //category in ua
             for (let category in ua) {
-              if (category === "projectExecute")
-                ua2122projectExecute = uaArray[i].projectExecute;
-              if (category === "sourceFund")
-                ua2122sourceFund = uaArray[i].sourceFund;
-              if (category === "yearOutlay")
-                ua2122yearOutlay = uaArray[i].yearOutlay;
+              // if (category === "projectExecute")
+              //   ua2122projectExecute = uaArray[i].projectExecute;
+              // if (category === "sourceFund")
+              //   ua2122sourceFund = uaArray[i].sourceFund;
+              // if (category === "yearOutlay")
+              //   ua2122yearOutlay = uaArray[i].yearOutlay;
               if (
                 category === "projectExecute" ||
                 category === "sourceFund" ||
@@ -271,52 +274,62 @@ exports.getActionPlans = async (req, res) => {
        
           // }
   
-          if (data2223) {
-            uaArray2223 = data2223.uaData;
-            //Number of UAs
-            let ua = uaArray2223[i];
-            // for (let i = 0; i < uaArray2223.length; i++) {
-              // for (let ua of uaArray2223) {
-                //category in ua
-                for (let category in ua) {
-                  if (category === "projectExecute") {
-                    ua2122projectExecute.push(...uaArray2223[i].projectExecute);
-                  } else if (category === "sourceFund") {
-                    ua2122sourceFund.push(...uaArray2223[i].sourceFund);
-                  } else if (category === "yearOutlay") {
-                    ua2122yearOutlay.push(...uaArray2223[i].yearOutlay);
-                  }
-                }
-              // }
-            // }
-          }
+          // if (data2223) {
+          //   uaArray2223 = data2223.uaData;
+          //   //Number of UAs
+          //   let ua = uaArray2223[i];
+          //   // for (let i = 0; i < uaArray2223.length; i++) {
+          //     // for (let ua of uaArray2223) {
+          //       //category in ua
+          //       for (let category in ua) {
+          //         if (category === "projectExecute") {
+          //           ua2122projectExecute.push(...uaArray2223[i].projectExecute);
+          //         } else if (category === "sourceFund") {
+          //           ua2122sourceFund.push(...uaArray2223[i].sourceFund);
+          //         } else if (category === "yearOutlay") {
+          //           ua2122yearOutlay.push(...uaArray2223[i].yearOutlay);
+          //         }
+          //       }
+          //     // }
+          //   // }
+          // }
         }
         
       }else{//previous year form not final submitted
         
-        return res.status(200).json({
+        return res.status(400).json({
           status: true,
-          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank>Click here</a> in order to submit form`,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank">Click here</a> in order to submit form`,
         })
       }
     }else{
       //previous year form not found 
       if(!data2122){
         
-        return res.status(200).json({
+        return res.status(400).json({
           status: true,
-          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank>Click here</a> in order to submit form`,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank">Click here</a> in order to submit form`,
         })
       }
     }
+    // if(data2122 && data2223){
+    //   data2223.uaData = data2122.uaData;
+    //   Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
+    //   return res.status(200).json({
+    //     status: true,
+    //     message: "Data found And Appended in 22-23",
+    //     data: data2223
+    //   })
+    // }else 
     if(data2122){
-      data2223.uaData = data2122.uaData;
-      Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
+      data2122.status = null;
+      data2122.isDraft = null;
       return res.status(200).json({
         status: true,
-        message: "Data found And Appended",
-        data: data2223
+        message: "Data for 21-22",
+        data: data2122
       })
+ 
     }else{
       return res.status(400).json({
         status: false,
