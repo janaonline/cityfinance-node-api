@@ -739,6 +739,7 @@ console.log( submittedForms.length, pipeline);
                     approvedValue: approvedFormPercent[modelName],
                     totalApproved: totalApprovedUlbForm[modelName],
                     totalSubmitted: totalSubmittedUlbForm[modelName],
+                    totalForms,
                     cutOff,
                     icon: formData["icon"],
                     link: formData["link"],

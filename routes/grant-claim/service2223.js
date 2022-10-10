@@ -9,6 +9,8 @@ const gtcConstants = {
     nmpc_tied:"Non-Million Tied"
 }
 
+const LOCALHOST = 'localhost:8080';
+
 module.exports.get2223 = async (req, res)=>{
 
     let expectedValues = {
@@ -165,7 +167,9 @@ module.exports.get2223 = async (req, res)=>{
       state: ObjectId(stateId),
       design_year: ObjectId(financialYear),
     }).lean();
-    
+    if(!grantClaimedData){
+      throw new Error("Data not found");
+    }
     for (let i = 0; i < grantClaimedData.stateData.length; i++) {
       let grantClaim = grantClaimedData.stateData[i];
 
@@ -257,7 +261,7 @@ async function getDashboardData(req,stateId, financialYear) {
     };
     let host= "";
     host = req.headers.host
-    if(host = "localhost:8080"){
+    if(host === LOCALHOST){
         host = BackendHeaderHost.Demo
     }
     for(let key in formType){
