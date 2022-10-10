@@ -297,7 +297,7 @@ exports.getActionPlans = async (req, res) => {
         
       }else{//previous year form not final submitted
         
-        return res.status(200).json({
+        return res.status(400).json({
           status: true,
           message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank>Click here</a> in order to submit form`,
         })
@@ -306,7 +306,7 @@ exports.getActionPlans = async (req, res) => {
       //previous year form not found 
       if(!data2122){
         
-        return res.status(200).json({
+        return res.status(400).json({
           status: true,
           message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/action-plan target="_blank>Click here</a> in order to submit form`,
         })
@@ -322,6 +322,8 @@ exports.getActionPlans = async (req, res) => {
     //   })
     // }else 
     if(data2122){
+      data2122.status = null;
+      data2122.isDraft = null;
       return res.status(200).json({
         status: true,
         message: "Data for 21-22",
