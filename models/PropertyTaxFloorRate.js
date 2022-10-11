@@ -60,6 +60,9 @@ const propertyTaxFloorRateSchema = new Schema({
     history:{
         type: Array,
         default: [],
+    },
+    stateSubmit:{
+        type: Date
     }
 },{
     timestamps:{createdAt: "createdAt", updatedAt:"modifiedAt"}
