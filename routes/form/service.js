@@ -5,6 +5,130 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const service = require("../../service");
 const email = require("../../service/email");
 const Response = require("../../service").response;
+const request = require('request')
+function doRequest(url) {
+  return new Promise(function (resolve, reject) {
+    request(url, function (error, resp, body) {
+      if (!error && resp?.statusCode == 404) {
+        resolve(url)
+
+      }else{
+        reject(url);
+      }
+    });
+  });
+}
+
+module.exports.defunc = async(req,res)=> {
+  let query = [
+    {
+        $lookup: {
+            from:"ulbs",
+            localField:"ulb",
+            foreignField:"_id",
+            as:"ulb"
+            }
+        },
+        {
+            $unwind:"$ulb"
+            },
+            {
+                $project: {
+                    ulbName:"$ulb.name",
+                    ulbCode:"$ulb.code",
+                    pdf_15_16 : {$arrayElemAt:["$documents.financial_year_2015_16.pdf", 0]} ,
+                                    excel_15_16 : {$arrayElemAt:["$documents.financial_year_2015_16.excel", 0]} ,
+                                    pdf_16_17 : {$arrayElemAt:["$documents.financial_year_2016_17.pdf", 0]} ,
+                                    excel_16_17 : {$arrayElemAt:["$documents.financial_year_2016_17.excel", 0]} ,
+                                    pdf_17_18 : {$arrayElemAt:["$documents.financial_year_2017_18.pdf", 0]} ,
+                                    excel_17_18 : {$arrayElemAt:["$documents.financial_year_2017_18.excel", 0]} ,
+                                    pdf_18_19 : {$arrayElemAt:["$documents.financial_year_2018_19.pdf", 0]} ,
+                                    excel_18_19 : {$arrayElemAt:["$documents.financial_year_2018_19.excel", 0]} ,
+    
+                    }
+                },
+                 {
+                $project: {
+                    ulbName:"$ulbName",
+                    ulbCode:"$ulbCode",
+                    pdf_15_16 : "$pdf_15_16.url" ,
+                                    excel_15_16 : "$excel_15_16.url" ,
+                                    pdf_16_17 : "$pdf_16_17.url" ,
+                                    excel_16_17 : "$excel_16_17.url" ,
+                                    pdf_17_18 : "$pdf_17_18.url" ,
+                                    excel_17_18 : "$excel_17_18.url" ,
+                                    pdf_18_19 : "$pdf_18_19.url" ,
+                                    excel_18_19 : "$excel_18_19.url" ,
+    
+                    }
+                },
+           {
+            $limit: 20
+           }     
+    ]
+    let arr = [];
+
+    let totalCounter = 1;
+  let data = await dCForm.aggregate(query);
+  let target = data.length;
+console.log(target)
+let skip = 0;
+let batch = 150;
+while(skip<=target){
+  const slice = data.slice(parseInt(skip),parseInt(skip)+batch);
+  await Promise.all(
+    slice.map(async el=>{
+      for(let key in el) {
+        if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
+          let url = el[key];
+        // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+          try{
+            totalCounter++;
+            let response = await doRequest(url);
+            
+            let obj = {
+              ulbName:"",
+              ulbCode:"",
+              key:"",
+              url:"",
+            
+            }
+            obj.ulbName = el.ulbName;
+            obj.ulbCode = el.ulbCode;
+            obj.key = key;
+            obj.url = response
+            
+            console.log(obj)
+            arr.push(obj);
+      
+          } catch (error) {
+            //console.log('working', error)
+            // `error` will be whatever you passed to `reject()` at the top
+          }
+          
+              
+          
+        }
+          
+      
+      }
+    })
+  )
+  //for(let el of data){
+    
+
+    
+  ///}
+  console.log(skip)
+  skip+=batch;
+}
+
+  return res.send({
+    data:arr,
+    number: arr.length,
+    total: totalCounter
+  });
+}
 
 module.exports.post = function (req, res) {
   req.body["state"] = ObjectId(req.body["state"]);

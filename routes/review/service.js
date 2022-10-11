@@ -1134,7 +1134,7 @@ if(getQuery) return res.json({
 })
 
 // if csv - then no skip and limit, else with skip and limit
-let data = formType == "ULB" ? Ulb.aggregate(query[0]) : State.aggregate(query[0])
+let data = formType == "ULB" ?  Ulb.aggregate(query[0])  : State.aggregate(query[0])
 total =  formType == "ULB" ?  Ulb.aggregate(query[1]) : State.aggregate(query[1])
 let allData = await Promise.all([data, total]);
 data = allData[0]
@@ -1638,6 +1638,11 @@ filledQueryExpression = {
             })
 
             let paginator = [
+              {$addFields:{"dummy":[]}},
+              {$unwind:{
+                  path:"$dummy",
+                  preserveNullAndEmptyArrays: true
+                  }},
                 {
                     $skip:skip
                 },
