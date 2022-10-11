@@ -1525,6 +1525,7 @@ if(dataCollection && dataCollection.hasOwnProperty("documents") && Array.isArray
   dataSubmittedByOpenPage = true
   status = 'Submitted through Open Page'
 }
+let obj = {}
 if(!ulbData.access_2122){
   obj['action'] = 'not_show';
   obj['url'] = ``;
@@ -1538,7 +1539,7 @@ if(!ulbData.access_2122){
   }
 }
 
-let obj = annualAccountData;
+ obj = annualAccountData;
 
  
 
