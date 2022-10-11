@@ -47,6 +47,9 @@ function createDynamicColumns(collectionName){
         case CollectionNames.propTaxState:
           columns =  `Financial Year, Form Status, Created, Submitted On, Filled Status,Notification Url , Notfication Name, Act Page Number,Minimum Floor Rate Url, Minimum Floor Rate Name,  Operationalization of the notification Url, Operationalization of the notification Name, MoHUA Review Status, MoHUA Comments, MoHUA file Url`
           break;
+        case CollectionNames.sfc:
+          columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`
+          break;
         default:
             columns = '';
             break;
@@ -485,7 +488,6 @@ function createDynamicObject(collectionName, formType){
             };
             break;
           case CollectionNames["28SLB"]:
-            
             obj = {
               _id: "",
               population: "",
@@ -529,8 +531,9 @@ function createDynamicObject(collectionName, formType){
                 value: "",
               },
               indicatorLineItem: "",
-            }
-            for(let i =0 ; i<28; i++){ //adding question object to data array
+            };
+            for (let i = 0; i < 28; i++) {
+              //adding question object to data array
               obj["data"].push(quesObj);
             }
             break;
@@ -539,7 +542,7 @@ function createDynamicObject(collectionName, formType){
 
       case "STATE":
         switch (collectionName) {
-          case CollectionNames['propTaxState']:
+          case CollectionNames["propTaxState"]:
             obj = {
               actPage: "",
               isDraft: "",
@@ -571,6 +574,33 @@ function createDynamicObject(collectionName, formType){
                 name: "",
               },
             };
+            break;
+          case CollectionNames["sfc"]:
+            obj = {
+              _id: "",
+              isDraft: "",
+              rejectReason: "",
+              history: [],
+              constitutedSfc: "",
+              state: "",
+              design_year: "",
+              actionTakenBy: "",
+              actionTakenByRole: "",
+              createdAt: "",
+              modifiedAt: "",
+              __v: "",
+              stateNotification: {
+                url: "",
+                name: "",
+              },
+              status: "",
+              rejectReason_mohua: "",
+              responseFile_mohua: {
+                url: "",
+                name: "",
+              },
+            };
+            break;
         }
         break;
     }
@@ -831,6 +861,9 @@ function createDynamicElements(collectionName, formType, entity) {
             case CollectionNames.propTaxState:
                 entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""},${data.stateNotification.url ?? ""},${data.stateNotification.name ?? ""},${data.actPage ?? ""}, ${data.floorRate.url ?? ""}, ${data.floorRate.name ?? ""}, ${data.comManual.url ?? ""}, ${data.comManual.name ?? ""}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""}`
                 break;
+            case CollectionNames.sfc:
+              entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""},${data.constitutedSfc ?? ""},${data.stateNotification.url ?? ""},${data.stateNotification.name ?? ""}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""}`
+              break;
           }
     }
     return entity;

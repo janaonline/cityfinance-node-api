@@ -60,6 +60,9 @@ const stateFinanceCommissionFormationSchema = new Schema({
             message: "values can be either PENDING/APPROVED/REJECTED"
         }
     },
+    stateSubmit:{
+        type: Date
+    },
     createdAt:{ type: Date },
     modifiedAt:{ type: Date }
 },{ timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt"}}
