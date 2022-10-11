@@ -35,9 +35,6 @@ function createDynamicColumns(collectionName){
         case CollectionNames.propTaxUlb:
            columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Collecting Property Taxes in 2022-23,	Operationalized as per the state notification,Proof of operationalization of Property Tax Collection Process Url,Proof of operationalization of Property Tax Collection Process Name	,Property Tax Valuation Method,	Property Tax Rate Card Url, Property Tax Rate Card Name,	Property Tax Collection for 2019-20,	Property Tax Collection for 2020-21,	Property Tax Collection for 2021-22,	Property Tax Collection Target for 2022-23,	Proof for Property Tax collection for 2021-22 Url, Proof for Property Tax collection for 2021-22 Name,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `
            break;
-        case CollectionNames.propTaxState:
-            columns =  `Financial Year, Form Status, Created, Submitted On, Filled Status, Act Page,Floor Rate Url, Floor Rate Name, Status`
-            break;
         case CollectionNames.annual:
             columns = `Financial Year, Form Status, Created, Submitted On, Filled Status,Type, Audited/Provisional Year,Balance Sheet_PDF_URL, Balance Sheet_Excel_URL,	Balance Sheet_State Review Status,	Balance Sheet_State_Comments,	Balance Sheet_MoHUA Review Status,	Balance Sheet_MoHUA_Comments,	Balance Sheet_Total Amount of Assets,	Balance Sheet_Total Amount of Fixed Assets,	Balance Sheet_Total Amount of State Grants received,	Balance Sheet_Total Amount of Central Grants received,	Balance Sheet Schedule_PDF_URL,	Balance Sheet Schedule_Excel_URL,	Balance Sheet Schedule_State Review Status,	Balance Sheet Schedule_State_Comments,	Balance Sheet Schedule_MoHUA Review Status,	Balance Sheet Schedule_MoHUA_Comments,	Income Expenditure_PDF_URL,	Income Expenditure_Excel_URL, Income Expenditure_State Review Status,	Income Expenditure_State_Comments,	Income Expenditure_MoHUA Review Status,	Income Expenditure_MoHUA_Comments,	Income Expenditure_Total Amount of Revenue,	Income Expenditure_Total Amount of Expenses,	Income Expenditure Schedule_PDF_URL,	Income Expenditure Schedule_Excel_URL,	Income Expenditure Schedule_State Review Status	Income Expenditure Schedule_State_Comments,	Income Expenditure Schedule_MoHUA Review Status,	Income Expenditure Schedule_MoHUA_Comments,	Cash Flow Schedule_PDF_URL,	Cash Flow Schedule_Excel_URL,	Cash Flow Schedule_State Review Status,	Cash Flow Schedule_State_Comments,	Cash Flow Schedule_MoHUA Review Status	,Cash Flow Schedule_MoHUA_Comments, Financials in Standardized Format_Filled Status	,Financials in Standardized Format_Excel URL,	State Review File_URL,	MoHUA Review File_URL`;
             break;
@@ -46,6 +43,9 @@ function createDynamicColumns(collectionName){
             break;
         case CollectionNames['28SLB']:
           columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year, Coverage of water supply connections,Per capita supply of water(lpcd) ,Extent of metering of water connections, Continuity of water supply, Quality of water supplied,Efficiency in redressal of customer complaints, Cost recovery in water supply service , Efficiency in collection of water supply-related charges ,Extent of non-revenue water (NRW),Coverage of toilets , Coverage of waste water network services ,Collection efficiency of waste water network , Adequacy of waste water treatment capacity , Quality of waste water treatment, Extent of reuse and recycling of waste water,Efficiency in collection of waste water charges  , Efficiency in redressal of customer complaints , Extent of cost recovery in waste water management  ,Household level coverage of solid waste management services ,Extent of segregation of municipal solid waste ,Extent of municipal solid waste recovered, Extent of cost recovery in SWM services ,Efficiency in collection of SWM related user related charges, Efficiency of collection of municipal solid waste , Extent of scientific disposal of municipal solid waste  ,Efficiency in redressal of customer complaints ,Incidence of water logging,Coverage of storm water drainage network ,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
+          break;
+        case CollectionNames.propTaxState:
+          columns =  `Financial Year, Form Status, Created, Submitted On, Filled Status,Notification Url , Notfication Name, Act Page Number,Minimum Floor Rate Url, Minimum Floor Rate Name,  Operationalization of the notification Url, Operationalization of the notification Name, MoHUA Review Status, MoHUA Comments, MoHUA file Url`
           break;
         default:
             columns = '';
@@ -538,14 +538,46 @@ function createDynamicObject(collectionName, formType){
         break;
 
       case "STATE":
-        switch (collectioName) {
+        switch (collectionName) {
+          case CollectionNames['propTaxState']:
+            obj = {
+              actPage: "",
+              isDraft: "",
+              rejectReason: "",
+              history: [],
+              state: "",
+              design_year: "",
+              floorRate: {
+                url: "",
+                name: "",
+              },
+              stateNotification: {
+                url: "",
+                name: "",
+              },
+              actionTakenBy: "",
+              actionTakenByRole: "",
+              createdAt: "",
+              modifiedAt: "",
+              __v: "",
+              comManual: {
+                url: "",
+                name: "",
+              },
+              status: "",
+              rejectReason_mohua: "",
+              responseFile_mohua: {
+                url: "",
+                name: "",
+              },
+            };
         }
         break;
     }
     return obj;
 }
 
-function actionTakenByResponse(entity, formStatus){
+function actionTakenByResponse(entity, formStatus, formType){
   let obj = {
     state_status:"",
     mohua_status:"",
@@ -560,6 +592,40 @@ function actionTakenByResponse(entity, formStatus){
       name: ""
     }
   };
+  if (formType === "STATE"){
+    obj = {
+      mohua_status: "",
+      rejectReason_mohua: "",
+      responseFile_mohua: {
+        url: "",
+        name: "",
+      },
+    };
+    if (
+      formStatus === STATUS_LIST.In_Progress ||
+      formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
+      formStatus === STATUS_LIST.Not_Started
+    ) {
+      return obj;
+    }
+    if (
+      formStatus === STATUS_LIST.Approved_By_MoHUA ||
+      formStatus === STATUS_LIST.Rejected_By_MoHUA
+    ) {
+      if (entity["status"]) {
+        obj.mohua_status = entity["status"];
+      }
+      if (entity["rejectReason_mohua"]) {
+        obj.rejectReason_mohua = entity["rejectReason_mohua"];
+      }
+      if (entity["responseFile_mohua"]) {
+        obj.responseFile_mohua = entity["responseFile_mohua"];
+      }
+      return obj;
+    }
+
+  }
+
   if (
     formStatus === STATUS_LIST.In_Progress ||
     formStatus === STATUS_LIST.Under_Review_By_State ||
@@ -624,61 +690,54 @@ function actionTakenByResponse(entity, formStatus){
     return obj;
 }
 
-function nullToEmptyStrings(obj) {
-  if (typeof obj === "object" && obj !== null) {
-    if (Object.keys(obj).length > 0) {
-      for (let key of Object.keys(obj)) {
-        if (typeof obj[key] === "object"  && obj !== null && !Array.isArray(obj[key])) {
-          if (obj[key] === null) {
-            obj[key] = "";
-            continue;
-          }
-          if(obj[key].hasOwnProperty('_bsontype')){
-            if( obj[key]["_bsontype"] !== "ObjectID" ){
-              if (obj[key] === null) {
-                obj[key] = "";
-              }
-              nullToEmptyStrings(obj[key]);
-            }
-          }else {
-            if (obj[key] === null) {
-              obj[key] = "";
-            }
-            nullToEmptyStrings(obj[key]);
-          }
-      
-        } 
-      }
-    }
-  }
-  return obj;
-}
-
-
 function createDynamicElements(collectionName, formType, entity) {
     if(!entity.formData){
         entity["filled"] = "No";
         entity['formData'] =  createDynamicObject(collectionName ,formType);
     }    
-    let actions = actionTakenByResponse(entity.formData, entity.formStatus);
-    
-    if(!entity["formData"]["rejectReason_state"]){
-        entity["formData"]["rejectReason_state"] = ""
-    }
-    if(!entity["formData"]["rejectReason_mohua"]){
-        entity["formData"]["rejectReason_mohua"] = ""
-    }
-    if( !entity["formData"]["responseFile_state"] ){
-        entity["formData"]["responseFile_state"]= {
-            url:"",
-            name:""
-        }
-    }
-    if(!entity["formData"]["responseFile_mohua"]){
+    let actions = actionTakenByResponse(entity.formData, entity.formStatus, formType);
+    if(formType === "ULB"){
+
+      if(!entity["formData"]["rejectReason_state"]){
+          entity["formData"]["rejectReason_state"] = ""
+      }
+      if(!entity["formData"]["rejectReason_mohua"]){
+          entity["formData"]["rejectReason_mohua"] = ""
+      }
+      if( !entity["formData"]["responseFile_state"] ){
+          entity["formData"]["responseFile_state"]= {
+              url:"",
+              name:""
+          }
+      }
+      if(!entity["formData"]["responseFile_mohua"]){
+          entity["formData"]["responseFile_mohua"] = {
+              url: "",
+              name:""
+          }
+      }
+      if(entity?.formData.ulbSubmit){
+        entity["formData"]["ulbSubmit"] = formatDate(
+          entity?.formData.ulbSubmit
+        );
+      }
+
+    }else if(formType === "STATE"){
+      if (!entity["formData"]["rejectReason_mohua"]) {
+        entity["formData"]["rejectReason_mohua"] = "";
+      }
+      if (!entity["formData"]["responseFile_mohua"]) {
         entity["formData"]["responseFile_mohua"] = {
-            url: "",
-            name:""
-        }
+          url: "",
+          name: "",
+        };
+      }
+      if(entity?.formData.stateSubmit){
+        entity["formData"]["stateSubmit"] = formatDate(
+          entity?.formData.stateSubmit
+        );
+      }
+    
     }
 
     if(!entity["formData"]["design_year"]) {
@@ -697,11 +756,6 @@ function createDynamicElements(collectionName, formType, entity) {
           entity?.formData.modifiedAt
         );
       }
-    if(entity?.formData.ulbSubmit){
-      entity["formData"]["ulbSubmit"] = formatDate(
-        entity?.formData.ulbSubmit
-      );
-    }
 
       let data  = entity?.formData;          
       switch(formType){
@@ -775,7 +829,7 @@ function createDynamicElements(collectionName, formType, entity) {
         case "STATE":
           switch (collectionName) {
             case CollectionNames.propTaxState:
-                entity = `${data?.design_year?.year}, ${entity?.formStatus}, ${data?.createdAt}, ${data?.ulbSubmit},${entity.filled},${entity.actPage}, ${entity.floorRate.url}, ${entity.floorRate.name},${entity.status}`
+                entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""},${data.stateNotification.url ?? ""},${data.stateNotification.name ?? ""},${data.actPage ?? ""}, ${data.floorRate.url ?? ""}, ${data.floorRate.name ?? ""}, ${data.comManual.url ?? ""}, ${data.comManual.name ?? ""}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""}`
                 break;
           }
     }
@@ -1282,7 +1336,7 @@ if(csv){
             return
         }
     } else if( formType === "STATE"){
-        let fixedColumns = `State Name, City Finance Code, Regional Name`;
+        let fixedColumns = `State Name, City Finance Code, Regional Name,`;
         let dynamicColumns = createDynamicColumns(collectionName)
         res.write(
             `${fixedColumns } ${dynamicColumns} \r\n`
@@ -1290,14 +1344,14 @@ if(csv){
         
         res.flushHeaders();
         for(let el of data){
-            let dynamicElementData = createDynamicElements(collectionName,el);
+            let dynamicElementData = createDynamicElements(collectionName,formType,el);
             
             res.write(
-                el.stateData.name +
+                el.stateName +
                 "," +
-                el.stateData.code + 
+                el.stateCode + 
                 "," +
-                el.stateData.regionalName + 
+                el.regionalName + 
                 "," +
                 dynamicElementData +
                 
@@ -1389,51 +1443,59 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
     if(isFormOptional){
     // if form is optional check if the deciding condition is true or false
      switch (formName) {
-         case CollectionNames.slb:
-filledQueryExpression = {
-    $cond: {
-      if: { $eq: [`$formData.blank`, true] },
-      then: STATUS_LIST.Not_Submitted,
-      else: STATUS_LIST.Submitted,
-    },
-  }
-             break;
-             case CollectionNames.pfms:
-filledQueryExpression = {
-    $cond: {
-      if:  {$eq: [`$formData.linkPFMS`, "Yes" ] },
-      then: STATUS_LIST.Submitted,
-      else: STATUS_LIST.Not_Submitted,
-    },
-  }
-             break;
-             case CollectionNames.propTaxUlb:
-                filledQueryExpression = {
-                    $cond: {
-                      if:  {$eq: [`$formData.toCollect`, "Yes" ]},
-                      then: STATUS_LIST.Submitted,
-                      else: STATUS_LIST.Not_Submitted,
-                    },
-                  }
-                             break;
-     case CollectionNames.annual:
-        filledProvisionalExpression = {
-            $cond: {
-              if: { $eq: [`$formData.unAudited.submit_annual_accounts`, true] },
-              then: STATUS_LIST.Submitted,
-              else: STATUS_LIST.Not_Submitted,
-            },
-          };
-          filledAuditedExpression = {
-            $cond: {
-              if: { $eq: [`$formData.audited.submit_annual_accounts`, true] },
-              then: STATUS_LIST.Submitted,
-              else: STATUS_LIST.Not_Submitted,
-            },
-          }
-
-         default:
-             break;
+       case CollectionNames.slb:
+         filledQueryExpression = {
+           $cond: {
+             if: { $eq: [`$formData.blank`, true] },
+             then: STATUS_LIST.Not_Submitted,
+             else: STATUS_LIST.Submitted,
+           },
+         };
+         break;
+       case CollectionNames.pfms:
+         filledQueryExpression = {
+           $cond: {
+             if: { $eq: [`$formData.linkPFMS`, "Yes"] },
+             then: STATUS_LIST.Submitted,
+             else: STATUS_LIST.Not_Submitted,
+           },
+         };
+         break;
+       case CollectionNames.propTaxUlb:
+         filledQueryExpression = {
+           $cond: {
+             if: { $eq: [`$formData.toCollect`, "Yes"] },
+             then: STATUS_LIST.Submitted,
+             else: STATUS_LIST.Not_Submitted,
+           },
+         };
+         break;
+       case CollectionNames.annual:
+         filledProvisionalExpression = {
+           $cond: {
+             if: { $eq: [`$formData.unAudited.submit_annual_accounts`, true] },
+             then: STATUS_LIST.Submitted,
+             else: STATUS_LIST.Not_Submitted,
+           },
+         };
+         filledAuditedExpression = {
+           $cond: {
+             if: { $eq: [`$formData.audited.submit_annual_accounts`, true] },
+             then: STATUS_LIST.Submitted,
+             else: STATUS_LIST.Not_Submitted,
+           },
+         };
+         break;
+       case CollectionNames.sfc:
+        filledQueryExpression = {
+          $cond: {
+            if: { $eq: [`$formData.constitutedSfc`, "Yes"] },
+            then: STATUS_LIST.Submitted,
+            else: STATUS_LIST.Not_Submitted,
+          },
+        };
+       default:
+         break;
      }
 
 
@@ -1650,51 +1712,71 @@ filledQueryExpression = {
         break;
         case "STATE":
         let query_s = [
-            {
-                $match: {
-                    "accessToXVFC" : true
-                }
+          {
+            $match: {
+              accessToXVFC: true,
             },
-            {
-                $lookup: {
-                    from: dbCollectionName,
-                    let: {
-                      firstUser: ObjectId(design_year),
-                      secondUser: "$_id",
-                    },
-                    pipeline: [
-                      {
-                        $match: {
-                          $expr: {
-                            $and: [
-                              {
-                                $eq: ["$design_year", "$$firstUser"],
-                              },
-                              {
-                                $eq: ["$state", "$$secondUser"],
-                              },
-                            ],
-                          },
-                        },
-                      },
-                    ],
-                    as: dbCollectionName,
-                  }
-                        },{
-                            $unwind:{
-                                path:`$${dbCollectionName}`,
-                                preserveNullAndEmptyArrays:true
-                            }
+          },
+          {
+            $lookup: {
+              from: dbCollectionName,
+              let: {
+                firstUser: ObjectId(design_year),
+                secondUser: "$_id",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$design_year", "$$firstUser"],
                         },
                         {
-                            $project:{
-                              state: "$_id",
-                                stateName  :"$name",
-                                    formData:{$ifNull: [`$${dbCollectionName}`, "" ]} ,
-                            }
-                        }
-
-        ]
+                          $eq: ["$state", "$$secondUser"],
+                        },
+                      ],
+                    },
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "years",
+                    localField: "design_year",
+                    foreignField: "_id",
+                    as: "design_year",
+                  },
+                },
+                {
+                  $unwind: "$design_year",
+                },
+              ],
+              as: dbCollectionName,
+            },
+          },
+          {
+            $unwind: {
+              path: `$${dbCollectionName}`,
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $project: {
+              state: "$_id",
+              stateName: "$name",
+              stateCode: "$code",
+              regionalName: 1,
+              formData: { $ifNull: [`$${dbCollectionName}`, ""] },
+              filled:
+                {
+                  $cond: { if: { $or: [{ $eq: [ "$formData", "" ]},{ $eq: [ "$formData.isDraft", true ]}] }, then: "No" , else: isFormOptional ? filledQueryExpression : "Yes" }
+                }
+            },
+          },
+          {
+            $sort: { formData: -1 },
+          },
+        ];
 
         query_s = createDynamicQuery(formName, query_s, userRole);
 

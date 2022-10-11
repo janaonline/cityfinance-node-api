@@ -61,6 +61,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['status'] = 'PENDING';
+        formData['stateSubmit'] = ""
         const condition = {};
         condition.state = data.state;
         condition.design_year = data.design_year;
@@ -74,6 +75,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                 })
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    formData['stateSubmit'] = new Date();
                     const form = await PropertyTaxFloorRate.create(formData);
                     formData.createdAt = form.createdAt;
                     formData.modifiedAt = form.modifiedAt;
@@ -109,6 +111,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
                     formData.createdAt = submittedForm.createdAt;
                     formData.modifiedAt = new Date();
                     formData.modifiedAt.toISOString();
+                    formData['stateSubmit'] = new Date();
                     const updatedForm = await PropertyTaxFloorRate.findOneAndUpdate(
                         condition,
                         {
