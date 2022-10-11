@@ -13,6 +13,7 @@ var ResourceLineItemSchema = new Schema(
     },
     type: { type: String },
     description: { type: String },
+    tags: [{type:String}],
     subHeader: {
       type: String,
       enum: [

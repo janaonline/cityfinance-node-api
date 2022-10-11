@@ -70,6 +70,16 @@ const projectDetails = () => {
       type: String,
     },
     _id: false,
+    dprCompletion:{
+      type: String,
+      enum: ["Yes", "No",""]
+    },
+    workCompletion: {
+      type: Number
+    },
+    isDisable:{
+      type: Boolean
+    }
   };
 };
 
@@ -94,6 +104,16 @@ const projectDetails2 = () => {
       type: String,
     },
     _id: false,
+    dprCompletion:{
+      type: String,
+      enum: ["Yes", "No",""]
+    },
+    workCompletion: {
+      type: Number
+    },
+    isDisable:{
+      type: Boolean
+    }
   };
 };
 const projectDetails3 = () => {
@@ -118,6 +138,16 @@ const projectDetails3 = () => {
       type: Number,
     },
     _id: false,
+    dprCompletion:{
+      type: String,
+      enum: ["Yes", "No",""]
+    },
+    workCompletion: {
+      type: Number
+    },
+    isDisable:{
+      type: Boolean
+    }
   };
 };
 
@@ -152,6 +182,15 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
   modifiedAt: { type: Date, default: Date.now() },
   createdAt: { type: Date, default: Date.now() },
   isActive: { type: Boolean, default: 1 },
+  declaration: {
+    url: { type: String },
+    name: { type: String },
+  },
+  actionTakenByRole: {
+    type: String,
+    enum: ["ULB", "MoHUA", "STATE"],
+    required: true,
+  },
 });
 
 WaterRejenuvationRecyclingPlansSchema.index(

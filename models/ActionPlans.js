@@ -26,6 +26,7 @@ const uas = new Schema({
       Type: { type: String, default: "" },
       Estimated_Outcome: { type: String, default: "" },
       _id: false,
+      isDisable: {type: Boolean}
     },
   ],
   sourceFund: [
@@ -43,6 +44,8 @@ const uas = new Schema({
       "2024-25": { type: Number, default: "" },
       "2025-26": { type: Number, default: "" },
       _id: false,
+      isDisable: {type: Boolean}
+
     },
   ],
   yearOutlay: [
@@ -58,6 +61,7 @@ const uas = new Schema({
       "2024-25": { type: Number, default: "" },
       "2025-26": { type: Number, default: "" },
       _id: false,
+      isDisable: {type: Boolean}
     },
   ],
   rejectReason: {
@@ -91,7 +95,12 @@ const ActionPlansSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    }
+    },
+    actionTakenByRole: {
+      type: String,
+      enum: ["ULB", "MoHUA", "STATE"],
+      required: true,
+    },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

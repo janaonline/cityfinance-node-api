@@ -15,7 +15,7 @@ const StateFinanceCommissionFormation = require('../../models/StateFinanceCommis
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
 const {FormNames} = require('../../util/FormNames');
-
+const {calculateTabwiseStatus} = require('../annual-accounts/utilFunc')
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch(formType){
         case "ULB":
@@ -365,19 +365,27 @@ module.exports.updateForm = async (req, res) =>{
                 form['actionTakenBy'] = formData.actionTakenBy;
                 form['status'] = formData.status;
                 form['modifiedAt'] = new Date();
+                
                 if(masterForm.name == "Annual Accounts"){
+                    form['common'] = true
                     for(let key in form.audited.provisional_data){
-                        form.audited.provisional_data[key]['status'] = formData.status
-                        form.audited.provisional_data[key]['rejectReason'] = formData.rejectReason
-                        form.audited.provisional_data[key]['responseFile'] = formData.responseFile
+                        if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
+                            form.audited.provisional_data[key]['status'] = formData.status
+                            form.audited.provisional_data[key]['rejectReason'] = formData.rejectReason
+                            form.audited.provisional_data[key]['responseFile'] = formData.responseFile
+                        }
+                        
     
                     }
                     for(let key in form.unAudited.provisional_data){
+                        if(typeof form.unAudited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
                         form.unAudited.provisional_data[key]['status'] = formData.status
                         form.unAudited.provisional_data[key]['rejectReason'] = formData.rejectReason
                         form.unAudited.provisional_data[key]['responseFile'] = formData.responseFile
-    
+                        }
                     }
+                    form = calculateTabwiseStatus(form)
+                    
                 }
                 //add reject reason/responseFile for single ulb entry
                 if(masterForm.name != "Annual Accounts" ){
@@ -392,7 +400,7 @@ module.exports.updateForm = async (req, res) =>{
                 delete form['history'] ;
                 let updatedForm = await collection.findOneAndUpdate(
                     {ulb , [condition.design_year]: data.design_year},
-                    {$set: formData, $push: {history: form }},
+                    {$set: form, $push: {history: form }},
                     {new: true, runValidators: true}
                     );
                 numberOfFormsUpdated++;
@@ -479,7 +487,7 @@ module.exports.updateForm = async (req, res) =>{
                     delete form['history'];
                     let updatedForm = await collection.findOneAndUpdate(
                         {state , [condition.design_year]: data.design_year},
-                        {$set: formData, $push: {history: form }},
+                        {$set: form, $push: {history: form }},
                         {new: true, runValidators: true}
                         );
                     numberOfFormsUpdated++;

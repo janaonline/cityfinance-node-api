@@ -222,7 +222,7 @@ if(from == "slb"){
     });
 
     if (csv) {
-      return getExcelForAvailability(res, query, stateId);
+      return getExcelForAvailability(res, query, stateId, from);
     } else {
       query.push({
         $count: "ulb",
@@ -287,7 +287,7 @@ if(from == "slb"){
     }
     if (getQuery) return Response.OK(res, query);
     let noData = Ulb.aggregate(query_noData);
-const Indicator = require('../../models/indicators')
+
     let collection = from == "slb" ? Indicator  : UlbLedger
     let data = collection.aggregate(query);
     let ulbCount = Ulb.aggregate(countQuery);
@@ -323,7 +323,7 @@ const Indicator = require('../../models/indicators')
   }
 };
 
-async function getExcelForAvailability(res, query, stateId) {
+async function getExcelForAvailability(res, query, stateId, from) {
   try {
     let ulbCount = await Ulb.find(
       ObjectId.isValid(stateId) ? { state: ObjectId(stateId) } : {}
@@ -331,7 +331,8 @@ async function getExcelForAvailability(res, query, stateId) {
       .populate("state")
       .select({ _id: 1, name: 1, state: 1 })
       .lean();
-    let data = await UlbLedger.aggregate(query);
+      let collection = from == "slb" ? Indicator : UlbLedger
+    let data = await collection.aggregate(query);
 
     data = JSON.parse(JSON.stringify(data));
     let ulbMap = data.map((value) => value._id);

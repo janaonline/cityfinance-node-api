@@ -382,20 +382,27 @@ module.exports.getAll = async (req, res) => {
                     q.push({ $match: newFilter });
                 }
                 if (csv) {
-                    let arr = await Ulb.aggregate(q).exec();
+                    let arr;
+                    if(role ===  "ULB"){
+                     arr = await Ulb.aggregate(q).exec();
+                    } else {
+                        arr = await User.aggregate(q2).exec();
+                    }
                     let field = {};
-                    Object.assign(field, {
-                        ulbName: 'ULB Name'
-                    });
+                    if(role === "ULB"){
+                        Object.assign(field, {
+                          ulbName: "ULB Name"
+                        });
+                    }
                     if (['STATE'].indexOf(role) > -1) {
                         Object.assign(field, {
                             stateName: 'State'
                         });
                     }
                     Object.assign(field, {
-                        name: 'ULB Nodal Officer Name',
-                        email: 'ULB Nodal Officer Email ID',
-                        mobile: 'ULB Nodal Officer Phone Number'
+                        name: `${role} Nodal Officer Name`,
+                        email: `${role} Nodal Officer Email ID`,
+                        mobile: `${role} Nodal Officer Phone Number`
                     });
                     if (
                         ['MoHUA', 'PARTNER', 'STATE', 'USER'].indexOf(role) > -1

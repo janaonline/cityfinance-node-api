@@ -155,15 +155,24 @@ switch (true) {
 
 const attachPrescription = (data) => {
   let scorePerformance = data.scorePerformance ;
-  let category, question, answer, prescription;
+  let category, question, answer, prescription = '';
   for(let el in scorePerformance ){
+    let temp = "";
     for(let el2 of scorePerformance[el] ){
       category = el;
       question = el2?.question;
       answer = el2?.answer;
        prescription =  fetchPrescription(category,question,answer);
-       Object.assign(el2, {prescription: prescription })
+    
+       if(temp != prescription ){
+        temp = prescription
+        Object.assign(el2, {prescription: temp })
+       }
+       
+
+       
     }
+  
   }
   data.scorePerformance = scorePerformance;
   
@@ -171,9 +180,9 @@ const attachPrescription = (data) => {
 let overallPrescription = ''
   for(let el in scorePerformance ){
     for(let el2 of scorePerformance[el] ){
-        overallPrescription = overallPrescription + `- ${el2.prescription}<br>`;
+        overallPrescription = overallPrescription + (el2.hasOwnProperty('prescription') ?  `- ${el2.prescription}<br>` : ``) ;
     }
-
+    
     for(let key of data.partcularAnswerValues){
       if(key.name == 'Enumeration' && el == 'enumeration'){
 key['prescription'] = overallPrescription;
@@ -187,6 +196,7 @@ key['prescription'] = overallPrescription;
         key['prescription'] = overallPrescription;
       }
     }
+    overallPrescription = ''
   }
 
 

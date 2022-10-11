@@ -170,7 +170,7 @@ module.exports.get = catchAsync(async (req, res) => {
      }
 
     data.forEach((el,)=> {
-        if( el.category && el.collectionName != "GTC"){
+        if( el.category && el.collectionName != "GTC" && el.collectionName != "SLB"){
             let  flag = 0;
             output.forEach(el2 => {
                 if((el._id).toString() == (Object.keys(el2)[0])){
@@ -190,7 +190,7 @@ module.exports.get = catchAsync(async (req, res) => {
     }) 
   }else if(role == "STATE"){
     data.forEach((el,)=> {
-        if( el.category.toLowerCase() != "ulb management"){
+        if( el.category.toLowerCase() != "ulb management" && el.url !== "water-supply"){
             let  flag = 0;
             output.forEach(el2 => {
                 if((el._id).toString() == (Object.keys(el2)[0])){
@@ -286,10 +286,11 @@ module.exports.list = catchAsync(async (req,res) => {
         role: role,
         year: ObjectId(design_year),
         isForm: true,
-        isActive: true
-
+        isActive: true,
+name:{$ne: "Grant Transfer Certificate"}
     }
     let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1, optional: 1});
+    
     data = data.filter((value, index, self) =>
   index === self.findIndex((t) => (
     t.collectionName === value.collectionName
