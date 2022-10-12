@@ -1574,7 +1574,7 @@ if(!ulbData.access_2122){
       annualAccountData.actionTakenByRole === "STATE" &&
       annualAccountData.status == "APPROVED"
     ) {
-      annualAccountData.status = "PENDING";
+      // annualAccountData.status = "PENDING";
       if (annualAccountData.unAudited.submit_annual_accounts) {
         let proData = annualAccountData.unAudited.provisional_data;
         for (const key in proData) {
