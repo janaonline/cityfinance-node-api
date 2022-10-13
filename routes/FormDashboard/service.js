@@ -733,6 +733,7 @@ console.log( submittedForms.length, pipeline);
             if(formCategory === "ULB"){
                 ulbResponse = {
                     formName: formData["formName"],
+                    key: modelName,
                     approvedColor: formData["approvedColor"],
                     submittedColor: formData["submittedColor"],
                     submittedValue: submittedFormPercent[modelName],
@@ -750,6 +751,7 @@ console.log( submittedForms.length, pipeline);
             } else if( formCategory === "STATE") {
                 stateResponse = {
                     formName: formData["formName"],
+                    key: modelName,
                     approvedColor: formData["approvedColor"],
                     submittedColor: formData["submittedColor"],
                     submittedValue: submittedFormPercent[modelName],
