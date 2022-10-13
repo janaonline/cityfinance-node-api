@@ -365,23 +365,31 @@ module.exports.updateForm = async (req, res) =>{
                 form['actionTakenBy'] = formData.actionTakenBy;
                 form['status'] = formData.status;
                 form['modifiedAt'] = new Date();
-                
+                form['rejectReason'] = data.rejectReason
+                form['responseFile'] =   data.responseFile
                 if(masterForm.name == "Annual Accounts"){
+     
                     form['common'] = true
                     for(let key in form.audited.provisional_data){
-                        if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
-                            form.audited.provisional_data[key]['status'] = formData.status
-                            form.audited.provisional_data[key]['rejectReason'] = formData.rejectReason
-                            form.audited.provisional_data[key]['responseFile'] = formData.responseFile
+                        if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null && key != 'auditor_report'){
+                            Object.assign(form.audited.provisional_data[key], {status:formData.status })
+                            Object.assign(form.audited.provisional_data[key], {rejectReason:data.rejectReason })
+                            Object.assign(form.audited.provisional_data[key], {responseFile:data.responseFile })
+                            // form.audited.provisional_data[key]['status'] = formData.status
+                            // form.audited.provisional_data[key]['rejectReason'] = data.rejectReason
+                            // form.audited.provisional_data[key]['responseFile'] = data.responseFile
                         }
                         
     
                     }
                     for(let key in form.unAudited.provisional_data){
-                        if(typeof form.unAudited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
-                        form.unAudited.provisional_data[key]['status'] = formData.status
-                        form.unAudited.provisional_data[key]['rejectReason'] = formData.rejectReason
-                        form.unAudited.provisional_data[key]['responseFile'] = formData.responseFile
+                        if(typeof form.unAudited.provisional_data[key] == 'object' && form.unAudited.provisional_data[key] != null){
+                        Object.assign(form.unAudited.provisional_data[key], {status:formData.status })
+                        Object.assign(form.unAudited.provisional_data[key], {rejectReason:data.rejectReason })
+                        Object.assign(form.unAudited.provisional_data[key], {responseFile:data.responseFile })
+                        //     form.unAudited.provisional_data[key]['status'] = formData.status
+                        // form.unAudited.provisional_data[key]['rejectReason'] = data.rejectReason
+                        // form.unAudited.provisional_data[key]['responseFile'] = data.responseFile
                         }
                     }
                     form = calculateTabwiseStatus(form)

@@ -12,7 +12,7 @@ const {calculateStatus} = require('../CommonActionAPI/service')
 const {canTakenAction} = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
-
+const MasterForm = require('../../models/MasterForm')
 function update2223from2122(){
 
 }
@@ -698,15 +698,17 @@ let role  = req.decoded.role;
      
     prevYear = await Year.findOne({year: prevYearVal}).lean()
 
-    let prevData = await UtilizationReport.findOne({
+    let prevData = await MasterForm.findOne({
       ulb: ObjectId(ulb),
-      designYear: prevYear._id
-    }).select({status:1, isDraft:1, actionTakenByRole:1}).lean()
+      design_year: prevYear._id
+    }).select({history:1}).lean()
+    
     let status = ''
 if(!prevData){
   status = 'Not Started'
 }else{
-  status = calculateStatus(prevData.status, prevData.actionTakenByRole, prevData.isDraft, "ULB")
+  prevData = prevData.history[prevData.history.length-1]
+  status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
 }
 let host ="";
 if(req.headers.host === BackendHeaderHost.Demo){
