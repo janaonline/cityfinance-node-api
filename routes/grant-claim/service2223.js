@@ -3,6 +3,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const GrantTransferMohua = require('../../models/grantTransferMohua');
 const {BackendHeaderHost} =  require('../../util/envUrl');
 const GrantTypes = require('../../models/GrantType');
+const {CollectionNames} = require('../../util/15thFCstatus')
 const gtcConstants = {
     mpc_tied : "Million Plus for Water Supply and SWM",
     nmpc_untied: "Non-Million Untied",
@@ -10,6 +11,7 @@ const gtcConstants = {
 }
 
 const LOCALHOST = 'localhost:8080';
+
 
 module.exports.get2223 = async (req, res)=>{
 
@@ -20,7 +22,8 @@ module.exports.get2223 = async (req, res)=>{
         linkPFMS: 100,
         dur:100,
         odf: 100,
-        gfc: 100
+        gfc: 100,
+        twentyEightSlbs: 100
     }
     let claimsInformation = {
         npmc_tied: null,
@@ -28,89 +31,129 @@ module.exports.get2223 = async (req, res)=>{
         mpc: null
     }
     const conditions_nmpc_untied_1st = [
-      {
-        1: `Minimum ${expectedValues.annualAccounts}% Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+      { key: CollectionNames.annualAcc,
+        text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
       },
       {
-        2: `${expectedValues.linkPFMS}% Filled, Submitted, and Approved by State`,
+        key: CollectionNames.linkPFMS,
+        text: `${expectedValues.linkPFMS}% Linking of PFMS Account forms Filled, Submitted, and Approved by State`,
       },
       {
-        3: `Submission of Previous installment document i.e. 2021-22 Untied 2nd Instalment`,
+        key: CollectionNames.gtc,
+        text: ` Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Untied 2nd Instalment`,
       },
-      { 4: `Submission by State & Approval by MoHUA` },
-      { 5: `Submission by State & Approval by MoHUA` },
+      { key: CollectionNames.pTAX,
+        text: ` Property Tax Floor Rate form submission by State & Approval by MoHUA` },
+      { key: CollectionNames.sfc,
+        text: `State Finance Commission Notification form submission by State & Approval by MoHUA` },
     ];
     const conditions_nmpc_tied_1st = [
-      { 1: `${expectedValues.dur}% Submitted, and Approved by State` },
+      { 
+        key: CollectionNames.dur,
+        text: `${expectedValues.dur}% Detailed Utilisation Report form submitted, and Approved by State` },
       {
-        2: `Minimum ${expectedValues.annualAccounts}% Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+        key: CollectionNames.annualAcc,
+        text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
       },
       {
-        3: `${expectedValues.linkPFMS}% Filled, Submitted, and Approved by State`,
+        key: CollectionNames.linkPFMS,
+        text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
       },
       {
-        4: `Submission of Previous installment document i.e. 2021-22 Tied 2nd Instalment`,
+        key: CollectionNames.gtc,
+        text: ` Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Tied 2nd Instalment`,
       },
-      { 5: `Submission by State & Approval by MoHUA` },
-      { 6: `Submission by State & Approval by MoHUA` },
+      { 
+        key: CollectionNames.pTAX,
+        text: `Property Tax Floor Rate form submission by State & Approval by MoHUA` },
+      { 
+        key: CollectionNames.sfc,
+        text: `State Finance Commission Notification form submission by State & Approval by MoHUA` },
     ]; 
     const conditions_nmpc_untied_2nd = [
       {
-        1: `Minimum ${expectedValues.annualAccounts}% Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+        key: CollectionNames.annualAcc,
+        text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
       },
       {
-        2: `${expectedValues.linkPFMS}% Filled, Submitted, and Approved by State`,
+        key: CollectionNames.linkPFMS,
+        text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
       },
       {
-        3: `Submission of Previous installment document i.e. 2022-23 Untied 1st Instalment`,
+        key: CollectionNames.gtc,
+        text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2022-23 Untied 1st Instalment`,
       },
-      { 4: `Submission by State & Approval by MoHUA` },
-      { 5: `Submission by State & Approval by MoHUA` },
+      { 
+        key: CollectionNames.pTAX,
+        text: `Property Tax Floor Rate form submission by State & Approval by MoHUA` 
+      },
+      { 
+        key: CollectionNames.sfc,
+        text: `State Finance Commission Notification form submission by State & Approval by MoHUA` 
+      },
     ];
      const conditions_nmpc_tied_2nd = [
-        { 1: `${expectedValues.dur}% Submitted, and Approved by State` },
+        { key: CollectionNames.dur,
+          text: `${expectedValues.dur}% Detailed Utilisation Report form Submitted, and Approved by State` },
         {
-          2: `Minimum ${expectedValues.annualAccounts}% Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+          key: CollectionNames.annualAcc,
+          text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
         },
         {
-          3: `${expectedValues.linkPFMS}% Filled, Submitted, and Approved by State`,
+          key: CollectionNames.linkPFMS,
+          text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
         },
         {
-          4: `Submission of Previous installment document i.e. 2022-23 Tied 1st Instalment`,
+          key: CollectionNames.gtc,
+          text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2022-23 Tied 1st Instalment`,
         },
-        { 5: `Submission by State & Approval by MoHUA` },
-        { 6: `Submission by State & Approval by MoHUA` },
+        { 
+          key: CollectionNames.pTAX,
+          text: `Property Tax Floor Rate form submission by State & Approval by MoHUA` },
+        { 
+          key: CollectionNames.sfc,
+          text: `State Finance Commission Notification form submission by State & Approval by MoHUA` },
      ] 
     const conditions_mpc_tied_1st = [
-      { 1: `${expectedValues.dur}% Submitted, and Approved by State` },
+      { 
+        key: CollectionNames.dur,
+        text: `${expectedValues.dur}% Detailed Utilization Report form Submitted, and Approved by State` },
       {
-        2: `"Minimum ${expectedValues.annualAccounts}% Submission of Unstandardized data by ULBs and Approved by State
-        ULB having data in Both Years should be considered in 25%"`,
+        key: CollectionNames.annualAcc,
+        text: `Minimum ${expectedValues.annualAccounts}% Annual Account Form Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in 25%`,
       },
       {
-        3: `${expectedValues.linkPFMS}% Filled, Submitted, and Approved by State`,
+        key: CollectionNames.linkPFMS,
+        text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
       },
       {
-        4: `${expectedValues.odf}% Submitted, and Approved by State`,
+        key: CollectionNames['twentyEightSlbs'],
+        text: `${expectedValues.twentyEightSlbs}% 28 Slbs form  Submitted, and Approved by State`
       },
       {
-        5: `${expectedValues.gfc}% Submitted, and Approved by State`,
+        key: CollectionNames.odf,
+        text: `${expectedValues.odf}% Open Defecation Free Forms Submitted, and Approved by State`,
       },
       {
-        6: `${expectedValues.odf}% Submitted, and Approved by State`,
+        key: CollectionNames.gfc,
+        text: `${expectedValues.gfc}% Garbage Free City Forms Submitted, and Approved by State`,
       },
       {
-        7: `Submission of Previous year document i.e. 2021-22`
+        key: CollectionNames.slb,
+        text: `${expectedValues.slb}% SLBs for Water Supply and Sanitation form Filled, Submitted, and Approved by State `
       },
       {
-        8: `Submission by State & Approval by MoHUA`
+        key: CollectionNames.gtc,
+        text: `Grant Transfer Certificate Form Submission of Previous year document i.e. 2021-22`
       },
       {
-        9: `Submission by State & Approval by MoHUA`
+        key: CollectionNames.pTAX,
+        text: ` Property Tax Floor Rate form Submission by State & Approval by MoHUA`
       },
       {
-        10: `Submission by State & Approval by MoHUA`
-      },
+        key: CollectionNames.sfc,
+        text: `State Finance Commission Notication form Submission by State & Approval by MoHUA`
+      }
 
     ];
     const { financialYear, stateId } = req.query;
@@ -202,30 +245,43 @@ module.exports.get2223 = async (req, res)=>{
         }
       }
     }
+    let conditionSuccess = { 
+      nmpc_untied_1_success :calculateSuccess(dashboardData["nmpc_untied"]["1"]),
+      nmpc_untied_2_success : calculateSuccess(dashboardData['nmpc_untied']['2']),
+      nmpc_tied_1_success: calculateSuccess(dashboardData['nmpc_tied']['1']),
+      nmpc_tied_2_success: calculateSuccess(dashboardData['nmpc_tied']['2']),
+      mpc_tied_1_success: calculateSuccess(dashboardData['mpc_tied']['1']),
+      
+    }
       nmpc_untied_1 = {
         conditions: conditions_nmpc_untied_1st,
         nmpc_untied_1_GrantData,
         dashboardData: dashboardData["nmpc_untied"]["1"],
+        conditionSuccess: conditionSuccess['nmpc_untied_1_success']
       };
       nmpc_untied_2 = {
         conditions: conditions_nmpc_untied_2nd,
         nmpc_untied_2_GrantData,
         dashboardData: dashboardData["nmpc_untied"]["2"],
+        conditionSuccess: conditionSuccess['nmpc_untied_2_success']
       };
       nmpc_tied_1 = {
         conditions: conditions_nmpc_tied_1st,
         nmpc_tied_1_GrantData,
         dashboardData: dashboardData["nmpc_tied"]["1"],
+        conditionSuccess: conditionSuccess['nmpc_tied_1_success']
       };
       nmpc_tied_2 = {
         conditions: conditions_nmpc_tied_2nd,
         nmpc_tied_2_GrantData,
         dashboardData: dashboardData["nmpc_tied"]["2"],
+        conditionSuccess: conditionSuccess['nmpc_tied_2_success']
       };
       mpc_tied_1 = {
         conditions: conditions_mpc_tied_1st,
         mpc_tied_1_GrantData,
         dashboardData: dashboardData["mpc_tied"]["1"],
+        conditionSuccess: conditionSuccess['mpc_tied_1_success']
       };
 
       let submitClaim = {
@@ -251,6 +307,18 @@ module.exports.get2223 = async (req, res)=>{
       
     
     
+}
+
+function calculateSuccess(dashboardData){
+  
+    for(let forms of dashboardData){
+      for(let form of forms['formData']){
+        if(form['approvedValue']< form['cutOff']){
+          return false;
+        }
+      }
+    }
+    return true;
 }
 
 async function getDashboardData(req,stateId, financialYear) {
