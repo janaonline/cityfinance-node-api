@@ -22,7 +22,8 @@ module.exports.get2223 = async (req, res)=>{
         linkPFMS: 100,
         dur:100,
         odf: 100,
-        gfc: 100
+        gfc: 100,
+        twentyEightSlbs: 100
     }
     let claimsInformation = {
         npmc_tied: null,
@@ -114,11 +115,15 @@ module.exports.get2223 = async (req, res)=>{
         text: `${expectedValues.dur}% Detailed Utilization Report form Submitted, and Approved by State` },
       {
         key: CollectionNames.annualAcc,
-        text: `"Minimum ${expectedValues.annualAccounts}% Annual Account Form Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in 25%"`,
+        text: `Minimum ${expectedValues.annualAccounts}% Annual Account Form Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in 25%`,
       },
       {
         key: CollectionNames.linkPFMS,
         text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
+      },
+      {
+        key: CollectionNames['twentyEightSlbs'],
+        text: `${expectedValues.twentyEightSlbs}% 28 Slbs form  Submitted, and Approved by State`
       },
       {
         key: CollectionNames.odf,
@@ -126,9 +131,12 @@ module.exports.get2223 = async (req, res)=>{
       },
       {
         key: CollectionNames.gfc,
-        text: `${expectedValues.gfc}% Grabage Free City Forms Submitted, and Approved by State`,
+        text: `${expectedValues.gfc}% Garbage Free City Forms Submitted, and Approved by State`,
       },
-      
+      {
+        key: CollectionNames.slb,
+        text: `${expectedValues.slb}% SLBs for Water Supply and Sanitation form Filled, Submitted, and Approved by State `
+      },
       {
         key: CollectionNames.gtc,
         text: `Grant Transfer Certificate Form Submission of Previous year document i.e. 2021-22`
