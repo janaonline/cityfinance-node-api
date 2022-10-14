@@ -51,6 +51,7 @@ const grantTransferCertificateSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'User'
     },
+    stateSubmit: {type: Date},
     actionTakenByRole: {
         type: String,
         enum:["STATE", "MoHUA"],

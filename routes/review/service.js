@@ -53,7 +53,8 @@ function createDynamicColumns(collectionName){
           columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`
           break;
         case CollectionNames.state_gtc:
-          columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Non-Million Plus Cities Tied Grants 2nd Installment (2021-22) File Url,Non-Million Plus Cities Tied Grants 2nd Installment (2021-22) File Name ,Non-Million Plus Cities Tied Grants 1st Installment (2022-23) File Url,Non-Million Plus Cities Tied Grants 1st Installment (2022-23) File Name,Non-Million Plus Cities Tied Grants 2nd Installment (2022-23) File Url,Non-Million Plus Cities Tied Grants 2nd Installment (2022-23) File Name,Non-Million Plus Cities Untied Grants 2nd Installment (2021-22) File Url,Non-Million Plus Cities Untied Grants 2nd Installment (2021-22) File Name,Non-Million Plus Cities Untied Grants 1st Installment (2022-23) File Url,Non-Million Plus Cities Untied Grants 1st Installment (2022-23) File Name ,Non-Million Plus Cities Untied Grants 2nd Installment (2022-23) File Url,Non-Million Plus Cities Untied Grants 2nd Installment (2022-23) File Name,  FY (2021-22) File Url, FY (2021-22) File Name , FY (2022-23) File Url , FY (2022-23) File Name`
+          columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, File Url, File Name,  MoHUA Review Status, MoHUA Comments, MoHUA file Url `
+          break;
         default:
             columns = '';
             break;
@@ -1299,11 +1300,10 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
               }`;
               break;
             case CollectionNames.state_gtc:
-              entity = sortGtcData(entity);
-              if(entity.allFormData[0] === ""){
-                
-              }else{
-              }
+              // entity = sortGtcData(entity);
+              entity = `${data?.design_year?.year ?? ""}, ${ entity?.formStatus ?? "" }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${ entity.filled ?? "" }, ${data.type ?? "" }, ${data.file['url']?? ""}, ${data.file['name']}, ${ actions["mohua_status"] ?? "" },${actions["rejectReason_mohua"] ?? ""}, ${ actions["responseFile_mohua"]["url"] ?? "" } `
+              break;
+
           }
     }
     return entity;
@@ -1494,20 +1494,21 @@ function createDynamicQuery(collectionName, oldQuery,userRole,csv) {
                  state: { $first: "$state" },
                },
              };
-           } else {
-             query_2 = {
-               $group: {
-                "_id": "$state",
-                "regionalName": {$first: "$regionalName"},
-                "stateName":{$first: "$stateName"},
-                "stateCode":{$first: "$stateCode"},
-                "allFormData": {
-                    "$push": "$$ROOT"
-                }
-               },
-             };
+             oldQuery.push(query_2);
            }
-            oldQuery.push(query_2);
+          //   else {
+          //    query_2 = {
+          //      $group: {
+          //       "_id": "$state",
+          //       "regionalName": {$first: "$regionalName"},
+          //       "stateName":{$first: "$stateName"},
+          //       "stateCode":{$first: "$stateCode"},
+          //       "allFormData": {
+          //           "$push": "$$ROOT"
+          //       }
+          //      },
+          //    };
+          //  }
             break;
           case CollectionNames.state_grant_alloc:
             query_2 = {
