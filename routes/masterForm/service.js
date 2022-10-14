@@ -1939,7 +1939,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
             from: "annualaccountdatas",
             let: {
               firstUser: ObjectId(design_year),
-              secondUser: "$_id",
+              secondUser: "$ulb",
             },
             pipeline: [
               {
@@ -2556,11 +2556,30 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $lookup: {
             from: "utilizationreports",
-            localField: "_id",
-            foreignField: "ulb",
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$designYear", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
             as: "utilizationreports",
           },
         },
+       
         {
           $unwind: {
             path: "$utilizationreports",
