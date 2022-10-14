@@ -83,10 +83,14 @@ module.exports.get2223 = async (req, res)=>{
         key: CollectionNames.gtc,
         text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2022-23 Untied 1st Instalment`,
       },
-      { key: CollectionNames.pTAX,
-        text: `Property Tax Floor Rate form submission by State & Approval by MoHUA` },
-      { key: CollectionNames.sfc,
-        text: `State Finance Commission Notification form submission by State & Approval by MoHUA` },
+      { 
+        key: CollectionNames.pTAX,
+        text: `Property Tax Floor Rate form submission by State & Approval by MoHUA` 
+      },
+      { 
+        key: CollectionNames.sfc,
+        text: `State Finance Commission Notification form submission by State & Approval by MoHUA` 
+      },
     ];
      const conditions_nmpc_tied_2nd = [
         { key: CollectionNames.dur,
@@ -111,7 +115,8 @@ module.exports.get2223 = async (req, res)=>{
           text: `State Finance Commission Notification form submission by State & Approval by MoHUA` },
      ] 
     const conditions_mpc_tied_1st = [
-      { key: CollectionNames.dur,
+      { 
+        key: CollectionNames.dur,
         text: `${expectedValues.dur}% Detailed Utilization Report form Submitted, and Approved by State` },
       {
         key: CollectionNames.annualAcc,
@@ -240,30 +245,43 @@ module.exports.get2223 = async (req, res)=>{
         }
       }
     }
+    let conditionSuccess = { 
+      nmpc_untied_1_success :calculateSuccess(dashboardData["nmpc_untied"]["1"]),
+      nmpc_untied_2_success : calculateSuccess(dashboardData['nmpc_untied']['2']),
+      nmpc_tied_1_success: calculateSuccess(dashboardData['nmpc_tied']['1']),
+      nmpc_tied_2_success: calculateSuccess(dashboardData['nmpc_tied']['2']),
+      mpc_tied_1_success: calculateSuccess(dashboardData['mpc_tied']['1']),
+      
+    }
       nmpc_untied_1 = {
         conditions: conditions_nmpc_untied_1st,
         nmpc_untied_1_GrantData,
         dashboardData: dashboardData["nmpc_untied"]["1"],
+        conditionSuccess: conditionSuccess['nmpc_untied_1_success']
       };
       nmpc_untied_2 = {
         conditions: conditions_nmpc_untied_2nd,
         nmpc_untied_2_GrantData,
         dashboardData: dashboardData["nmpc_untied"]["2"],
+        conditionSuccess: conditionSuccess['nmpc_untied_2_success']
       };
       nmpc_tied_1 = {
         conditions: conditions_nmpc_tied_1st,
         nmpc_tied_1_GrantData,
         dashboardData: dashboardData["nmpc_tied"]["1"],
+        conditionSuccess: conditionSuccess['nmpc_tied_1_success']
       };
       nmpc_tied_2 = {
         conditions: conditions_nmpc_tied_2nd,
         nmpc_tied_2_GrantData,
         dashboardData: dashboardData["nmpc_tied"]["2"],
+        conditionSuccess: conditionSuccess['nmpc_tied_2_success']
       };
       mpc_tied_1 = {
         conditions: conditions_mpc_tied_1st,
         mpc_tied_1_GrantData,
         dashboardData: dashboardData["mpc_tied"]["1"],
+        conditionSuccess: conditionSuccess['mpc_tied_1_success']
       };
 
       let submitClaim = {
@@ -289,6 +307,18 @@ module.exports.get2223 = async (req, res)=>{
       
     
     
+}
+
+function calculateSuccess(dashboardData){
+  
+    for(let forms of dashboardData){
+      for(let form of forms['formData']){
+        if(form['approvedValue']< form['cutOff']){
+          return false;
+        }
+      }
+    }
+    return true;
 }
 
 async function getDashboardData(req,stateId, financialYear) {
