@@ -11,7 +11,6 @@ const Ulb = require('../../models/Ulb')
 const State = require('../../models/State')
 
 
-
 function padTo2Digits(num) {
     return num.toString().padStart(2, '0');
   }
@@ -53,6 +52,8 @@ function createDynamicColumns(collectionName){
         case CollectionNames.sfc:
           columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`
           break;
+        case CollectionNames.state_gtc:
+          columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Non-Million Plus Cities Tied Grants 2nd Installment (2021-22) File Url,Non-Million Plus Cities Tied Grants 2nd Installment (2021-22) File Name ,Non-Million Plus Cities Tied Grants 1st Installment (2022-23) File Url,Non-Million Plus Cities Tied Grants 1st Installment (2022-23) File Name,Non-Million Plus Cities Tied Grants 2nd Installment (2022-23) File Url,Non-Million Plus Cities Tied Grants 2nd Installment (2022-23) File Name,Non-Million Plus Cities Untied Grants 2nd Installment (2021-22) File Url,Non-Million Plus Cities Untied Grants 2nd Installment (2021-22) File Name,Non-Million Plus Cities Untied Grants 1st Installment (2022-23) File Url,Non-Million Plus Cities Untied Grants 1st Installment (2022-23) File Name ,Non-Million Plus Cities Untied Grants 2nd Installment (2022-23) File Url,Non-Million Plus Cities Untied Grants 2nd Installment (2022-23) File Name,  FY (2021-22) File Url, FY (2021-22) File Name , FY (2022-23) File Url , FY (2022-23) File Name`
         default:
             columns = '';
             break;
@@ -604,13 +605,41 @@ function createDynamicObject(collectionName, formType){
               },
             };
             break;
+          case CollectionNames['state_gtc']:
+            obj = {
+              _id: "",
+              isDraft: "",
+              rejectReason: "",
+              history:[],
+              installment: "",
+              year: "",
+              type: "",
+              file: {
+                name: "",
+                url: "",
+              },
+              status: "",
+              state: "",
+              design_year: "",
+              actionTakenBy: "",
+              actionTakenByRole: "",
+              createdAt:"",
+              modifiedAt: "",
+              __v: "",
+              rejectReason_mohua: "",
+              responseFile_mohua: {
+                url: "",
+                name: "",
+              },
+            };
+            break;
         }
         break;
     }
     return obj;
 }
 
-function actionTakenByResponse(entity, formStatus, formType){
+function actionTakenByResponse(entity, formStatus, formType, collectionName){
   let obj = {
     state_status:"",
     mohua_status:"",
@@ -625,6 +654,24 @@ function actionTakenByResponse(entity, formStatus, formType){
       name: ""
     }
   };
+  if(collectionName === CollectionNames['annual']){
+    obj.auditedResponseFile_state = {
+      url: "",
+      name: ""
+    };
+    obj.unAuditedResponseFile_state = {
+      url: "",
+      name: ""
+    };
+    obj.auditedResponseFile_mohua = {
+      url: "",
+      name: ""
+    };
+    obj.unAuditedResponseFile_mohua = {
+      url: "",
+      name: ""
+    };
+  }
   if (formType === "STATE"){
     obj = {
       mohua_status: "",
@@ -683,6 +730,15 @@ function actionTakenByResponse(entity, formStatus, formType){
       if (entity["status"]) {
         obj.state_status = entity["status"];
       }
+
+      if(collectionName ===  CollectionNames['annual']){
+        if(entity.audited.responseFile){
+          obj.auditedResponseFile_state =  entity.audited.responseFile;
+        }
+        if(entity.unAudited.responseFile){
+          obj.unAuditedResponseFile_state = entity.unAudited.responseFile;
+        }
+      }
       return obj;
     }
     if (
@@ -697,6 +753,14 @@ function actionTakenByResponse(entity, formStatus, formType){
       }
       if (entity["status"]) {
         obj.mohua_status = entity["status"];
+      }
+      if(collectionName ===  CollectionNames['annual']){
+        if(entity.audited.responseFile){
+          obj.auditedResponseFile_mohua =  entity.audited.responseFile;
+        }
+        if(entity.unAudited.responseFile){
+          obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile;
+        }
       }
       mohuaFlag = false;
     }
@@ -717,18 +781,27 @@ function actionTakenByResponse(entity, formStatus, formType){
          if (history["status"]) {
            obj.state_status = history["status"];
          }
+
+         if(collectionName ===  CollectionNames['annual']){
+          if(history.audited.responseFile){
+            obj.auditedResponseFile_state =  history.audited.responseFile;
+          }
+          if(history.unAudited.responseFile){
+            obj.unAuditedResponseFile_state = history.unAudited.responseFile;
+          }
+        }
          stateFlag = false;
        }
     }
     return obj;
 }
 
-function createDynamicElements(collectionName, formType, entity) {
+ function createDynamicElements(collectionName, formType, entity) {
     if(!entity.formData){
         entity["filled"] = "No";
         entity['formData'] =  createDynamicObject(collectionName ,formType);
     }    
-    let actions = actionTakenByResponse(entity.formData, entity.formStatus, formType);
+    let actions = actionTakenByResponse(entity.formData, entity.formStatus, formType, collectionName);
     if(formType === "ULB"){
 
       if(!entity["formData"]["rejectReason_state"]){
@@ -878,8 +951,8 @@ function createDynamicElements(collectionName, formType, entity) {
                   auditedProvisional?.auditor_report?.rejectReason ?? ""
                 }, , , ${data?.audited?.submit_standardized_data ?? ""}, ${
                   auditedStandardized?.excel?.url ?? ""
-                }, ${actions["responseFile_state"]["url"] ?? ""},${
-                  actions["responseFile_mohua"]["url"] ?? ""
+                }, ${actions["auditedResponseFile_state"]["url"] ?? ""},${
+                  actions["auditedResponseFile_mohua"]["url"] ?? ""
                 }  `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
                     entity?.formStatus ?? ""
@@ -925,8 +998,8 @@ function createDynamicElements(collectionName, formType, entity) {
                   },  , , , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
                   }, ${unAuditedStandardized?.excel?.url ?? ""}, ${
-                    actions["responseFile_state"]["url"] ?? ""
-                  },${actions["responseFile_mohua"]["url"] ?? ""} `;
+                    actions["unAuditedResponseFile_state"]["url"] ?? ""
+                  },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
                 
               }else if( data?.actionTakenByRole === "MoHUA"){
                 auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
@@ -968,8 +1041,8 @@ function createDynamicElements(collectionName, formType, entity) {
                 }, ${auditedProvisional?.auditor_report?.rejectReason ?? ""}, ${
                   data?.audited?.submit_standardized_data ?? ""
                 }, ${auditedStandardized?.excel?.url ?? ""} , ${
-                  actions["responseFile_state"]["url"] ?? ""
-                },${actions["responseFile_mohua"]["url"] ?? ""} `;
+                  actions["auditedResponseFile_state"]["url"] ?? ""
+                },${actions["auditedResponseFile_mohua"]["url"] ?? ""} `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
                     entity?.formStatus ?? ""
                   }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
@@ -1014,8 +1087,8 @@ function createDynamicElements(collectionName, formType, entity) {
                   }, , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
                   }, ${unAuditedStandardized?.excel?.url ?? ""} , ${
-                    actions["responseFile_state"]["url"] ?? ""
-                  },${actions["responseFile_mohua"]["url"] ?? ""} `;
+                    actions["unAuditedResponseFile_state"]["url"] ?? ""
+                  },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
               } else {
                 auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
                   entity?.formStatus ?? ""
@@ -1045,8 +1118,8 @@ function createDynamicElements(collectionName, formType, entity) {
                   auditedProvisional?.auditor_report?.pdf?.url ?? ""
                 }, , , , , ${data?.audited?.submit_standardized_data ?? ""}, ${
                   auditedStandardized?.excel?.url ?? ""
-                } , ${actions["responseFile_state"]["url"] ?? ""},${
-                  actions["responseFile_mohua"]["url"] ?? ""
+                } , ${actions["auditedResponseFile_state"]["url"] ?? ""},${
+                  actions["auditedResponseFile_mohua"]["url"] ?? ""
                 } `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
                     entity?.formStatus ?? ""
@@ -1079,8 +1152,8 @@ function createDynamicElements(collectionName, formType, entity) {
                   }, , , , , , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
                   }, ${unAuditedStandardized?.excel?.url ?? ""} , ${
-                    actions["responseFile_state"]["url"] ?? ""
-                  },${actions["responseFile_mohua"]["url"] ?? ""} `;
+                    actions["unAuditedResponseFile_state"]["url"] ?? ""
+                  },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
               }
               return [auditedEntity, unAuditedEntity];
               break;
@@ -1225,12 +1298,68 @@ function createDynamicElements(collectionName, formType, entity) {
                 actions["responseFile_mohua"]["url"] ?? ""
               }`;
               break;
+            case CollectionNames.state_gtc:
+              entity = sortGtcData(entity);
+              if(entity.allFormData[0] === ""){
+                
+              }else{
+              }
           }
     }
     return entity;
 }
 
-function createDynamicQuery(collectionName, oldQuery,userRole) {
+function sortGtcData(entity){
+  if(entity.allFormData[0] === ""){
+    return entity;
+  }
+  let gtcFormObj = { nmpc_tied: {}, nmpc_untied: {}, mpc_tied: {} };
+
+  for(let i=0; i < entity.allFormData.length; i++){
+    let form = entity.allFormData[i];
+    if(form.type === "nonmillion_tied"){
+      if(form.design_year.year === "2021-22"){
+        if(form.installment === 2){
+          gtcFormObj['nmpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
+        }
+      }else if(form.design_year === "2022-23"){
+        if(form.installment === 1){
+          gtcFormObj['nmpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
+        }else if(form.installment === 2){
+          gtcFormObj['nmpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
+        }
+      }
+    }else if(form.type === "nonmillion_untied"){
+      if(form.design_year.year === "2021-22"){
+        if(form.installment === 2){
+          gtcFormObj['nmpc_untied'][`${form.design_year.year}_${form.installment}`] =  form;
+        }
+      }else if(form.design_year === "2022-23"){
+        if(form.installment === 1){
+          gtcFormObj['nmpc_untied'][`${form.design_year.year}_${form.installment}`] =  form;
+        }else if(form.installment === 2){
+          gtcFormObj['nmpc_untied'][`${form.design_year.year}_${form.installment}`] =  form;
+        }
+      }
+    }else if (form.type === "million_tied"){
+      if(form.design_year.year === "2021-22"){
+        gtcFormObj['mpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
+
+      }else if( form.design_year === "2022-23"){
+        gtcFormObj['mpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
+      }
+    }
+  }
+  gtcFormObj =  JSON.parse(JSON.stringify(gtcFormObj));
+  for(let obj in gtcFormObj){
+    // let 
+    // gtcFormObj.sort((a,b)=>{})
+  }
+  return gtcFormObj;
+
+}
+
+function createDynamicQuery(collectionName, oldQuery,userRole,csv) {
     let query_2 = {};
     let query_3 = {}, query_4 = {}, query_5 = {};
   let pipelineIndex;
@@ -1356,57 +1485,28 @@ function createDynamicQuery(collectionName, oldQuery,userRole) {
       case "STATE":
         switch (collectionName) {
           case CollectionNames.state_gtc:
-          //   let facetQuery =  {
-          //     $facet:{
-          //  data: [{
-          //     "$project": {
-          //         "state": "$_id",
-          //         "stateName": "$name",
-          //         "formData": {
-          //             "$ifNull": [
-          //                 "$granttransfercertificates",
-          //                 ""
-          //             ]
-          //         },
-                  
-                  
-          //     }
-          // }],
-          
-          // statusData:[{
-          //     "$project": {
-          //         "state": "$_id",
-          //         "stateName": "$name",
-          //         "formData": {
-          //             "$ifNull": [
-          //                 "$granttransfercertificates",
-          //                 ""
-          //             ]
-          //         },
-                  
-                  
-          //     }
-          // },
-          // {
-          //     $group:{
-          //         _id:{
-          //             state:"$stateName",
-          //             },
-          //            status: {$push:"$formData.status"},
-          //            count: {$sum:1}
-                      
-          //     }
-          // }]
-          // }
-          // },
-            query_2 = {
-              $group:{
-                _id:"$state",
-                status: {$push:"$formData.status"}, 
-                stateName: {$first: "$stateName"},
-                state: {$first: "$state"},
-              },           
-            }
+           if (!csv) {
+             query_2 = {
+               $group: {
+                 _id: "$state",
+                 status: { $push: "$formData.status" },
+                 stateName: { $first: "$stateName" },
+                 state: { $first: "$state" },
+               },
+             };
+           } else {
+             query_2 = {
+               $group: {
+                "_id": "$state",
+                "regionalName": {$first: "$regionalName"},
+                "stateName":{$first: "$stateName"},
+                "stateCode":{$first: "$stateCode"},
+                "allFormData": {
+                    "$push": "$$ROOT"
+                }
+               },
+             };
+           }
             oldQuery.push(query_2);
             break;
           case CollectionNames.state_grant_alloc:
@@ -2068,7 +2168,7 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
 // return query
         //dynamic query based on condition
         if(csv){
-          query = createDynamicQuery(formName, query, userRole);
+          query = createDynamicQuery(formName, query, userRole,csv);
         }
 
 
@@ -2177,7 +2277,7 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
           },
         ];
 
-        query_s = createDynamicQuery(formName, query_s, userRole);
+        query_s = createDynamicQuery(formName, query_s, userRole,csv);
 
         let  filterApplied_s = Object.keys(filter).length > 0
         if(filterApplied_s){
