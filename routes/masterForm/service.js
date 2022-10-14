@@ -2031,7 +2031,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
                   $expr: {
                     $and: [
                       {
-                        $eq: ["$design_year", "$$firstUser"],
+                        $eq: ["$designYear", "$$firstUser"],
                       },
                       {
                         $eq: ["$ulb", "$$secondUser"],
@@ -2048,6 +2048,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         {
           $unwind: {
             path: "$utilReportForm",
+            preserveNullAndEmptyArrays: true
           },
         },
         {
