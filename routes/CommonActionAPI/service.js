@@ -371,7 +371,7 @@ module.exports.updateForm = async (req, res) =>{
      
                     form['common'] = true
                     for(let key in form.audited.provisional_data){
-                        if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null && key != 'auditor_report'){
+                        if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
                             Object.assign(form.audited.provisional_data[key], {status:formData.status })
                             Object.assign(form.audited.provisional_data[key], {rejectReason:data.rejectReason })
                             Object.assign(form.audited.provisional_data[key], {responseFile:data.responseFile })

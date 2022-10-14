@@ -1890,6 +1890,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
       let query3 = [
         {
           $match: {
+            design_year: ObjectId(design_year),
             $or: [
               { isSubmit: true, actionTakenByRole: "ULB", status: "PENDING" },
               {
