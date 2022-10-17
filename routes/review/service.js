@@ -1704,6 +1704,7 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
                             {
                                 $sort: {formData: -1}
                             }
+                            
     
         ]
         query.push(...query_2)
@@ -1749,6 +1750,9 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
             if(!csv){
                 query.push(...paginator)
             }
+            query.push( {
+              allowDiskUse: true
+            })
             return [query,countQuery ]
         break;
         case "STATE":
