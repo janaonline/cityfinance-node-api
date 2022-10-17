@@ -208,6 +208,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
         const {_id:actionTakenBy, role: actionTakenByRole} = user;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
+        formData['stateSubmit'] = ""
         
         const condition = {};
         condition.state = data.state;
@@ -221,6 +222,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 })
             } else {
                 if( (!submittedForm) && formData.isDraft === false){ // final submit in first attempt   
+                    formData['stateSubmit'] = new Date();
                     const form = await GrantTransferCertificate.create(formData);
                     formData.createdAt = form.createdAt;
                     formData.modifiedAt = form.modifiedAt;
@@ -256,6 +258,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                         formData.createdAt = submittedForm.createdAt;
                         formData.modifiedAt = new Date();
                         formData.modifiedAt.toISOString();
+                        formData['stateSubmit'] = new Date();
                         const updatedForm = await GrantTransferCertificate.findOneAndUpdate(
                             condition,
                             {

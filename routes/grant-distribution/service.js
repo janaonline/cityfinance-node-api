@@ -84,6 +84,7 @@ exports.getTemplate = async (req, res) => {
 exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
+  let formData = req.query;
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
@@ -267,7 +268,7 @@ function readXlsxFile(file) {
   });
 }
 
-async function validate(data) {
+async function validate(data, formData) {
   let ulbCodes = [],
     ulbNames = [];
   const code = "ulb census code/ulb code";
