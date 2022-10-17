@@ -314,7 +314,7 @@ function calculateSuccess(dashboardData){
     for(let forms of dashboardData){
       for(let form of forms['formData']){
         if(form['approvedValue']< form['cutOff']){
-          return false;
+          return true;
         }
       }
     }
