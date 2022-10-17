@@ -87,7 +87,6 @@ const ActionPlansSchema = new Schema(
     isDraft: { type: Boolean, default: false, required: true },
     history: { type: Array, default: [] },
     uaData: [uas],
-    status: statusType(),
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
