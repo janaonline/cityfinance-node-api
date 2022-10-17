@@ -1683,8 +1683,16 @@ if(getQuery) return res.json({
 })
 
 // if csv - then no skip and limit, else with skip and limit
-let data = formType == "ULB" ?  Ulb.aggregate(query[0])  : State.aggregate(query[0])
-total =  formType == "ULB" ?  Ulb.aggregate(query[1]) : State.aggregate(query[1])
+let data = formType == "ULB" ?  Ulb.aggregate(query[0],{
+  allowDiskUse: true
+})  : State.aggregate(query[0],{
+  allowDiskUse: true
+})
+total =  formType == "ULB" ?  Ulb.aggregate(query[1],{
+  allowDiskUse: true
+}) : State.aggregate(query[1],{
+  allowDiskUse: true
+})
 let allData = await Promise.all([data, total]);
 data = allData[0]
 total = allData[1].length ? allData[1][0]['total'] : 0
@@ -2209,9 +2217,9 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
             if(!csv){
                 query.push(...paginator)
             }
-            query.push( {
-              allowDiskUse: true
-            })
+            // query.push( {
+            //   allowDiskUse: true
+            // })
             return [query,countQuery ]
         break;
         case "STATE":
