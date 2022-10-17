@@ -1683,16 +1683,8 @@ if(getQuery) return res.json({
 })
 
 // if csv - then no skip and limit, else with skip and limit
-let data = formType == "ULB" ?  Ulb.aggregate(query[0],{
-  allowDiskUse: true
-})  : State.aggregate(query[0],{
-  allowDiskUse: true
-})
-total =  formType == "ULB" ?  Ulb.aggregate(query[1],{
-  allowDiskUse: true
-}) : State.aggregate(query[1],{
-  allowDiskUse: true
-})
+let data = formType == "ULB" ?  Ulb.aggregate(query[0]).allowDiskUse(true)  : State.aggregate(query[0]).allowDiskUse(true)
+total =  formType == "ULB" ?  Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true)
 let allData = await Promise.all([data, total]);
 data = allData[0]
 total = allData[1].length ? allData[1][0]['total'] : 0
