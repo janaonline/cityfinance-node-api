@@ -43,6 +43,7 @@ exports.saveActionPlans = async (req, res) => {
     formData["uaData"].forEach(entity=>{
       entity.status = "PENDING"
     })
+    formData.status = "PENDING"
     if (formData.state) {
       formData["state"] = ObjectId(formData.state);
     }

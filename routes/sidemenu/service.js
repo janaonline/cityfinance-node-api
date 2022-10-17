@@ -287,7 +287,6 @@ module.exports.list = catchAsync(async (req,res) => {
         year: ObjectId(design_year),
         isForm: true,
         isActive: true,
-name:{$ne: "Grant Transfer Certificate"}
     }
     let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1, optional: 1});
     
