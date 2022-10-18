@@ -58,6 +58,7 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
           message: "Sorry! You are not Authorized To Access XV FC Grants Module"
         })
       }
+      let role = ''
         if (user.role === "ULB") {
             ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
             role = user.role;
