@@ -62,9 +62,7 @@ module.exports.defunc = async(req,res)=> {
     
                     }
                 },
-           {
-            $limit: 20
-           }     
+            
     ]
     let arr = [];
 
