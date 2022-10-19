@@ -427,7 +427,7 @@ module.exports.fileDeFuncFiles = async (req, res) => {
                             obj.key = key;
                             obj.url = response
                             obj.year = el.year
-                            console.log("ppp",obj)
+                            console.log("ppp", obj)
                             arr.push(obj);
                         } catch (error) {
                             //console.log('working', error)
@@ -446,9 +446,14 @@ module.exports.fileDeFuncFiles = async (req, res) => {
         total: documnetcounter
     });
 }
+
 function doRequest(url) {
     return new Promise((resolve, reject) => {
-        request(url, (error, resp, body) => {
+        let options = {
+            url: url,
+            method: 'HEAD'
+        }
+        request(options, (error, resp, body) => {
             if (!error && resp?.statusCode == 404) {
                 resolve(url)
             } else {
