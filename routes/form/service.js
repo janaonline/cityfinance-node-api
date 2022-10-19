@@ -7,8 +7,12 @@ const email = require("../../service/email");
 const Response = require("../../service").response;
 const request = require('request')
 function doRequest(url) {
+  let options = {
+    url : url,
+    method: 'HEAD'
+  }
   return new Promise(function (resolve, reject) {
-    request(url, function (error, resp, body) {
+    request(options, function (error, resp, body) {
       if (!error && resp?.statusCode == 404) {
         resolve(url)
 
@@ -82,6 +86,7 @@ while(skip<=target){
         // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
           try{
             totalCounter++;
+            console.log(totalCounter)
             let response = await doRequest(url);
             
             let obj = {
@@ -96,11 +101,11 @@ while(skip<=target){
             obj.key = key;
             obj.url = response
             
-            console.log(obj)
+            // console.log(obj)
             arr.push(obj);
       
           } catch (error) {
-            //console.log('working', error)
+            // console.log('working', error)
             // `error` will be whatever you passed to `reject()` at the top
           }
           
