@@ -365,8 +365,10 @@ module.exports.updateForm = async (req, res) =>{
                 form['actionTakenBy'] = formData.actionTakenBy;
                 form['status'] = formData.status;
                 form['modifiedAt'] = new Date();
-                
+                form['rejectReason'] = data.rejectReason
+                form['responseFile'] =   data.responseFile
                 if(masterForm.name == "Annual Accounts"){
+     
                     form['common'] = true
                     for(let key in form.audited.provisional_data){
                         if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){

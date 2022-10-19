@@ -1611,7 +1611,7 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel, Form Status  \r\n"
+    "Year, ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel, Form Status  \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -1627,6 +1627,17 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
     'Rejected By MoHUA'
   ]
   let Audited_data = await AnnualAccountData.aggregate([
+    {
+      $lookup: {
+        from: "years",
+        localField: "design_year",
+        foreignField: "_id",
+        as: "year"
+      }
+    },
+    {
+      $unwind: "$year"
+    },
     {
       $lookup: {
         from: "ulbs",
@@ -1669,7 +1680,8 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         unaudited_answer: "$unAudited.submit_annual_accounts",
         isDraft:"$isDraft",
         status:"$status",
-        role:"$actionTakenByRole"
+        role:"$actionTakenByRole",
+        year:"$year.year"
       }
     }]).exec((err, data) => {
       if (err) {
@@ -1735,6 +1747,8 @@ el['formStatus'] = statusList[0]
         }
         for (el of data) {
           res.write(
+            el.year +
+            "," +
             el.ulbName +
             "," +
             el.censusCode +
@@ -1779,7 +1793,7 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel, Form Status \r\n"
+    "Year, ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel, Form Status \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -1795,6 +1809,17 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
     'Rejected By MoHUA'
   ]
   let Unaudited_data = await AnnualAccountData.aggregate([
+    {
+      $lookup: {
+        from: "years",
+        localField: "design_year",
+        foreignField: "_id",
+        as: "year"
+      }
+    },
+    {
+      $unwind: "$year"
+    },
     {
       $lookup: {
         from: "ulbs",
@@ -1836,7 +1861,8 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         unaudited_answer: "$unAudited.submit_annual_accounts",
         isDraft:"$isDraft",
         status:"$status",
-        role:"$actionTakenByRole"
+        role:"$actionTakenByRole",
+        year:"$year.year"
       }
     }]).exec((err, data) => {
       if (err) {
@@ -1899,6 +1925,8 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         }
         for (el of data) {
           res.write(
+            el.year +
+            "," +
             el.ulbName +
             "," +
             el.censusCode +

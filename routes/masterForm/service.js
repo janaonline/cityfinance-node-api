@@ -1890,6 +1890,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
       let query3 = [
         {
           $match: {
+            design_year: ObjectId(design_year),
             $or: [
               { isSubmit: true, actionTakenByRole: "ULB", status: "PENDING" },
               {
@@ -1936,14 +1937,34 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         {
           $lookup: {
             from: "annualaccountdatas",
-            localField: "ulb",
-            foreignField: "ulb",
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$ulb",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$design_year", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
             as: "annualaccount",
           },
         },
         {
           $unwind: {
             path: "$annualaccount",
+            preserveNullAndEmptyArrays: true
+
           },
         },
         {
@@ -2000,14 +2021,34 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         {
           $lookup: {
             from: "utilizationreports",
-            localField: "ulb",
-            foreignField: "ulb",
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$ulb",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$designYear", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
             as: "utilReportForm",
           },
         },
+    
         {
           $unwind: {
             path: "$utilReportForm",
+            preserveNullAndEmptyArrays: true
           },
         },
         {
@@ -2484,8 +2525,26 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $lookup: {
             from: "annualaccountdatas",
-            localField: "_id",
-            foreignField: "ulb",
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$design_year", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
             as: "annualaccountdatas",
           },
         },
@@ -2498,11 +2557,30 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $lookup: {
             from: "utilizationreports",
-            localField: "_id",
-            foreignField: "ulb",
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$designYear", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
             as: "utilizationreports",
           },
         },
+       
         {
           $unwind: {
             path: "$utilizationreports",
@@ -2745,8 +2823,26 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $lookup: {
             from: "annualaccountdatas",
-            localField: "_id",
-            foreignField: "ulb",
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$design_year", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
             as: "annualaccountdatas",
           },
         },
@@ -2759,11 +2855,30 @@ module.exports.viewList = catchAsync(async (req, res) => {
         {
           $lookup: {
             from: "utilizationreports",
-            localField: "_id",
-            foreignField: "ulb",
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$designYear", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
             as: "utilizationreports",
           },
         },
+        
         {
           $unwind: {
             path: "$utilizationreports",
