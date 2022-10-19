@@ -24,6 +24,7 @@ module.exports.getForm = async (req, res) => {
         const data = req.query;
         const condition = {};
         const ulb = req.decoded.ulb;
+        let actionTakenByRole = req.decoded.role;
         condition.design_year = data.design_year;
         condition.state = data.state;
         let mpc = false;
@@ -183,7 +184,7 @@ module.exports.getForm = async (req, res) => {
 
             })
         }
-
+    
     } catch (error) {
         return res.status(400).json({
             status: false,
