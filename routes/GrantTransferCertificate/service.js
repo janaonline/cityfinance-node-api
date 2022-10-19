@@ -170,8 +170,16 @@ module.exports.getForm = async (req, res) => {
             }
 
         }
-
+        
         if (forms) {
+            //removing status and file when mohua is logged in to approve/reject
+            for(let i =0; i< forms.length; i++ ){
+                let form = forms[i];
+                if(form.status === "PENDING" && actionTakenByRole === "MoHUA"){
+                    delete form['rejectReason_mohua'];
+                    delete form['responseFile_mohua'];
+                }
+            }
             return res.status(200).json({
                 status: true,
                 data: forms,
