@@ -7,7 +7,7 @@ const {canTakenAction} = require('../CommonActionAPI/service');
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
 const User = require('../../models/User');
-
+const doRequest = require('../../util/doRequest')
 function dateFormatter(input){
     const t = new Date(input);
     const date = ('0' + t.getDate()).slice(-2);
@@ -319,4 +319,115 @@ module.exports.getCSV = async (req, res)=>{
         }
       });
 
+}
+
+module.exports.defunct = async (req,res) => {
+    let query = [
+        {
+            $lookup: {
+                from:"years",
+                localField:"design_year",
+                foreignField:"_id",
+                as:"design_year"
+                }
+            },
+            {
+                $unwind:"$design_year"
+                },
+        {
+            $lookup: {
+                from:"ulbs",
+                localField:"ulb",
+                foreignField:"_id",
+                as:"ulb"
+                }
+            },
+            {
+                $unwind:"$ulb"
+                },
+        {
+            $group: {
+                _id: {
+                    ulb: "$ulb._id",
+                    year: "$design_year.year"
+                    },
+                    ulbName:{$first: "$ulb.name"},
+                     ulbcode:{$first: "$ulb.code"},
+                    Certificate_pdf : {$first: "$cert.url"},
+                   
+                    
+                }
+            },
+         
+           
+        ]
+        let data = await GfcFormCollection.aggregate(query);
+        let odfData = await OdfFormCollection.aggregate(query);
+
+        data.push(...odfData)
+        let documnetcounter = 1;
+        working = 0;
+        notWorking = 0;
+        let arr = []
+    let target = data.length;
+    console.log(target)
+    let skip = 0;
+    let batch = 150;
+    while(skip<=target){
+      const slice = data.slice(parseInt(skip),parseInt(skip)+batch);
+      await Promise.all(
+        slice.map(async el=>{
+          for(let key in el) {
+            
+            
+            
+            if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
+                documnetcounter++;
+              let url = el[key];
+            // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+              try{
+                let response = await doRequest(url);
+                
+                let obj = {
+                  ulbName:"",
+                  ulbCame:"",
+                  key:"",
+                  url:"",
+                  year: ""
+                }
+                obj.ulbName = el.ulbName;
+                obj.ulbCode = el.ulbcode;
+                obj.key = key;
+                obj.url = response
+                obj.year = el['_id']['year']
+                // console.log(obj)
+                arr.push(obj);
+          
+              } catch (error) {
+                //console.log('working', error)
+                // `error` will be whatever you passed to `reject()` at the top
+              }
+              
+                  
+              
+            }
+              
+          
+          }
+        })
+      )
+      //for(let el of data){
+        
+    
+        
+      ///}
+      console.log(skip)
+      skip+=batch;
+    }
+    return res.send({
+      data: arr,
+      number: arr.length,
+      total: documnetcounter
+    });
+     
 }
