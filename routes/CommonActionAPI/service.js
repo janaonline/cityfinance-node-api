@@ -322,7 +322,7 @@ module.exports.updateForm = async (req, res) =>{
             })
         }
         //add reject reason and response file based on role
-       if(masterForm.name != FormNames.annualAcc ){
+    //    if(masterForm.name != FormNames.annualAcc ){
         if(actionTakenByRole === "STATE"){
             formData['rejectReason_state'] = data.rejectReason;
             formData['responseFile_state'] = data.responseFile;
@@ -331,7 +331,7 @@ module.exports.updateForm = async (req, res) =>{
             formData['rejectReason_mohua'] = data.rejectReason;
             formData['responseFile_mohua'] = data.responseFile;     
         }
-       }
+    //    }
         
         let condition = {};
         if (collection === UtilizationReport ){
@@ -372,24 +372,57 @@ module.exports.updateForm = async (req, res) =>{
                     form['common'] = true
                     for(let key in form.audited.provisional_data){
                         if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
-                            Object.assign(form.audited.provisional_data[key], {status:formData.status })
-                            Object.assign(form.audited.provisional_data[key], {rejectReason:data.rejectReason })
-                            Object.assign(form.audited.provisional_data[key], {responseFile:data.responseFile })
-                            // form.audited.provisional_data[key]['status'] = formData.status
-                            // form.audited.provisional_data[key]['rejectReason'] = data.rejectReason
-                            // form.audited.provisional_data[key]['responseFile'] = data.responseFile
+                            if(form.audited.provisional_data[key]){
+                                if(actionTakenByRole === "STATE"){
+                                    form.audited.provisional_data[key]['status'] = formData.status
+                                    form.audited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
+                                    form.audited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
+                                }
+                                else if(actionTakenByRole === "MoHUA"){
+                                    form.audited.provisional_data[key]['status'] = formData.status
+                                    form.audited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
+                                    form.audited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
+                                }
+                            }
                         }
                         
     
                     }
                     for(let key in form.unAudited.provisional_data){
-                        if(typeof form.unAudited.provisional_data[key] == 'object' && form.unAudited.provisional_data[key] != null){
-                        Object.assign(form.unAudited.provisional_data[key], {status:formData.status })
-                        Object.assign(form.unAudited.provisional_data[key], {rejectReason:data.rejectReason })
-                        Object.assign(form.unAudited.provisional_data[key], {responseFile:data.responseFile })
-                        //     form.unAudited.provisional_data[key]['status'] = formData.status
-                        // form.unAudited.provisional_data[key]['rejectReason'] = data.rejectReason
-                        // form.unAudited.provisional_data[key]['responseFile'] = data.responseFile
+                        if(typeof form.unAudited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
+                            if(form.unAudited.provisional_data[key]){
+                                if(actionTakenByRole === "STATE"){
+                                    form.unAudited.provisional_data[key]['status'] = formData.status
+                                    form.unAudited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
+                                    form.unAudited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
+                                }else if(actionTakenByRole === "MoHUA"){
+                                    form.unAudited.provisional_data[key]['status'] = formData.status
+                                    form.unAudited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
+                                    form.unAudited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
+                                }
+                            }
+                        }
+                    }
+                    if(form.audited){
+                        if(actionTakenByRole === "STATE"){
+                            form.audited['status'] = formData.status
+                            form.audited['rejectReason_state'] = formData.rejectReason_state
+                            form.audited['responseFile_state'] = formData.responseFile_state
+                        }else if(actionTakenByRole === "MoHUA"){
+                            form.audited['status'] = formData.status
+                            form.audited['rejectReason_mohua'] = formData.rejectReason_mohua
+                            form.audited['responseFile_mohua'] = formData.responseFile_mohua
+                        }
+                    }
+                    if(form.unAudited){
+                        if(actionTakenByRole === "STATE"){
+                            form.unAudited['status'] = formData.status
+                            form.unAudited['rejectReason_state'] = formData.rejectReason_state
+                            form.unAudited['responseFile_state'] = formData.responseFile_state
+                        }else if(actionTakenByRole === "MoHUA"){
+                            form.unAudited['status'] = formData.status
+                            form.unAudited['rejectReason_mohua'] = formData.rejectReason_mohua
+                            form.unAudited['responseFile_mohua'] = formData.responseFile_mohua
                         }
                     }
                     form = calculateTabwiseStatus(form)
@@ -406,9 +439,13 @@ module.exports.updateForm = async (req, res) =>{
                 }
             }
                 delete form['history'] ;
+                let formHistory = JSON.parse(JSON.stringify(form))
+                delete form["_id"];
+                delete form['ulb'];
+                delete form['design_year'];
                 let updatedForm = await collection.findOneAndUpdate(
                     {ulb , [condition.design_year]: data.design_year},
-                    {$set: form, $push: {history: form }},
+                    {$set: form, $push: {history: formHistory }},
                     {new: true, runValidators: true}
                     );
                 numberOfFormsUpdated++;
@@ -427,8 +464,9 @@ module.exports.updateForm = async (req, res) =>{
 
                   //add reject reason/responseFile for single state entry
                   if (actionTakenByRole === "MoHUA") {
-                    form["rejectReason_mohua"] = data["rejectReason"];
+                    form["rejectReason_mohua"] = data["rejectReason_mohua"];
                     form["responseFile_mohua"] = data["responseFile"];
+                    formData['rejectReason_mohua'] = data["rejectReason_mohua"]
                   }
                   delete form["history"];
                   let updatedForm = await collection
@@ -458,8 +496,9 @@ module.exports.updateForm = async (req, res) =>{
           
                               //add reject reason/responseFile for single ulb entry
                               if (actionTakenByRole === "MoHUA") {
-                                form["rejectReason_mohua"] = data.rejectReason;
+                                form["rejectReason_mohua"] = data["rejectReason_mohua"];
                                 form["responseFile_mohua"] = data.responseFile;
+                                formData['rejectReason_mohua'] = data["rejectReason_mohua"]
                               }
                               delete form["history"];
                               let updatedForm = await collection.findOneAndUpdate(

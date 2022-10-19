@@ -3,7 +3,8 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const GrantTransferMohua = require('../../models/grantTransferMohua');
 const {BackendHeaderHost} =  require('../../util/envUrl');
 const GrantTypes = require('../../models/GrantType');
-const {CollectionNames} = require('../../util/15thFCstatus')
+const {CollectionNames} = require('../../util/15thFCstatus');
+const GrantClaim = require('../../models/GrantClaim');
 const gtcConstants = {
     mpc_tied : "Million Plus for Water Supply and SWM",
     nmpc_untied: "Non-Million Untied",
@@ -213,6 +214,7 @@ module.exports.get2223 = async (req, res)=>{
     if(!grantClaimedData){
       throw new Error("Data not found");
     }
+
     for (let i = 0; i < grantClaimedData.stateData.length; i++) {
       let grantClaim = grantClaimedData.stateData[i];
 
@@ -245,12 +247,61 @@ module.exports.get2223 = async (req, res)=>{
         }
       }
     }
+    
+    let grantClaimData = await GrantClaim.findOne({
+      financialYear: ObjectId(financialYear),
+      state: ObjectId(stateId),
+    }).lean();
+    let submitCondition = {
+      mpc_tied: {},
+      nmpc_tied: {},
+      nmpc_untied: {}
+    };
+    if (grantClaimData) {
+      let grantTypes = {
+        mpc: "mpc",
+        nmpc_tied: "nmpc_tied",
+        nmpc_untied: "nmpc_untied",
+      };
+      for (let key in grantClaimData) {
+        // if(key === "mpc"){
+
+        // }else if( key === "nmpc_tied"){
+
+        // }else if(key === "nmpc_untied"){
+
+        // }
+        if (grantTypes[key]) {
+          for (let i = 0; i < grantClaimData[key].length; i++) {
+            let grant = grantClaimData[key][i];
+            if (key === "mpc") {
+              if (grant.installment === "1") {
+                submitCondition["mpc_tied"]["1"] = grant;
+              }
+            } else if (key === "nmpc_tied") {
+              if (grant.installment === "1") {
+                submitCondition["nmpc_tied"]["1"] = grant;
+              } else if (grant.installment === "2") {
+                submitCondition["nmpc_tied"]["2"] = grant;
+              }
+            } else if (key === "nmpc_untied") {
+              if (grant.installment === "1") {
+                submitCondition["nmpc_untied"]["1"] = grant;
+              } else if (grant.installment === "2") {
+                submitCondition["nmpc_untied"]["2"] = grant;
+              }
+            }
+          }
+        }
+      }
+    }
+
     let conditionSuccess = { 
-      nmpc_untied_1_success :calculateSuccess(dashboardData["nmpc_untied"]["1"]),
-      nmpc_untied_2_success : calculateSuccess(dashboardData['nmpc_untied']['2']),
-      nmpc_tied_1_success: calculateSuccess(dashboardData['nmpc_tied']['1']),
-      nmpc_tied_2_success: calculateSuccess(dashboardData['nmpc_tied']['2']),
-      mpc_tied_1_success: calculateSuccess(dashboardData['mpc_tied']['1']),
+      nmpc_untied_1_success: calculateSuccess(dashboardData["nmpc_untied"]["1"],submitCondition["nmpc_untied"]["1"]),
+      nmpc_untied_2_success: calculateSuccess(dashboardData['nmpc_untied']['2'],submitCondition['nmpc_untied']['2']),
+      nmpc_tied_1_success: calculateSuccess(dashboardData['nmpc_tied']['1'], submitCondition['nmpc_tied']['1']),
+      nmpc_tied_2_success: calculateSuccess(dashboardData['nmpc_tied']['2'],submitCondition['nmpc_tied']['2']),
+      mpc_tied_1_success: calculateSuccess(dashboardData['mpc_tied']['1'],submitCondition['mpc_tied']['1']),
       
     }
       nmpc_untied_1 = {
@@ -309,12 +360,15 @@ module.exports.get2223 = async (req, res)=>{
     
 }
 
-function calculateSuccess(dashboardData){
-  
+function calculateSuccess(dashboardData, submitCondition){
+
+  if(submitCondition?.dates?.submittedOn){
+    return false;
+  }
     for(let forms of dashboardData){
       for(let form of forms['formData']){
         if(form['approvedValue']< form['cutOff']){
-          return true;
+          return false;
         }
       }
     }
@@ -378,13 +432,13 @@ async function getDashboardData(req,stateId, financialYear) {
 function getGrantStatus(grantClaim){
   let status = "";
 if (!grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
-  status = `Claim yet to be Submitted. `;
+  status = `Eligibility Condition Pending`;
 } else if (grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
-  status = `Claim for grant Submitted. Date - ${grantClaim.submissionDate}`;
+  status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${grantClaim.submissionDate}`;
 } else if (grantClaim.submissionDate && grantClaim.recommendationDate && !grantClaim.releaseDate) {
   status = `Claim Recommended to Ministry of Finance.`;
 } else if (grantClaim.submissionDate && grantClaim.recommendationDate && grantClaim.releaseDate) {
-  status = `Claim released to State by Ministry of Finance.`;
+  status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
 }
   return status;
 }

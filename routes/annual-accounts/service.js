@@ -2092,6 +2092,7 @@ exports.action = async (req, res) => {
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
     req.body.actionTakenByRole = req.decoded.role;
+    const actionTakenByRole = req.body.actionTakenByRole;
     let currentAnnualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: ObjectId(design_year),
@@ -2126,8 +2127,60 @@ exports.action = async (req, res) => {
     }
     req.body.status = finalStatus;
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
-    if (design_year != "606aaf854dff55e6c075d219")
-      req.body = calculateTabwiseStatus(req.body)
+    if(design_year != "606aaf854dff55e6c075d219" )
+req.body = calculateTabwiseStatus(req.body)
+
+if(design_year == "606aaf854dff55e6c075d219" )
+    await UpdateMasterSubmitForm(req, "annualAccounts");
+
+delete req.body.rejectReason
+  for(let key in req.body.audited.provisional_data){
+    if(typeof req.body.audited.provisional_data[key] == 'object' && req.body.audited.provisional_data[key] != null){
+        if(req.body.audited.provisional_data[key]){
+            if(actionTakenByRole === "STATE"){
+                req.body.audited.provisional_data[key]['rejectReason_state'] = req.body.audited.provisional_data[key]['rejectReason']
+                req.body.audited.provisional_data[key]['responseFile_state'] = req.body.audited.provisional_data[key]['responseFile']
+            }
+            else if(actionTakenByRole === "MoHUA"){
+                req.body.audited.provisional_data[key]['rejectReason_mohua'] = req.body.audited.provisional_data[key]['rejectReason']
+                req.body.audited.provisional_data[key]['responseFile_mohua'] = req.body.audited.provisional_data[key]['responseFile']
+            }
+        }
+    }
+    
+
+}
+for(let key in req.body.unAudited.provisional_data){
+    if(typeof req.body.unAudited.provisional_data[key] == 'object' && req.body.audited.provisional_data[key] != null){
+        if(req.body.unAudited.provisional_data[key]){
+            if(actionTakenByRole === "STATE"){
+                req.body.unAudited.provisional_data[key]['rejectReason_state'] = req.body.unAudited.provisional_data[key]['rejectReason'];
+                req.body.unAudited.provisional_data[key]['responseFile_state'] = req.body.unAudited.provisional_data[key]['responseFile']
+            }else if(actionTakenByRole === "MoHUA"){
+                req.body.unAudited.provisional_data[key]['rejectReason_mohua'] = req.body.unAudited.provisional_data[key]['rejectReason']
+                req.body.unAudited.provisional_data[key]['responseFile_mohua'] = req.body.unAudited.provisional_data[key]['responseFile']
+            }
+        }
+    }
+}
+if(req.body.audited){
+  if(actionTakenByRole === "STATE"){
+      req.body.audited['rejectReason_state'] = req.body.audited.rejectReason
+      req.body.audited['responseFile_state'] = req.body.audited.responseFile
+  }else if(actionTakenByRole === "MoHUA"){
+     req.body.audited['rejectReason_mohua'] = req.body.audited.rejectReason
+      req.body.audited['responseFile_mohua'] = req.body.audited.responseFile
+  }
+}
+if(req.body.unAudited){
+  if(actionTakenByRole === "STATE"){
+      req.body.unAudited['rejectReason_state'] = req.body.unAudited.rejectReason
+      req.body.unAudited['responseFile_state'] = req.body.unAudited.responseFile
+  }else if(actionTakenByRole === "MoHUA"){
+      req.body.unAudited['rejectReason_mohua'] = req.body.unAudited.rejectReason
+      req.body.unAudited['responseFile_mohua'] = req.body.unAudited.responseFile
+  }
+}
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
@@ -2138,8 +2191,6 @@ exports.action = async (req, res) => {
         msg: "no AnnualAccountData found",
       });
     }
-    if (design_year == "606aaf854dff55e6c075d219")
-      await UpdateMasterSubmitForm(req, "annualAccounts");
 
     return res.status(200).json({
       msg: "Action Submitted!",
