@@ -439,12 +439,13 @@ module.exports.updateForm = async (req, res) =>{
                 }
             }
                 delete form['history'] ;
+                let formHistory = JSON.parse(JSON.stringify(form))
                 delete form["_id"];
                 delete form['ulb'];
                 delete form['design_year'];
                 let updatedForm = await collection.findOneAndUpdate(
                     {ulb , [condition.design_year]: data.design_year},
-                    {$set: form, $push: {history: form }},
+                    {$set: form, $push: {history: formHistory }},
                     {new: true, runValidators: true}
                     );
                 numberOfFormsUpdated++;
@@ -463,8 +464,9 @@ module.exports.updateForm = async (req, res) =>{
 
                   //add reject reason/responseFile for single state entry
                   if (actionTakenByRole === "MoHUA") {
-                    form["rejectReason_mohua"] = data["rejectReason"];
+                    form["rejectReason_mohua"] = data["rejectReason_mohua"];
                     form["responseFile_mohua"] = data["responseFile"];
+                    formData['rejectReason_mohua'] = data["rejectReason_mohua"]
                   }
                   delete form["history"];
                   let updatedForm = await collection
@@ -494,8 +496,9 @@ module.exports.updateForm = async (req, res) =>{
           
                               //add reject reason/responseFile for single ulb entry
                               if (actionTakenByRole === "MoHUA") {
-                                form["rejectReason_mohua"] = data.rejectReason;
+                                form["rejectReason_mohua"] = data["rejectReason_mohua"];
                                 form["responseFile_mohua"] = data.responseFile;
+                                formData['rejectReason_mohua'] = data["rejectReason_mohua"]
                               }
                               delete form["history"];
                               let updatedForm = await collection.findOneAndUpdate(
