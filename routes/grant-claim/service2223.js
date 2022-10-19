@@ -432,13 +432,13 @@ async function getDashboardData(req,stateId, financialYear) {
 function getGrantStatus(grantClaim){
   let status = "";
 if (!grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
-  status = `Claim yet to be Submitted. `;
+  status = `Eligibility Condition Pending`;
 } else if (grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
-  status = `Claim for grant Submitted. Date - ${grantClaim.submissionDate}`;
+  status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${grantClaim.submissionDate}`;
 } else if (grantClaim.submissionDate && grantClaim.recommendationDate && !grantClaim.releaseDate) {
   status = `Claim Recommended to Ministry of Finance.`;
 } else if (grantClaim.submissionDate && grantClaim.recommendationDate && grantClaim.releaseDate) {
-  status = `Claim released to State by Ministry of Finance.`;
+  status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
 }
   return status;
 }
