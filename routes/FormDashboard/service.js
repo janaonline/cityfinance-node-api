@@ -80,7 +80,7 @@ function gtcSubmitCondition(type, installment, state, designYear){
                 state: ObjectId(state),
                 year: ObjectId("606aaf854dff55e6c075d219"),
                 type:"nonmillion_untied",
-                installment
+                installment:2
             }
         } else if( installment ===2){
             condition ={
@@ -88,7 +88,7 @@ function gtcSubmitCondition(type, installment, state, designYear){
                 state: ObjectId(state),
                 year: ObjectId("606aafb14dff55e6c075d3ae"),
                 type:"nonmillion_untied",
-                installment
+                installment:1
             }
         }
     } else if( type === "nmpc_tied"){
@@ -98,7 +98,7 @@ function gtcSubmitCondition(type, installment, state, designYear){
                 state: ObjectId(state),
                 year: ObjectId("606aaf854dff55e6c075d219"),
                 type:"nonmillion_tied",
-                installment
+                installment:2
             }
         } else if( installment ===2){
             condition ={
@@ -106,7 +106,7 @@ function gtcSubmitCondition(type, installment, state, designYear){
                 state: ObjectId(state),
                 year: ObjectId("606aafb14dff55e6c075d3ae"),
                 type:"nonmillion_tied",
-                installment
+                installment:1
             }
         }
     }else if(type === "mpc_tied"){
