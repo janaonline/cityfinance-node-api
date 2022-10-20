@@ -616,7 +616,12 @@ module.exports.dashboard = async (req, res) => {
             Sidemenu.findOne({_id:ObjectId("62c55f9c3671152ee4198dc5")}).lean()
         ]);
         
-        let totalForms = totalUlbs[0]["totalUlb"];
+        let totalForms;
+        if(totalUlbs.length){
+            totalForms = totalUlbs[0]["totalUlb"];
+        }else {
+            totalForms = 0
+        }
         for(let i =0; i < collectionArr.length; i++){
             let stateResponse = {
                 formName: '',
