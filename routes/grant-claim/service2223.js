@@ -175,6 +175,20 @@ module.exports.get2223 = async (req, res)=>{
         nmpc_tied_2_GrantData={},
         mpc_tied_1_GrantData = {};
 
+        let grantClaimObj = {
+          submissionDate: "",
+          recommendationDate: "",
+          releaseDate: "",
+          amountReleased: "",
+          amountAssigned: "",
+          name: "",
+          year: "",
+          installment: "",
+          GrantType: "",
+          noOfUlb: "",
+          status: "Eligibility Condition Pending",
+        };
+
     //   if (grantClaimedData) {
     //     if (grantClaimedData.hasOwnProperty("nmpc_tied")) {
     //       if (grantClaimedData["nmpc_tied"][0]["installment"] === "1") {
@@ -211,8 +225,99 @@ module.exports.get2223 = async (req, res)=>{
       state: ObjectId(stateId),
       design_year: ObjectId(financialYear),
     }).lean();
+
+    let grantClaimData = await GrantClaim.findOne({
+      financialYear: ObjectId(financialYear),
+      state: ObjectId(stateId),
+    }).lean();
+    let submitCondition = {
+      mpc_tied: {},
+      nmpc_tied: {},
+      nmpc_untied: {}
+    };
+    if (grantClaimData) {
+      let grantTypes = {
+        mpc: "mpc",
+        nmpc_tied: "nmpc_tied",
+        nmpc_untied: "nmpc_untied",
+      };
+      for (let key in grantClaimData) {
+        
+        if (grantTypes[key]) {
+          for (let i = 0; i < grantClaimData[key].length; i++) {
+            let grant = grantClaimData[key][i];
+            if (key === "mpc") {
+              if (grant.installment === "1") {
+                submitCondition["mpc_tied"]["1"] = grant;
+              }
+            } else if (key === "nmpc_tied") {
+              if (grant.installment === "1") {
+                submitCondition["nmpc_tied"]["1"] = grant;
+              } else if (grant.installment === "2") {
+                submitCondition["nmpc_tied"]["2"] = grant;
+              }
+            } else if (key === "nmpc_untied") {
+              if (grant.installment === "1") {
+                submitCondition["nmpc_untied"]["1"] = grant;
+              } else if (grant.installment === "2") {
+                submitCondition["nmpc_untied"]["2"] = grant;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    let conditionSuccess = { 
+      nmpc_untied_1_success: calculateSuccess(dashboardData["nmpc_untied"]["1"],submitCondition["nmpc_untied"]["1"]),
+      nmpc_untied_2_success: calculateSuccess(dashboardData['nmpc_untied']['2'],submitCondition['nmpc_untied']['2']),
+      nmpc_tied_1_success: calculateSuccess(dashboardData['nmpc_tied']['1'], submitCondition['nmpc_tied']['1']),
+      nmpc_tied_2_success: calculateSuccess(dashboardData['nmpc_tied']['2'],submitCondition['nmpc_tied']['2']),
+      mpc_tied_1_success: calculateSuccess(dashboardData['mpc_tied']['1'],submitCondition['mpc_tied']['1']),
+      
+    }
     if(!grantClaimedData){
-      throw new Error("Data not found");
+      nmpc_untied_1 = {
+        conditions: conditions_nmpc_untied_1st,
+        nmpc_untied_1_GrantData: grantClaimObj,
+        dashboardData: dashboardData["nmpc_untied"]["1"],
+        conditionSuccess: conditionSuccess['nmpc_untied_1_success']
+      };
+      nmpc_untied_2 = {
+        conditions: conditions_nmpc_untied_2nd,
+        nmpc_untied_2_GrantData: grantClaimObj,
+        dashboardData: dashboardData["nmpc_untied"]["2"],
+        conditionSuccess: conditionSuccess['nmpc_untied_2_success']
+      };
+      nmpc_tied_1 = {
+        conditions: conditions_nmpc_tied_1st,
+        nmpc_tied_1_GrantData: grantClaimObj,
+        dashboardData: dashboardData["nmpc_tied"]["1"],
+        conditionSuccess: conditionSuccess['nmpc_tied_1_success']
+      };
+      nmpc_tied_2 = {
+        conditions: conditions_nmpc_tied_2nd,
+        nmpc_tied_2_GrantData: grantClaimObj,
+        dashboardData: dashboardData["nmpc_tied"]["2"],
+        conditionSuccess: conditionSuccess['nmpc_tied_2_success']
+      };
+      mpc_tied_1 = {
+        conditions: conditions_mpc_tied_1st,
+        mpc_tied_1_GrantData: grantClaimObj,
+        dashboardData: dashboardData["mpc_tied"]["1"],
+        conditionSuccess: conditionSuccess['mpc_tied_1_success']
+      };
+
+      let submitClaim = {
+        nmpc_untied_1,
+        nmpc_untied_2,
+        nmpc_tied_1,
+        nmpc_tied_2,
+        mpc_tied_1,
+      };
+      return res.status(200).json({
+        data: submitClaim,
+      });
     }
 
     for (let i = 0; i < grantClaimedData.stateData.length; i++) {
@@ -248,62 +353,7 @@ module.exports.get2223 = async (req, res)=>{
       }
     }
     
-    let grantClaimData = await GrantClaim.findOne({
-      financialYear: ObjectId(financialYear),
-      state: ObjectId(stateId),
-    }).lean();
-    let submitCondition = {
-      mpc_tied: {},
-      nmpc_tied: {},
-      nmpc_untied: {}
-    };
-    if (grantClaimData) {
-      let grantTypes = {
-        mpc: "mpc",
-        nmpc_tied: "nmpc_tied",
-        nmpc_untied: "nmpc_untied",
-      };
-      for (let key in grantClaimData) {
-        // if(key === "mpc"){
-
-        // }else if( key === "nmpc_tied"){
-
-        // }else if(key === "nmpc_untied"){
-
-        // }
-        if (grantTypes[key]) {
-          for (let i = 0; i < grantClaimData[key].length; i++) {
-            let grant = grantClaimData[key][i];
-            if (key === "mpc") {
-              if (grant.installment === "1") {
-                submitCondition["mpc_tied"]["1"] = grant;
-              }
-            } else if (key === "nmpc_tied") {
-              if (grant.installment === "1") {
-                submitCondition["nmpc_tied"]["1"] = grant;
-              } else if (grant.installment === "2") {
-                submitCondition["nmpc_tied"]["2"] = grant;
-              }
-            } else if (key === "nmpc_untied") {
-              if (grant.installment === "1") {
-                submitCondition["nmpc_untied"]["1"] = grant;
-              } else if (grant.installment === "2") {
-                submitCondition["nmpc_untied"]["2"] = grant;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    let conditionSuccess = { 
-      nmpc_untied_1_success: calculateSuccess(dashboardData["nmpc_untied"]["1"],submitCondition["nmpc_untied"]["1"]),
-      nmpc_untied_2_success: calculateSuccess(dashboardData['nmpc_untied']['2'],submitCondition['nmpc_untied']['2']),
-      nmpc_tied_1_success: calculateSuccess(dashboardData['nmpc_tied']['1'], submitCondition['nmpc_tied']['1']),
-      nmpc_tied_2_success: calculateSuccess(dashboardData['nmpc_tied']['2'],submitCondition['nmpc_tied']['2']),
-      mpc_tied_1_success: calculateSuccess(dashboardData['mpc_tied']['1'],submitCondition['mpc_tied']['1']),
-      
-    }
+    
       nmpc_untied_1 = {
         conditions: conditions_nmpc_untied_1st,
         nmpc_untied_1_GrantData,
