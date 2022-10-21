@@ -242,7 +242,6 @@ module.exports.get2223 = async (req, res)=>{
         nmpc_untied: "nmpc_untied",
       };
       for (let key in grantClaimData) {
-        
         if (grantTypes[key]) {
           for (let i = 0; i < grantClaimData[key].length; i++) {
             let grant = grantClaimData[key][i];
@@ -326,29 +325,53 @@ module.exports.get2223 = async (req, res)=>{
       if (grantClaim['GrantType'].toString() === grantTypesObj['nmpc_untied']['_id'].toString()) {
         if (grantClaim["installment"] === 1) {
           nmpc_untied_1_GrantData = grantClaim;
-          nmpc_untied_1_GrantData.status = getGrantStatus(grantClaim);
+          nmpc_untied_1_GrantData.status = getGrantStatus(
+            grantClaim,
+            conditionSuccess.nmpc_untied_1_success,
+            submitCondition["nmpc_untied"]["1"]
+          );
           
         } else if (grantClaim["installment"] === 2) {
           nmpc_untied_2_GrantData = grantClaim;
-          nmpc_untied_2_GrantData.status = getGrantStatus(grantClaim);
+          nmpc_untied_2_GrantData.status = getGrantStatus(
+            grantClaim,
+            conditionSuccess.nmpc_untied_2_success,
+            submitCondition["nmpc_untied"]["2"]
+          );
 
         }
       }
-      if (grantClaim["GrantType"].toString() === grantTypesObj['nmpc_tied']["_id"].toString()) {
+      if (
+        grantClaim["GrantType"].toString() ===
+        grantTypesObj["nmpc_tied"]["_id"].toString()
+      ) {
         if (grantClaim["installment"] === 1) {
           nmpc_tied_1_GrantData = grantClaim;
-          nmpc_tied_1_GrantData.status = getGrantStatus(grantClaim);
+          nmpc_tied_1_GrantData.status = getGrantStatus(
+            grantClaim,
+            conditionSuccess.nmpc_tied_1_success,
+            submitCondition["nmpc_tied"]["1"]
+          );
         } else if (grantClaim["installment"] === 2) {
           nmpc_tied_2_GrantData = grantClaim;
-          nmpc_tied_2_GrantData.status = getGrantStatus(grantClaim);
-
+          nmpc_tied_2_GrantData.status = getGrantStatus(
+            grantClaim,
+            submitCondition.nmpc_tied_2_success,
+            submitCondition["nmpc_tied"]["2"]
+          );
         }
       }
-
-      if (grantClaim["GrantType"].toString() === grantTypesObj['mpc_tied']["_id"].toString()) {
+      if (
+        grantClaim["GrantType"].toString() ===
+        grantTypesObj["mpc_tied"]["_id"].toString()
+      ) {
         if (grantClaim["installment"] === 1) {
           mpc_tied_1_GrantData = grantClaim;
-          mpc_tied_1_GrantData.status = getGrantStatus(grantClaim);
+          mpc_tied_1_GrantData.status = getGrantStatus(
+            grantClaim,
+            conditionSuccess.mpc_tied_1_success,
+            submitCondition["mpc_tied"]["1"]
+          );
         }
       }
     }
@@ -479,16 +502,33 @@ async function getDashboardData(req,stateId, financialYear) {
     return dashboardData;
 }
 
-function getGrantStatus(grantClaim){
+function getGrantStatus(grantClaim, successCondition, submitCondition){
   let status = "";
-if (!grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
-  status = `Eligibility Condition Pending`;
-} else if (grantClaim.submissionDate && !grantClaim.recommendationDate && !grantClaim.releaseDate) {
-  status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${grantClaim.submissionDate}`;
-} else if (grantClaim.submissionDate && grantClaim.recommendationDate && !grantClaim.releaseDate) {
-  status = `Claim Recommended to Ministry of Finance.`;
-} else if (grantClaim.submissionDate && grantClaim.recommendationDate && grantClaim.releaseDate) {
-  status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
-}
+  if (!successCondition) {
+    status = `Eligibility Condition Pending`;
+  } 
+  // else if (
+  //   !grantClaim.submissionDate &&
+  //   !grantClaim.recommendationDate &&
+  //   !grantClaim.releaseDate
+  // ) {
+  //   status = `Eligibility Condition Pending`;
+  // }
+   else if (
+    !grantClaim.recommendationDate &&
+    !grantClaim.releaseDate
+  ) {
+    status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${submitCondition?.dates?.submittedOn}`;
+  } else if (
+    grantClaim.recommendationDate &&
+    !grantClaim.releaseDate
+  ) {
+    status = `Claim Recommended to Ministry of Finance.`;
+  } else if (
+    grantClaim.recommendationDate &&
+    grantClaim.releaseDate
+  ) {
+    status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
+  }
   return status;
 }
