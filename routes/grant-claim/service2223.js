@@ -524,31 +524,30 @@ async function getDashboardData(req,stateId, financialYear) {
 
 function getGrantStatus(grantClaim, successCondition, submitCondition){
   let status = "";
-  if (!successCondition) {
-    status = `Eligibility Condition Pending`;
+  if (successCondition && !submitCondition?.dates?.submittedOn ) {
+    status = `Submit Claim for Grant.`;
   } 
-  // else if (
-  //   !grantClaim.submissionDate &&
-  //   !grantClaim.recommendationDate &&
-  //   !grantClaim.releaseDate
-  // ) {
-  //   status = `Eligibility Condition Pending`;
-  // }
-   else if (
-    !grantClaim.recommendationDate &&
-    !grantClaim.releaseDate
-  ) {
-    status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${submitCondition?.dates?.submittedOn}`;
-  } else if (
-    grantClaim.recommendationDate &&
-    !grantClaim.releaseDate
-  ) {
-    status = `Claim Recommended to Ministry of Finance.`;
-  } else if (
-    grantClaim.recommendationDate &&
-    grantClaim.releaseDate
-  ) {
-    status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
+  else if(!succcessCondition && submitCondition?.dates?.submittedOn){
+    if (
+      !grantClaim.recommendationDate &&
+      !grantClaim.releaseDate
+    ) {
+      status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${submitCondition?.dates?.submittedOn}`;
+    } else if (
+      grantClaim.recommendationDate &&
+      !grantClaim.releaseDate
+    ) {
+      status = `Claim Recommended to Ministry of Finance.`;
+    } else if (
+      grantClaim.recommendationDate &&
+      grantClaim.releaseDate
+    ) {
+      status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
+    }
+  }
+  else if(!successCondition && !submitCondition?.dates?.submittedOn)
+  {
+    status = `Eligibility Condition Pending.`
   }
   return status;
 }
