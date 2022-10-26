@@ -434,10 +434,6 @@ module.exports.get2223 = async (req, res)=>{
 }
 
 function calculateSuccess(dashboardData, submitCondition){
-
-  if(submitCondition?.dates?.submittedOn){
-    return false;
-  }
     for(let forms of dashboardData){
       for(let form of forms['formData']){
         if(form['approvedValue']< form['cutOff']){
