@@ -267,14 +267,38 @@ module.exports.get2223 = async (req, res)=>{
       }
     }
 
-    let conditionSuccess = { 
-      nmpc_untied_1_success: calculateSuccess(dashboardData["nmpc_untied"]["1"],submitCondition["nmpc_untied"]["1"]),
-      nmpc_untied_2_success: calculateSuccess(dashboardData['nmpc_untied']['2'],submitCondition['nmpc_untied']['2']),
-      nmpc_tied_1_success: calculateSuccess(dashboardData['nmpc_tied']['1'], submitCondition['nmpc_tied']['1']),
-      nmpc_tied_2_success: calculateSuccess(dashboardData['nmpc_tied']['2'],submitCondition['nmpc_tied']['2']),
-      mpc_tied_1_success: calculateSuccess(dashboardData['mpc_tied']['1'],submitCondition['mpc_tied']['1']),
-      
-    }
+    let conditionSuccess = {
+      nmpc_untied_1_success: submitCondition["nmpc_untied"]["1"]?.dates?.submittedOn
+        ? false
+        : calculateSuccess(
+          dashboardData["nmpc_untied"]["1"],
+          submitCondition["nmpc_untied"]["1"]
+        ),
+      nmpc_untied_2_success: submitCondition["nmpc_untied"]["2"]?.dates?.submittedOn
+      ? false
+      :calculateSuccess(
+        dashboardData["nmpc_untied"]["2"],
+        submitCondition["nmpc_untied"]["2"]
+      ),
+      nmpc_tied_1_success: submitCondition["nmpc_tied"]["1"]?.dates?.submittedOn
+      ? false
+      :calculateSuccess(
+        dashboardData["nmpc_tied"]["1"],
+        submitCondition["nmpc_tied"]["1"]
+      ),
+      nmpc_tied_2_success: submitCondition["nmpc_tied"]["1"]?.dates?.submittedOn
+      ? false
+      :calculateSuccess(
+        dashboardData["nmpc_tied"]["2"],
+        submitCondition["nmpc_tied"]["2"]
+      ),
+      mpc_tied_1_success:  submitCondition["mpc_tied"]["1"]?.dates?.submittedOn
+      ? false
+      : calculateSuccess(
+        dashboardData["mpc_tied"]["1"],
+        submitCondition["mpc_tied"]["1"]
+      )
+    };
     if(!grantClaimedData){
       nmpc_untied_1 = {
         conditions: conditions_nmpc_untied_1st,
