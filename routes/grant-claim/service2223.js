@@ -527,7 +527,7 @@ function getGrantStatus(grantClaim, successCondition, submitCondition){
   if (successCondition && !submitCondition?.dates?.submittedOn ) {
     status = `Submit Claim for Grant.`;
   } 
-  else if(!succcessCondition && submitCondition?.dates?.submittedOn){
+  else if(!successCondition && submitCondition?.dates?.submittedOn){
     if (
       !grantClaim.recommendationDate &&
       !grantClaim.releaseDate
