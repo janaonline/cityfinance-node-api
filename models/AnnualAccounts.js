@@ -25,6 +25,10 @@ const ContentSchema = new Schema({
   status: statusType(),
   rejectReason: { type: String, default:"" },
   responseFile: pdfSchema(),
+  rejectReason_state: {type: String, default: ""},
+  rejectReason_mohua: {type: String, default: ""},
+  responseFile_state: pdfSchema(),
+  responseFile_mohua: pdfSchema(),
   _id: false,
 });
 
@@ -33,6 +37,10 @@ const ContentPDFSchema = new Schema({
   status: statusType(),
   rejectReason: { type: String, default:"" },
   responseFile: pdfSchema(),
+  rejectReason_state: {type: String, default: ""},
+  rejectReason_mohua: {type: String, default: ""},
+  responseFile_state: pdfSchema(),
+  responseFile_mohua: pdfSchema(),
   _id: false,
 });
 
@@ -70,6 +78,10 @@ const formDataSchema = new Schema({
   },
   rejectReason: { type: String, default:"" },
   responseFile: pdfSchema(),
+  rejectReason_state: {type: String, default: ""},
+  rejectReason_mohua: {type: String, default: ""},
+  responseFile_state: pdfSchema(),
+  responseFile_mohua: pdfSchema(),
   audit_status: {
     type: String,
     enum: {

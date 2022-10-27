@@ -9,6 +9,7 @@ const User = require('../../models/User')
 const Year = require('../../models/Year');
 const {canTakenAction} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
+const StateMasterForm = require('../../models/StateMasterForm')
 
 
 function response(form, res, successMsg ,errMsg){
@@ -228,10 +229,16 @@ exports.getActionPlans = async (req, res) => {
       state: ObjectId(state),
       design_year,
     }).lean();
+    
+    const stateMasterFormDataQuery = StateMasterForm.findOne({
+      state,
+      design_year
+    }).lean()
 
-    const [ data2122, data2223] = await Promise.all([
+    const [ data2122, data2223, stateMasterFormData] = await Promise.all([
       data2122Query,
       data2223Query,
+      stateMasterFormDataQuery
     ]);
 
     if(data2223){
@@ -240,10 +247,10 @@ exports.getActionPlans = async (req, res) => {
 
     }
     let uaArray;
-    let uaArray2223;
-    let ua2122projectExecute, ua2122sourceFund, ua2122yearOutlay;
-    if (data2122) {
-      if(data2122.isDraft === false){
+    // let uaArray2223;
+    // let ua2122projectExecute, ua2122sourceFund, ua2122yearOutlay;
+    if (stateMasterFormData) {
+      if(stateMasterFormData.isSubmit === true){
 
         uaArray = data2122.uaData;
         //Number of UAs
@@ -305,7 +312,7 @@ exports.getActionPlans = async (req, res) => {
       }
     }else{
       //previous year form not found 
-      if(!data2122){
+      if(!stateMasterFormData){
         
         return res.status(400).json({
           status: true,
