@@ -464,9 +464,9 @@ module.exports.updateForm = async (req, res) =>{
 
                   //add reject reason/responseFile for single state entry
                   if (actionTakenByRole === "MoHUA") {
-                    form["rejectReason_mohua"] = data["rejectReason_mohua"];
+                    form["rejectReason_mohua"] = data["rejectReason"];
                     form["responseFile_mohua"] = data["responseFile"];
-                    formData['rejectReason_mohua'] = data["rejectReason_mohua"]
+                    formData['rejectReason_mohua'] = data["rejectReason"]
                   }
                   delete form["history"];
                   let updatedForm = await collection
@@ -496,9 +496,9 @@ module.exports.updateForm = async (req, res) =>{
           
                               //add reject reason/responseFile for single ulb entry
                               if (actionTakenByRole === "MoHUA") {
-                                form["rejectReason_mohua"] = data["rejectReason_mohua"];
+                                form["rejectReason_mohua"] = data["rejectReason"];
                                 form["responseFile_mohua"] = data.responseFile;
-                                formData['rejectReason_mohua'] = data["rejectReason_mohua"]
+                                formData['rejectReason_mohua'] = data["rejectReason"]
                               }
                               delete form["history"];
                               let updatedForm = await collection.findOneAndUpdate(
