@@ -152,10 +152,18 @@ module.exports.get = catchAsync(async (req, res) => {
         }
         let formArr = [SFC, PTFR, GTC_STATE, ActionPlan]
        for(el of formArr) {
+            if(el !== GTC_STATE){
             let formData = await el.findOne(condition).lean()
             if (formData) {
 
                 output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']] , el['modelName'], user.role, role))
+                }
+            }else{
+                let formDataArray = await el.find(condition).lean();
+                if(formDataArray.length>0){
+                    let formData = getGTCFinalForm(formDataArray);
+                    output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']] , el['modelName'], user.role, role))
+                }
             }
         }
     }
@@ -361,3 +369,40 @@ const sortByPosition = (data) => {
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
 
+function getGTCFinalForm(formArray){
+    let formData = "";
+    let approvedForm = 0;
+    let pendingForm = 0;
+    let pendingFormData =  "";
+    for (let i = 0; i < formArray.length; i++) {
+      formData = formArray[i];
+      if (formData.status === "REJECTED") {//return rejected form if any rejected
+        return formData;
+      } else if (formData.status === "APPROVED") {
+        approvedForm++;
+      } else if (formData.status === "PENDING") {
+        pendingForm++;
+        pendingFormData = formData;
+      }
+    }
+    if(approvedForm === 8){//if all forms approved
+        return formData;
+    }
+    if (pendingForm === 8) {
+      //if all forms are submit, to get Under review by mohua status
+      return pendingFormData;
+    }
+    if(approvedForm < 8 && pendingForm > 0){
+        //if any form is pending, In progress
+        pendingFormData.isDraft = true;
+        return pendingFormData;
+    }else if(approvedForm < 8 && pendingForm === 0){
+        //if all forms submitted are approved but all 8 are not submitted.
+        //In progress
+        formData.status = 'PENDING';
+        formData.actionTakenByRole = 'STATE';
+        formData.isDraft = true;
+        return formData;
+     }
+    
+}
