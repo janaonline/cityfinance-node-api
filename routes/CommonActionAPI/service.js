@@ -631,3 +631,24 @@ function findForm(formArray, stateId){
     })
     return forms;
 }
+
+// db.getCollection('ulbs').aggregate([
+//     {
+//         $lookup: {
+//             from: "states",
+//             localField: "state",
+//             foreignField: "_id",
+//             as: "state"
+//         }
+//   },
+//   {$unwind : "$state"},
+//   {
+//       $lookup: {
+//             from: "annualaccountdatas",
+//             localField: "_id",
+//             foreignField: "ulb",
+//             as: "annualaccountdata",
+            
+//         }  
+//   },
+// ])

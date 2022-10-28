@@ -1,8 +1,8 @@
+const request = require('request')
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
-
 
 function response(form, res, successMsg, errMsg) {
     if (form) {
@@ -280,7 +280,6 @@ module.exports.createOrUpdateForm = async (req, res) => {
     }
 }
 
-
 module.exports.createForm = async (req, res) => {
     try {
         const data = req.body;
@@ -371,7 +370,6 @@ module.exports.createForm = async (req, res) => {
         });
     }
 }
-
 module.exports.fileDeFuncFiles = async (req, res) => {
     let query = [
         {
@@ -436,6 +434,81 @@ module.exports.fileDeFuncFiles = async (req, res) => {
                     }
                 }
                 console.log("arr", arr)
+            })
+        )
+        skip += batch;
+    }
+    return res.send({
+        data: arr,
+        number: arr.length,
+        total: documnetcounter
+    });
+}
+
+module.exports.OldFileDeFuncFiles = async (req, res) => {
+    let query = [
+        {
+            $lookup: {
+                from: "states",
+                localField: "state",
+                foreignField: "_id",
+                as: "state"
+            }
+        },
+        { $unwind: "$state" },
+        {
+            $project: {
+                _id: "$state._id",
+                year: "$design_year",
+                stateName: "$state.name",
+                stateCode: "$state.code",
+                million_tied: "$million_tied.pdfUrl",
+                nonmillion_tied: "$nonmillion_tied.pdfUrl",
+                nonmillion_untied: "$nonmillion_untied.pdfUrl"
+            }
+        }
+    ]
+    let data = await StateGTCCertificate.aggregate(query);
+    // console.log("data",data)
+    let documnetcounter = 1;
+    working = 0;
+    notWorking = 0;
+    let arr = []
+    let target = data.length;
+    let skip = 0;
+    let batch = 150;
+    while (skip <= target) {
+        const slice = data.slice(parseInt(skip), parseInt(skip) + batch);
+        await Promise.all(
+            slice.map(async el => {
+                for (let key in el) {
+                    documnetcounter++;
+                    if (key != '_id' && key != 'stateName' && key != 'stateCode' && el[key]) {
+                        let url = el[key];
+                        try {
+                            let response = await doRequest(url);
+                            console.log("suresh",response)
+                            let obj = {
+                                stateName: "",
+                                stateCode: "",
+                                key: "",
+                                url: "",
+                                year: ""
+                            }
+                            obj.stateName = el.stateName;
+                            obj.stateCode = el.stateCode;
+                            obj.key = key;
+                            obj.url = response
+                            obj.year = el.year
+                            // console.log("ppp", obj)
+                            arr.push(obj);
+                        } catch (error) {
+                            console.log('working', error)
+                            // `error` will be whatever you passed to `reject()` at the top
+                        }
+                    }
+                }
+                // console.log("arr", arr)
             })
         )
         skip += batch;
