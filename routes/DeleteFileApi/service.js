@@ -5,6 +5,9 @@ const AnnualAccounts = require('../../models/AnnualAccounts');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const GrantDistribution = require('../../models/GrantDistribution');
+const XVFcGrantForm = require('../../models/XVFcGrantForm');
+const WaterRejenuvation = require('../../models/WaterRejenuvation&Recycling');
+
 const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.pfmsaccounts = async (req, res) => {
@@ -135,6 +138,7 @@ module.exports.annualAccountData = async (req, res) => {
     }
     try {
         let query = [
+            { $match: condition },
             {
                 $lookup: {
                     from: "ulbs",
@@ -236,6 +240,181 @@ module.exports.propertyTaxFloorRate = async (req, res) => {
             }
         ]
         let data = await PropertyTaxFloorRate.aggregate(query);
+        let dataMissingFile = await getMissingArray(data);
+        return res.send(dataMissingFile);
+    } catch (error) {
+        return res.status(400).json({
+            status: false,
+            message: error.message
+        });
+    }
+}
+module.exports.propertyTaxFloorRate = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
+    try {
+        let query = [
+            { $match: condition },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
+            {
+                $project: {
+                    _id: "$state._id",
+                    year: "$design_year",
+                    stateName: "$state.name",
+                    stateCode: "$state.code",
+                    comManual: "$comManual.url",
+                    floorRate: "$floorRate.url",
+                    stateNotification: "$stateNotification.url",
+                    responseFile_mohua: "$responseFile_mohua.url",
+                }
+            }
+        ]
+        let data = await PropertyTaxFloorRate.aggregate(query);
+        let dataMissingFile = await getMissingArray(data);
+        return res.send(dataMissingFile);
+    } catch (error) {
+        return res.status(400).json({
+            status: false,
+            message: error.message
+        });
+    }
+}
+module.exports.xvfcGrantForm = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
+    try {
+        let query = [
+            { $match: condition },
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            { $unwind: "$ulb" },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "ulb.state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
+            {
+                $project: {
+                    _id: "$state._id",
+                    year: "$design_year",
+                    stateName: "$state.name",
+                    stateCode: "$state.code",
+                    ulbName: "$ulb.name",
+                    ulbCode: "$ulb.code",
+                    garbageFreeCities: { $arrayElemAt: ["$solidWasteManagement.documents.garbageFreeCities.url", 0] },
+                    waterSupplyCoverage: { $arrayElemAt: ["$solidWasteManagement.documents.waterSupplyCoverage.url", 0] }
+                }
+            }
+        ]
+        let data = await XVFcGrantForm.aggregate(query);
+        let dataMissingFile = await getMissingArray(data);
+        return res.send(dataMissingFile);
+    } catch (error) {
+        return res.status(400).json({
+            status: false,
+            message: error.message
+        });
+    }
+}
+module.exports.waterRejenuvation = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
+    try {
+        let query = [
+            { $match: condition },
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            { $unwind: "$ulb" },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "ulb.state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
+            {
+                $project: {
+                    _id: "$state._id",
+                    year: "$design_year",
+                    stateName: "$state.name",
+                    stateCode: "$state.code",
+                    ulbName: "$ulb.name",
+                    ulbCode: "$ulb.code",
+                    garbageFreeCities: { $arrayElemAt: ["$solidWasteManagement.documents.garbageFreeCities.url", 0] },
+                    waterSupplyCoverage: { $arrayElemAt: ["$solidWasteManagement.documents.waterSupplyCoverage.url", 0] }
+                }
+            }
+        ]
+        let data = await WaterRejenuvation.aggregate(query);
+        let dataMissingFile = await getMissingArray(data);
+        return res.send(dataMissingFile);
+    } catch (error) {
+        return res.status(400).json({
+            status: false,
+            message: error.message
+        });
+    }
+}
+module.exports.grantDistribution = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
+    try {
+        let query = [
+            { $match: condition },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
+            {
+                $project: {
+                    _id: "$state._id",
+                    year: "$design_year",
+                    stateName: "$state.name",
+                    stateCode: "$state.code",
+                    url: "$url",
+                }
+            }
+        ]
+        let data = await GrantDistribution.aggregate(query);
         let dataMissingFile = await getMissingArray(data);
         return res.send(dataMissingFile);
     } catch (error) {
