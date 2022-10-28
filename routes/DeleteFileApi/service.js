@@ -5,11 +5,16 @@ const AnnualAccounts = require('../../models/AnnualAccounts');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const GrantDistribution = require('../../models/GrantDistribution');
-
+const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.pfmsaccounts = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
     try {
         let query = [
+            { $match: condition },
             {
                 $lookup: {
                     from: "ulbs",
@@ -54,8 +59,13 @@ module.exports.pfmsaccounts = async (req, res) => {
     }
 }
 module.exports.propertyTaxOp = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
     try {
         let query = [
+            { $match: condition },
             {
                 $lookup: {
                     from: "ulbs",
@@ -101,6 +111,28 @@ module.exports.propertyTaxOp = async (req, res) => {
     }
 }
 module.exports.annualAccountData = async (req, res) => {
+    let condition = {};
+    let obj = {
+        _id: "$state._id",
+        year: "$design_year",
+        stateName: "$state.name",
+        stateCode: "$state.code",
+        ulbName: "$ulb.name",
+        ulbCode: "$ulb.code"
+    };
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
+    if (req.query.audited_year) {
+        condition['audited.year'] = ObjectId(req.query.audited_year);
+        obj["standardized_data_pdf"] = "$audited.standardized_data.pdf.url";
+        obj["standardized_data_excel"] = "$audited.standardized_data.excel.url"
+    }
+    if (req.query.unAudited_year) {
+        condition['unAudited.year'] = ObjectId(req.query.unAudited_year);
+        obj["standardized_data_pdf"] = "$unAudited.standardized_data.pdf.url";
+        obj["standardized_data_excel"] = "$unAudited.standardized_data.excel.url"
+    }
     try {
         let query = [
             {
@@ -122,28 +154,7 @@ module.exports.annualAccountData = async (req, res) => {
             },
             { $unwind: "$state" },
             {
-                $project: {
-                    _id: "$state._id",
-                    year: "$design_year",
-                    stateName: "$state.name",
-                    stateCode: "$state.code",
-                    ulbName: "$ulb.name",
-                    ulbCode: "$ulb.code",
-                    bal_sheet_pdf: "$audited.provisional_data.bal_sheet.pdf.url",
-                    bal_sheet_excel: "$audited.provisional_data.bal_sheet.excel.url",
-                    bal_sheet_schedules_pdf: "$audited.provisional_data.bal_sheet_schedules.pdf.url",
-                    bal_sheet_schedules_excel: "$audited.provisional_data.bal_sheet_schedules.excel.url",
-                    inc_exp_pdf: "$audited.provisional_data.inc_exp.pdf.url",
-                    inc_exp_excel: "$audited.provisional_data.inc_exp.excel.url",
-                    inc_exp_schedules_pdf: "$audited.provisional_data.inc_exp_schedules.pdf.url",
-                    inc_exp_schedules_excel: "$audited.provisional_data.inc_exp_schedules.excel.url",
-                    cash_flow_pdf: "$audited.provisional_data.cash_flow.pdf.url",
-                    cash_flow_excel: "$audited.provisional_data.cash_flow.excel.url",
-                    auditor_report_pdf: "$audited.provisional_data.auditor_report.pdf.url",
-                    auditor_report_excel: "$audited.provisional_data.auditor_report.excel.url",
-                    standardized_data_pdf: "$audited.standardized_data.pdf.url",
-                    standardized_data_excel: "$audited.standardized_data.excel.url"
-                }
+                $project: obj
             }
         ]
         let data = await AnnualAccounts.aggregate(query);
@@ -157,8 +168,13 @@ module.exports.annualAccountData = async (req, res) => {
     }
 }
 module.exports.statefinancecommissionformation = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
     try {
         let query = [
+            { $match: condition },
             {
                 $lookup: {
                     from: "states",
@@ -190,8 +206,13 @@ module.exports.statefinancecommissionformation = async (req, res) => {
     }
 }
 module.exports.propertyTaxFloorRate = async (req, res) => {
+    let condition = {};
+    if (req.query.design_year) {
+        condition['design_year'] = ObjectId(req.query.design_year);
+    }
     try {
         let query = [
+            { $match: condition },
             {
                 $lookup: {
                     from: "states",
@@ -224,7 +245,6 @@ module.exports.propertyTaxFloorRate = async (req, res) => {
         });
     }
 }
-
 const getMissingArray = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -281,7 +301,6 @@ const getMissingArray = (data) => {
         }
     })
 }
-
 function doRequest(url) {
     return new Promise((resolve, reject) => {
         let options = {
