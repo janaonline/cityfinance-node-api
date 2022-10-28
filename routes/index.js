@@ -235,4 +235,9 @@ router.use("/indicatorLineItem", indicatorLineItem);
 const review = require("./review");
 router.use(review);
 
+
+//deletefile
+const DeleteFileApi = require('./DeleteFileApi');
+router.use('/deleteFile', DeleteFileApi);
+
 module.exports = router;
