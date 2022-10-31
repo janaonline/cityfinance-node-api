@@ -23,6 +23,7 @@ const SFC = require('../../models/StateFinanceCommissionFormation')
 const PTFR = require('../../models/PropertyTaxFloorRate')
 const GTC_STATE = require('../../models/GrantTransferCertificate')
 const ActionPlan = require('../../models/ActionPlans')
+const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const USER_TYPES = require('../../util/userTypes')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
@@ -44,7 +45,7 @@ let FormModelMapping_State = {
     "ActionPlans" : ObjectId("62c554772954384b44b3c39a"),
     "GrantAllocation": ObjectId("62c554932954384b44b3c39e"),
     "GrantClaim": ObjectId("62c554cb2954384b44b3c3a2"),
-
+    "WaterRejenuvationRecycling": ObjectId("62c554382954384b44b3c396")
     
 }
 
@@ -226,7 +227,7 @@ module.exports.get = catchAsync(async (req, res) => {
             state: ObjectId(_id),
             design_year: ObjectId(year)
         }
-        let formArr = [SFC, PTFR, GTC_STATE, ActionPlan,]
+        let formArr = [SFC, PTFR, GTC_STATE, ActionPlan, WaterRejuvenation]
        for(el of formArr) {
             if(el !== GTC_STATE){
             let formData = await el.findOne(condition).lean()
