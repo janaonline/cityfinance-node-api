@@ -248,8 +248,8 @@ exports.getWaterRejenuvation = async (req, res) => {
     let uaArray;
     // let uaArray2223;
     // let ua2122WaterBodies, ua2122ReuseWater, ua2122ServiceLevelIndicators;
-    if (data2122) {
-      if(data2122.isDraft === false){
+    if (stateMasterFormData) {
+      if(stateMasterFormData.isSubmit === true){
 
         uaArray = data2122.uaData;
         for (let i = 0; i < uaArray.length; i++) {
@@ -306,7 +306,7 @@ exports.getWaterRejenuvation = async (req, res) => {
         // if(data2223 && data2122){
         //   data2122.declaration = data2223.declaration
         // }
-      }else if(data2122.isDraft === true){
+      }else if(stateMasterFormData.isSubmit === false){
          //no final submit
         return res.status(400).json({
           status: true,
@@ -315,7 +315,7 @@ exports.getWaterRejenuvation = async (req, res) => {
       }
       
     }else{
-      if(!data2122){//Not found
+      if(!stateMasterFormData){//Not found
         return res.status(400).json({
           status: true,
           message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/water-rejenuvation target="_blank">Click here</a> in order to submit form`,
