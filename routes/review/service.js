@@ -1286,6 +1286,23 @@ function removeEscapeChars(entity){
         case "STATE":
           switch (collectionName) {
             case CollectionNames.propTaxState:
+              if(!data["comManual"]["name"]){
+                data['comManual'] = {
+                  name: "",
+                  url: ""
+                }
+              }
+              if(!data["stateNotification"]["name"]){
+                data['stateNotification'] = {
+                  name: "",
+                  url: ""
+                }
+              }if(!data["floorRate"]["name"]){
+                data['floorRate'] = {
+                  name: "",
+                  url: ""
+                }
+              }
               data["stateNotification"]["name"] = removeEscapeChars(data["stateNotification"]["name"]);
               data["comManual"]["name"] = removeEscapeChars(data["comManual"]["name"]);
               data["floorRate"]["name"] = removeEscapeChars(data["floorRate"]["name"]);
