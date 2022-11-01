@@ -310,7 +310,7 @@ exports.getWaterRejenuvation = async (req, res) => {
          //no final submit
         return res.status(400).json({
           status: true,
-          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/water-rejenuvation target="_blank">Click here</a> in order to submit form`,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
         })
       }
       
@@ -318,7 +318,7 @@ exports.getWaterRejenuvation = async (req, res) => {
       if(!stateMasterFormData){//Not found
         return res.status(400).json({
           status: true,
-          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/water-rejenuvation target="_blank">Click here</a> in order to submit form`,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
         })
       }
       // if(data2223){
