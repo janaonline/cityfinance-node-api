@@ -736,11 +736,11 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
 
       if(collectionName ===  CollectionNames['annual']){
         if(entity.audited.responseFile){
-          entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
+          // entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
           obj.auditedResponseFile_state =  entity.audited.responseFile;
         }
         if(entity.unAudited.responseFile){
-          entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
+          // entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
           obj.unAuditedResponseFile_state = entity.unAudited.responseFile;
         }
       }
@@ -762,11 +762,11 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
       }
       if(collectionName ===  CollectionNames['annual']){
         if(entity.audited.responseFile){
-          entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
+          // entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
           obj.auditedResponseFile_mohua =  entity.audited.responseFile;
         }
         if(entity.unAudited.responseFile){
-          entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
+          // entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
           obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile;
         }
       }
@@ -808,7 +808,7 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
 }
 
 function removeEscapeChars(entity){
-  return entity.replace(/(\n|,)/gm, " ");
+  return entity.replace(/(\n|,)/gm, "");
 }
 
  function createDynamicElements(collectionName, formType, entity) {
