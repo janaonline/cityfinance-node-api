@@ -29,10 +29,23 @@ function response(form, res, successMsg ,errMsg){
 
 exports.saveActionPlans = async (req, res) => {
   try {
-    // let { state, _id } = req.decoded;
-    // let data = req.body;
-    // req.body.actionTakenBy = _id;
-    // req.body.modifiedAt = new Date();
+    if(req.body.design_year === "606aaf854dff55e6c075d219"){
+      let { state, _id } = req.decoded;
+      let data = req.body;
+      req.body.actionTakenBy = _id;
+      req.body.modifiedAt = new Date();
+      await ActionPlans.findOneAndUpdate(
+        { state: ObjectId(state), design_year: ObjectId(data.design_year) },
+        data,
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+      await UpdateStateMasterForm(req, "actionPlans");
+      return Response.OK(res, null, "Submitted!");
+    }
     const data = req.body;
     const user = req.decoded;
     let formData = {};
@@ -165,19 +178,6 @@ exports.saveActionPlans = async (req, res) => {
       }
   }
 
-    // await ActionPlans.findOneAndUpdate(
-    //   { state: ObjectId(state), design_year: ObjectId(data.design_year) },
-    //   data,
-    //   {
-    //     upsert: true,
-    //     new: true,
-    //     setDefaultsOnInsert: true,
-    //   }
-    // );
-    // if(data.design_year === "606aaf854dff55e6c075d219"){//check for year 2021-22
-    //   await UpdateStateMasterForm(req, "actionPlans");
-    // }
-    // return Response.OK(res, null, "Submitted!");
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
