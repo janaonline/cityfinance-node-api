@@ -447,8 +447,9 @@ const getMissingArray = (data) => {
                 await Promise.all(
                     slice.map(async el => {
                         for (let key in el) {
-                            documnetcounter++;
+                            
                             if (key != '_id' && key != 'stateName' && key != 'stateCode' && el[key]) {
+                                documnetcounter++;
                                 let url = el[key];
                                 try {
                                     let response = await doRequest(url);
