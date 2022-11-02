@@ -736,11 +736,11 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
 
       if(collectionName ===  CollectionNames['annual']){
         if(entity.audited.responseFile){
-          // entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
+          entity.audited.responseFile.name =  removeEscapeChars(entity.audited.responseFile?.name)
           obj.auditedResponseFile_state =  entity.audited.responseFile;
         }
         if(entity.unAudited.responseFile){
-          // entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
+          entity.unAudited.responseFile.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
           obj.unAuditedResponseFile_state = entity.unAudited.responseFile;
         }
       }
@@ -762,11 +762,11 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
       }
       if(collectionName ===  CollectionNames['annual']){
         if(entity.audited.responseFile){
-          // entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
+          entity.audited.responseFile.name =  removeEscapeChars(entity.audited.responseFile?.name)
           obj.auditedResponseFile_mohua =  entity.audited.responseFile;
         }
         if(entity.unAudited.responseFile){
-          // entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
+          entity.unAudited.responseFile.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
           obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile;
         }
       }
@@ -808,7 +808,7 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
 }
 
 function removeEscapeChars(entity){
-  return entity.replace(/(\n|,)/gm, "");
+  return !entity ? entity: entity.replace(/(\n|,)/gm, " ");
 }
 
  function createDynamicElements(collectionName, formType, entity) {
@@ -927,6 +927,11 @@ function removeEscapeChars(entity){
               let unAuditedStandardized = data?.unAudited?.standardized_data;
               let auditedStandardized = data?.audited?.standardized_data
 
+              removeEscapesFromAnnual(unAuditedProvisional);
+              removeEscapesFromAnnual(auditedProvisional);
+              removeEscapesFromAnnual(unAuditedStandardized);
+              removeEscapesFromAnnual(auditedStandardized);
+              
               if(data?.actionTakenByRole === "STATE"){
                 auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
                   entity?.formStatus ?? ""
@@ -1345,6 +1350,16 @@ function removeEscapeChars(entity){
           }
     }
     return entity;
+}
+
+function removeEscapesFromAnnual(element) {
+  for (let key in element) {
+    if (element[key] && typeof element[key] === "object") {
+      if (element[key].hasOwnProperty("rejectReason")) {
+        element[key]["rejectReason"] = removeEscapeChars(element[key]["rejectReason"]);
+      }
+    }
+  }
 }
 
 function sortGtcData(entity){
