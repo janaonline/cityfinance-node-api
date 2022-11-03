@@ -310,6 +310,7 @@ module.exports.createForm = async (req, res) => {
         const { _id: actionTakenBy, role: actionTakenByRole } = user;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = "STATE";
+        formData['stateSubmit'] = ""
 
         const condition = {};
         condition.state = data.state;
@@ -326,6 +327,7 @@ module.exports.createForm = async (req, res) => {
                     message: "Form already submitted."
                 })
             } else if (!submittedForm) {
+                formData['stateSubmit'] = new Date();
                 const form = await GrantTransferCertificate.create(formData);
                 if (form) {//add history
                     formData['createdAt'] = form.createdAt;
@@ -356,6 +358,7 @@ module.exports.createForm = async (req, res) => {
                 formData['createdAt'] = submittedForm.createdAt;
                 formData['modifiedAt'] = new Date();
                 formData.modifiedAt.toISOString();
+                formData['stateSubmit'] = new Date();
                 const form = await GrantTransferCertificate.findOneAndUpdate(
                     condition,
                     {
