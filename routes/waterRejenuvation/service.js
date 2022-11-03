@@ -28,6 +28,23 @@ function response(form, res, successMsg ,errMsg){
 
 exports.saveWaterRejenuvation = async (req, res) => {
   try {
+    if(req.body.design_year === "606aaf854dff55e6c075d219"){
+      let { state, _id } = req.decoded;
+      let data = req.body;  
+      req.body.actionTakenBy = _id;
+      req.body.modifiedAt = new Date();
+      await WaterRejenuvation.findOneAndUpdate(
+        { state: ObjectId(state), design_year: ObjectId(data.design_year) },
+        data,
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true,
+        }
+      );
+      await UpdateStateMasterForm(req, "waterRejuventation");
+      return Response.OK(res, null, "Submitted!");
+    }
     let { state, _id } = req.decoded;
     let data = req.body;
     const user = req.decoded;
@@ -165,20 +182,6 @@ exports.saveWaterRejenuvation = async (req, res) => {
         });
       }
     }
-
-    // req.body.actionTakenBy = _id;
-    // req.body.modifiedAt = new Date();
-    // await WaterRejenuvation.findOneAndUpdate(
-    //   { state: ObjectId(state), design_year: ObjectId(data.design_year) },
-    //   data,
-    //   {
-    //     upsert: true,
-    //     new: true,
-    //     setDefaultsOnInsert: true,
-    //   }
-    // );
-    // await UpdateStateMasterForm(req, "waterRejuventation");
-    // return Response.OK(res, null, "Submitted!");
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
@@ -248,8 +251,8 @@ exports.getWaterRejenuvation = async (req, res) => {
     let uaArray;
     // let uaArray2223;
     // let ua2122WaterBodies, ua2122ReuseWater, ua2122ServiceLevelIndicators;
-    if (data2122) {
-      if(data2122.isDraft === false){
+    if (stateMasterFormData) {
+      if(stateMasterFormData.isSubmit === true){
 
         uaArray = data2122.uaData;
         for (let i = 0; i < uaArray.length; i++) {
@@ -306,19 +309,19 @@ exports.getWaterRejenuvation = async (req, res) => {
         // if(data2223 && data2122){
         //   data2122.declaration = data2223.declaration
         // }
-      }else if(data2122.isDraft === true){
+      }else if(stateMasterFormData.isSubmit === false){
          //no final submit
         return res.status(400).json({
           status: true,
-          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/water-rejenuvation target="_blank">Click here</a> in order to submit form`,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
         })
       }
       
     }else{
-      if(!data2122){//Not found
+      if(!stateMasterFormData){//Not found
         return res.status(400).json({
           status: true,
-          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/water-rejenuvation target="_blank">Click here</a> in order to submit form`,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
         })
       }
       // if(data2223){

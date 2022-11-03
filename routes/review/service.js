@@ -697,9 +697,10 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
         obj.mohua_status = entity["status"];
       }
       if (entity["rejectReason_mohua"]) {
-        obj.rejectReason_mohua = entity["rejectReason_mohua"];
+        obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
       }
       if (entity["responseFile_mohua"]) {
+        entity["responseFile_mohua"]["name"] = removeEscapeChars( entity["responseFile_mohua"]["name"] )  
         obj.responseFile_mohua = entity["responseFile_mohua"];
       }
       return obj;
@@ -723,9 +724,10 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
       formStatus === STATUS_LIST.Rejected_By_State
     ) {
       if (entity["rejectReason_state"]) {
-        obj.rejectReason_state = entity["rejectReason_state"];
+        obj.rejectReason_state = removeEscapeChars(entity["rejectReason_state"]);
       }
       if (entity["responseFile_state"]) {
+        entity["responseFile_state"]["name"] = removeEscapeChars( entity["responseFile_state"]["name"] )  
         obj.responseFile_state = entity["responseFile_state"];
       }
       if (entity["status"]) {
@@ -734,9 +736,11 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
 
       if(collectionName ===  CollectionNames['annual']){
         if(entity.audited.responseFile){
+          // entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
           obj.auditedResponseFile_state =  entity.audited.responseFile;
         }
         if(entity.unAudited.responseFile){
+          // entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
           obj.unAuditedResponseFile_state = entity.unAudited.responseFile;
         }
       }
@@ -747,9 +751,10 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
       formStatus === STATUS_LIST.Rejected_By_MoHUA
     ) {
       if (entity["rejectReason_mohua"]) {
-        obj.rejectReason_mohua = entity["rejectReason_mohua"];
+        obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
       }
       if (entity["responseFile_mohua"]) {
+        entity["responseFile_mohua"]["name"] = removeEscapeChars( entity["responseFile_mohua"]["name"] )  
         obj.responseFile_mohua = entity["responseFile_mohua"];
       }
       if (entity["status"]) {
@@ -757,9 +762,11 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
       }
       if(collectionName ===  CollectionNames['annual']){
         if(entity.audited.responseFile){
+          // entity.audited.responseFile?.name =  removeEscapeChars(entity.audited.responseFile?.name)
           obj.auditedResponseFile_mohua =  entity.audited.responseFile;
         }
         if(entity.unAudited.responseFile){
+          // entity.unAudited.responseFile?.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
           obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile;
         }
       }
@@ -774,9 +781,10 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
       if(!stateFlag && !mohuaFlag) break;
        if (history["actionTakenByRole"] === "STATE" && stateFlag) {
          if (history["rejectReason_state"]) {
-           obj.rejectReason_state = history["rejectReason_state"];
+           obj.rejectReason_state = removeEscapeChars(history["rejectReason_state"]);
          }
          if (history["responseFile_state"]) {
+        entity["responseFile_state"]["name"] = removeEscapeChars( entity["responseFile_state"]["name"] )  
            obj.responseFile_state = history["responseFile_state"];
          }
          if (history["status"]) {
@@ -785,9 +793,11 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
 
          if(collectionName ===  CollectionNames['annual']){
           if(history.audited.responseFile){
+            history["audited"]["responseFile"]["name"] = removeEscapeChars(history["audited"]["responseFile"]["name"])  
             obj.auditedResponseFile_state =  history.audited.responseFile;
           }
           if(history.unAudited.responseFile){
+            history["unAudited"]["responseFile"]["name"] = removeEscapeChars(history["unAudited"]["responseFile"]["name"])  
             obj.unAuditedResponseFile_state = history.unAudited.responseFile;
           }
         }
@@ -795,6 +805,10 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
        }
     }
     return obj;
+}
+
+function removeEscapeChars(entity){
+  return entity.replace(/(\n|,)/gm, "");
 }
 
  function createDynamicElements(collectionName, formType, entity) {
@@ -1160,6 +1174,10 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
               break;
             
             case CollectionNames.propTaxUlb:
+              data["proof"]["name"] = removeEscapeChars(data["proof"]["name"]);
+              data["rateCard"]["name"] = removeEscapeChars(data["rateCard"]["name"]);
+              data["ptCollection"]["name"] = removeEscapeChars(data["ptCollection"]["name"]);
+              
             entity = ` ${data?.design_year?.year ?? ""}, ${
               entity?.formStatus ?? ""
             }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
@@ -1272,6 +1290,26 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
         case "STATE":
           switch (collectionName) {
             case CollectionNames.propTaxState:
+              if(!data["comManual"]["name"]){
+                data['comManual'] = {
+                  name: "",
+                  url: ""
+                }
+              }
+              if(!data["stateNotification"]["name"]){
+                data['stateNotification'] = {
+                  name: "",
+                  url: ""
+                }
+              }if(!data["floorRate"]["name"]){
+                data['floorRate'] = {
+                  name: "",
+                  url: ""
+                }
+              }
+              data["stateNotification"]["name"] = removeEscapeChars(data["stateNotification"]["name"]);
+              data["comManual"]["name"] = removeEscapeChars(data["comManual"]["name"]);
+              data["floorRate"]["name"] = removeEscapeChars(data["floorRate"]["name"]);
                 entity = `${data?.design_year?.year ?? ""}, ${
                   entity?.formStatus ?? ""
                 }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${

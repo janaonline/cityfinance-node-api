@@ -23,6 +23,7 @@ const SFC = require('../../models/StateFinanceCommissionFormation')
 const PTFR = require('../../models/PropertyTaxFloorRate')
 const GTC_STATE = require('../../models/GrantTransferCertificate')
 const ActionPlan = require('../../models/ActionPlans')
+const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const USER_TYPES = require('../../util/userTypes')
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
@@ -44,29 +45,105 @@ let FormModelMapping_State = {
     "ActionPlans" : ObjectId("62c554772954384b44b3c39a"),
     "GrantAllocation": ObjectId("62c554932954384b44b3c39e"),
     "GrantClaim": ObjectId("62c554cb2954384b44b3c3a2"),
-
+    "WaterRejenuvationRecycling": ObjectId("62c554382954384b44b3c396")
     
 }
 
-const calculateTick = (tooltip, loggedInUserRole) => {
-    if(loggedInUserRole == USER_TYPES.ulb){
-        if (tooltip == StatusList.Not_Started || tooltip == StatusList.In_Progress || tooltip == StatusList.Rejected_By_State || tooltip == StatusList.Rejected_By_MoHUA) {
-            return ticks['red']
-        } else {
-            return ticks['green']
+const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
+    //get 3 parameter formType and compare formType with loggedInUserRole
+    if(viewFor === USER_TYPES.ulb){
+        if (loggedInUserRole == USER_TYPES.ulb) {
+          if (
+            tooltip == StatusList.Not_Started ||
+            tooltip == StatusList.In_Progress ||
+            tooltip == StatusList.Rejected_By_State ||
+            tooltip == StatusList.Rejected_By_MoHUA
+          ) {
+            return ticks["red"];
+          } else {
+            return ticks["green"];
+          }
+        } else if (loggedInUserRole == USER_TYPES.state) {
+          if (
+            tooltip == StatusList.Not_Started ||
+            tooltip == StatusList.In_Progress ||
+            tooltip == StatusList.Under_Review_By_State
+          ) {
+            return ticks["red"];
+          } else if (
+            tooltip == StatusList.Rejected_By_State ||
+            tooltip == StatusList.Rejected_By_MoHUA ||
+            tooltip == StatusList.Under_Review_By_MoHUA ||
+            tooltip == StatusList.Approved_By_MoHUA
+          ) {
+            return ticks["green"];
+          }
+        } else if (
+          loggedInUserRole == USER_TYPES.mohua ||
+          loggedInUserRole == USER_TYPES.admin
+        ) {
+          if (
+            tooltip == StatusList.Not_Started ||
+            tooltip == StatusList.In_Progress ||
+            tooltip == StatusList.Under_Review_By_State ||
+            tooltip == StatusList.Rejected_By_State ||
+            tooltip == StatusList.Under_Review_By_MoHUA
+          ) {
+            return ticks["red"];
+          } else if (
+            tooltip == StatusList.Rejected_By_MoHUA ||
+            tooltip == StatusList.Approved_By_MoHUA
+          ) {
+            return ticks["green"];
+          }
         }
-    }else if(loggedInUserRole == USER_TYPES.state){
-        if (tooltip == StatusList.Not_Started || tooltip == StatusList.In_Progress || tooltip == StatusList.Under_Review_By_State ) {
-            return ticks['red']
-        } else if(tooltip == StatusList.Rejected_By_State || tooltip == StatusList.Rejected_By_MoHUA || tooltip == StatusList.Under_Review_By_MoHUA || tooltip == StatusList.Approved_By_MoHUA ) {
-            return ticks['green']
+    }else if( viewFor === USER_TYPES.state){
+        if (loggedInUserRole == USER_TYPES.state) {
+          if (
+            tooltip == StatusList.Not_Started ||
+            tooltip == StatusList.In_Progress ||
+            tooltip == StatusList.Under_Review_By_State ||
+            tooltip == StatusList.Rejected_By_MoHUA
+          ) {
+            return ticks["red"];
+          } else if (
+            tooltip == StatusList.Under_Review_By_MoHUA ||
+            tooltip == StatusList.Approved_By_MoHUA
+          ) {
+            return ticks["green"];
+          }
+        } else if (
+          loggedInUserRole == USER_TYPES.mohua ||
+          loggedInUserRole == USER_TYPES.admin
+        ) {
+          if (
+            tooltip == StatusList.Not_Started ||
+            tooltip == StatusList.In_Progress ||
+            tooltip == StatusList.Under_Review_By_MoHUA
+          ) {
+            return ticks["red"];
+          } else if (
+            tooltip == StatusList.Rejected_By_MoHUA ||
+            tooltip == StatusList.Approved_By_MoHUA
+          ) {
+            return ticks["green"];
+          }
         }
-    }else if(loggedInUserRole == USER_TYPES.mohua || loggedInUserRole == USER_TYPES.admin  ){
-        if (tooltip == StatusList.Not_Started || tooltip == StatusList.In_Progress || tooltip == StatusList.Under_Review_By_State || tooltip == StatusList.Rejected_By_State || tooltip == StatusList.Under_Review_By_MoHUA  ) {
-            return ticks['red']
-        } else if( tooltip == StatusList.Rejected_By_MoHUA  || tooltip == StatusList.Approved_By_MoHUA ) {
-            return ticks['green']
+    }else if( viewFor === USER_TYPES.mohua){
+      if (
+        loggedInUserRole == USER_TYPES.mohua ||
+        loggedInUserRole == USER_TYPES.admin
+      ) {
+        if (
+          tooltip == StatusList.Not_Started ||
+          tooltip == StatusList.In_Progress ||
+          tooltip == StatusList.Under_Review_By_MoHUA
+        ) {
+          return ticks["red"];
+        } else if (tooltip == StatusList.Under_Review_By_MoHUA) {
+          return ticks["green"];
         }
+      }
     }
    
 
@@ -80,7 +157,7 @@ const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole, vie
     let actionTakenByRole = formData.actionTakenByRole;
     let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
     let tooltip = calculateStatus(status, actionTakenByRole, isDraft, viewFor  );
-    let tick = calculateTick(tooltip,loggedInUserRole)
+    let tick = calculateTick(tooltip,loggedInUserRole, viewFor)
 
     return {
         [formId]: {
@@ -150,7 +227,7 @@ module.exports.get = catchAsync(async (req, res) => {
             state: ObjectId(_id),
             design_year: ObjectId(year)
         }
-        let formArr = [SFC, PTFR, GTC_STATE, ActionPlan]
+        let formArr = [SFC, PTFR, GTC_STATE, ActionPlan, WaterRejuvenation]
        for(el of formArr) {
             if(el !== GTC_STATE){
             let formData = await el.findOne(condition).lean()
