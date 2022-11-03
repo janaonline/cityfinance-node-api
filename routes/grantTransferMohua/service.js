@@ -13,6 +13,14 @@ const MasterForm = require("../../models/MasterForm");
 const Redis = require("../../service/redis");
 const moment = require("moment");
 const { promisify } = require("util");
+const GTC = require('../../models/GrantTransferCertificate')
+
+const GRANT_TYPES = {
+   "nonmillion_untied":"60f6cdb468e143a9b134c337",
+   "nonmillion_tied":"60f6cdb468e143a9b134c339",
+  "million_tied": "60f6cdb368e143a9b134c335"
+}
+
 
 exports.get = async (req, res) => {
   try {
@@ -37,6 +45,7 @@ exports.get = async (req, res) => {
       states = ULB.find({ isMillionPlus: "Yes", isUA: "Yes" })
         .select({ state: 1 })
         .lean();
+    let gtcForms =  GTC.find(query).lean()
     delete query.design_year;
     let allUlb = ULB.find(query)
       .select({ _id: 1, state: 1, isMillionPlus: 1, status: 1 })
@@ -52,11 +61,13 @@ exports.get = async (req, res) => {
       states,
       allUlb,
       ulbSubmittedForm,
+      gtcForms
     ]);
     if (data[1].length > 0) {
       let grantTypesMap = {},
         yearsMap = {};
       ulbMap = {};
+      gtcFormsMap = {};
       data[0].forEach((element) => {
         grantTypesMap[element._id] = element.name;
       });
@@ -67,6 +78,12 @@ exports.get = async (req, res) => {
         if (yearsMap[element.state]) yearsMap[element.state].push(element);
         else yearsMap[element.state] = [element];
       });
+      data[6].forEach((element)=> {
+        let key = `${element.state}_${GRANT_TYPES[element.type]}_${element.installment}`
+        gtcFormsMap[key] =  element.stateSubmit ?? ""
+
+      })
+
       data[1] = JSON.parse(JSON.stringify(data[1]));
       if (csv === "true") {
         data[1].forEach((element) => {
@@ -78,6 +95,10 @@ exports.get = async (req, res) => {
               return true;
             }
             innerElement.year = yearsMap[innerElement.year];
+            if(design_year === "606aafb14dff55e6c075d3ae"){
+              let key = `${element.state}_${innerElement.GrantType}_${innerElement.installment}`
+                innerElement.submissionDate = gtcFormsMap[key];
+            }
             innerElement.GrantType = grantTypesMap[innerElement.GrantType];
             if (innerElement.submissionDate)
               innerElement.submissionDate = moment(
@@ -361,7 +382,7 @@ exports.get = async (req, res) => {
         }
       }
     } else {
-      ExcelData = await makeData();
+      ExcelData = await makeData(design_year);
     }
     if (csv === "true") {
       let field = {
@@ -414,7 +435,7 @@ const ulbInState = async (state, isMillionPlus, allUlb, ulbSubmittedForm) => {
   return { ulbCount };
 };
 
-const makeData = async () => {
+const makeData = async (design_year) => {
   let allData = await getStates();
   excelData = [];
   allData.forEach((ele) => {
@@ -432,10 +453,19 @@ const makeData = async () => {
       "2021-22",
       "2021-22",
     ];
+    if(design_year === "606aafb14dff55e6c075d3ae"){
+      year = [
+        "2022-23",
+        "2022-23",
+        "2022-23",
+        "2022-23",
+        "2022-23",
+      ]
+    }
     grantTypes = [
-      "Million Plus for Water Supply and SWM",
       "Non-Million Untied",
       "Non-Million Tied",
+      "Million Plus for Water Supply and SWM",
     ];
     grantIndex = 0;
     installmentIndex = 0;
@@ -532,6 +562,7 @@ const getUlbs = async (state, name) => {
 exports.uploadTemplate = async (req, res) => {
   try {
     const { url, design_year } = req.body;
+    let gtcFormsMap = {};
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
         return Response.BadRequest(err, err.message);
@@ -563,10 +594,17 @@ exports.uploadTemplate = async (req, res) => {
           .status(400)
           .xls("error_sheet.xlsx", { error: "Invalid Format" });
       }
+      if(design_year === "606aafb14dff55e6c075d3ae"){
+        const gtcForms =  await GTC.find({design_year}).lean()
 
+        gtcForms.forEach((element)=> {
+          let key = `${element.state}_${GRANT_TYPES[element.type]}_${element.installment}`
+          gtcFormsMap[key] =  (element.stateSubmit ? moment(element.stateSubmit).format("L"): element.stateSubmit ) ?? ""
+        })
+      }
       let xlsData = await Service.dataFormating(XslData, field);
       // validate data
-      const result = await validate(xlsData);
+      const result = await validate(xlsData,gtcFormsMap, design_year);
       if (!result.valid) {
         let field = {
           name: "State Name",
@@ -655,7 +693,7 @@ function readXlsxFile(file) {
   });
 }
 
-async function validate(data) {
+async function validate(data, gtcFormsMap, design_year) {
   try {
     let valid = true,
       copyData = JSON.parse(JSON.stringify(data));
@@ -745,6 +783,13 @@ async function validate(data) {
         element.error += "Installment should be a number,";
       }
       let date = moment(element.submissionDate, "L");
+      if(design_year === "606aafb14dff55e6c075d3ae"){
+        let key = `${stateNameMap[element.name]["state"]}_${element.GrantType}_${element.installment}`
+        if(gtcFormsMap[key] && gtcFormsMap[key] !== element.submissionDate){
+          valid = false;
+          element.error+="submission date cannot be changed,"
+        }
+      }
       console.log(date._isValid);
       if (date._isValid) {
         element.submissionDate = date._d;
