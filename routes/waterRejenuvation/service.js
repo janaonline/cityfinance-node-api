@@ -249,26 +249,16 @@ exports.getWaterRejenuvation = async (req, res) => {
 
     }
     let uaArray;
-    // let uaArray2223;
-    // let ua2122WaterBodies, ua2122ReuseWater, ua2122ServiceLevelIndicators;
     if (stateMasterFormData) {
       if(stateMasterFormData.isSubmit === true){
 
         uaArray = data2122.uaData;
         for (let i = 0; i < uaArray.length; i++) {
-          //Number of UAs
-          // for (let ua of uaArray) {
+
             let ua = uaArray[i];
             //an entry of ua
             for (let category in ua) {
               //category in ua
-              // if (category === "waterBodies")
-              //   ua2122WaterBodies = uaArray[i].waterBodies;
-              // if (category === "reuseWater")
-              //   ua2122ReuseWater = uaArray[i].reuseWater;
-              // if (category === "serviceLevelIndicators")
-              //   ua2122ServiceLevelIndicators =
-              //     uaArray[i].serviceLevelIndicators;
               if (
                 category === "waterBodies" ||
                 category === "reuseWater" ||
@@ -283,32 +273,7 @@ exports.getWaterRejenuvation = async (req, res) => {
               }
             }
   
-            // if (data2223) {
-            //   uaArray2223 = data2223.uaData;
-            //   //Number of UAs
-            //   // for (let i = 0; i < uaArray2223.length; i++) {
-            //   let ua = uaArray2223[i];
-            //   // for (let ua of uaArray2223) {
-            //   //category in ua
-            //   for (let category in ua) {
-            //     if (category === "waterBodies") {
-            //       ua2122WaterBodies.push(...uaArray2223[i].waterBodies);
-            //     } else if (category === "reuseWater") {
-            //       ua2122ReuseWater.push(...uaArray2223[i].reuseWater);
-            //     } else if (category === "serviceLevelIndicators") {
-            //       ua2122ServiceLevelIndicators.push(
-            //         ...uaArray2223[i].serviceLevelIndicators
-            //       );
-            //     }
-            //   }
-            //   // }
-            //   // }
-            // }
       }
-        // }
-        // if(data2223 && data2122){
-        //   data2122.declaration = data2223.declaration
-        // }
       }else if(stateMasterFormData.isSubmit === false){
          //no final submit
         return res.status(400).json({
@@ -324,23 +289,9 @@ exports.getWaterRejenuvation = async (req, res) => {
           message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
         })
       }
-      // if(data2223){
-      //   return res.status(200).json({
-      //     status: true,
-      //     message: "Data 2223",
-      //     data: data2223
-      //   })
-      // }
+      
     }
   
-    // if(data2122 && data2223){
-    //   data2223.uaData = data2122.uaData;
-    //   return res.status(200).json({
-    //     status: true,
-    //     message: "Data found And Appended for 22-23 ",
-    //     data: data2223
-    //   })
-    // }else
      if(data2122){
       data2122.status = null
       data2122.isDraft = null
