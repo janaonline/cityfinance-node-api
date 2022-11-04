@@ -595,7 +595,10 @@ exports.uploadTemplate = async (req, res) => {
           .xls("error_sheet.xlsx", { error: "Invalid Format" });
       }
       if(design_year === "606aafb14dff55e6c075d3ae"){
-        const gtcForms =  await GTC.find({design_year, year: design_year}).lean()
+        const gtcForms = await GTC.find({
+          design_year,
+          year: design_year,
+        }).lean();
 
         gtcForms.forEach((element)=> {
           let key = `${element.state}_${GRANT_TYPES[element.type]}_${element.installment}`
@@ -785,7 +788,12 @@ async function validate(data, gtcFormsMap, design_year) {
       let date = moment(element.submissionDate, "L");
       if(design_year === "606aafb14dff55e6c075d3ae"){
         let key = `${stateNameMap[element.name]["state"]}_${element.GrantType}_${element.installment}`
-        if(gtcFormsMap[key] && gtcFormsMap[key] !== element.submissionDate){
+        if(gtcFormsMap[key]){
+          if( gtcFormsMap[key] !== element.submissionDate){
+            valid = false;
+            element.error+="submission date cannot be changed,"
+          }
+        } else if(element.submissionDate){
           valid = false;
           element.error+="submission date cannot be changed,"
         }
