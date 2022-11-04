@@ -45,7 +45,7 @@ exports.get = async (req, res) => {
       states = ULB.find({ isMillionPlus: "Yes", isUA: "Yes" })
         .select({ state: 1 })
         .lean();
-    let gtcForms =  GTC.find(query).lean()
+    let gtcForms =  GTC.find({design_year, year: design_year}).lean()
     delete query.design_year;
     let allUlb = ULB.find(query)
       .select({ _id: 1, state: 1, isMillionPlus: 1, status: 1 })
@@ -595,7 +595,7 @@ exports.uploadTemplate = async (req, res) => {
           .xls("error_sheet.xlsx", { error: "Invalid Format" });
       }
       if(design_year === "606aafb14dff55e6c075d3ae"){
-        const gtcForms =  await GTC.find({design_year}).lean()
+        const gtcForms =  await GTC.find({design_year, year: design_year}).lean()
 
         gtcForms.forEach((element)=> {
           let key = `${element.state}_${GRANT_TYPES[element.type]}_${element.installment}`
