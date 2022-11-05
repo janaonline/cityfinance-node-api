@@ -543,7 +543,12 @@ function getGrantStatus(grantClaim, successCondition, submitCondition){
       grantClaim.recommendationDate &&
       grantClaim.releaseDate
     ) {
-        status = `Claim released to State by Ministry of Finance. ${grantClaim.amountAssigned}`;
+      if(grantClaim.amountReleased){
+        status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
+      }else{
+        status = `Claim released to State by Ministry of Finance.`;
+        
+      }
     }
   }
   else if(!successCondition && !submitCondition?.dates?.submittedOn)
