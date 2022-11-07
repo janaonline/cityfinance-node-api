@@ -462,6 +462,10 @@ const getMissingArray = (data) => {
                                     }
                                     obj.stateName = el.stateName;
                                     obj.stateCode = el.stateCode;
+                                    if (el?.ulbName) {
+                                        obj.ulbName = el?.ulbName;
+                                        obj.ulbCode = el?.ulbCode;
+                                    }
                                     obj.key = key;
                                     obj.url = response
                                     obj.year = el.year
