@@ -5,6 +5,7 @@ const {BackendHeaderHost} =  require('../../util/envUrl');
 const GrantTypes = require('../../models/GrantType');
 const {CollectionNames} = require('../../util/15thFCstatus');
 const GrantClaim = require('../../models/GrantClaim');
+const moment = require("moment");
 const gtcConstants = {
     mpc_tied : "Million Plus for Water Supply and SWM",
     nmpc_untied: "Non-Million Untied",
@@ -532,7 +533,7 @@ function getGrantStatus(grantClaim, successCondition, submitCondition){
       !grantClaim.recommendationDate &&
       !grantClaim.releaseDate
     ) {
-      status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${submitCondition?.dates?.submittedOn}`;
+      status = `Claim for Grant Submitted and Under Process by MoHUA. Date - ${moment(submitCondition?.dates?.submittedOn).format("L")}`;
     } else if (
       grantClaim.recommendationDate &&
       !grantClaim.releaseDate
@@ -542,7 +543,12 @@ function getGrantStatus(grantClaim, successCondition, submitCondition){
       grantClaim.recommendationDate &&
       grantClaim.releaseDate
     ) {
-      status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
+      if(grantClaim.amountReleased){
+        status = `Claim released to State by Ministry of Finance. ${grantClaim.amountReleased}`;
+      }else{
+        status = `Claim released to State by Ministry of Finance.`;
+        
+      }
     }
   }
   else if(!successCondition && !submitCondition?.dates?.submittedOn)

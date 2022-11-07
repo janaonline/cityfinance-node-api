@@ -152,10 +152,11 @@ exports.uploadTemplate = async (req, res) => {
       let xslDataStateName = xslDataStateInfo[0].state.name;
       let stateName = stateInfo[0].state.name;
       if(stateName !== xslDataStateName){
-        return BadRequest(res,null, "Wrong state file");
+        return res.status(400).xls("error_sheet.xlsx", [{"message": "Wrong state file"}]);
       }
       if(ulbCount != (XslData.length- emptyCensus) ){
-        return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
+        return res.status(400).xls("error_sheet.xlsx", [{"message": `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`}]);
+        // return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
       }
       const notValid = await validate(XslData, formData);
       if (notValid) {
