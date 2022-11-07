@@ -6,9 +6,6 @@ const StateFinanceCommissionFormation = require('../../models/StateFinanceCommis
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const GrantDistribution = require('../../models/GrantDistribution');
 const XVFcGrantULBForm = require('../../models/XVFcGrantForm');
-
-
-
 const WaterRejenuvation = require('../../models/WaterRejenuvation&Recycling');
 
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -353,36 +350,27 @@ module.exports.waterRejenuvation = async (req, res) => {
     try {
         let query = [
             { $match: condition },
-            {
-                $lookup: {
-                    from: "ulbs",
-                    localField: "ulb",
-                    foreignField: "_id",
-                    as: "ulb"
-                }
-            },
-            { $unwind: "$ulb" },
-            {
+             {
                 $lookup: {
                     from: "states",
-                    localField: "ulb.state",
+                    localField: "state",
                     foreignField: "_id",
-                    as: "state"
+                    as : "state"
                 }
-            },
-            { $unwind: "$state" },
-            {
+             },
+             { $unwind: "$state" },
+             { $unwind: "$uaData" },
+             { $unwind: "$uaData.waterBodies" },
+             {
                 $project: {
                     _id: "$state._id",
                     year: "$design_year",
                     stateName: "$state.name",
                     stateCode: "$state.code",
-                    ulbName: "$ulb.name",
-                    ulbCode: "$ulb.code",
-                    garbageFreeCities: { $arrayElemAt: ["$solidWasteManagement.documents.garbageFreeCities.url", 0] },
-                    waterSupplyCoverage: { $arrayElemAt: ["$solidWasteManagement.documents.waterSupplyCoverage.url", 0] }
+                    photo: { $arrayElemAt: ["$uaData.waterBodies.photos.url", 0] },
+                    declaration: "$declaration.url"
                 }
-            }
+             }
         ]
         let data = await WaterRejenuvation.aggregate(query);
         let dataMissingFile = await getMissingArray(data);
