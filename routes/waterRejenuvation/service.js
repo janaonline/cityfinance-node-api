@@ -249,8 +249,8 @@ exports.getWaterRejenuvation = async (req, res) => {
 
     }
     let uaArray;
-    if (stateMasterFormData) {
-      if(stateMasterFormData.isSubmit === true){
+    if (data2122) {
+      if(data2122.isDraft === false){
 
         uaArray = data2122.uaData;
         for (let i = 0; i < uaArray.length; i++) {
@@ -274,7 +274,7 @@ exports.getWaterRejenuvation = async (req, res) => {
             }
   
       }
-      }else if(stateMasterFormData.isSubmit === false){
+      }else if(data2122.isDraft === true){
          //no final submit
         return res.status(400).json({
           status: true,
@@ -283,7 +283,7 @@ exports.getWaterRejenuvation = async (req, res) => {
       }
       
     }else{
-      if(!stateMasterFormData){//Not found
+      if(!data2122){//Not found
         return res.status(400).json({
           status: true,
           message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
