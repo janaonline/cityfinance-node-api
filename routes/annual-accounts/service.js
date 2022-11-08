@@ -1030,13 +1030,22 @@ exports.dataset = catchAsync(async (req, res) => {
             ulbName: "$ulb.name",
             state: "$state.name",
             modifiedAt: "$modifiedAt",
-            "2019-20_balance_pdf":
+            "2019-20_balance_pdf": [
               "$audited.provisional_data.bal_sheet.pdf.url",
-            "2019-20_balance_excel":
+              "$audited.provisional_data.bal_sheet_schedules.pdf.url",
+            ],
+            "2019-20_balance_excel": [
               "$audited.provisional_data.bal_sheet.excel.url",
-            "2019-20_income_pdf": "$audited.provisional_data.inc_exp.pdf.url",
-            "2019-20_income_excel":
+              "$audited.provisional_data.bal_sheet_schedules.excel.url",
+            ],
+            "2019-20_income_pdf": [
+              "$audited.provisional_data.inc_exp.pdf.url",
+              "$audited.provisional_data.inc_exp_schedules.pdf.url",
+            ],
+            "2019-20_income_excel": [
               "$audited.provisional_data.inc_exp.excel.url",
+              "$audited.provisional_data.inc_exp_schedules.excel.url",
+            ],
           },
         },
         {
@@ -1094,12 +1103,18 @@ exports.dataset = catchAsync(async (req, res) => {
             state: "$state.name",
             modifiedAt: "$modifiedAt",
             "2020-21_balance_pdf":
-              "$unAudited.provisional_data.bal_sheet.pdf.url",
+              ["$unAudited.provisional_data.bal_sheet.pdf.url",
+              "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
             "2020-21_balance_excel":
-              "$unAudited.provisional_data.bal_sheet.excel.url",
-            "2020-21_income_pdf": "$unAudited.provisional_data.inc_exp.pdf.url",
+             [ "$unAudited.provisional_data.bal_sheet.excel.url",
+             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
+            ],
+            "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
+            "$unAudited.provisional_data.inc_exp_schedules.pdf.url"          ],
             "2020-21_income_excel":
-              "$unAudited.provisional_data.inc_exp.excel.url",
+              ["$unAudited.provisional_data.inc_exp.excel.url",
+              "$unAudited.provisional_data.inc_exp_schedules.excel.url"
+            ],
           },
         },
         {
