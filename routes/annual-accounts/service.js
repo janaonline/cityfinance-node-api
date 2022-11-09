@@ -905,22 +905,22 @@ exports.dataset = catchAsync(async (req, res) => {
           state: "$state.name",
           ulbName: "$ulb.name",
           modifiedAt: "$modifiedAt",
-          "2015-16_income_pdf": ["$documents.financial_year_2015_16.pdf"],
-          "2015-16_income_excel": ["$documents.financial_year_2015_16.excel"],
-          "2015-16_balance_pdf": ["$documents.financial_year_2015_16.pdf"],
-          "2015-16_balance_excel": ["$documents.financial_year_2015_16.excel"],
-          "2016-17_income_pdf": ["$documents.financial_year_2016_17.pdf"],
-          "2016-17_income_excel": ["$documents.financial_year_2016_17.excel"],
-          "2016-17_balance_pdf": ["$documents.financial_year_2016_17.pdf"],
-          "2016-17_balance_excel": ["$documents.financial_year_2016_17.excel"],
-          "2017-18_income_pdf": ["$documents.financial_year_2017_18.pdf"],
-          "2017-18_income_excel": ["$documents.financial_year_2017_18.excel"],
-          "2017-18_balance_pdf": ["$documents.financial_year_2017_18.pdf"],
-          "2017-18_balance_excel": ["$documents.financial_year_2017_18.excel"],
-          "2018-19_income_pdf": ["$documents.financial_year_2018_19.pdf"],
-          "2018-19_income_excel": ["$documents.financial_year_2018_19.excel"],
-          "2018-19_balance_pdf": ["$documents.financial_year_2018_19.pdf"],
-          "2018-19_balance_excel": ["$documents.financial_year_2018_19.excel"],
+          "2015-16_income_pdf": "$documents.financial_year_2015_16.pdf",
+          "2015-16_income_excel": "$documents.financial_year_2015_16.excel",
+          "2015-16_balance_pdf": "$documents.financial_year_2015_16.pdf",
+          "2015-16_balance_excel": "$documents.financial_year_2015_16.excel",
+          "2016-17_income_pdf": "$documents.financial_year_2016_17.pdf",
+          "2016-17_income_excel": "$documents.financial_year_2016_17.excel",
+          "2016-17_balance_pdf": "$documents.financial_year_2016_17.pdf",
+          "2016-17_balance_excel": "$documents.financial_year_2016_17.excel",
+          "2017-18_income_pdf": "$documents.financial_year_2017_18.pdf",
+          "2017-18_income_excel": "$documents.financial_year_2017_18.excel",
+          "2017-18_balance_pdf": "$documents.financial_year_2017_18.pdf",
+          "2017-18_balance_excel": "$documents.financial_year_2017_18.excel",
+          "2018-19_income_pdf": "$documents.financial_year_2018_19.pdf",
+          "2018-19_income_excel": "$documents.financial_year_2018_19.excel",
+          "2018-19_balance_pdf": "$documents.financial_year_2018_19.pdf",
+          "2018-19_balance_excel": "$documents.financial_year_2018_19.excel",
         },
       },
 
@@ -980,8 +980,7 @@ exports.dataset = catchAsync(async (req, res) => {
       data.modifiedAt = el?.modifiedAt;
       data.year = year;
       data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-      data.fileUrl = el?.file?.url;
-
+      data.fileUrl = [el?.file?.url];
       finalData.push(data);
     });
   } else {
