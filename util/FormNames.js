@@ -14,3 +14,9 @@ module.exports.FormNames = {
 // "Annual Accounts", "Linking of PFMS Account", "Property Tax Operationalisation",
 // "SLBs for Water Supply and Sanitation", "Open Defecation Free (ODF)", 
 // "Garbage Free City (GFC)", "Scoring"],
+
+module.exports.YEAR_CONSTANTS = {
+    "20_21": "606aadac4dff55e6c075c507",
+    "21_22":"606aaf854dff55e6c075d219",
+    "22_23":"606aafb14dff55e6c075d3ae",
+}

@@ -26,7 +26,7 @@ const ExcelJS = require("exceljs");
 const { canTakenAction } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
-const { FormNames } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS } = require('../../util/FormNames');
 var https = require('https');
 var request = require('request')
 function doRequest(url) {
@@ -1584,21 +1584,24 @@ exports.getAccounts = async (req, res) => {
       annualAccountData.status == "APPROVED"
     ) {
       // annualAccountData.status = "PENDING";
-      if (annualAccountData.unAudited.submit_annual_accounts) {
-        let proData = annualAccountData.unAudited.provisional_data;
-        for (const key in proData) {
-          if (key == "auditor_report") continue;
-          proData[key].status = "PENDING";
-          proData[key].rejectReason = null;
+      if(annualAccountData.design_year !== YEAR_CONSTANTS["22_23"]){
+        if (annualAccountData.unAudited.submit_annual_accounts) {
+          let proData = annualAccountData.unAudited.provisional_data;
+          for (const key in proData) {
+            if (key == "auditor_report") continue;
+            proData[key].status = "PENDING";
+            proData[key].rejectReason = null;
+          }
+        }
+        if (annualAccountData.audited.submit_annual_accounts) {
+          let proData = annualAccountData.audited.provisional_data;
+          for (const key in proData) {
+            proData[key].rejectReason = null;
+            proData[key].status = "PENDING";
+          }
         }
       }
-      if (annualAccountData.audited.submit_annual_accounts) {
-        let proData = annualAccountData.audited.provisional_data;
-        for (const key in proData) {
-          proData[key].rejectReason = null;
-          proData[key].status = "PENDING";
-        }
-      }
+     
     }
     Object.assign(annualAccountData, obj)
     Object.assign(annualAccountData, { canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB", role) })
