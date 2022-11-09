@@ -587,9 +587,9 @@ responseObj.gfc.pending = gfcPending
 responseObj.odf.approved = odfApproved
 responseObj.odf.pending = odfPending
 
-if(responseObj.fourSLB.approved.count != ulbs.length ||
-    responseObj.gfc.approved.count != ulbs.length ||
-    responseObj.odf.approved.count != ulbs.length 
+if(responseObj.fourSLB.pending.count === ulbs.length ||
+    responseObj.gfc.pending.count === ulbs.length ||
+    responseObj.odf.pending.count === ulbs.length 
     ){
 return res.status(200).json({
     data: responseObj,
@@ -615,7 +615,10 @@ let slbWeigthed ={}
   let arr = []
   let filteredData = []
   TEslbdata.forEach(el => {
- filteredData = el.twentyeightslbforms.data.filter(el2=> lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString()))
+    if (el.hasOwnProperty("twentyeightslbforms"))
+      filteredData = el.twentyeightslbforms.data.filter((el2) =>
+        lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
+      );
 arr.push({
 data: filteredData,
 population: el.population
