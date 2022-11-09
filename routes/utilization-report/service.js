@@ -688,6 +688,13 @@ let role  = req.decoded.role;
     })
   }
   let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+ /* Checking if the user has access to the form. */
+  if(!ulbData.access_2122){
+    return res.status(400).json({
+      success: false,
+      message: `Last year form access not allowed.`
+    })
+  }
   let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
   let currentYear = await Year.findOne({_id: ObjectId(design_year)}).lean()
   // current year
