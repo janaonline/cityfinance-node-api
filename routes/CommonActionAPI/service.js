@@ -374,35 +374,39 @@ module.exports.updateForm = async (req, res) =>{
                 if(masterForm.name == "Annual Accounts"){
      
                     form['common'] = true
-                    for(let key in form.audited.provisional_data){
-                        if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
-                            if(form.audited.provisional_data[key]){
-                                if(actionTakenByRole === "STATE"){
-                                    form.audited.provisional_data[key]['status'] = formData.status
-                                    form.audited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
-                                    form.audited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
-                                }
-                                else if(actionTakenByRole === "MoHUA"){
-                                    form.audited.provisional_data[key]['status'] = formData.status
-                                    form.audited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
-                                    form.audited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
+                    if(form.audited.submit_annual_accounts){
+                        for(let key in form.audited.provisional_data){
+                            if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
+                                if(form.audited.provisional_data[key]){
+                                    if(actionTakenByRole === "STATE"){
+                                        form.audited.provisional_data[key]['status'] = formData.status
+                                        form.audited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
+                                        form.audited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
+                                    }
+                                    else if(actionTakenByRole === "MoHUA"){
+                                        form.audited.provisional_data[key]['status'] = formData.status
+                                        form.audited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
+                                        form.audited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
+                                    }
                                 }
                             }
+                            
+        
                         }
-                        
-    
                     }
-                    for(let key in form.unAudited.provisional_data){
-                        if(typeof form.unAudited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
-                            if(form.unAudited.provisional_data[key]){
-                                if(actionTakenByRole === "STATE"){
-                                    form.unAudited.provisional_data[key]['status'] = formData.status
-                                    form.unAudited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
-                                    form.unAudited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
-                                }else if(actionTakenByRole === "MoHUA"){
-                                    form.unAudited.provisional_data[key]['status'] = formData.status
-                                    form.unAudited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
-                                    form.unAudited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
+                    if(form.unAudited.submit_annual_accounts){
+                        for(let key in form.unAudited.provisional_data){
+                            if(typeof form.unAudited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
+                                if(form.unAudited.provisional_data[key]){
+                                    if(actionTakenByRole === "STATE"){
+                                        form.unAudited.provisional_data[key]['status'] = formData.status
+                                        form.unAudited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
+                                        form.unAudited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
+                                    }else if(actionTakenByRole === "MoHUA"){
+                                        form.unAudited.provisional_data[key]['status'] = formData.status
+                                        form.unAudited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
+                                        form.unAudited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
+                                    }
                                 }
                             }
                         }
