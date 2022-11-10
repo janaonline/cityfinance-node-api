@@ -688,7 +688,7 @@ let role  = req.decoded.role;
     })
   }
   let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
-  /* Checking if the user has access to the form. */
+ /* Checking if the user has access to the form. */
   if(!ulbData.access_2122){
     return res.status(400).json({
       success: false,

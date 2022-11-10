@@ -26,7 +26,7 @@ const ExcelJS = require("exceljs");
 const { canTakenAction } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
-const { FormNames } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS } = require('../../util/FormNames');
 var https = require('https');
 var request = require('request')
 function doRequest(url) {
@@ -982,8 +982,7 @@ exports.dataset = catchAsync(async (req, res) => {
       data.modifiedAt = el?.modifiedAt;
       data.year = year;
       data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-      data.fileUrl = el?.file?.url;
-
+      data.fileUrl = [el?.file?.url];
       finalData.push(data);
     });
   } else {
@@ -1032,20 +1031,22 @@ exports.dataset = catchAsync(async (req, res) => {
             ulbName: "$ulb.name",
             state: "$state.name",
             modifiedAt: "$modifiedAt",
-            "2019-20_balance_pdf":
+            "2019-20_balance_pdf": [
               "$audited.provisional_data.bal_sheet.pdf.url",
-              "2019-20_balanceSch_pdf":
               "$audited.provisional_data.bal_sheet_schedules.pdf.url",
-            "2019-20_balance_excel":
+            ],
+            "2019-20_balance_excel": [
               "$audited.provisional_data.bal_sheet.excel.url",
-              "2019-20_balanceSch_excel":
               "$audited.provisional_data.bal_sheet_schedules.excel.url",
-            "2019-20_income_pdf": "$audited.provisional_data.inc_exp.pdf.url",
-            "2019-20_incomeSch_pdf": "$audited.provisional_data.inc_exp_schedules.pdf.url",
-            "2019-20_income_excel":
+            ],
+            "2019-20_income_pdf": [
+              "$audited.provisional_data.inc_exp.pdf.url",
+              "$audited.provisional_data.inc_exp_schedules.pdf.url",
+            ],
+            "2019-20_income_excel": [
               "$audited.provisional_data.inc_exp.excel.url",
-              "2019-20_incomeSch_excel":
               "$audited.provisional_data.inc_exp_schedules.excel.url",
+            ],
           },
         },
         {
@@ -1103,20 +1104,18 @@ exports.dataset = catchAsync(async (req, res) => {
             state: "$state.name",
             modifiedAt: "$modifiedAt",
             "2020-21_balance_pdf":
-              "$unAudited.provisional_data.bal_sheet.pdf.url",
+              ["$unAudited.provisional_data.bal_sheet.pdf.url",
+              "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
             "2020-21_balance_excel":
-              "$unAudited.provisional_data.bal_sheet.excel.url",
-            "2020-21_income_pdf": "$unAudited.provisional_data.inc_exp.pdf.url",
+             [ "$unAudited.provisional_data.bal_sheet.excel.url",
+             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
+            ],
+            "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
+            "$unAudited.provisional_data.inc_exp_schedules.pdf.url"          ],
             "2020-21_income_excel":
-              "$unAudited.provisional_data.inc_exp.excel.url",
-              
-              "2020-21_balanceSch_pdf":
-              "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
-            "2020-21_balanceSch_excel":
-              "$unAudited.provisional_data.bal_sheet_schedules.excel.url",
-            "2020-21_incomeSch_pdf": "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
-            "2020-21_incomeSch_excel":
-              "$unAudited.provisional_data.inc_exp_schedules.excel.url",
+              ["$unAudited.provisional_data.inc_exp.excel.url",
+              "$unAudited.provisional_data.inc_exp_schedules.excel.url"
+            ],
           },
         },
         {
@@ -1587,27 +1586,52 @@ exports.getAccounts = async (req, res) => {
       annualAccountData.status == "APPROVED"
     ) {
       // annualAccountData.status = "PENDING";
-      if (annualAccountData.unAudited.submit_annual_accounts) {
-        let proData = annualAccountData.unAudited.provisional_data;
-        for (const key in proData) {
-          if (key == "auditor_report") continue;
-          proData[key].status = "PENDING";
-          proData[key].rejectReason = null;
+      if(annualAccountData.design_year !== YEAR_CONSTANTS["22_23"]){
+        if (annualAccountData.unAudited.submit_annual_accounts) {
+          let proData = annualAccountData.unAudited.provisional_data;
+          for (const key in proData) {
+            if (key == "auditor_report") continue;
+            proData[key].status = "PENDING";
+            proData[key].rejectReason = null;
+          }
+        }
+        if (annualAccountData.audited.submit_annual_accounts) {
+          let proData = annualAccountData.audited.provisional_data;
+          for (const key in proData) {
+            proData[key].rejectReason = null;
+            proData[key].status = "PENDING";
+          }
         }
       }
-      if (annualAccountData.audited.submit_annual_accounts) {
-        let proData = annualAccountData.audited.provisional_data;
-        for (const key in proData) {
-          proData[key].rejectReason = null;
-          proData[key].status = "PENDING";
-        }
-      }
+     
     }
     Object.assign(annualAccountData, obj)
     Object.assign(annualAccountData, { canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB", role) })
     // Object.assign(annualAccountData, {canTakeAction: false })
-    if (annualAccountData?.status === "PENDING") {
-      annualAccountData.unAudited.rejectReason = ""
+    if (annualAccountData?.status === "PENDING" && (role === "STATE" || role === "MoHUA")) {
+      annualAccountData.unAudited.rejectReason_state = "";
+      annualAccountData.unAudited.responseFile_state = {
+        url: "",
+        name: ""
+      }
+      annualAccountData.unAudited.rejectReason_mohua = ""
+      annualAccountData.unAudited.responseFile_mohua = {
+        url: "",
+        name: ""
+      }
+      annualAccountData.audited.rejectReason_state = "";
+      annualAccountData.audited.responseFile_state = {
+        url: "",
+        name: ""
+      }
+      annualAccountData.audited.rejectReason_mohua = ""
+      annualAccountData.audited.responseFile_mohua = {
+        url: "",
+        name: ""
+      }
+
+      clearResponseReason(annualAccountData);
+
     }
     return res.status(200).json(annualAccountData);
   } catch (err) {
@@ -1616,6 +1640,34 @@ exports.getAccounts = async (req, res) => {
   }
 };
 
+function clearResponseReason(formData){
+
+  for(let key in formData){
+    if(key === "audited" || key === "unAudited"){
+      for(let innerKey in formData[key]){
+        if(innerKey === "provisional_data"){
+          for(let innerKey2 in formData[key][innerKey]){
+            if (
+              typeof formData[key][innerKey][innerKey2] === "object" &&
+              formData[key][innerKey][innerKey2] != null
+            ) {
+              formData[key][innerKey][innerKey2].rejectReason_state = "";
+              formData[key][innerKey][innerKey2].responseFile_state = {
+                url:"",
+                name:""
+              };
+              formData[key][innerKey][innerKey2].rejectReason_mohua = ""
+              formData[key][innerKey][innerKey2].responseFile_mohua = {
+                url: "",
+                name: ""
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+}
 exports.getCSVAudited = catchAsync(async (req, res) => {
   let filename = "Annual_Accounts-Audited.csv";
 

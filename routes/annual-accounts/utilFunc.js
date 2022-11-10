@@ -5,8 +5,25 @@ module.exports.calculateTabwiseStatus = (formData) => {
     let unAuditedAns = formData['unAudited']['submit_annual_accounts']
     let actionTakenByRole = formData['actionTakenByRole']
     if(actionTakenByRole == 'ULB'){
-      formData.audited['status'] = "PENDING"
-      formData.unAudited['status'] = "PENDING"
+      /* This is a condition to check if the status of audited and unaudited is rejected and approved
+      respectively. If it is true, then the status of audited is set to pending. */
+      if (
+        formData.audited["status"] === "REJECTED" &&
+        formData.unAudited["status"] === "APPROVED"
+      ) {
+        formData.audited["status"] = "PENDING";
+      } else if (
+        formData.audited["status"] === "APPROVED" &&
+        formData.unAudited["status"] === "REJECTED"
+      ) {
+        formData.unAudited["status"] = "PENDING";
+      } else if (
+        formData.audited["status"] === "REJECTED" &&
+        formData.unAudited["status"] === "REJECTED"
+      ) {
+        formData.unAudited["status"] = "PENDING";
+        formData.audited["status"] = "PENDING";
+      }
     }else if(actionTakenByRole != 'ULB'){
       if(auditedAns){
         let flag = 0;
