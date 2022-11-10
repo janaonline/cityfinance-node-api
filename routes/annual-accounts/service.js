@@ -1620,11 +1620,11 @@ exports.getAccounts = async (req, res) => {
         name: ""
       }
       annualAccountData.audited.rejectReason_state = "";
-      annualAccountData.audited.responseFile_state = ""
-      annualAccountData.audited.rejectReason_mohua = {
+      annualAccountData.audited.responseFile_state = {
         url: "",
         name: ""
       }
+      annualAccountData.audited.rejectReason_mohua = ""
       annualAccountData.audited.responseFile_mohua = {
         url: "",
         name: ""
