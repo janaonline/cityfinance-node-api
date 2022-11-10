@@ -73,10 +73,7 @@ module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, l
         if (loggedInUser == "STATE") {
           if (actionTakenByRole == "ULB" && !isDraft) {
             return true;
-          } else if( actionTakenByRole == "MoHUA" && status === "REJECTED"
-            && !isDraft) {
-                return true;
-          }else{
+          } else{
             return false;
           }
         } else if (loggedInUser == "MoHUA") {
