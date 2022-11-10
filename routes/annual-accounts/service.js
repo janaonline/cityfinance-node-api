@@ -1610,9 +1610,27 @@ exports.getAccounts = async (req, res) => {
     // Object.assign(annualAccountData, {canTakeAction: false })
     if (annualAccountData?.status === "PENDING" && (role === "STATE" || role === "MoHUA")) {
       annualAccountData.unAudited.rejectReason_state = "";
-      annualAccountData.unAudited.responseFile_state = ""
+      annualAccountData.unAudited.responseFile_state = {
+        url: "",
+        name: ""
+      }
       annualAccountData.unAudited.rejectReason_mohua = ""
-      annualAccountData.unAudited.responseFile_mohua = ""
+      annualAccountData.unAudited.responseFile_mohua = {
+        url: "",
+        name: ""
+      }
+      annualAccountData.audited.rejectReason_state = "";
+      annualAccountData.audited.responseFile_state = ""
+      annualAccountData.audited.rejectReason_mohua = {
+        url: "",
+        name: ""
+      }
+      annualAccountData.audited.responseFile_mohua = {
+        url: "",
+        name: ""
+      }
+
+      clearResponseReason(annualAccountData);
 
     }
     return res.status(200).json(annualAccountData);
@@ -1622,6 +1640,34 @@ exports.getAccounts = async (req, res) => {
   }
 };
 
+function clearResponseReason(formData){
+
+  for(let key in formData){
+    if(key === "audited" || key === "unAudited"){
+      for(let innerKey in formData[key]){
+        if(innerKey === "provisional_data"){
+          for(let innerKey2 in formData[key][innerKey]){
+            if (
+              typeof formData[key][innerKey][innerKey2] === "object" &&
+              formData[key][innerKey][innerKey2] != null
+            ) {
+              formData[key][innerKey][innerKey2].rejectReason_state = "";
+              formData[key][innerKey][innerKey2].responseFile_state = {
+                url:"",
+                name:""
+              };
+              formData[key][innerKey][innerKey2].rejectReason_mohua = ""
+              formData[key][innerKey][innerKey2].responseFile_mohua = {
+                url: "",
+                name: ""
+              };
+            }
+          }
+        }
+      }
+    }
+  }
+}
 exports.getCSVAudited = catchAsync(async (req, res) => {
   let filename = "Annual_Accounts-Audited.csv";
 
