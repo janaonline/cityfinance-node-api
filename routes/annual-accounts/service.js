@@ -1606,8 +1606,12 @@ exports.getAccounts = async (req, res) => {
     Object.assign(annualAccountData, obj)
     Object.assign(annualAccountData, { canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB", role) })
     // Object.assign(annualAccountData, {canTakeAction: false })
-    if (annualAccountData?.status === "PENDING") {
-      annualAccountData.unAudited.rejectReason = ""
+    if (annualAccountData?.status === "PENDING" && (role === "STATE" || role === "MoHUA")) {
+      annualAccountData.unAudited.rejectReason_state = "";
+      annualAccountData.unAudited.responseFile_state = ""
+      annualAccountData.unAudited.rejectReason_mohua = ""
+      annualAccountData.unAudited.responseFile_mohua = ""
+
     }
     return res.status(200).json(annualAccountData);
   } catch (err) {
