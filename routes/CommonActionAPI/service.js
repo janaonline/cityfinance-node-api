@@ -69,40 +69,47 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
 
 module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, loggedInUser) => {
     switch (formType) {
-        case "ULB":
-           if(loggedInUser == "STATE"){
-                if(actionTakenByRole == "ULB" && !isDraft){
-                    return true;
-                }else{
-                    
-                } }   else if(loggedInUser == "MoHUA"){
-                    if(actionTakenByRole == "STATE" && status =="APPROVED" && !isDraft){
-                        return true
-                    }else{
-                        return false;
-                    }
-                }else{
-                    return false;
-                }
-            
-            
-            break;
-    
-            case "STATE":
-                if(loggedInUser =="MoHUA"){
-                    if(actionTakenByRole=="STATE" && !isDraft){
-                        return true;
-                    }else{
-                        return false;
-                    }
-                }else{
-                    return false;
-                }
-            
-                break;
-        
-        default:
-            break;
+      case "ULB":
+        if (loggedInUser == "STATE") {
+          if (actionTakenByRole == "ULB" && !isDraft) {
+            return true;
+          } else if( actionTakenByRole == "MoHUA" && status === "REJECTED"
+            && !isDraft) {
+                return true;
+          }else{
+            return false;
+          }
+        } else if (loggedInUser == "MoHUA") {
+          if (
+            actionTakenByRole == "STATE" &&
+            status == "APPROVED" &&
+            !isDraft
+          ) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+
+        break;
+
+      case "STATE":
+        if (loggedInUser == "MoHUA") {
+          if (actionTakenByRole == "STATE" && !isDraft) {
+            return true;
+          } else {
+            return false;
+          }
+        } else {
+          return false;
+        }
+
+        break;
+
+      default:
+        break;
     }
    
 }
