@@ -615,15 +615,15 @@ let slbWeigthed ={}
   let arr = []
   let filteredData = []
   TEslbdata.forEach(el => {
-    if (el.hasOwnProperty("twentyeightslbforms"))
-      filteredData = el.twentyeightslbforms.data.filter((el2) =>
-        lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
-      );
-arr.push({
-data: filteredData,
-population: el.population
-
-})
+ if (el.hasOwnProperty("twentyeightslbforms")) {
+   filteredData = el.twentyeightslbforms.data.filter((el2) =>
+     lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
+   );
+ }
+ arr.push({
+   data: filteredData,
+   population: el.population,
+ });
 
 
   })  

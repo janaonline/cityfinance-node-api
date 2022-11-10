@@ -77,7 +77,7 @@ module.exports.post = async function (req, res) {
       return Response.BadRequest(res, null, "name and downloadUrl is required");
     let data = new ResourceLineItem(req.body);
     await data.save();
-    return Response.OK(res.data);
+    return Response.OK(res,data);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);

@@ -22,7 +22,7 @@ module.exports.login = async (req, res) => {
       })
     }
     if (user.role === "ULB") {
-      ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
+      ulb = await Ulb.findOne({ _id: ObjectId(user.ulb), isActive: true });
       role = user.role;
     }
     let sessionId = ObjectId.isValid(req.headers.sessionid) ? req.headers.sessionid : null;
