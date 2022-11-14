@@ -2301,3 +2301,129 @@ function csvData_Audited() {
   });
 }
 
+
+
+module.exports.updateAnnualAccForms = async (req, res ) =>{
+
+  let condition = {
+    design_year: "606aafb14dff55e6c075d3ae",
+  }
+
+  let updatedForms = [];
+  let annualAccForms = await AnnualAccountData.find(condition)
+  .select({history: 0}).lean()
+
+  for(let i =0; i< annualAccForms.length; i++){
+    let form = annualAccForms[i];
+    let formStatus = calculateStatus(form.status, form.actionTakenByRole, form.isDraft, "ULB");
+    updateKeys(formStatus, form);
+    delete form["history"];
+    let newForm = await AnnualAccountData.findOneAndUpdate({design_year: form.design_year,
+    ulb: form.ulb},{
+      $set: form
+    },{
+      new: true
+    })
+    updatedForms.push(newForm);
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: updatedForms
+  })
+}
+
+function updateKeys(formStatus, form){
+  if (
+    formStatus === STATUS_LIST.In_Progress ||
+    formStatus === STATUS_LIST.Under_Review_By_State
+  ) {
+
+    addKeysToObj(form);
+
+  } else if (
+    formStatus === STATUS_LIST.Approved_By_State ||
+    formStatus === STATUS_LIST.Rejected_By_State ||
+    formStatus === STATUS_LIST.Under_Review_By_MoHUA
+  ) {
+      addKeysToObj(form);
+
+  }else if(
+    formStatus === STATUS_LIST.Approved_By_MoHUA ||
+    formStatus === STATUS_LIST.Rejected_By_MoHUA
+  ){
+
+  }
+}
+
+function addKeysToObj(formData){
+
+  for(let key in formData){
+    if(key === "audited" || key === "unAudited"){
+
+      if (formData.actionTakenByRole === "STATE") {
+        formData[key].rejectReason_state = formData[key].rejectReason ?? "";
+        formData[key].responseFile_state = formData[key].responseFile ?? {url: "", name: ""};
+        formData[key].rejectReason_mohua = "";
+        formData[key].responseFile_mohua = {
+          url: "",
+          name: ""
+        };
+      } else if (formData.actionTakenByRole === "MoHUA") {
+        formData[key].rejectReason_mohua = formData[key].rejectReason ?? "";
+        formData[key].responseFile_mohua = formData[key].responseFile ?? {url: "", name: ""};
+      } else if( formData.actionTakenByRole === "ULB"){
+        formData[key].rejectReason_state = "";
+        formData[key].responseFile_state = {
+          url: "",
+          name: "",
+        };
+        formData[key].rejectReason_mohua = "";
+        formData[key].responseFile_mohua = {
+          url: "",
+          name: "",
+        };              
+    }
+
+      for(let innerKey in formData[key]){
+        if(innerKey === "provisional_data"){
+          for(let innerKey2 in formData[key][innerKey]){
+            if (
+              typeof formData[key] === "object" &&
+              formData[key][innerKey][innerKey2] != null
+            ) {
+              if (formData.actionTakenByRole === "STATE") {
+                formData[key][innerKey][innerKey2].rejectReason_state =
+                  formData[key][innerKey][innerKey2].rejectReason ?? "";
+                formData[key][innerKey][innerKey2].responseFile_state =
+                  formData[key][innerKey][innerKey2].responseFile ?? {url: "", name: ""};
+                  formData[key].rejectReason_mohua = "";
+                formData[key].responseFile_mohua = {
+                  url: "",
+                  name: ""
+                };
+              } else if (formData.actionTakenByRole === "MoHUA") {
+                formData[key][innerKey][innerKey2].rejectReason_mohua =
+                  formData[key][innerKey][innerKey2].rejectReason;
+                formData[key][innerKey][innerKey2].responseFile_mohua =
+                  formData[key][innerKey][innerKey2].responseFile;
+              }
+              else if( formData.actionTakenByRole === "ULB"){
+                formData[key][innerKey][innerKey2].rejectReason_state = "";
+                formData[key][innerKey][innerKey2].responseFile_state = {
+                  url: "",
+                  name: "",
+                };
+                formData[key][innerKey][innerKey2].rejectReason_mohua = "";
+                formData[key][innerKey][innerKey2].responseFile_mohua = {
+                  url: "",
+                  name: "",
+                };              
+            }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -38,7 +38,7 @@ function createDynamicColumns(collectionName){
            columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Collecting Property Taxes in 2022-23,	Operationalized as per the state notification,Proof of operationalization of Property Tax Collection Process Url,Proof of operationalization of Property Tax Collection Process Name	,Property Tax Valuation Method,	Property Tax Rate Card Url, Property Tax Rate Card Name,	Property Tax Collection for 2019-20,	Property Tax Collection for 2020-21,	Property Tax Collection for 2021-22,	Property Tax Collection Target for 2022-23,	Proof for Property Tax collection for 2021-22 Url, Proof for Property Tax collection for 2021-22 Name,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `
            break;
         case CollectionNames.annual:
-            columns = `Financial Year, Form Status, Created, Submitted On, Filled Status,Type, Audited/Provisional Year,Balance Sheet_PDF_URL, Balance Sheet_Excel_URL,	Balance Sheet_State Review Status,	Balance Sheet_State_Comments,	Balance Sheet_MoHUA Review Status,	Balance Sheet_MoHUA_Comments,	Balance Sheet_Total Amount of Assets,	Balance Sheet_Total Amount of Fixed Assets,	Balance Sheet_Total Amount of State Grants received,	Balance Sheet_Total Amount of Central Grants received,	Balance Sheet Schedule_PDF_URL,	Balance Sheet Schedule_Excel_URL,	Balance Sheet Schedule_State Review Status,	Balance Sheet Schedule_State_Comments,	Balance Sheet Schedule_MoHUA Review Status,	Balance Sheet Schedule_MoHUA_Comments, Income Expenditure_PDF_URL,	Income Expenditure_Excel_URL, Income Expenditure_State Review Status,	Income Expenditure_State_Comments,	Income Expenditure_MoHUA Review Status,	Income Expenditure_MoHUA_Comments, 	Income Expenditure_Total Amount of Revenue,	Income Expenditure_Total Amount of Expenses,	Income Expenditure Schedule_PDF_URL,	Income Expenditure Schedule_Excel_URL,	Income Expenditure Schedule_State Review Status, Income Expenditure Schedule_State_Comments, 	Income Expenditure Schedule_MoHUA Review Status,	Income Expenditure Schedule_MoHUA_Comments,	Cash Flow Schedule_PDF_URL,	Cash Flow Schedule_Excel_URL,	Cash Flow Schedule_State Review Status,	Cash Flow Schedule_State_Comments, 	Cash Flow Schedule_MoHUA Review Status	,Cash Flow Schedule_MoHUA_Comments,	Auditor Report PDF_URL,	Auditor Report State Review Status,	Auditor Report State_Comments,	Auditor Report MoHUA Review Status	,Auditor Report MoHUA_Comments ,Financials in Standardized Format_Filled Status	,Financials in Standardized Format_Excel URL,	State Review File_URL,	MoHUA Review File_URL`;
+            columns = `Financial Year, Form Status, Created, Submitted On, Filled Status,Type, Audited/Provisional Year,Balance Sheet_PDF_URL, Balance Sheet_Excel_URL,	Balance Sheet_State Review Status,	Balance Sheet_State_Comments,	Balance Sheet_MoHUA Review Status,	Balance Sheet_MoHUA_Comments,	Balance Sheet_Total Amount of Assets,	Balance Sheet_Total Amount of Fixed Assets,	Balance Sheet_Total Amount of State Grants received,	Balance Sheet_Total Amount of Central Grants received,	Balance Sheet Schedule_PDF_URL,	Balance Sheet Schedule_Excel_URL,	Balance Sheet Schedule_State Review Status,	Balance Sheet Schedule_State_Comments,	Balance Sheet Schedule_MoHUA Review Status,	Balance Sheet Schedule_MoHUA_Comments, Income Expenditure_PDF_URL,	Income Expenditure_Excel_URL, Income Expenditure_State Review Status,	Income Expenditure_State_Comments,	Income Expenditure_MoHUA Review Status,	Income Expenditure_MoHUA_Comments, 	Income Expenditure_Total Amount of Revenue,	Income Expenditure_Total Amount of Expenses,	Income Expenditure Schedule_PDF_URL,	Income Expenditure Schedule_Excel_URL,	Income Expenditure Schedule_State Review Status, Income Expenditure Schedule_State_Comments, 	Income Expenditure Schedule_MoHUA Review Status,	Income Expenditure Schedule_MoHUA_Comments,	Cash Flow Schedule_PDF_URL,	Cash Flow Schedule_Excel_URL,	Cash Flow Schedule_State Review Status,	Cash Flow Schedule_State_Comments, 	Cash Flow Schedule_MoHUA Review Status	,Cash Flow Schedule_MoHUA_Comments,	Auditor Report PDF_URL,	Auditor Report State Review Status,	Auditor Report State_Comments,	Auditor Report MoHUA Review Status	,Auditor Report MoHUA_Comments ,Financials in Standardized Format_Filled Status	,Financials in Standardized Format_Excel URL,	State Comments if Accounts for 2021-22 is selected No, MoHUA Comments if Accounts for 2021-22 is selected No,State Review File_URL,	MoHUA Review File_URL`;
             break;
         case CollectionNames.dur:
             columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Tied grants for year,	Unutilised Tied Grants from previous installment (INR in lakhs),	15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs)	,Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),	Closing balance at the end of year (INR in lakhs),	WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),	WM Rejuvenation of Water Bodies Number of Projects Undertaken,	WM_Rejuvenation of Water Bodies_Total Project Cost Involved,	WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Drinking Water_Number of Projects Undertaken	,WM_Drinking Water_Total Project Cost Involved,	WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Rainwater Harvesting_Number of Projects Undertaken,	WM_Rainwater Harvesting_Total Project Cost Involved	,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Water Recycling_Number of Projects Undertaken,	WM_Water Recycling_Total Project Cost Involved,	SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Sanitation_Number of Projects Undertaken,	SWM_Sanitation_Total Project Cost Involved(INR in lakhs),	SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Solid Waste Management_Number of Projects Undertaken,	SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),	State_Review Status,	State_Comments,	MoHUA Review Status,	MoHUA_Comments,	State_File URL,	MoHUA_File URL `
@@ -143,6 +143,16 @@ function createDynamicObject(collectionName, formType){
                 provisional_data: {
                   bal_sheet: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -162,6 +172,16 @@ function createDynamicObject(collectionName, formType){
                   s_grant: "",
                   c_grant: "",
                   bal_sheet_schedules: {
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     rejectReason: "",
                     pdf: {
                       url: "",
@@ -179,6 +199,16 @@ function createDynamicObject(collectionName, formType){
                   },
                   inc_exp: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -197,6 +227,16 @@ function createDynamicObject(collectionName, formType){
                   expense: "",
                   inc_exp_schedules: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -213,6 +253,16 @@ function createDynamicObject(collectionName, formType){
                   },
                   cash_flow: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -229,6 +279,16 @@ function createDynamicObject(collectionName, formType){
                   },
                   auditor_report: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -249,13 +309,53 @@ function createDynamicObject(collectionName, formType){
                 },
                 audit_status: "",
                 year: "",
+                rejectReason_state: "",
+                rejectReason_mohua: "",
+                responseFile_state:{
+                  url: "",
+                  name: "",
+                },
+                responseFile_mohua:{
+                  url: "",
+                  name:""
+                    },
+                rejectReason: "",
+                responseFile: {
+                  url:"",
+                  name: ""
+                }
               },
               unAudited: {
+                rejectReason: "",
+                responseFile:{
+                  url: "",
+                  name: ""
+                },
+                rejectReason_state: "",
+                rejectReason_mohua: "",
+                responseFile_state:{
+                  url: "",
+                  name: "",
+                },
+                responseFile_mohua:{
+                  url: "",
+                  name:""
+                },
                 submit_annual_accounts: "",
                 submit_standardized_data: "",
                 provisional_data: {
                   bal_sheet: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -276,6 +376,16 @@ function createDynamicObject(collectionName, formType){
                   c_grant: "",
                   bal_sheet_schedules: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -292,6 +402,16 @@ function createDynamicObject(collectionName, formType){
                   },
                   inc_exp: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -309,6 +429,16 @@ function createDynamicObject(collectionName, formType){
                   revenue: "",
                   expense: "",
                   inc_exp_schedules: {
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     rejectReason: "",
                     pdf: {
                       url: "",
@@ -326,6 +456,16 @@ function createDynamicObject(collectionName, formType){
                   },
                   cash_flow: {
                     rejectReason: "",
+                    rejectReason_state: "",
+                    rejectReason_mohua: "",
+                    responseFile_state:{
+                      url: "",
+                      name: "",
+                    },
+                    responseFile_mohua:{
+                      url: "",
+                      name:""
+                    },
                     pdf: {
                       url: "",
                       name: "",
@@ -735,13 +875,13 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
       }
 
       if(collectionName ===  CollectionNames['annual']){
-        if(entity.audited.responseFile){
-          entity.audited.responseFile.name =  removeEscapeChars(entity.audited.responseFile?.name)
-          obj.auditedResponseFile_state =  entity.audited.responseFile;
+        if(entity.audited.responseFile_state){
+          entity.audited.responseFile_state.name =  removeEscapeChars(entity.audited.responseFile_state?.name)
+          obj.auditedResponseFile_state =  entity.audited.responseFile_state;
         }
-        if(entity.unAudited.responseFile){
-          entity.unAudited.responseFile.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
-          obj.unAuditedResponseFile_state = entity.unAudited.responseFile;
+        if(entity.unAudited.responseFile_state){
+          entity.unAudited.responseFile_state.name =  removeEscapeChars(entity.unAudited.responseFile_state?.name)
+          obj.unAuditedResponseFile_state = entity.unAudited.responseFile_state;
         }
       }
       return obj;
@@ -761,13 +901,13 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
         obj.mohua_status = entity["status"];
       }
       if(collectionName ===  CollectionNames['annual']){
-        if(entity.audited.responseFile){
-          entity.audited.responseFile.name =  removeEscapeChars(entity.audited.responseFile?.name)
-          obj.auditedResponseFile_mohua =  entity.audited.responseFile;
+        if(entity.audited.responseFile_mohua){
+          entity.audited.responseFile_mohua.name =  removeEscapeChars(entity.audited.responseFile_mohua?.name)
+          obj.auditedResponseFile_mohua =  entity.audited.responseFile_mohua;
         }
-        if(entity.unAudited.responseFile){
-          entity.unAudited.responseFile.name =  removeEscapeChars(entity.unAudited.responseFile?.name)
-          obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile;
+        if(entity.unAudited.responseFile_mohua){
+          entity.unAudited.responseFile_mohua.name =  removeEscapeChars(entity.unAudited.responseFile_mohua?.name)
+          obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile_mohua;
         }
       }
       mohuaFlag = false;
@@ -792,13 +932,13 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName){
          }
 
          if(collectionName ===  CollectionNames['annual']){
-          if(history.audited.responseFile){
-            history["audited"]["responseFile"]["name"] = removeEscapeChars(history["audited"]["responseFile"]["name"])  
-            obj.auditedResponseFile_state =  history.audited.responseFile;
+          if(history.audited.responseFile_state){
+            history["audited"]["responseFile_state"]["name"] = removeEscapeChars(history["audited"]["responseFile_state"]["name"])  
+            obj.auditedResponseFile_state =  history.audited.responseFile_state;
           }
-          if(history.unAudited.responseFile){
-            history["unAudited"]["responseFile"]["name"] = removeEscapeChars(history["unAudited"]["responseFile"]["name"])  
-            obj.unAuditedResponseFile_state = history.unAudited.responseFile;
+          if(history.unAudited.responseFile_state){
+            history["unAudited"]["responseFile_state"]["name"] = removeEscapeChars(history["unAudited"]["responseFile_state"]["name"])  
+            obj.unAuditedResponseFile_state = history.unAudited.responseFile_state;
           }
         }
          stateFlag = false;
@@ -944,7 +1084,7 @@ function removeEscapeChars(entity){
                   auditedProvisional?.bal_sheet?.pdf?.url ?? ""
                 }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
                   auditedProvisional?.bal_sheet?.status ?? ""
-                }, ${auditedProvisional?.bal_sheet?.rejectReason ?? ""}, , ,  ${
+                }, ${auditedProvisional?.bal_sheet?.rejectReason_state ?? ""}, , ,  ${
                   auditedProvisional?.assets ?? ""
                 }, ${auditedProvisional?.f_assets ?? ""}, ${
                   auditedProvisional?.s_grant ?? ""
@@ -953,28 +1093,28 @@ function removeEscapeChars(entity){
                 }, ${
                   auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
                 }, ${auditedProvisional?.bal_sheet_schedules?.status ?? ""}, ${
-                  auditedProvisional?.bal_sheet_schedules?.rejectReason ?? ""
+                  auditedProvisional?.bal_sheet_schedules?.rejectReason_state ?? ""
                 }, , ,${auditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
                   auditedProvisional?.inc_exp?.excel?.url ?? ""
                 }, ${auditedProvisional?.inc_exp?.status ?? ""}, ${
-                  auditedProvisional?.inc_exp?.rejectReason ?? ""
+                  auditedProvisional?.inc_exp?.rejectReason_state ?? ""
                 }, , , ${auditedProvisional?.revenue ?? ""}, ${
                   auditedProvisional?.expense ?? ""
                 },${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${
                   auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
                 }, ${auditedProvisional?.inc_exp_schedules?.status ?? ""}, ${
-                  auditedProvisional?.inc_exp_schedules?.rejectReason ?? ""
+                  auditedProvisional?.inc_exp_schedules?.rejectReason_state ?? ""
                 }, , ,${auditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
                   auditedProvisional?.cash_flow?.excel?.url ?? ""
                 }, ${auditedProvisional?.cash_flow?.status ?? ""}, ${
-                  auditedProvisional?.cash_flow?.rejectReason ?? ""
+                  auditedProvisional?.cash_flow?.rejectReason_state ?? ""
                 } , , ,${auditedProvisional?.auditor_report?.pdf?.url ?? ""},${
                   auditedProvisional?.auditor_report?.status ?? ""
                 }, ${
-                  auditedProvisional?.auditor_report?.rejectReason ?? ""
+                  auditedProvisional?.auditor_report?.rejectReason_state ?? ""
                 }, , , ${data?.audited?.submit_standardized_data ?? ""}, ${
                   auditedStandardized?.excel?.url ?? ""
-                }, ${actions["auditedResponseFile_state"]["url"] ?? ""},${
+                }, ${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_state : ""}, ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
                   actions["auditedResponseFile_mohua"]["url"] ?? ""
                 }  `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
@@ -986,7 +1126,7 @@ function removeEscapeChars(entity){
                   }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
                     unAuditedProvisional?.bal_sheet?.status ?? ""
                   }, ${
-                    unAuditedProvisional?.bal_sheet?.rejectReason ?? ""
+                    unAuditedProvisional?.bal_sheet?.rejectReason_state ?? ""
                   }, , , ${unAuditedProvisional?.assets ?? ""}, ${
                     unAuditedProvisional?.f_assets ?? "" ?? ""
                   }, ${unAuditedProvisional?.s_grant ?? ""}, ${
@@ -998,12 +1138,12 @@ function removeEscapeChars(entity){
                   }, ${
                     unAuditedProvisional?.bal_sheet_schedules?.status ?? ""
                   }, ${
-                    unAuditedProvisional?.bal_sheet_schedules?.rejectReason ??
+                    unAuditedProvisional?.bal_sheet_schedules?.rejectReason_state ??
                     ""
                   }, , ,${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
                     unAuditedProvisional?.inc_exp?.excel?.url ?? ""
                   }, ${unAuditedProvisional?.inc_exp?.status ?? ""}, ${
-                    unAuditedProvisional?.inc_exp?.rejectReason ?? ""
+                    unAuditedProvisional?.inc_exp?.rejectReason_state ?? ""
                   }, , , ${unAuditedProvisional?.revenue ?? ""}, ${
                     unAuditedProvisional?.expense ?? ""
                   },${
@@ -1013,14 +1153,14 @@ function removeEscapeChars(entity){
                   }, ${
                     unAuditedProvisional?.inc_exp_schedules?.status ?? ""
                   }, ${
-                    unAuditedProvisional?.inc_exp_schedules?.rejectReason ?? ""
+                    unAuditedProvisional?.inc_exp_schedules?.rejectReason_state ?? ""
                   }, , ,${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
                     unAuditedProvisional?.cash_flow?.excel?.url ?? ""
                   }, ${unAuditedProvisional?.cash_flow?.status ?? ""}, ${
-                    unAuditedProvisional?.cash_flow?.rejectReason ?? ""
+                    unAuditedProvisional?.cash_flow?.rejectReason_state ?? ""
                   },  , , , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
-                  }, ${unAuditedStandardized?.excel?.url ?? ""}, ${
+                  }, ${unAuditedStandardized?.excel?.url ?? ""}, ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_state : ""}, , ${
                     actions["unAuditedResponseFile_state"]["url"] ?? ""
                   },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
                 
@@ -1033,7 +1173,7 @@ function removeEscapeChars(entity){
                   auditedProvisional?.bal_sheet?.pdf?.url ?? ""
                 }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, , ,${
                   auditedProvisional?.bal_sheet?.status ?? ""
-                }, ${auditedProvisional?.bal_sheet?.rejectReason ?? ""},  ${
+                }, ${auditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${
                   auditedProvisional?.assets ?? ""
                 }, ${auditedProvisional?.f_assets ?? ""}, ${
                   auditedProvisional?.s_grant ?? ""
@@ -1044,26 +1184,26 @@ function removeEscapeChars(entity){
                 }, , , ${
                   auditedProvisional?.bal_sheet_schedules?.status ?? ""
                 }, ${
-                  auditedProvisional?.bal_sheet_schedules?.rejectReason ?? ""
+                  auditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""
                 },${auditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
                   auditedProvisional?.inc_exp?.excel?.url ?? ""
                 }, , , ${auditedProvisional?.inc_exp?.status ?? ""}, ${
-                  auditedProvisional?.inc_exp?.rejectReason ?? ""
+                  auditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
                 }, ${auditedProvisional?.revenue ?? ""}, ${
                   auditedProvisional?.expense ?? ""
                 },${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${
                   auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
                 }, , ,${auditedProvisional?.inc_exp_schedules?.status ?? ""}, ${
-                  auditedProvisional?.inc_exp_schedules?.rejectReason ?? ""
+                  auditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
                 }, ${auditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
                   auditedProvisional?.cash_flow?.excel?.url ?? ""
                 }, , , ${auditedProvisional?.cash_flow?.status ?? ""}, ${
-                  auditedProvisional?.cash_flow?.rejectReason ?? ""
+                  auditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
                 }, ${auditedProvisional?.auditor_report?.pdf?.url ?? ""}, , ,${
                   auditedProvisional?.auditor_report?.status ?? ""
-                }, ${auditedProvisional?.auditor_report?.rejectReason ?? ""}, ${
+                }, ${auditedProvisional?.auditor_report?.rejectReason_mohua ?? ""}, ${
                   data?.audited?.submit_standardized_data ?? ""
-                }, ${auditedStandardized?.excel?.url ?? ""} , ${
+                }, ${auditedStandardized?.excel?.url ?? ""} , ,${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_mohua : ""},  ${
                   actions["auditedResponseFile_state"]["url"] ?? ""
                 },${actions["auditedResponseFile_mohua"]["url"] ?? ""} `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
@@ -1075,7 +1215,7 @@ function removeEscapeChars(entity){
                   }, ${
                     unAuditedProvisional?.bal_sheet?.excel?.url ?? ""
                   }, , ,  ${unAuditedProvisional?.bal_sheet?.status ?? ""}, ${
-                    unAuditedProvisional?.bal_sheet?.rejectReason ?? ""
+                    unAuditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""
                   },  ${unAuditedProvisional?.assets ?? ""}, ${
                     unAuditedProvisional?.f_assets ?? "" ?? ""
                   }, ${unAuditedProvisional?.s_grant ?? ""}, ${
@@ -1087,12 +1227,12 @@ function removeEscapeChars(entity){
                   }, , , ${
                     unAuditedProvisional?.bal_sheet_schedules?.status ?? ""
                   }, ${
-                    unAuditedProvisional?.bal_sheet_schedules?.rejectReason ??
+                    unAuditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ??
                     ""
                   }, ${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
                     unAuditedProvisional?.inc_exp?.excel?.url ?? ""
                   }, , , ${unAuditedProvisional?.inc_exp?.status ?? ""}, ${
-                    unAuditedProvisional?.inc_exp?.rejectReason ?? ""
+                    unAuditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
                   },  ${unAuditedProvisional?.revenue ?? ""}, ${
                     unAuditedProvisional?.expense ?? ""
                   },${
@@ -1102,14 +1242,14 @@ function removeEscapeChars(entity){
                   }, , ,  ${
                     unAuditedProvisional?.inc_exp_schedules?.status ?? ""
                   }, ${
-                    unAuditedProvisional?.inc_exp_schedules?.rejectReason ?? ""
+                    unAuditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
                   }, ${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
                     unAuditedProvisional?.cash_flow?.excel?.url ?? ""
                   }, , ,  ${unAuditedProvisional?.cash_flow?.status ?? ""}, ${
-                    unAuditedProvisional?.cash_flow?.rejectReason ?? ""
+                    unAuditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
                   }, , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
-                  }, ${unAuditedStandardized?.excel?.url ?? ""} , ${
+                  }, ${unAuditedStandardized?.excel?.url ?? ""} , , ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_mohua : ""}, ${
                     actions["unAuditedResponseFile_state"]["url"] ?? ""
                   },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
               } else {
@@ -1141,7 +1281,7 @@ function removeEscapeChars(entity){
                   auditedProvisional?.auditor_report?.pdf?.url ?? ""
                 }, , , , , ${data?.audited?.submit_standardized_data ?? ""}, ${
                   auditedStandardized?.excel?.url ?? ""
-                } , ${actions["auditedResponseFile_state"]["url"] ?? ""},${
+                } , , ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
                   actions["auditedResponseFile_mohua"]["url"] ?? ""
                 } `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
@@ -1174,7 +1314,7 @@ function removeEscapeChars(entity){
                     unAuditedProvisional?.cash_flow?.excel?.url ?? ""
                   }, , , , , , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
-                  }, ${unAuditedStandardized?.excel?.url ?? ""} , ${
+                  }, ${unAuditedStandardized?.excel?.url ?? ""} , , , ${
                     actions["unAuditedResponseFile_state"]["url"] ?? ""
                   },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
               }
@@ -1359,8 +1499,11 @@ function removeEscapeChars(entity){
 function removeEscapesFromAnnual(element) {
   for (let key in element) {
     if (element[key] && typeof element[key] === "object") {
-      if (element[key].hasOwnProperty("rejectReason")) {
-        element[key]["rejectReason"] = removeEscapeChars(element[key]["rejectReason"]);
+      if (element[key].hasOwnProperty("rejectReason_state")) {
+        element[key]["rejectReason_state"] = removeEscapeChars(element[key]["rejectReason_state"]);
+      }
+       if(element[key].hasOwnProperty("rejectReason_mohua")){
+        element[key]["rejectReason_mohua"] = removeEscapeChars(element[key]["rejectReason_mohua"]);
       }
     }
   }
