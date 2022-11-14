@@ -1499,8 +1499,10 @@ function removeEscapeChars(entity){
 function removeEscapesFromAnnual(element) {
   for (let key in element) {
     if (element[key] && typeof element[key] === "object") {
-      if (element[key].hasOwnProperty("rejectReason")) {
-        element[key]["rejectReason"] = removeEscapeChars(element[key]["rejectReason"]);
+      if (element[key].hasOwnProperty("rejectReason_state")) {
+        element[key]["rejectReason_state"] = removeEscapeChars(element[key]["rejectReason_state"]);
+      }else if(element[key].hasOwnProperty("rejectReason_mohua")){
+        element[key]["rejectReason_mohua"] = removeEscapeChars(element[key]["rejectReason_mohua"]);
       }
     }
   }
