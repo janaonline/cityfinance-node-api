@@ -675,6 +675,78 @@ exports.report = async (req, res) => {
     res.end();
   }
 };
+function utilReportObject(){
+  let obj =  {
+      _id: null,
+      designYear: null,
+      ulb: null,
+      actionTakenByRole: null,
+      categoryWiseData_swm: [
+        {
+          category_name: "Sanitation",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Solid Waste Management",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+      ],
+      categoryWiseData_wm: [
+        {
+          category_name: "Rejuvenation of Water Bodies",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Drinking Water",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Rainwater Harvesting",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Water Recycling",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+      ],
+      declaration: false,
+      grantPosition: {
+        closingBal: null,
+        expDuringYr: null,
+        receivedDuringYr: null,
+        unUtilizedPrevYr: 0,
+      },
+      history: [],
+      isActive: true,
+      isDraft: true,
+      projects: [],
+      rejectReason: null,
+      rejectReason_mohua: null,
+      rejectReason_state: null,
+      status: null,
+      // canTakeAction: false,
+    }
+
+    return obj;
+  }
 
 module.exports.read2223 = catchAsync(async(req,res)=> {
   let ulb = req.query.ulb;
@@ -692,7 +764,8 @@ let role  = req.decoded.role;
   if(!ulbData.access_2122){
     return res.status(400).json({
       success: false,
-      message: `Last year form access not allowed.`
+      message: `Last year form access not allowed.`,
+      data: utilReportObject()
     })
   }
   let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
@@ -705,11 +778,31 @@ let role  = req.decoded.role;
      
     prevYear = await Year.findOne({year: prevYearVal}).lean()
 
-    let prevData = await MasterForm.findOne({
+    let prevDataQuery = MasterForm.findOne({
       ulb: ObjectId(ulb),
       design_year: prevYear._id
     }).select({history:1}).lean()
-    
+    let prevUtilReportQuery =  UtilizationReport.findOne({
+      ulb: ulb,
+      designYear: design_year
+    }).select({history: 0}).lean()
+    let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
+    //check if prevyear util report is atleast approved by state
+    let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
+
+    if (
+      !(
+        prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
+        prevUtilStatus === FORM_STATUS.Approved_By_State ||
+        prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `last year form not approved.`,
+        data: utilReportObject(),
+      });
+    }
     let status = ''
 if(!prevData){
   status = 'Not Started'
