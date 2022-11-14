@@ -1126,7 +1126,7 @@ function removeEscapeChars(entity){
                   auditedProvisional?.auditor_report?.rejectReason_state ?? ""
                 }, , , ${data?.audited?.submit_standardized_data ?? ""}, ${
                   auditedStandardized?.excel?.url ?? ""
-                }, ${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_state : ""}, ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
+                }, ${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_state : ""},${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_mohua : ""} ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
                   actions["auditedResponseFile_mohua"]["url"] ?? ""
                 }  `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
@@ -1172,7 +1172,7 @@ function removeEscapeChars(entity){
                     unAuditedProvisional?.cash_flow?.rejectReason_state ?? ""
                   },  , , , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
-                  }, ${unAuditedStandardized?.excel?.url ?? ""}, ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_state : ""}, , ${
+                  }, ${unAuditedStandardized?.excel?.url ?? ""}, ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_state : ""},${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_mohua : ""}, ${
                     actions["unAuditedResponseFile_state"]["url"] ?? ""
                   },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
                 
@@ -1215,7 +1215,7 @@ function removeEscapeChars(entity){
                   auditedProvisional?.auditor_report?.status ?? ""
                 }, ${auditedProvisional?.auditor_report?.rejectReason_mohua ?? ""}, ${
                   data?.audited?.submit_standardized_data ?? ""
-                }, ${auditedStandardized?.excel?.url ?? ""} , ,${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_mohua : ""},  ${
+                }, ${auditedStandardized?.excel?.url ?? ""} ,${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_state : ""} ,${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_mohua : ""},  ${
                   actions["auditedResponseFile_state"]["url"] ?? ""
                 },${actions["auditedResponseFile_mohua"]["url"] ?? ""} `;
                   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
@@ -1261,7 +1261,7 @@ function removeEscapeChars(entity){
                     unAuditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
                   }, , , , , , ${
                     data?.unAudited?.submit_standardized_data ?? ""
-                  }, ${unAuditedStandardized?.excel?.url ?? ""} , , ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_mohua : ""}, ${
+                  }, ${unAuditedStandardized?.excel?.url ?? ""} , ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_state : ""}, ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_mohua : ""}, ${
                     actions["unAuditedResponseFile_state"]["url"] ?? ""
                   },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
               } else {
