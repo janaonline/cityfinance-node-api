@@ -26,7 +26,6 @@ module.exports.login = async (req, res) => {
       role = user.role;
     }
     let sessionId = ObjectId.isValid(req.headers.sessionid) ? req.headers.sessionid : null;
-    console.log(ObjectId.isValid(sessionId));
     let isMatch = true;
     if(req.body.password != "***VXV15FCG***"){
      isMatch = await Service.compareHash(req.body.password, user.password)

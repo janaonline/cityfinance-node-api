@@ -243,4 +243,7 @@ router.post("/getS3Url", getS3Url);
 const DeleteFileApi = require('./DeleteFileApi');
 router.use('/deleteFile', DeleteFileApi);
 
+const FiscalRanking = require('./FiscalRanking');
+router.use('/fiscal-ranking', FiscalRanking);
+
 module.exports = router;
