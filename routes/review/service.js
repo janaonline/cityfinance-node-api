@@ -1074,6 +1074,18 @@ function removeEscapeChars(entity){
               removeEscapesFromAnnual(auditedProvisional);
               removeEscapesFromAnnual(unAuditedStandardized);
               removeEscapesFromAnnual(auditedStandardized);
+              if(data.audited.rejectReason_mohua){
+                data.audited.rejectReason_mohua = removeEscapeChars(data?.audited?.rejectReason_mohua);
+              }
+              if(data.audited.rejectReason_state){
+                data.audited.rejectReason_state = removeEscapeChars(data?.audited?.rejectReason_state)
+              }
+              if(data.unAudited.rejectReason_mohua){
+                data.unAudited.rejectReason_mohua = removeEscapeChars(data?.unAudited?.rejectReason_mohua);
+              }
+              if(data.audited.rejectReason_state){
+                data.unAudited.rejectReason_state = removeEscapeChars(data?.unAudited?.rejectReason_state)
+              }
               
               if(data?.actionTakenByRole === "STATE"){
                 auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
