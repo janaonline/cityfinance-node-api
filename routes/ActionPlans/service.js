@@ -249,8 +249,8 @@ exports.getActionPlans = async (req, res) => {
     let uaArray;
     // let uaArray2223;
     // let ua2122projectExecute, ua2122sourceFund, ua2122yearOutlay;
-    if (data2122) {
-      if(data2122.isDraft === false){
+    if (stateMasterFormData) {
+      if(stateMasterFormData.isSubmit === true){
 
         uaArray = data2122.uaData;
         //Number of UAs
@@ -312,7 +312,7 @@ exports.getActionPlans = async (req, res) => {
       }
     }else{
       //previous year form not found 
-      if(!data2122){
+      if(!stateMasterFormData){
         
         return res.status(400).json({
           status: true,
