@@ -114,27 +114,65 @@ module.exports = (req, res) => {
 
     let ulbDataCount = new Promise(async (rslv, rjct) => {
         try {
-           
-                let query = [
-                    {
-                        $group: {
-                            _id: "$financialYear",
-                            ulbs: {$addToSet:"$ulb"}
-                            }
-                        },
-                        {
-                            $project: {
-                                _id:0,
-                                year: "$_id",
-                                ulbs: {$size:"$ulbs"}
-                                }
-                            },
-                            {
-                                $sort: {year:-1}
-                                }
-                    ]
-                let count = await UlbLedger.aggregate(query).exec();
-                count.length > 0 ? rslv(count) : rslv(0);
+            let query = [];
+           if (req.query.state) {
+             query = [
+               {
+                 $lookup: {
+                   from: "ulbs",
+                   foreignField: "_id",
+                   localField: "ulb",
+                   as: "ulbData",
+                 },
+               },
+               {
+                 $unwind: "$ulbData",
+               },
+
+               {
+                 $match: {
+                   "ulbData.state": ObjectId(req.query.state),
+                 },
+               },
+               {
+                 $group: {
+                   _id: "$financialYear",
+                   ulbs: { $addToSet: "$ulb" },
+                 },
+               },
+               {
+                 $project: {
+                   _id: 0,
+                   year: "$_id",
+                   ulbs: { $size: "$ulbs" },
+                 },
+               },
+               {
+                 $sort: { year: -1 },
+               },
+             ];
+           } else {
+             query = [
+               {
+                 $group: {
+                   _id: "$financialYear",
+                   ulbs: { $addToSet: "$ulb" },
+                 },
+               },
+               {
+                 $project: {
+                   _id: 0,
+                   year: "$_id",
+                   ulbs: { $size: "$ulbs" },
+                 },
+               },
+               {
+                 $sort: { year: -1 },
+               },
+             ];
+           }
+            let count = await UlbLedger.aggregate(query).exec();
+            count.length > 0 ? rslv(count) : rslv(0);
             
         }
         catch (err) {
