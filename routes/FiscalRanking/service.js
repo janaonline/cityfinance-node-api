@@ -5,8 +5,8 @@ const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 
 exports.CreateorUpdate = async (req, res, next) => {
   try {
-    let id = req?.body?.id;
-    let fsData = await FiscalRanking.findOne({ _id: ObjectId(id) }).lean();
+    let { ulb, design_year } = req.body;
+    let fsData = await FiscalRanking.findOne({ "": req.body.ulb }).lean();
     if (fsData) {
       let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(id) });
       let obj = { ...fsData, fsMapper };
@@ -60,6 +60,160 @@ const fRMapperCreate = (objData) => {
   })
 }
 
+/* A function which is used to get the data from the database. */
+exports.getView = async function (req, res, next) {
+  try {
+    let condition = {};
+    if (req.decoded.ulb) {
+      condition['ulb'] = ObjectId(req.decoded.ulb);
+    }
+    if (req.query.design_year) {
+      condition['design_year'] = ObjectId(req.query.design_year);
+    }
+    let data = await FiscalRanking.find(condition).lean();
+    let viewOne = {};
+    if (data.length) {
+      viewOne = data[0];
+    } else {
+      viewOne = {
+        "ulb": null,
+        "design_year": null,
+        "population11": null,
+        "populationFr": null,
+        "webLink": null,
+        "nameCmsnr": "",
+        "nameOfNodalOfficer": "",
+        "designationOftNodalOfficer": "",
+        "email": null,
+        "mobile": null,
+        "webUrlAnnual": null,
+        "digitalRegtr": "",
+        "registerGis": "",
+        "accountStwre": "",
+        "totalOwnRevenueArea": null,
+        "fy_19_20_cash": {
+          "type": null,
+          "amount": null
+        },
+        "fy_19_20_online": {
+          "type": null,
+          "amount": null
+        },
+        "fyData": [],
+        "property_tax_register": null,
+        "paying_property_tax": null,
+        "paid_property_tax": null,
+        "isDraft": null
+      }
+    }
+
+    let yearsArr = [
+      {
+        "year": "63735a1ad44534713673bc2b",
+        "lable": "FY 2016-17"
+      },
+      {
+        "year": "63735a4bd44534713673bfbf",
+        "lable": "FY 2017-18"
+      },
+      {
+        "year": "63735a5bd44534713673c1ca",
+        "lable": "FY 2018-19"
+      },
+      {
+        "year": "607697074dff55e6c0be33ba",
+        "lable": "FY 2019-20"
+      }
+    ]
+    let yearsArr2 = [
+      {
+        "year": "63735a4bd44534713673bfbf",
+        "lable": "FY 2017-18"
+      },
+      {
+        "year": "63735a5bd44534713673c1ca",
+        "lable": "FY 2018-19"
+      },
+      {
+        "year": "607697074dff55e6c0be33ba",
+        "lable": "FY 2019-20"
+      }
+    ]
+
+    let fyDynemic = [
+      {
+        "title": "REVENUE MOBILIZATION PARAMETERS",
+        "subData": [
+          {
+            "type": "1",
+            "typeLable": "Total Receipts (Actual)",
+            "years": yearsArr
+          },
+          {
+            "type": "2",
+            "typeLable": "Total Receipts (Budget Estimate)",
+            "years": yearsArr
+          },
+          {
+            "type": "3",
+            "typeLable": "Total Own Revenues",
+            "years": yearsArr
+          },
+          {
+            "type": "4",
+            "typeLable": "Total Property Tax Revenue",
+            "years": yearsArr
+          }
+        ]
+      },
+      {
+        "title": "EXPENDITURE PERFORMANCE PARAMETERS",
+        "subData": [
+          {
+            "type": "5",
+            "typeLable": "Total Gross Block",
+            "years": yearsArr
+          },
+          {
+            "type": "6",
+            "typeLable": "Total Capital Work in Progress (CWIP)",
+            "years": yearsArr
+          },
+          {
+            "type": "7",
+            "typeLable": "Establishment & Administrative Expenses",
+            "years": yearsArr
+          },
+          {
+            "type": "8",
+            "typeLable": "Total Revenue Expenditure",
+            "years": yearsArr
+          },
+        ]
+      },
+      {
+        "title": "UPLOAD FINANCIAL DOCUMENTS",
+        "subData": [
+          {
+            "type": "9",
+            "typeLable": "Approved Annual Budget",
+            "years": yearsArr2
+          },
+          {
+            "type": "10",
+            "typeLable": "Audited Annual Financial Statements",
+            "years": yearsArr2
+          }
+        ]
+      }
+    ]
+    return res.status(200).json({ status: false, message: "Something error wrong!", "data": viewOne, fyDynemic });
+  } catch (error) {
+    console.log("err", error)
+    return res.status(400).json({ status: false, message: "Something error wrong!" });
+  }
+}
+
 exports.getAll = async function (req, res, next) {
   try {
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
@@ -81,7 +235,7 @@ exports.getAll = async function (req, res, next) {
       });
       prmsArr.push(totalPrms);
     }
-    
+
     let dataPrms = new Promise((resolve, reject) => {
       FiscalRanking.aggregate([
         { $match: condition },
@@ -141,7 +295,7 @@ exports.getAll = async function (req, res, next) {
               },
               { "$unwind": "$years" },
             ],
-            "as": "fiscalrankingmappers"
+            "as": "fyData"
           }
         },
         {
@@ -169,7 +323,7 @@ exports.getAll = async function (req, res, next) {
             "digitalRegtr": 1,
             "registerGis": 1,
             "accountStwre": 1,
-            "fiscalrankingmappers": 1
+            "fyData": 1
           }
         },
         { $skip: skip },
