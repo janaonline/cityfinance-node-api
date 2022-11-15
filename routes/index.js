@@ -232,6 +232,10 @@ router.use('/propTaxOpDropDown', PropertyTaxOpDropDown);
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
+
+const FRHomePageContent = require("./FRHomePageContent");
+router.use("/FRHomePageContent", FRHomePageContent);
+
 const review = require("./review");
 router.use(review);
 
