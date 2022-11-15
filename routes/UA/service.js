@@ -587,9 +587,9 @@ responseObj.gfc.pending = gfcPending
 responseObj.odf.approved = odfApproved
 responseObj.odf.pending = odfPending
 
-if(responseObj.fourSLB.approved.count != ulbs.length ||
-    responseObj.gfc.approved.count != ulbs.length ||
-    responseObj.odf.approved.count != ulbs.length 
+if(responseObj.fourSLB.pending.count === ulbs.length ||
+    responseObj.gfc.pending.count === ulbs.length ||
+    responseObj.odf.pending.count === ulbs.length 
     ){
 return res.status(200).json({
     data: responseObj,
@@ -598,7 +598,7 @@ return res.status(200).json({
 })
     }
 
-let slbWeigthed 
+let slbWeigthed ={}
 // console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
  await axios.get(`https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
             console.log('Data Fetched');
@@ -615,12 +615,15 @@ let slbWeigthed
   let arr = []
   let filteredData = []
   TEslbdata.forEach(el => {
- filteredData = el.twentyeightslbforms.data.filter(el2=> lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString()))
-arr.push({
-data: filteredData,
-population: el.population
-
-})
+ if (el.hasOwnProperty("twentyeightslbforms")) {
+   filteredData = el.twentyeightslbforms.data.filter((el2) =>
+     lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
+   );
+ }
+ arr.push({
+   data: filteredData,
+   population: el.population,
+ });
 
 
   })  
