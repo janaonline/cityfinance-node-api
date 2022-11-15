@@ -81,7 +81,7 @@ exports.getAll = async function (req, res, next) {
       });
       prmsArr.push(totalPrms);
     }
-
+    
     let dataPrms = new Promise((resolve, reject) => {
       FiscalRanking.aggregate([
         { $match: condition },
