@@ -762,7 +762,7 @@ let role  = req.decoded.role;
   let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
  /* Checking if the user has access to the form. */
   if(!ulbData.access_2122){
-    return res.status(400).json({
+    return res.status(200).json({
       success: false,
       message: `Last year form access not allowed.`,
       data: utilReportObject()
@@ -797,7 +797,7 @@ let role  = req.decoded.role;
         prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
       )
     ) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: `last year form not approved.`,
         data: utilReportObject(),
