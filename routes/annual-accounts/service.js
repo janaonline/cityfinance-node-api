@@ -242,8 +242,8 @@ module.exports.fileDeFuncFiles = async (req, res) => {
     await Promise.all(
       slice.map(async el => {
         for (let key in el) {
-         
-          
+
+
           if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
             documnetcounter++;
             let url = el[key];
@@ -1105,17 +1105,17 @@ exports.dataset = catchAsync(async (req, res) => {
             modifiedAt: "$modifiedAt",
             "2020-21_balance_pdf":
               ["$unAudited.provisional_data.bal_sheet.pdf.url",
-              "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
+                "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
             "2020-21_balance_excel":
-             [ "$unAudited.provisional_data.bal_sheet.excel.url",
-             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
-            ],
+              ["$unAudited.provisional_data.bal_sheet.excel.url",
+                "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
+              ],
             "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
-            "$unAudited.provisional_data.inc_exp_schedules.pdf.url"          ],
+              "$unAudited.provisional_data.inc_exp_schedules.pdf.url"],
             "2020-21_income_excel":
               ["$unAudited.provisional_data.inc_exp.excel.url",
-              "$unAudited.provisional_data.inc_exp_schedules.excel.url"
-            ],
+                "$unAudited.provisional_data.inc_exp_schedules.excel.url"
+              ],
           },
         },
         {
@@ -1586,7 +1586,7 @@ exports.getAccounts = async (req, res) => {
       annualAccountData.status == "APPROVED"
     ) {
       // annualAccountData.status = "PENDING";
-      if(annualAccountData.design_year !== YEAR_CONSTANTS["22_23"]){
+      if (annualAccountData.design_year !== YEAR_CONSTANTS["22_23"]) {
         if (annualAccountData.unAudited.submit_annual_accounts) {
           let proData = annualAccountData.unAudited.provisional_data;
           for (const key in proData) {
@@ -1603,7 +1603,7 @@ exports.getAccounts = async (req, res) => {
           }
         }
       }
-     
+
     }
     Object.assign(annualAccountData, obj)
     Object.assign(annualAccountData, { canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB", role) })
@@ -1640,21 +1640,21 @@ exports.getAccounts = async (req, res) => {
   }
 };
 
-function clearResponseReason(formData){
+function clearResponseReason(formData) {
 
-  for(let key in formData){
-    if(key === "audited" || key === "unAudited"){
-      for(let innerKey in formData[key]){
-        if(innerKey === "provisional_data"){
-          for(let innerKey2 in formData[key][innerKey]){
+  for (let key in formData) {
+    if (key === "audited" || key === "unAudited") {
+      for (let innerKey in formData[key]) {
+        if (innerKey === "provisional_data") {
+          for (let innerKey2 in formData[key][innerKey]) {
             if (
               typeof formData[key][innerKey][innerKey2] === "object" &&
               formData[key][innerKey][innerKey2] != null
             ) {
               formData[key][innerKey][innerKey2].rejectReason_state = "";
               formData[key][innerKey][innerKey2].responseFile_state = {
-                url:"",
-                name:""
+                url: "",
+                name: ""
               };
               formData[key][innerKey][innerKey2].rejectReason_mohua = ""
               formData[key][innerKey][innerKey2].responseFile_mohua = {
@@ -1675,7 +1675,7 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "Year, ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel, Form Status  \r\n"
+    "Design Year,Data Year,ULB name, Census Code, SB Code, ULB Code, State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Auditor Report, Standardized Excel, Form Status  \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -1725,6 +1725,15 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
       $unwind: "$state"
     },
     {
+      $lookup: {
+        from: "years",
+        localField: "audited.year",
+        foreignField: "_id",
+        as: "dataYear"
+      }
+    },
+    { $unwind: "$dataYear" },
+    {
 
       $project: {
         ulbName: "$ulb.name",
@@ -1745,6 +1754,7 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         isDraft: "$isDraft",
         status: "$status",
         role: "$actionTakenByRole",
+        dataYear: "$dataYear.year",
         year: "$year.year"
       }
     }]).exec((err, data) => {
@@ -1813,6 +1823,8 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
           res.write(
             el.year +
             "," +
+            el.dataYear +
+            "," +
             el.ulbName +
             "," +
             el.censusCode +
@@ -1857,7 +1869,7 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
   res.write(
-    "Year, ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel, Form Status \r\n"
+    "Design Year,Data Year,ULB name, Census Code, SB Code, ULB Code,  State, Submission Date, Balance Sheet, Balance Sheet Schedules, Income Expenditure, Income Expenditure Schedules, Cash Flow, Standardized Excel, Form Status \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -1903,11 +1915,17 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         as: "state"
       }
     },
+    { $unwind: "$state" },
     {
-      $unwind: "$state"
+      $lookup: {
+        from: "years",
+        localField: "unAudited.year",
+        foreignField: "_id",
+        as: "dataYear"
+      }
     },
+    { $unwind: "$dataYear" },
     {
-
       $project: {
         ulbName: "$ulb.name",
         censusCode: "$ulb.censusCode",
@@ -1926,6 +1944,7 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         isDraft: "$isDraft",
         status: "$status",
         role: "$actionTakenByRole",
+        dataYear: "$dataYear.year",
         year: "$year.year"
       }
     }]).exec((err, data) => {
@@ -1990,6 +2009,8 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         for (el of data) {
           res.write(
             el.year +
+            "," +
+            el.dataYear +
             "," +
             el.ulbName +
             "," +
@@ -2196,60 +2217,60 @@ exports.action = async (req, res) => {
     }
     req.body.status = finalStatus;
     if (req.body.status == "REJECTED") req.body.rejectReason = allReasons;
-    if(design_year != "606aaf854dff55e6c075d219" )
-req.body = calculateTabwiseStatus(req.body)
+    if (design_year != "606aaf854dff55e6c075d219")
+      req.body = calculateTabwiseStatus(req.body)
 
-if(design_year == "606aaf854dff55e6c075d219" )
-    await UpdateMasterSubmitForm(req, "annualAccounts");
+    if (design_year == "606aaf854dff55e6c075d219")
+      await UpdateMasterSubmitForm(req, "annualAccounts");
 
-delete req.body.rejectReason
-//   for(let key in req.body.audited.provisional_data){
-//     if(typeof req.body.audited.provisional_data[key] == 'object' && req.body.audited.provisional_data[key] != null){
-//         if(req.body.audited.provisional_data[key]){
-//             if(actionTakenByRole === "STATE"){
-//                 req.body.audited.provisional_data[key]['rejectReason_state'] = req.body.audited.provisional_data[key]['rejectReason']
-//                 req.body.audited.provisional_data[key]['responseFile_state'] = req.body.audited.provisional_data[key]['responseFile']
-//             }
-//             else if(actionTakenByRole === "MoHUA"){
-//                 req.body.audited.provisional_data[key]['rejectReason_mohua'] = req.body.audited.provisional_data[key]['rejectReason']
-//                 req.body.audited.provisional_data[key]['responseFile_mohua'] = req.body.audited.provisional_data[key]['responseFile']
-//             }
-//         }
-//     }
-    
+    delete req.body.rejectReason
+    //   for(let key in req.body.audited.provisional_data){
+    //     if(typeof req.body.audited.provisional_data[key] == 'object' && req.body.audited.provisional_data[key] != null){
+    //         if(req.body.audited.provisional_data[key]){
+    //             if(actionTakenByRole === "STATE"){
+    //                 req.body.audited.provisional_data[key]['rejectReason_state'] = req.body.audited.provisional_data[key]['rejectReason']
+    //                 req.body.audited.provisional_data[key]['responseFile_state'] = req.body.audited.provisional_data[key]['responseFile']
+    //             }
+    //             else if(actionTakenByRole === "MoHUA"){
+    //                 req.body.audited.provisional_data[key]['rejectReason_mohua'] = req.body.audited.provisional_data[key]['rejectReason']
+    //                 req.body.audited.provisional_data[key]['responseFile_mohua'] = req.body.audited.provisional_data[key]['responseFile']
+    //             }
+    //         }
+    //     }
 
-// }
-// for(let key in req.body.unAudited.provisional_data){
-//     if(typeof req.body.unAudited.provisional_data[key] == 'object' && req.body.audited.provisional_data[key] != null){
-//         if(req.body.unAudited.provisional_data[key]){
-//             if(actionTakenByRole === "STATE"){
-//                 req.body.unAudited.provisional_data[key]['rejectReason_state'] = req.body.unAudited.provisional_data[key]['rejectReason'];
-//                 req.body.unAudited.provisional_data[key]['responseFile_state'] = req.body.unAudited.provisional_data[key]['responseFile']
-//             }else if(actionTakenByRole === "MoHUA"){
-//                 req.body.unAudited.provisional_data[key]['rejectReason_mohua'] = req.body.unAudited.provisional_data[key]['rejectReason']
-//                 req.body.unAudited.provisional_data[key]['responseFile_mohua'] = req.body.unAudited.provisional_data[key]['responseFile']
-//             }
-//         }
-//     }
-// }
-// if(req.body.audited){
-//   if(actionTakenByRole === "STATE"){
-//       req.body.audited['rejectReason_state'] = req.body.audited.rejectReason
-//       req.body.audited['responseFile_state'] = req.body.audited.responseFile
-//   }else if(actionTakenByRole === "MoHUA"){
-//      req.body.audited['rejectReason_mohua'] = req.body.audited.rejectReason
-//       req.body.audited['responseFile_mohua'] = req.body.audited.responseFile
-//   }
-// }
-// if(req.body.unAudited){
-//   if(actionTakenByRole === "STATE"){
-//       req.body.unAudited['rejectReason_state'] = req.body.unAudited.rejectReason
-//       req.body.unAudited['responseFile_state'] = req.body.unAudited.responseFile
-//   }else if(actionTakenByRole === "MoHUA"){
-//       req.body.unAudited['rejectReason_mohua'] = req.body.unAudited.rejectReason
-//       req.body.unAudited['responseFile_mohua'] = req.body.unAudited.responseFile
-//   }
-// }
+
+    // }
+    // for(let key in req.body.unAudited.provisional_data){
+    //     if(typeof req.body.unAudited.provisional_data[key] == 'object' && req.body.audited.provisional_data[key] != null){
+    //         if(req.body.unAudited.provisional_data[key]){
+    //             if(actionTakenByRole === "STATE"){
+    //                 req.body.unAudited.provisional_data[key]['rejectReason_state'] = req.body.unAudited.provisional_data[key]['rejectReason'];
+    //                 req.body.unAudited.provisional_data[key]['responseFile_state'] = req.body.unAudited.provisional_data[key]['responseFile']
+    //             }else if(actionTakenByRole === "MoHUA"){
+    //                 req.body.unAudited.provisional_data[key]['rejectReason_mohua'] = req.body.unAudited.provisional_data[key]['rejectReason']
+    //                 req.body.unAudited.provisional_data[key]['responseFile_mohua'] = req.body.unAudited.provisional_data[key]['responseFile']
+    //             }
+    //         }
+    //     }
+    // }
+    // if(req.body.audited){
+    //   if(actionTakenByRole === "STATE"){
+    //       req.body.audited['rejectReason_state'] = req.body.audited.rejectReason
+    //       req.body.audited['responseFile_state'] = req.body.audited.responseFile
+    //   }else if(actionTakenByRole === "MoHUA"){
+    //      req.body.audited['rejectReason_mohua'] = req.body.audited.rejectReason
+    //       req.body.audited['responseFile_mohua'] = req.body.audited.responseFile
+    //   }
+    // }
+    // if(req.body.unAudited){
+    //   if(actionTakenByRole === "STATE"){
+    //       req.body.unAudited['rejectReason_state'] = req.body.unAudited.rejectReason
+    //       req.body.unAudited['responseFile_state'] = req.body.unAudited.responseFile
+    //   }else if(actionTakenByRole === "MoHUA"){
+    //       req.body.unAudited['rejectReason_mohua'] = req.body.unAudited.rejectReason
+    //       req.body.unAudited['responseFile_mohua'] = req.body.unAudited.responseFile
+    //   }
+    // }
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
@@ -2303,7 +2324,7 @@ function csvData_Audited() {
 
 
 
-module.exports.updateAnnualAccForms = async (req, res ) =>{
+module.exports.updateAnnualAccForms = async (req, res) => {
 
   let condition = {
     design_year: "606aafb14dff55e6c075d3ae",
@@ -2311,17 +2332,19 @@ module.exports.updateAnnualAccForms = async (req, res ) =>{
 
   let updatedForms = [];
   let annualAccForms = await AnnualAccountData.find(condition)
-  .select({history: 0}).lean()
+    .select({ history: 0 }).lean()
 
-  for(let i =0; i< annualAccForms.length; i++){
+  for (let i = 0; i < annualAccForms.length; i++) {
     let form = annualAccForms[i];
     let formStatus = calculateStatus(form.status, form.actionTakenByRole, form.isDraft, "ULB");
     updateKeys(formStatus, form);
     delete form["history"];
-    let newForm = await AnnualAccountData.findOneAndUpdate({design_year: form.design_year,
-    ulb: form.ulb},{
+    let newForm = await AnnualAccountData.findOneAndUpdate({
+      design_year: form.design_year,
+      ulb: form.ulb
+    }, {
       $set: form
-    },{
+    }, {
       new: true
     })
     updatedForms.push(newForm);
@@ -2333,7 +2356,7 @@ module.exports.updateAnnualAccForms = async (req, res ) =>{
   })
 }
 
-function updateKeys(formStatus, form){
+function updateKeys(formStatus, form) {
   if (
     formStatus === STATUS_LIST.In_Progress ||
     formStatus === STATUS_LIST.Under_Review_By_State
@@ -2346,24 +2369,24 @@ function updateKeys(formStatus, form){
     formStatus === STATUS_LIST.Rejected_By_State ||
     formStatus === STATUS_LIST.Under_Review_By_MoHUA
   ) {
-      addKeysToObj(form);
+    addKeysToObj(form);
 
-  }else if(
+  } else if (
     formStatus === STATUS_LIST.Approved_By_MoHUA ||
     formStatus === STATUS_LIST.Rejected_By_MoHUA
-  ){
+  ) {
 
   }
 }
 
-function addKeysToObj(formData){
+function addKeysToObj(formData) {
 
-  for(let key in formData){
-    if(key === "audited" || key === "unAudited"){
+  for (let key in formData) {
+    if (key === "audited" || key === "unAudited") {
 
       if (formData.actionTakenByRole === "STATE") {
         formData[key].rejectReason_state = formData[key].rejectReason ?? "";
-        formData[key].responseFile_state = formData[key].responseFile ?? {url: "", name: ""};
+        formData[key].responseFile_state = formData[key].responseFile ?? { url: "", name: "" };
         formData[key].rejectReason_mohua = "";
         formData[key].responseFile_mohua = {
           url: "",
@@ -2371,8 +2394,8 @@ function addKeysToObj(formData){
         };
       } else if (formData.actionTakenByRole === "MoHUA") {
         formData[key].rejectReason_mohua = formData[key].rejectReason ?? "";
-        formData[key].responseFile_mohua = formData[key].responseFile ?? {url: "", name: ""};
-      } else if( formData.actionTakenByRole === "ULB"){
+        formData[key].responseFile_mohua = formData[key].responseFile ?? { url: "", name: "" };
+      } else if (formData.actionTakenByRole === "ULB") {
         formData[key].rejectReason_state = "";
         formData[key].responseFile_state = {
           url: "",
@@ -2382,12 +2405,12 @@ function addKeysToObj(formData){
         formData[key].responseFile_mohua = {
           url: "",
           name: "",
-        };              
-    }
+        };
+      }
 
-      for(let innerKey in formData[key]){
-        if(innerKey === "provisional_data"){
-          for(let innerKey2 in formData[key][innerKey]){
+      for (let innerKey in formData[key]) {
+        if (innerKey === "provisional_data") {
+          for (let innerKey2 in formData[key][innerKey]) {
             if (
               typeof formData[key] === "object" &&
               formData[key][innerKey][innerKey2] != null
@@ -2396,8 +2419,8 @@ function addKeysToObj(formData){
                 formData[key][innerKey][innerKey2].rejectReason_state =
                   formData[key][innerKey][innerKey2].rejectReason ?? "";
                 formData[key][innerKey][innerKey2].responseFile_state =
-                  formData[key][innerKey][innerKey2].responseFile ?? {url: "", name: ""};
-                  formData[key].rejectReason_mohua = "";
+                  formData[key][innerKey][innerKey2].responseFile ?? { url: "", name: "" };
+                formData[key].rejectReason_mohua = "";
                 formData[key].responseFile_mohua = {
                   url: "",
                   name: ""
@@ -2408,7 +2431,7 @@ function addKeysToObj(formData){
                 formData[key][innerKey][innerKey2].responseFile_mohua =
                   formData[key][innerKey][innerKey2].responseFile;
               }
-              else if( formData.actionTakenByRole === "ULB"){
+              else if (formData.actionTakenByRole === "ULB") {
                 formData[key][innerKey][innerKey2].rejectReason_state = "";
                 formData[key][innerKey][innerKey2].responseFile_state = {
                   url: "",
@@ -2418,8 +2441,8 @@ function addKeysToObj(formData){
                 formData[key][innerKey][innerKey2].responseFile_mohua = {
                   url: "",
                   name: "",
-                };              
-            }
+                };
+              }
             }
           }
         }
