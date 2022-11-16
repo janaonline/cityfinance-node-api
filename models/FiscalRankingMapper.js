@@ -5,6 +5,13 @@ const fiscalRankingMapperSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         amount: { type: Number, default: 0 },
+        status: {
+            type: String,
+            enum: {
+                values: ["PENDING", "APPROVED", "REJECTED"],
+                message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+            },
+        },
         isActive: { type: Boolean, default: 1 },
         type: {
             type: String,

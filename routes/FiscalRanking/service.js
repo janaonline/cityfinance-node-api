@@ -6,16 +6,20 @@ const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 exports.CreateorUpdate = async (req, res, next) => {
   try {
     let { ulb, design_year } = req.body;
-    let fsData = await FiscalRanking.findOne({ "": req.body.ulb }).lean();
+    if (!ulb && !design_year) {
+      return res.status(400).json({ status: false, message: "ULB and Design year required fields!" });
+    }
+    let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
+    let fsData = await FiscalRanking.findOne(condition).lean();
     if (fsData) {
-      let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(id) });
+      let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData.id) });
       let obj = { ...fsData, fsMapper };
       delete obj.history;
       let history = fsData.history;
       history.push(obj);
       req.body['history'] = history;
-      await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(id) });
-      await FiscalRanking.update({ _id: ObjectId(id) }, req.body);
+      await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(fsData.id) });
+      await FiscalRanking.update(condition, req.body);
     } else {
       let d = await FiscalRanking.create(req.body);
       id = d._id;
@@ -64,16 +68,14 @@ const fRMapperCreate = (objData) => {
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
-    if (req.decoded.ulb) {
-      condition['ulb'] = ObjectId(req.decoded.ulb);
+    if (req.decoded.ulb && req.query.design_year) {
+      condition = { "ulb": ObjectId(req.decoded.ulb), "design_year": ObjectId(req.query.design_year) }
     }
-    if (req.query.design_year) {
-      condition['design_year'] = ObjectId(req.query.design_year);
-    }
-    let data = await FiscalRanking.find(condition).lean();
+    let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
+    let fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
     let viewOne = {};
-    if (data.length) {
-      viewOne = data[0];
+    if (data) {
+      viewOne = { data, fyData }
     } else {
       viewOne = {
         "ulb": null,
@@ -139,7 +141,7 @@ exports.getView = async function (req, res, next) {
         "lable": "FY 2019-20"
       }
     ]
-
+    
     let fyDynemic = [
       {
         "title": "REVENUE MOBILIZATION PARAMETERS",
