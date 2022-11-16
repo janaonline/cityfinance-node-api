@@ -275,7 +275,9 @@ module.exports.get = catchAsync(async (req, res) => {
     }) 
   }else if(role == "STATE"){
     data.forEach((el,)=> {
-        if( el.category.toLowerCase() != "ulb management" && el.url !== "water-supply"){
+        if( el.category.toLowerCase() != "ulb management" && el.url !== "water-supply"
+        &&  !(["GrantClaim"].includes(`${el.collectionName}`)) && !(el.name === "Dashboard")
+          ){
             let  flag = 0;
             output.forEach(el2 => {
                 if((el._id).toString() == (Object.keys(el2)[0])){
