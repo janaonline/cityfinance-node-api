@@ -68,8 +68,8 @@ const fRMapperCreate = (objData) => {
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
-    if (req.decoded.ulb && req.query.design_year) {
-      condition = { "ulb": ObjectId(req.decoded.ulb), "design_year": ObjectId(req.query.design_year) }
+    if (req.query.ulb && req.query.design_year) {
+      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.design_year) }
     }
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
@@ -141,7 +141,7 @@ exports.getView = async function (req, res, next) {
         "lable": "FY 2019-20"
       }
     ]
-    
+
     let fyDynemic = [
       {
         "title": "REVENUE MOBILIZATION PARAMETERS",
