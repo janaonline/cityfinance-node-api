@@ -784,7 +784,7 @@ let role  = req.decoded.role;
     }).select({history:1}).lean()
     let prevUtilReportQuery =  UtilizationReport.findOne({
       ulb: ulb,
-      designYear: design_year
+      designYear: prevYear._id
     }).select({history: 0}).lean()
     let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
     //check if prevyear util report is atleast approved by state
