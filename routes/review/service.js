@@ -1088,7 +1088,7 @@ function removeEscapeChars(entity){
               }
               
             /* Destructuring the data from the annualAccountCsvFormat function. */
-+           ({ auditedEntity, unAuditedEntity } = annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized));
+           ({ auditedEntity, unAuditedEntity } = annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized));
               return [auditedEntity, unAuditedEntity];
               break;
             
