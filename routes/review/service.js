@@ -1400,8 +1400,8 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
     }
 
   } else if (data?.actionTakenByRole === "MoHUA") {
-    let stateHistoryAudited = data?.history[data?.history.length -1].audited
-    let stateHistoryUnAudited = data?.history[data?.history.length -1].unAudited
+    let stateHistoryAuditedProvisional = data?.history[data?.history.length -2]?.audited?.provisional_data
+    let stateHistoryUnAuditedProvisional = data?.history[data?.history.length -2]?.unAudited?.provisional_data
 
     if(data?.audited?.submit_annual_accounts === false){
       auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
@@ -1426,7 +1426,9 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
         entity?.filled_audited ?? ""
       }, Audited, ${data?.auditedYear?.year ?? ""},${
         auditedProvisional?.bal_sheet?.pdf?.url ?? ""
-      }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""},, ,${
+      }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.bal_sheet?.status ?? ""}, ${
+        auditedProvisional?.bal_sheet?.rejectReason_state ?? ""},${
         auditedProvisional?.bal_sheet?.status ?? ""
       }, ${auditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${
         auditedProvisional?.assets ?? ""
@@ -1434,25 +1436,36 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
         auditedProvisional?.s_grant ?? ""
       }, ${auditedProvisional?.c_grant ?? ""}, ${
         auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-      }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, , , ${
+      }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_state}, ${
         auditedProvisional?.bal_sheet_schedules?.status ?? ""
       }, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""},${
         auditedProvisional?.inc_exp?.pdf?.url ?? ""
-      }, ${auditedProvisional?.inc_exp?.excel?.url ?? ""}, , , ${
+      }, ${auditedProvisional?.inc_exp?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.inc_exp?.status ?? ""
+      }, ${auditedProvisional?.inc_exp?.rejectReason_state}, ${
         auditedProvisional?.inc_exp?.status ?? ""
       }, ${auditedProvisional?.inc_exp?.rejectReason_mohua ?? ""}, ${
         auditedProvisional?.revenue ?? ""
       }, ${auditedProvisional?.expense ?? ""},${
         auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
-      }, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""}, , ,${
+      }, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.inc_exp_schedules?.status ?? ""
+      }, ${auditedProvisional?.inc_exp_schedules?.rejectReason_state},${
         auditedProvisional?.inc_exp_schedules?.status ?? ""
       }, ${auditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""}, ${
         auditedProvisional?.cash_flow?.pdf?.url ?? ""
-      }, ${auditedProvisional?.cash_flow?.excel?.url ?? ""}, , , ${
+      }, ${auditedProvisional?.cash_flow?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.cash_flow?.status ?? ""
+      }, ${auditedProvisional?.cash_flow?.rejectReason_state}, ${
         auditedProvisional?.cash_flow?.status ?? ""
       }, ${auditedProvisional?.cash_flow?.rejectReason_mohua ?? ""}, ${
         auditedProvisional?.auditor_report?.pdf?.url ?? ""
-      }, , ,${auditedProvisional?.auditor_report?.status ?? ""}, ${
+      }, ${
+        stateHistoryAuditedProvisional?.auditor_report?.status ?? ""
+      }, ${auditedProvisional?.auditor_report?.rejectReason_state},${
+        auditedProvisional?.auditor_report?.status ?? ""}, ${
         auditedProvisional?.auditor_report?.rejectReason_mohua ?? ""
       }, ${data?.audited?.submit_standardized_data ?? ""}, ${
         auditedStandardized?.excel?.url ?? ""
@@ -1492,7 +1505,9 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
         entity?.filled_provisional ?? ""
       }, Provisional,${data?.unAuditedYear?.year ?? ""}, ${
         unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
-      }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, , ,  ${
+      }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
+        stateHistoryUnAuditedProvisional?.bal_sheet?.status ?? ""
+      }, ${unAuditedProvisional?.bal_sheet?.rejectReason_state},  ${
         unAuditedProvisional?.bal_sheet?.status ?? ""
       }, ${unAuditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${
         unAuditedProvisional?.assets ?? ""
@@ -1500,23 +1515,34 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
         unAuditedProvisional?.s_grant ?? ""
       }, ${unAuditedProvisional?.c_grant ?? ""}, ${
         unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-      }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, , , ${
+      }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${
+        stateHistoryUnAuditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_state}, ${
         unAuditedProvisional?.bal_sheet_schedules?.status ?? ""
       }, ${
         unAuditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""
       }, ${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
         unAuditedProvisional?.inc_exp?.excel?.url ?? ""
-      }, , , ${unAuditedProvisional?.inc_exp?.status ?? ""}, ${
+      }, ${
+        stateHistoryUnAuditedProvisional?.inc_exp?.status ?? ""
+      }, ${unAuditedProvisional?.inc_exp?.rejectReason_state}, ${
+        unAuditedProvisional?.inc_exp?.status ?? ""}, ${
         unAuditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
       },  ${unAuditedProvisional?.revenue ?? ""}, ${
         unAuditedProvisional?.expense ?? ""
       },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${
         unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-      }, , ,  ${unAuditedProvisional?.inc_exp_schedules?.status ?? ""}, ${
+      }, ${
+        stateHistoryUnAuditedProvisional?.inc_exp_schedules?.status ?? ""
+      }, ${unAuditedProvisional?.inc_exp_schedules?.rejectReason_state},  ${
+        unAuditedProvisional?.inc_exp_schedules?.status ?? ""}, ${
         unAuditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
       }, ${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
         unAuditedProvisional?.cash_flow?.excel?.url ?? ""
-      }, , ,  ${unAuditedProvisional?.cash_flow?.status ?? ""}, ${
+      }, ${
+        stateHistoryUnAuditedProvisional?.cash_flow?.status ?? ""
+      }, ${unAuditedProvisional?.cash_flow?.rejectReason_state},  ${
+        unAuditedProvisional?.cash_flow?.status ?? ""}, ${
         unAuditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
       }, , , , , , ${data?.unAudited?.submit_standardized_data ?? ""}, ${
         unAuditedStandardized?.excel?.url ?? ""
