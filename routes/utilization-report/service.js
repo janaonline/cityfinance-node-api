@@ -852,7 +852,7 @@ else{
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
-    sampleData.grantPosition.unUtilizedPrevYr = fetchedData?.grantPosition?.closingBal
+    sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? fetchedData?.grantPosition?.closingBal : 0;
     console.log(sampleData)
     sampleData = sampleData.toObject()
     // sampleData = sampleData.lean()
