@@ -761,13 +761,13 @@ let role  = req.decoded.role;
   }
   let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
  /* Checking if the user has access to the form. */
-  if(!ulbData.access_2122){
-    return res.status(200).json({
-      success: false,
-      message: `Last year form access not allowed.`,
-      data: utilReportObject()
-    })
-  }
+  // if(!ulbData.access_2122){
+  //   return res.status(200).json({
+  //     success: false,
+  //     message: `Last year form access not allowed.`,
+  //     data: utilReportObject()
+  //   })
+  // }
   let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
   let currentYear = await Year.findOne({_id: ObjectId(design_year)}).lean()
   // current year
@@ -790,19 +790,19 @@ let role  = req.decoded.role;
     //check if prevyear util report is atleast approved by state
     let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
 
-    if (
-      !(
-        prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
-        prevUtilStatus === FORM_STATUS.Approved_By_State ||
-        prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
-      )
-    ) {
-      return res.status(200).json({
-        success: false,
-        message: `last year form not approved.`,
-        data: utilReportObject(),
-      });
-    }
+    // if (
+    //   !(
+    //     prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
+    //     prevUtilStatus === FORM_STATUS.Approved_By_State ||
+    //     prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
+    //   )
+    // ) {
+    //   return res.status(200).json({
+    //     success: false,
+    //     message: `last year form not approved.`,
+    //     data: utilReportObject(),
+    //   });
+    // }
     let status = ''
 if(!prevData){
   status = 'Not Started'
@@ -821,7 +821,7 @@ if(!ulbData.access_2122){
   obj['url'] = ``;
 }
 else{
-  if(status == FORM_STATUS.Under_Review_By_MoHUA || status == FORM_STATUS.Approved_By_MoHUA ){
+  if([FORM_STATUS.Under_Review_By_MoHUA , FORM_STATUS.Approved_By_MoHUA , FORM_STATUS.Approved_By_State].includes(status) ){
     obj['action'] = 'not_show';
     obj['url'] = ``;
   }else if(status == FORM_STATUS.Under_Review_By_State){
