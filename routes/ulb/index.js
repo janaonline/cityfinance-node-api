@@ -14,6 +14,8 @@ router.get("/getAllULBS/csv", Ulb.getAllULBSCSV);
 router.put("/ulb/:_id", verifyToken, Ulb.put);
 router.put("/ulb", Ulb.renameUlb);
 router.post("/Ulb", verifyToken, Ulb.post);
+router.post("/bulkPost", verifyToken, Ulb.bulkPost);
+
 router.post(
   "/multi-Ulb",
   verifyToken,
