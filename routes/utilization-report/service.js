@@ -844,6 +844,15 @@ else{
   
   if(fetchedData){
     Object.assign(fetchedData, {canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB",role ) })
+    
+    
+/* Checking if the ulbData.access_2122 is not true, then it is setting the
+   unUtilizedPrevYr to 0. */
+    !ulbData.access_2122 ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : ""
+    
+/* The above code is checking if the action property of the obj object is equal to "not_show". If it
+is, then it is assigning the fetchedData object to the obj object. */
+    obj['action'] === "note" ? Object.assign(fetchedData, obj) : ""
     return res.status(200).json({
       success: true,
       data:fetchedData
@@ -852,7 +861,7 @@ else{
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
-    sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? fetchedData?.grantPosition?.closingBal : 0;
+    sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
     console.log(sampleData)
     sampleData = sampleData.toObject()
     // sampleData = sampleData.lean()
