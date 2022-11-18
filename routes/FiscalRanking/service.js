@@ -142,73 +142,630 @@ exports.getView = async function (req, res, next) {
       }
     ]
 
-    let fyDynemic = [
-      {
-        "title": "REVENUE MOBILIZATION PARAMETERS",
-        "subData": [
-          {
-            "type": "1",
-            "typeLable": "Total Receipts (Actual)",
-            "years": yearsArr
-          },
-          {
-            "type": "2",
-            "typeLable": "Total Receipts (Budget Estimate)",
-            "years": yearsArr
-          },
-          {
-            "type": "3",
-            "typeLable": "Total Own Revenues",
-            "years": yearsArr
-          },
-          {
-            "type": "4",
-            "typeLable": "Total Property Tax Revenue",
-            "years": yearsArr
-          }
-        ]
+    // let fyDynemic = [
+    //   {
+    //     "title": "REVENUE MOBILIZATION PARAMETERS",
+    //     "subData": [
+    //       {
+    //         "type": "1",
+    //         "typeLable": "Total Receipts (Actual)",
+    //         "years": yearsArr
+    //       },
+    //       {
+    //         "type": "2",
+    //         "typeLable": "Total Receipts (Budget Estimate)",
+    //         "years": yearsArr
+    //       },
+    //       {
+    //         "type": "3",
+    //         "typeLable": "Total Own Revenues",
+    //         "years": yearsArr
+    //       },
+    //       {
+    //         "type": "4",
+    //         "typeLable": "Total Property Tax Revenue",
+    //         "years": yearsArr
+    //       }
+    //     ]
+    //   },
+    //   {
+    //     "title": "EXPENDITURE PERFORMANCE PARAMETERS",
+    //     "subData": [
+    //       {
+    //         "type": "5",
+    //         "typeLable": "Total Gross Block",
+    //         "years": yearsArr
+    //       },
+    //       {
+    //         "type": "6",
+    //         "typeLable": "Total Capital Work in Progress (CWIP)",
+    //         "years": yearsArr
+    //       },
+    //       {
+    //         "type": "7",
+    //         "typeLable": "Establishment & Administrative Expenses",
+    //         "years": yearsArr
+    //       },
+    //       {
+    //         "type": "8",
+    //         "typeLable": "Total Revenue Expenditure",
+    //         "years": yearsArr
+    //       },
+    //     ]
+    //   },
+    //   {
+    //     "title": "UPLOAD FINANCIAL DOCUMENTS",
+    //     "subData": [
+    //       {
+    //         "type": "9",
+    //         "typeLable": "Approved Annual Budget",
+    //         "years": yearsArr2
+    //       },
+    //       {
+    //         "type": "10",
+    //         "typeLable": "Audited Annual Financial Statements",
+    //         "years": yearsArr2
+    //       }
+    //     ]
+    //   }
+    // ]
+    let fyDynemic = {
+      revenueMob: {
+        totalRecActual: {
+          key: 'totalRecActual',
+          label: 'Total Receipts (Actual)',
+          yearData: [
+            {
+              label: 'FY 2016-17',
+              key: 'FY2016-17',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '1',
+              year: "63735a1ad44534713673bc2b",
+              bottomText: 'to be taken from approved Annual Budget of ',
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2017-18',
+              key: 'FY2017-18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '1',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: 'to be taken from approved Annual Budget of ',
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'FY2018-19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '1',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'FY2019-20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '1',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget `,
+              placeHolder: ''
+            }
+          ]
+        },
+        totalRecBudgetEst: {
+          key: 'totalRecBudgetEst',
+          label: 'Total Receipts (Budget Estimate)',
+          yearData: [
+            {
+              label: 'FY 2016-17',
+              key: 'FY2016-17',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '2',
+              year: "63735a1ad44534713673bc2b",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2017-18',
+              key: 'FY2017-18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '2',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'FY2018-19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '2',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'FY2019-20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '2',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            }
+          ]
+        },
+        totalOwnRevenues: {
+          key: 'totalOwnRevenues',
+          label: 'Total Own Revenues ',
+          yearData: [
+            {
+              label: 'FY 2016-17',
+              key: 'FY2016-17',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '3',
+              year: "63735a1ad44534713673bc2b",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2017-18',
+              key: 'FY2017-18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '3',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'FY2018-19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '3',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'FY2019-20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '3',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            }
+          ]
+        },
+        totalPropTaxRevenue: {
+          key: 'totalPropTaxRevenue',
+          label: 'Total Property Tax Revenue ',
+          yearData: [
+            {
+              label: 'FY 2016-17',
+              key: 'FY2016-17',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '4',
+              year: "63735a1ad44534713673bc2b",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2017-18',
+              key: 'FY2017-18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '4',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'FY2018-19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '4',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'FY2019-20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '4',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            }
+          ]
+        },
       },
-      {
-        "title": "EXPENDITURE PERFORMANCE PARAMETERS",
-        "subData": [
-          {
-            "type": "5",
-            "typeLable": "Total Gross Block",
-            "years": yearsArr
-          },
-          {
-            "type": "6",
-            "typeLable": "Total Capital Work in Progress (CWIP)",
-            "years": yearsArr
-          },
-          {
-            "type": "7",
-            "typeLable": "Establishment & Administrative Expenses",
-            "years": yearsArr
-          },
-          {
-            "type": "8",
-            "typeLable": "Total Revenue Expenditure",
-            "years": yearsArr
-          },
-        ]
+      expPerf: {
+        totalGrossBlock: {
+          key: 'totalGrossBlock',
+          label: 'Total Gross Block',
+          yearData: [
+            {
+              label: 'As on 31st March 2017',
+              key: 'totalGrossBlock_17',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '5',
+              year: "63735a1ad44534713673bc2b",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'As on 31st March 2018',
+              key: 'totalGrossBlock_18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '5',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'As on 31st March 2019',
+              key: 'totalGrossBlock_19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '5',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'As on 31st March 2020',
+              key: 'totalGrossBlock_20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '5',
+              required: true,
+              type: '',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            }
+          ]
+        },
+        totalCWIP: {
+          key: 'totalCWIP',
+          label: 'Total Capital Work in Progress (CWIP)',
+          yearData: [
+            {
+              label: 'As on 31st March 2017',
+              key: 'totalCWIP_17',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '6',
+              year: "63735a1ad44534713673bc2b",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'As on 31st March 2018',
+              key: 'totalCWIP_18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '6',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'As on 31st March 2019',
+              key: 'totalCWIP_19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '6',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'As on 31st March 2020',
+              key: 'totalCWIP_20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '6',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            }
+          ]
+        },
+        estAdmExpenses: {
+          key: 'estAdmExpenses',
+          label: 'Establishment & Administrative Expenses',
+          yearData: [
+            {
+              label: 'FY 2017-18',
+              key: 'estAdmExpenses_17-18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '7',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'estAdmExpenses_18-19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '7',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'estAdmExpenses_19-20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '7',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            }
+          ]
+        },
+        totalRevExp: {
+          key: 'totalRevExp',
+          label: 'Total Revenue Expenditure',
+          yearData: [
+            {
+              label: 'FY 2017-18',
+              key: 'totalRevExp_17-18',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '8',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'totalRevExp_18-19',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '8',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'totalRevExp_19-20',
+              postion: '4',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '8',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `to be taken from approved Annual Budget of `,
+              placeHolder: ''
+            }
+          ]
+        },
       },
-      {
-        "title": "UPLOAD FINANCIAL DOCUMENTS",
-        "subData": [
-          {
-            "type": "9",
-            "typeLable": "Approved Annual Budget",
-            "years": yearsArr2
-          },
-          {
-            "type": "10",
-            "typeLable": "Audited Annual Financial Statements",
-            "years": yearsArr2
-          }
-        ]
+      uploadFyDoc: {
+        guidanceNotes: {
+          key: 'guidanceNotes',
+          label: 'Guidance Notes:',
+          yearData: [
+            {
+              title: '',
+              pos: '1',
+              desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
+            },
+            {
+              title: '',
+              pos: '2',
+              desc: `Annual Budgets should be the detailed final approved version and should be in English language.`
+            },
+            {
+              title: '',
+              pos: '3',
+              desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
+            }
+          ]
+        },
+        appAnnualBudget: {
+          key: 'appAnnualBudget',
+          label: 'Copy of Detailed Approved Annual Budget of',
+          yearData: [
+            {
+              label: 'FY 2017-18',
+              key: 'appAnnualBudget_2017-18',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `Maximum Size  5MB (pdf files only)`,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'appAnnualBudget_2018-19',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `Maximum Size  5MB (pdf files only)`,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'appAnnualBudget_2019-20',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `Maximum Size  5MB (pdf files only)`,
+              placeHolder: ''
+            },
+          ]
+        },
+        auditedAnnualFySt: {
+          key: 'auditedAnnualFySt',
+          label: 'Copy of Detailed Audited Annual Accounts for',
+          yearData: [
+            {
+              label: 'FY 2017-18',
+              key: 'auditedAnnualFySt_2017-18',
+              postion: '1',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '',
+              year: "63735a5bd44534713673c1ca",
+              bottomText: `Maximum Size  5MB (pdf files only)`,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2018-19',
+              key: 'auditedAnnualFySt_2018-19',
+              postion: '2',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '',
+              year: "63735a4bd44534713673bfbf",
+              bottomText: `Maximum Size  5MB (pdf files only)`,
+              placeHolder: ''
+            },
+            {
+              label: 'FY 2019-20',
+              key: 'auditedAnnualFySt_2019-20',
+              postion: '3',
+              value: '',
+              min: '',
+              max: '',
+              required: true,
+              type: '',
+              year: "607697074dff55e6c0be33ba",
+              bottomText: `Maximum Size  5MB (pdf files only)`,
+              placeHolder: ''
+            },
+          ]
+        },
       }
-    ]
+    }
     return res.status(200).json({ status: false, message: "Something error wrong!", "data": viewOne, fyDynemic });
   } catch (error) {
     console.log("err", error)
