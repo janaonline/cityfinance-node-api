@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const ObjectId = require("mongoose").Types.ObjectId;
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
+const UlbLedger = require('../../models/UlbLedger');
+
 
 exports.CreateorUpdate = async (req, res, next) => {
   try {
@@ -109,106 +111,6 @@ exports.getView = async function (req, res, next) {
       }
     }
 
-    let yearsArr = [
-      {
-        "year": "63735a1ad44534713673bc2b",
-        "lable": "FY 2016-17"
-      },
-      {
-        "year": "63735a4bd44534713673bfbf",
-        "lable": "FY 2017-18"
-      },
-      {
-        "year": "63735a5bd44534713673c1ca",
-        "lable": "FY 2018-19"
-      },
-      {
-        "year": "607697074dff55e6c0be33ba",
-        "lable": "FY 2019-20"
-      }
-    ]
-    let yearsArr2 = [
-      {
-        "year": "63735a4bd44534713673bfbf",
-        "lable": "FY 2017-18"
-      },
-      {
-        "year": "63735a5bd44534713673c1ca",
-        "lable": "FY 2018-19"
-      },
-      {
-        "year": "607697074dff55e6c0be33ba",
-        "lable": "FY 2019-20"
-      }
-    ]
-
-    // let fyDynemic = [
-    //   {
-    //     "title": "REVENUE MOBILIZATION PARAMETERS",
-    //     "subData": [
-    //       {
-    //         "type": "1",
-    //         "typeLable": "Total Receipts (Actual)",
-    //         "years": yearsArr
-    //       },
-    //       {
-    //         "type": "2",
-    //         "typeLable": "Total Receipts (Budget Estimate)",
-    //         "years": yearsArr
-    //       },
-    //       {
-    //         "type": "3",
-    //         "typeLable": "Total Own Revenues",
-    //         "years": yearsArr
-    //       },
-    //       {
-    //         "type": "4",
-    //         "typeLable": "Total Property Tax Revenue",
-    //         "years": yearsArr
-    //       }
-    //     ]
-    //   },
-    //   {
-    //     "title": "EXPENDITURE PERFORMANCE PARAMETERS",
-    //     "subData": [
-    //       {
-    //         "type": "5",
-    //         "typeLable": "Total Gross Block",
-    //         "years": yearsArr
-    //       },
-    //       {
-    //         "type": "6",
-    //         "typeLable": "Total Capital Work in Progress (CWIP)",
-    //         "years": yearsArr
-    //       },
-    //       {
-    //         "type": "7",
-    //         "typeLable": "Establishment & Administrative Expenses",
-    //         "years": yearsArr
-    //       },
-    //       {
-    //         "type": "8",
-    //         "typeLable": "Total Revenue Expenditure",
-    //         "years": yearsArr
-    //       },
-    //     ]
-    //   },
-    //   {
-    //     "title": "UPLOAD FINANCIAL DOCUMENTS",
-    //     "subData": [
-    //       {
-    //         "type": "9",
-    //         "typeLable": "Approved Annual Budget",
-    //         "years": yearsArr2
-    //       },
-    //       {
-    //         "type": "10",
-    //         "typeLable": "Audited Annual Financial Statements",
-    //         "years": yearsArr2
-    //       }
-    //     ]
-    //   }
-    // ]
     let fyDynemic = {
       revenueMob: {
         totalRecActual: {
@@ -220,10 +122,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2016-17',
               postion: '1',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '1',
+              code: [],
               year: "63735a1ad44534713673bc2b",
               bottomText: 'to be taken from approved Annual Budget of ',
               placeHolder: ''
@@ -233,10 +136,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2017-18',
               postion: '2',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '1',
+              code: [],
               year: "63735a5bd44534713673c1ca",
               bottomText: 'to be taken from approved Annual Budget of ',
               placeHolder: ''
@@ -246,10 +150,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2018-19',
               postion: '3',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '1',
+              code: [],
               year: "63735a4bd44534713673bfbf",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -259,10 +164,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2019-20',
               postion: '4',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '1',
+              code: [],
               year: "607697074dff55e6c0be33ba",
               bottomText: `to be taken from approved Annual Budget `,
               placeHolder: ''
@@ -278,10 +184,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2016-17',
               postion: '1',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '2',
+              code: [],
               year: "63735a1ad44534713673bc2b",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -291,10 +198,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2017-18',
               postion: '2',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '2',
+              code: [],
               year: "63735a5bd44534713673c1ca",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -304,10 +212,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2018-19',
               postion: '3',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '2',
+              code: [],
               year: "63735a4bd44534713673bfbf",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -317,10 +226,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2019-20',
               postion: '4',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '2',
+              code: [],
               year: "607697074dff55e6c0be33ba",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -336,10 +246,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2016-17',
               postion: '1',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '3',
+              code: ['110', '130', '140', '150', '180'],
               year: "63735a1ad44534713673bc2b",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -349,11 +260,12 @@ exports.getView = async function (req, res, next) {
               key: 'FY2017-18',
               postion: '2',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '3',
               year: "63735a5bd44534713673c1ca",
+              code: ['110', '130', '140', '150', '180'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -362,10 +274,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2018-19',
               postion: '3',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '3',
+              code: ['110', '130', '140', '150', '180'],
               year: "63735a4bd44534713673bfbf",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -375,11 +288,12 @@ exports.getView = async function (req, res, next) {
               key: 'FY2019-20',
               postion: '4',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '3',
               year: "607697074dff55e6c0be33ba",
+              code: ['110', '130', '140', '150', '180'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             }
@@ -394,11 +308,12 @@ exports.getView = async function (req, res, next) {
               key: 'FY2016-17',
               postion: '1',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '4',
               year: "63735a1ad44534713673bc2b",
+              code: ['11001'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -407,11 +322,12 @@ exports.getView = async function (req, res, next) {
               key: 'FY2017-18',
               postion: '2',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '4',
               year: "63735a5bd44534713673c1ca",
+              code: ['11001'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -420,11 +336,12 @@ exports.getView = async function (req, res, next) {
               key: 'FY2018-19',
               postion: '3',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '4',
               year: "63735a4bd44534713673bfbf",
+              code: ['11001'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -433,10 +350,11 @@ exports.getView = async function (req, res, next) {
               key: 'FY2019-20',
               postion: '4',
               value: '',
-              min: '',
-              max: '',
+              min: 0,
+              max: 13,
               required: true,
               type: '4',
+              code: ['11001'],
               year: "607697074dff55e6c0be33ba",
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
@@ -459,6 +377,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '5',
               year: "63735a1ad44534713673bc2b",
+              code: ['410'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -472,6 +391,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '5',
               year: "63735a5bd44534713673c1ca",
+              code: ['410'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -485,6 +405,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '5',
               year: "63735a4bd44534713673bfbf",
+              code: ['410'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -498,6 +419,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '',
               year: "607697074dff55e6c0be33ba",
+              code: ['410'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             }
@@ -517,6 +439,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '6',
               year: "63735a1ad44534713673bc2b",
+              code: ['412'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -530,6 +453,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '6',
               year: "63735a5bd44534713673c1ca",
+              code: ['412'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -543,6 +467,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '6',
               year: "63735a4bd44534713673bfbf",
+              code: ['412'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -556,6 +481,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '6',
               year: "607697074dff55e6c0be33ba",
+              code: ['412'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             }
@@ -575,6 +501,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '7',
               year: "63735a5bd44534713673c1ca",
+              code: ['210', '220'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -588,6 +515,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '7',
               year: "63735a4bd44534713673bfbf",
+              code: ['210', '220'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -601,6 +529,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '7',
               year: "607697074dff55e6c0be33ba",
+              code: ['210', '220'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             }
@@ -620,6 +549,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '8',
               year: "63735a5bd44534713673c1ca",
+              code: ['210', '220', '230', '240', '200'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -633,6 +563,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '8',
               year: "63735a4bd44534713673bfbf",
+              code: ['210', '220', '230', '240', '200'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             },
@@ -646,6 +577,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '8',
               year: "607697074dff55e6c0be33ba",
+              code: ['210', '220', '230', '240', '200'],
               bottomText: `to be taken from approved Annual Budget of `,
               placeHolder: ''
             }
@@ -688,6 +620,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '',
               year: "63735a5bd44534713673c1ca",
+              code: [],
               bottomText: `Maximum Size  5MB (pdf files only)`,
               placeHolder: ''
             },
@@ -701,6 +634,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '',
               year: "63735a4bd44534713673bfbf",
+              code: [],
               bottomText: `Maximum Size  5MB (pdf files only)`,
               placeHolder: ''
             },
@@ -714,6 +648,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '',
               year: "607697074dff55e6c0be33ba",
+              code: [],
               bottomText: `Maximum Size  5MB (pdf files only)`,
               placeHolder: ''
             },
@@ -733,6 +668,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '',
               year: "63735a5bd44534713673c1ca",
+              code: [],
               bottomText: `Maximum Size  5MB (pdf files only)`,
               placeHolder: ''
             },
@@ -746,6 +682,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '',
               year: "63735a4bd44534713673bfbf",
+              code: [],
               bottomText: `Maximum Size  5MB (pdf files only)`,
               placeHolder: ''
             },
@@ -759,6 +696,7 @@ exports.getView = async function (req, res, next) {
               required: true,
               type: '',
               year: "607697074dff55e6c0be33ba",
+              code: [],
               bottomText: `Maximum Size  5MB (pdf files only)`,
               placeHolder: ''
             },
@@ -766,13 +704,105 @@ exports.getView = async function (req, res, next) {
         },
       }
     }
-    return res.status(200).json({ status: false, message: "Something error wrong!", "data": viewOne, fyDynemic });
+    let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
+    for (const sortKey in fyDynemic) {
+      let subData = fyDynemic[sortKey];
+      for (const key in subData) {
+        for (const pf of subData[key]?.yearData) {
+          if (pf?.code?.length && ulbData.length) {
+            let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+            pf['value'] = ulbFyAmount;
+          }
+        }
+      }
+    }
+    return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic });
   } catch (error) {
     console.log("err", error)
     return res.status(400).json({ status: false, message: "Something error wrong!" });
   }
 }
+const getUlbLedgerDataFilter = (objData) => {
+  const { code, year, data } = objData;
+  if (code.length) {
+    let ulbFyData = data.length ? data.filter(el => code.includes(el.code) && el.year_id.toString() === year.toString()) : []
+    var sum = ulbFyData ? ulbFyData.reduce((pv, cv) => pv + cv.totalAmount, 0) : 0;
+    return sum;
+  } else {
+    return 0;
+  }
+}
 
+const ulbLedgersData = (objData) => {
+  return new Promise(async (resolve, reject) => {
+    const { ulb } = objData;
+    try {
+      let data = await UlbLedger.aggregate([
+        { $match: { ulb: ObjectId(ulb) } },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems"
+          }
+        },
+        { $unwind: "$lineitems" },
+        {
+          $project: {
+            _id: 1,
+            year: "$financialYear",
+            amount: 1,
+            ulb: 1,
+            code: "$lineitems.code"
+          }
+        },
+        {
+          $match: {
+            code: { $in: ["110", "130", "140", "150", "180", "11001", "410", "412", "210", "220", "230", "240", "200"] },
+            year: { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }
+          }
+        },
+        {
+          "$group": {
+            "_id": { "year": "$year", "code": "$code" },
+            "totalAmount": { $sum: "$amount" }
+          }
+        },
+        {
+          $project: {
+            year: "$_id.year",
+            code: "$_id.code",
+            totalAmount: 1
+          }
+        },
+        {
+          $lookup: {
+            from: "years",
+            localField: "year",
+            foreignField: "year",
+            as: "years"
+          }
+        },
+        {
+          $unwind: "$years"
+        },
+        {
+          $project: {
+            _id: 0,
+            year_id: "$years._id",
+            year: "$years.year",
+            code: "$_id.code",
+            totalAmount: 1
+          }
+        }
+      ]);
+      resolve(data);
+    } catch (error) {
+      reject(error);
+    }
+  })
+}
 exports.getAll = async function (req, res, next) {
   try {
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
