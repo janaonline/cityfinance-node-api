@@ -788,7 +788,7 @@ let role  = req.decoded.role;
     }).select({history: 0}).lean()
     let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
     //check if prevyear util report is atleast approved by state
-    let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
+    // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
 
     // if (
     //   !(
