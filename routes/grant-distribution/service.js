@@ -303,7 +303,7 @@ async function validate(data, formData) {
   amount = `${amount} - ${type}`
   /* Checking if the formData.design_year is equal to 2021-22, if it is, then it sets the amount variable
   to "grant amount". */
-  formData.design_year === undefined ? amount = "grant amount": ""
+  formData.design_year === "2021-22" ? amount = "grant amount": ""
 const keys = Object.keys(data[0]);
   if (
     !(keys.includes(code) && keys.includes(name) && keys.includes(amount) 
