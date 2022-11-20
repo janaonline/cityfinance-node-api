@@ -675,6 +675,78 @@ exports.report = async (req, res) => {
     res.end();
   }
 };
+function utilReportObject(){
+  let obj =  {
+      _id: null,
+      designYear: null,
+      ulb: null,
+      actionTakenByRole: null,
+      categoryWiseData_swm: [
+        {
+          category_name: "Sanitation",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Solid Waste Management",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+      ],
+      categoryWiseData_wm: [
+        {
+          category_name: "Rejuvenation of Water Bodies",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Drinking Water",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Rainwater Harvesting",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+        {
+          category_name: "Water Recycling",
+          grantUtilised: null,
+          numberOfProjects: null,
+          totalProjectCost: null,
+          _id: null,
+        },
+      ],
+      declaration: false,
+      grantPosition: {
+        closingBal: null,
+        expDuringYr: null,
+        receivedDuringYr: null,
+        unUtilizedPrevYr: 0,
+      },
+      history: [],
+      isActive: true,
+      isDraft: true,
+      projects: [],
+      rejectReason: null,
+      rejectReason_mohua: null,
+      rejectReason_state: null,
+      status: null,
+      // canTakeAction: false,
+    }
+
+    return obj;
+  }
 
 module.exports.read2223 = catchAsync(async(req,res)=> {
   let ulb = req.query.ulb;
@@ -688,6 +760,14 @@ let role  = req.decoded.role;
     })
   }
   let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+ /* Checking if the user has access to the form. */
+  // if(!ulbData.access_2122){
+  //   return res.status(200).json({
+  //     success: false,
+  //     message: `Last year form access not allowed.`,
+  //     data: utilReportObject()
+  //   })
+  // }
   let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
   let currentYear = await Year.findOne({_id: ObjectId(design_year)}).lean()
   // current year
@@ -698,11 +778,31 @@ let role  = req.decoded.role;
      
     prevYear = await Year.findOne({year: prevYearVal}).lean()
 
-    let prevData = await MasterForm.findOne({
+    let prevDataQuery = MasterForm.findOne({
       ulb: ObjectId(ulb),
       design_year: prevYear._id
     }).select({history:1}).lean()
-    
+    let prevUtilReportQuery =  UtilizationReport.findOne({
+      ulb: ulb,
+      designYear: prevYear._id
+    }).select({history: 0}).lean()
+    let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
+    //check if prevyear util report is atleast approved by state
+    // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
+
+    // if (
+    //   !(
+    //     prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
+    //     prevUtilStatus === FORM_STATUS.Approved_By_State ||
+    //     prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
+    //   )
+    // ) {
+    //   return res.status(200).json({
+    //     success: false,
+    //     message: `last year form not approved.`,
+    //     data: utilReportObject(),
+    //   });
+    // }
     let status = ''
 if(!prevData){
   status = 'Not Started'
@@ -721,7 +821,7 @@ if(!ulbData.access_2122){
   obj['url'] = ``;
 }
 else{
-  if(status == FORM_STATUS.Under_Review_By_MoHUA || status == FORM_STATUS.Approved_By_MoHUA ){
+  if([FORM_STATUS.Under_Review_By_MoHUA , FORM_STATUS.Approved_By_MoHUA , FORM_STATUS.Approved_By_State].includes(status) ){
     obj['action'] = 'not_show';
     obj['url'] = ``;
   }else if(status == FORM_STATUS.Under_Review_By_State){
@@ -744,6 +844,15 @@ else{
   
   if(fetchedData){
     Object.assign(fetchedData, {canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB",role ) })
+    
+    
+/* Checking if the ulbData.access_2122 is not true, then it is setting the
+   unUtilizedPrevYr to 0. */
+    !ulbData.access_2122 ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : ""
+    
+/* The above code is checking if the action property of the obj object is equal to "not_show". If it
+is, then it is assigning the fetchedData object to the obj object. */
+    obj['action'] === "note" ? Object.assign(fetchedData, obj) : ""
     return res.status(200).json({
       success: true,
       data:fetchedData
@@ -752,7 +861,7 @@ else{
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
-    sampleData.grantPosition.unUtilizedPrevYr = fetchedData?.grantPosition?.closingBal
+    sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
     console.log(sampleData)
     sampleData = sampleData.toObject()
     // sampleData = sampleData.lean()

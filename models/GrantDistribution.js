@@ -16,6 +16,7 @@ const GrantDistributionSchema = new Schema(
       index: true,
     },
     design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+    year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
