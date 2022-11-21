@@ -74,9 +74,9 @@ exports.getView = async function (req, res, next) {
       condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.design_year) }
     }
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
-    let fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
     let viewOne = {};
     if (data) {
+      let fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
       viewOne = { data, fyData }
     } else {
       viewOne = {
@@ -121,7 +121,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2016-17',
               key: 'FY2016-17',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -135,7 +136,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'FY2017-18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -149,7 +151,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'FY2018-19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -163,7 +166,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'FY2019-20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -183,7 +187,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2016-17',
               key: 'FY2016-17',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -197,7 +202,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'FY2017-18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -211,7 +217,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'FY2018-19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -225,7 +232,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'FY2019-20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -245,7 +253,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2016-17',
               key: 'FY2016-17',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -259,7 +268,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'FY2017-18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -273,7 +283,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'FY2018-19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -287,7 +298,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'FY2019-20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -307,7 +319,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2016-17',
               key: 'FY2016-17',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -321,7 +334,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'FY2017-18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -335,7 +349,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'FY2018-19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -349,7 +364,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'FY2019-20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: 0,
               max: 13,
               required: true,
@@ -371,7 +387,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2017',
               key: 'totalGrossBlock_17',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -385,7 +402,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2018',
               key: 'totalGrossBlock_18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -399,7 +417,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2019',
               key: 'totalGrossBlock_19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -413,7 +432,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2020',
               key: 'totalGrossBlock_20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '5',
               required: true,
@@ -433,7 +453,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2017',
               key: 'totalCWIP_17',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -447,7 +468,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2018',
               key: 'totalCWIP_18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -461,7 +483,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2019',
               key: 'totalCWIP_19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -475,7 +498,8 @@ exports.getView = async function (req, res, next) {
               label: 'As on 31st March 2020',
               key: 'totalCWIP_20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -495,7 +519,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'estAdmExpenses_17-18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -509,7 +534,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'estAdmExpenses_18-19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -523,7 +549,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'estAdmExpenses_19-20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -543,7 +570,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'totalRevExp_17-18',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -557,7 +585,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'totalRevExp_18-19',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -571,7 +600,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'totalRevExp_19-20',
               postion: '4',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -614,7 +644,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'appAnnualBudget_2017-18',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -628,7 +659,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'appAnnualBudget_2018-19',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -642,7 +674,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'appAnnualBudget_2019-20',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -662,7 +695,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2017-18',
               key: 'auditedAnnualFySt_2017-18',
               postion: '1',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -676,7 +710,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2018-19',
               key: 'auditedAnnualFySt_2018-19',
               postion: '2',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -690,7 +725,8 @@ exports.getView = async function (req, res, next) {
               label: 'FY 2019-20',
               key: 'auditedAnnualFySt_2019-20',
               postion: '3',
-              value: '',
+              amount: '',
+              file: '',
               min: '',
               max: '',
               required: true,
@@ -705,13 +741,18 @@ exports.getView = async function (req, res, next) {
       }
     }
     let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
+    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
     for (const sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       for (const key in subData) {
         for (const pf of subData[key]?.yearData) {
-          if (pf?.code?.length && ulbData.length) {
+          if (pf?.code?.length > 0 && ulbData.length) {
             let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
             pf['value'] = ulbFyAmount;
+          } else {
+            if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
+              pf['readonly'] = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+            }
           }
         }
       }
@@ -722,6 +763,8 @@ exports.getView = async function (req, res, next) {
     return res.status(400).json({ status: false, message: "Something error wrong!" });
   }
 }
+
+
 const getUlbLedgerDataFilter = (objData) => {
   const { code, year, data } = objData;
   if (code.length) {
@@ -731,6 +774,41 @@ const getUlbLedgerDataFilter = (objData) => {
   } else {
     return 0;
   }
+}
+
+const ulbLedgerFy = (condition) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = await UlbLedger.aggregate([
+        { $match: condition },
+        {
+          $group: {
+            _id: "$financialYear",
+          }
+        },
+        {
+          $lookup: {
+            from: "years",
+            localField: "_id",
+            foreignField: "year",
+            as: "years"
+          }
+        },
+        { $unwind: "$years" },
+        {
+          $project: {
+            _id: 0,
+            year_id: "$years._id",
+            year: "$years.year"
+          }
+        }
+      ])
+
+      resolve(data)
+    } catch (error) {
+      reject(error);
+    }
+  })
 }
 
 const ulbLedgersData = (objData) => {
