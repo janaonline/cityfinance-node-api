@@ -6,7 +6,7 @@ const FRHomePageContentSchema = new Schema(
     title: { type: String, required: true },
     text: { type: String },
     seq: { type: Number, required: true },
-    section: { type: String, enum:['Objective','Assessment Parameters',"Salient Features","Ranking Categories"], required: true },
+    section: { type: String, enum:['Objective','Assessment Parameters',"Salient Features","Ranking Categories","Banner Icon"], required: true },
     modifiedAt: { type: Date, default: Date.now},
     createdAt: { type: Date, default: Date.now},
     isActive: { type: Boolean, default: 1 },

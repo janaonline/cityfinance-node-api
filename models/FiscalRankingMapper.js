@@ -7,6 +7,7 @@ const fiscalRankingMapperSchema = new Schema(
         amount: { type: Number, default: 0 },
         status: {
             type: String,
+            default : "PENDING",
             enum: {
                 values: ["PENDING", "APPROVED", "REJECTED"],
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
@@ -16,7 +17,16 @@ const fiscalRankingMapperSchema = new Schema(
         type: {
             type: String,
             enum: {
-                values: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+                values: ["totalRcptActl", "totalRcptBudget", "totalOwnRvnue", "totalProperty", "totalGrossBl", "totalCWIP", "estAdmExpenses", "totalRevExp", "appAnnualBudget", "auditedAnnualFySt"],
+                message: "ERROR: STATUS BE EITHER",
+            },
+        },
+        file: { type: String, default: null },
+        typeofdata: {
+            type: String,
+            default: "Number",
+            enum: {
+                values: ["Number", "PDF", "Excel"],
                 message: "ERROR: STATUS BE EITHER",
             },
         }
