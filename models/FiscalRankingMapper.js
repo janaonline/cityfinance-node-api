@@ -5,6 +5,14 @@ const fiscalRankingMapperSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         amount: { type: Number, default: 0 },
+        status: {
+            type: String,
+            default : "PENDING",
+            enum: {
+                values: ["PENDING", "APPROVED", "REJECTED"],
+                message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+            },
+        },
         isActive: { type: Boolean, default: 1 },
         type: {
             type: String,
@@ -16,7 +24,7 @@ const fiscalRankingMapperSchema = new Schema(
         file: { type: String, default: null },
         typeofdata: {
             type: String,
-            default : "Number",
+            default: "Number",
             enum: {
                 values: ["Number", "PDF", "Excel"],
                 message: "ERROR: STATUS BE EITHER",
