@@ -783,7 +783,7 @@ let role  = req.decoded.role;
 
     let prevDataQuery = MasterForm.findOne({
       ulb: ObjectId(ulb),
-      design_year: prevYear._id
+      designYear: prevYear._id
     }).select({history:1}).lean()
     let prevUtilReportQuery =  UtilizationReport.findOne({
       ulb: ulb,
