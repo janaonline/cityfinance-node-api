@@ -182,11 +182,14 @@ exports.uploadTemplate = async (req, res) => {
         }else if( formData.design_year === "606aaf854dff55e6c075d219"){
           formData.design_year = '2021-22';
         }
-        const type = `${formData.type}_${formData.design_year}_${formData.installment}`
+        let type = `${formData.type}_${formData.design_year}_${formData.installment}`
         amount = `${amount} - ${type}`
-        /* Checking if the formData.design_year is equal to 2021-22, if it is, then it sets the amount variable
+
+        /* Checking if the formData.design_year is equal to 2021-22 or undefined, if it is, then it sets the amount variable
         to "grant amount". */
-        formData.design_year === undefined ? amount = "grant amount": ""
+        formData.design_year === undefined || formData.design_year === "2021-22"
+          ? amount = "grant amount"
+          : "";
         let field = {
           ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
           ["ulb name"]: "ULB Name",
