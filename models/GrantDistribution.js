@@ -15,8 +15,17 @@ const GrantDistributionSchema = new Schema(
       ref: "User",
       index: true,
     },
+    type:{
+      type: String,
+      enum: {
+        values: ["nonmillion_tied", "million_tied", "nonmillion_untied",""],
+      },
+    },
+    installment:{
+      type: Number,
+    },
     design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
-    year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+    year: { type: Schema.Types.ObjectId, ref: "Year" },
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
