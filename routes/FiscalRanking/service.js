@@ -2,20 +2,27 @@ const mongoose = require('mongoose');
 const ObjectId = require("mongoose").Types.ObjectId;
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
+const UlbLedger = require('../../models/UlbLedger');
+const { fiscalRankingFormJson } = require('./fydynemic');
+
 
 exports.CreateorUpdate = async (req, res, next) => {
   try {
-    let id = req?.body?.id;
-    let fsData = await FiscalRanking.findOne({ _id: ObjectId(id) }).lean();
+    let { ulb, design_year } = req.body;
+    if (!ulb && !design_year) {
+      return res.status(400).json({ status: false, message: "ULB and Design year required fields!" });
+    }
+    let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
+    let fsData = await FiscalRanking.findOne(condition).lean();
     if (fsData) {
-      let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(id) });
+      let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData.id) });
       let obj = { ...fsData, fsMapper };
       delete obj.history;
       let history = fsData.history;
       history.push(obj);
       req.body['history'] = history;
-      await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(id) });
-      await FiscalRanking.update({ _id: ObjectId(id) }, req.body);
+      await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(fsData.id) });
+      await FiscalRanking.update(condition, req.body);
     } else {
       let d = await FiscalRanking.create(req.body);
       id = d._id;
@@ -60,6 +67,195 @@ const fRMapperCreate = (objData) => {
   })
 }
 
+/* A function which is used to get the data from the database. */
+exports.getView = async function (req, res, next) {
+  try {
+    let condition = {};
+    if (req.query.ulb && req.query.design_year) {
+      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.design_year) }
+    }
+    let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
+    let viewOne = {};
+    if (data) {
+      let fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
+      viewOne = { data, fyData }
+    } else {
+      viewOne = {
+        "ulb": null,
+        "design_year": null,
+        "population11": null,
+        "populationFr": null,
+        "webLink": null,
+        "nameCmsnr": "",
+        "nameOfNodalOfficer": "",
+        "designationOftNodalOfficer": "",
+        "email": null,
+        "mobile": null,
+        "webUrlAnnual": null,
+        "digitalRegtr": "",
+        "registerGis": "",
+        "accountStwre": "",
+        "totalOwnRevenueArea": null,
+        "fy_19_20_cash": {
+          "type": null,
+          "amount": null
+        },
+        "fy_19_20_online": {
+          "type": null,
+          "amount": null
+        },
+        "fyData": [],
+        "property_tax_register": null,
+        "paying_property_tax": null,
+        "paid_property_tax": null,
+        "isDraft": null
+      }
+    }
+
+    let fyDynemic = await fiscalRankingFormJson();
+    exports = {fyDynemic};
+    console.log(fyDynemic);
+    let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
+    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
+    for (const sortKey in fyDynemic) {
+      let subData = fyDynemic[sortKey];
+      for (const key in subData) {
+        for (const pf of subData[key]?.yearData) {
+          if (pf?.code?.length > 0 && ulbData.length) {
+            let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+            pf['amount'] = ulbFyAmount;
+          } else {
+            if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
+              pf['readonly'] = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+            }
+          }
+        }
+      }
+    }
+    return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic });
+  } catch (error) {
+    console.log("err", error)
+    return res.status(400).json({ status: false, message: "Something error wrong!" });
+  }
+}
+
+
+const getUlbLedgerDataFilter = (objData) => {
+  const { code, year, data } = objData;
+  if (code.length) {
+    let ulbFyData = data.length ? data.filter(el => code.includes(el.code) && el.year_id.toString() === year.toString()) : []
+    var sum = ulbFyData ? ulbFyData.reduce((pv, cv) => pv + cv.totalAmount, 0) : 0;
+    return sum;
+  } else {
+    return 0;
+  }
+}
+
+const ulbLedgerFy = (condition) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = await UlbLedger.aggregate([
+        { $match: condition },
+        {
+          $group: {
+            _id: "$financialYear",
+          }
+        },
+        {
+          $lookup: {
+            from: "years",
+            localField: "_id",
+            foreignField: "year",
+            as: "years"
+          }
+        },
+        { $unwind: "$years" },
+        {
+          $project: {
+            _id: 0,
+            year_id: "$years._id",
+            year: "$years.year"
+          }
+        }
+      ])
+
+      resolve(data)
+    } catch (error) {
+      reject(error);
+    }
+  })
+}
+
+const ulbLedgersData = (objData) => {
+  return new Promise(async (resolve, reject) => {
+    const { ulb } = objData;
+    try {
+      let data = await UlbLedger.aggregate([
+        { $match: { ulb: ObjectId(ulb) } },
+        {
+          $lookup: {
+            from: "lineitems",
+            localField: "lineItem",
+            foreignField: "_id",
+            as: "lineitems"
+          }
+        },
+        { $unwind: "$lineitems" },
+        {
+          $project: {
+            _id: 1,
+            year: "$financialYear",
+            amount: 1,
+            ulb: 1,
+            code: "$lineitems.code"
+          }
+        },
+        {
+          $match: {
+            code: { $in: ["110", "130", "140", "150", "180", "11001", "410", "412", "210", "220", "230", "240", "200"] },
+            year: { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }
+          }
+        },
+        {
+          "$group": {
+            "_id": { "year": "$year", "code": "$code" },
+            "totalAmount": { $sum: "$amount" }
+          }
+        },
+        {
+          $project: {
+            year: "$_id.year",
+            code: "$_id.code",
+            totalAmount: 1
+          }
+        },
+        {
+          $lookup: {
+            from: "years",
+            localField: "year",
+            foreignField: "year",
+            as: "years"
+          }
+        },
+        {
+          $unwind: "$years"
+        },
+        {
+          $project: {
+            _id: 0,
+            year_id: "$years._id",
+            year: "$years.year",
+            code: "$_id.code",
+            totalAmount: 1
+          }
+        }
+      ]);
+      resolve(data);
+    } catch (error) {
+      reject(error);
+    }
+  })
+}
 exports.getAll = async function (req, res, next) {
   try {
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
@@ -81,7 +277,7 @@ exports.getAll = async function (req, res, next) {
       });
       prmsArr.push(totalPrms);
     }
-    
+
     let dataPrms = new Promise((resolve, reject) => {
       FiscalRanking.aggregate([
         { $match: condition },
@@ -141,7 +337,7 @@ exports.getAll = async function (req, res, next) {
               },
               { "$unwind": "$years" },
             ],
-            "as": "fiscalrankingmappers"
+            "as": "fyData"
           }
         },
         {
@@ -169,7 +365,7 @@ exports.getAll = async function (req, res, next) {
             "digitalRegtr": 1,
             "registerGis": 1,
             "accountStwre": 1,
-            "fiscalrankingmappers": 1
+            "fyData": 1
           }
         },
         { $skip: skip },

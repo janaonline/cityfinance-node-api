@@ -19,7 +19,7 @@ module.exports = (req, res) => {
             let state = req.query.state;
             let query = { "state": ObjectId(state) }
             try {
-                let count = await OverallUlb.count(query).exec();
+                let count = await Ulb.count(query).exec();
                 rslv(count)
             }
             catch (err) {
