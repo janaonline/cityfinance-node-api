@@ -10,6 +10,7 @@ const {
   action,
   report,
   read2223,
+  dataRepair
 } = require("./service");
 
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
@@ -45,5 +46,7 @@ router.post("/utilization-report/action", verifyToken, userAuth, action);
 router.get("/dur/report", report);
 //2223
 router.get("/utilReport", verifyToken, read2223);
+
+router.get("/repair_data",dataRepair);
 
 module.exports = router;
