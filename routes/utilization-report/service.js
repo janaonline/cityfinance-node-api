@@ -150,7 +150,10 @@ module.exports.createOrUpdate = async (req, res) => {
     );
     if(utiData){
       await UtilizationReport.findOneAndUpdate(
-        { ulb: ObjectId(ulb), designYear : ObjectId("606aafb14dff55e6c075d3ae") },
+        { 
+          ulb: ObjectId(ulb),
+           designYear : ObjectId("606aafb14dff55e6c075d3ae"),
+           financialYear: ObjectId("606aaf854dff55e6c075d219") },
         { $set: {"grantPosition.unUtilizedPrevYr" : utiData?.grantPosition?.closingBal } },
         {
           upsert: true,
@@ -761,13 +764,13 @@ let role  = req.decoded.role;
   }
   let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
  /* Checking if the user has access to the form. */
-  if(!ulbData.access_2122){
-    return res.status(200).json({
-      success: false,
-      message: `Last year form access not allowed.`,
-      data: utilReportObject()
-    })
-  }
+  // if(!ulbData.access_2122){
+  //   return res.status(200).json({
+  //     success: false,
+  //     message: `Last year form access not allowed.`,
+  //     data: utilReportObject()
+  //   })
+  // }
   let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
   let currentYear = await Year.findOne({_id: ObjectId(design_year)}).lean()
   // current year
@@ -784,25 +787,25 @@ let role  = req.decoded.role;
     }).select({history:1}).lean()
     let prevUtilReportQuery =  UtilizationReport.findOne({
       ulb: ulb,
-      designYear: design_year
+      designYear: prevYear._id
     }).select({history: 0}).lean()
     let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
     //check if prevyear util report is atleast approved by state
-    let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
+    // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
 
-    if (
-      !(
-        prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
-        prevUtilStatus === FORM_STATUS.Approved_By_State ||
-        prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
-      )
-    ) {
-      return res.status(200).json({
-        success: false,
-        message: `last year form not approved.`,
-        data: utilReportObject(),
-      });
-    }
+    // if (
+    //   !(
+    //     prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
+    //     prevUtilStatus === FORM_STATUS.Approved_By_State ||
+    //     prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
+    //   )
+    // ) {
+    //   return res.status(200).json({
+    //     success: false,
+    //     message: `last year form not approved.`,
+    //     data: utilReportObject(),
+    //   });
+    // }
     let status = ''
 if(!prevData){
   status = 'Not Started'
@@ -821,7 +824,7 @@ if(!ulbData.access_2122){
   obj['url'] = ``;
 }
 else{
-  if(status == FORM_STATUS.Under_Review_By_MoHUA || status == FORM_STATUS.Approved_By_MoHUA ){
+  if([FORM_STATUS.Under_Review_By_MoHUA , FORM_STATUS.Approved_By_MoHUA , FORM_STATUS.Approved_By_State].includes(status) ){
     obj['action'] = 'not_show';
     obj['url'] = ``;
   }else if(status == FORM_STATUS.Under_Review_By_State){
@@ -844,6 +847,15 @@ else{
   
   if(fetchedData){
     Object.assign(fetchedData, {canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB",role ) })
+    
+    
+/* Checking if the ulbData.access_2122 is not true, then it is setting the
+   unUtilizedPrevYr to 0. */
+    !ulbData.access_2122 ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : ""
+    
+/* The above code is checking if the action property of the obj object is equal to "not_show". If it
+is, then it is assigning the fetchedData object to the obj object. */
+    obj['action'] === "note" ? Object.assign(fetchedData, obj) : ""
     return res.status(200).json({
       success: true,
       data:fetchedData
@@ -852,7 +864,7 @@ else{
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
-    sampleData.grantPosition.unUtilizedPrevYr = fetchedData?.grantPosition?.closingBal
+    sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
     console.log(sampleData)
     sampleData = sampleData.toObject()
     // sampleData = sampleData.lean()

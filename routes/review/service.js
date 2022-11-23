@@ -1063,169 +1063,53 @@ function createDynamicElements(collectionName, formType, entity) {
           let unAuditedStandardized = data?.unAudited?.standardized_data;
           let auditedStandardized = data?.audited?.standardized_data
 
-          removeEscapesFromAnnual(unAuditedProvisional);
-          removeEscapesFromAnnual(auditedProvisional);
-          removeEscapesFromAnnual(unAuditedStandardized);
-          removeEscapesFromAnnual(auditedStandardized);
-          if (data.audited.rejectReason_mohua) {
-            data.audited.rejectReason_mohua = removeEscapeChars(data?.audited?.rejectReason_mohua);
-          }
-          if (data.audited.rejectReason_state) {
-            data.audited.rejectReason_state = removeEscapeChars(data?.audited?.rejectReason_state)
-          }
-          if (data.unAudited.rejectReason_mohua) {
-            data.unAudited.rejectReason_mohua = removeEscapeChars(data?.unAudited?.rejectReason_mohua);
-          }
-          if (data.audited.rejectReason_state) {
-            data.unAudited.rejectReason_state = removeEscapeChars(data?.unAudited?.rejectReason_state)
-          }
-
-          if (data?.actionTakenByRole === "STATE") {
-            auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
-              }, Audited,${data?.auditedYear?.year ?? ""}, ${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
-              }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${auditedProvisional?.bal_sheet?.status ?? ""
-              }, ${auditedProvisional?.bal_sheet?.rejectReason_state ?? ""}, , ,  ${auditedProvisional?.assets ?? ""
-              }, ${auditedProvisional?.f_assets ?? ""}, ${auditedProvisional?.s_grant ?? ""
-              }, ${auditedProvisional?.c_grant ?? ""}, ${auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-              }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
-              }, ${auditedProvisional?.bal_sheet_schedules?.status ?? ""}, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_state ?? ""
-              }, , ,${auditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${auditedProvisional?.inc_exp?.excel?.url ?? ""
-              }, ${auditedProvisional?.inc_exp?.status ?? ""}, ${auditedProvisional?.inc_exp?.rejectReason_state ?? ""
-              }, , , ${auditedProvisional?.revenue ?? ""}, ${auditedProvisional?.expense ?? ""
-              },${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-              }, ${auditedProvisional?.inc_exp_schedules?.status ?? ""}, ${auditedProvisional?.inc_exp_schedules?.rejectReason_state ?? ""
-              }, , ,${auditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${auditedProvisional?.cash_flow?.excel?.url ?? ""
-              }, ${auditedProvisional?.cash_flow?.status ?? ""}, ${auditedProvisional?.cash_flow?.rejectReason_state ?? ""
-              } , , ,${auditedProvisional?.auditor_report?.pdf?.url ?? ""},${auditedProvisional?.auditor_report?.status ?? ""
-              }, ${auditedProvisional?.auditor_report?.rejectReason_state ?? ""
-              }, , , ${data?.audited?.submit_standardized_data ?? ""}, ${auditedStandardized?.excel?.url ?? ""
-              }, ${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_state : ""},${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_mohua : ""} ,${actions["auditedResponseFile_state"]["url"] ?? ""},${actions["auditedResponseFile_mohua"]["url"] ?? ""
-              }  `;
-            unAuditedEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_provisional ?? ""
-              }, Provisional,${data?.unAuditedYear?.year ?? ""}, ${unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${unAuditedProvisional?.bal_sheet?.status ?? ""
-              }, ${unAuditedProvisional?.bal_sheet?.rejectReason_state ?? ""
-              }, , , ${unAuditedProvisional?.assets ?? ""}, ${unAuditedProvisional?.f_assets ?? "" ?? ""
-              }, ${unAuditedProvisional?.s_grant ?? ""}, ${unAuditedProvisional?.c_grant ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.status ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_state ??
-              ""
-              }, , ,${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${unAuditedProvisional?.inc_exp?.excel?.url ?? ""
-              }, ${unAuditedProvisional?.inc_exp?.status ?? ""}, ${unAuditedProvisional?.inc_exp?.rejectReason_state ?? ""
-              }, , , ${unAuditedProvisional?.revenue ?? ""}, ${unAuditedProvisional?.expense ?? ""
-              },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-              }, ${unAuditedProvisional?.inc_exp_schedules?.status ?? ""
-              }, ${unAuditedProvisional?.inc_exp_schedules?.rejectReason_state ?? ""
-              }, , ,${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${unAuditedProvisional?.cash_flow?.excel?.url ?? ""
-              }, ${unAuditedProvisional?.cash_flow?.status ?? ""}, ${unAuditedProvisional?.cash_flow?.rejectReason_state ?? ""
-              },  , , , , , , , ${data?.unAudited?.submit_standardized_data ?? ""
-              }, ${unAuditedStandardized?.excel?.url ?? ""}, ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_state : ""},${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_mohua : ""}, ${actions["unAuditedResponseFile_state"]["url"] ?? ""
-              },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
-
-          } else if (data?.actionTakenByRole === "MoHUA") {
-            auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
-              }, Audited, ${data?.auditedYear?.year ?? ""},${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
-              }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, , ,${auditedProvisional?.bal_sheet?.status ?? ""
-              }, ${auditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${auditedProvisional?.assets ?? ""
-              }, ${auditedProvisional?.f_assets ?? ""}, ${auditedProvisional?.s_grant ?? ""
-              }, ${auditedProvisional?.c_grant ?? ""}, ${auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-              }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
-              }, , , ${auditedProvisional?.bal_sheet_schedules?.status ?? ""
-              }, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""
-              },${auditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${auditedProvisional?.inc_exp?.excel?.url ?? ""
-              }, , , ${auditedProvisional?.inc_exp?.status ?? ""}, ${auditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
-              }, ${auditedProvisional?.revenue ?? ""}, ${auditedProvisional?.expense ?? ""
-              },${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-              }, , ,${auditedProvisional?.inc_exp_schedules?.status ?? ""}, ${auditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
-              }, ${auditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${auditedProvisional?.cash_flow?.excel?.url ?? ""
-              }, , , ${auditedProvisional?.cash_flow?.status ?? ""}, ${auditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
-              }, ${auditedProvisional?.auditor_report?.pdf?.url ?? ""}, , ,${auditedProvisional?.auditor_report?.status ?? ""
-              }, ${auditedProvisional?.auditor_report?.rejectReason_mohua ?? ""}, ${data?.audited?.submit_standardized_data ?? ""
-              }, ${auditedStandardized?.excel?.url ?? ""} ,${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_state : ""} ,${data?.audited?.submit_annual_accounts === false ? data?.audited?.rejectReason_mohua : ""},  ${actions["auditedResponseFile_state"]["url"] ?? ""
-              },${actions["auditedResponseFile_mohua"]["url"] ?? ""} `;
-            unAuditedEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_provisional ?? ""
-              }, Provisional,${data?.unAuditedYear?.year ?? ""}, ${unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""
-              }, , ,  ${unAuditedProvisional?.bal_sheet?.status ?? ""}, ${unAuditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""
-              },  ${unAuditedProvisional?.assets ?? ""}, ${unAuditedProvisional?.f_assets ?? "" ?? ""
-              }, ${unAuditedProvisional?.s_grant ?? ""}, ${unAuditedProvisional?.c_grant ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
-              }, , , ${unAuditedProvisional?.bal_sheet_schedules?.status ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ??
-              ""
-              }, ${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${unAuditedProvisional?.inc_exp?.excel?.url ?? ""
-              }, , , ${unAuditedProvisional?.inc_exp?.status ?? ""}, ${unAuditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
-              },  ${unAuditedProvisional?.revenue ?? ""}, ${unAuditedProvisional?.expense ?? ""
-              },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-              }, , ,  ${unAuditedProvisional?.inc_exp_schedules?.status ?? ""
-              }, ${unAuditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
-              }, ${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${unAuditedProvisional?.cash_flow?.excel?.url ?? ""
-              }, , ,  ${unAuditedProvisional?.cash_flow?.status ?? ""}, ${unAuditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
-              }, , , , , , ${data?.unAudited?.submit_standardized_data ?? ""
-              }, ${unAuditedStandardized?.excel?.url ?? ""} , ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_state : ""}, ${data?.unAudited?.submit_annual_accounts === false ? data?.unAudited?.rejectReason_mohua : ""}, ${actions["unAuditedResponseFile_state"]["url"] ?? ""
-              },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
-          } else {
-            auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
-              }, Audited, ${data?.auditedYear?.year ?? ""}, ${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
-              }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""
-              },  , , , , ${auditedProvisional?.assets ?? ""}, ${auditedProvisional?.f_assets ?? ""
-              }, ${auditedProvisional?.s_grant ?? ""}, ${auditedProvisional?.c_grant ?? ""
-              }, ${auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-              }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
-              }, , , ,  ,${auditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${auditedProvisional?.inc_exp?.excel?.url ?? ""
-              }, , , ,  , ${auditedProvisional?.revenue ?? ""}, ${auditedProvisional?.expense ?? ""
-              },${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-              }, , , ,  ,${auditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${auditedProvisional?.cash_flow?.excel?.url ?? ""
-              }, , , ,  ,${auditedProvisional?.auditor_report?.pdf?.url ?? ""
-              }, , , , , ${data?.audited?.submit_standardized_data ?? ""}, ${auditedStandardized?.excel?.url ?? ""
-              } , , ,${actions["auditedResponseFile_state"]["url"] ?? ""},${actions["auditedResponseFile_mohua"]["url"] ?? ""
-              } `;
-            unAuditedEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_provisional ?? ""
-              }, Provisional,${data?.unAuditedYear?.year ?? ""}, ${unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""
-              }, , ,  , ,  ${unAuditedProvisional?.assets ?? ""}, ${unAuditedProvisional?.f_assets ?? "" ?? ""
-              }, ${unAuditedProvisional?.s_grant ?? ""}, ${unAuditedProvisional?.c_grant ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
-              }, , , , ,${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${unAuditedProvisional?.inc_exp?.excel?.url ?? ""
-              }, , , , ,${unAuditedProvisional?.revenue ?? ""}, ${unAuditedProvisional?.expense ?? ""
-              },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-              }, , , , ,${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""
-              }, ${unAuditedProvisional?.cash_flow?.excel?.url ?? ""
-              }, , , , , , , , , , ${data?.unAudited?.submit_standardized_data ?? ""
-              }, ${unAuditedStandardized?.excel?.url ?? ""} , , , ${actions["unAuditedResponseFile_state"]["url"] ?? ""
-              },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
-          }
-          return [auditedEntity, unAuditedEntity];
-          break;
-
-        case CollectionNames.propTaxUlb:
-          data["proof"]["name"] = removeEscapeChars(data["proof"]["name"]);
-          data["rateCard"]["name"] = removeEscapeChars(data["rateCard"]["name"]);
-          data["ptCollection"]["name"] = removeEscapeChars(data["ptCollection"]["name"]);
-
-          entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
-            }, ${data["toCollect"] ?? ""},${data["operationalize"] ?? ""},${data["proof"]["url"] ?? ""
-            }, ${data["proof"]["name"] ?? ""},${data["method"] ?? ""},${data["rateCard"]["url"] ?? ""
-            },${data["rateCard"]["name"] ?? ""},${data["collection2019_20"] ?? ""
-            },${data["collection2020_21"] ?? ""},${data["collection2021_22"] ?? ""
-            },${data["target2022_23"] ?? ""},${data["ptCollection"]["url"] ?? ""
-            },${data["ptCollection"]["name"] ?? ""},${actions["state_status"] ?? ""
-            },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
-            },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
+              removeEscapesFromAnnual(unAuditedProvisional);
+              removeEscapesFromAnnual(auditedProvisional);
+              removeEscapesFromAnnual(unAuditedStandardized);
+              removeEscapesFromAnnual(auditedStandardized);
+              if(data.audited.rejectReason_mohua){
+                data.audited.rejectReason_mohua = removeEscapeChars(data?.audited?.rejectReason_mohua);
+              }
+              if(data.audited.rejectReason_state){
+                data.audited.rejectReason_state = removeEscapeChars(data?.audited?.rejectReason_state)
+              }
+              if(data.unAudited.rejectReason_mohua){
+                data.unAudited.rejectReason_mohua = removeEscapeChars(data?.unAudited?.rejectReason_mohua);
+              }
+              if(data.audited.rejectReason_state){
+                data.unAudited.rejectReason_state = removeEscapeChars(data?.unAudited?.rejectReason_state)
+              }
+              
+            /* Destructuring the data from the annualAccountCsvFormat function. */
+           ({ auditedEntity, unAuditedEntity } = annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized));
+              return [auditedEntity, unAuditedEntity];
+              break;
+            
+            case CollectionNames.propTaxUlb:
+              data["proof"]["name"] = removeEscapeChars(data["proof"]["name"]);
+              data["rateCard"]["name"] = removeEscapeChars(data["rateCard"]["name"]);
+              data["ptCollection"]["name"] = removeEscapeChars(data["ptCollection"]["name"]);
+              
+            entity = ` ${data?.design_year?.year ?? ""}, ${
+              entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+              entity.filled ?? ""
+            }, ${data["toCollect"] ?? ""},${data["operationalize"] ?? ""},${
+              data["proof"]["url"] ?? ""
+            }, ${data["proof"]["name"] ?? ""},${data["method"] ?? ""},${
+              data["rateCard"]["url"] ?? ""
+            },${data["rateCard"]["name"] ?? ""},${
+              data["collection2019_20"] ?? ""
+            },${data["collection2020_21"] ?? ""},${
+              data["collection2021_22"] ?? ""
+            },${data["target2022_23"] ?? ""},${
+              data["ptCollection"]["url"] ?? ""
+            },${data["ptCollection"]["name"] ?? ""},${
+              actions["state_status"] ?? ""
+            },${actions["rejectReason_state"] ?? ""},${
+              actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""},${
+              actions["responseFile_state"]["url"] ?? ""
             },${actions["responseFile_mohua"]["url"] ?? ""} `;
           break;
 
@@ -1328,6 +1212,377 @@ function createDynamicElements(collectionName, formType, entity) {
       }
   }
   return entity;
+}
+
+
+function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
+  if (data?.actionTakenByRole === "STATE") {
+    if(data?.audited?.submit_annual_accounts === false){
+      auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_audited ?? ""
+      }, Audited,${data?.auditedYear?.year ?? ""}, , , ,, , ,  ,, , ,,, , , , ,  , ,, , , , , ,,, ,, , ,,, , , , ,,, , , , ,, ${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_state ?? "")
+          : ""
+      },${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_mohua ?? "")
+          : ""
+      } ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
+        actions["auditedResponseFile_mohua"]["url"] ?? ""
+      }  `;
+    }else{
+      auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_audited ?? ""
+      }, Audited,${data?.auditedYear?.year ?? ""}, ${
+        auditedProvisional?.bal_sheet?.pdf?.url ?? ""
+      }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
+        auditedProvisional?.bal_sheet?.status ?? ""
+      }, ${auditedProvisional?.bal_sheet?.rejectReason_state ?? ""}, , ,  ${
+        auditedProvisional?.assets ?? ""
+      }, ${auditedProvisional?.f_assets ?? ""}, ${
+        auditedProvisional?.s_grant ?? ""
+      }, ${auditedProvisional?.c_grant ?? ""}, ${
+        auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+      }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${
+        auditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${
+        auditedProvisional?.bal_sheet_schedules?.rejectReason_state ?? ""
+      }, , ,${auditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
+        auditedProvisional?.inc_exp?.excel?.url ?? ""
+      }, ${auditedProvisional?.inc_exp?.status ?? ""}, ${
+        auditedProvisional?.inc_exp?.rejectReason_state ?? ""
+      }, , , ${auditedProvisional?.revenue ?? ""}, ${
+        auditedProvisional?.expense ?? ""
+      },${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${
+        auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
+      }, ${auditedProvisional?.inc_exp_schedules?.status ?? ""}, ${
+        auditedProvisional?.inc_exp_schedules?.rejectReason_state ?? ""
+      }, , ,${auditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
+        auditedProvisional?.cash_flow?.excel?.url ?? ""
+      }, ${auditedProvisional?.cash_flow?.status ?? ""}, ${
+        auditedProvisional?.cash_flow?.rejectReason_state ?? ""
+      } , , ,${auditedProvisional?.auditor_report?.pdf?.url ?? ""},${
+        auditedProvisional?.auditor_report?.status ?? ""
+      }, ${auditedProvisional?.auditor_report?.rejectReason_state ?? ""}, , , ${
+        data?.audited?.submit_standardized_data ?? ""
+      }, ${auditedStandardized?.excel?.url ?? ""}, ${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_state ?? "")
+          : ""
+      },${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_mohua ?? "")
+          : ""
+      } ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
+        actions["auditedResponseFile_mohua"]["url"] ?? ""
+      }  `;
+    }
+    if(data?.unAudited?.submit_annual_accounts === false){
+      unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_provisional ?? ""
+      }, Provisional,${data?.unAuditedYear?.year ?? ""}, , , ,, , ,  ,, , ,,, , , , ,  , ,, , , , , ,,, ,, , ,,, , , , ,,, , , , ,, ${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_state ?? "")
+          : ""
+      },${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_mohua ?? "")
+          : ""
+      }, ${actions["unAuditedResponseFile_state"]["url"] ?? ""},${
+        actions["unAuditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+    }else{
+      unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_provisional ?? ""
+      }, Provisional,${data?.unAuditedYear?.year ?? ""}, ${
+        unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
+      }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
+        unAuditedProvisional?.bal_sheet?.status ?? ""
+      }, ${unAuditedProvisional?.bal_sheet?.rejectReason_state ?? ""}, , , ${
+        unAuditedProvisional?.assets ?? ""
+      }, ${unAuditedProvisional?.f_assets ?? "" ?? ""}, ${
+        unAuditedProvisional?.s_grant ?? ""
+      }, ${unAuditedProvisional?.c_grant ?? ""}, ${
+        unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+      }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${
+        unAuditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${
+        unAuditedProvisional?.bal_sheet_schedules?.rejectReason_state ?? ""
+      }, , ,${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.inc_exp?.excel?.url ?? ""
+      }, ${unAuditedProvisional?.inc_exp?.status ?? ""}, ${
+        unAuditedProvisional?.inc_exp?.rejectReason_state ?? ""
+      }, , , ${unAuditedProvisional?.revenue ?? ""}, ${
+        unAuditedProvisional?.expense ?? ""
+      },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
+      }, ${unAuditedProvisional?.inc_exp_schedules?.status ?? ""}, ${
+        unAuditedProvisional?.inc_exp_schedules?.rejectReason_state ?? ""
+      }, , ,${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.cash_flow?.excel?.url ?? ""
+      }, ${unAuditedProvisional?.cash_flow?.status ?? ""}, ${
+        unAuditedProvisional?.cash_flow?.rejectReason_state ?? ""
+      },  , , , , , , , ${data?.unAudited?.submit_standardized_data ?? ""}, ${
+        unAuditedStandardized?.excel?.url ?? ""
+      }, ${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_state ?? "")
+          : ""
+      },${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_mohua ?? "")
+          : ""
+      }, ${actions["unAuditedResponseFile_state"]["url"] ?? ""},${
+        actions["unAuditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+    }
+
+  } else if (data?.actionTakenByRole === "MoHUA") {
+    let stateHistoryAuditedProvisional = data?.history[data?.history.length -2]?.audited?.provisional_data
+    let stateHistoryUnAuditedProvisional = data?.history[data?.history.length -2]?.unAudited?.provisional_data
+
+    if(data?.audited?.submit_annual_accounts === false){
+      auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_audited ?? ""
+      }, Audited, ${data?.auditedYear?.year ?? ""}, , , ,, , ,  ,, , ,,, , , , ,  , ,, , , , , ,,, ,, , ,,, , , , ,,, , , , ,, ${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_state ?? "")
+          : ""
+      } ,${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_mohua ?? "")
+          : ""
+      },  ${actions["auditedResponseFile_state"]["url"] ?? ""},${
+        actions["auditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+    }else{
+      auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_audited ?? ""
+      }, Audited, ${data?.auditedYear?.year ?? ""},${
+        auditedProvisional?.bal_sheet?.pdf?.url ?? ""
+      }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.bal_sheet?.status ?? ""}, ${
+        auditedProvisional?.bal_sheet?.rejectReason_state ?? ""},${
+        auditedProvisional?.bal_sheet?.status ?? ""
+      }, ${auditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${
+        auditedProvisional?.assets ?? ""
+      }, ${auditedProvisional?.f_assets ?? ""}, ${
+        auditedProvisional?.s_grant ?? ""
+      }, ${auditedProvisional?.c_grant ?? ""}, ${
+        auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+      }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_state}, ${
+        auditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""},${
+        auditedProvisional?.inc_exp?.pdf?.url ?? ""
+      }, ${auditedProvisional?.inc_exp?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.inc_exp?.status ?? ""
+      }, ${auditedProvisional?.inc_exp?.rejectReason_state}, ${
+        auditedProvisional?.inc_exp?.status ?? ""
+      }, ${auditedProvisional?.inc_exp?.rejectReason_mohua ?? ""}, ${
+        auditedProvisional?.revenue ?? ""
+      }, ${auditedProvisional?.expense ?? ""},${
+        auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
+      }, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.inc_exp_schedules?.status ?? ""
+      }, ${auditedProvisional?.inc_exp_schedules?.rejectReason_state},${
+        auditedProvisional?.inc_exp_schedules?.status ?? ""
+      }, ${auditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""}, ${
+        auditedProvisional?.cash_flow?.pdf?.url ?? ""
+      }, ${auditedProvisional?.cash_flow?.excel?.url ?? ""}, ${
+        stateHistoryAuditedProvisional?.cash_flow?.status ?? ""
+      }, ${auditedProvisional?.cash_flow?.rejectReason_state}, ${
+        auditedProvisional?.cash_flow?.status ?? ""
+      }, ${auditedProvisional?.cash_flow?.rejectReason_mohua ?? ""}, ${
+        auditedProvisional?.auditor_report?.pdf?.url ?? ""
+      }, ${
+        stateHistoryAuditedProvisional?.auditor_report?.status ?? ""
+      }, ${auditedProvisional?.auditor_report?.rejectReason_state},${
+        auditedProvisional?.auditor_report?.status ?? ""}, ${
+        auditedProvisional?.auditor_report?.rejectReason_mohua ?? ""
+      }, ${data?.audited?.submit_standardized_data ?? ""}, ${
+        auditedStandardized?.excel?.url ?? ""
+      } ,${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_state ?? "")
+          : ""
+      } ,${
+        data?.audited?.submit_annual_accounts === false
+          ? (data?.audited?.rejectReason_mohua ?? "")
+          : ""
+      },  ${actions["auditedResponseFile_state"]["url"] ?? ""},${
+        actions["auditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+    }
+    if(data?.unAudited?.submit_annual_accounts === false){
+      unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_provisional ?? ""
+      }, Provisional,${data?.unAuditedYear?.year ?? ""}, , , ,, , ,  ,, , ,,, , , , ,  , ,, , , , , ,,, ,, , ,,, , , , ,,, , , , ,,  ${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_state ?? "")
+          : ""
+      }, ${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_mohua ?? "")
+          : ""
+      }, ${actions["unAuditedResponseFile_state"]["url"] ?? ""},${
+        actions["unAuditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+
+    }else{
+      unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_provisional ?? ""
+      }, Provisional,${data?.unAuditedYear?.year ?? ""}, ${
+        unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
+      }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${
+        stateHistoryUnAuditedProvisional?.bal_sheet?.status ?? ""
+      }, ${unAuditedProvisional?.bal_sheet?.rejectReason_state},  ${
+        unAuditedProvisional?.bal_sheet?.status ?? ""
+      }, ${unAuditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${
+        unAuditedProvisional?.assets ?? ""
+      }, ${unAuditedProvisional?.f_assets ?? "" ?? ""}, ${
+        unAuditedProvisional?.s_grant ?? ""
+      }, ${unAuditedProvisional?.c_grant ?? ""}, ${
+        unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+      }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${
+        stateHistoryUnAuditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_state}, ${
+        unAuditedProvisional?.bal_sheet_schedules?.status ?? ""
+      }, ${
+        unAuditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""
+      }, ${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.inc_exp?.excel?.url ?? ""
+      }, ${
+        stateHistoryUnAuditedProvisional?.inc_exp?.status ?? ""
+      }, ${unAuditedProvisional?.inc_exp?.rejectReason_state}, ${
+        unAuditedProvisional?.inc_exp?.status ?? ""}, ${
+        unAuditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
+      },  ${unAuditedProvisional?.revenue ?? ""}, ${
+        unAuditedProvisional?.expense ?? ""
+      },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
+      }, ${
+        stateHistoryUnAuditedProvisional?.inc_exp_schedules?.status ?? ""
+      }, ${unAuditedProvisional?.inc_exp_schedules?.rejectReason_state},  ${
+        unAuditedProvisional?.inc_exp_schedules?.status ?? ""}, ${
+        unAuditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
+      }, ${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.cash_flow?.excel?.url ?? ""
+      }, ${
+        stateHistoryUnAuditedProvisional?.cash_flow?.status ?? ""
+      }, ${unAuditedProvisional?.cash_flow?.rejectReason_state},  ${
+        unAuditedProvisional?.cash_flow?.status ?? ""}, ${
+        unAuditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
+      }, , , , , , ${data?.unAudited?.submit_standardized_data ?? ""}, ${
+        unAuditedStandardized?.excel?.url ?? ""
+      } , ${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_state ?? "")
+          : ""
+      }, ${
+        data?.unAudited?.submit_annual_accounts === false
+          ? (data?.unAudited?.rejectReason_mohua ?? "")
+          : ""
+      }, ${actions["unAuditedResponseFile_state"]["url"] ?? ""},${
+        actions["unAuditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+
+    }
+  } else {
+    if(data?.audited?.submit_annual_accounts === false){
+      auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_audited ?? ""
+      }, Audited, ${data?.auditedYear?.year ?? ""}, , , ,, , ,  ,, , ,,, , , , ,  , ,, , , , , ,,, ,, , ,,, , , , ,,, , , , ,,   , ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
+        actions["auditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+    }else{
+      auditedEntity = ` ${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_audited ?? ""
+      }, Audited, ${data?.auditedYear?.year ?? ""}, ${
+        auditedProvisional?.bal_sheet?.pdf?.url ?? ""
+      }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""},  , , , , ${
+        auditedProvisional?.assets ?? ""
+      }, ${auditedProvisional?.f_assets ?? ""}, ${
+        auditedProvisional?.s_grant ?? ""
+      }, ${auditedProvisional?.c_grant ?? ""}, ${
+        auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+      }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, , , ,  ,${
+        auditedProvisional?.inc_exp?.pdf?.url ?? ""
+      }, ${auditedProvisional?.inc_exp?.excel?.url ?? ""}, , , ,  , ${
+        auditedProvisional?.revenue ?? ""
+      }, ${auditedProvisional?.expense ?? ""},${
+        auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
+      }, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""}, , , ,  ,${
+        auditedProvisional?.cash_flow?.pdf?.url ?? ""
+      }, ${auditedProvisional?.cash_flow?.excel?.url ?? ""}, , , ,  ,${
+        auditedProvisional?.auditor_report?.pdf?.url ?? ""
+      }, , , , , ${data?.audited?.submit_standardized_data ?? ""}, ${
+        auditedStandardized?.excel?.url ?? ""
+      } , , ,${actions["auditedResponseFile_state"]["url"] ?? ""},${
+        actions["auditedResponseFile_mohua"]["url"] ?? ""
+      } `;
+    }
+    if (data?.unAudited?.submit_annual_accounts === false) {
+      unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_provisional ?? ""
+      }, Provisional,${data?.unAuditedYear?.year ?? ""}, , , ,, , ,  ,, , ,,, , , , ,  , ,, , , , , ,,, ,, , ,,, , , , ,,, , , , ,,   , ,${
+        actions["unAuditedResponseFile_state"]["url"] ?? ""
+      },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
+    } else {
+      unAuditedEntity = `${data?.design_year?.year ?? ""}, ${
+        entity?.formStatus ?? ""
+      }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+        entity?.filled_provisional ?? ""
+      }, Provisional,${data?.unAuditedYear?.year ?? ""}, ${
+        unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
+      }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, , ,  , ,  ${
+        unAuditedProvisional?.assets ?? ""
+      }, ${unAuditedProvisional?.f_assets ?? "" ?? ""}, ${
+        unAuditedProvisional?.s_grant ?? ""
+      }, ${unAuditedProvisional?.c_grant ?? ""}, ${
+        unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+      }, ${
+        unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""
+      }, , , , ,${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.inc_exp?.excel?.url ?? ""
+      }, , , , ,${unAuditedProvisional?.revenue ?? ""}, ${
+        unAuditedProvisional?.expense ?? ""
+      },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
+      }, , , , ,${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${
+        unAuditedProvisional?.cash_flow?.excel?.url ?? ""
+      }, , , , , , , , , , ${
+        data?.unAudited?.submit_standardized_data ?? ""
+      }, ${unAuditedStandardized?.excel?.url ?? ""} , , , ${
+        actions["unAuditedResponseFile_state"]["url"] ?? ""
+      },${actions["unAuditedResponseFile_mohua"]["url"] ?? ""} `;
+    }
+  }
+  return { auditedEntity, unAuditedEntity };
 }
 
 function removeEscapesFromAnnual(element) {
