@@ -785,27 +785,9 @@ let role  = req.decoded.role;
       ulb: ObjectId(ulb),
       design_year: prevYear._id
     }).select({history:1}).lean()
-    let prevUtilReportQuery =  UtilizationReport.findOne({
-      ulb: ulb,
-      designYear: prevYear._id
-    }).select({history: 0}).lean()
-    let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
-    //check if prevyear util report is atleast approved by state
-    // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
 
-    // if (
-    //   !(
-    //     prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
-    //     prevUtilStatus === FORM_STATUS.Approved_By_State ||
-    //     prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
-    //   )
-    // ) {
-    //   return res.status(200).json({
-    //     success: false,
-    //     message: `last year form not approved.`,
-    //     data: utilReportObject(),
-    //   });
-    // }
+    let [prevData] = await Promise.all([prevDataQuery])
+
     let status = ''
 if(!prevData){
   status = 'Not Started'
