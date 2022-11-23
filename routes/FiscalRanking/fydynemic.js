@@ -2,7 +2,7 @@
 
 const fiscalRankingFormJson = () => {
   return {
-    goverPar = {
+    goverPar : {
       normalData: {
         key: 'normalData',
         label: '',
