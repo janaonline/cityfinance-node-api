@@ -102,6 +102,10 @@ exports.getView = async function (req, res, next) {
           "type": null,
           "amount": null
         },
+        "signedCopyOfFile": {
+          "name": null,
+          "url": null
+        },
         "fy_19_20_online": {
           "type": null,
           "amount": null
