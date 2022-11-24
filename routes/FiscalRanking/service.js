@@ -40,7 +40,6 @@ exports.CreateorUpdate = async (req, res, next) => {
       message: "Successfully saved data!"
     });
   } catch (error) {
-    console.log(error)
     let msg = "Something went wrong";
     if (error?.code === "11000") {
       msg = "Form already submitted."
