@@ -47,6 +47,10 @@ const fiscalRankingSchema = new Schema(
             },
             amount: { type: Number, default: 0. }
         },
+        signedCopyOfFile: {
+            name: { type: String },
+            url: { type: String }
+        },
         property_tax_register: { type: Number, default: 0 },
         paying_property_tax: { type: Number, default: 0 },
         paid_property_tax: { type: Number, default: 0 },

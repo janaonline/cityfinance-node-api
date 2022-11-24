@@ -14,7 +14,9 @@ exports.CreateorUpdate = async (req, res, next) => {
     }
     let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
     let fsData = await FiscalRanking.findOne(condition).lean();
+    let id ="";
     if (fsData) {
+      id=fsData.id;
       let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData.id) });
       let obj = { ...fsData, fsMapper };
       delete obj.history;
@@ -99,6 +101,10 @@ exports.getView = async function (req, res, next) {
         "fy_19_20_cash": {
           "type": null,
           "amount": null
+        },
+        "signedCopyOfFile": {
+          "name": null,
+          "url": null
         },
         "fy_19_20_online": {
           "type": null,
