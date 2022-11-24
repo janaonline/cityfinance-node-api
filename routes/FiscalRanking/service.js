@@ -14,7 +14,9 @@ exports.CreateorUpdate = async (req, res, next) => {
     }
     let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
     let fsData = await FiscalRanking.findOne(condition).lean();
+    let id ="";
     if (fsData) {
+      id=fsData.id;
       let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData.id) });
       let obj = { ...fsData, fsMapper };
       delete obj.history;
@@ -38,6 +40,7 @@ exports.CreateorUpdate = async (req, res, next) => {
       message: "Successfully saved data!"
     });
   } catch (error) {
+    console.log(error)
     let msg = "Something went wrong";
     if (error?.code === "11000") {
       msg = "Form already submitted."
