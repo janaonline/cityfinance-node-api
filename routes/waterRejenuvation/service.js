@@ -235,7 +235,7 @@ exports.getWaterRejenuvation = async (req, res) => {
 
     const stateMasterFormDataQuery = StateMasterForm.findOne({
       state,
-      design_year
+      design_year: ObjectId(year2122Id._id)
     }).lean()
     const [ data2122, data2223, stateMasterFormData] = await Promise.all([
       data2122Query,
