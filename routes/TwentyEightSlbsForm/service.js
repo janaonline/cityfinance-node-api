@@ -7,7 +7,7 @@ const {groupByKey} = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
 const {canTakenAction} = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const {FormNames} = require('../../util/FormNames');
+const {FormNames, YEAR_CONSTANTS} = require('../../util/FormNames');
 const User = require('../../models/User');
 
 function response(form, res, successMsg ,errMsg){
@@ -29,6 +29,14 @@ function rejectResponse(res, errMsg){
         status: false,
         message: errMsg
     })
+}
+
+
+const PrevLineItem_CONSTANTS = {
+    "Coverage of water supply connections": "6284d6f65da0fa64b423b53a",
+    "Per capita supply of water(lpcd)": "6284d6f65da0fa64b423b53c",
+    "Extent of non-revenue water (NRW)": "6284d6f65da0fa64b423b540",
+    "Coverage of waste water network services": "6284d6f65da0fa64b423b52a"
 }
 
 module.exports.createOrUpdateForm = async (req, res) =>{
@@ -331,116 +339,215 @@ module.exports.getForm = async (req, res) => {
         }).lean()
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
         
-        if(formData){
-            Object.assign(formData, {canTakeAction: canTakenAction(formData['status'], formData['actionTakenByRole'], formData['isDraft'], "ULB",userRole ) })
-            formData['data'].forEach(el=>{
-                if(!formData['isDraft']){
-                    el['targetDisable'] = true;
-                    el['actualDisable'] = true;
-                    formData['popDisable'] = true;
-                }
-                if(userRole != 'ULB'){
-                    el['targetDisable'] = true;
-                    el['actualDisable'] = true;
-                    formData['popDisable'] = true;
-                }
-            })
-            let groupedData = groupByKey(formData['data'], "type")
-        formData['data'] = groupedData;
-        
-          return  res.status(200).json({
-                success: true,
-                data: formData
-               })
-        }else{
-      let slbData =       await SLB.findOne({ulb: ObjectId(data.ulb), design_year: ObjectId("606aaf854dff55e6c075d219") }).lean()
-      let pipedSupply, waterSuppliedPerDay, reduction, houseHoldCoveredWithSewerage
-      if(slbData){
-        pipedSupply = slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty("target") ? slbData.waterManagement.houseHoldCoveredPipedSupply?.target['2223'] : ""
-        waterSuppliedPerDay = slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty("target") ? slbData.waterManagement.waterSuppliedPerDay?.target['2223'] : ""
-        reduction =slbData.waterManagement.reduction.hasOwnProperty("target") ? slbData.waterManagement.reduction?.target['2223'] : ""
-        houseHoldCoveredWithSewerage =slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty("target") ? slbData.waterManagement.houseHoldCoveredWithSewerage?.target['2223'] : ""
-      }
-let lineItems = await IndicatorLineItem.find().lean();
-let obj = {
-   targetDisable: false, 
-   actualDisable: false, 
-    question:"",
-    type:"",
-    actual: {
-        year:prevYearData._id,
-        value:""
-    },
-    target_1: {
-        year:ObjectId(data.design_year),
-        value:""
-    },
+        if (formData) {
+          let slbData = await SLB.findOne({
+            ulb: ObjectId(data.ulb),
+            design_year: YEAR_CONSTANTS["21_22"],
+          }).lean();
+        if(slbData){
+                formData["data"].forEach((element) => {
+                  /* Checking if the element is equal to the previous line item. */
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS[
+                      "Coverage of water supply connections"
+                    ]
+                  ){
+                    element.target_1.value =
+                      slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
+                        "target"
+                      )
+                        ? Number(slbData.waterManagement.houseHoldCoveredPipedSupply
+                            ?.target["2223"])
+                        : "";
+                      }
+                    if (
+                        element["indicatorLineItem"].toString() ===
+                        PrevLineItem_CONSTANTS[
+                            "Per capita supply of water(lpcd)"
+                        ]
+                        )
+                        element.target_1.value =
+                        slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
+                            "target"
+                            )
+                            ? Number(slbData.waterManagement.waterSuppliedPerDay?.target["2223"])
+                            : "";
+                    if (
+                        element["indicatorLineItem"].toString() ===
+                        PrevLineItem_CONSTANTS[
+                            "Extent of non-revenue water (NRW)"
+                        ]
+                        )
+                        element.target_1.value = slbData.waterManagement.reduction.hasOwnProperty(
+                            "target"
+                          )
+                            ? Number(slbData.waterManagement.reduction?.target["2223"])
+                            : "";
+                    if (
+                        element["indicatorLineItem"].toString() ===
+                        PrevLineItem_CONSTANTS[
+                            "Coverage of waste water network services"
+                        ]
+                        )
+                        element.target_1.value =
+                        slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
+                          "target"
+                        )
+                          ? Number(slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
+                              "2223"
+                            ])
+                          : "";                           
+                });                          
+              
+        }
+          Object.assign(formData, {
+            canTakeAction: canTakenAction(
+              formData["status"],
+              formData["actionTakenByRole"],
+              formData["isDraft"],
+              "ULB",
+              userRole
+            ),
+          });
+          formData["data"].forEach((el) => {
+            if (!formData["isDraft"]) {
+              el["targetDisable"] = true;
+              el["actualDisable"] = true;
+              formData["popDisable"] = true;
+            }
+            if (userRole != "ULB") {
+              el["targetDisable"] = true;
+              el["actualDisable"] = true;
+              formData["popDisable"] = true;
+            }
+          });
+          let groupedData = groupByKey(formData["data"], "type");
+          formData["data"] = groupedData;
 
-}
-let dataArr = []
-lineItems.forEach(el => {
-    let targ = null ;
-    switch (el['_id'].toString()) {
-        case "6284d6f65da0fa64b423b52a":
-            targ = houseHoldCoveredWithSewerage ?? null
-            break;
-            case "6284d6f65da0fa64b423b53a":
-                targ = pipedSupply ?? null
+          return res.status(200).json({
+            success: true,
+            data: formData,
+          });
+        } else {
+          let slbData = await SLB.findOne({
+            ulb: ObjectId(data.ulb),
+            design_year: ObjectId("606aaf854dff55e6c075d219"),
+          }).lean();
+          let pipedSupply,
+            waterSuppliedPerDay,
+            reduction,
+            houseHoldCoveredWithSewerage;
+          if (slbData) {
+            pipedSupply =
+              slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
+                "target"
+              )
+                ? slbData.waterManagement.houseHoldCoveredPipedSupply?.target[
+                    "2223"
+                  ]
+                : "";
+            waterSuppliedPerDay =
+              slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
+                "target"
+              )
+                ? slbData.waterManagement.waterSuppliedPerDay?.target["2223"]
+                : "";
+            reduction = slbData.waterManagement.reduction.hasOwnProperty(
+              "target"
+            )
+              ? slbData.waterManagement.reduction?.target["2223"]
+              : "";
+            houseHoldCoveredWithSewerage =
+              slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
+                "target"
+              )
+                ? slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
+                    "2223"
+                  ]
+                : "";
+          }
+          let lineItems = await IndicatorLineItem.find().lean();
+          let obj = {
+            targetDisable: false,
+            actualDisable: false,
+            question: "",
+            type: "",
+            actual: {
+              year: prevYearData._id,
+              value: "",
+            },
+            target_1: {
+              year: ObjectId(data.design_year),
+              value: "",
+            },
+          };
+          let dataArr = [];
+          lineItems.forEach((el) => {
+            let targ = null;
+            switch (el["_id"].toString()) {
+              case "6284d6f65da0fa64b423b52a":
+                targ = houseHoldCoveredWithSewerage ?? null;
                 break;
-                case "6284d6f65da0fa64b423b53c":
-                    targ = waterSuppliedPerDay
-                    break;
-                    case "6284d6f65da0fa64b423b540":
-                        targ = reduction
-                        break;
-    
-        default:
-            break;
-    }
-obj['unit'] = el['unit'];
-obj['range'] = el['range'];
-obj['indicatorLineItem'] = el['_id'];
-obj['question'] = el['name'];
-obj['type'] = el['type'];
-obj['actual']['value'] = "";
-obj['target_1']['value'] = targ ?? "" ;
-obj['targetDisable'] = targ || userRole != 'ULB' ? true : false
-obj['actualDisable'] = userRole != 'ULB' ? true : false
-dataArr.push(obj)
-obj = {
-targetDisable : false,
-actualDisable : false,
-    question:"",
-    unit:"",
-    range:"",
-    type : "",
-    actual: {
-        year:prevYearData._id,
-        value:""
-    },
-    target_1: {
-        year:ObjectId(data.design_year),
-        value:""
-    },
+              case "6284d6f65da0fa64b423b53a":
+                targ = pipedSupply ?? null;
+                break;
+              case "6284d6f65da0fa64b423b53c":
+                targ = waterSuppliedPerDay;
+                break;
+              case "6284d6f65da0fa64b423b540":
+                targ = reduction;
+                break;
 
-}
-})
-let groupedData = groupByKey(dataArr, "type")
+              default:
+                break;
+            }
+            obj["unit"] = el["unit"];
+            obj["range"] = el["range"];
+            obj["indicatorLineItem"] = el["_id"];
+            obj["question"] = el["name"];
+            obj["type"] = el["type"];
+            obj["actual"]["value"] = "";
+            obj["target_1"]["value"] = targ ?? "";
+            obj["targetDisable"] = targ || userRole != "ULB" ? true : false;
+            obj["actualDisable"] = userRole != "ULB" ? true : false;
+            dataArr.push(obj);
+            obj = {
+              targetDisable: false,
+              actualDisable: false,
+              question: "",
+              unit: "",
+              range: "",
+              type: "",
+              actual: {
+                year: prevYearData._id,
+                value: "",
+              },
+              target_1: {
+                year: ObjectId(data.design_year),
+                value: "",
+              },
+            };
+          });
+          let groupedData = groupByKey(dataArr, "type");
 
-          let output = {}
+          let output = {};
 
-         
-          Object.assign(output,{"water supply" : groupedData['water supply'],"sanitation": groupedData['sanitation'], "solid waste": groupedData['solid waste'], "storm water" : groupedData['storm water']}   )
-          
-           
-       return     res.status(200).json({
+          Object.assign(output, {
+            "water supply": groupedData["water supply"],
+            sanitation: groupedData["sanitation"],
+            "solid waste": groupedData["solid waste"],
+            "storm water": groupedData["storm water"],
+          });
+
+          return res.status(200).json({
             success: true,
             data: {
-                canTakeAction: false,
-                data :  output,
-                population: null
-            } 
-           })
+              canTakeAction: false,
+              data: output,
+              population: null,
+            },
+          });
         }
     } catch (error) {
         return res.status(400).json({

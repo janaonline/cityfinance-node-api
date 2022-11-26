@@ -850,11 +850,21 @@ module.exports.read2223 = catchAsync(async (req, res) => {
 
     /* Checking if the ulbData.access_2122 is not true, then it is setting the
        unUtilizedPrevYr to 0. */
-    !ulbData.access_2122 ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : ""
+    !ulbData.access_2122 ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : "";
 
-    /* The above code is checking if the action property of the obj object is equal to "not_show". If it
+    /* The code is checking if the action property of the obj object is equal to "note". If it
     is, then it is assigning the fetchedData object to the obj object. */
-    obj['action'] === "note" ? Object.assign(fetchedData, obj) : ""
+    obj["action"] === "note" ? Object.assign(fetchedData, obj) : "";
+   /* The above code is checking if the fetchedData has grantPosition property and if it has then it is
+   checking if the value of the property is a number or not. If it is a number then it is converting
+   it to a fixed number with 2 decimal places. */
+    if(fetchedData?.grantPosition){
+      !isNaN(fetchedData?.grantPosition.unUtilizedPrevYr) ? fetchedData.grantPosition.unUtilizedPrevYr =Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2): ""
+      !isNaN(fetchedData?.grantPosition.receivedDuringYr) ? fetchedData.grantPosition.receivedDuringYr = Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2): ""
+      !isNaN(fetchedData?.grantPosition.closingBal) ? fetchedData.grantPosition.closingBal= Number(fetchedData?.grantPosition.closingBal).toFixed(2): ""
+      !isNaN(fetchedData?.grantPosition.expDuringYr) ? fetchedData.grantPosition.expDuringYr= Number(fetchedData?.grantPosition.expDuringYr).toFixed(2): ""
+
+    }
     return res.status(200).json({
       success: true,
       data: fetchedData

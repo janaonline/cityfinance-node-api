@@ -1128,28 +1128,28 @@ function removeEscapeChars(entity){
               }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
                 entity.filled ?? ""
               },${data?.["financialYear"]["year"] ?? ""}, ${
-                data?.grantPosition?.unUtilizedPrevYr ?? ""
-              } ,${data?.grantPosition?.receivedDuringYr ?? ""}, ${
-                data?.grantPosition?.expDuringYr ?? ""
-              },${data?.grantPosition?.closingBal ?? ""},${
-                wmData[0]?.["grantUtilised"] ?? ""
-              },${wmData[0]?.["numberOfProjects"] ?? ""}, ${
-                wmData[0]?.["totalProjectCost"] ?? ""
-              },${wmData[1]?.["grantUtilised"] ?? ""},${
-                wmData[1]?.["numberOfProjects"] ?? ""
-              }, ${wmData[1]?.["totalProjectCost"] ?? ""},${
-                wmData[2]?.["grantUtilised"] ?? ""
-              },${wmData[2]?.["numberOfProjects"] ?? ""}, ${
-                wmData[2]?.["totalProjectCost"] ?? ""
-              },${wmData[3]?.["grantUtilised"] ?? ""},${
-                wmData[3]?.["numberOfProjects"] ?? ""
-              }, ${wmData[3]?.["totalProjectCost"] ?? ""},${
-                swmData[0]?.["grantUtilised"] ?? ""
-              },${swmData[0]?.["numberOfProjects"] ?? ""}, ${
-                swmData[0]?.["totalProjectCost"] ?? ""
-              },${swmData[1]?.["grantUtilised"] ?? ""},${
-                swmData[1]?.["numberOfProjects"] ?? ""
-              }, ${swmData[1]?.["totalProjectCost"] ?? ""}, ${
+               ( !isNaN(data?.grantPosition?.unUtilizedPrevYr) ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2) : "")?? ""
+              } ,${(!isNaN(data?.grantPosition?.receivedDuringYr) ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2):"") ?? ""}, ${
+                (!isNaN(data?.grantPosition?.expDuringYr) ? Number(data?.grantPosition?.expDuringYr).toFixed(2):"") ?? ""
+              },${(!isNaN(data?.grantPosition?.closingBal) ? Number(data?.grantPosition?.closingBal).toFixed(2):"") ?? ""},${
+                (!isNaN(wmData[0]?.["grantUtilised"])  ? Number(wmData[0]?.["grantUtilised"]).toFixed(2) :"") ?? ""
+              },${(!isNaN(wmData[0]?.["numberOfProjects"])  ? Number(wmData[0]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
+                (!isNaN(wmData[0]?.["totalProjectCost"])  ? Number(wmData[0]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
+              },${(!isNaN(wmData[1]?.["grantUtilised"])  ? Number(wmData[1]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
+                (!isNaN(wmData[1]?.["numberOfProjects"])  ? Number(wmData[1]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
+              }, ${(!isNaN(wmData[1]?.["totalProjectCost"])  ? Number(wmData[1]?.["totalProjectCost"]).toFixed(2) :"") ?? ""},${
+                (!isNaN(wmData[2]?.["grantUtilised"])  ? Number(wmData[2]?.["grantUtilised"]).toFixed(2) :"") ?? ""
+              },${(!isNaN(wmData[2]?.["numberOfProjects"])  ? Number(wmData[2]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
+                (!isNaN(wmData[2]?.["totalProjectCost"])  ? Number(wmData[2]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
+              },${(!isNaN(wmData[3]?.["grantUtilised"])  ? Number(wmData[3]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
+                (!isNaN(wmData[3]?.["numberOfProjects"])  ? Number(wmData[3]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
+              }, ${(!isNaN(wmData[3]?.["totalProjectCost"])  ? Number(wmData[3]?.["totalProjectCost"]).toFixed(2) :"") ?? ""},${
+                (!isNaN(swmData[0]?.["grantUtilised"])  ? Number(swmData[0]?.["grantUtilised"]).toFixed(2) :"") ?? ""
+              },${(!isNaN(swmData[0]?.["numberOfProjects"])  ? Number(swmData[0]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
+                (!isNaN(swmData[0]?.["totalProjectCost"])  ? Number(swmData[0]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
+              },${(!isNaN(swmData[1]?.["grantUtilised"])  ? Number(swmData[1]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
+                (!isNaN(swmData[1]?.["numberOfProjects"])  ? Number(swmData[1]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
+              }, ${(!isNaN(swmData[1]?.["totalProjectCost"])  ? Number(swmData[1]?.["totalProjectCost"]).toFixed(2) :"") ?? ""}, ${
                 actions["state_status"] ?? ""
               },${actions["rejectReason_state"] ?? ""},${
                 actions["mohua_status"] ?? ""
@@ -2509,7 +2509,17 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
     
         ]
         query.push(...query_2)
-// return query
+        //temp filter for duplicate dur entries
+        if(formName === CollectionNames.dur){
+          query[4]["$lookup"]["pipeline"][0]["$match"]["$expr"]["$and"].push(
+            {
+              $eq:[
+                "$financialYear",
+                ObjectId("606aaf854dff55e6c075d219")
+              ]
+            }
+          )
+        }
         //dynamic query based on condition
         if(csv){
           query = createDynamicQuery(formName, query, userRole,csv);
