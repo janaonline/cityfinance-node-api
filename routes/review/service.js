@@ -2509,7 +2509,17 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
     
         ]
         query.push(...query_2)
-// return query
+        //temp filter for duplicate dur entries
+        if(formName === CollectionNames.dur){
+          query[4]["$lookup"]["pipeline"][0]["$match"]["$expr"]["$and"].push(
+            {
+              $eq:[
+                "$financialYear",
+                ObjectId("606aaf854dff55e6c075d219")
+              ]
+            }
+          )
+        }
         //dynamic query based on condition
         if(csv){
           query = createDynamicQuery(formName, query, userRole,csv);
