@@ -15,15 +15,16 @@ exports.CreateorUpdate = async (req, res, next) => {
     let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
     let fsData = await FiscalRanking.findOne(condition).lean();
     let id ="";
+    
     if (fsData) {
-      id=fsData.id;
-      let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData.id) });
+      id=fsData._id;
+      let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData._id) });
       let obj = { ...fsData, fsMapper };
       delete obj.history;
       let history = fsData.history;
       history.push(obj);
       req.body['history'] = history;
-      await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(fsData.id) });
+      await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(fsData._id) });
       await FiscalRanking.update(condition, req.body);
     } else {
       let d = await FiscalRanking.create(req.body);
