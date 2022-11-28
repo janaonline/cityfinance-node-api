@@ -78,8 +78,9 @@ exports.getView = async function (req, res, next) {
     }
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let viewOne = {};
+    let fyData =[];
     if (data) {
-      let fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
+      fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
       viewOne = { data, fyData }
     } else {
       viewOne = {
@@ -119,20 +120,47 @@ exports.getView = async function (req, res, next) {
     }
 
     let fyDynemic = await fiscalRankingFormJson();
-    exports = {fyDynemic};
-    console.log(fyDynemic);
     let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
-    for (const sortKey in fyDynemic) {
+    for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
-      for (const key in subData) {
-        for (const pf of subData[key]?.yearData) {
-          if (pf?.code?.length > 0 && ulbData.length) {
-            let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-            pf['amount'] = ulbFyAmount;
+      for (let key in subData) {
+        for (let pf of subData[key]?.yearData) {
+          if (pf?.code?.length > 0) {
+            if(fyData.length){
+                  let singleFydata = fyData.find(e=>{
+                    return (e.year.toString() == pf.year.toString() && e.type==pf.type)
+                  }
+                  );
+                  if(singleFydata){
+                    pf['amount'] = singleFydata.amount;  
+                  }else{
+                    let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                    pf['amount'] = ulbFyAmount;
+                  }
+            }else{
+              let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+              pf['amount'] = ulbFyAmount;
+            }
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
-              pf['readonly'] = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+              if(fyData.length){
+                  let singleFydata = fyData.find(e=>(e.year.toString() == pf.year.toString() && e.type==pf.type));
+                  if(singleFydata){
+                    pf['file'] = singleFydata.file;  
+                  }else{
+                       pf['readonly'] = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+                  }
+              }else{
+                pf['readonly'] = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+              }
+            }else{
+              if(fyData.length){
+               if(pf.year && pf.type){
+                let singleFydata = fyData.find(e=> (e.year.toString() == pf.year.toString() && e.type==pf.type));
+                pf['amount'] = singleFydata ? singleFydata.amount : 0;  
+              }
+            }
             }
           }
         }
