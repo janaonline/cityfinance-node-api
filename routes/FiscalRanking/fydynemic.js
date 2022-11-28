@@ -1,5 +1,3 @@
-
-
 const fiscalRankingFormJson = () => {
   return {
     goverPar : {
