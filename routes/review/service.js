@@ -2511,7 +2511,7 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
         query.push(...query_2)
         //temp filter for duplicate dur entries
         if(formName === CollectionNames.dur){
-          query[4]["$lookup"]["pipeline"][0]["$match"]["$expr"]["$and"].push(
+          query[5]["$lookup"]["pipeline"][0]["$match"]["$expr"]["$and"].push(
             {
               $eq:[
                 "$financialYear",
