@@ -5,10 +5,13 @@ const {findPreviousYear} = require('../../util/findPreviousYear')
 const Year = require('../../models/Year')
 const {groupByKey} = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
-const {canTakenAction} = require('../CommonActionAPI/service')
+const {canTakenAction, calculateStatus} = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const {FormNames, YEAR_CONSTANTS} = require('../../util/FormNames');
 const User = require('../../models/User');
+const MasterForm = require('../../models/MasterForm')
+const StatusList = require('../../util/newStatusList')
+const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -337,6 +340,42 @@ module.exports.getForm = async (req, res) => {
         let prevYearData =   await Year.findOne({
             year : prevYearVal
         }).lean()
+        const masterFormData = await MasterForm.findOne({
+          ulb: data.ulb,
+          design_year: prevYearData._id
+        }).lean()
+
+        /* Checking the host header and setting the host variable to the appropriate value. */
+        let host = "";
+        if (req.headers.host === BackendHeaderHost.Demo) {
+          host = FrontendHeaderHost.Demo;
+        }
+        /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
+        req.headers.host = host !== "" ? host : req.headers.host;
+
+        if(masterFormData){
+          let status =  calculateStatus(masterFormData.status, masterFormData.actionTakenByRole,
+            !masterFormData.isSubmit, "ULB");
+            
+            /* Checking the status of the form. If the status is not in the list of statuses, it will
+            return a message. */
+            if(![
+              StatusList.Under_Review_By_MoHUA,
+              StatusList.Approved_By_MoHUA,
+              StatusList.Approved_By_State,
+            ].includes(status)){
+              return res.status(200).json({
+                status: true,
+                message: `Your Previous Year's form status is - ${status ? status : "Not Submitted"}. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+              })
+            }
+        }else{
+          return res.status(200).json({
+            status: true,
+            message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+          })
+        }
+
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
         
         if (formData) {
