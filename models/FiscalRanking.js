@@ -9,25 +9,40 @@ const enumYesNo = {
     },
     status: {
         type: String,
+        default : "PENDING",
         enum: {
             values: ["PENDING", "APPROVED", "REJECTED"],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         },
     },
-    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
     actionTakenByRole: { type: String, default: null },
 }
 
-const numberOfQuestion = {
-    value: { type: Number },
+const numberOfQuestion1 = {
+    value: { type: String },
     status: {
         type: String,
+        default : "PENDING",
         enum: {
             values: ["PENDING", "APPROVED", "REJECTED"],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         },
     },
-    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
+    actionTakenByRole: { type: String, default: null },
+}
+const numberOfQuestion = {
+    value: { type: Number},
+    status: {
+        type: String,
+        default : "PENDING",
+        enum: {
+            values: ["PENDING", "APPROVED", "REJECTED"],
+            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+        },
+    },
+    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
     actionTakenByRole: { type: String, default: null },
 }
 
@@ -56,13 +71,12 @@ const fiscalRankingSchema = new Schema(
                 },
             },
             value: { type: String, default: null },
-            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
             actionTakenByRole: { type: String, default: null },
         },
         digitalRegtr: enumYesNo,
         registerGis: enumYesNo,
         accountStwre: enumYesNo,
-        totalOwnRevenueArea: numberOfQuestion,
         fy_19_20_cash: {
             type: {
                 type: String,
@@ -73,13 +87,14 @@ const fiscalRankingSchema = new Schema(
             },
             amount: { type: Number, default: 0 },
             status: {
+                default : "PENDING",
                 type: String,
                 enum: {
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
             },
-            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
             actionTakenByRole: { type: String, default: null }
         },
         fy_19_20_online: {
@@ -93,14 +108,16 @@ const fiscalRankingSchema = new Schema(
             amount: { type: Number, default: 0. },
             status: {
                 type: String,
+                default : "PENDING",
                 enum: {
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
             },
-            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
             actionTakenByRole: { type: String, default: null }
         },
+        totalOwnRevenueArea: numberOfQuestion1,
         property_tax_register: numberOfQuestion,
         paying_property_tax: numberOfQuestion,
         paid_property_tax: numberOfQuestion,
@@ -111,7 +128,7 @@ const fiscalRankingSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
-        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
         actionTakenByRole: { type: String, default: null },
         history: { type: Array, default: [] },
         createdAt: { type: Date, default: Date.now() },

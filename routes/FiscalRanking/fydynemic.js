@@ -1,5 +1,3 @@
-
-
 const fiscalRankingFormJson = () => {
   return {
     goverPar : {
@@ -17,7 +15,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'text'
           },
           {
             label: 'Do you maintain a Digital Property Tax Register?',
@@ -29,7 +28,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'radio'
           },
           {
             label: 'Is the property tax register GIS-based?',
@@ -41,7 +41,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'radio'
           },
           {
             label: 'Do you use accounting software?',
@@ -53,7 +54,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'radio'
           }
         ]
       },
@@ -71,7 +73,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'number'
           },
           {
             label: 'FY 2019-20 - by Cash/Cheque/DD',
@@ -83,7 +86,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'number'
           },
           {
             label: 'FY 2019-20 - by Online (UPI,Netbanking,Credit Card,Debit Card,others)',
@@ -95,7 +99,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'number'
           },
         ]
       },
@@ -113,7 +118,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'number'
           },
           {
             label: 'Number of Properties exemt from paying Property Tax',
@@ -125,7 +131,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'number'
           },
           {
             label: 'Number of Properties for which Property Tax has been paid',
@@ -137,7 +144,8 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: '',
             bottomText: ``,
-            placeHolder: ''
+            placeHolder: '',
+            input: 'number'
           },
         ]
       },
