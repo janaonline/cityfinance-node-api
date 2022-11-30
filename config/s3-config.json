@@ -1,15 +1,15 @@
 {
     "S3BUCKET": {
         "DATA": {
-            "production": "amazon-afe-production-is-row-data",
-            "staging": "afe-amazon-is-row-data-stg",
-            "demo": "afe-amazon-is-row-data-stg",
-            "development": "afe-amazon-is-row-data-dev"
+            "production": "cityfinance-production-is-row-data",
+            "staging": "cityfinance-is-row-data-stg",
+            "demo": "cityfinance-is-row-data-stg",
+            "development": "cityfinance-is-row-data-dev"
         },
         "IMAGE": {
-            "production": "democityfinance",
+            "production": "jana-cityfinance",
             "staging": "democityfinance",
-            "demo": "democityfinance",
+            "demo": "jana-cityfinance",
             "development": "democityfinance"
         }
     }

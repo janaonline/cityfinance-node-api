@@ -48,7 +48,6 @@ exports.CreateorUpdate = async (req, res, next) => {
     });
   }
 }
-
 /**
  * It takes in an object with a property called fyData, which is an object with properties that match
  * the columns in the FiscalRankingMapper table. It then creates a new row in the FiscalRankingMapper
@@ -113,7 +112,7 @@ exports.getView = async function (req, res, next) {
     }
 
     let fyDynemic = await fiscalRankingFormJson();
-    exports = {fyDynemic};
+    exports = { fyDynemic };
     console.log(fyDynemic);
     let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
@@ -139,7 +138,12 @@ exports.getView = async function (req, res, next) {
   }
 }
 
-
+/**
+ * It takes an object with three properties (code, year, data) and returns the sum of the totalAmount
+ * property of the objects in the data array that have a code property that matches one of the values
+ * in the code array and a year_id property that matches the year property
+ * @param objData - The object that contains the data to be filtered.
+ */
 const getUlbLedgerDataFilter = (objData) => {
   const { code, year, data } = objData;
   if (code.length) {
@@ -150,7 +154,10 @@ const getUlbLedgerDataFilter = (objData) => {
     return 0;
   }
 }
-
+/**
+ * It returns an array of years from the ulb_ledger collection, based on the condition passed to it
+ * @param condition - This is the condition that you want to apply to the query.
+ */
 const ulbLedgerFy = (condition) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -185,7 +192,12 @@ const ulbLedgerFy = (condition) => {
     }
   })
 }
-
+/**
+ * It takes an object with a single property, ulb, which is the id of the ULB, and returns a promise
+ * that resolves to an array of objects, each of which has the following properties: year_id, year,
+ * code, and totalAmount
+ * @param objData - {
+ */
 const ulbLedgersData = (objData) => {
   return new Promise(async (resolve, reject) => {
     const { ulb } = objData;
@@ -405,3 +417,44 @@ exports.getAll = async function (req, res, next) {
     return res.status(400).json({ status: false, message: "Something error wrong!" });
   }
 }
+
+exports.approvedByMohua = async function (req, res, next) {
+  try {
+    let { ulb, design_year } = req.body;
+    if (!ulb && !design_year) {
+      return res.status(400).json({ status: false, message: "ULB and Design year required fields!" });
+    }
+    let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
+    let fsData = await FiscalRanking.findOne(condition).lean();
+    if (fsData) {
+      if (fsData.status == "PENDING") {
+        let d = await FiscalRanking.findOneAndUpdate(condition,
+          {
+            "actionTakenByRole": req.body.actionTakenByRole,
+            "actionTakenBy": req.decoded._id,
+            "status": req.body.actionTakenByRole,
+            "modifiedAt": new Date()
+          }, { upsert: true, new: false });
+        return res.status(200).json({
+          status: true,
+          message: "Successfully change request!"
+        })
+      } else {
+        return res.status(400).json({
+          status: false,
+          message: "Already status change by MoHUA!"
+        })
+      }
+    } else {
+      return res.status(400).json({
+        status: false,
+        message: "Data not found!"
+      })
+    }
+  } catch (error) {
+    return res.status(400).json({
+      status: false,
+      message: "Something went wrong!"
+    })
+  }
+} 
