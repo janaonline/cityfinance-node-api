@@ -79,6 +79,11 @@ exports.getView = async function (req, res, next) {
       let fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
       viewOne = { data, fyData }
     } else {
+      let numberOfQuestion = {
+        value: null,
+        status: "",
+        actionTakenByRole: "",
+      }
       viewOne = {
         "ulb": null,
         "design_year": null,
@@ -90,27 +95,43 @@ exports.getView = async function (req, res, next) {
         "designationOftNodalOfficer": "",
         "email": null,
         "mobile": null,
-        "webUrlAnnual": null,
-        "digitalRegtr": "",
-        "registerGis": "",
-        "accountStwre": "",
-        "totalOwnRevenueArea": null,
+        "webUrlAnnual": numberOfQuestion,
+        "digitalRegtr": numberOfQuestion,
+        "registerGis": numberOfQuestion,
+        "accountStwre": numberOfQuestion,
+        "totalOwnRevenueArea": numberOfQuestion,
         "fy_19_20_cash": {
           "type": null,
-          "amount": null
+          "amount": null,
+          "status": "",
+          "actionTakenByRole": ""
         },
         "fy_19_20_online": {
           "type": null,
-          "amount": null
+          "amount": null,
+          "status": "",
+          "actionTakenByRole": ""
         },
         "fyData": [],
-        "property_tax_register": null,
-        "paying_property_tax": null,
-        "paid_property_tax": null,
+        "property_tax_register": {
+          "value": "",
+          "status": "",
+          "actionTakenByRole": ""
+        },
+        "paying_property_tax": {
+          "value": "",
+          "status": "",
+          "actionTakenByRole": ""
+        },
+        "paid_property_tax": {
+          "value": "",
+          "status": "",
+          "actionTakenByRole": ""
+        },
         "isDraft": null
       }
     }
-
+    
     let fyDynemic = await fiscalRankingFormJson();
     exports = { fyDynemic };
     console.log(fyDynemic);
@@ -420,7 +441,7 @@ exports.getAll = async function (req, res, next) {
 
 exports.approvedByMohua = async function (req, res, next) {
   try {
-    let { ulb, design_year, year, type,actionTakenByRole } = req.body;
+    let { ulb, design_year, year, type, actionTakenByRole } = req.body;
     if (!ulb && !design_year) {
       return res.status(400).json({ status: false, message: "ULB and Design year required fields!" });
     }
