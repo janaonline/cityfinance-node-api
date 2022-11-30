@@ -3,8 +3,8 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
+const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const { fiscalRankingFormJson } = require('./fydynemic');
-
 
 exports.CreateorUpdate = async (req, res, next) => {
   try {
@@ -78,6 +78,7 @@ exports.getView = async function (req, res, next) {
       condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.design_year) }
     }
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
+    let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
     let viewOne = {};
     let fyData = [];
     if (data) {
@@ -93,7 +94,7 @@ exports.getView = async function (req, res, next) {
         "ulb": null,
         "design_year": null,
         "population11": null,
-        "populationFr": null,
+        "populationFr": twEightSlbs ? twEightSlbs?.population : "",
         "webLink": null,
         "nameCmsnr": "",
         "nameOfNodalOfficer": "",
