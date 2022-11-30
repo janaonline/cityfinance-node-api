@@ -19,5 +19,5 @@ router.post("/datasets", datasetDownload);
 
 router.get("/findNonFunctionalLinks", fileDeFuncFiles);
 
-router.get('/addKeys',verifyToken, updateAnnualAccForms );
+router.get('/addKeys', updateAnnualAccForms );
 module.exports = router;
