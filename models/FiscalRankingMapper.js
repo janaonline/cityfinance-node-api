@@ -32,7 +32,11 @@ const fiscalRankingMapperSchema = new Schema(
                 values: ["Number", "PDF", "Excel"],
                 message: "ERROR: STATUS BE EITHER",
             },
-        }
+        },
+        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        actionTakenByRole: { type: String, default: null },
+        createdAt: { type: Date, default: Date.now() },
+        modifiedAt: { type: Date, default: Date.now() },
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

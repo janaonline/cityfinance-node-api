@@ -420,31 +420,29 @@ exports.getAll = async function (req, res, next) {
 
 exports.approvedByMohua = async function (req, res, next) {
   try {
-    let { ulb, design_year } = req.body;
+    let { ulb, design_year, year, type,actionTakenByRole } = req.body;
     if (!ulb && !design_year) {
       return res.status(400).json({ status: false, message: "ULB and Design year required fields!" });
     }
     let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
     let fsData = await FiscalRanking.findOne(condition).lean();
     if (fsData) {
-      if (fsData.status == "PENDING") {
-        let d = await FiscalRanking.findOneAndUpdate(condition,
-          {
-            "actionTakenByRole": req.body.actionTakenByRole,
-            "actionTakenBy": req.decoded._id,
-            "status": req.body.actionTakenByRole,
-            "modifiedAt": new Date()
-          }, { upsert: true, new: false });
-        return res.status(200).json({
-          status: true,
-          message: "Successfully change request!"
-        })
-      } else {
-        return res.status(400).json({
-          status: false,
-          message: "Already status change by MoHUA!"
-        })
+      let cond = {
+        "fiscal_ranking": fsData._id,
+        "year": year,
+        "type": type
       }
+      let d = await FiscalRankingMapper.findOneAndUpdate(cond,
+        {
+          "actionTakenByRole": actionTakenByRole,
+          "actionTakenBy": req.decoded._id,
+          "status": req.body.status,
+          "modifiedAt": new Date()
+        }, { upsert: true, new: false });
+      return res.status(200).json({
+        status: true,
+        message: "Successfully change request!"
+      })
     } else {
       return res.status(400).json({
         status: false,
