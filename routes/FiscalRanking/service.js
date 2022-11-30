@@ -141,7 +141,6 @@ exports.getView = async function (req, res, next) {
         "isDraft": null
       }
     }
-
     let fyDynemic = await fiscalRankingFormJson();
     let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
@@ -484,8 +483,8 @@ exports.getAll = async function (req, res, next) {
 exports.approvedByMohua = async function (req, res, next) {
   try {
     let { ulb, design_year, year, type, actionTakenByRole, status } = req.body;
-    if (!ulb && !design_year) {
-      return res.status(400).json({ status: false, message: "ULB and Design year required fields!" });
+    if (!ulb && !design_year && !type && !actionTakenByRole && !status) {
+      return res.status(400).json({ status: false, message: "Required fields!", "keys": ['ulb', 'design_year', 'type', 'actionTakenByRole', 'status'] });
     }
     let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
     let fsData = await FiscalRanking.findOne(condition).lean();
