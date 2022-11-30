@@ -144,16 +144,13 @@ async function generateSignedUrl(data, _cb) {
 
         date = date.split(":").join("-");
         date = date.split(", ").join("_");
-
-        console.log("Date", date);
         var file_alias = custom
             ? fileNameWithoutExt + "_" + date + file_extension
             : fileNameWithoutExt + "_" + uuid.v4() + file_extension;
-        // var file_alias = fileNameWithoutExt+"_"+uuid.v4() + file_extension;
-        console.log("file alias", file_alias);
+
         var params = {
             Bucket: BUCKETNAME,
-            Key: file_alias,
+            Key: data?.folder ? data?.folder + '/' + file_alias : file_alias,
             Expires: 60 * 60 * 60,
             ContentType: data.mime_type,
             ACL: "public-read",
