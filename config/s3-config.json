@@ -1,0 +1,16 @@
+{
+    "S3BUCKET": {
+        "DATA": {
+            "production": "cityfinance-production-is-row-data",
+            "staging": "cityfinance-is-row-data-stg",
+            "demo": "cityfinance-is-row-data-stg",
+            "development": "cityfinance-is-row-data-dev"
+        },
+        "IMAGE": {
+            "production": "democityfinance",
+            "staging": "democityfinance",
+            "demo": "democityfinance",
+            "development": "democityfinance"
+        }
+    }
+}
