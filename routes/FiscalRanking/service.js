@@ -26,7 +26,8 @@ exports.CreateorUpdate = async (req, res, next) => {
       req.body['history'] = history;
       if (req.decoded.role == "MoHUA") {
         let status = "APPROVED"
-        if (await checkPendingStatus(req.body)) {
+        console.log(await checkPendingStatus(req.body))
+        if (!await checkPendingStatus(req.body)) {
           status = "REJECTED"
         }
         req.body['status'] = status;
@@ -65,17 +66,19 @@ exports.CreateorUpdate = async (req, res, next) => {
 const checkPendingStatus = (data) => {
   return new Promise((resolve, reject) => {
     try {
-      let isStatusFy = false;
+      let arr = [];
       for (const key in data) {
         if (Array.isArray(data[key])) {
-          isStatusFy = data[key].length ? data[key].some(e => e.status == "REJECTED") : true
+          let d = data[key].length ? data[key].some(e => e.status == "REJECTED") : false;
+          d ? arr.push(1) : ""
         } else {
           if (data[key]?.status == "REJECTED") {
-            isStatusFy = true;
+            arr.push(1)
           }
         }
       }
-      resolve(isStatusFy)
+      console.log("arr", arr)
+      resolve(arr.length ? false : true)
     } catch (error) {
       reject(error);
     }
