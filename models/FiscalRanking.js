@@ -70,9 +70,7 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
             },
-            value: { type: String, default: null },
-            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
-            actionTakenByRole: { type: String, default: null },
+            value: { type: String, default: null }
         },
         digitalRegtr: enumYesNo,
         registerGis: enumYesNo,
@@ -93,9 +91,7 @@ const fiscalRankingSchema = new Schema(
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
-            },
-            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
-            actionTakenByRole: { type: String, default: null }
+            }
         },
         fy_19_20_online: {
             type: {
@@ -113,9 +109,7 @@ const fiscalRankingSchema = new Schema(
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
-            },
-            actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
-            actionTakenByRole: { type: String, default: null }
+            }
         },
         totalOwnRevenueArea: numberOfQuestion1,
         property_tax_register: numberOfQuestion,
@@ -130,6 +124,7 @@ const fiscalRankingSchema = new Schema(
         },
         actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
         actionTakenByRole: { type: String, default: null },
+        rejectReason: { type: String, default: null },
         history: { type: Array, default: [] },
         createdAt: { type: Date, default: Date.now() },
         modifiedAt: { type: Date, default: Date.now() },

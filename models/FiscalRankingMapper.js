@@ -9,7 +9,7 @@ const fiscalRankingMapperSchema = new Schema(
             type: String,
             default: "PENDING",
             enum: {
-                values: ["PENDING", "APPROVED", "REJECTED","NA"],
+                values: ["PENDING", "APPROVED", "REJECTED", "NA"],
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
@@ -33,8 +33,6 @@ const fiscalRankingMapperSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER",
             },
         },
-        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User" },
-        actionTakenByRole: { type: String, default: null },
         createdAt: { type: Date, default: Date.now() },
         modifiedAt: { type: Date, default: Date.now() },
     },
