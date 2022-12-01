@@ -14,8 +14,8 @@ exports.CreateorUpdate = async (req, res, next) => {
     }
     let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
     let fsData = await FiscalRanking.findOne(condition).lean();
-    let id = "";
 
+    let id = "";
     if (fsData) {
       id = fsData._id;
       let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData._id) });
@@ -24,6 +24,15 @@ exports.CreateorUpdate = async (req, res, next) => {
       let history = fsData.history;
       history.push(obj);
       req.body['history'] = history;
+      if (req.decoded.role == "MoHUA") {
+        let status = "APPROVED"
+        if (await checkPendingStatus(req.body)) {
+          status = "REJECTED"
+        }
+        req.body['status'] = status;
+        req.body['actionTakenBy'] = req.decoded._id;
+        req.body['actionTakenByRole'] = "MoHUA";
+      }
       await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(fsData._id) });
       await FiscalRanking.update(condition, req.body);
     } else {
@@ -52,6 +61,27 @@ exports.CreateorUpdate = async (req, res, next) => {
     });
   }
 }
+
+const checkPendingStatus = (data) => {
+  return new Promise((resolve, reject) => {
+    try {
+      let isStatusFy = false;
+      for (const key in data) {
+        if (Array.isArray(data[key])) {
+          isStatusFy = data[key].length ? data[key].some(e => e.status == "REJECTED") : true
+        } else {
+          if (data[key]?.status == "REJECTED") {
+            isStatusFy = true;
+          }
+        }
+      }
+      resolve(isStatusFy)
+    } catch (error) {
+      reject(error);
+    }
+  })
+}
+
 /**
  * It takes in an object with a property called fyData, which is an object with properties that match
  * the columns in the FiscalRankingMapper table. It then creates a new row in the FiscalRankingMapper
@@ -531,18 +561,4 @@ exports.approvedByMohua = async function (req, res, next) {
     })
   }
 }
-const checkPendingStatus = (fsData) => {
-  return new Promise((resolve, reject) => {
-    try {
-      let isStatusFy = false;
-      for (const key in fsData) {
-        if (fsData[key]?.status == "PENDING") {
-          isStatusFy = true;
-        }
-      }
-      resolve(isStatusFy)
-    } catch (error) {
-      reject(error);
-    }
-  })
-}
+
