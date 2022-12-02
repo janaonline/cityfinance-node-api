@@ -328,6 +328,7 @@ module.exports.getForm = async (req, res) => {
         if(!(data.ulb && data.design_year)){
             return res.status(400).json({
                 status: false,
+                show: false,
                 message: "Design year and Ulb are mandatory"
             })
         }
@@ -366,12 +367,14 @@ module.exports.getForm = async (req, res) => {
             ].includes(status)){
               return res.status(200).json({
                 status: true,
+                show: true,
                 message: `Your Previous Year's form status is - ${status ? status : "Not Submitted"}. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
               })
             }
         }else{
           return res.status(200).json({
             status: true,
+            show: true,
             message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
           })
         }
@@ -466,6 +469,7 @@ module.exports.getForm = async (req, res) => {
 
           return res.status(200).json({
             success: true,
+            show: false,
             data: formData,
           });
         } else {
@@ -581,6 +585,7 @@ module.exports.getForm = async (req, res) => {
 
           return res.status(200).json({
             success: true,
+            show: false,
             data: {
               canTakeAction: false,
               data: output,
@@ -591,6 +596,7 @@ module.exports.getForm = async (req, res) => {
     } catch (error) {
         return res.status(400).json({
             status: false,
+            show: false,
             message: error.message
         })
     }
