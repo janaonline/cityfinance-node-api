@@ -32,6 +32,9 @@ const FORM_STATUS = require("../../util/newStatusList");
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const IndicatorLineItem = require('../../models/indicatorLineItems')
 const {calculateSlbMarks} = require('../Scoring/service')
+const MasterForm = require('../../models/MasterForm')
+const { calculateStatus} = require('../CommonActionAPI/service')
+
 const BackendHeaderHost ={
   Demo: "democityfinanceapi.dhwaniris.in",
   Staging: "staging.cityfinance.in",
@@ -1091,6 +1094,53 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
     });
   }
   if(from == "2223"){
+    let host = "";
+    /* Checking if the host is the same as the backend host. If it is, then it sets the host to the
+    frontend host. */
+    if (req.headers.host === BackendHeaderHost.Demo) {
+      host = FrontendHeaderHost.Demo;
+    }
+    /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
+    req.headers.host = host !== "" ? host : req.headers.host;
+    const masterFormData = await MasterForm.findOne({
+      ulb: ulb,
+      design_year: design_year_2122,
+    }).lean();
+
+    /* The above code is checking the status of the form. If the status is not in the list of statuses,
+    it will return a message. */
+    if (masterFormData) {
+      let status = calculateStatus(
+        masterFormData.status,
+        masterFormData.actionTakenByRole,
+        !masterFormData.isSubmit,
+        "ULB"
+      );
+
+      /* Checking the status of the form. If the status is not in the list of statuses, it will
+        return a message. */
+      if (
+        ![
+          FORM_STATUS.Under_Review_By_MoHUA,
+          FORM_STATUS.Approved_By_MoHUA,
+          FORM_STATUS.Approved_By_State,
+        ].includes(status)
+      ) {
+        return res.status(200).json({
+          status: true,
+          show: true,
+          message: `Your Previous Year's form status is - ${
+            status ? status : "Not Submitted"
+          }. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+        });
+      }
+    } else {
+      return res.status(200).json({
+        status: true,
+        show: true,
+        message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+      });
+    }
     const lineItems = await IndicatorLineItem.find({
       isPartOfSLB : true
     }).select("_id").lean()
@@ -1104,11 +1154,7 @@ let slbData = await XVFCGrantULBData.findOne({
   ulb: ObjectId(ulb),
 }).lean()
 let status =""
-let host ="";
-if(req.headers.host === BackendHeaderHost.Demo){
-  host = FrontendHeaderHost.Demo;
-}
-req.headers.host = host !== "" ? host: req.headers.host;
+
 if(!slbData){
 
   return res.status(400).json({
