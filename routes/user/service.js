@@ -471,6 +471,10 @@ module.exports.getAll = async (req, res) => {
                             .exec();
 
                     } else {
+                        if (newFilter && Object.keys(newFilter).length) {
+                            roleQuery.unshift({ $match: newFilter });
+                            q2.push({ $match: newFilter });
+                        }
                         totalUsers = await User.aggregate(roleQuery)
                         users = await User.aggregate(q2)
                             .collation({ locale: 'en' })
@@ -478,7 +482,10 @@ module.exports.getAll = async (req, res) => {
                     }
                     console.log(totalUsers)
                     // console.log(util.inspect(q, { showHidden: false, depth: null }))
-
+                    // return res.json({
+                    //     q2,
+                    //     roleQuery
+                    // })
                     return res.status(200).json({
                         timestamp: moment().unix(),
                         success: true,
