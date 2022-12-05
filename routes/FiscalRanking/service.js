@@ -4,6 +4,8 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
+const Ulb = require('../../models/Ulb');
+
 const { fiscalRankingFormJson } = require('./fydynemic');
 
 exports.CreateorUpdate = async (req, res, next) => {
@@ -112,10 +114,14 @@ exports.getView = async function (req, res, next) {
     }
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
+    let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
+
     let viewOne = {};
     let fyData = [];
     if (data) {
       fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
+      data['population11_status'] = ulbPData ? ulbPData?.population > 0 ? "NA" : "" : ""
+      data['populationFr_status'] = twEightSlbs ? twEightSlbs?.population > 0 ? "NA" : "" : ""
       viewOne = { data, fyData }
     } else {
       let numberOfQuestion = {
@@ -126,7 +132,9 @@ exports.getView = async function (req, res, next) {
       viewOne = {
         "ulb": null,
         "design_year": null,
-        "population11": null,
+        "population11_status": ulbPData ? ulbPData?.population > 0 ? "NA" : "" : "",
+        'populationFr_status': twEightSlbs ? twEightSlbs?.population > 0 ? "NA" : "" : "",
+        "population11": ulbPData ? ulbPData?.population : "",
         "populationFr": twEightSlbs ? twEightSlbs?.population : "",
         "webLink": null,
         "nameCmsnr": "",
@@ -198,7 +206,7 @@ exports.getView = async function (req, res, next) {
               pf['status'] = ulbFyAmount ? "NA" : "";
             }
           } else {
-            if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
+            if (['auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
                 if (singleFydata) {
