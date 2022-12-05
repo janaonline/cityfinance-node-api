@@ -102,11 +102,18 @@ module.exports.getAll = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         if (filter["sbCode"]) {
             let code = filter["sbCode"];
-            var digit = code.toString()[0];
-            if (digit == "8") {
-              delete filter["sbCode"];
-              filter["censusCode"] = code;
+            let dataWithCensusCodeQuery =  User.findOne({censusCode: code},{censusCode:1}).lean();
+            // let dataWithSbCodeQuery = User.findOne({sbCode: code},{sbCode:1}).lean();
+            const [dataWithCensusCode] = await Promise.all([dataWithCensusCodeQuery]);
+            if(dataWithCensusCode){
+                filter['censusCode'] = code
+                delete filter["sbCode"];
             }
+            // var digit = code.toString()[0];
+            // if (digit == "8") {
+            //   delete filter["sbCode"];
+            //   filter["censusCode"] = code;
+            // }
           }
         let access = Constants.USER.LEVEL_ACCESS;
 
