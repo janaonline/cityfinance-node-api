@@ -9,49 +9,47 @@ const enumYesNo = {
     },
     status: {
         type: String,
-        default : "PENDING",
+        default: "PENDING",
         enum: {
             values: ["PENDING", "APPROVED", "REJECTED"],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         },
     },
-    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
-    actionTakenByRole: { type: String, default: null },
 }
 
 const numberOfQuestion1 = {
     value: { type: String },
     status: {
         type: String,
-        default : "PENDING",
+        default: "PENDING",
         enum: {
             values: ["PENDING", "APPROVED", "REJECTED"],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         },
     },
-    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
-    actionTakenByRole: { type: String, default: null },
 }
 const numberOfQuestion = {
-    value: { type: Number},
+    value: { type: Number },
     status: {
         type: String,
-        default : "PENDING",
+        default: "PENDING",
         enum: {
             values: ["PENDING", "APPROVED", "REJECTED"],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         },
     },
-    actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
-    actionTakenByRole: { type: String, default: null },
 }
 
 const fiscalRankingSchema = new Schema(
     {
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
-        population11: { type: Number, default: 0 },
-        populationFr: { type: Number, default: 0 },
+        population11: {
+            value: { type: Number, default: 0 },
+        },
+        populationFr: {
+            value: { type: Number, default: 0 },
+        },
         webLink: { type: String, default: null },
         nameCmsnr: { type: String, default: null },
         nameOfNodalOfficer: { type: String, default: null },
@@ -85,7 +83,7 @@ const fiscalRankingSchema = new Schema(
             },
             amount: { type: Number, default: 0 },
             status: {
-                default : "PENDING",
+                default: "PENDING",
                 type: String,
                 enum: {
                     values: ["PENDING", "APPROVED", "REJECTED"],
@@ -104,7 +102,7 @@ const fiscalRankingSchema = new Schema(
             amount: { type: Number, default: 0. },
             status: {
                 type: String,
-                default : "PENDING",
+                default: "PENDING",
                 enum: {
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
@@ -122,7 +120,7 @@ const fiscalRankingSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
-        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default:null },
+        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
         actionTakenByRole: { type: String, default: null },
         rejectReason: { type: String, default: null },
         history: { type: Array, default: [] },
