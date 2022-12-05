@@ -120,8 +120,8 @@ exports.getView = async function (req, res, next) {
     let fyData = [];
     if (data) {
       fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
-      data['population11_status'] = ulbPData ? ulbPData?.population > 0 ? "NA" : "" : ""
-      data['populationFr_status'] = twEightSlbs ? twEightSlbs?.population > 0 ? "NA" : "" : ""
+      data['population11']['readonly'] = ulbPData ? ulbPData?.population > 0 ? true : false : false
+      data['populationFr']['readonly'] = twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
       viewOne = { data, fyData }
     } else {
       let numberOfQuestion = {
@@ -132,10 +132,14 @@ exports.getView = async function (req, res, next) {
       viewOne = {
         "ulb": null,
         "design_year": null,
-        "population11_status": ulbPData ? ulbPData?.population > 0 ? "NA" : "" : "",
-        'populationFr_status': twEightSlbs ? twEightSlbs?.population > 0 ? "NA" : "" : "",
-        "population11": ulbPData ? ulbPData?.population : "",
-        "populationFr": twEightSlbs ? twEightSlbs?.population : "",
+        "population11": {
+          "value": ulbPData ? ulbPData?.population : "",
+          "readonly": ulbPData ? ulbPData?.population > 0 ? true : false : false
+        },
+        "populationFr": {
+          "value": twEightSlbs ? twEightSlbs?.population : "",
+          "readonly": twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
+        },
         "webLink": null,
         "nameCmsnr": "",
         "nameOfNodalOfficer": "",
@@ -150,8 +154,7 @@ exports.getView = async function (req, res, next) {
         "fy_19_20_cash": {
           "type": null,
           "amount": null,
-          "status": "",
-          "actionTakenByRole": ""
+          "status": ""
         },
         "signedCopyOfFile": {
           "name": null,
@@ -160,24 +163,20 @@ exports.getView = async function (req, res, next) {
         "fy_19_20_online": {
           "type": null,
           "amount": null,
-          "status": "",
-          "actionTakenByRole": ""
+          "status": ""
         },
         "fyData": [],
         "property_tax_register": {
           "value": "",
           "status": "",
-          "actionTakenByRole": ""
         },
         "paying_property_tax": {
           "value": "",
-          "status": "",
-          "actionTakenByRole": ""
+          "status": ""
         },
         "paid_property_tax": {
           "value": "",
-          "status": "",
-          "actionTakenByRole": ""
+          "status": ""
         },
         "isDraft": null
       }
