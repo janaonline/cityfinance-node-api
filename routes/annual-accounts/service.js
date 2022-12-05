@@ -591,11 +591,7 @@ exports.createUpdate = async (req, res) => {
           data: addedHistory
         })
       }
-
-
     }
-
-
     let annualAccountData;
     if (
       !req.body.unAudited.submit_annual_accounts &&

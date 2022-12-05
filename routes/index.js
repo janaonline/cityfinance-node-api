@@ -232,12 +232,22 @@ router.use('/propTaxOpDropDown', PropertyTaxOpDropDown);
 const indicatorLineItem = require("./indicatorLineItem");
 router.use("/indicatorLineItem", indicatorLineItem);
 
+
+const FRHomePageContent = require("./FRHomePageContent");
+router.use("/FRHomePageContent", FRHomePageContent);
+
 const review = require("./review");
 router.use(review);
 
+// @getS3Url
+const getS3Url = require("../service/getS3Url");
+router.post("/getS3Url", getS3Url);
 
 //deletefile
 const DeleteFileApi = require('./DeleteFileApi');
 router.use('/deleteFile', DeleteFileApi);
+
+const FiscalRanking = require('./FiscalRanking');
+router.use('/fiscal-ranking', FiscalRanking);
 
 module.exports = router;
