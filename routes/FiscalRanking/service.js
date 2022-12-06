@@ -115,13 +115,12 @@ exports.getView = async function (req, res, next) {
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
     let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
-    console.log("twEightSlbs",twEightSlbs)
     let viewOne = {};
     let fyData = [];
     if (data) {
       fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
-      data['populationFr']['value'] = twEightSlbs ? twEightSlbs?.population : ""
-      data['population11']['value'] = ulbPData ? ulbPData?.population : ""
+      data['populationFr']['value'] = data.populationFr.value ? data.populationFr.value : twEightSlbs ? twEightSlbs?.population : ""
+      data['population11']['value'] = data.population11.value ? data.population11.value : ulbPData ? ulbPData?.population : ""
       data['population11']['readonly'] = ulbPData ? ulbPData?.population > 0 ? true : false : false
       data['populationFr']['readonly'] = twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
       data['fyData'] = fyData
