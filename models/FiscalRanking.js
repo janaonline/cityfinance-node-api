@@ -113,6 +113,17 @@ const fiscalRankingSchema = new Schema(
         property_tax_register: numberOfQuestion,
         paying_property_tax: numberOfQuestion,
         paid_property_tax: numberOfQuestion,
+        signedCopyOfFile: {
+            name: { type: String },
+            url: { type: String },
+            status: {
+                type: String,
+                enum: {
+                    values: ["PENDING", "APPROVED", "REJECTED"],
+                    message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+                },
+            }
+        },
         status: {
             type: String,
             enum: {
