@@ -1,17 +1,55 @@
 require("./dbConnect");
 const enumYesNo = {
-    type: String,
-    enum: {
-        values: ["Yes", "No", null],
-        message: "ERROR: STATUS BE EITHER 'Yes'/ 'No'",
+    value: {
+        type: String,
+        enum: {
+            values: ["Yes", "No", null],
+            message: "ERROR: STATUS BE EITHER 'Yes'/ 'No'",
+        }
+    },
+    status: {
+        type: String,
+        default: "PENDING",
+        enum: {
+            values: ["PENDING", "APPROVED", "REJECTED"],
+            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+        },
     },
 }
+
+const numberOfQuestion1 = {
+    value: { type: String },
+    status: {
+        type: String,
+        default: "PENDING",
+        enum: {
+            values: ["PENDING", "APPROVED", "REJECTED"],
+            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+        },
+    },
+}
+const numberOfQuestion = {
+    value: { type: Number },
+    status: {
+        type: String,
+        default: "PENDING",
+        enum: {
+            values: ["PENDING", "APPROVED", "REJECTED"],
+            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+        },
+    },
+}
+
 const fiscalRankingSchema = new Schema(
     {
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
-        population11: { type: Number, default: 0 },
-        populationFr: { type: Number, default: 0 },
+        population11: {
+            value: { type: Number, default: 0 },
+        },
+        populationFr: {
+            value: { type: Number, default: 0 },
+        },
         webLink: { type: String, default: null },
         nameCmsnr: { type: String, default: null },
         nameOfNodalOfficer: { type: String, default: null },
@@ -22,11 +60,19 @@ const fiscalRankingSchema = new Schema(
             lowercase: true
         },
         mobile: { type: String, default: null },
-        webUrlAnnual: { type: String, default: null },
+        webUrlAnnual: {
+            status: {
+                type: String,
+                enum: {
+                    values: ["PENDING", "APPROVED", "REJECTED"],
+                    message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+                },
+            },
+            value: { type: String, default: null }
+        },
         digitalRegtr: enumYesNo,
         registerGis: enumYesNo,
         accountStwre: enumYesNo,
-        totalOwnRevenueArea: { type: Number, default: 0 },
         fy_19_20_cash: {
             type: {
                 type: String,
@@ -35,7 +81,15 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'Cash'/ 'Cheque'/ 'DD'",
                 },
             },
-            amount: { type: Number, default: 0 }
+            amount: { type: Number, default: 0 },
+            status: {
+                default: "PENDING",
+                type: String,
+                enum: {
+                    values: ["PENDING", "APPROVED", "REJECTED"],
+                    message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+                },
+            }
         },
         fy_19_20_online: {
             type: {
@@ -45,15 +99,20 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'UPI'/ 'Netbanking'/ 'Credit Card'/ 'Debit Card'/ 'Others'",
                 },
             },
-            amount: { type: Number, default: 0. }
+            amount: { type: Number, default: 0. },
+            status: {
+                type: String,
+                default: "PENDING",
+                enum: {
+                    values: ["PENDING", "APPROVED", "REJECTED"],
+                    message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+                },
+            }
         },
-        signedCopyOfFile: {
-            name: { type: String },
-            url: { type: String }
-        },
-        property_tax_register: { type: Number, default: 0 },
-        paying_property_tax: { type: Number, default: 0 },
-        paid_property_tax: { type: Number, default: 0 },
+        totalOwnRevenueArea: numberOfQuestion1,
+        property_tax_register: numberOfQuestion,
+        paying_property_tax: numberOfQuestion,
+        paid_property_tax: numberOfQuestion,
         status: {
             type: String,
             enum: {
@@ -61,6 +120,9 @@ const fiscalRankingSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
+        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+        actionTakenByRole: { type: String, default: null },
+        rejectReason: { type: String, default: null },
         history: { type: Array, default: [] },
         createdAt: { type: Date, default: Date.now() },
         modifiedAt: { type: Date, default: Date.now() },

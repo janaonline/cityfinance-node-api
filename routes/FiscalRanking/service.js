@@ -3,8 +3,10 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
-const { fiscalRankingFormJson } = require('./fydynemic');
+const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
+const Ulb = require('../../models/Ulb');
 
+const { fiscalRankingFormJson } = require('./fydynemic');
 
 exports.CreateorUpdate = async (req, res, next) => {
   try {
@@ -14,16 +16,26 @@ exports.CreateorUpdate = async (req, res, next) => {
     }
     let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
     let fsData = await FiscalRanking.findOne(condition).lean();
-    let id ="";
-    
+
+    let id = "";
     if (fsData) {
-      id=fsData._id;
+      id = fsData._id;
       let fsMapper = await FiscalRankingMapper.find({ fiscal_ranking: ObjectId(fsData._id) });
       let obj = { ...fsData, fsMapper };
       delete obj.history;
       let history = fsData.history;
       history.push(obj);
       req.body['history'] = history;
+      if (req.decoded.role == "MoHUA") {
+        let status = "APPROVED"
+        console.log(await checkPendingStatus(req.body))
+        if (!await checkPendingStatus(req.body)) {
+          status = "REJECTED"
+        }
+        req.body['status'] = status;
+        req.body['actionTakenBy'] = req.decoded._id;
+        req.body['actionTakenByRole'] = "MoHUA";
+      }
       await FiscalRankingMapper.deleteMany({ fiscal_ranking: ObjectId(fsData._id) });
       await FiscalRanking.update(condition, req.body);
     } else {
@@ -41,6 +53,7 @@ exports.CreateorUpdate = async (req, res, next) => {
       message: "Successfully saved data!"
     });
   } catch (error) {
+    console.log(error);
     let msg = "Something went wrong";
     if (error?.code === "11000") {
       msg = "Form already submitted."
@@ -50,6 +63,28 @@ exports.CreateorUpdate = async (req, res, next) => {
       message: msg,
     });
   }
+}
+
+const checkPendingStatus = (data) => {
+  return new Promise((resolve, reject) => {
+    try {
+      let arr = [];
+      for (const key in data) {
+        if (Array.isArray(data[key])) {
+          let d = data[key].length ? data[key].some(e => e.status == "REJECTED") : false;
+          d ? arr.push(1) : ""
+        } else {
+          if (data[key]?.status == "REJECTED") {
+            arr.push(1)
+          }
+        }
+      }
+      console.log("arr", arr)
+      resolve(arr.length ? false : true)
+    } catch (error) {
+      reject(error);
+    }
+  })
 }
 
 /**
@@ -78,31 +113,48 @@ exports.getView = async function (req, res, next) {
       condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.design_year) }
     }
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
+    let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
+    let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
+
     let viewOne = {};
-    let fyData =[];
+    let fyData = [];
     if (data) {
       fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
+      data['population11']['readonly'] = ulbPData ? ulbPData?.population > 0 ? true : false : false
+      data['populationFr']['readonly'] = twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
       viewOne = { data, fyData }
     } else {
+      let numberOfQuestion = {
+        value: null,
+        status: "",
+        actionTakenByRole: "",
+      }
       viewOne = {
         "ulb": null,
         "design_year": null,
-        "population11": null,
-        "populationFr": null,
+        "population11": {
+          "value": ulbPData ? ulbPData?.population : "",
+          "readonly": ulbPData ? ulbPData?.population > 0 ? true : false : false
+        },
+        "populationFr": {
+          "value": twEightSlbs ? twEightSlbs?.population : "",
+          "readonly": twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
+        },
         "webLink": null,
         "nameCmsnr": "",
         "nameOfNodalOfficer": "",
         "designationOftNodalOfficer": "",
         "email": null,
         "mobile": null,
-        "webUrlAnnual": null,
-        "digitalRegtr": "",
-        "registerGis": "",
-        "accountStwre": "",
-        "totalOwnRevenueArea": null,
+        "webUrlAnnual": numberOfQuestion,
+        "digitalRegtr": numberOfQuestion,
+        "registerGis": numberOfQuestion,
+        "accountStwre": numberOfQuestion,
+        "totalOwnRevenueArea": numberOfQuestion,
         "fy_19_20_cash": {
           "type": null,
-          "amount": null
+          "amount": null,
+          "status": ""
         },
         "signedCopyOfFile": {
           "name": null,
@@ -110,16 +162,25 @@ exports.getView = async function (req, res, next) {
         },
         "fy_19_20_online": {
           "type": null,
-          "amount": null
+          "amount": null,
+          "status": ""
         },
         "fyData": [],
-        "property_tax_register": null,
-        "paying_property_tax": null,
-        "paid_property_tax": null,
+        "property_tax_register": {
+          "value": "",
+          "status": "",
+        },
+        "paying_property_tax": {
+          "value": "",
+          "status": ""
+        },
+        "paid_property_tax": {
+          "value": "",
+          "status": ""
+        },
         "isDraft": null
       }
     }
-
     let fyDynemic = await fiscalRankingFormJson();
     let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
@@ -128,40 +189,46 @@ exports.getView = async function (req, res, next) {
       for (let key in subData) {
         for (let pf of subData[key]?.yearData) {
           if (pf?.code?.length > 0) {
-            if(fyData.length){
-                  let singleFydata = fyData.find(e=>{
-                    return (e.year.toString() == pf.year.toString() && e.type==pf.type)
-                  }
-                  );
-                  if(singleFydata){
-                    pf['amount'] = singleFydata.amount;  
-                  }else{
-                    let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-                    pf['amount'] = ulbFyAmount;
-                  }
-            }else{
+            if (fyData.length) {
+              let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+              if (singleFydata) {
+                pf['amount'] = singleFydata.amount;
+                pf['status'] = singleFydata.status;
+              } else {
+                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                pf['amount'] = ulbFyAmount;
+                pf['status'] = ulbFyAmount ? "NA" : "";
+              }
+            } else {
               let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
               pf['amount'] = ulbFyAmount;
+              pf['status'] = ulbFyAmount ? "NA" : "";
             }
           } else {
-            if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
-              if(fyData.length){
-                  let singleFydata = fyData.find(e=>(e.year.toString() == pf.year.toString() && e.type==pf.type));
-                  if(singleFydata){
-                    pf['file'] = singleFydata.file;  
-                  }else{
-                       pf['readonly'] = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                  }
-              }else{
-                pf['readonly'] = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+            if (['auditedAnnualFySt'].includes(subData[key]?.key)) {
+              if (fyData.length) {
+                let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+                if (singleFydata) {
+                  pf['file'] = singleFydata.file;
+                  pf['status'] = singleFydata.status;
+                } else {
+                  let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+                  pf['readonly'] = chekFile;
+                  pf['status'] = chekFile ? "NA" : ""
+                }
+              } else {
+                let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+                pf['readonly'] = chekFile;
+                pf['status'] = chekFile ? "NA" : "";
               }
-            }else{
-              if(fyData.length){
-               if(pf.year && pf.type){
-                let singleFydata = fyData.find(e=> (e.year.toString() == pf.year.toString() && e.type==pf.type));
-                pf['amount'] = singleFydata ? singleFydata.amount : 0;  
+            } else {
+              if (fyData.length) {
+                if (pf.year && pf.type) {
+                  let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+                  pf['amount'] = singleFydata ? singleFydata.amount : 0;
+                  pf['status'] = singleFydata ? singleFydata.status : "";
+                }
               }
-            }
             }
           }
         }
@@ -174,7 +241,12 @@ exports.getView = async function (req, res, next) {
   }
 }
 
-
+/**
+ * It takes an object with three properties (code, year, data) and returns the sum of the totalAmount
+ * property of the objects in the data array that have a code property that matches one of the values
+ * in the code array and a year_id property that matches the year property
+ * @param objData - The object that contains the data to be filtered.
+ */
 const getUlbLedgerDataFilter = (objData) => {
   const { code, year, data } = objData;
   if (code.length) {
@@ -185,7 +257,10 @@ const getUlbLedgerDataFilter = (objData) => {
     return 0;
   }
 }
-
+/**
+ * It returns an array of years from the ulb_ledger collection, based on the condition passed to it
+ * @param condition - This is the condition that you want to apply to the query.
+ */
 const ulbLedgerFy = (condition) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -220,7 +295,12 @@ const ulbLedgerFy = (condition) => {
     }
   })
 }
-
+/**
+ * It takes an object with a single property, ulb, which is the id of the ULB, and returns a promise
+ * that resolves to an array of objects, each of which has the following properties: year_id, year,
+ * code, and totalAmount
+ * @param objData - {
+ */
 const ulbLedgersData = (objData) => {
   return new Promise(async (resolve, reject) => {
     const { ulb } = objData;
@@ -440,3 +520,55 @@ exports.getAll = async function (req, res, next) {
     return res.status(400).json({ status: false, message: "Something error wrong!" });
   }
 }
+exports.approvedByMohua = async function (req, res, next) {
+  try {
+    let { ulb, design_year, year, type, actionTakenByRole, status } = req.body;
+    if (!ulb && !design_year && !type && !actionTakenByRole && !status) {
+      return res.status(400).json({ status: false, message: "Required fields!", "keys": ['ulb', 'design_year', 'type', 'actionTakenByRole', 'status'] });
+    }
+    let condition = { "ulb": ObjectId(ulb), design_year: ObjectId(design_year) }
+    let fsData = await FiscalRanking.findOne(condition).lean();
+    if (fsData) {
+      let frMCount = await FiscalRankingMapper.count({ "fiscal_ranking": fsData._id, "status": "PENDING" }).lean();
+      let cond = {
+        "fiscal_ranking": fsData._id,
+        "year": year,
+        "type": type
+      }
+      let upObj = {
+        "actionTakenByRole": actionTakenByRole,
+        "actionTakenBy": req.decoded._id,
+        "status": status,
+        "modifiedAt": new Date()
+      }
+      if (year) {
+        let d = await FiscalRankingMapper.findOneAndUpdate(cond, upObj, { upsert: true, new: false });
+      } else {
+        let upObj1 = fsData[type];
+        upObj1['status'] = status
+        upObj1['actionTakenByRole'] = actionTakenByRole
+        upObj1['actionTakenBy'] = req.decoded._id
+        let d = await FiscalRanking.findOneAndUpdate(condition, { $set: { [type]: upObj1 } }, { upsert: true, new: false });
+      }
+      if (frMCount == 0 && !await checkPendingStatus(fsData)) {
+        let d = await FiscalRanking.findOneAndUpdate(condition, { $set: upObj }, { upsert: true, new: false });
+      }
+      return res.status(200).json({
+        status: true,
+        message: "Successfully change request!"
+      })
+    } else {
+      return res.status(400).json({
+        status: false,
+        message: "Data not found!"
+      })
+    }
+  } catch (error) {
+    console.log(error)
+    return res.status(400).json({
+      status: false,
+      message: "Something went wrong!"
+    })
+  }
+}
+
