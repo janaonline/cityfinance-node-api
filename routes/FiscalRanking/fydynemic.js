@@ -221,21 +221,21 @@ const fiscalRankingFormJson = () => {
         key: 'totalRecBudgetEst',
         label: 'Total Receipts (Budget Estimate)',
         yearData: [
-          {
-            label: 'FY 2016-17',
-            key: 'FY2016-17',
-            postion: '1',
-            amount: '',
-            file: '',
-            min: 0,
-            max: 13,
-            required: true,
-            type: 'totalRcptBudget',
-            code: [],
-            year: "63735a1ad44534713673bc2b",
-            bottomText: `to be taken from approved Annual Budget of `,
-            placeHolder: ''
-          },
+          // {
+          //   label: 'FY 2016-17',
+          //   key: 'FY2016-17',
+          //   postion: '1',
+          //   amount: '',
+          //   file: '',
+          //   min: 0,
+          //   max: 13,
+          //   required: true,
+          //   type: 'totalRcptBudget',
+          //   code: [],
+          //   year: "63735a1ad44534713673bc2b",
+          //   bottomText: `to be taken from approved Annual Budget of `,
+          //   placeHolder: ''
+          // },
           {
             label: 'FY 2017-18',
             key: 'FY2017-18',
@@ -693,6 +693,7 @@ const fiscalRankingFormJson = () => {
             type: 'appAnnualBudget',
             year: "63735a5bd44534713673c1ca",
             code: [],
+            readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only)`,
             placeHolder: ''
           },
@@ -711,6 +712,7 @@ const fiscalRankingFormJson = () => {
             type: 'appAnnualBudget',
             year: "63735a4bd44534713673bfbf",
             code: [],
+            readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only)`,
             placeHolder: ''
           },
@@ -729,6 +731,7 @@ const fiscalRankingFormJson = () => {
             type: 'appAnnualBudget',
             year: "607697074dff55e6c0be33ba",
             code: [],
+            readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only)`,
             placeHolder: ''
           },

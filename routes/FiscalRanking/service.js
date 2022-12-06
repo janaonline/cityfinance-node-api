@@ -194,15 +194,18 @@ exports.getView = async function (req, res, next) {
               if (singleFydata) {
                 pf['amount'] = singleFydata.amount;
                 pf['status'] = singleFydata.status;
+                pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA" : "";
+                pf['readonly'] = ulbFyAmount ? true : false;
               }
             } else {
               let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
               pf['amount'] = ulbFyAmount;
               pf['status'] = ulbFyAmount ? "NA" : "";
+              pf['readonly'] = ulbFyAmount ? true : false;
             }
           } else {
             if (['auditedAnnualFySt'].includes(subData[key]?.key)) {
@@ -211,15 +214,18 @@ exports.getView = async function (req, res, next) {
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
+                  pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
                 } else {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['readonly'] = chekFile;
                   pf['status'] = chekFile ? "NA" : ""
+                  pf['readonly'] = chekFile ? true : false;
                 }
               } else {
                 let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                 pf['readonly'] = chekFile;
                 pf['status'] = chekFile ? "NA" : "";
+                pf['readonly'] = chekFile ? true : false;
               }
             } else {
               if (fyData.length) {
@@ -227,6 +233,7 @@ exports.getView = async function (req, res, next) {
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
                   pf['amount'] = singleFydata ? singleFydata.amount : 0;
                   pf['status'] = singleFydata ? singleFydata.status : "";
+                  pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : false;
                 }
               }
             }
