@@ -124,7 +124,8 @@ exports.getView = async function (req, res, next) {
       data['population11']['value'] = ulbPData ? ulbPData?.population : ""
       data['population11']['readonly'] = ulbPData ? ulbPData?.population > 0 ? true : false : false
       data['populationFr']['readonly'] = twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
-      viewOne = { data, fyData }
+      data['fyData'] = fyData
+      viewOne = data
     } else {
       let numberOfQuestion = {
         value: null,

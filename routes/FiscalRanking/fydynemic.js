@@ -13,6 +13,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -26,6 +27,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -39,6 +41,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -52,6 +55,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -71,6 +75,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -84,6 +89,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -97,6 +103,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -116,6 +123,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -129,6 +137,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -142,6 +151,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
+            readonly: false,
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -166,6 +176,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalRcptActl',
             code: [],
+            readonly: false,
             year: "63735a1ad44534713673bc2b",
             bottomText: 'to be taken from approved Annual Budget of ',
             placeHolder: ''
@@ -181,6 +192,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalRcptActl',
             code: [],
+            readonly: false,
             year: "63735a5bd44534713673c1ca",
             bottomText: 'to be taken from approved Annual Budget of ',
             placeHolder: ''
@@ -196,6 +208,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalRcptActl',
             code: [],
+            readonly: false,
             year: "63735a4bd44534713673bfbf",
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
@@ -211,6 +224,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalRcptActl',
             code: [],
+            readonly: false,
             year: "607697074dff55e6c0be33ba",
             bottomText: `to be taken from approved Annual Budget `,
             placeHolder: ''
@@ -247,6 +261,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalRcptBudget',
             code: [],
+            readonly: false,
             year: "63735a5bd44534713673c1ca",
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
@@ -262,6 +277,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalRcptBudget',
             code: [],
+            readonly: false,
             year: "63735a4bd44534713673bfbf",
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
@@ -277,6 +293,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalRcptBudget',
             code: [],
+            readonly: false,
             year: "607697074dff55e6c0be33ba",
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
@@ -298,6 +315,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalOwnRvnue',
             code: ['110', '130', '140', '150', '180'],
+            readonly: false,
             year: "63735a1ad44534713673bc2b",
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
@@ -314,6 +332,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOwnRvnue',
             year: "63735a5bd44534713673c1ca",
             code: ['110', '130', '140', '150', '180'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -328,6 +347,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalOwnRvnue',
             code: ['110', '130', '140', '150', '180'],
+            readonly: false,
             year: "63735a4bd44534713673bfbf",
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
@@ -344,6 +364,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOwnRvnue',
             year: "607697074dff55e6c0be33ba",
             code: ['110', '130', '140', '150', '180'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           }
@@ -365,6 +386,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalProperty',
             year: "63735a1ad44534713673bc2b",
             code: ['11001'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -380,6 +402,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalProperty',
             year: "63735a5bd44534713673c1ca",
             code: ['11001'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -395,6 +418,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalProperty',
             year: "63735a4bd44534713673bfbf",
             code: ['11001'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -409,6 +433,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'totalProperty',
             code: ['11001'],
+            readonly: false,
             year: "607697074dff55e6c0be33ba",
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
@@ -433,6 +458,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalGrossBl',
             year: "63735a1ad44534713673bc2b",
             code: ['410'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -448,6 +474,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalGrossBl',
             year: "63735a5bd44534713673c1ca",
             code: ['410'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -463,6 +490,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalGrossBl',
             year: "63735a4bd44534713673bfbf",
             code: ['410'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -478,6 +506,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalGrossBl',
             year: "607697074dff55e6c0be33ba",
             code: ['410'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           }
@@ -499,6 +528,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCWIP',
             year: "63735a1ad44534713673bc2b",
             code: ['412'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -514,6 +544,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCWIP',
             year: "63735a5bd44534713673c1ca",
             code: ['412'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -529,6 +560,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCWIP',
             year: "63735a4bd44534713673bfbf",
             code: ['412'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -544,6 +576,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCWIP',
             year: "607697074dff55e6c0be33ba",
             code: ['412'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           }
@@ -565,6 +598,7 @@ const fiscalRankingFormJson = () => {
             type: 'estAdmExpenses',
             year: "63735a5bd44534713673c1ca",
             code: ['210', '220'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -580,6 +614,7 @@ const fiscalRankingFormJson = () => {
             type: 'estAdmExpenses',
             year: "63735a4bd44534713673bfbf",
             code: ['210', '220'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -595,6 +630,7 @@ const fiscalRankingFormJson = () => {
             type: 'estAdmExpenses',
             year: "607697074dff55e6c0be33ba",
             code: ['210', '220'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           }
@@ -616,6 +652,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRevExp',
             year: "63735a5bd44534713673c1ca",
             code: ['210', '220', '230', '240', '200'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -631,6 +668,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRevExp',
             year: "63735a4bd44534713673bfbf",
             code: ['210', '220', '230', '240', '200'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           },
@@ -646,6 +684,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRevExp',
             year: "607697074dff55e6c0be33ba",
             code: ['210', '220', '230', '240', '200'],
+            readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
             placeHolder: ''
           }
@@ -756,6 +795,7 @@ const fiscalRankingFormJson = () => {
             type: 'auditedAnnualFySt',
             year: "63735a5bd44534713673c1ca",
             code: [],
+            readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only)`,
             placeHolder: ''
           },
@@ -774,6 +814,7 @@ const fiscalRankingFormJson = () => {
             type: 'auditedAnnualFySt',
             year: "63735a4bd44534713673bfbf",
             code: [],
+            readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only)`,
             placeHolder: ''
           },
@@ -792,6 +833,7 @@ const fiscalRankingFormJson = () => {
             type: 'auditedAnnualFySt',
             year: "607697074dff55e6c0be33ba",
             code: [],
+            readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only)`,
             placeHolder: ''
           },
