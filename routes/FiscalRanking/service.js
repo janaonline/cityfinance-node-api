@@ -115,19 +115,20 @@ exports.getView = async function (req, res, next) {
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
     let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
-
+    console.log("twEightSlbs",twEightSlbs)
     let viewOne = {};
     let fyData = [];
     if (data) {
       fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
+      data['populationFr']['value'] = twEightSlbs ? twEightSlbs?.population : ""
+      data['population11']['value'] = ulbPData ? ulbPData?.population : ""
       data['population11']['readonly'] = ulbPData ? ulbPData?.population > 0 ? true : false : false
       data['populationFr']['readonly'] = twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
       viewOne = { data, fyData }
     } else {
       let numberOfQuestion = {
         value: null,
-        status: "",
-        actionTakenByRole: "",
+        status: ""
       }
       viewOne = {
         "ulb": null,
@@ -208,7 +209,7 @@ exports.getView = async function (req, res, next) {
               pf['readonly'] = ulbFyAmount ? true : false;
             }
           } else {
-            if (['auditedAnnualFySt'].includes(subData[key]?.key)) {
+            if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
                 if (singleFydata) {
@@ -216,22 +217,26 @@ exports.getView = async function (req, res, next) {
                   pf['status'] = singleFydata.status;
                   pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
                 } else {
-                  let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                  pf['readonly'] = chekFile;
-                  pf['status'] = chekFile ? "NA" : ""
-                  pf['readonly'] = chekFile ? true : false;
+                  if (subData[key]?.key !== "appAnnualBudget") {
+                    let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+                    pf['readonly'] = chekFile;
+                    pf['status'] = chekFile ? "NA" : ""
+                    pf['readonly'] = chekFile ? true : false;
+                  }
                 }
               } else {
-                let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                pf['readonly'] = chekFile;
-                pf['status'] = chekFile ? "NA" : "";
-                pf['readonly'] = chekFile ? true : false;
+                if (subData[key]?.key !== "appAnnualBudget") {
+                  let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
+                  pf['readonly'] = chekFile;
+                  pf['status'] = chekFile ? "NA" : "";
+                  pf['readonly'] = chekFile ? true : false;
+                }
               }
             } else {
               if (fyData.length) {
                 if (pf.year && pf.type) {
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
-                  pf['amount'] = singleFydata ? singleFydata.amount : 0;
+                  pf['amount'] = singleFydata ? singleFydata.amount : "";
                   pf['status'] = singleFydata ? singleFydata.status : "";
                   pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : false;
                 }
