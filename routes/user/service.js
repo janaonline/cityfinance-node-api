@@ -102,7 +102,10 @@ module.exports.getAll = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         if (filter["sbCode"]) {
             let code = filter["sbCode"];
-            let dataWithCensusCodeQuery =  User.findOne({censusCode: code},{censusCode:1}).lean();
+            const dataWithCensusCodeQuery =  Ulb.findOne(
+                {
+                    censusCode: {$regex: `^${code}`, $options: 'i' }
+                },{censusCode:1}).lean();
             // let dataWithSbCodeQuery = User.findOne({sbCode: code},{sbCode:1}).lean();
             const [dataWithCensusCode] = await Promise.all([dataWithCensusCodeQuery]);
             if(dataWithCensusCode){
