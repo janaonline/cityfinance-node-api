@@ -235,21 +235,8 @@ const fiscalRankingFormJson = () => {
         key: 'totalRecBudgetEst',
         label: 'Total Receipts (Budget Estimate)',
         yearData: [
-          // {
-          //   label: 'FY 2016-17',
-          //   key: 'FY2016-17',
-          //   postion: '1',
-          //   amount: '',
-          //   file: '',
-          //   min: 0,
-          //   max: 13,
-          //   required: true,
-          //   type: 'totalRcptBudget',
-          //   code: [],
-          //   year: "63735a1ad44534713673bc2b",
-          //   bottomText: `to be taken from approved Annual Budget of `,
-          //   placeHolder: ''
-          // },
+          {
+          },
           {
             label: 'FY 2017-18',
             key: 'FY2017-18',
@@ -542,7 +529,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             type: 'totalCWIP',
-            year: "63735a5bd44534713673c1ca",
+            year: "63735a4bd44534713673bfbf",
             code: ['412'],
             readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
@@ -558,7 +545,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             type: 'totalCWIP',
-            year: "63735a4bd44534713673bfbf",
+            year: "63735a5bd44534713673c1ca",
             code: ['412'],
             readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
@@ -596,7 +583,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             type: 'estAdmExpenses',
-            year: "63735a5bd44534713673c1ca",
+            year: "63735a4bd44534713673bfbf",
             code: ['210', '220'],
             readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
@@ -612,7 +599,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             type: 'estAdmExpenses',
-            year: "63735a4bd44534713673bfbf",
+            year: "63735a5bd44534713673c1ca",
             code: ['210', '220'],
             readonly: false,
             bottomText: `to be taken from approved Annual Budget of `,
@@ -736,7 +723,6 @@ const fiscalRankingFormJson = () => {
             bottomText: `Maximum Size  5MB (pdf files only)`,
             placeHolder: ''
           },
-          
           {
             label: 'FY 2018-19',
             key: 'appAnnualBudget_2018-19',

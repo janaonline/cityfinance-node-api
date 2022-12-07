@@ -198,13 +198,13 @@ exports.getView = async function (req, res, next) {
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-                pf['amount'] = ulbFyAmount;
+                pf['amount'] = ulbFyAmount > 0 ? ulbFyAmount :"";
                 pf['status'] = ulbFyAmount ? "NA" : "";
                 pf['readonly'] = ulbFyAmount ? true : false;
               }
             } else {
               let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-              pf['amount'] = ulbFyAmount;
+              pf['amount'] = ulbFyAmount > 0 ? ulbFyAmount :"";
               pf['status'] = ulbFyAmount ? "NA" : "";
               pf['readonly'] = ulbFyAmount ? true : false;
             }

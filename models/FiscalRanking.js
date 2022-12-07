@@ -45,10 +45,10 @@ const fiscalRankingSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         population11: {
-            value: { type: Number, default: 0 },
+            value: { type: Number, default: null },
         },
         populationFr: {
-            value: { type: Number, default: 0 },
+            value: { type: Number, default: null },
         },
         webLink: { type: String, default: null },
         nameCmsnr: { type: String, default: null },
@@ -81,7 +81,7 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'Cash'/ 'Cheque'/ 'DD'",
                 },
             },
-            amount: { type: Number, default: 0 },
+            amount: { type: Number, default: null },
             status: {
                 default: "PENDING",
                 type: String,
@@ -99,7 +99,7 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'UPI'/ 'Netbanking'/ 'Credit Card'/ 'Debit Card'/ 'Others'",
                 },
             },
-            amount: { type: Number, default: 0. },
+            amount: { type: Number, default: null },
             status: {
                 type: String,
                 default: "PENDING",
