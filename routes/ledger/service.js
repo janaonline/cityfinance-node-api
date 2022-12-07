@@ -464,8 +464,8 @@ module.exports.getAllLedgersCsv = function (req, res) {
                 amount: 1,
                 population: 1
             }
-        }
-    ]).cursor({ batchSize: 500 }).exec()
+        },
+    ]).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
     cursor.on("data", function (el) {
         if (el.ulb != 'NA') {
             let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
