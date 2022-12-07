@@ -2062,7 +2062,8 @@ if(csv){
         
         if(collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']){
             res.write(
-                `${fixedColumns} ${dynamicColumns} \r\n`
+              "\ufeff"+
+                `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
               );
             
             res.flushHeaders();
@@ -2080,6 +2081,7 @@ if(csv){
                     el.censusCode = "NA"
                 }
                 res.write(
+                  "\ufeff"+
                     el.stateName +
                     "," +
                     el.ulbName +
@@ -2095,7 +2097,7 @@ if(csv){
                     el.UA +
                     "," +
     
-                    dynamicElementData +
+                    dynamicElementData.toString() +
                     
                     "\r\n"
                 )
