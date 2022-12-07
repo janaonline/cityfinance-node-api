@@ -369,7 +369,7 @@ const ulbLedgersData = (objData) => {
         },
         {
           $project: {
-            _id: 0,
+            _id: "$years._id",
             year_id: "$years._id",
             year: "$years.year",
             code: "$_id.code",
