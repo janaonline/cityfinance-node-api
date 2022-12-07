@@ -199,14 +199,14 @@ exports.getView = async function (req, res, next) {
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['amount'] = ulbFyAmount > 0 ? ulbFyAmount :"";
-                pf['status'] = ulbFyAmount ? "NA" : "";
-                pf['readonly'] = ulbFyAmount ? true : false;
+                pf['status'] = ulbFyAmount  > 0 ? "NA" : "";
+                pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
               pf['amount'] = ulbFyAmount > 0 ? ulbFyAmount :"";
-              pf['status'] = ulbFyAmount ? "NA" : "";
-              pf['readonly'] = ulbFyAmount ? true : false;
+              pf['status'] = ulbFyAmount > 0 ? "NA" : "";
+              pf['readonly'] = ulbFyAmount > 0 ? true : false;
             }
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
@@ -219,7 +219,6 @@ exports.getView = async function (req, res, next) {
                 } else {
                   if (subData[key]?.key !== "appAnnualBudget") {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                    pf['readonly'] = chekFile;
                     pf['status'] = chekFile ? "NA" : ""
                     pf['readonly'] = chekFile ? true : false;
                   }
@@ -227,7 +226,6 @@ exports.getView = async function (req, res, next) {
               } else {
                 if (subData[key]?.key !== "appAnnualBudget") {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                  pf['readonly'] = chekFile;
                   pf['status'] = chekFile ? "NA" : "";
                   pf['readonly'] = chekFile ? true : false;
                 }
