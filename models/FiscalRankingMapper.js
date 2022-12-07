@@ -4,7 +4,7 @@ const fiscalRankingMapperSchema = new Schema(
         fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
-        amount: { type: Number, default: 0 },
+        amount: { type: Number, default: null },
         status: {
             type: String,
             default: "PENDING",
