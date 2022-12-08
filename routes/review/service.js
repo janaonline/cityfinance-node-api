@@ -2062,7 +2062,8 @@ if(csv){
         
         if(collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']){
             res.write(
-                `${fixedColumns} ${dynamicColumns} \r\n`
+              "\ufeff"+
+                `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
               );
             
             res.flushHeaders();
@@ -2080,6 +2081,7 @@ if(csv){
                     el.censusCode = "NA"
                 }
                 res.write(
+                  "\ufeff"+
                     el.stateName +
                     "," +
                     el.ulbName +
@@ -2095,7 +2097,7 @@ if(csv){
                     el.UA +
                     "," +
     
-                    dynamicElementData +
+                    dynamicElementData.toString() +
                     
                     "\r\n"
                 )
@@ -2510,8 +2512,21 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
         ]
         query.push(...query_2)
         //temp filter for duplicate dur entries
+        let pipelineIndex;
+        for (let i = 0; i < query.length; i++) {
+          if (query[i].hasOwnProperty("$lookup")) {
+            let lookupQuery = query[i]["$lookup"];
+            if (
+              lookupQuery.hasOwnProperty("pipeline") &&
+              lookupQuery.hasOwnProperty("let")
+            ) {
+              pipelineIndex = i;
+              break;
+            }
+          }
+        }
         if(formName === CollectionNames.dur){
-          query[5]["$lookup"]["pipeline"][0]["$match"]["$expr"]["$and"].push(
+          query[pipelineIndex]["$lookup"]["pipeline"][0]["$match"]["$expr"]["$and"].push(
             {
               $eq:[
                 "$financialYear",

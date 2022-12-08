@@ -13,6 +13,8 @@ const { canTakenAction } = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
+const { YEAR_CONSTANTS } = require("../../util/FormNames");
+
 function update2223from2122() {
 
 }
@@ -514,6 +516,11 @@ exports.report = async (req, res) => {
   res.flushHeaders();
   let query = [
     {
+      $match: {
+        designYear: ObjectId(YEAR_CONSTANTS["21_22"]),
+      },
+    },
+    {
       $lookup: {
         from: "years",
         localField: "designYear",
@@ -561,8 +568,12 @@ exports.report = async (req, res) => {
         role: "$actionTakenByRole",
         waterManagement: "$categoryWiseData_wm",
         solidWasteMgt: "$categoryWiseData_swm",
-        createdAt: { $dateToString: { format: "%d/%m/%Y", date: "$createdAt" } },
-        modifiedAt: { $dateToString: { format: "%d/%m/%Y", date: "$modifiedAt" } },
+        createdAt: {
+          $dateToString: { format: "%d/%m/%Y", date: "$createdAt" },
+        },
+        modifiedAt: {
+          $dateToString: { format: "%d/%m/%Y", date: "$modifiedAt" },
+        },
       },
     },
   ];

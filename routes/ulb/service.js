@@ -2921,7 +2921,7 @@ module.exports.getAllUlbs = async function (req, res) {
     // Get all ulbs list in older format, so that everything works fine
     let data;
     Redis.get("ulbList", async (err, value) => {
-      console.log(err, value);
+      // console.log(err, value);
       if (!value) {
         data = await Ulb.aggregate([
           {

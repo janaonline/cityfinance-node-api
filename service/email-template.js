@@ -5,6 +5,11 @@ const sendEmail = require("./email");
 const Service = require('../service');
 const emailVericationLink = require("./email-verification-link");
 const ObjectId = require("mongoose").Types.ObjectId;
+const {CollectionNames} = require('../util/15thFCstatus')
+const StatusList = require("../util/newStatusList");
+const { Not_Started } = require("../util/newStatusList");
+
+
 const userSignup = (userName, name, link) => {
   return {
     subject: `Registration Successful for City Finance`,
@@ -1394,6 +1399,175 @@ const ulbFormSubmitted = (ulbName, formName) => {
   };
 };
 
+const stateUlbFormTrigger = (stateName,stateData) => {
+  const CollectionNamesArray = Object.keys(stateData[stateName]);
+  
+const dur =  stateData[stateName][CollectionNames.dur];
+const aa_Audited =  stateData[stateName]["AnnualAccount_Audited"];
+const aa_UnAudited =  stateData[stateName]["AnnualAccount_UnAudited"];
+const gfc =  stateData[stateName][CollectionNames.gfc];
+const odf =  stateData[stateName][CollectionNames.odf];
+const propTaxOp =  stateData[stateName][CollectionNames.propTaxOp];
+const twentyEightSlbs =  stateData[stateName][CollectionNames.twentyEightSlbs];
+const pfms = stateData[stateName][CollectionNames.linkPFMS]
+
+let total = {
+  [StatusList.Not_Started]:0,
+  [StatusList.In_Progress]:0,
+  [StatusList.Under_Review_By_State]:0,
+  [StatusList.Rejected_By_State]:0,
+  [StatusList.Under_Review_By_MoHUA]:0,
+  [StatusList.Rejected_By_MoHUA]:0,
+  [StatusList.Approved_By_MoHUA]:0,
+}
+
+  let formArray = [dur, aa_Audited, aa_UnAudited, gfc, odf , propTaxOp, twentyEightSlbs, pfms];
+
+  total = calculateTotalStatus(total, formArray);
+  return {
+    subject: `Weekly status summary`,
+    body: `<table width="100%">
+                        
+    <tr>
+        <td  font-size: 16px">
+            <p>Dear ${stateName} Team,</p>
+
+            <p>Attached is a weekly status summary on the form submission by ULBs. Kindly review the ULB forms and approve upon completion.</p>
+
+            <div style="overflow-x: auto;">
+                <table cellpadding="8" cellspacing="0" border="1" style="border: 1px solid #efefef; border-collapse: collapse;">
+                    <tbody>
+                        <tr>
+                            <th>S.No.</th>
+                            <th>Form Name</th>
+                            <th>Not Started</th>
+                            <th>In Progress</th>
+                            <th>Under Review by State</th>
+                            <th>Returned by State</th>
+                            <th>Under Review by MoHUA</th>
+                            <th>Returned by MoHUA</th>
+                            <th>Approved by MoHUA</th>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>DUR</td>
+                            <td>${dur[StatusList.Not_Started]}</td>
+                            <td>${dur[StatusList.In_Progress]}</td>
+                            <td>${dur[StatusList.Under_Review_By_State]}</td>
+                            <td>${dur[StatusList.Rejected_By_State]}</td>
+                            <td>${dur[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${dur[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${dur[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>AFS Audited</td>
+                            <td>${aa_Audited[StatusList.Not_Started]}</td>
+                            <td>${aa_Audited[StatusList.In_Progress]}</td>
+                            <td>${aa_Audited[StatusList.Under_Review_By_State]}</td>
+                            <td>${aa_Audited[StatusList.Rejected_By_State]}</td>
+                            <td>${aa_Audited[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${aa_Audited[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${aa_Audited[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>AFS Provisional</td>
+                            <td>${aa_UnAudited[StatusList.Not_Started]}</td>
+                            <td>${aa_UnAudited[StatusList.In_Progress]}</td>
+                            <td>${aa_UnAudited[StatusList.Under_Review_By_State]}</td>
+                            <td>${aa_UnAudited[StatusList.Rejected_By_State]}</td>
+                            <td>${aa_UnAudited[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${aa_UnAudited[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${aa_UnAudited[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>PFMS Linkage</td>
+                            <td>${pfms[StatusList.Not_Started]}</td>
+                            <td>${pfms[StatusList.In_Progress]}</td>
+                            <td>${pfms[StatusList.Under_Review_By_State]}</td>
+                            <td>${pfms[StatusList.Rejected_By_State]}</td>
+                            <td>${pfms[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${pfms[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${pfms[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>Property Tax Operationalization</td>
+                            <td>${propTaxOp[StatusList.Not_Started]}</td>
+                            <td>${propTaxOp[StatusList.In_Progress]}</td>
+                            <td>${propTaxOp[StatusList.Under_Review_By_State]}</td>
+                            <td>${propTaxOp[StatusList.Rejected_By_State]}</td>
+                            <td>${propTaxOp[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${propTaxOp[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${propTaxOp[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>28 SLB</td>
+                            <td>${twentyEightSlbs[StatusList.Not_Started]}</td>
+                            <td>${twentyEightSlbs[StatusList.In_Progress]}</td>
+                            <td>${twentyEightSlbs[StatusList.Under_Review_By_State]}</td>
+                            <td>${twentyEightSlbs[StatusList.Rejected_By_State]}</td>
+                            <td>${twentyEightSlbs[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${twentyEightSlbs[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${twentyEightSlbs[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td>ODF</td>
+                            <td>${odf[StatusList.Not_Started]}</td>
+                            <td>${odf[StatusList.In_Progress]}</td>
+                            <td>${odf[StatusList.Under_Review_By_State]}</td>
+                            <td>${odf[StatusList.Rejected_By_State]}</td>
+                            <td>${odf[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${odf[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${odf[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td>GFC</td>
+                            <td>${gfc[StatusList.Not_Started]}</td>
+                            <td>${gfc[StatusList.In_Progress]}</td>
+                            <td>${gfc[StatusList.Under_Review_By_State]}</td>
+                            <td>${gfc[StatusList.Rejected_By_State]}</td>
+                            <td>${gfc[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${gfc[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${gfc[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td>Total</td>
+                            <td>${total[StatusList.Not_Started]}</td>
+                            <td>${total[StatusList.In_Progress]}</td>
+                            <td>${total[StatusList.Under_Review_By_State]}</td>
+                            <td>${total[StatusList.Rejected_By_State]}</td>
+                            <td>${total[StatusList.Under_Review_By_MoHUA]}</td>
+                            <td>${total[StatusList.Rejected_By_MoHUA]}</td>
+                            <td>${total[StatusList.Approved_By_MoHUA]}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>Regards, <br> City Finance Team</p>
+        </td>
+    </tr>
+</table>`,
+  };
+};
+
+
+const calculateTotalStatus = (totalObj, formArray)=>{
+  for(let key in totalObj){
+    let sum =0;
+     formArray.forEach((el)=>{
+      sum  = el[key]+sum;
+    })
+    totalObj[key] = sum;
+  }
+  return totalObj;
+}
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
 }
@@ -1431,5 +1605,7 @@ module.exports = {
   utilizationRequestAction,
   grantClaimAcknowledgement,
   gtcSubmission,
-  ulbFormSubmitted
+  ulbFormSubmitted,
+  stateUlbFormTrigger
+
 };

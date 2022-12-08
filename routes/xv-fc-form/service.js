@@ -1126,19 +1126,19 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
           FORM_STATUS.Approved_By_State,
         ].includes(status)
       ) {
-        return res.status(200).json({
+        return res.status(400).json({
           status: true,
           show: true,
           message: `Your Previous Year's form status is - ${
             status ? status : "Not Submitted"
-          }. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+          }. Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
         });
       }
     } else {
-      return res.status(200).json({
+      return res.status(400).json({
         status: true,
         show: true,
-        message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+        message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
       });
     }
     const lineItems = await IndicatorLineItem.find({
