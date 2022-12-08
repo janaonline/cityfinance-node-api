@@ -966,24 +966,24 @@ const utilisationUpdate = (objData) => {
 
 module.exports.GrantPositionDesiMalvalueUpdate = async function (req, res, next) {
   try {
-    const arr = [
-      ObjectId("5dd247914f14901fa9b4a8ab"),
-      ObjectId("5dd24d43e7af460396bf2ead"),
-      ObjectId("5dd24e98cc3ddc04b552b7cb"),
-      ObjectId("5eb5844f76a3b61f40ba06ae"),
-      ObjectId("5eb5844f76a3b61f40ba06c0"),
-      ObjectId("5eb5844f76a3b61f40ba0706"),
-      ObjectId("5eb5844f76a3b61f40ba0707"),
-      ObjectId("5eb5845076a3b61f40ba0768"),
-      ObjectId("5eb5845076a3b61f40ba077e"),
-      ObjectId("5eb5845076a3b61f40ba079e"),
-      ObjectId("5eb5845076a3b61f40ba085e"),
-      ObjectId("5fa2465f072dab780a6f12d9"),
-      ObjectId("5fa2465f072dab780a6f1319"),
-      ObjectId("5fa24660072dab780a6f13d4"),
-      ObjectId("5fa24661072dab780a6f1513")
-    ];
-    let condition = { "ulb": { $in: arr } }
+    // const arr = [
+    //   ObjectId("5dd247914f14901fa9b4a8ab"),
+    //   ObjectId("5dd24d43e7af460396bf2ead"),
+    //   ObjectId("5dd24e98cc3ddc04b552b7cb"),
+    //   ObjectId("5eb5844f76a3b61f40ba06ae"),
+    //   ObjectId("5eb5844f76a3b61f40ba06c0"),
+    //   ObjectId("5eb5844f76a3b61f40ba0706"),
+    //   ObjectId("5eb5844f76a3b61f40ba0707"),
+    //   ObjectId("5eb5845076a3b61f40ba0768"),
+    //   ObjectId("5eb5845076a3b61f40ba077e"),
+    //   ObjectId("5eb5845076a3b61f40ba079e"),
+    //   ObjectId("5eb5845076a3b61f40ba085e"),
+    //   ObjectId("5fa2465f072dab780a6f12d9"),
+    //   ObjectId("5fa2465f072dab780a6f1319"),
+    //   ObjectId("5fa24660072dab780a6f13d4"),
+    //   ObjectId("5fa24661072dab780a6f1513")
+    // ];
+    let condition = { "ulb": { $ne: null } }
     const utiReportData = await UtilizationReport.find(condition, {
       "_id": 1,
       "grantPosition": 1
@@ -1007,7 +1007,10 @@ const roundGrantPosition = (objData) => {
       let pmr = new Promise(async (rjlv, rjct) => {
         try {
           if (pf.grantPosition.closingBal) {
-            let obj = { ...pf.grantPosition, "closingBal": parseFloat(pf.grantPosition.closingBal).toFixed(2) }
+            let obj = {
+              ...pf.grantPosition,
+              "closingBal": parseFloat(pf.grantPosition.closingBal).toFixed(2)
+            }
             await UtilizationReport.update({
               "_id": pf._id
             }, { "$set": { "grantPosition": obj } })
