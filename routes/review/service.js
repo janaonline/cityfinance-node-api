@@ -2128,7 +2128,7 @@ if(csv){
                 }
 
                 res.write(
-                    
+                  "\ufeff"+
                     el.stateName +
                     "," +
                     el.ulbName +
@@ -2143,13 +2143,13 @@ if(csv){
                     "," + 
                     el.UA +
                     "," +
-                    row1 +
+                    row1.toString() +
                     
                     
                     "\r\n"
                 )
                 res.write(
-                    
+                  "\ufeff"+
                   el.stateName +
                   "," +
                   el.ulbName +
@@ -2164,7 +2164,7 @@ if(csv){
                   "," + 
                   el.UA +
                   "," +
-                  row2 +
+                  row2.toString() +
                   
                   
                   "\r\n"
@@ -2178,7 +2178,8 @@ if(csv){
         let fixedColumns = `State Name, City Finance Code, Regional Name,`;
         let dynamicColumns = createDynamicColumns(collectionName)
         res.write(
-            `${fixedColumns } ${dynamicColumns} \r\n`
+          "\ufeff"+
+            `${fixedColumns.toString() } ${dynamicColumns.toString()} \r\n`
         );
         
         res.flushHeaders();
@@ -2186,13 +2187,14 @@ if(csv){
             let dynamicElementData = createDynamicElements(collectionName,formType,el);
             
             res.write(
+              "\ufeff"+
                 el.stateName +
                 "," +
                 el.stateCode + 
                 "," +
                 el.regionalName + 
                 "," +
-                dynamicElementData +
+                dynamicElementData.toString() +
                 
                 "\r\n"
             )
