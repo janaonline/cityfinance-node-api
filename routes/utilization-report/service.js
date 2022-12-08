@@ -866,14 +866,14 @@ module.exports.read2223 = catchAsync(async (req, res) => {
     /* The code is checking if the action property of the obj object is equal to "note". If it
     is, then it is assigning the fetchedData object to the obj object. */
     obj["action"] === "note" ? Object.assign(fetchedData, obj) : "";
-   /* The above code is checking if the fetchedData has grantPosition property and if it has then it is
-   checking if the value of the property is a number or not. If it is a number then it is converting
-   it to a fixed number with 2 decimal places. */
-    if(fetchedData?.grantPosition){
-      !isNaN(fetchedData?.grantPosition.unUtilizedPrevYr) ? fetchedData.grantPosition.unUtilizedPrevYr =Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2): ""
-      !isNaN(fetchedData?.grantPosition.receivedDuringYr) ? fetchedData.grantPosition.receivedDuringYr = Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2): ""
-      !isNaN(fetchedData?.grantPosition.closingBal) ? fetchedData.grantPosition.closingBal= Number(fetchedData?.grantPosition.closingBal).toFixed(2): ""
-      !isNaN(fetchedData?.grantPosition.expDuringYr) ? fetchedData.grantPosition.expDuringYr= Number(fetchedData?.grantPosition.expDuringYr).toFixed(2): ""
+    /* The above code is checking if the fetchedData has grantPosition property and if it has then it is
+    checking if the value of the property is a number or not. If it is a number then it is converting
+    it to a fixed number with 2 decimal places. */
+    if (fetchedData?.grantPosition) {
+      !isNaN(fetchedData?.grantPosition.unUtilizedPrevYr) ? fetchedData.grantPosition.unUtilizedPrevYr = Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2) : ""
+      !isNaN(fetchedData?.grantPosition.receivedDuringYr) ? fetchedData.grantPosition.receivedDuringYr = Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2) : ""
+      !isNaN(fetchedData?.grantPosition.closingBal) ? fetchedData.grantPosition.closingBal = Number(fetchedData?.grantPosition.closingBal).toFixed(2) : ""
+      !isNaN(fetchedData?.grantPosition.expDuringYr) ? fetchedData.grantPosition.expDuringYr = Number(fetchedData?.grantPosition.expDuringYr).toFixed(2) : ""
 
     }
     return res.status(200).json({
@@ -975,4 +975,69 @@ const utilisationUpdate = (objData) => {
   })
 }
 
-
+module.exports.GrantPositionDesiMalvalueUpdate = async function (req, res, next) {
+  try {
+    const arr = [
+      ObjectId("5dd247914f14901fa9b4a8ab"),
+      ObjectId("5dd24d43e7af460396bf2ead"),
+      ObjectId("5dd24e98cc3ddc04b552b7cb"),
+      ObjectId("5eb5844f76a3b61f40ba06ae"),
+      ObjectId("5eb5844f76a3b61f40ba06c0"),
+      ObjectId("5eb5844f76a3b61f40ba0706"),
+      ObjectId("5eb5844f76a3b61f40ba0707"),
+      ObjectId("5eb5845076a3b61f40ba0768"),
+      ObjectId("5eb5845076a3b61f40ba077e"),
+      ObjectId("5eb5845076a3b61f40ba079e"),
+      ObjectId("5eb5845076a3b61f40ba085e"),
+      ObjectId("5fa2465f072dab780a6f12d9"),
+      ObjectId("5fa2465f072dab780a6f1319"),
+      ObjectId("5fa24660072dab780a6f13d4"),
+      ObjectId("5fa24661072dab780a6f1513")
+    ];
+    let condition = { "ulb": { $in: arr } }
+    const utiReportData = await UtilizationReport.find(condition, {
+      "_id": 1,
+      "grantPosition": 1
+    }).lean();
+    if (utiReportData.length) {
+      let dd = await roundGrantPosition({ utiReportData })
+    }
+    return res.status(200).json({
+      msg: "Successfully save update data!"
+    });
+  } catch (error) {
+    console.log("error", error)
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+const roundGrantPosition = (objData) => {
+  const { utiReportData } = objData;
+  return new Promise(async (resolve, reject) => {
+    let prmsArr = [];
+    for (const pf of utiReportData) {
+      let pmr = new Promise(async (rjlv, rjct) => {
+        try {
+          if (pf.grantPosition.closingBal) {
+            let obj = { ...pf.grantPosition, "closingBal": parseFloat(pf.grantPosition.closingBal).toFixed(2) }
+            await UtilizationReport.update({
+              "_id": pf._id
+            }, { "$set": { "grantPosition": obj } })
+          }
+          rjlv(1)
+        } catch (error) {
+          rjct(error);
+        }
+      })
+      prmsArr.push(pmr);
+    }
+    Promise.all(prmsArr).then((values) => {
+      resolve(values);
+    }, (rejectErr) => {
+      console.log("rejectErr", rejectErr);
+      reject(rejectErr)
+    }).catch((caughtErr) => {
+      console.log("caughtErr", caughtErr)
+      reject(caughtErr)
+    })
+  })
+}
