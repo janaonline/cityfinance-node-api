@@ -10,8 +10,7 @@ const {
   action,
   report,
   read2223,
-  dataRepair,
-  GrantPositionDesiMalvalueUpdate
+  dataRepair
 } = require("./service");
 
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
@@ -49,6 +48,4 @@ router.get("/dur/report", report);
 router.get("/utilReport", verifyToken, read2223);
 
 router.get("/repair_data",dataRepair);
-router.get("/grantPositionDesiMalvalueUpdate",GrantPositionDesiMalvalueUpdate);
-
 module.exports = router;
