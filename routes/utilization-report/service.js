@@ -999,7 +999,7 @@ const utilisationUpdate = (objData) => {
                   "unUtilizedPrevYr": pf.grantPosition.closingBal,
                   "receivedDuringYr": dk.grantPosition.receivedDuringYr,
                   "expDuringYr": dk.grantPosition.expDuringYr,
-                  "closingBal": (((parseFloat(pf.grantPosition.unUtilizedPrevYr)) + (parseFloat(dk.grantPosition.receivedDuringYr == null ? 0 : dk.grantPosition.receivedDuringYr))) - parseFloat(dk.grantPosition.expDuringYr==null ? 0 : dk.grantPosition.expDuringYr)).toFixed(2)
+                  "closingBal": (((parseFloat(pf.grantPosition.unUtilizedPrevYr)) + (parseFloat(dk.grantPosition.receivedDuringYr == null ? 0 : dk.grantPosition.receivedDuringYr))) - parseFloat(dk.grantPosition.expDuringYr == null ? 0 : dk.grantPosition.expDuringYr)).toFixed(2)
                 }
                 await UtilizationReport.update({
                   "_id": dk._id
@@ -1123,24 +1123,34 @@ const roundGrantPosition = (objData) => {
             "receivedDuringYr": receivedDuringYr !== null ? parseFloat(parseFloat(receivedDuringYr).toFixed(2)) : receivedDuringYr,
             "expDuringYr": expDuringYr !== null ? parseFloat(parseFloat(expDuringYr).toFixed(2)) : expDuringYr,
           }
-          
-          if (unUtilizedPrevYr == 0 && receivedDuringYr == 0 && expDuringYr == 0) {
-            obj["closingBal"] = closingBal
-          } else if (unUtilizedPrevYr == 0 && receivedDuringYr == null && expDuringYr == null) {
-            obj["closingBal"] = closingBal
-          } else if (unUtilizedPrevYr == 0 && receivedDuringYr !== null && expDuringYr !== null) {
-            obj['closingBal'] = ((parseFloat(receivedDuringYr)) - parseFloat(expDuringYr)).toFixed(2);
-          } else if (unUtilizedPrevYr == null && receivedDuringYr !== null && expDuringYr !== null) {
-            obj['closingBal'] = ((parseFloat(receivedDuringYr)) - parseFloat(expDuringYr)).toFixed(2);
-          } else if (unUtilizedPrevYr == null && receivedDuringYr == null && expDuringYr == null) {
-            obj['closingBal'] = closingBal !== null ? parseFloat(closingBal).toFixed(2) : closingBal;
-          } else if (receivedDuringYr == null && expDuringYr == null) {
-            obj['closingBal'] = parseFloat(unUtilizedPrevYr).toFixed(2);
-          } else if (unUtilizedPrevYr !== null && receivedDuringYr !== null && expDuringYr !== null) {
-            obj['closingBal'] = (((parseFloat(unUtilizedPrevYr)) + (parseFloat(receivedDuringYr))) - parseFloat(expDuringYr)).toFixed(2);
+
+          let unUtilPri = unUtilizedPrevYr == null ? 0 : unUtilizedPrevYr;
+          let recdDurYr = receivedDuringYr == null ? 0 : receivedDuringYr;
+          let expDuYr = expDuringYr == null ? 0 : expDuringYr;
+         
+          if (unUtilPri == 0 && recdDurYr == 0 && expDuYr == 0) {
+            obj['closingBal'] = 0;
           } else {
-            obj['closingBal'] = closingBal;
+            obj['closingBal'] = (((parseFloat(unUtilPri)) + (parseFloat(recdDurYr))) - parseFloat(expDuYr)).toFixed(2);
           }
+          
+          // if (unUtilizedPrevYr == 0 && receivedDuringYr == 0 && expDuringYr == 0) {
+          //   obj["closingBal"] = 0
+          // } else if (unUtilizedPrevYr == 0 && receivedDuringYr == null && expDuringYr == null) {
+          //   obj["closingBal"] = closingBal
+          // } else if (unUtilizedPrevYr == 0 && receivedDuringYr !== null && expDuringYr !== null) {
+          //   obj['closingBal'] = ((parseFloat(receivedDuringYr)) - parseFloat(expDuringYr)).toFixed(2);
+          // } else if (unUtilizedPrevYr == null && receivedDuringYr !== null && expDuringYr !== null) {
+          //   obj['closingBal'] = ((parseFloat(receivedDuringYr)) - parseFloat(expDuringYr)).toFixed(2);
+          // } else if (unUtilizedPrevYr == null && receivedDuringYr == null && expDuringYr == null) {
+          //   obj['closingBal'] = closingBal !== null ? parseFloat(closingBal).toFixed(2) : closingBal;
+          // } else if (receivedDuringYr == null && expDuringYr == null) {
+          //   obj['closingBal'] = parseFloat(unUtilizedPrevYr).toFixed(2);
+          // } else if (unUtilizedPrevYr !== null && receivedDuringYr !== null && expDuringYr !== null) {
+          //   obj['closingBal'] = (((parseFloat(unUtilizedPrevYr)) + (parseFloat(receivedDuringYr))) - parseFloat(expDuringYr)).toFixed(2);
+          // } else {
+          //   obj['closingBal'] = closingBal;
+          // }
 
           await UtilizationReport.update({
             "_id": pf._id
