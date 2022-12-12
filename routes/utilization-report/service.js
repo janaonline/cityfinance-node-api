@@ -783,7 +783,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   let prevDataQuery = MasterForm.findOne({
     ulb: ObjectId(ulb),
     design_year: prevYear._id
-  }).select({ history: 1 }).lean()
+  }).lean()
   let prevUtilReportQuery = UtilizationReport.findOne({
     ulb: ulb,
     designYear: prevYear._id
