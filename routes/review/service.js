@@ -1273,7 +1273,6 @@ function removeEscapeChars(entity){
     return entity;
 }
 
-
 function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
   if (data?.actionTakenByRole === "STATE") {
     if(data?.audited?.submit_annual_accounts === false){
@@ -1643,7 +1642,6 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
   }
   return { auditedEntity, unAuditedEntity };
 }
-
 function removeEscapesFromAnnual(element) {
   for (let key in element) {
     if (element[key] && typeof element[key] === "object") {
