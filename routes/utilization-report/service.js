@@ -820,7 +820,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData.history[prevData.history.length - 1]
+    // prevData = prevData.history[prevData.history.length - 1]
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
   }
   let host = "";
