@@ -27,7 +27,13 @@ const propertyTaxFloorRateSchema = new Schema({
     },
     floorRate: pdfSchema(),
     comManual: pdfSchema(),
-
+    actMunicipal:{
+        type: Number,
+    },
+    extantAct:{
+        type: String
+    },
+    extantActDoc: pdfSchema(),
     actionTakenByRole:{
         type: String,
         enum:["MoHUA","STATE"],

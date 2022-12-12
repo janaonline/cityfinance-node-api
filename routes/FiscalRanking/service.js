@@ -198,15 +198,15 @@ exports.getView = async function (req, res, next) {
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-                pf['amount'] = ulbFyAmount > 0 ? ulbFyAmount :"";
-                pf['status'] = ulbFyAmount  > 0 ? "NA" : "";
-                pf['readonly'] = ulbFyAmount > 0 ? true : false;
+                pf['amount'] = ulbFyAmount;
+                pf['status'] = ulbFyAmount;
+                pf['readonly'] = ulbFyAmount >= 0 ? true : false;
               }
             } else {
               let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-              pf['amount'] = ulbFyAmount > 0 ? ulbFyAmount :"";
-              pf['status'] = ulbFyAmount > 0 ? "NA" : "";
-              pf['readonly'] = ulbFyAmount > 0 ? true : false;
+              pf['amount'] = ulbFyAmount;
+              pf['status'] = ulbFyAmount;
+              pf['readonly'] = ulbFyAmount >= 0 ? true : false;
             }
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
@@ -217,14 +217,14 @@ exports.getView = async function (req, res, next) {
                   pf['status'] = singleFydata.status;
                   pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
                 } else {
-                  if (subData[key]?.key !== "appAnnualBudget") {
+                  if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : ""
                     pf['readonly'] = chekFile ? true : false;
                   }
                 }
               } else {
-                if (subData[key]?.key !== "appAnnualBudget") {
+                if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "";
                   pf['readonly'] = chekFile ? true : false;
