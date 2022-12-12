@@ -203,10 +203,12 @@ exports.getView = async function (req, res, next) {
                 pf['readonly'] = ulbFyAmount >= 0 ? true : false;
               }
             } else {
-              let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-              pf['amount'] = ulbFyAmount;
-              pf['status'] = ulbFyAmount;
-              pf['readonly'] = ulbFyAmount >= 0 ? true : false;
+              if (viewOne.isDraft == null) {
+                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                pf['amount'] = ulbFyAmount;
+                pf['status'] = ulbFyAmount;
+                pf['readonly'] = ulbFyAmount >= 0 ? true : false;
+              }
             }
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
@@ -261,7 +263,7 @@ const getUlbLedgerDataFilter = (objData) => {
   const { code, year, data } = objData;
   if (code.length) {
     let ulbFyData = data.length ? data.filter(el => code.includes(el.code) && el.year_id.toString() === year.toString()) : []
-    var sum = ulbFyData ? ulbFyData.reduce((pv, cv) => pv + cv.totalAmount, 0) : 0;
+    var sum = ulbFyData.length > 0 ? ulbFyData.reduce((pv, cv) => pv + cv.totalAmount, 0) : '';
     return sum;
   } else {
     return 0;
