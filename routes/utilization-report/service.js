@@ -149,27 +149,27 @@ module.exports.createOrUpdate = async (req, res) => {
           setDefaultsOnInsert: true,
         }
       );
-      if (utiData) {
-        await UtilizationReport.findOneAndUpdate(
-          {
-            ulb: ObjectId(ulb),
-            designYear: ObjectId("606aafb14dff55e6c075d3ae"),
-            // financialYear: ObjectId("606aaf854dff55e6c075d219")
-          },
-          { $set: { "grantPosition.unUtilizedPrevYr": utiData?.grantPosition?.closingBal } },
-          {
-            upsert: true,
-            new: true,
-            setDefaultsOnInsert: true,
-          }
-        )
-        await UpdateMasterSubmitForm(req, "utilReport");
-        return res.status(200).json({
-          success: true,
-          isCompleted: formData['isDraft'] ? false : true,
-          message: "Form Submitted"
-        })
-      }
+      // if (utiData) {
+      //   await UtilizationReport.findOneAndUpdate(
+      //     {
+      //       ulb: ObjectId(ulb),
+      //       designYear: ObjectId("606aafb14dff55e6c075d3ae"),
+      //       // financialYear: ObjectId("606aaf854dff55e6c075d219")
+      //     },
+      //     { $set: { "grantPosition.unUtilizedPrevYr": utiData?.grantPosition?.closingBal } },
+      //     {
+      //       upsert: true,
+      //       new: true,
+      //       setDefaultsOnInsert: true,
+      //     }
+      //   )
+      //   await UpdateMasterSubmitForm(req, "utilReport");
+      //   return res.status(200).json({
+      //     success: true,
+      //     isCompleted: formData['isDraft'] ? false : true,
+      //     message: "Form Submitted"
+      //   })
+      // }
     } else {
       if (submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == "ULB") {// form already submitted
         return res.status(200).json({
