@@ -154,7 +154,7 @@ module.exports.createOrUpdate = async (req, res) => {
           {
             ulb: ObjectId(ulb),
             designYear: ObjectId("606aafb14dff55e6c075d3ae"),
-            financialYear: ObjectId("606aaf854dff55e6c075d219")
+            // financialYear: ObjectId("606aaf854dff55e6c075d219")
           },
           { $set: { "grantPosition.unUtilizedPrevYr": utiData?.grantPosition?.closingBal } },
           {
