@@ -47,7 +47,7 @@ module.exports.login = async (req, res) => {
           stateName: state?.name,
           designation: user?.designation,
           ulb: user.ulb,
-          ulbCode : user.role === "ULB"  ? (user.censusCode ? user.censusCode:  user.sbCode) : "" ,
+          ulbCode : user.role === "ULB"  ? ulb.code : "" ,
           stateCode: user.role === "STATE" || user.role === "ULB" ? state.code : "",
           isUA: role === "ULB" ? ulb.isUA : null,
           isMillionPlus: role === "ULB" ? ulb.isMillionPlus : null,
