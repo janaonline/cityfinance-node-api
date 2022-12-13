@@ -170,6 +170,11 @@ module.exports.createOrUpdate = async (req, res) => {
       //     message: "Form Submitted"
       //   })
       // }
+      return res.status(200).json({
+        success: true,
+        isCompleted: formData['isDraft'] ? false : true,
+        message: "Form Submitted"
+      })
     } else {
       if (submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == "ULB") {// form already submitted
         return res.status(200).json({
