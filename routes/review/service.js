@@ -1128,28 +1128,28 @@ function removeEscapeChars(entity){
               }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
                 entity.filled ?? ""
               },${data?.["financialYear"]["year"] ?? ""}, ${
-               ( !isNaN(data?.grantPosition?.unUtilizedPrevYr) ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2) : "")?? ""
-              } ,${(!isNaN(data?.grantPosition?.receivedDuringYr) ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2):"") ?? ""}, ${
-                (!isNaN(data?.grantPosition?.expDuringYr) ? Number(data?.grantPosition?.expDuringYr).toFixed(2):"") ?? ""
-              },${(!isNaN(data?.grantPosition?.closingBal) ? Number(data?.grantPosition?.closingBal).toFixed(2):"") ?? ""},${
-                (!isNaN(wmData[0]?.["grantUtilised"])  ? Number(wmData[0]?.["grantUtilised"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[0]?.["numberOfProjects"])  ? Number(wmData[0]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
-                (!isNaN(wmData[0]?.["totalProjectCost"])  ? Number(wmData[0]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[1]?.["grantUtilised"])  ? Number(wmData[1]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(wmData[1]?.["numberOfProjects"])  ? Number(wmData[1]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
-              }, ${(!isNaN(wmData[1]?.["totalProjectCost"])  ? Number(wmData[1]?.["totalProjectCost"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(wmData[2]?.["grantUtilised"])  ? Number(wmData[2]?.["grantUtilised"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[2]?.["numberOfProjects"])  ? Number(wmData[2]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
-                (!isNaN(wmData[2]?.["totalProjectCost"])  ? Number(wmData[2]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[3]?.["grantUtilised"])  ? Number(wmData[3]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(wmData[3]?.["numberOfProjects"])  ? Number(wmData[3]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
-              }, ${(!isNaN(wmData[3]?.["totalProjectCost"])  ? Number(wmData[3]?.["totalProjectCost"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(swmData[0]?.["grantUtilised"])  ? Number(swmData[0]?.["grantUtilised"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(swmData[0]?.["numberOfProjects"])  ? Number(swmData[0]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
-                (!isNaN(swmData[0]?.["totalProjectCost"])  ? Number(swmData[0]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(swmData[1]?.["grantUtilised"])  ? Number(swmData[1]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(swmData[1]?.["numberOfProjects"])  ? Number(swmData[1]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
-              }, ${(!isNaN(swmData[1]?.["totalProjectCost"])  ? Number(swmData[1]?.["totalProjectCost"]).toFixed(2) :"") ?? ""}, ${
+               ( typeof(data?.grantPosition?.unUtilizedPrevYr)==="number" ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2) : "")?? ""
+              } ,${(typeof(data?.grantPosition?.receivedDuringYr)==="number" ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2):"") ?? ""}, ${
+                (typeof(data?.grantPosition?.expDuringYr)==="number" ? Number(data?.grantPosition?.expDuringYr).toFixed(2):"") ?? ""
+              },${(typeof(data?.grantPosition?.closingBal)==="number" ? Number(data?.grantPosition?.closingBal).toFixed(2):"") ?? ""},${
+                (wmData[0]?.["grantUtilised"] !== ""  ? (typeof(Number(Number(wmData[0]?.["grantUtilised"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[0]?.["grantUtilised"]).toFixed(2) :"") :"") ?? ""
+              },${(wmData[0]?.["numberOfProjects"] !== ""  ? (typeof(Number(Number(wmData[0]?.["numberOfProjects"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[0]?.["numberOfProjects"]).toFixed(2) :"") :"") ?? ""}, ${
+                (wmData[0]?.["totalProjectCost"] !== ""  ? (typeof(Number(Number(wmData[0]?.["totalProjectCost"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[0]?.["totalProjectCost"]).toFixed(2) :"") :"") ?? ""
+              },${(wmData[1]?.["grantUtilised"] !== ""  ? (typeof(Number(Number(wmData[1]?.["grantUtilised"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[1]?.["grantUtilised"]).toFixed(2) :"") :"") ?? ""},${
+                (wmData[1]?.["numberOfProjects"] !== ""  ? (typeof(Number(Number(wmData[1]?.["numberOfProjects"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[1]?.["numberOfProjects"]).toFixed(2) :"") :"") ?? ""
+              }, ${(wmData[1]?.["totalProjectCost"] !== ""  ? (typeof(Number(Number(wmData[1]?.["totalProjectCost"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[1]?.["totalProjectCost"]).toFixed(2) :"") :"") ?? ""},${
+                (wmData[2]?.["grantUtilised"] !== ""  ? (typeof(Number(Number(wmData[2]?.["grantUtilised"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[2]?.["grantUtilised"]).toFixed(2) :"") :"") ?? ""
+              },${(wmData[2]?.["numberOfProjects"] !== ""  ? (typeof(Number(Number(wmData[2]?.["numberOfProjects"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[2]?.["numberOfProjects"]).toFixed(2) :"") :"") ?? ""}, ${
+                (wmData[2]?.["totalProjectCost"] !== ""  ? (typeof(Number(Number(wmData[2]?.["totalProjectCost"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[2]?.["totalProjectCost"]).toFixed(2) :"") :"") ?? ""
+              },${(wmData[3]?.["grantUtilised"] !== ""  ? (typeof(Number(Number(wmData[3]?.["grantUtilised"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[3]?.["grantUtilised"]).toFixed(2) :"") :"") ?? ""},${
+                (wmData[3]?.["numberOfProjects"] !== ""  ? (typeof(Number(Number(wmData[3]?.["numberOfProjects"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[3]?.["numberOfProjects"]).toFixed(2) :"") :"") ?? ""
+              }, ${(wmData[3]?.["totalProjectCost"] !== ""  ? (typeof(Number(Number(wmData[3]?.["totalProjectCost"]).toFixed(2))) === "number" && wmData.length>0 ? Number(wmData[3]?.["totalProjectCost"]).toFixed(2) :"") :"") ?? ""},${
+                (swmData[0]?.["grantUtilised"] !== ""  ? (typeof(Number(Number(swmData[0]?.["grantUtilised"]).toFixed(2))) === "number" && swmData.length>0 ? Number(swmData[0]?.["grantUtilised"]).toFixed(2) :"") :"") ?? ""
+              },${(swmData[0]?.["numberOfProjects"] !== ""  ? (typeof(Number(Number(swmData[0]?.["numberOfProjects"]).toFixed(2))) === "number" && swmData.length>0 ? Number(swmData[0]?.["numberOfProjects"]).toFixed(2) :"") :"") ?? ""}, ${
+                (swmData[0]?.["totalProjectCost"] !== ""  ? (typeof(Number(Number(swmData[0]?.["totalProjectCost"]).toFixed(2))) === "number" && swmData.length>0 ? Number(swmData[0]?.["totalProjectCost"]).toFixed(2) :"") :"") ?? ""
+              },${(swmData[1]?.["grantUtilised"] !== ""  ? (typeof(Number(Number(swmData[1]?.["grantUtilised"]).toFixed(2))) === "number" && swmData.length>0 ? Number(swmData[1]?.["grantUtilised"]).toFixed(2) :"") :"") ?? ""},${
+                (swmData[1]?.["numberOfProjects"] !== ""  ? (typeof(Number(Number(swmData[1]?.["numberOfProjects"]).toFixed(2))) === "number" && swmData.length>0 ? Number(swmData[1]?.["numberOfProjects"]).toFixed(2) :"") :"") ?? ""
+              }, ${(swmData[1]?.["totalProjectCost"] !== ""  ? (typeof(Number(Number(swmData[1]?.["totalProjectCost"]).toFixed(2))) === "number" && swmData.length>0 ? Number(swmData[1]?.["totalProjectCost"]).toFixed(2) :"") :"") ?? ""}, ${
                 actions["state_status"] ?? ""
               },${actions["rejectReason_state"] ?? ""},${
                 actions["mohua_status"] ?? ""
