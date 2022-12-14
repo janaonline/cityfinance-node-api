@@ -13,6 +13,8 @@ const { canTakenAction } = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
+const { YEAR_CONSTANTS } = require("../../util/FormNames");
+
 function update2223from2122() {
 
 }
@@ -148,19 +150,19 @@ module.exports.createOrUpdate = async (req, res) => {
         }
       );
       if (utiData) {
-        await UtilizationReport.findOneAndUpdate(
-          {
-            ulb: ObjectId(ulb),
-            designYear: ObjectId("606aafb14dff55e6c075d3ae"),
-            financialYear: ObjectId("606aaf854dff55e6c075d219")
-          },
-          { $set: { "grantPosition.unUtilizedPrevYr": utiData?.grantPosition?.closingBal } },
-          {
-            upsert: true,
-            new: true,
-            setDefaultsOnInsert: true,
-          }
-        )
+        // await UtilizationReport.findOneAndUpdate(
+        //   {
+        //     ulb: ObjectId(ulb),
+        //     designYear: ObjectId("606aafb14dff55e6c075d3ae"),
+        //     financialYear: ObjectId("606aaf854dff55e6c075d219")
+        //   },
+        //   { $set: { "grantPosition.unUtilizedPrevYr": utiData?.grantPosition?.closingBal } },
+        //   {
+        //     upsert: true,
+        //     new: true,
+        //     setDefaultsOnInsert: true,
+        //   }
+        // )
         await UpdateMasterSubmitForm(req, "utilReport");
         return res.status(200).json({
           success: true,
@@ -514,6 +516,15 @@ exports.report = async (req, res) => {
   res.flushHeaders();
   let query = [
     {
+
+      $match: {
+
+        designYear: ObjectId(YEAR_CONSTANTS["21_22"]),
+
+      },
+
+    },
+    {
       $lookup: {
         from: "years",
         localField: "designYear",
@@ -783,7 +794,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   let prevDataQuery = MasterForm.findOne({
     ulb: ObjectId(ulb),
     design_year: prevYear._id
-  }).select({ history: 1 }).lean()
+  }).lean()
   let prevUtilReportQuery = UtilizationReport.findOne({
     ulb: ulb,
     designYear: prevYear._id
@@ -809,7 +820,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData.history[prevData.history.length - 1]
+    // prevData = prevData.history[prevData.history.length - 1]
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
   }
   let host = "";
