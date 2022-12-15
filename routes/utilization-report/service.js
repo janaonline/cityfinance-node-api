@@ -794,7 +794,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   let prevDataQuery = MasterForm.findOne({
     ulb: ObjectId(ulb),
     design_year: prevYear._id
-  }).lean()
+  }).select({history:1}).lean()
   let prevUtilReportQuery = UtilizationReport.findOne({
     ulb: ulb,
     designYear: prevYear._id
@@ -820,7 +820,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    // prevData = prevData.history[prevData.history.length - 1]
+    prevData = prevData.history[prevData.history.length - 1]
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
   }
   let host = "";
@@ -968,14 +968,16 @@ module.exports.dataRepair = async function (req, res, next) {
     let condition = {
       "designYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
       "financialYear": ObjectId("606aadac4dff55e6c075c507"), /// 2020-21
-      "ulb": { $in: ulbIds }
+      "ulb": { $in: ulbIds },
+      // "ulb": { $ne: null }
     }
     let cond = {
       "designYear": ObjectId("606aafb14dff55e6c075d3ae"), /// 2022-23
       "financialYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
       // "actionTakenByRole": { $ne: "STATE" },
       // "status": { $ne: "APPROVED" },
-      "ulb": { $in: ulbIds }
+      "ulb": { $in: ulbIds },
+      // "ulb": { $ne: null }
     }
     const utiReportData = await UtilizationReport.find(condition, {
       "_id": 1,
