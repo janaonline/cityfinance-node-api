@@ -794,7 +794,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   let prevDataQuery = MasterForm.findOne({
     ulb: ObjectId(ulb),
     design_year: prevYear._id
-  }).select({history:1}).lean()
+  }).lean()
   let prevUtilReportQuery = UtilizationReport.findOne({
     ulb: ulb,
     designYear: prevYear._id
@@ -820,7 +820,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData.history[prevData.history.length - 1]
+    prevData = prevData.history.length > 0? prevData.history[prevData.history.length - 1]: prevData
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
   }
   let host = "";
