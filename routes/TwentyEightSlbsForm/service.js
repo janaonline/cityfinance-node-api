@@ -341,7 +341,7 @@ module.exports.getForm = async (req, res) => {
         let prevYearData =   await Year.findOne({
             year : prevYearVal
         }).lean()
-        const masterFormData = await MasterForm.findOne({
+        let masterFormData = await MasterForm.findOne({
           ulb: data.ulb,
           design_year: prevYearData._id
         }).lean()
@@ -355,6 +355,9 @@ module.exports.getForm = async (req, res) => {
         req.headers.host = host !== "" ? host : req.headers.host;
 
         if(masterFormData){
+          if(masterFormData.history.length>0){
+            masterFormData =  masterFormData.history[masterFormData.history.length -1]
+          }
           let status =  calculateStatus(masterFormData.status, masterFormData.actionTakenByRole,
             !masterFormData.isSubmit, "ULB");
             
@@ -386,7 +389,9 @@ module.exports.getForm = async (req, res) => {
             ulb: ObjectId(data.ulb),
             design_year: YEAR_CONSTANTS["21_22"],
           }).lean();
+          let slbDataNotFilled;
         if(slbData){
+          slbDataNotFilled = slbData.blank;
                 formData["data"].forEach((element) => {
                   /* Checking if the element is equal to the previous line item. */
                   if (
@@ -402,44 +407,56 @@ module.exports.getForm = async (req, res) => {
                         ? Number(slbData.waterManagement.houseHoldCoveredPipedSupply
                             ?.target["2223"])
                         : "";
+
+                        slbDataNotFilled ? element.targetDisable =  false: ""
                       }
                     if (
                         element["indicatorLineItem"].toString() ===
                         PrevLineItem_CONSTANTS[
                             "Per capita supply of water(lpcd)"
                         ]
-                        )
-                        element.target_1.value =
-                        slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
-                            "target"
-                            )
-                            ? Number(slbData.waterManagement.waterSuppliedPerDay?.target["2223"])
-                            : "";
+                        ){
+                          element.target_1.value =
+                          slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
+                              "target"
+                              )
+                              ? Number(slbData.waterManagement.waterSuppliedPerDay?.target["2223"])
+                              : "";
+                        slbDataNotFilled ? element.targetDisable =  false: ""
+                          
+                        }
                     if (
                         element["indicatorLineItem"].toString() ===
                         PrevLineItem_CONSTANTS[
                             "Extent of non-revenue water (NRW)"
                         ]
-                        )
-                        element.target_1.value = slbData.waterManagement.reduction.hasOwnProperty(
-                            "target"
-                          )
-                            ? Number(slbData.waterManagement.reduction?.target["2223"])
-                            : "";
+                        ){
+                          element.target_1.value = slbData.waterManagement.reduction.hasOwnProperty(
+                              "target"
+                            )
+                              ? Number(slbData.waterManagement.reduction?.target["2223"])
+                              : "";
+                        slbDataNotFilled ? element.targetDisable =  false: ""
+
+                        }
                     if (
                         element["indicatorLineItem"].toString() ===
                         PrevLineItem_CONSTANTS[
                             "Coverage of waste water network services"
                         ]
-                        )
-                        element.target_1.value =
-                        slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
-                          "target"
-                        )
-                          ? Number(slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
-                              "2223"
-                            ])
-                          : "";                           
+                        ){
+
+                          element.target_1.value =
+                          slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
+                            "target"
+                          )
+                            ? Number(slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
+                                "2223"
+                              ])
+                            : "";   
+                          slbDataNotFilled ? element.targetDisable =  false: ""
+
+                        }
                 });                          
               
         }
