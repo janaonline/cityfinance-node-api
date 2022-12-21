@@ -390,13 +390,12 @@ module.exports.getForm = async (req, res) => {
         }
 
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
-        
+        let slbDataNotFilled;
         if (formData) {
           let slbData = await SLB.findOne({
             ulb: ObjectId(data.ulb),
             design_year: YEAR_CONSTANTS["21_22"],
           }).lean();
-          let slbDataNotFilled;
         if(slbData){
           slbDataNotFilled = slbData.blank;
                 formData["data"].forEach((element) => {
@@ -490,6 +489,7 @@ module.exports.getForm = async (req, res) => {
             success: true,
             show: false,
             data: formData,
+            slbDataNotFilled
           });
         } else {
           let slbData = await SLB.findOne({
@@ -501,6 +501,7 @@ module.exports.getForm = async (req, res) => {
             reduction,
             houseHoldCoveredWithSewerage;
           if (slbData) {
+            slbDataNotFilled = slbData.blank
             pipedSupply =
               slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
                 "target"
@@ -605,6 +606,7 @@ module.exports.getForm = async (req, res) => {
           return res.status(200).json({
             success: true,
             show: false,
+            slbDataNotFilled,
             data: {
               canTakeAction: false,
               data: output,
