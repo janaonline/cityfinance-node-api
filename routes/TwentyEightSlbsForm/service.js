@@ -472,7 +472,8 @@ module.exports.getForm = async (req, res) => {
             ),
           });
           formData["data"].forEach((el) => {
-            if (!formData["isDraft"]  && formData['actionTakenByRole'] === "ULB" && formData["status"] === "PENDING") {              el["targetDisable"] = true;
+            if (!formData["isDraft"]  && formData['actionTakenByRole'] === "ULB" && formData["status"] === "PENDING") {
+              el["targetDisable"] = true;
               el["actualDisable"] = true;
               formData["popDisable"] = true;
             }
