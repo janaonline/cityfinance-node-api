@@ -1106,7 +1106,6 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
       ulb: ulb,
       design_year: design_year_2122,
     }).lean();
-
     /* The above code is checking the status of the form. If the status is not in the list of statuses,
     it will return a message. */
     if (masterFormData) {
@@ -1116,7 +1115,6 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
         !masterFormData.isSubmit,
         "ULB"
       );
-
       /* Checking the status of the form. If the status is not in the list of statuses, it will
         return a message. */
       if (

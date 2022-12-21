@@ -33,6 +33,7 @@ const propertyTaxFloorRateSchema = new Schema({
     extantAct:{
         type: String
     },
+    
     extantActDoc: pdfSchema(),
     actionTakenByRole:{
         type: String,

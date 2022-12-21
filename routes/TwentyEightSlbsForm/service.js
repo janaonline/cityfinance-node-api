@@ -343,43 +343,50 @@ module.exports.getForm = async (req, res) => {
         }).lean()
         let masterFormData = await MasterForm.findOne({
           ulb: data.ulb,
-          design_year: prevYearData._id
-        }).lean()
-
+          design_year: prevYearData._id,
+        }).lean();
         /* Checking the host header and setting the host variable to the appropriate value. */
         let host = "";
         if (req.headers.host === BackendHeaderHost.Demo) {
           host = FrontendHeaderHost.Demo;
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
-        req.headers.host = host !== "" ? host : req.headers.host;
+        host = host !== "" ? host : req.headers.host;
 
-        if(masterFormData){
-          if(masterFormData.history.length>0){
-            masterFormData =  masterFormData.history[masterFormData.history.length -1]
+        if (masterFormData) {
+          if (masterFormData.history.length > 0) {
+            masterFormData =
+              masterFormData.history[masterFormData.history.length - 1];
           }
-          let status =  calculateStatus(masterFormData.status, masterFormData.actionTakenByRole,
-            !masterFormData.isSubmit, "ULB");
-            
-            /* Checking the status of the form. If the status is not in the list of statuses, it will
+          let status = calculateStatus(
+            masterFormData.status,
+            masterFormData.actionTakenByRole,
+            !masterFormData.isSubmit,
+            "ULB"
+          );
+          /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
-            if(![
+          if (
+            ![
               StatusList.Under_Review_By_MoHUA,
               StatusList.Approved_By_MoHUA,
               StatusList.Approved_By_State,
-            ].includes(status)){
-              return res.status(200).json({
-                status: true,
-                show: true,
-                message: `Your Previous Year's form status is - ${status ? status : "Not Submitted"}. Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
-              })
-            }
-        }else{
+            ].includes(status)
+          ) {
+            return res.status(200).json({
+              status: true,
+              show: true,
+              message: `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
+                status ? status : "Not Submitted"
+              }. Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
+            });
+          }
+        } else {
           return res.status(200).json({
             status: true,
             show: true,
-            message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
-          })
+            message: `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
+          });
         }
 
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
@@ -407,7 +414,6 @@ module.exports.getForm = async (req, res) => {
                         ? Number(slbData.waterManagement.houseHoldCoveredPipedSupply
                             ?.target["2223"])
                         : "";
-
                         slbDataNotFilled ? element.targetDisable =  false: ""
                       }
                     if (
@@ -416,14 +422,13 @@ module.exports.getForm = async (req, res) => {
                             "Per capita supply of water(lpcd)"
                         ]
                         ){
-                          element.target_1.value =
-                          slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
-                              "target"
-                              )
-                              ? Number(slbData.waterManagement.waterSuppliedPerDay?.target["2223"])
-                              : "";
-                        slbDataNotFilled ? element.targetDisable =  false: ""
-                          
+                        element.target_1.value =
+                        slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
+                            "target"
+                            )
+                            ? Number(slbData.waterManagement.waterSuppliedPerDay?.target["2223"])
+                            : "";
+                            slbDataNotFilled ? element.targetDisable =  false: ""
                         }
                     if (
                         element["indicatorLineItem"].toString() ===
@@ -431,13 +436,12 @@ module.exports.getForm = async (req, res) => {
                             "Extent of non-revenue water (NRW)"
                         ]
                         ){
-                          element.target_1.value = slbData.waterManagement.reduction.hasOwnProperty(
-                              "target"
-                            )
-                              ? Number(slbData.waterManagement.reduction?.target["2223"])
-                              : "";
-                        slbDataNotFilled ? element.targetDisable =  false: ""
-
+                        element.target_1.value = slbData.waterManagement.reduction.hasOwnProperty(
+                            "target"
+                          )
+                            ? Number(slbData.waterManagement.reduction?.target["2223"])
+                            : "";
+                            slbDataNotFilled ? element.targetDisable =  false: ""
                         }
                     if (
                         element["indicatorLineItem"].toString() ===
@@ -445,18 +449,16 @@ module.exports.getForm = async (req, res) => {
                             "Coverage of waste water network services"
                         ]
                         ){
-
-                          element.target_1.value =
-                          slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
-                            "target"
-                          )
-                            ? Number(slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
-                                "2223"
-                              ])
-                            : "";   
+                        element.target_1.value =
+                        slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
+                          "target"
+                        )
+                          ? Number(slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
+                              "2223"
+                            ])
+                          : "";  
                           slbDataNotFilled ? element.targetDisable =  false: ""
-
-                        }
+                        }                         
                 });                          
               
         }
@@ -470,8 +472,7 @@ module.exports.getForm = async (req, res) => {
             ),
           });
           formData["data"].forEach((el) => {
-            if (!formData["isDraft"]) {
-              el["targetDisable"] = true;
+            if (!formData["isDraft"]  && formData['actionTakenByRole'] === "ULB" && formData["status"] === "PENDING") {              el["targetDisable"] = true;
               el["actualDisable"] = true;
               formData["popDisable"] = true;
             }
