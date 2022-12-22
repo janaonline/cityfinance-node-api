@@ -3807,7 +3807,8 @@ module.exports.finalAction = catchAsync(async (req, res) => {
 
     currentMasterForm.status = req.body.status;
     currentMasterForm.isSubmit = req.body.isSubmit;
-
+    currentMasterForm.modifiedAt = new Date();
+    
     let updatedData = await MasterFormData.findOneAndUpdate(query, {
       $set: req.body,
       $push: { history: currentMasterForm },
