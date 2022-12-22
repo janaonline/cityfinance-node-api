@@ -425,7 +425,7 @@ module.exports.getForm = async (req, res) => {
           let groupedData = groupByKey(formData["data"], "type");
           formData["data"] = groupedData;
 
-          return res.status(200).json({
+          return res.status(400).json({
             success: true,
             data: formData,
           });
@@ -540,7 +540,7 @@ module.exports.getForm = async (req, res) => {
             "storm water": groupedData["storm water"],
           });
 
-          return res.status(200).json({
+          return res.status(400).json({
             success: true,
             data: {
               canTakeAction: false,
