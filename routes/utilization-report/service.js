@@ -140,6 +140,9 @@ module.exports.createOrUpdate = async (req, res) => {
 
     const submittedForm = await UtilizationReport.findOne(condition);
     if (designYear == "606aaf854dff55e6c075d219") {
+      if(req.body.actionTakenByRole === "ULB"){
+        req.body.status = "PENDING"
+      }
       let utiData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), financialYear, designYear },
         { $set: req.body },

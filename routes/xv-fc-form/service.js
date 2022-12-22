@@ -1015,7 +1015,7 @@ module.exports.create = catchAsync(async (req, res) => {
     if (!req.body["blank"]) {
       req.body["status"] = "PENDING";
     } else {
-      req.body["status"] = "NA";
+      req.body["status"] = "N/A";
     }
 
     query["ulb"] = ObjectId(data.ulb);
