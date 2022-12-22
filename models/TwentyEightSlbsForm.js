@@ -28,37 +28,39 @@ const TwentyEightSlbFormSchema = new Schema({
         type: Boolean,
         default: 0
     },
-    data: [{
-        indicatorLineItem:{
-            type: Schema.Types.ObjectId,
-            ref:"indicatorLineItem",
-            required: true
-        },
-        question : {type: String, default : ""}, 
-        type : {type: String, default : ""}, 
-        unit : {type: String, default : ""}, 
-        range : {type: String, default : ""}, 
-actualDisable : {type: Boolean, default: false},
-targetDisable : {type: Boolean, default: false},
-        actual:{
-            year:{
+    data: {
+        type:[{
+            indicatorLineItem:{
                 type: Schema.Types.ObjectId,
-                ref: 'Year',
+                ref:"indicatorLineItem",
                 required: true
             },
-            value:{ type: Number,}
-        },
-        target_1:{
-            year:{
-                type: Schema.Types.ObjectId,
-                ref: 'Year',
-                required: true
+            question : {type: String, default : ""}, 
+            type : {type: String, default : ""}, 
+            unit : {type: String, default : ""}, 
+            range : {type: String, default : ""}, 
+            actualDisable : {type: Boolean, default: false},
+            targetDisable : {type: Boolean, default: false},
+            actual:{
+                year:{
+                    type: Schema.Types.ObjectId,
+                    ref: 'Year',
+                    required: true
+                },
+                value:{ type: Number,}
             },
-             value:{ type: Number,}
-        },
-    }
-      
-    ],
+            target_1:{
+                year:{
+                    type: Schema.Types.ObjectId,
+                    ref: 'Year',
+                    required: true
+                },
+                 value:{ type: Number,}
+            },
+        }
+          
+        ],
+    },
     
 
     createdAt:{

@@ -470,8 +470,22 @@ module.exports.getForm = async (req, res) => {
               userRole
             ),
           });
+          let slb28FormStatus = calculateStatus(
+            formData.status,
+            formData.actionTakenByRole,
+            formData.isDraft,
+            "ULB"
+          );
+
           formData["data"].forEach((el) => {
-            if (!formData["isDraft"]  && formData['actionTakenByRole'] === "ULB" && formData["status"] === "PENDING") {
+            if (
+              ![
+                StatusList.Not_Started,
+                StatusList.In_Progress,
+                StatusList.Rejected_By_State,
+                StatusList.Rejected_By_MoHUA,
+              ].includes(slb28FormStatus)
+            ) {
               el["targetDisable"] = true;
               el["actualDisable"] = true;
               formData["popDisable"] = true;
