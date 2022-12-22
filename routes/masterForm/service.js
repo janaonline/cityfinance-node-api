@@ -109,7 +109,7 @@ module.exports.get = catchAsync(async (req, res) => {
         masterFormData.status == "APPROVED"
       ) {
         for (const key in masterFormData.steps) {
-          if (masterFormData.steps[key].status == "N/A") continue;
+          if (masterFormData.steps[key].status == "N/A" || masterFormData.steps[key].status === "NA") continue;
           masterFormData.steps[key].status = "PENDING";
         }
         try {
@@ -3808,7 +3808,7 @@ module.exports.finalAction = catchAsync(async (req, res) => {
     currentMasterForm.status = req.body.status;
     currentMasterForm.isSubmit = req.body.isSubmit;
     currentMasterForm.modifiedAt = new Date();
-    
+
     let updatedData = await MasterFormData.findOneAndUpdate(query, {
       $set: req.body,
       $push: { history: currentMasterForm },
