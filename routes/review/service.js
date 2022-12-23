@@ -47,7 +47,7 @@ function createDynamicColumns(collectionName){
           columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year, Coverage of water supply connections,Per capita supply of water(lpcd) ,Extent of metering of water connections, Continuity of water supply, Quality of water supplied,Efficiency in redressal of customer complaints, Cost recovery in water supply service , Efficiency in collection of water supply-related charges ,Extent of non-revenue water (NRW),Coverage of toilets , Coverage of waste water network services ,Collection efficiency of waste water network , Adequacy of waste water treatment capacity , Quality of waste water treatment, Extent of reuse and recycling of waste water,Efficiency in collection of waste water charges  , Efficiency in redressal of customer complaints , Extent of cost recovery in waste water management  ,Household level coverage of solid waste management services ,Extent of segregation of municipal solid waste ,Extent of municipal solid waste recovered, Extent of cost recovery in SWM services ,Efficiency in collection of SWM related user related charges, Efficiency of collection of municipal solid waste , Extent of scientific disposal of municipal solid waste  ,Efficiency in redressal of customer complaints ,Incidence of water logging,Coverage of storm water drainage network ,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
           break;
         case CollectionNames.propTaxState:
-          columns =  `Financial Year, Form Status, Created, Submitted On, Filled Status,Notification Url , Notfication Name, Act Page Number,Minimum Floor Rate Url, Minimum Floor Rate Name,  Operationalization of the notification Url, Operationalization of the notification Name, MoHUA Review Status, MoHUA Comments, MoHUA file Url`
+          columns =  `Financial Year, Form Status, Created, Submitted On, Filled Status,Notification Url , Notfication Name, Act Page Number,Minimum Floor Rate Url, Minimum Floor Rate Name,  Operationalization of the notification Url, Operationalization of the notification Name, Number of extant acts for municipal bodies, Names of all the extant acts, Extant Acts Url, Extant Acts Name, MoHUA Review Status, MoHUA Comments, MoHUA file Url`
           break;
         case CollectionNames.sfc:
           columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`
@@ -1128,34 +1128,172 @@ function removeEscapeChars(entity){
               }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
                 entity.filled ?? ""
               },${data?.["financialYear"]["year"] ?? ""}, ${
-               ( !isNaN(data?.grantPosition?.unUtilizedPrevYr) ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2) : "")?? ""
-              } ,${(!isNaN(data?.grantPosition?.receivedDuringYr) ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2):"") ?? ""}, ${
-                (!isNaN(data?.grantPosition?.expDuringYr) ? Number(data?.grantPosition?.expDuringYr).toFixed(2):"") ?? ""
-              },${(!isNaN(data?.grantPosition?.closingBal) ? Number(data?.grantPosition?.closingBal).toFixed(2):"") ?? ""},${
-                (!isNaN(wmData[0]?.["grantUtilised"])  ? Number(wmData[0]?.["grantUtilised"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[0]?.["numberOfProjects"])  ? Number(wmData[0]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
-                (!isNaN(wmData[0]?.["totalProjectCost"])  ? Number(wmData[0]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[1]?.["grantUtilised"])  ? Number(wmData[1]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(wmData[1]?.["numberOfProjects"])  ? Number(wmData[1]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
-              }, ${(!isNaN(wmData[1]?.["totalProjectCost"])  ? Number(wmData[1]?.["totalProjectCost"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(wmData[2]?.["grantUtilised"])  ? Number(wmData[2]?.["grantUtilised"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[2]?.["numberOfProjects"])  ? Number(wmData[2]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
-                (!isNaN(wmData[2]?.["totalProjectCost"])  ? Number(wmData[2]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(wmData[3]?.["grantUtilised"])  ? Number(wmData[3]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(wmData[3]?.["numberOfProjects"])  ? Number(wmData[3]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
-              }, ${(!isNaN(wmData[3]?.["totalProjectCost"])  ? Number(wmData[3]?.["totalProjectCost"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(swmData[0]?.["grantUtilised"])  ? Number(swmData[0]?.["grantUtilised"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(swmData[0]?.["numberOfProjects"])  ? Number(swmData[0]?.["numberOfProjects"]).toFixed(2) :"") ?? ""}, ${
-                (!isNaN(swmData[0]?.["totalProjectCost"])  ? Number(swmData[0]?.["totalProjectCost"]).toFixed(2) :"") ?? ""
-              },${(!isNaN(swmData[1]?.["grantUtilised"])  ? Number(swmData[1]?.["grantUtilised"]).toFixed(2) :"") ?? ""},${
-                (!isNaN(swmData[1]?.["numberOfProjects"])  ? Number(swmData[1]?.["numberOfProjects"]).toFixed(2) :"") ?? ""
-              }, ${(!isNaN(swmData[1]?.["totalProjectCost"])  ? Number(swmData[1]?.["totalProjectCost"]).toFixed(2) :"") ?? ""}, ${
-                actions["state_status"] ?? ""
-              },${actions["rejectReason_state"] ?? ""},${
-                actions["mohua_status"] ?? ""
-              },${actions["rejectReason_mohua"] ?? ""},${
-                actions["responseFile_state"]["url"] ?? ""
-              },${actions["responseFile_mohua"]["url"] ?? ""}`;
+                (typeof data?.grantPosition?.unUtilizedPrevYr === "number"
+                  ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2)
+                  : "") ?? ""
+              } ,${
+                (typeof data?.grantPosition?.receivedDuringYr === "number"
+                  ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2)
+                  : "") ?? ""
+              }, ${
+                (typeof data?.grantPosition?.expDuringYr === "number"
+                  ? Number(data?.grantPosition?.expDuringYr).toFixed(2)
+                  : "") ?? ""
+              },${
+                (typeof data?.grantPosition?.closingBal === "number"
+                  ? Number(data?.grantPosition?.closingBal).toFixed(2)
+                  : "") ?? ""
+              },${
+                (wmData[0]?.["grantUtilised"] !== ""
+                  ? typeof Number(
+                      Number(wmData[0]?.["grantUtilised"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[0]?.["grantUtilised"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (wmData[0]?.["numberOfProjects"] !== ""
+                  ? typeof Number(
+                      Number(wmData[0]?.["numberOfProjects"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[0]?.["numberOfProjects"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              }, ${
+                (wmData[0]?.["totalProjectCost"] !== ""
+                  ? typeof Number(
+                      Number(wmData[0]?.["totalProjectCost"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[0]?.["totalProjectCost"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (wmData[1]?.["grantUtilised"] !== ""
+                  ? typeof Number(
+                      Number(wmData[1]?.["grantUtilised"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[1]?.["grantUtilised"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (wmData[1]?.["numberOfProjects"] !== ""
+                  ? typeof Number(
+                      Number(wmData[1]?.["numberOfProjects"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[1]?.["numberOfProjects"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              }, ${
+                (wmData[1]?.["totalProjectCost"] !== ""
+                  ? typeof Number(
+                      Number(wmData[1]?.["totalProjectCost"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[1]?.["totalProjectCost"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (wmData[2]?.["grantUtilised"] !== ""
+                  ? typeof Number(
+                      Number(wmData[2]?.["grantUtilised"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[2]?.["grantUtilised"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (wmData[2]?.["numberOfProjects"] !== ""
+                  ? typeof Number(
+                      Number(wmData[2]?.["numberOfProjects"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[2]?.["numberOfProjects"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              }, ${
+                (wmData[2]?.["totalProjectCost"] !== ""
+                  ? typeof Number(
+                      Number(wmData[2]?.["totalProjectCost"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[2]?.["totalProjectCost"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (wmData[3]?.["grantUtilised"] !== ""
+                  ? typeof Number(
+                      Number(wmData[3]?.["grantUtilised"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[3]?.["grantUtilised"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (wmData[3]?.["numberOfProjects"] !== ""
+                  ? typeof Number(
+                      Number(wmData[3]?.["numberOfProjects"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[3]?.["numberOfProjects"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              }, ${
+                (wmData[3]?.["totalProjectCost"] !== ""
+                  ? typeof Number(
+                      Number(wmData[3]?.["totalProjectCost"]).toFixed(2)
+                    ) === "number" && wmData.length > 0
+                    ? Number(wmData[3]?.["totalProjectCost"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (swmData[0]?.["grantUtilised"] !== ""
+                  ? typeof Number(
+                      Number(swmData[0]?.["grantUtilised"]).toFixed(2)
+                    ) === "number" && swmData.length > 0
+                    ? Number(swmData[0]?.["grantUtilised"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (swmData[0]?.["numberOfProjects"] !== ""
+                  ? typeof Number(
+                      Number(swmData[0]?.["numberOfProjects"]).toFixed(2)
+                    ) === "number" && swmData.length > 0
+                    ? Number(swmData[0]?.["numberOfProjects"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              }, ${
+                (swmData[0]?.["totalProjectCost"] !== ""
+                  ? typeof Number(
+                      Number(swmData[0]?.["totalProjectCost"]).toFixed(2)
+                    ) === "number" && swmData.length > 0
+                    ? Number(swmData[0]?.["totalProjectCost"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (swmData[1]?.["grantUtilised"] !== ""
+                  ? typeof Number(
+                      Number(swmData[1]?.["grantUtilised"]).toFixed(2)
+                    ) === "number" && swmData.length > 0
+                    ? Number(swmData[1]?.["grantUtilised"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              },${
+                (swmData[1]?.["numberOfProjects"] !== ""
+                  ? typeof Number(
+                      Number(swmData[1]?.["numberOfProjects"]).toFixed(2)
+                    ) === "number" && swmData.length > 0
+                    ? Number(swmData[1]?.["numberOfProjects"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              }, ${
+                (swmData[1]?.["totalProjectCost"] !== ""
+                  ? typeof Number(
+                      Number(swmData[1]?.["totalProjectCost"]).toFixed(2)
+                    ) === "number" && swmData.length > 0
+                    ? Number(swmData[1]?.["totalProjectCost"]).toFixed(2)
+                    : ""
+                  : "") ?? ""
+              }, ${actions["state_status"] ?? ""},${
+                actions["rejectReason_state"] ?? ""
+              },${actions["mohua_status"] ?? ""},${
+                actions["rejectReason_mohua"] ?? ""
+              },${actions["responseFile_state"]["url"] ?? ""},${
+                actions["responseFile_mohua"]["url"] ?? ""
+              }`;
               break;
             
             case CollectionNames['28SLB']:
@@ -1216,6 +1354,15 @@ function removeEscapeChars(entity){
                   url: ""
                 }
               }
+              if (
+                !data.hasOwnProperty("extantActDoc") ||
+                !data["extantActDoc"]["name"]
+              ) {
+                data["extantActDoc"] = {
+                  name: "",
+                  url: "",
+                };
+              }
               if(!data.hasOwnProperty("stateNotification") || !data["stateNotification"]["name"] ){
                 data['stateNotification'] = {
                   name: "",
@@ -1230,6 +1377,7 @@ function removeEscapeChars(entity){
               data["stateNotification"]["name"] = removeEscapeChars(data["stateNotification"]["name"]);
               data["comManual"]["name"] = removeEscapeChars(data["comManual"]["name"]);
               data["floorRate"]["name"] = removeEscapeChars(data["floorRate"]["name"]);
+              data["extantActDoc"]["name"] = removeEscapeChars(data["extantActDoc"]["name"]);
                 entity = `${data?.design_year?.year ?? ""}, ${
                   entity?.formStatus ?? ""
                 }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${
@@ -1238,7 +1386,7 @@ function removeEscapeChars(entity){
                   data.stateNotification.name ?? ""
                 },${data.actPage ?? ""}, ${data.floorRate.url ?? ""}, ${
                   data.floorRate.name ?? ""
-                }, ${data.comManual.url ?? ""}, ${data.comManual.name ?? ""}, ${
+                }, ${data.comManual.url ?? ""}, ${data.comManual.name ?? ""},${data.actMunicipal ?? ""},${data.extantAct ?? ""},${data.extantActDoc.url ?? ""},${data.extantActDoc.name ?? ""}, ${
                   actions["mohua_status"] ?? ""
                 },${actions["rejectReason_mohua"] ?? ""}, ${
                   actions["responseFile_mohua"]["url"] ?? ""
@@ -1651,55 +1799,6 @@ function removeEscapesFromAnnual(element) {
   }
 }
 
-function sortGtcData(entity){
-  if(entity.allFormData[0] === ""){
-    return entity;
-  }
-  let gtcFormObj = { nmpc_tied: {}, nmpc_untied: {}, mpc_tied: {} };
-
-  for(let i=0; i < entity.allFormData.length; i++){
-    let form = entity.allFormData[i];
-    if(form.type === "nonmillion_tied"){
-      if(form.design_year.year === "2021-22"){
-        if(form.installment === 2){
-          gtcFormObj['nmpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
-        }
-      }else if(form.design_year === "2022-23"){
-        if(form.installment === 1){
-          gtcFormObj['nmpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
-        }else if(form.installment === 2){
-          gtcFormObj['nmpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
-        }
-      }
-    }else if(form.type === "nonmillion_untied"){
-      if(form.design_year.year === "2021-22"){
-        if(form.installment === 2){
-          gtcFormObj['nmpc_untied'][`${form.design_year.year}_${form.installment}`] =  form;
-        }
-      }else if(form.design_year === "2022-23"){
-        if(form.installment === 1){
-          gtcFormObj['nmpc_untied'][`${form.design_year.year}_${form.installment}`] =  form;
-        }else if(form.installment === 2){
-          gtcFormObj['nmpc_untied'][`${form.design_year.year}_${form.installment}`] =  form;
-        }
-      }
-    }else if (form.type === "million_tied"){
-      if(form.design_year.year === "2021-22"){
-        gtcFormObj['mpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
-
-      }else if( form.design_year === "2022-23"){
-        gtcFormObj['mpc_tied'][`${form.design_year.year}_${form.installment}`] =  form;
-      }
-    }
-  }
-  gtcFormObj =  JSON.parse(JSON.stringify(gtcFormObj));
-  for(let obj in gtcFormObj){
-    // let 
-    // gtcFormObj.sort((a,b)=>{})
-  }
-  return gtcFormObj;
-
-}
 
 function createDynamicQuery(collectionName, oldQuery,userRole,csv) {
     let query_2 = {};
@@ -2062,7 +2161,8 @@ if(csv){
         
         if(collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']){
             res.write(
-                `${fixedColumns} ${dynamicColumns} \r\n`
+              "\ufeff"+
+                `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
               );
             
             res.flushHeaders();
@@ -2080,6 +2180,7 @@ if(csv){
                     el.censusCode = "NA"
                 }
                 res.write(
+                  "\ufeff"+
                     el.stateName +
                     "," +
                     el.ulbName +
@@ -2095,7 +2196,7 @@ if(csv){
                     el.UA +
                     "," +
     
-                    dynamicElementData +
+                    dynamicElementData.toString() +
                     
                     "\r\n"
                 )
@@ -2126,7 +2227,7 @@ if(csv){
                 }
 
                 res.write(
-                    
+                  "\ufeff"+
                     el.stateName +
                     "," +
                     el.ulbName +
@@ -2141,13 +2242,12 @@ if(csv){
                     "," + 
                     el.UA +
                     "," +
-                    row1 +
-                    
+                    row1.toString() +                    
                     
                     "\r\n"
                 )
                 res.write(
-                    
+                  "\ufeff"+
                   el.stateName +
                   "," +
                   el.ulbName +
@@ -2162,8 +2262,7 @@ if(csv){
                   "," + 
                   el.UA +
                   "," +
-                  row2 +
-                  
+                  row2.toString() +                  
                   
                   "\r\n"
               )
@@ -2176,7 +2275,8 @@ if(csv){
         let fixedColumns = `State Name, City Finance Code, Regional Name,`;
         let dynamicColumns = createDynamicColumns(collectionName)
         res.write(
-            `${fixedColumns } ${dynamicColumns} \r\n`
+          "\ufeff"+
+            `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
         );
         
         res.flushHeaders();
@@ -2184,14 +2284,14 @@ if(csv){
             let dynamicElementData = createDynamicElements(collectionName,formType,el);
             
             res.write(
+          "\ufeff"+
                 el.stateName +
                 "," +
                 el.stateCode + 
                 "," +
                 el.regionalName + 
                 "," +
-                dynamicElementData +
-                
+                dynamicElementData.toString() +                
                 "\r\n"
             )
         
