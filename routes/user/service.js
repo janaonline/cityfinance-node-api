@@ -102,11 +102,21 @@ module.exports.getAll = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         if (filter["sbCode"]) {
             let code = filter["sbCode"];
-            var digit = code.toString()[0];
-            if (digit == "8") {
-              delete filter["sbCode"];
-              filter["censusCode"] = code;
+            const dataWithCensusCodeQuery =  Ulb.findOne(
+                {
+                    censusCode: {$regex: `^${code}`, $options: 'i' }
+                },{censusCode:1}).lean();
+            // let dataWithSbCodeQuery = User.findOne({sbCode: code},{sbCode:1}).lean();
+            const [dataWithCensusCode] = await Promise.all([dataWithCensusCodeQuery]);
+            if(dataWithCensusCode){
+                filter['censusCode'] = code
+                delete filter["sbCode"];
             }
+            // var digit = code.toString()[0];
+            // if (digit == "8") {
+            //   delete filter["sbCode"];
+            //   filter["censusCode"] = code;
+            // }
           }
         let access = Constants.USER.LEVEL_ACCESS;
 
@@ -471,6 +481,10 @@ module.exports.getAll = async (req, res) => {
                             .exec();
 
                     } else {
+                        if (newFilter && Object.keys(newFilter).length) {
+                            roleQuery.unshift({ $match: newFilter });
+                            q2.push({ $match: newFilter });
+                        }
                         totalUsers = await User.aggregate(roleQuery)
                         users = await User.aggregate(q2)
                             .collation({ locale: 'en' })
@@ -478,7 +492,10 @@ module.exports.getAll = async (req, res) => {
                     }
                     console.log(totalUsers)
                     // console.log(util.inspect(q, { showHidden: false, depth: null }))
-
+                    // return res.json({
+                    //     q2,
+                    //     roleQuery
+                    // })
                     return res.status(200).json({
                         timestamp: moment().unix(),
                         success: true,

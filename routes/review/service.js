@@ -1406,7 +1406,6 @@ function removeEscapeChars(entity){
               }`;
               break;
             case CollectionNames.state_gtc:
-              // entity = sortGtcData(entity);
               entity = `${data?.design_year?.year ?? ""}, ${ entity?.formStatus ?? "" }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${ entity.filled ?? "" }, ${data.type ?? "" }, ${data.file['url']?? ""}, ${data.file['name']}, ${ actions["mohua_status"] ?? "" },${actions["rejectReason_mohua"] ?? ""}, ${ actions["responseFile_mohua"]["url"] ?? "" } `
               break;
 
@@ -1414,7 +1413,6 @@ function removeEscapeChars(entity){
     }
     return entity;
 }
-
 
 function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
   if (data?.actionTakenByRole === "STATE") {
@@ -1785,7 +1783,6 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
   }
   return { auditedEntity, unAuditedEntity };
 }
-
 function removeEscapesFromAnnual(element) {
   for (let key in element) {
     if (element[key] && typeof element[key] === "object") {

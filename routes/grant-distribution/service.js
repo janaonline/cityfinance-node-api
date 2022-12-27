@@ -163,16 +163,19 @@ exports.uploadTemplate = async (req, res) => {
         { $unwind: "$state"}
 
       ]);
+      if(formData.design_year === "606aafb14dff55e6c075d3ae"){
       let  [xslDataStateInfo,stateInfo] =  await Promise.all([xslDataState ,ULB.aggregate(queryState)]);
       let ulbCount = stateInfo[0].totalUlbs;
       let xslDataStateName = xslDataStateInfo[0].state.name;
       let stateName = stateInfo[0].state.name;
-      if(stateName !== xslDataStateName){
-        return res.status(400).xls("error_sheet.xlsx", [{"message": "Wrong state file"}]);
-      }
-      if(ulbCount != (XslData.length- emptyCensus) ){
-        return res.status(400).xls("error_sheet.xlsx", [{"message": `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`}]);
-        // return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
+
+        if(stateName !== xslDataStateName){
+          return res.status(400).xls("error_sheet.xlsx", [{"message": "Wrong state file"}]);
+        }
+        if(ulbCount != (XslData.length- emptyCensus) ){
+          return res.status(400).xls("error_sheet.xlsx", [{"message": `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`}]);
+          // return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
+        }
       }
       const notValid = await validate(XslData, formData);
       if (notValid) {

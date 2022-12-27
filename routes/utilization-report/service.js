@@ -167,6 +167,50 @@ module.exports.createOrUpdate = async (req, res) => {
         //   }
         // )
         await UpdateMasterSubmitForm(req, "utilReport");
+
+/* Checking if the utiData.isDraft is false. */
+        // if (!utiData.isDraft) {
+        //   let dur22_23Form = await UtilizationReport.findOne({
+        //     ulb: ObjectId(ulb),
+        //     designYear: ObjectId(YEAR_CONSTANTS["22_23"]),
+        //   }).lean();
+        //   if (dur22_23Form) {
+        //     let dur22_23FormStatus = calculateStatus(
+        //       dur22_23Form.status,
+        //       dur22_23Form.actionTakenByRole,
+        //       dur22_23Form.isDraft,
+        //       "ULB"
+        //     );
+        //     /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
+        //     Then update it with latest values */
+        //     if (
+        //       [
+        //         FORM_STATUS.In_Progress,
+        //         FORM_STATUS.Rejected_By_MoHUA,
+        //         FORM_STATUS.Rejected_By_State,
+        //       ].includes(dur22_23FormStatus)
+        //     ) {
+        //       /* calculate closing balance and opening balance for 22-23 form */
+        //       dur22_23Form.grantPosition.unUtilizedPrevYr = utiData
+        //         ?.grantPosition?.closingBal
+        //         ? Number(utiData?.grantPosition?.closingBal)
+        //         : "";
+        //       dur22_23Form.grantPosition.closingBal =
+        //         Number(dur22_23Form?.grantPosition?.unUtilizedPrevYr) +
+        //         Number(dur22_23Form?.grantPosition.receivedDuringYr) -
+        //         Number(dur22_23Form?.grantPosition?.expDuringYr);
+
+        //       let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
+        //         condition,
+        //         {
+        //           $set: {
+        //             grantPosition: dur22_23Form?.grantPosition,
+        //           },
+        //         }
+        //       );
+        //     }
+        //   }
+        // }
         return res.status(200).json({
           success: true,
           isCompleted: formData['isDraft'] ? false : true,
@@ -519,13 +563,9 @@ exports.report = async (req, res) => {
   res.flushHeaders();
   let query = [
     {
-
       $match: {
-
         designYear: ObjectId(YEAR_CONSTANTS["21_22"]),
-
       },
-
     },
     {
       $lookup: {
@@ -575,8 +615,12 @@ exports.report = async (req, res) => {
         role: "$actionTakenByRole",
         waterManagement: "$categoryWiseData_wm",
         solidWasteMgt: "$categoryWiseData_swm",
-        createdAt: { $dateToString: { format: "%d/%m/%Y", date: "$createdAt" } },
-        modifiedAt: { $dateToString: { format: "%d/%m/%Y", date: "$modifiedAt" } },
+        createdAt: {
+          $dateToString: { format: "%d/%m/%Y", date: "$createdAt" },
+        },
+        modifiedAt: {
+          $dateToString: { format: "%d/%m/%Y", date: "$modifiedAt" },
+        },
       },
     },
   ];
@@ -970,29 +1014,45 @@ module.exports.dataRepair = async function (req, res, next) {
     // ]
 
     let ulbIds = [
-      ObjectId("5dd2474883f0771f8da4da14"),
-      ObjectId("5e0b2190f0d3fc6ffa3d94ab"),
-      ObjectId("5e0b2190f0d3fc6ffa3d94ae"),
-      ObjectId("5eb5844f76a3b61f40ba0698"),
-      ObjectId("5eb5844f76a3b61f40ba0703"),
-      ObjectId("5eb5845076a3b61f40ba0726"),
-      ObjectId("5eb5845076a3b61f40ba072c"),
-      ObjectId("5eb5845076a3b61f40ba0795"),
-      ObjectId("5eb5845076a3b61f40ba07ca"),
-      ObjectId("5eb5845076a3b61f40ba07dc"),
-      ObjectId("5eb5845076a3b61f40ba082b"),
-      ObjectId("5fa2465c072dab780a6f0f35"),
-      ObjectId("5fa2465d072dab780a6f105d"),
-      ObjectId("5fa2465e072dab780a6f11ca"),
-      ObjectId("5fa2465e072dab780a6f11ce"),
-      ObjectId("5fa2465f072dab780a6f11de"),
-      ObjectId("5fa2465f072dab780a6f11e9"),
-      ObjectId("5fa2465f072dab780a6f11eb"),
-      ObjectId("5fa2465f072dab780a6f1252"),
-      ObjectId("5fa2465f072dab780a6f129d"),
-      ObjectId("5fa2465f072dab780a6f12c0"),
-      ObjectId("5fa24661072dab780a6f14b7"),
-      ObjectId("5fa24661072dab780a6f14e4")
+      ObjectId("5dd2472a437ba31f7eb43074"),
+      ObjectId("5dd24d43e7af460396bf2ebf"),
+      ObjectId("5e0b2190f0d3fc6ffa3d9497"),
+      ObjectId("5f5610b3aab0f778b2d2caab"),
+      ObjectId("5fa2465d072dab780a6f0fe4"),
+      ObjectId("5fa2465d072dab780a6f0ff7"),
+      ObjectId("5fa2465d072dab780a6f1012"),
+      ObjectId("5fa2465d072dab780a6f1023"),
+      ObjectId("5fa2465d072dab780a6f1057"),
+      ObjectId("5fa2465e072dab780a6f109b"),
+      ObjectId("5fa2465e072dab780a6f1103"),
+      ObjectId("5fa24661072dab780a6f153f"),
+      ObjectId("5fa24662072dab780a6f1631"),
+      ObjectId("5fa24662072dab780a6f1633"),
+      ObjectId("5fa24663072dab780a6f16ad"),
+      ObjectId("5fa24663072dab780a6f16b1"),
+      ObjectId("5fa24663072dab780a6f16d2"),
+      ObjectId("5fa24663072dab780a6f16d7"),
+      ObjectId("5fa24663072dab780a6f16eb"),
+      ObjectId("5fa24664072dab780a6f170d"),
+      ObjectId("5fa24664072dab780a6f1711"),
+      ObjectId("5fa24664072dab780a6f1723"),
+      ObjectId("5fa24664072dab780a6f1741"),
+      ObjectId("5fa24664072dab780a6f1746"),
+      ObjectId("5fa24664072dab780a6f175f"),
+      ObjectId("5fa24664072dab780a6f17ba"),
+      ObjectId("5fa24664072dab780a6f17d2"),
+      ObjectId("5fa24664072dab780a6f17f6"),
+      ObjectId("5fa24665072dab780a6f182c"),
+      ObjectId("5e0b2190f0d3fc6ffa3d9494"),
+      ObjectId("5e0b2190f0d3fc6ffa3d949c"),
+      ObjectId("5e0b2190f0d3fc6ffa3d94a5"),
+      ObjectId("5fa2465e072dab780a6f1183"),
+      ObjectId("5fa2465f072dab780a6f11d7"),
+      ObjectId("5fa24660072dab780a6f1397"),
+      ObjectId("5fa24660072dab780a6f13a2"),
+      ObjectId("5fa24665072dab780a6f1877"),
+      ObjectId("6049bafc7d66d1146d885656"),
+      ObjectId("620a0ac67f6b136427b7152a")
     ]
     let condition = {
       "designYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
