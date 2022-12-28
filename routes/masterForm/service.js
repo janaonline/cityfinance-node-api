@@ -3698,6 +3698,9 @@ module.exports.finalSubmit = catchAsync(async (req, res) => {
 
     currentMasterForm.status = "PENDING";
     currentMasterForm.isSubmit = req.body.isSubmit;
+    currentMasterForm.actionTakenByRole = req.body.actionTakenByRole;
+    currentMasterForm.actionTakenBy = req.body.actionTakenBy;
+    currentMasterForm.modifiedAt = new Date();
 
     let updatedData = await MasterFormData.findOneAndUpdate(query, {
       $set: data,
@@ -3808,6 +3811,8 @@ module.exports.finalAction = catchAsync(async (req, res) => {
     currentMasterForm.status = req.body.status;
     currentMasterForm.isSubmit = req.body.isSubmit;
     currentMasterForm.modifiedAt = new Date();
+    currentMasterForm.actionTakenByRole = req.body.actionTakenByRole;
+    currentMasterForm.actionTakenBy = req.body.actionTakenBy;
 
     let updatedData = await MasterFormData.findOneAndUpdate(query, {
       $set: req.body,
