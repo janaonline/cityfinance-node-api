@@ -1140,9 +1140,8 @@ function removeEscapeChars(entity){
                   ? Number(data?.grantPosition?.expDuringYr).toFixed(2)
                   : "") ?? ""
               },${
-                (typeof data?.grantPosition?.closingBal === "number"
-                  ? Number(data?.grantPosition?.closingBal).toFixed(2)
-                  : "") ?? ""
+                   Number(data?.grantPosition?.closingBal).toFixed(2)
+                   ?? ""
               },${
                 (wmData[0]?.["grantUtilised"] !== ""
                   ? typeof Number(
@@ -2206,7 +2205,7 @@ if(csv){
           return
         } else{
             res.write(
-                `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns}  \r\n`
+                `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
               );
               
               res.flushHeaders();
