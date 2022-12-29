@@ -169,48 +169,48 @@ module.exports.createOrUpdate = async (req, res) => {
         await UpdateMasterSubmitForm(req, "utilReport");
 
 /* Checking if the utiData.isDraft is false. */
-        // if (!utiData.isDraft) {
-        //   let dur22_23Form = await UtilizationReport.findOne({
-        //     ulb: ObjectId(ulb),
-        //     designYear: ObjectId(YEAR_CONSTANTS["22_23"]),
-        //   }).lean();
-        //   if (dur22_23Form) {
-        //     let dur22_23FormStatus = calculateStatus(
-        //       dur22_23Form.status,
-        //       dur22_23Form.actionTakenByRole,
-        //       dur22_23Form.isDraft,
-        //       "ULB"
-        //     );
-        //     /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
-        //     Then update it with latest values */
-        //     if (
-        //       [
-        //         FORM_STATUS.In_Progress,
-        //         FORM_STATUS.Rejected_By_MoHUA,
-        //         FORM_STATUS.Rejected_By_State,
-        //       ].includes(dur22_23FormStatus)
-        //     ) {
-        //       /* calculate closing balance and opening balance for 22-23 form */
-        //       dur22_23Form.grantPosition.unUtilizedPrevYr = utiData
-        //         ?.grantPosition?.closingBal
-        //         ? Number(utiData?.grantPosition?.closingBal)
-        //         : "";
-        //       dur22_23Form.grantPosition.closingBal =
-        //         Number(dur22_23Form?.grantPosition?.unUtilizedPrevYr) +
-        //         Number(dur22_23Form?.grantPosition.receivedDuringYr) -
-        //         Number(dur22_23Form?.grantPosition?.expDuringYr);
+        if (!utiData.isDraft) {
+          let dur22_23Form = await UtilizationReport.findOne({
+            ulb: ObjectId(ulb),
+            designYear: ObjectId(YEAR_CONSTANTS["22_23"]),
+          }).lean();
+          if (dur22_23Form) {
+            let dur22_23FormStatus = calculateStatus(
+              dur22_23Form.status,
+              dur22_23Form.actionTakenByRole,
+              dur22_23Form.isDraft,
+              "ULB"
+            );
+            /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
+            Then update it with latest values */
+            if (
+              [
+                FORM_STATUS.In_Progress,
+                FORM_STATUS.Rejected_By_MoHUA,
+                FORM_STATUS.Rejected_By_State,
+              ].includes(dur22_23FormStatus)
+            ) {
+              /* calculate closing balance and opening balance for 22-23 form */
+              dur22_23Form.grantPosition.unUtilizedPrevYr = utiData
+                ?.grantPosition?.closingBal
+                ? Number(utiData?.grantPosition?.closingBal)
+                : "";
+              dur22_23Form.grantPosition.closingBal =
+                Number(dur22_23Form?.grantPosition?.unUtilizedPrevYr) +
+                Number(dur22_23Form?.grantPosition.receivedDuringYr) -
+                Number(dur22_23Form?.grantPosition?.expDuringYr);
 
-        //       let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
-        //         condition,
-        //         {
-        //           $set: {
-        //             grantPosition: dur22_23Form?.grantPosition,
-        //           },
-        //         }
-        //       );
-        //     }
-        //   }
-        // }
+              let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
+                condition,
+                {
+                  $set: {
+                    grantPosition: dur22_23Form?.grantPosition,
+                  },
+                }
+              );
+            }
+          }
+        }
         return res.status(200).json({
           success: true,
           isCompleted: formData['isDraft'] ? false : true,
