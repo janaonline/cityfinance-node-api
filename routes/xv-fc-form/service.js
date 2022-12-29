@@ -1544,7 +1544,7 @@ value = allData.filter(el => {
         //     })
         // }
         for (s of data) {
-          s["status"] = getStatus(s);
+          // s["status"] = getStatus(s);
         }
 
         return res.status(200).json({
