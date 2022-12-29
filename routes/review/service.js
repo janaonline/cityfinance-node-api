@@ -2549,7 +2549,17 @@ const computeQuery = (formName, userRole, isFormOptional,state, design_year,csv,
                                                         ulbName:"$name",
                                                         ulbId:"$_id",
                                                         ulbCode:"$code",
-                                                        censusCode: {$ifNull: ["$censusCode","$sbCode"]},
+                                                        censusCode: {
+                                                          $cond: {
+                                                            if: { $or:[
+                                                                {$eq:["$censusCode",""]},
+                                                                {$eq:["$censusCode",null]},
+                                                                ] },
+                                                            then: "$sbCode",
+                                                            else: "$censusCode"
+                                                         }
+                                                          
+                                                        },
                                                         UA: {
                                                             $cond: {
                                                             if: { $eq: ["$isUA", "Yes"] },
