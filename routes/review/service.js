@@ -2202,6 +2202,7 @@ if(csv){
           return
         } else{
             res.write(
+              "\ufeff"+
                 `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
               );
               
