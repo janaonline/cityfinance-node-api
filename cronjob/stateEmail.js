@@ -71,7 +71,7 @@ const calculateFormStatus = async () => {
         let formData = await collection.aggregate(pipeline);
         const ulbsCount = await Ulb.find({state:states[i]._id}).countDocuments();
         const obj = {
-          [collection.$__collection.collectionName]: {
+          [collection.collection.collectionName]: {
             [StatusList.Not_Started]: 0,
             [StatusList.In_Progress]: 0,
             [StatusList.Under_Review_By_State]: 0,
@@ -85,7 +85,7 @@ const calculateFormStatus = async () => {
         /* Iterating over the formData and calculating the status of each form and then adding it to the
         object. */
         formData.forEach((element) => {
-          obj[collection.$__collection.collectionName][
+          obj[collection.collection.collectionName][
             calculateStatus(
               element.status,
               element.actionTakenByRole,
@@ -93,7 +93,7 @@ const calculateFormStatus = async () => {
               "ULB"
             )
           ] =
-            obj[collection.$__collection.collectionName][
+            obj[collection.collection.collectionName][
               calculateStatus(
                 element.status,
                 element.actionTakenByRole,
@@ -103,9 +103,9 @@ const calculateFormStatus = async () => {
             ] + 1;
         });
        /* This is calculating the number of forms that are not started. */
-        obj[collection.$__collection.collectionName][StatusList.Not_Started] = ulbsCount - formData.length;
+        obj[collection.collection.collectionName][StatusList.Not_Started] = ulbsCount - formData.length;
   
-          if(collection.$__collection.collectionName === CollectionNames.annualAcc){
+          if(collection.collection.collectionName === CollectionNames.annualAcc){
           Object.assign(stateObj[states[i].name],annualAccountStatus(formData, ulbsCount));
         }
         Object.assign(stateObj[states[i].name], obj);
