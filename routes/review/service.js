@@ -951,7 +951,7 @@ function removeEscapeChars(entity){
   return !entity ? entity: entity.replace(/(\n|,)/gm, " ");
 }
 
- function createDynamicElements(collectionName, formType, entity) {
+ async function createDynamicElements(collectionName, formType, entity) {
     if(!entity.formData){
         entity["filled"] = "No";
         entity['formData'] =  createDynamicObject(collectionName ,formType);
@@ -1121,8 +1121,32 @@ function removeEscapeChars(entity){
             break; 
 
             case CollectionNames.dur:
+              
+              if (
+                data?.categoryWiseData_wm &&
+                data?.categoryWiseData_wm.length > 0
+              ) {
+                let wm = await convertValue({
+                  data: data.categoryWiseData_wm,
+                  keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+                });
+                data.categoryWiseData_wm = wm;
+              }
+              console.log("su", data);
+              if (
+                data?.categoryWiseData_swm &&
+                data?.categoryWiseData_swm.length > 0
+              ) {
+                let swm = await convertValue({
+                  data: data.categoryWiseData_swm,
+                  keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+                });
+                data.categoryWiseData_swm = swm;
+              }
               let wmData = data?.categoryWiseData_wm;
               let swmData = data?.categoryWiseData_swm;
+
+
               entity = ` ${data?.design_year?.year ?? ""}, ${
                 entity?.formStatus ?? ""
               }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
@@ -1143,149 +1167,41 @@ function removeEscapeChars(entity){
                    Number(data?.grantPosition?.closingBal).toFixed(2)
                    ?? ""
               },${
-                (wmData[0]?.["grantUtilised"] !== ""
-                  ? typeof Number(
-                      Number(wmData[0]?.["grantUtilised"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[0]?.["grantUtilised"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[0]?.["grantUtilised"] ?? ""
               },${
-                (wmData[0]?.["numberOfProjects"] !== ""
-                  ? typeof Number(
-                      Number(wmData[0]?.["numberOfProjects"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[0]?.["numberOfProjects"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[0]?.["numberOfProjects"] ?? ""
               }, ${
-                (wmData[0]?.["totalProjectCost"] !== ""
-                  ? typeof Number(
-                      Number(wmData[0]?.["totalProjectCost"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[0]?.["totalProjectCost"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[0]?.["totalProjectCost"] ?? ""
               },${
-                (wmData[1]?.["grantUtilised"] !== ""
-                  ? typeof Number(
-                      Number(wmData[1]?.["grantUtilised"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[1]?.["grantUtilised"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[1]?.["grantUtilised"] ?? ""
               },${
-                (wmData[1]?.["numberOfProjects"] !== ""
-                  ? typeof Number(
-                      Number(wmData[1]?.["numberOfProjects"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[1]?.["numberOfProjects"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[1]?.["numberOfProjects"] ?? ""
               }, ${
-                (wmData[1]?.["totalProjectCost"] !== ""
-                  ? typeof Number(
-                      Number(wmData[1]?.["totalProjectCost"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[1]?.["totalProjectCost"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[1]?.["totalProjectCost"] ?? ""
               },${
-                (wmData[2]?.["grantUtilised"] !== ""
-                  ? typeof Number(
-                      Number(wmData[2]?.["grantUtilised"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[2]?.["grantUtilised"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[2]?.["grantUtilised"] ?? ""
               },${
-                (wmData[2]?.["numberOfProjects"] !== ""
-                  ? typeof Number(
-                      Number(wmData[2]?.["numberOfProjects"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[2]?.["numberOfProjects"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[2]?.["numberOfProjects"] ?? ""
               }, ${
-                (wmData[2]?.["totalProjectCost"] !== ""
-                  ? typeof Number(
-                      Number(wmData[2]?.["totalProjectCost"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[2]?.["totalProjectCost"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[2]?.["totalProjectCost"] ?? ""
               },${
-                (wmData[3]?.["grantUtilised"] !== ""
-                  ? typeof Number(
-                      Number(wmData[3]?.["grantUtilised"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[3]?.["grantUtilised"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[3]?.["grantUtilised"] ?? ""
               },${
-                (wmData[3]?.["numberOfProjects"] !== ""
-                  ? typeof Number(
-                      Number(wmData[3]?.["numberOfProjects"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[3]?.["numberOfProjects"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[3]?.["numberOfProjects"] ?? ""
               }, ${
-                (wmData[3]?.["totalProjectCost"] !== ""
-                  ? typeof Number(
-                      Number(wmData[3]?.["totalProjectCost"]).toFixed(2)
-                    ) === "number" && wmData.length > 0
-                    ? Number(wmData[3]?.["totalProjectCost"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                wmData[3]?.["totalProjectCost"] ?? ""
               },${
-                (swmData[0]?.["grantUtilised"] !== ""
-                  ? typeof Number(
-                      Number(swmData[0]?.["grantUtilised"]).toFixed(2)
-                    ) === "number" && swmData.length > 0
-                    ? Number(swmData[0]?.["grantUtilised"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                swmData[0]?.["grantUtilised"] ?? ""
               },${
-                (swmData[0]?.["numberOfProjects"] !== ""
-                  ? typeof Number(
-                      Number(swmData[0]?.["numberOfProjects"]).toFixed(2)
-                    ) === "number" && swmData.length > 0
-                    ? Number(swmData[0]?.["numberOfProjects"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                swmData[0]?.["numberOfProjects"] ?? ""
               }, ${
-                (swmData[0]?.["totalProjectCost"] !== ""
-                  ? typeof Number(
-                      Number(swmData[0]?.["totalProjectCost"]).toFixed(2)
-                    ) === "number" && swmData.length > 0
-                    ? Number(swmData[0]?.["totalProjectCost"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                swmData[0]?.["totalProjectCost"] ?? ""
               },${
-                (swmData[1]?.["grantUtilised"] !== ""
-                  ? typeof Number(
-                      Number(swmData[1]?.["grantUtilised"]).toFixed(2)
-                    ) === "number" && swmData.length > 0
-                    ? Number(swmData[1]?.["grantUtilised"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                swmData[1]?.["grantUtilised"] ?? ""
               },${
-                (swmData[1]?.["numberOfProjects"] !== ""
-                  ? typeof Number(
-                      Number(swmData[1]?.["numberOfProjects"]).toFixed(2)
-                    ) === "number" && swmData.length > 0
-                    ? Number(swmData[1]?.["numberOfProjects"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                swmData[1]?.["numberOfProjects"] ?? ""
               }, ${
-                (swmData[1]?.["totalProjectCost"] !== ""
-                  ? typeof Number(
-                      Number(swmData[1]?.["totalProjectCost"]).toFixed(2)
-                    ) === "number" && swmData.length > 0
-                    ? Number(swmData[1]?.["totalProjectCost"]).toFixed(2)
-                    : ""
-                  : "") ?? ""
+                swmData[1]?.["totalProjectCost"] ?? ""
               }, ${actions["state_status"] ?? ""},${
                 actions["rejectReason_state"] ?? ""
               },${actions["mohua_status"] ?? ""},${
@@ -1412,6 +1328,24 @@ function removeEscapeChars(entity){
     }
     return entity;
 }
+const convertValue = async (objData) => {
+  const { data, keyArr } = objData;
+  let arr = [];
+  if (data.length > 0) {
+    for (let el of data) {
+      if (keyArr.length) {
+        for (let pf of keyArr) {
+          if (el.hasOwnProperty(pf)) {
+            el[pf] =
+              el[pf] !== null && el[pf] !== "" ? Number(el[pf]).toFixed(2) : "";
+          }
+        }
+        arr.push(el);
+      }
+    }
+  }
+  return arr;
+};
 
 function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
   if (data?.actionTakenByRole === "STATE") {
@@ -2165,7 +2099,7 @@ if(csv){
             
             res.flushHeaders();
             for(let el of data){
-                let dynamicElementData = createDynamicElements(collectionName,formType,el);
+                let dynamicElementData = await createDynamicElements(collectionName,formType,el);
                 if(el.UA === "null"){
                     el.UA = "NA"
                 }
@@ -2211,7 +2145,7 @@ if(csv){
               res.flushHeaders();
             for(let el of data){
               
-              let [ row1, row2] = createDynamicElements(collectionName,formType,el);
+              let [ row1, row2] = await createDynamicElements(collectionName,formType,el);
               
                 if(el.UA === "null"){
                     el.UA = "NA"
@@ -2280,7 +2214,7 @@ if(csv){
         
         res.flushHeaders();
         for(let el of data){
-            let dynamicElementData = createDynamicElements(collectionName,formType,el);
+            let dynamicElementData = await createDynamicElements(collectionName,formType,el);
             
             res.write(
           "\ufeff"+
