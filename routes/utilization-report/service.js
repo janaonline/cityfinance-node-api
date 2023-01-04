@@ -917,10 +917,10 @@ module.exports.read2223 = catchAsync(async (req, res) => {
     checking if the value of the property is a number or not. If it is a number then it is converting
     it to a fixed number with 2 decimal places. */
     if (fetchedData?.grantPosition) {
-      !isNaN(fetchedData?.grantPosition.unUtilizedPrevYr) ? fetchedData.grantPosition.unUtilizedPrevYr = Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.receivedDuringYr) ? fetchedData.grantPosition.receivedDuringYr = Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.closingBal) ? fetchedData.grantPosition.closingBal = Number(fetchedData?.grantPosition.closingBal).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.expDuringYr) ? fetchedData.grantPosition.expDuringYr = Number(fetchedData?.grantPosition.expDuringYr).toFixed(2) : ""
+      typeof(fetchedData?.grantPosition.unUtilizedPrevYr) === "number" ? fetchedData.grantPosition.unUtilizedPrevYr = Number(Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)) : ""
+      typeof(fetchedData?.grantPosition.receivedDuringYr) === "number"? fetchedData.grantPosition.receivedDuringYr = Number(Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)) : ""
+      typeof(fetchedData?.grantPosition.expDuringYr) === "number" ? fetchedData.grantPosition.expDuringYr = Number(Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)) : ""
+      fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
 
     }
     return res.status(200).json({
