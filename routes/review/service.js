@@ -1932,6 +1932,7 @@ function createDynamicQuery(collectionName, oldQuery,userRole,csv) {
                  status: { $push: "$formData.status" },
                  stateName: { $first: "$stateName" },
                  state: { $first: "$state" },
+                 stateCode: { $first: "$stateCode" },
                },
              };
              oldQuery.push(query_2);
@@ -1957,6 +1958,7 @@ function createDynamicQuery(collectionName, oldQuery,userRole,csv) {
                 draft:{$push:"$formData.isDraft"},
                 stateName: {$first: "$stateName"},
                 state: {$first: "$state"},
+                stateCode: { $first: "$stateCode" },
               }
             }
             oldQuery.push(query_2);
