@@ -4361,3 +4361,50 @@ let calculatePercentage = (masterformData, loggedInUserRole) => {
     }
   }
 };
+
+
+module.exports.roleCorrection = async (req, res)=>{
+
+  const forms = await MasterFormData.find({
+    actionTakenByRole: "STATE",
+    status: "APPROVED",
+    isSubmit: true,
+    design_year: ObjectId("606aaf854dff55e6c075d219"),
+    // "_id" : ObjectId("613724673a106d7a9f106b4d"),
+
+  }).lean();
+
+  let formsWithWrongHistoryArr =  []
+  let updatedFormWithCorrectHistoryArr = []
+  for(let i = 0; i< forms.length; i++){
+
+    let form = forms[i];
+    let formHistory =  form.history;
+    let formLastHistory = form.history[form.history.length-1];
+
+    if(formLastHistory){
+
+      if( formLastHistory.actionTakenByRole === "ULB"){
+        formLastHistory.actionTakenByRole = "STATE"
+        // formsWithWrongHistoryArr.push(formLastHistory);
+        formHistory[formHistory.length -1] = formLastHistory;
+        let x = await MasterFormData.findOneAndUpdate({
+          _id: form._id,
+
+        },{
+          $set:{
+            history: formHistory
+          }
+        }).lean();
+        updatedFormWithCorrectHistoryArr.push(x)
+      }
+    }
+  }
+
+  return res.status(200).json({
+    data: formsWithWrongHistoryArr,
+    totalForms :  formsWithWrongHistoryArr.length,
+    data2: updatedFormWithCorrectHistoryArr
+  })
+
+}
