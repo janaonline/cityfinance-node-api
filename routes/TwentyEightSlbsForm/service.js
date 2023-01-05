@@ -12,7 +12,6 @@ const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
-const { ULBMASTER } = require('../../_helper/constants');
 const Ulb = require('../../models/Ulb');
 
 function response(form, res, successMsg ,errMsg){

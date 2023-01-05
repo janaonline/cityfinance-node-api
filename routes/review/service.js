@@ -1164,8 +1164,9 @@ function removeEscapeChars(entity){
                   ? Number(data?.grantPosition?.expDuringYr).toFixed(2)
                   : "") ?? ""
               },${
+                  data?.grantPosition?.closingBal ? (
                    Number(data?.grantPosition?.closingBal).toFixed(2)
-                   ?? ""
+                   ?? "") : ""
               },${
                 wmData[0]?.["grantUtilised"] ?? ""
               },${
