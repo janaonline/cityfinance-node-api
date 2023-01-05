@@ -169,48 +169,50 @@ module.exports.createOrUpdate = async (req, res) => {
         await UpdateMasterSubmitForm(req, "utilReport");
 
 /* Checking if the utiData.isDraft is false. */
-        // if (!utiData.isDraft) {
-        //   let dur22_23Form = await UtilizationReport.findOne({
-        //     ulb: ObjectId(ulb),
-        //     designYear: ObjectId(YEAR_CONSTANTS["22_23"]),
-        //   }).lean();
-        //   if (dur22_23Form) {
-        //     let dur22_23FormStatus = calculateStatus(
-        //       dur22_23Form.status,
-        //       dur22_23Form.actionTakenByRole,
-        //       dur22_23Form.isDraft,
-        //       "ULB"
-        //     );
-        //     /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
-        //     Then update it with latest values */
-        //     if (
-        //       [
-        //         FORM_STATUS.In_Progress,
-        //         FORM_STATUS.Rejected_By_MoHUA,
-        //         FORM_STATUS.Rejected_By_State,
-        //       ].includes(dur22_23FormStatus)
-        //     ) {
-        //       /* calculate closing balance and opening balance for 22-23 form */
-        //       dur22_23Form.grantPosition.unUtilizedPrevYr = utiData
-        //         ?.grantPosition?.closingBal
-        //         ? Number(utiData?.grantPosition?.closingBal)
-        //         : "";
-        //       dur22_23Form.grantPosition.closingBal =
-        //         Number(dur22_23Form?.grantPosition?.unUtilizedPrevYr) +
-        //         Number(dur22_23Form?.grantPosition.receivedDuringYr) -
-        //         Number(dur22_23Form?.grantPosition?.expDuringYr);
-
-        //       let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
-        //         condition,
-        //         {
-        //           $set: {
-        //             grantPosition: dur22_23Form?.grantPosition,
-        //           },
-        //         }
-        //       );
-        //     }
-        //   }
-        // }
+        if (!utiData.isDraft) {
+          let dur22_23Form = await UtilizationReport.findOne({
+            ulb: ObjectId(ulb),
+            designYear: ObjectId(YEAR_CONSTANTS["22_23"]),
+          }).lean();
+          if (dur22_23Form) {
+            let dur22_23FormStatus = calculateStatus(
+              dur22_23Form.status,
+              dur22_23Form.actionTakenByRole,
+              dur22_23Form.isDraft,
+              "ULB"
+            );
+            /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
+            Then update it with latest values */
+            if (
+              [
+                FORM_STATUS.In_Progress,
+                FORM_STATUS.Rejected_By_MoHUA,
+                FORM_STATUS.Rejected_By_State,
+              ].includes(dur22_23FormStatus)
+            ) {
+              /* calculate closing balance and opening balance for 22-23 form */
+              dur22_23Form.grantPosition.unUtilizedPrevYr = utiData
+                ?.grantPosition?.closingBal
+                ? Number(utiData?.grantPosition?.closingBal)
+                : "";
+              dur22_23Form.grantPosition.closingBal =
+                Number(dur22_23Form?.grantPosition?.unUtilizedPrevYr) +
+                Number(dur22_23Form?.grantPosition.receivedDuringYr) -
+                Number(dur22_23Form?.grantPosition?.expDuringYr);
+              
+              condition.designYear =  ObjectId(YEAR_CONSTANTS["22_23"]);
+              condition.financialYear = ObjectId(YEAR_CONSTANTS["21_22"])
+              let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
+                condition,
+                {
+                  $set: {
+                    grantPosition: dur22_23Form?.grantPosition,
+                  },
+                }
+              );
+            }
+          }
+        }
         return res.status(200).json({
           success: true,
           isCompleted: formData['isDraft'] ? false : true,
@@ -917,10 +919,10 @@ module.exports.read2223 = catchAsync(async (req, res) => {
     checking if the value of the property is a number or not. If it is a number then it is converting
     it to a fixed number with 2 decimal places. */
     if (fetchedData?.grantPosition) {
-      !isNaN(fetchedData?.grantPosition.unUtilizedPrevYr) ? fetchedData.grantPosition.unUtilizedPrevYr = Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.receivedDuringYr) ? fetchedData.grantPosition.receivedDuringYr = Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.closingBal) ? fetchedData.grantPosition.closingBal = Number(fetchedData?.grantPosition.closingBal).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.expDuringYr) ? fetchedData.grantPosition.expDuringYr = Number(fetchedData?.grantPosition.expDuringYr).toFixed(2) : ""
+      typeof(fetchedData?.grantPosition.unUtilizedPrevYr) === "number" ? fetchedData.grantPosition.unUtilizedPrevYr = Number(Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)) : ""
+      typeof(fetchedData?.grantPosition.receivedDuringYr) === "number"? fetchedData.grantPosition.receivedDuringYr = Number(Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)) : ""
+      typeof(fetchedData?.grantPosition.expDuringYr) === "number" ? fetchedData.grantPosition.expDuringYr = Number(Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)) : ""
+      fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
 
     }
     return res.status(200).json({

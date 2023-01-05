@@ -21,6 +21,7 @@ const SidemenuSchema = new Schema({
     prevUrl: {type: String},
     nextUrl: {type: String},
     sequence:{type: Number},
+    folderName: {type: String},
     year: {type : Schema.Types.ObjectId, ref: "Year", required: true }
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 

@@ -3449,3 +3449,33 @@ module.exports.eligibleULBForms = async function (req, res) {
     data: output,
   });
 };
+
+module.exports.truncateSbCode = async (req, res)=>{
+  const query = {
+    createdAt:{
+    $gt: new Date("2022-11-17")
+    },
+
+  };
+  let updatedUlbs=[]
+  let ulbs = await Ulb.find(query).lean();
+  for(let ulb of ulbs){
+  // ulbs.forEach(async (ulb)=>{
+    let sbCode = Number(ulb.sbCode).toFixed();
+    let x = await Ulb.findOneAndUpdate({
+      _id: ulb._id
+    },{
+      $set:{
+        sbCode: sbCode
+      }
+    }).lean()
+
+    updatedUlbs.push(JSON.stringify(JSON.parse(x.sbCode)));
+
+  }
+
+  return res.status(200).json({
+    updatedUlbs,
+    length:updatedUlbs.length
+  })
+}
