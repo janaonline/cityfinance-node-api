@@ -199,7 +199,9 @@ module.exports.createOrUpdate = async (req, res) => {
                 Number(dur22_23Form?.grantPosition?.unUtilizedPrevYr) +
                 Number(dur22_23Form?.grantPosition.receivedDuringYr) -
                 Number(dur22_23Form?.grantPosition?.expDuringYr);
-
+              
+              condition.designYear =  ObjectId(YEAR_CONSTANTS["22_23"]);
+              condition.financialYear = ObjectId(YEAR_CONSTANTS["21_22"])
               let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
                 condition,
                 {
