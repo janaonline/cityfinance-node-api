@@ -5,7 +5,7 @@ const { verifyToken } = require('../auth/services/verifyToken')
 const { get } = require('./service')
 const { getAll, getAllForms } = require('./service')
 const { finalSubmit, finalAction } = require('./service')
-const { StateDashboard, plansData, slbWaterSanitationState, viewList, getHistory, stateUlbData, UAList, update, check } = require('./service')
+const { StateDashboard, plansData, slbWaterSanitationState, viewList, getHistory, stateUlbData, UAList, update, check , roleCorrection} = require('./service')
 router.get('/get/:design_year', verifyToken, get) //ulb login
 router.get('/get/:design_year/:masterform_id', verifyToken, get) // admin login
 router.get('/UAList', verifyToken, UAList) // admin login
@@ -23,5 +23,7 @@ router.get('/check', verifyToken, check)
 
 router.post('/finalSubmit', verifyToken, finalSubmit)
 router.post('/finalAction', verifyToken, finalAction)
+
+router.post('/roleCorrection', roleCorrection);
 
 module.exports = router;
