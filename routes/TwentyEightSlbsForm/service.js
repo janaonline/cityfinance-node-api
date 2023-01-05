@@ -11,7 +11,9 @@ const {FormNames, YEAR_CONSTANTS} = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
-const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
+const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
+const { ULBMASTER } = require('../../_helper/constants');
+const Ulb = require('../../models/Ulb');
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -332,6 +334,10 @@ module.exports.getForm = async (req, res) => {
                 message: "Design year and Ulb are mandatory"
             })
         }
+        const ulbData = await Ulb.findOne({
+          _id: ObjectId(data.ulb)
+        }).lean();
+        
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
       let yearData =   await Year.findOne({
@@ -373,19 +379,22 @@ module.exports.getForm = async (req, res) => {
               StatusList.Approved_By_State,
             ].includes(status)
           ) {
+
+            let msg = userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
+              status ? status : "Not Submitted"
+            }. Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
             return res.status(200).json({
               status: true,
               show: true,
-              message: `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
-                status ? status : "Not Submitted"
-              }. Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
+              message: msg,
             });
           }
         } else {
+
           return res.status(200).json({
             status: true,
             show: true,
-            message: `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
+            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. ` ,
           });
         }
 
