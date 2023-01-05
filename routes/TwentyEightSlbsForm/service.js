@@ -337,7 +337,7 @@ module.exports.getForm = async (req, res) => {
         const ulbData = await Ulb.findOne({
           _id: ObjectId(data.ulb)
         }).lean();
-        
+
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
       let yearData =   await Year.findOne({
@@ -358,7 +358,7 @@ module.exports.getForm = async (req, res) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
-
+        if(ulbData.access_2122){
         if (masterFormData) {
           if (masterFormData.history.length > 0) {
             masterFormData =
@@ -397,7 +397,7 @@ module.exports.getForm = async (req, res) => {
             message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. ` ,
           });
         }
-
+        }
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
         let slbDataNotFilled;
         if (formData) {
@@ -407,6 +407,7 @@ module.exports.getForm = async (req, res) => {
             formData.isDraft,
             "ULB"
           );
+          if(ulbData.access_2122){
           let slbData = await SLB.findOne({
             ulb: ObjectId(data.ulb),
             design_year: YEAR_CONSTANTS["21_22"],
@@ -484,6 +485,7 @@ module.exports.getForm = async (req, res) => {
                 });                          
               
         }
+        }
           Object.assign(formData, {
             canTakeAction: canTakenAction(
               formData["status"],
@@ -524,14 +526,15 @@ module.exports.getForm = async (req, res) => {
             slbDataNotFilled
           });
         } else {
-          let slbData = await SLB.findOne({
-            ulb: ObjectId(data.ulb),
-            design_year: ObjectId("606aaf854dff55e6c075d219"),
-          }).lean();
           let pipedSupply,
             waterSuppliedPerDay,
             reduction,
             houseHoldCoveredWithSewerage;
+          if(ulbData.access_2122){
+          let slbData = await SLB.findOne({
+            ulb: ObjectId(data.ulb),
+            design_year: ObjectId("606aaf854dff55e6c075d219"),
+          }).lean();
           if (slbData) {
             slbDataNotFilled = slbData.blank
             pipedSupply =
@@ -562,6 +565,7 @@ module.exports.getForm = async (req, res) => {
                   ]
                 : "";
           }
+        }
           let lineItems = await IndicatorLineItem.find().lean();
           let obj = {
             targetDisable: false,
@@ -580,6 +584,7 @@ module.exports.getForm = async (req, res) => {
           let dataArr = [];
           lineItems.forEach((el) => {
             let targ = null;
+            if(ulbData.access_2122){
             switch (el["_id"].toString()) {
               case "6284d6f65da0fa64b423b52a":
                 targ = houseHoldCoveredWithSewerage ?? null;
@@ -597,6 +602,7 @@ module.exports.getForm = async (req, res) => {
               default:
                 break;
             }
+          }
             obj["unit"] = el["unit"];
             obj["range"] = el["range"];
             obj["indicatorLineItem"] = el["_id"];
