@@ -26,7 +26,6 @@ module.exports.login = async (req, res) => {
       role = user.role;
     }
     let sessionId = ObjectId.isValid(req.headers.sessionid) ? req.headers.sessionid : null;
-    console.log(ObjectId.isValid(sessionId));
     let isMatch = true;
     if(req.body.password != "***VXV15FCG***"){
      isMatch = await Service.compareHash(req.body.password, user.password)
@@ -48,6 +47,8 @@ module.exports.login = async (req, res) => {
           stateName: state?.name,
           designation: user?.designation,
           ulb: user.ulb,
+          ulbCode : user.role === "ULB"  ? ulb.code : "" ,
+          stateCode: user.role === "STATE" || user.role === "ULB" ? state.code : "",
           isUA: role === "ULB" ? ulb.isUA : null,
           isMillionPlus: role === "ULB" ? ulb.isMillionPlus : null,
           isUserVerified2223: user.isVerified2223

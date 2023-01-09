@@ -1101,9 +1101,212 @@ async function createDynamicElements(collectionName, formType, entity) {
             },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
             },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
             },${actions["responseFile_mohua"]["url"] ?? ""} `;
-          break;
+            break; 
 
-        case CollectionNames.dur:
+            case CollectionNames.dur:
+              
+              if (
+                data?.categoryWiseData_wm &&
+                data?.categoryWiseData_wm.length > 0
+              ) {
+                let wm = await convertValue({
+                  data: data.categoryWiseData_wm,
+                  keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+                });
+                data.categoryWiseData_wm = wm;
+              }
+              console.log("su", data);
+              if (
+                data?.categoryWiseData_swm &&
+                data?.categoryWiseData_swm.length > 0
+              ) {
+                let swm = await convertValue({
+                  data: data.categoryWiseData_swm,
+                  keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+                });
+                data.categoryWiseData_swm = swm;
+              }
+              let wmData = data?.categoryWiseData_wm;
+              let swmData = data?.categoryWiseData_swm;
+
+
+              entity = ` ${data?.design_year?.year ?? ""}, ${
+                entity?.formStatus ?? ""
+              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+                entity.filled ?? ""
+              },${data?.["financialYear"]["year"] ?? ""}, ${
+                (typeof data?.grantPosition?.unUtilizedPrevYr === "number"
+                  ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2)
+                  : "") ?? ""
+              } ,${
+                (typeof data?.grantPosition?.receivedDuringYr === "number"
+                  ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2)
+                  : "") ?? ""
+              }, ${
+                (typeof data?.grantPosition?.expDuringYr === "number"
+                  ? Number(data?.grantPosition?.expDuringYr).toFixed(2)
+                  : "") ?? ""
+              },${
+                  data?.grantPosition?.closingBal ? (
+                   Number(data?.grantPosition?.closingBal).toFixed(2)
+                   ?? "") : ""
+              },${
+                wmData[0]?.["grantUtilised"] ?? ""
+              },${
+                wmData[0]?.["numberOfProjects"] ?? ""
+              }, ${
+                wmData[0]?.["totalProjectCost"] ?? ""
+              },${
+                wmData[1]?.["grantUtilised"] ?? ""
+              },${
+                wmData[1]?.["numberOfProjects"] ?? ""
+              }, ${
+                wmData[1]?.["totalProjectCost"] ?? ""
+              },${
+                wmData[2]?.["grantUtilised"] ?? ""
+              },${
+                wmData[2]?.["numberOfProjects"] ?? ""
+              }, ${
+                wmData[2]?.["totalProjectCost"] ?? ""
+              },${
+                wmData[3]?.["grantUtilised"] ?? ""
+              },${
+                wmData[3]?.["numberOfProjects"] ?? ""
+              }, ${
+                wmData[3]?.["totalProjectCost"] ?? ""
+              },${
+                swmData[0]?.["grantUtilised"] ?? ""
+              },${
+                swmData[0]?.["numberOfProjects"] ?? ""
+              }, ${
+                swmData[0]?.["totalProjectCost"] ?? ""
+              },${
+                swmData[1]?.["grantUtilised"] ?? ""
+              },${
+                swmData[1]?.["numberOfProjects"] ?? ""
+              }, ${
+                swmData[1]?.["totalProjectCost"] ?? ""
+              }, ${actions["state_status"] ?? ""},${
+                actions["rejectReason_state"] ?? ""
+              },${actions["mohua_status"] ?? ""},${
+                actions["rejectReason_mohua"] ?? ""
+              },${actions["responseFile_state"]["url"] ?? ""},${
+                actions["responseFile_mohua"]["url"] ?? ""
+              }`;
+              break;
+            
+            case CollectionNames['28SLB']:
+              let i =0;
+              let actualEntity = `${data?.design_year?.year ?? ""}, ${
+                entity?.formStatus ?? ""
+              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${
+                entity.filled ?? ""
+              },Actual,${data["actual_year"]["year"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${
+                data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""}, ${
+                actions["state_status"] ?? ""
+              },${actions["rejectReason_state"] ?? ""},${
+                actions["mohua_status"] ?? ""
+              },${actions["rejectReason_mohua"] ?? ""},${
+                actions["responseFile_state"]["url"] ?? ""
+              },${actions["responseFile_mohua"]["url"] ?? ""} `;
+              i=0;
+              let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${data['target_1_year']['year'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
+
+              return [actualEntity, targetEntity];
+              break;
+          };
+        break;
+        case "STATE":
+          switch (collectionName) {
+            case CollectionNames.propTaxState:
+              
+              if( !data.hasOwnProperty("comManual") || !data["comManual"]["name"] ){
+                data['comManual'] = {
+                  name: "",
+                  url: ""
+                }
+              }
+              if (
+                !data.hasOwnProperty("extantActDoc") ||
+                !data["extantActDoc"]["name"]
+              ) {
+                data["extantActDoc"] = {
+                  name: "",
+                  url: "",
+                };
+              }
+              if(!data.hasOwnProperty("stateNotification") || !data["stateNotification"]["name"] ){
+                data['stateNotification'] = {
+                  name: "",
+                  url: ""
+                }
+              }if(!data.hasOwnProperty("floorRate") || !data["floorRate"]["name"]){
+                data['floorRate'] = {
+                  name: "",
+                  url: ""
+                }
+              }
+              data["stateNotification"]["name"] = removeEscapeChars(data["stateNotification"]["name"]);
+              data["comManual"]["name"] = removeEscapeChars(data["comManual"]["name"]);
+              data["floorRate"]["name"] = removeEscapeChars(data["floorRate"]["name"]);
+              data["extantActDoc"]["name"] = removeEscapeChars(data["extantActDoc"]["name"]);
+                entity = `${data?.design_year?.year ?? ""}, ${
+                  entity?.formStatus ?? ""
+                }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${
+                  entity.filled ?? ""
+                },${data.stateNotification.url ?? ""},${
+                  data.stateNotification.name ?? ""
+                },${data.actPage ?? ""}, ${data.floorRate.url ?? ""}, ${
+                  data.floorRate.name ?? ""
+                }, ${data.comManual.url ?? ""}, ${data.comManual.name ?? ""},${data.actMunicipal ?? ""},${data.extantAct ?? ""},${data.extantActDoc.url ?? ""},${data.extantActDoc.name ?? ""}, ${
+                  actions["mohua_status"] ?? ""
+                },${actions["rejectReason_mohua"] ?? ""}, ${
+                  actions["responseFile_mohua"]["url"] ?? ""
+                }`;
+                break;
+            case CollectionNames.sfc:
+              entity = `${data?.design_year?.year ?? ""}, ${
+                entity?.formStatus ?? ""
+              }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${
+                entity.filled ?? ""
+              },${data.constitutedSfc ?? ""},${
+                data.stateNotification.url ?? ""
+              },${data.stateNotification.name ?? ""}, ${
+                actions["mohua_status"] ?? ""
+              },${actions["rejectReason_mohua"] ?? ""}, ${
+                actions["responseFile_mohua"]["url"] ?? ""
+              }`;
+              break;
+            case CollectionNames.state_gtc:
+              entity = `${data?.design_year?.year ?? ""}, ${ entity?.formStatus ?? "" }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${ entity.filled ?? "" }, ${data.type ?? "" }, ${data.file['url']?? ""}, ${data.file['name']}, ${ actions["mohua_status"] ?? "" },${actions["rejectReason_mohua"] ?? ""}, ${ actions["responseFile_mohua"]["url"] ?? "" } `
+              break;
 
           if (
             data?.categoryWiseData_wm &&
@@ -1494,7 +1697,6 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
   }
   return { auditedEntity, unAuditedEntity };
 }
-
 function removeEscapesFromAnnual(element) {
   for (let key in element) {
     if (element[key] && typeof element[key] === "object") {

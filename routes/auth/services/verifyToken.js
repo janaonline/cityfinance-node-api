@@ -40,6 +40,7 @@ module.exports.verifyToken = (req, res, next) => {
         return Response.UnAuthorized(res, {}, `Failed to authenticate token.`);
       } else {
         req.decoded = decoded;
+        console.log(req.decoded)
         if (req.decoded.sessionId) {
           userId = ObjectId(req.decoded._id);
           let query = {
