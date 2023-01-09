@@ -34,6 +34,8 @@ const IndicatorLineItem = require('../../models/indicatorLineItems')
 const {calculateSlbMarks} = require('../Scoring/service')
 const MasterForm = require('../../models/MasterForm')
 const { calculateStatus} = require('../CommonActionAPI/service')
+const TwentyEightSlbForm = require('../../models/TwentyEightSlbsForm');
+const PrevLineItem_CONSTANTS = require('../../util/lineItems')
 
 const BackendHeaderHost ={
   Demo: "democityfinanceapi.dhwaniris.in",
@@ -1015,7 +1017,7 @@ module.exports.create = catchAsync(async (req, res) => {
     if (!req.body["blank"]) {
       req.body["status"] = "PENDING";
     } else {
-      req.body["status"] = "NA";
+      req.body["status"] = "N/A";
     }
 
     query["ulb"] = ObjectId(data.ulb);
@@ -1057,6 +1059,94 @@ module.exports.create = catchAsync(async (req, res) => {
                   ulbData._id,
                   "UPLOAD"
                 );
+            }
+          }
+          /* Checking if the ulbData object is not null and if the isCompleted property is true.
+            then update 22-23 28slb form with latest values  
+          */
+          if(ulbData?.isCompleted){
+            query.design_year = design_year_2223;
+            let slb28Form = await TwentyEightSlbForm.findOne(query).lean();
+            if (slb28Form) {
+              let slb28FormStatus = calculateStatus(
+                slb28Form.status,
+                slb28Form.actionTakenByRole,
+                slb28Form.isDraft,
+                "ULB"
+              );
+
+              /* Checking if the form status is in progress, rejected by MoHUA or rejected by state. */
+              if (
+                [
+                  FORM_STATUS.In_Progress,
+                  FORM_STATUS.Rejected_By_MoHUA,
+                  FORM_STATUS.Rejected_By_State,
+                ].includes(slb28FormStatus)
+              ) {
+                slb28Form["data"].forEach((element) => {
+                  /* Checking if the element is equal to the previous line item. */
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS[
+                      "Coverage of water supply connections"
+                    ]
+                  ) {
+                    element.target_1.value = ulbData?.waterManagement
+                      .houseHoldCoveredPipedSupply.target["2223"]
+                      ? Number(
+                          ulbData?.waterManagement.houseHoldCoveredPipedSupply
+                            ?.target["2223"]
+                        )
+                      : "";
+                  }
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS["Per capita supply of water(lpcd)"]
+                  ) {
+                    element.target_1.value = ulbData?.waterManagement
+                      .waterSuppliedPerDay.target["2223"]
+                      ? Number(
+                          ulbData?.waterManagement.waterSuppliedPerDay?.target[
+                            "2223"
+                          ]
+                        )
+                      : "";
+                  }
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS["Extent of non-revenue water (NRW)"]
+                  ) {
+                    element.target_1.value = ulbData?.waterManagement.reduction
+                      .target["2223"]
+                      ? Number(
+                          ulbData?.waterManagement.reduction?.target["2223"]
+                        )
+                      : "";
+                  }
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS[
+                      "Coverage of waste water network services"
+                    ]
+                  ) {
+                    element.target_1.value = ulbData?.waterManagement
+                      .houseHoldCoveredWithSewerage.target["2223"]
+                      ? Number(
+                          ulbData?.waterManagement.houseHoldCoveredWithSewerage
+                            ?.target["2223"]
+                        )
+                      : "";
+                  }
+                });
+              }
+              let slb28UpdatedForm = await TwentyEightSlbForm.findOneAndUpdate(
+                query,
+                {
+                  $set: {
+                    data: slb28Form["data"],
+                  },
+                }
+              ).lean();
             }
           }
           return res.status(response ? 200 : 400).send(value);
@@ -1106,7 +1196,6 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
       ulb: ulb,
       design_year: design_year_2122,
     }).lean();
-
     /* The above code is checking the status of the form. If the status is not in the list of statuses,
     it will return a message. */
     if (masterFormData) {
@@ -1116,7 +1205,6 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
         !masterFormData.isSubmit,
         "ULB"
       );
-
       /* Checking the status of the form. If the status is not in the list of statuses, it will
         return a message. */
       if (
@@ -1456,7 +1544,7 @@ value = allData.filter(el => {
         //     })
         // }
         for (s of data) {
-          s["status"] = getStatus(s);
+          // s["status"] = getStatus(s);
         }
 
         return res.status(200).json({

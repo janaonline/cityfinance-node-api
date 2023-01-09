@@ -140,6 +140,9 @@ module.exports.createOrUpdate = async (req, res) => {
 
     const submittedForm = await UtilizationReport.findOne(condition);
     if (designYear == "606aaf854dff55e6c075d219") {
+      if(req.body.actionTakenByRole === "ULB"){
+        req.body.status = "PENDING"
+      }
       let utiData = await UtilizationReport.findOneAndUpdate(
         { ulb: ObjectId(ulb), financialYear, designYear },
         { $set: req.body },
@@ -164,6 +167,52 @@ module.exports.createOrUpdate = async (req, res) => {
         //   }
         // )
         await UpdateMasterSubmitForm(req, "utilReport");
+
+/* Checking if the utiData.isDraft is false. */
+        if (!utiData.isDraft) {
+          let dur22_23Form = await UtilizationReport.findOne({
+            ulb: ObjectId(ulb),
+            designYear: ObjectId(YEAR_CONSTANTS["22_23"]),
+          }).lean();
+          if (dur22_23Form) {
+            let dur22_23FormStatus = calculateStatus(
+              dur22_23Form.status,
+              dur22_23Form.actionTakenByRole,
+              dur22_23Form.isDraft,
+              "ULB"
+            );
+            /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
+            Then update it with latest values */
+            if (
+              [
+                FORM_STATUS.In_Progress,
+                FORM_STATUS.Rejected_By_MoHUA,
+                FORM_STATUS.Rejected_By_State,
+              ].includes(dur22_23FormStatus)
+            ) {
+              /* calculate closing balance and opening balance for 22-23 form */
+              dur22_23Form.grantPosition.unUtilizedPrevYr = utiData
+                ?.grantPosition?.closingBal
+                ? Number(utiData?.grantPosition?.closingBal)
+                : "";
+              dur22_23Form.grantPosition.closingBal =
+                Number(dur22_23Form?.grantPosition?.unUtilizedPrevYr) +
+                Number(dur22_23Form?.grantPosition.receivedDuringYr) -
+                Number(dur22_23Form?.grantPosition?.expDuringYr);
+              
+              condition.designYear =  ObjectId(YEAR_CONSTANTS["22_23"]);
+              condition.financialYear = ObjectId(YEAR_CONSTANTS["21_22"])
+              let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
+                condition,
+                {
+                  $set: {
+                    grantPosition: dur22_23Form?.grantPosition,
+                  },
+                }
+              );
+            }
+          }
+        }
         return res.status(200).json({
           success: true,
           isCompleted: formData['isDraft'] ? false : true,
@@ -820,7 +869,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData.history.length > 0? prevData.history[prevData.history.length - 1]: prevData
+    prevData = prevData.history.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
   }
   let host = "";
@@ -870,10 +919,10 @@ module.exports.read2223 = catchAsync(async (req, res) => {
     checking if the value of the property is a number or not. If it is a number then it is converting
     it to a fixed number with 2 decimal places. */
     if (fetchedData?.grantPosition) {
-      !isNaN(fetchedData?.grantPosition.unUtilizedPrevYr) ? fetchedData.grantPosition.unUtilizedPrevYr = Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.receivedDuringYr) ? fetchedData.grantPosition.receivedDuringYr = Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.closingBal) ? fetchedData.grantPosition.closingBal = Number(fetchedData?.grantPosition.closingBal).toFixed(2) : ""
-      !isNaN(fetchedData?.grantPosition.expDuringYr) ? fetchedData.grantPosition.expDuringYr = Number(fetchedData?.grantPosition.expDuringYr).toFixed(2) : ""
+      typeof(fetchedData?.grantPosition.unUtilizedPrevYr) === "number" ? fetchedData.grantPosition.unUtilizedPrevYr = Number(Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)) : ""
+      typeof(fetchedData?.grantPosition.receivedDuringYr) === "number"? fetchedData.grantPosition.receivedDuringYr = Number(Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)) : ""
+      typeof(fetchedData?.grantPosition.expDuringYr) === "number" ? fetchedData.grantPosition.expDuringYr = Number(Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)) : ""
+      fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
 
     }
     return res.status(200).json({
@@ -902,68 +951,110 @@ module.exports.read2223 = catchAsync(async (req, res) => {
 
 module.exports.dataRepair = async function (req, res, next) {
   try {
+    // let ulbIds = [
+    //   ObjectId("5fa2465d072dab780a6f1047"),
+    //   ObjectId("5fa2465d072dab780a6f1052"),
+    //   ObjectId("5dd2472a437ba31f7eb43099"),
+    //   ObjectId("5fa2465e072dab780a6f10a9"),
+    //   ObjectId("5dd247904f14901fa9b4a7cd"),
+    //   ObjectId("5dd247904f14901fa9b4a7ec"),
+    //   ObjectId("5dd247904f14901fa9b4a7af"),
+    //   ObjectId("5dd247914f14901fa9b4a8a0"),
+    //   ObjectId("5dd247914f14901fa9b4a8ab"),
+    //   ObjectId("5dd2474a83f0771f8da4da8b"),
+    //   ObjectId("5dd2474983f0771f8da4da6a"),
+    //   ObjectId("5dd247924f14901fa9b4a902"),
+    //   ObjectId("5dd247924f14901fa9b4a8ec"),
+    //   ObjectId("5fa2465e072dab780a6f1170"),
+    //   ObjectId("5fa2465e072dab780a6f1183"),
+    //   ObjectId("5fa2465e072dab780a6f1187"),
+    //   ObjectId("5fa2465e072dab780a6f11ad"),
+    //   ObjectId("5dd247924f14901fa9b4a8eb"),
+    //   ObjectId("5e0b2190f0d3fc6ffa3d94aa"),
+    //   ObjectId("5dd24d43e7af460396bf2e9d"),
+    //   ObjectId("5dea38cb20bb8054b71b37b7"),
+    //   ObjectId("5dd24d43e7af460396bf2eb2"),
+    //   ObjectId("5dd24d43e7af460396bf2e86"),
+    //   ObjectId("5dd24d43e7af460396bf2eb5"),
+    //   ObjectId("5dea38ce20bb8054b71b37ce"),
+    //   ObjectId("5fa24660072dab780a6f13db"),
+    //   ObjectId("5dd24d43e7af460396bf2ef7"),
+    //   ObjectId("5dea38ce20bb8054b71b37d2"),
+    //   ObjectId("5fa24660072dab780a6f1393"),
+    //   ObjectId("5fa24660072dab780a6f13bf"),
+    //   ObjectId("5fa24660072dab780a6f13d4"),
+    //   ObjectId("5fa24660072dab780a6f13da"),
+    //   ObjectId("5fa24660072dab780a6f13dc"),
+    //   ObjectId("5fa24660072dab780a6f1417"),
+    //   ObjectId("5fa2465f072dab780a6f121e"),
+    //   ObjectId("5fa2465f072dab780a6f1319"),
+    //   ObjectId("5fa281a3c7ffa964f0cfaa24"),
+    //   ObjectId("5fa24661072dab780a6f14c3"),
+    //   ObjectId("5fa24661072dab780a6f14df"),
+    //   ObjectId("5fa24661072dab780a6f14f9"),
+    //   ObjectId("5fa24661072dab780a6f1501"),
+    //   ObjectId("5fa24661072dab780a6f1521"),
+    //   ObjectId("5eb5844f76a3b61f40ba06ae"),
+    //   ObjectId("5eb5844f76a3b61f40ba06bf"),
+    //   ObjectId("5eb5844f76a3b61f40ba06c0"),
+    //   ObjectId("5eb5844f76a3b61f40ba06fd"),
+    //   ObjectId("5eb5844f76a3b61f40ba0706"),
+    //   ObjectId("5eb5844f76a3b61f40ba0707"),
+    //   ObjectId("5eb5845076a3b61f40ba0764"),
+    //   ObjectId("5eb5845076a3b61f40ba0768"),
+    //   ObjectId("5eb5845076a3b61f40ba077e"),
+    //   ObjectId("5eb5845076a3b61f40ba0787"),
+    //   ObjectId("5eb5845076a3b61f40ba078a"),
+    //   ObjectId("5eb5845076a3b61f40ba079e"),
+    //   ObjectId("5eb5845076a3b61f40ba085e"),
+    //   ObjectId("5eb5845076a3b61f40ba0893"),
+    //   ObjectId("5eb5845176a3b61f40ba08c0"),
+    //   ObjectId("5eb5845176a3b61f40ba08e0"),
+    //   ObjectId("5fa24662072dab780a6f157b"),
+    //   ObjectId("620a0ac67f6b136427b7152a"),
+    //   ObjectId("5fa24665072dab780a6f1815")
+    // ]
+
     let ulbIds = [
-      ObjectId("5fa2465d072dab780a6f1047"),
-      ObjectId("5fa2465d072dab780a6f1052"),
-      ObjectId("5dd2472a437ba31f7eb43099"),
-      ObjectId("5fa2465e072dab780a6f10a9"),
-      ObjectId("5dd247904f14901fa9b4a7cd"),
-      ObjectId("5dd247904f14901fa9b4a7ec"),
-      ObjectId("5dd247904f14901fa9b4a7af"),
-      ObjectId("5dd247914f14901fa9b4a8a0"),
-      ObjectId("5dd247914f14901fa9b4a8ab"),
-      ObjectId("5dd2474a83f0771f8da4da8b"),
-      ObjectId("5dd2474983f0771f8da4da6a"),
-      ObjectId("5dd247924f14901fa9b4a902"),
-      ObjectId("5dd247924f14901fa9b4a8ec"),
-      ObjectId("5fa2465e072dab780a6f1170"),
+      ObjectId("5dd2472a437ba31f7eb43074"),
+      ObjectId("5dd24d43e7af460396bf2ebf"),
+      ObjectId("5e0b2190f0d3fc6ffa3d9497"),
+      ObjectId("5f5610b3aab0f778b2d2caab"),
+      ObjectId("5fa2465d072dab780a6f0fe4"),
+      ObjectId("5fa2465d072dab780a6f0ff7"),
+      ObjectId("5fa2465d072dab780a6f1012"),
+      ObjectId("5fa2465d072dab780a6f1023"),
+      ObjectId("5fa2465d072dab780a6f1057"),
+      ObjectId("5fa2465e072dab780a6f109b"),
+      ObjectId("5fa2465e072dab780a6f1103"),
+      ObjectId("5fa24661072dab780a6f153f"),
+      ObjectId("5fa24662072dab780a6f1631"),
+      ObjectId("5fa24662072dab780a6f1633"),
+      ObjectId("5fa24663072dab780a6f16ad"),
+      ObjectId("5fa24663072dab780a6f16b1"),
+      ObjectId("5fa24663072dab780a6f16d2"),
+      ObjectId("5fa24663072dab780a6f16d7"),
+      ObjectId("5fa24663072dab780a6f16eb"),
+      ObjectId("5fa24664072dab780a6f170d"),
+      ObjectId("5fa24664072dab780a6f1711"),
+      ObjectId("5fa24664072dab780a6f1723"),
+      ObjectId("5fa24664072dab780a6f1741"),
+      ObjectId("5fa24664072dab780a6f1746"),
+      ObjectId("5fa24664072dab780a6f175f"),
+      ObjectId("5fa24664072dab780a6f17ba"),
+      ObjectId("5fa24664072dab780a6f17d2"),
+      ObjectId("5fa24664072dab780a6f17f6"),
+      ObjectId("5fa24665072dab780a6f182c"),
+      ObjectId("5e0b2190f0d3fc6ffa3d9494"),
+      ObjectId("5e0b2190f0d3fc6ffa3d949c"),
+      ObjectId("5e0b2190f0d3fc6ffa3d94a5"),
       ObjectId("5fa2465e072dab780a6f1183"),
-      ObjectId("5fa2465e072dab780a6f1187"),
-      ObjectId("5fa2465e072dab780a6f11ad"),
-      ObjectId("5dd247924f14901fa9b4a8eb"),
-      ObjectId("5e0b2190f0d3fc6ffa3d94aa"),
-      ObjectId("5dd24d43e7af460396bf2e9d"),
-      ObjectId("5dea38cb20bb8054b71b37b7"),
-      ObjectId("5dd24d43e7af460396bf2eb2"),
-      ObjectId("5dd24d43e7af460396bf2e86"),
-      ObjectId("5dd24d43e7af460396bf2eb5"),
-      ObjectId("5dea38ce20bb8054b71b37ce"),
-      ObjectId("5fa24660072dab780a6f13db"),
-      ObjectId("5dd24d43e7af460396bf2ef7"),
-      ObjectId("5dea38ce20bb8054b71b37d2"),
-      ObjectId("5fa24660072dab780a6f1393"),
-      ObjectId("5fa24660072dab780a6f13bf"),
-      ObjectId("5fa24660072dab780a6f13d4"),
-      ObjectId("5fa24660072dab780a6f13da"),
-      ObjectId("5fa24660072dab780a6f13dc"),
-      ObjectId("5fa24660072dab780a6f1417"),
-      ObjectId("5fa2465f072dab780a6f121e"),
-      ObjectId("5fa2465f072dab780a6f1319"),
-      ObjectId("5fa281a3c7ffa964f0cfaa24"),
-      ObjectId("5fa24661072dab780a6f14c3"),
-      ObjectId("5fa24661072dab780a6f14df"),
-      ObjectId("5fa24661072dab780a6f14f9"),
-      ObjectId("5fa24661072dab780a6f1501"),
-      ObjectId("5fa24661072dab780a6f1521"),
-      ObjectId("5eb5844f76a3b61f40ba06ae"),
-      ObjectId("5eb5844f76a3b61f40ba06bf"),
-      ObjectId("5eb5844f76a3b61f40ba06c0"),
-      ObjectId("5eb5844f76a3b61f40ba06fd"),
-      ObjectId("5eb5844f76a3b61f40ba0706"),
-      ObjectId("5eb5844f76a3b61f40ba0707"),
-      ObjectId("5eb5845076a3b61f40ba0764"),
-      ObjectId("5eb5845076a3b61f40ba0768"),
-      ObjectId("5eb5845076a3b61f40ba077e"),
-      ObjectId("5eb5845076a3b61f40ba0787"),
-      ObjectId("5eb5845076a3b61f40ba078a"),
-      ObjectId("5eb5845076a3b61f40ba079e"),
-      ObjectId("5eb5845076a3b61f40ba085e"),
-      ObjectId("5eb5845076a3b61f40ba0893"),
-      ObjectId("5eb5845176a3b61f40ba08c0"),
-      ObjectId("5eb5845176a3b61f40ba08e0"),
-      ObjectId("5fa24662072dab780a6f157b"),
-      ObjectId("620a0ac67f6b136427b7152a"),
-      ObjectId("5fa24665072dab780a6f1815")
+      ObjectId("5fa2465f072dab780a6f11d7"),
+      ObjectId("5fa24660072dab780a6f1397"),
+      ObjectId("5fa24660072dab780a6f13a2"),
+      ObjectId("5fa24665072dab780a6f1877"),
+      ObjectId("6049bafc7d66d1146d885656"),
+      ObjectId("620a0ac67f6b136427b7152a")
     ]
     let condition = {
       "designYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
@@ -1140,13 +1231,13 @@ const roundGrantPosition = (objData) => {
           let unUtilPri = unUtilizedPrevYr == null ? 0 : unUtilizedPrevYr;
           let recdDurYr = receivedDuringYr == null ? 0 : receivedDuringYr;
           let expDuYr = expDuringYr == null ? 0 : expDuringYr;
-         
+
           if (unUtilPri == 0 && recdDurYr == 0 && expDuYr == 0) {
             obj['closingBal'] = 0;
           } else {
             obj['closingBal'] = (((parseFloat(unUtilPri)) + (parseFloat(recdDurYr))) - parseFloat(expDuYr)).toFixed(2);
           }
-          
+
           // if (unUtilizedPrevYr == 0 && receivedDuringYr == 0 && expDuringYr == 0) {
           //   obj["closingBal"] = 0
           // } else if (unUtilizedPrevYr == 0 && receivedDuringYr == null && expDuringYr == null) {

@@ -11,7 +11,8 @@ const {FormNames, YEAR_CONSTANTS} = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
-const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
+const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
+const Ulb = require('../../models/Ulb');
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -332,6 +333,10 @@ module.exports.getForm = async (req, res) => {
                 message: "Design year and Ulb are mandatory"
             })
         }
+        const ulbData = await Ulb.findOne({
+          _id: ObjectId(data.ulb)
+        }).lean();
+
         condition['ulb'] = data.ulb;
         condition['design_year'] = data.design_year;
       let yearData =   await Year.findOne({
@@ -341,107 +346,144 @@ module.exports.getForm = async (req, res) => {
         let prevYearData =   await Year.findOne({
             year : prevYearVal
         }).lean()
-        const masterFormData = await MasterForm.findOne({
+        let masterFormData = await MasterForm.findOne({
           ulb: data.ulb,
-          design_year: prevYearData._id
-        }).lean()
-
+          design_year: prevYearData._id,
+        }).lean();
         /* Checking the host header and setting the host variable to the appropriate value. */
         let host = "";
         if (req.headers.host === BackendHeaderHost.Demo) {
           host = FrontendHeaderHost.Demo;
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
-        req.headers.host = host !== "" ? host : req.headers.host;
-
-        if(masterFormData){
-          let status =  calculateStatus(masterFormData.status, masterFormData.actionTakenByRole,
-            !masterFormData.isSubmit, "ULB");
-            
-            /* Checking the status of the form. If the status is not in the list of statuses, it will
+        host = host !== "" ? host : req.headers.host;
+        if(ulbData.access_2122){
+        if (masterFormData) {
+          if (masterFormData.history.length > 0) {
+            masterFormData =
+              masterFormData.history[masterFormData.history.length - 1];
+          }
+          let status = calculateStatus(
+            masterFormData.status,
+            masterFormData.actionTakenByRole,
+            !masterFormData.isSubmit,
+            "ULB"
+          );
+          /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
-            if(![
+          if (
+            ![
               StatusList.Under_Review_By_MoHUA,
               StatusList.Approved_By_MoHUA,
               StatusList.Approved_By_State,
-            ].includes(status)){
-              return res.status(200).json({
-                status: true,
-                show: true,
-                message: `Your Previous Year's form status is - ${status ? status : "Not Submitted"}. Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
-              })
-            }
-        }else{
+            ].includes(status)
+          ) {
+
+            let msg = userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
+              status ? status : "Not Submitted"
+            }. Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
+            return res.status(200).json({
+              status: true,
+              show: true,
+              message: msg,
+            });
+          }
+        } else {
+
           return res.status(200).json({
             status: true,
             show: true,
-            message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
-          })
+            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. ` ,
+          });
         }
-
+        }
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
-        
+        let slbDataNotFilled;
         if (formData) {
+          let slb28FormStatus = calculateStatus(
+            formData.status,
+            formData.actionTakenByRole,
+            formData.isDraft,
+            "ULB"
+          );
+          if(ulbData.access_2122){
           let slbData = await SLB.findOne({
             ulb: ObjectId(data.ulb),
             design_year: YEAR_CONSTANTS["21_22"],
           }).lean();
         if(slbData){
+          slbDataNotFilled = slbData.blank;
                 formData["data"].forEach((element) => {
-                  /* Checking if the element is equal to the previous line item. */
-                  if (
-                    element["indicatorLineItem"].toString() ===
-                    PrevLineItem_CONSTANTS[
-                      "Coverage of water supply connections"
-                    ]
-                  ){
-                    element.target_1.value =
-                      slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
-                        "target"
-                      )
-                        ? Number(slbData.waterManagement.houseHoldCoveredPipedSupply
-                            ?.target["2223"])
-                        : "";
-                      }
-                    if (
-                        element["indicatorLineItem"].toString() ===
-                        PrevLineItem_CONSTANTS[
-                            "Per capita supply of water(lpcd)"
-                        ]
-                        )
-                        element.target_1.value =
-                        slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
-                            "target"
-                            )
-                            ? Number(slbData.waterManagement.waterSuppliedPerDay?.target["2223"])
-                            : "";
-                    if (
-                        element["indicatorLineItem"].toString() ===
-                        PrevLineItem_CONSTANTS[
-                            "Extent of non-revenue water (NRW)"
-                        ]
-                        )
-                        element.target_1.value = slbData.waterManagement.reduction.hasOwnProperty(
-                            "target"
-                          )
-                            ? Number(slbData.waterManagement.reduction?.target["2223"])
-                            : "";
-                    if (
-                        element["indicatorLineItem"].toString() ===
-                        PrevLineItem_CONSTANTS[
-                            "Coverage of waste water network services"
-                        ]
-                        )
-                        element.target_1.value =
-                        slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
-                          "target"
-                        )
-                          ? Number(slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
-                              "2223"
-                            ])
-                          : "";                           
+
+                  if ([StatusList.Not_Started].includes(slb28FormStatus)) {
+                   /* Checking if the element is equal to the previous line item. */
+                   if (
+                     element["indicatorLineItem"].toString() ===
+                     PrevLineItem_CONSTANTS[
+                       "Coverage of water supply connections"
+                     ]
+                   ) {
+                     element.target_1.value =
+                       slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
+                         "target"
+                       )
+                         ? Number(
+                             slbData.waterManagement.houseHoldCoveredPipedSupply
+                               ?.target["2223"]
+                           )
+                         : "";
+                     slbDataNotFilled ? (element.targetDisable = false) : "";
+                   }
+                   if (
+                     element["indicatorLineItem"].toString() ===
+                     PrevLineItem_CONSTANTS["Per capita supply of water(lpcd)"]
+                   ) {
+                     element.target_1.value =
+                       slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
+                         "target"
+                       )
+                         ? Number(
+                             slbData.waterManagement.waterSuppliedPerDay
+                               ?.target["2223"]
+                           )
+                         : "";
+                     slbDataNotFilled ? (element.targetDisable = false) : "";
+                   }
+                   if (
+                     element["indicatorLineItem"].toString() ===
+                     PrevLineItem_CONSTANTS["Extent of non-revenue water (NRW)"]
+                   ) {
+                     element.target_1.value =
+                       slbData.waterManagement.reduction.hasOwnProperty(
+                         "target"
+                       )
+                         ? Number(
+                             slbData.waterManagement.reduction?.target["2223"]
+                           )
+                         : "";
+                     slbDataNotFilled ? (element.targetDisable = false) : "";
+                   }
+                   if (
+                     element["indicatorLineItem"].toString() ===
+                     PrevLineItem_CONSTANTS[
+                       "Coverage of waste water network services"
+                     ]
+                   ) {
+                     element.target_1.value =
+                       slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
+                         "target"
+                       )
+                         ? Number(
+                             slbData.waterManagement
+                               .houseHoldCoveredWithSewerage?.target["2223"]
+                           )
+                         : "";
+                     slbDataNotFilled ? (element.targetDisable = false) : "";
+                   }
+                 }                         
                 });                          
               
+        }
         }
           Object.assign(formData, {
             canTakeAction: canTakenAction(
@@ -452,8 +494,17 @@ module.exports.getForm = async (req, res) => {
               userRole
             ),
           });
+
+
           formData["data"].forEach((el) => {
-            if (!formData["isDraft"]) {
+            if (
+              ![
+                StatusList.Not_Started,
+                StatusList.In_Progress,
+                StatusList.Rejected_By_State,
+                StatusList.Rejected_By_MoHUA,
+              ].includes(slb28FormStatus)
+            ) {
               el["targetDisable"] = true;
               el["actualDisable"] = true;
               formData["popDisable"] = true;
@@ -471,17 +522,20 @@ module.exports.getForm = async (req, res) => {
             success: true,
             show: false,
             data: formData,
+            slbDataNotFilled
           });
         } else {
-          let slbData = await SLB.findOne({
-            ulb: ObjectId(data.ulb),
-            design_year: ObjectId("606aaf854dff55e6c075d219"),
-          }).lean();
           let pipedSupply,
             waterSuppliedPerDay,
             reduction,
             houseHoldCoveredWithSewerage;
+          if(ulbData.access_2122){
+          let slbData = await SLB.findOne({
+            ulb: ObjectId(data.ulb),
+            design_year: ObjectId("606aaf854dff55e6c075d219"),
+          }).lean();
           if (slbData) {
+            slbDataNotFilled = slbData.blank
             pipedSupply =
               slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
                 "target"
@@ -510,6 +564,7 @@ module.exports.getForm = async (req, res) => {
                   ]
                 : "";
           }
+        }
           let lineItems = await IndicatorLineItem.find().lean();
           let obj = {
             targetDisable: false,
@@ -528,6 +583,7 @@ module.exports.getForm = async (req, res) => {
           let dataArr = [];
           lineItems.forEach((el) => {
             let targ = null;
+            if(ulbData.access_2122){
             switch (el["_id"].toString()) {
               case "6284d6f65da0fa64b423b52a":
                 targ = houseHoldCoveredWithSewerage ?? null;
@@ -545,6 +601,7 @@ module.exports.getForm = async (req, res) => {
               default:
                 break;
             }
+          }
             obj["unit"] = el["unit"];
             obj["range"] = el["range"];
             obj["indicatorLineItem"] = el["_id"];
@@ -586,6 +643,7 @@ module.exports.getForm = async (req, res) => {
           return res.status(200).json({
             success: true,
             show: false,
+            slbDataNotFilled,
             data: {
               canTakeAction: false,
               data: output,
