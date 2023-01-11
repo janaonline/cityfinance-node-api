@@ -34,16 +34,26 @@ module.exports.getForm = async (req, res) => {
             mpc = ulbData?.population > 1000000 ? true : false;
             isUA = ulbData?.isUA == 'Yes' ? true : false
         }
-        const prevFormData = await StateGTCCertificate.findOne({
+        let conditionPrevOne =
+        {
             state: data.state,
             design_year: ObjectId("606aaf854dff55e6c075d219"),
             installment: "2"
-        }).lean();
-        const prevFormDataMillionTied = await StateGTCCertificate.findOne({
+        }
+        let conditionPrevTwo =
+        {
             state: data.state,
             design_year: ObjectId("606aaf854dff55e6c075d219"),
-            installment: "1"
-        }).lean();
+            installment: "1",
+        }
+
+        if (data.design_year !== ObjectId("606aaf854dff55e6c075d219")) {
+            conditionPrevTwo['status'] = "APPROVED"
+            conditionPrevOne['status'] = "APPROVED"
+        }
+
+        const prevFormData = await StateGTCCertificate.findOne(conditionPrevOne).lean();
+        const prevFormDataMillionTied = await StateGTCCertificate.findOne(conditionPrevTwo).lean();
         let obj = {
             type: "",
             file: {
@@ -109,6 +119,7 @@ module.exports.getForm = async (req, res) => {
         }
         let form = await GrantTransferCertificate.find(condition, { history: 0 }).lean();
         form = JSON.parse(JSON.stringify(form))
+        console.log("form",form);process.exit()
         form.forEach((entity) => {
 
             if (entity.year.toString() == "606aadac4dff55e6c075c507") {
@@ -170,12 +181,12 @@ module.exports.getForm = async (req, res) => {
             }
 
         }
-        
+
         if (forms) {
             //removing status and file when mohua is logged in to approve/reject
-            for(let i =0; i< forms.length; i++ ){
+            for (let i = 0; i < forms.length; i++) {
                 let form = forms[i];
-                if(form.status === "PENDING" && actionTakenByRole === "MoHUA"){
+                if (form.status === "PENDING" && actionTakenByRole === "MoHUA") {
                     delete form['rejectReason_mohua'];
                     delete form['responseFile_mohua'];
                 }
@@ -192,7 +203,7 @@ module.exports.getForm = async (req, res) => {
 
             })
         }
-    
+
     } catch (error) {
         return res.status(400).json({
             status: false,
@@ -419,7 +430,7 @@ module.exports.fileDeFuncFiles = async (req, res) => {
         await Promise.all(
             slice.map(async el => {
                 for (let key in el) {
-                   
+
                     if (key != '_id' && key != 'stateName' && key != 'stateCode' && el[key]) {
                         documnetcounter++;
                         let url = el[key];
@@ -495,13 +506,13 @@ module.exports.OldFileDeFuncFiles = async (req, res) => {
         await Promise.all(
             slice.map(async el => {
                 for (let key in el) {
-                  
+
                     if (key != '_id' && key != 'stateName' && key != 'stateCode' && el[key]) {
                         documnetcounter++;
                         let url = el[key];
                         try {
                             let response = await doRequest(url);
-                            console.log("suresh",response)
+                            console.log("suresh", response)
                             let obj = {
                                 stateName: "",
                                 stateCode: "",
