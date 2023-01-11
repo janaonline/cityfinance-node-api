@@ -119,7 +119,6 @@ module.exports.getForm = async (req, res) => {
         }
         let form = await GrantTransferCertificate.find(condition, { history: 0 }).lean();
         form = JSON.parse(JSON.stringify(form))
-        console.log("form",form);process.exit()
         form.forEach((entity) => {
 
             if (entity.year.toString() == "606aadac4dff55e6c075c507") {
