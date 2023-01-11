@@ -1902,10 +1902,10 @@ module.exports.get = catchAsync(async (req, res) => {
   }
   let title_value = formTab.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
 
-  if (loggedInUserRole == "MoHUA" && title_value === "Review Grant Application") {
+  if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
     delete ulbColumnNames['stateName']
   }
-
+  
   let dbCollectionName = formTab?.dbCollectionName
   let formType = formTab.role
   if (formType === "ULB") {
@@ -2000,7 +2000,7 @@ module.exports.get = catchAsync(async (req, res) => {
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false :  canTakeActionOrViewOnly(el, loggedInUserRole)
+      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
     }
   })
 
