@@ -7,7 +7,7 @@
             "development": "cityfinance-is-row-data-dev"
         },
         "IMAGE": {
-            "production": "democityfinance",
+            "production": "jana-cityfinance",
             "staging": "democityfinance",
             "demo": "democityfinance",
             "development": "democityfinance"
