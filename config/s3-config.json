@@ -8,7 +8,7 @@
         },
         "IMAGE": {
             "production": "jana-cityfinance",
-            "staging": "democityfinance",
+            "staging": "jccd-cityfinance-staging2",
             "demo": "democityfinance",
             "development": "democityfinance"
         }
