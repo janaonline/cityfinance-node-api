@@ -10,6 +10,7 @@ const GrantDistribution = require("../../models/GrantDistribution");
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
+const {YEAR_CONSTANTS} = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 exports.getGrantDistribution = async (req, res) => {
   const { state_id } = req.query;
@@ -22,8 +23,9 @@ exports.getGrantDistribution = async (req, res) => {
     }).select({ history: 0 }).lean();
 
     grantDistribution = JSON.parse(JSON.stringify(grantDistribution))
+    if(design_year === YEAR_CONSTANTS["22_23"]){
     grantDistribution.forEach((entity)=>{
-
+          if(entity.hasOwnProperty("year")){
             if(entity.year.toString() == "606aadac4dff55e6c075c507"){
                 entity.key = `${entity.type}_2020-21_${entity.installment}`
             } 
@@ -35,7 +37,9 @@ exports.getGrantDistribution = async (req, res) => {
             if(entity.year.toString() == "606aafb14dff55e6c075d3ae"){
                 entity.key = `${entity.type}_2022-23_${entity.installment}`
             }
+          }
         })
+      }
     if (!grantDistribution) {
       return Response.BadRequest(res, null, "No GrantDistribution found");
     }
