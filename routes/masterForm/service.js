@@ -4461,13 +4461,13 @@ module.exports.statusCorrection = async (req, res)=>{
           totalFormsArray.push(formLastHistory);
           let status =  formLastHistory["steps"]["slbForWaterSupplyAndSanitation"]["status"]
 
-        // let updatedForm = await MasterFormData.findOneAndUpdate({_id: form._id},
-        //   {
-        //     $set:{
-        //       "steps.slbForWaterSupplyAndSanitation.status": status
-        //     }
-        //   })
-        //   totalFormsArray.push(updatedForm);
+        let updatedForm = await MasterFormData.findOneAndUpdate({_id: form._id},
+          {
+            $set:{
+              "steps.slbForWaterSupplyAndSanitation.status": status
+            }
+          })
+          totalFormsArray.push(updatedForm);
 
 
       }

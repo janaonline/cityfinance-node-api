@@ -576,7 +576,7 @@ exports.createUpdate = async (req, res) => {
         }
       }
     } else if (!submittedForm && isDraft) {
-      
+
       formData.audited.status = "PENDING";
       formData.unAudited.status = 'PENDING';
 
@@ -2291,7 +2291,7 @@ exports.action = async (req, res) => {
       design_year: ObjectId(design_year),
     }).select({
       history: 0,
-    });
+    }).lean();
 
     let allReasons = [];
     let finalStatus = "APPROVED";
@@ -2374,6 +2374,13 @@ exports.action = async (req, res) => {
     //       req.body.unAudited['responseFile_mohua'] = req.body.unAudited.responseFile
     //   }
     // }
+    currentAnnualAccountData.audited = req.body.audited;
+    currentAnnualAccountData.unAudited = req.body.unAudited
+    currentAnnualAccountData.modifiedAt = new Date();
+    currentAnnualAccountData.status= req.body.status;
+    currentAnnualAccountData.actionTakenByRole = actionTakenByRole;
+    currentAnnualAccountData.actionTakenBy = req.body.actionTakenBy;
+
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }
