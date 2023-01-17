@@ -27,6 +27,8 @@ const { canTakenAction } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const { FormNames, YEAR_CONSTANTS } = require('../../util/FormNames');
+const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
+
 var https = require('https');
 var request = require('request')
 function doRequest(url) {
@@ -1658,6 +1660,13 @@ exports.getAccounts = async (req, res) => {
       status = 'Submitted through Open Page'
     }
     let obj = {}
+    let host = "";
+    if (req.headers.host === BackendHeaderHost.Demo) {
+      host = FrontendHeaderHost.Demo;
+    }
+    /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
+    host = host !== "" ? host : req.headers.host;
+
     if (!ulbData.access_2122) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
@@ -1667,7 +1676,7 @@ exports.getAccounts = async (req, res) => {
         annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
       } else {
         annualAccountData['action'] = 'redirect'
-        annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${req.get("origin")}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+        annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
       }
     }
 
