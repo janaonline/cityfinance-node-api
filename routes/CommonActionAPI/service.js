@@ -38,7 +38,9 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
                 case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Rejected_By_MoHUA
                     break;
-        
+                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+
                 default:
                     return StatusList.Not_Started
                     break;
@@ -472,9 +474,9 @@ module.exports.updateForm = async (req, res) =>{
 
                   //add reject reason/responseFile for single state entry
                   if (actionTakenByRole === "MoHUA") {
-                    form["rejectReason_mohua"] = data["rejectReason"];
+                    form["rejectReason_mohua"] = data["rejectReason"] ? data["rejectReason"] : data["rejectReason_mohua"];
                     form["responseFile_mohua"] = data["responseFile"];
-                    formData['rejectReason_mohua'] = data["rejectReason"]
+                    formData['rejectReason_mohua'] = data["rejectReason"] ? data["rejectReason"] : data["rejectReason_mohua"]
                   }
                   delete form["history"];
                   let updatedForm = await collection

@@ -565,13 +565,9 @@ exports.report = async (req, res) => {
   res.flushHeaders();
   let query = [
     {
-
       $match: {
-
         designYear: ObjectId(YEAR_CONSTANTS["21_22"]),
-
       },
-
     },
     {
       $lookup: {
@@ -621,8 +617,12 @@ exports.report = async (req, res) => {
         role: "$actionTakenByRole",
         waterManagement: "$categoryWiseData_wm",
         solidWasteMgt: "$categoryWiseData_swm",
-        createdAt: { $dateToString: { format: "%d/%m/%Y", date: "$createdAt" } },
-        modifiedAt: { $dateToString: { format: "%d/%m/%Y", date: "$modifiedAt" } },
+        createdAt: {
+          $dateToString: { format: "%d/%m/%Y", date: "$createdAt" },
+        },
+        modifiedAt: {
+          $dateToString: { format: "%d/%m/%Y", date: "$modifiedAt" },
+        },
       },
     },
   ];

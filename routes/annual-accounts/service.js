@@ -598,11 +598,7 @@ exports.createUpdate = async (req, res) => {
           data: addedHistory
         })
       }
-
-
     }
-
-
     let annualAccountData;
     if (
       !req.body.unAudited.submit_annual_accounts &&
@@ -1808,6 +1804,7 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
     'Rejected By MoHUA'
   ]
   let Audited_data = await AnnualAccountData.aggregate([
+    // {$match : {"ulb" : ObjectId("5fa2465f072dab780a6f1292")}},
     {
       $lookup: {
         from: "years",
@@ -1922,20 +1919,18 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
             } else if (el.status == 'REJECTED') {
               el['formStatus'] = statusList[5]
             }
-
           } else if (el.role == 'MoHUA' && el.isDraft) {
-            el['formStatus'] = statusList[8]
+            el['formStatus'] = statusList[0]
+            // el['formStatus'] = statusList[8]
           } else if (el.role == 'MoHUA' && !el.isDraft) {
             if (el.status == 'APPROVED') {
               el['formStatus'] = statusList[7]
             } else if (el.status == 'REJECTED') {
-              el['formStatus'] = statusList[9]
-
+              el['formStatus'] = statusList[8] 
             }
-
           }
-
         }
+
         for (el of data) {
           res.write(
             el.year +

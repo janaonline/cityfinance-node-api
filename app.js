@@ -13,6 +13,8 @@ const json2xls = require("json2xls");
 const expressSanitizer = require("express-sanitizer");
 const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
+const emailCron = require('./cronjob/cron')
+
 app.use(json2xls.middleware);
 //Port Number
 const port = config.APP.PORT;

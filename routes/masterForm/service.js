@@ -166,8 +166,8 @@ const updateDataInMaster = async (data, user) => {
   delete newData._id;
   let query = [
     {
-      $match:{
-          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+      $match: {
+        $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
       }
     },
     {
@@ -323,20 +323,20 @@ module.exports.getAll = catchAsync(async (req, res) => {
     5: { status: "REJECTED", actionTakenByUserRole: "MoHUA" },
     6: { status: "APPROVED", actionTakenByUserRole: "MoHUA" },
   };
-let {state_id} = req.query
+  let { state_id } = req.query
   let user = req.decoded,
     filter =
       req.query.filter && !req.query.filter != "null"
         ? JSON.parse(req.query.filter)
         : req.body.filter
-        ? req.body.filter
-        : {},
+          ? req.body.filter
+          : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv === "true",
     limit = req.query.limit ? parseInt(req.query.limit) : 50;
@@ -378,16 +378,16 @@ let {state_id} = req.query
     };
 
 
-if(state_id && state_id != 'null'){
-match = {
+    if (state_id && state_id != 'null') {
+      match = {
 
-  $match:{
-    state: ObjectId(state_id),
-    design_year: ObjectId(design_year)
-  }
-}
-}
-let state = user.state ?? state_id
+        $match: {
+          state: ObjectId(state_id),
+          design_year: ObjectId(design_year)
+        }
+      }
+    }
+    let state = user.state ?? state_id
     if (user.role === "STATE") {
       match = {
         $match: {
@@ -501,8 +501,8 @@ let state = user.state ?? state_id
     // };
     let queryNotStarted = [
       {
-        $match:{
-            $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+        $match: {
+          $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
         }
       },
       {
@@ -544,7 +544,7 @@ let state = user.state ?? state_id
           ],
           as: "masterformData",
         },
-       
+
       },
       {
         $unwind: {
@@ -606,14 +606,14 @@ let state = user.state ?? state_id
       },
     ];
     if (user.role === "ADMIN" || "MoHUA" || "PARTNER" || "USER" || "STATE") {
-      if(state){
+      if (state) {
         queryNotStarted.unshift({
           $match: {
             state: ObjectId(state),
           },
         });
       }
-      
+
     }
 
     let newFilter = await Service.mapFilter(filter);
@@ -630,7 +630,7 @@ let state = user.state ?? state_id
       queryFilled.push({ $match: newFilter });
       queryNotStarted.push({ $match: newFilter });
     }
-    
+
     if (sort && Object.keys(sort).length) {
       queryFilled.push({ $sort: sort });
       queryNotStarted.push({ $sort: sort });
@@ -773,7 +773,7 @@ let state = user.state ?? state_id
           p3.push(d);
         }
       }
-console.log(util.inspect(queryNotStarted, {showHidden: false, depth: null}))
+      console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
       finalOutput.push(
         ...p1,
@@ -817,258 +817,271 @@ console.log(util.inspect(queryNotStarted, {showHidden: false, depth: null}))
 });
 
 module.exports.getAllForms = catchAsync(async (req, res) => {
-  const { design_year, ulb, financialYear } = req.query;
 
-  let query = [
-    {
-      $match:{
-          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
-      }
-    },
-    {
-      $match: {
-        _id: ObjectId(ulb),
+  try {
+    const { design_year, ulb, financialYear } = req.query;
+
+    let query = [
+      {
+        $match: {
+          $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
+        }
       },
-    },
-    {
-      $lookup: {
-        from: "annualaccountdatas",
-        pipeline: [
-          {
-            $match: {
-              ulb: ObjectId(ulb),
-              design_year: ObjectId(design_year),
-            },
-          },
-          {
-            $project: {
-              history: 0,
-            },
-          },
-        ],
-        as: "annualAccountData",
+      {
+        $match: {
+          _id: ObjectId(ulb),
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "utilizationreports",
-        pipeline: [
-          {
-            $match: {
-              ulb: ObjectId(ulb),
-              designYear: ObjectId(design_year),
-              financialYear: ObjectId(financialYear),
+      {
+        $lookup: {
+          from: "annualaccountdatas",
+          pipeline: [
+            {
+              $match: {
+                ulb: ObjectId(ulb),
+                design_year: ObjectId(design_year),
+              },
             },
-          },
-          {
-            $project: {
-              history: 0,
+            {
+              $project: {
+                history: 0,
+              },
             },
-          },
-        ],
-        as: "utilizationReport",
+          ],
+          as: "annualAccountData",
+        },
       },
-    },
-    {
-      $lookup: {
-        from: "xvfcgrantulbforms",
-        pipeline: [
-          {
-            $match: {
-              ulb: ObjectId(ulb),
-              design_year: ObjectId(design_year),
+      {
+        $lookup: {
+          from: "utilizationreports",
+          pipeline: [
+            {
+              $match: {
+                ulb: ObjectId(ulb),
+                designYear: ObjectId(design_year),
+                financialYear: ObjectId(financialYear),
+              },
             },
-          },
-          {
-            $project: {
-              history: 0,
+            {
+              $project: {
+                history: 0,
+              },
             },
-          },
-        ],
-        as: "SLBs",
+          ],
+          as: "utilizationReport",
+        },
       },
-    },
-    {
-      $project: {
-        history: 0,
+      {
+        $lookup: {
+          from: "xvfcgrantulbforms",
+          pipeline: [
+            {
+              $match: {
+                ulb: ObjectId(ulb),
+                design_year: ObjectId(design_year),
+              },
+            },
+            {
+              $project: {
+                history: 0,
+              },
+            },
+          ],
+          as: "SLBs",
+        },
       },
-    },
-  ];
-  let fetchMasterQuery = [
-    {
-      $match: {
-        ulb: ObjectId(ulb),
-        design_year: ObjectId(design_year),
+      {
+        $project: {
+          history: 0,
+        },
       },
-    },
-  ];
-  const masterData = await MasterFormData.aggregate(fetchMasterQuery);
-  let submissionByUlb = "";
-  let actionInfo = "";
-  if (masterData.length > 0) {
-    masterFormData = masterData[0];
-    if (masterFormData["status"] == "PENDING") {
-      if (masterFormData["history"].length == 0) {
-        submissionByUlb = "Not Submitted by ULB";
-        actionInfo = "No Action Taken by State/MoHUA";
-      } else {
-        if (masterFormData["isSubmit"]) {
-          submissionByUlb =
-            "Submitted by ULB on " +
-            masterFormData["modifiedAt"]
-              .toString()
-              .replace("GMT+0530 (India Standard Time)", "");
-          if (masterFormData["history"].length > 1) {
-            let len = masterFormData["history"].length;
-            let historicalData = masterFormData["history"][len - 2];
-            let role = historicalData["actionTakenByRole"];
-            let status = historicalData["status"];
-            let date = historicalData["modifiedAt"];
-            actionInfo =
-              status +
-              " by " +
-              role +
-              " on " +
-              date.toString().replace("GMT+0530 (India Standard Time)", "");
-          } else {
-            actionInfo = "No Action Taken by State/MoHUA";
-          }
+    ];
+    let fetchMasterQuery = [
+      {
+        $match: {
+          ulb: ObjectId(ulb),
+          design_year: ObjectId(design_year),
+        },
+      },
+    ];
+    const masterData = await MasterFormData.aggregate(fetchMasterQuery);
+    let submissionByUlb = "";
+    let actionInfo = "";
+    if (masterData.length > 0) {
+      masterFormData = masterData[0];
+      if (masterFormData["status"] == "PENDING") {
+        if (masterFormData["history"].length == 0) {
+          submissionByUlb = "Not Submitted by ULB";
+          actionInfo = "No Action Taken by State/MoHUA";
         } else {
-          if (masterFormData["actionTakenByRole"] == "ULB") {
-            submissionByUlb = "Not Submitted by ULB";
-            let len = masterFormData["history"].length;
-            let historicalData = masterFormData["history"][len - 1];
-            let role = historicalData["actionTakenByRole"];
-            let status = historicalData["status"];
-            let date = historicalData["modifiedAt"];
-            actionInfo =
-              status +
-              " by " +
-              role +
-              " on " +
-              date.toString().replace("GMT+0530 (India Standard Time)", "");
-          } else if (masterFormData["actionTakenByRole"] == "STATE") {
-            let len = masterFormData["history"].length;
-            let historicalData = masterFormData["history"][len - 1];
-            let role = historicalData["actionTakenByRole"];
-            let status = historicalData["status"];
-            let date = historicalData["modifiedAt"];
+          if (masterFormData["isSubmit"]) {
             submissionByUlb =
-              "Submitted by " +
-              role +
-              " on " +
-              date.toString().replace("GMT+0530 (India Standard Time)", "");
-            actionInfo = "Under Review by State";
-          } else if (masterFormData["actionTakenByRole"] == "MoHUA") {
-            let len = masterFormData["history"].length;
-            let historicalDataULB = masterFormData["history"][len - 2];
-            let historicalDataSTATE = masterFormData["history"][len - 1];
-            let roleULB = historicalDataULB["actionTakenByRole"];
-            let statusULB = historicalDataULB["status"];
-            let dateULB = historicalDataULB["modifiedAt"];
-            let roleSTATE = historicalDataSTATE["actionTakenByRole"];
-            let statusSTATE = historicalDataSTATE["status"];
-            let dateSTATE = historicalDataSTATE["modifiedAt"];
-            submissionByUlb =
-              "Submitted by " +
-              roleULB +
-              " on " +
-              dateULB.toString().replace("GMT+0530 (India Standard Time)", "");
-            actionInfo =
-              statusSTATE +
-              " by " +
-              roleSTATE +
-              " on " +
-              dateSTATE
+              "Submitted by ULB on " +
+              masterFormData["modifiedAt"]
                 .toString()
                 .replace("GMT+0530 (India Standard Time)", "");
+            if (masterFormData["history"].length > 1) {
+              let len = masterFormData["history"].length;
+              let historicalData = masterFormData["history"][len - 2];
+              let role = historicalData["actionTakenByRole"];
+              let status = historicalData["status"];
+              let date = historicalData["modifiedAt"];
+              actionInfo =
+                status +
+                " by " +
+                role +
+                " on " +
+                date.toString().replace("GMT+0530 (India Standard Time)", "");
+            } else {
+              actionInfo = "No Action Taken by State/MoHUA";
+            }
+          } else {
+            if (masterFormData["actionTakenByRole"] == "ULB") {
+              submissionByUlb = "Not Submitted by ULB";
+              let len = masterFormData["history"].length;
+              let historicalData = masterFormData["history"][len - 1];
+              let role = historicalData["actionTakenByRole"];
+              let status = historicalData["status"];
+              let date = historicalData["modifiedAt"];
+              actionInfo =
+                status +
+                " by " +
+                role +
+                " on " +
+                date.toString().replace("GMT+0530 (India Standard Time)", "");
+            } else if (masterFormData["actionTakenByRole"] == "STATE") {
+              let len = masterFormData["history"].length;
+              let historicalData = masterFormData["history"][len - 1];
+              let role = historicalData["actionTakenByRole"];
+              let status = historicalData["status"];
+              let date = historicalData["modifiedAt"];
+              submissionByUlb =
+                "Submitted by " +
+                role +
+                " on " +
+                date.toString().replace("GMT+0530 (India Standard Time)", "");
+              actionInfo = "Under Review by State";
+            } else if (masterFormData["actionTakenByRole"] == "MoHUA") {
+              let len = masterFormData["history"].length;
+              let historicalDataULB = masterFormData["history"][len - 2];
+              let historicalDataSTATE = masterFormData["history"][len - 1];
+              let roleULB = historicalDataULB["actionTakenByRole"];
+              let statusULB = historicalDataULB["status"];
+              let dateULB = historicalDataULB["modifiedAt"];
+              let roleSTATE = historicalDataSTATE["actionTakenByRole"];
+              let statusSTATE = historicalDataSTATE["status"];
+              let dateSTATE = historicalDataSTATE["modifiedAt"];
+
+              if (dateSTATE !== null) {
+                dateSTATE
+                  .toString()
+                  .replace("GMT+0530 (India Standard Time)", "")
+              }
+              if (dateULB !== null) {
+                dateULB.toString().replace("GMT+0530 (India Standard Time)", "")
+              }
+              submissionByUlb =
+                "Submitted by " +
+                roleULB +
+                " on " +
+                dateULB;
+              actionInfo =
+                statusSTATE +
+                " by " +
+                roleSTATE +
+                " on " +
+                dateSTATE;
+            }
           }
         }
+      } else if (
+        masterFormData["status"] == "APPROVED" ||
+        masterFormData["status"] == "REJECTED"
+      ) {
+        let len = masterFormData["history"].length;
+        let historicalData;
+        if (masterFormData["actionTakenByRole"] == "MoHUA") {
+          historicalData = masterFormData["history"][len - 2];
+        } else if (masterFormData["actionTakenByRole"] == "STATE") {
+          historicalData = masterFormData["history"][len - 1];
+        }
+        submissionByUlb =
+          "Submitted by ULB on " +
+          historicalData["modifiedAt"]
+            .toString()
+            .replace("GMT+0530 (India Standard Time)", "");
+        actionInfo =
+          masterFormData["status"] +
+          " by " +
+          masterFormData["actionTakenByRole"] +
+          " on " +
+          masterFormData["modifiedAt"]
+            .toString()
+            .replace("GMT+0530 (India Standard Time)", "");
       }
-    } else if (
-      masterFormData["status"] == "APPROVED" ||
-      masterFormData["status"] == "REJECTED"
-    ) {
-      let len = masterFormData["history"].length;
-      let historicalData;
-      if (masterFormData["actionTakenByRole"] == "MoHUA") {
-        historicalData = masterFormData["history"][len - 2];
-      } else if (masterFormData["actionTakenByRole"] == "STATE") {
-        historicalData = masterFormData["history"][len - 1];
-      }
-      submissionByUlb =
-        "Submitted by ULB on " +
-        historicalData["modifiedAt"]
-          .toString()
-          .replace("GMT+0530 (India Standard Time)", "");
-      actionInfo =
-        masterFormData["status"] +
-        " by " +
-        masterFormData["actionTakenByRole"] +
-        " on " +
-        masterFormData["modifiedAt"]
-          .toString()
-          .replace("GMT+0530 (India Standard Time)", "");
     }
-  }
-  const data = await Ulb.aggregate(query);
+    const data = await Ulb.aggregate(query);
 
-  let queryUtilReportAnalytics = [
-    {
-      $match: {
-        ulb: ObjectId(ulb),
-        designYear: ObjectId(design_year),
-        financialYear: ObjectId(financialYear),
+    let queryUtilReportAnalytics = [
+      {
+        $match: {
+          ulb: ObjectId(ulb),
+          designYear: ObjectId(design_year),
+          financialYear: ObjectId(financialYear),
+        },
       },
-    },
-    {
-      $unwind: "$projects",
-    },
-    {
-      $group: {
-        _id: "$projects.category",
-        count: { $sum: 1 },
-        amount: { $sum: { $toDouble: "$projects.expenditure" } },
-        totalProjectCost: { $sum: { $toDouble: "$projects.cost" } },
+      {
+        $unwind: "$projects",
       },
-    },
-  ];
-  let arr = await UtilizationReport.aggregate(queryUtilReportAnalytics);
-  let catData = await Category.find().lean().exec();
-  let flag = 0;
-  let filteredCat = [];
-
-  for (let el of catData) {
-    for (let el2 of arr) {
-      // console.log(el['_id'], el2['_id'])
-      if (String(el["_id"]) === String(el2["_id"])) {
-        // console.log(ObjectId(el._id), ObjectId(el2._id))
-        flag = 1;
-        break;
+      {
+        $group: {
+          _id: "$projects.category",
+          count: { $sum: 1 },
+          amount: { $sum: { $toDouble: "$projects.expenditure" } },
+          totalProjectCost: { $sum: { $toDouble: "$projects.cost" } },
+        },
+      },
+    ];
+    let arr = await UtilizationReport.aggregate(queryUtilReportAnalytics);
+    let catData = await Category.find().lean().exec();
+    let flag = 0;
+    let filteredCat = [];
+    for (let el of catData) {
+      for (let el2 of arr) {
+        // console.log(el['_id'], el2['_id'])
+        if (String(el["_id"]) === String(el2["_id"])) {
+          // console.log(ObjectId(el._id), ObjectId(el2._id))
+          flag = 1;
+          break;
+        }
+      }
+      if (!flag) {
+        filteredCat.push(el);
+      } else {
+        flag = 0;
       }
     }
-    if (!flag) {
-      filteredCat.push(el);
-    } else {
-      flag = 0;
-    }
-  }
-
-  // console.log(filteredCat)
-  filteredCat.forEach((el) => {
-    arr.push({
-      _id: el._id,
-      count: 0,
-      amount: 0,
-      totalProjectCost: 0,
+    // console.log(filteredCat)
+    filteredCat.forEach((el) => {
+      arr.push({
+        _id: el._id,
+        count: 0,
+        amount: 0,
+        totalProjectCost: 0,
+      });
     });
-  });
-  data[0]["utilizationReport"][0]["analytics"] = arr;
-  data[0]["submissionByUlb"] = submissionByUlb;
-  data[0]["actionInfo"] = actionInfo;
-  // console.log(util.inspect(data, { showHidden: false, depth: null, colors: true }))
-
-  return res.json(data);
+    data[0]["utilizationReport"][0]["analytics"] = arr;
+    data[0]["submissionByUlb"] = submissionByUlb;
+    data[0]["actionInfo"] = actionInfo;
+    // console.log(util.inspect(data, { showHidden: false, depth: null, colors: true }))
+    return res.json(data);
+  } catch (error) {
+    console.log("error", error)
+    return res.status(400).json({
+      success: false,
+      data: "Something went wrong!",
+    });
+  }
 });
 
 module.exports.plansData = catchAsync(async (req, res) => {
@@ -1368,8 +1381,8 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
 
   let queryNonMillionNonUA_NotStarted = [
     {
-      $match:{
-          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+      $match: {
+        $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
       }
     },
     {
@@ -1409,8 +1422,8 @@ module.exports.slbWaterSanitationState = catchAsync(async (req, res) => {
   ];
   let queryNonMillionNonUA = [
     {
-      $match:{
-          $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+      $match: {
+        $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
       }
     },
     {
@@ -1717,7 +1730,7 @@ processSLBData = (output1, output2, output3, output4, output5) => {
 //           ]},
 //       {isDraft:false}, 
 //       {actionTakenByRole: "ULB"}]
-     
+
 //       }
 //   },
 // {
@@ -1751,8 +1764,8 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
     }
     let baseQuery = [
       {
-        $match:{
-            $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+        $match: {
+          $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
         }
       },
       {
@@ -2044,7 +2057,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
             as: "utilReportForm",
           },
         },
-    
+
         {
           $unwind: {
             path: "$utilReportForm",
@@ -2054,7 +2067,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
         {
           $group: {
             _id: {
-              isSubmit: {$not: "$utilReportForm.isDraft" },
+              isSubmit: { $not: "$utilReportForm.isDraft" },
               actionTakenByRole: "$actionTakenByRole",
               masterformSubmit: "$isSubmit",
               status: "$status",
@@ -2081,7 +2094,7 @@ module.exports.StateDashboard = catchAsync(async (req, res) => {
           });
           let prms4 = new Promise(async (rslv, rjct) => {
             console.log(util.inspect(query4, { showHidden: false, depth: null }))
-          
+
             let output = await MasterFormData.aggregate(query4);
 
             rslv(output);
@@ -2378,19 +2391,19 @@ module.exports.viewList = catchAsync(async (req, res) => {
       utilizationreport: {},
     },
     22: {
-      $and:[
-        {"utilizationreport.isDraft": true},
-      {"utilizationreport.actionTakenBy":"ULB"}
-    ] 
+      $and: [
+        { "utilizationreport.isDraft": true },
+        { "utilizationreport.actionTakenBy": "ULB" }
+      ]
     },
     23: {
-      $or:[{
-        $and:[
-        {"utilizationreport.isDraft": false},
-        {"utilizationreport.actionTakenBy":"ULB"}]
+      $or: [{
+        $and: [
+          { "utilizationreport.isDraft": false },
+          { "utilizationreport.actionTakenBy": "ULB" }]
       },
       {
-          $or:[{"utilizationreport.actionTakenBy":"STATE"},{"utilizationreport.actionTakenBy":"MoHUA"}]
+        $or: [{ "utilizationreport.actionTakenBy": "STATE" }, { "utilizationreport.actionTakenBy": "MoHUA" }]
 
       }]
       ,
@@ -2448,17 +2461,17 @@ module.exports.viewList = catchAsync(async (req, res) => {
     },
   };
   let filter =
-      req.query.filter && !req.query.filter != "null"
-        ? JSON.parse(req.query.filter)
-        : req.body.filter
+    req.query.filter && !req.query.filter != "null"
+      ? JSON.parse(req.query.filter)
+      : req.body.filter
         ? req.body.filter
         : {},
     sort =
       req.query.sort && !req.query.sort != "null"
         ? JSON.parse(req.query.sort)
         : req.body.sort
-        ? req.body.sort
-        : {},
+          ? req.body.sort
+          : {},
     skip = req.query.skip ? parseInt(req.query.skip) : 0,
     csv = req.query.csv === "true",
     limit = req.query.limit ? parseInt(req.query.limit) : 10000;
@@ -2484,8 +2497,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
     if ((user.role != "STATE" || user.role != "ULB") && !state) {
       query = [
         {
-          $match:{
-              $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+          $match: {
+            $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
           }
         },
         {
@@ -2518,8 +2531,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
           },
         },
         {
-          $match:{
-            $or:[{"masterforms.design_year":ObjectId(design_year)},{"masterforms.design_year":{$exists: false}}]
+          $match: {
+            $or: [{ "masterforms.design_year": ObjectId(design_year) }, { "masterforms.design_year": { $exists: false } }]
           }
         },
         {
@@ -2580,7 +2593,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
             as: "utilizationreports",
           },
         },
-       
+
         {
           $unwind: {
             path: "$utilizationreports",
@@ -2777,8 +2790,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
     } else {
       query = [
         {
-          $match:{
-              $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+          $match: {
+            $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
           }
         },
         {
@@ -2816,8 +2829,8 @@ module.exports.viewList = catchAsync(async (req, res) => {
           },
         },
         {
-          $match:{
-            $or:[{"masterforms.design_year":ObjectId(design_year)},{"masterforms.design_year":{$exists: false}}]
+          $match: {
+            $or: [{ "masterforms.design_year": ObjectId(design_year) }, { "masterforms.design_year": { $exists: false } }]
           }
         },
         {
@@ -2878,7 +2891,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
             as: "utilizationreports",
           },
         },
-        
+
         {
           $unwind: {
             path: "$utilizationreports",
@@ -3088,7 +3101,7 @@ module.exports.viewList = catchAsync(async (req, res) => {
     };
 
     let newFilter = await Service.mapFilter(filter);
-let statusfilArray = []
+    let statusfilArray = []
     if (
       newFilter["status"] ||
       newFilter["auditedStatus"] ||
@@ -3117,16 +3130,18 @@ let statusfilArray = []
       delete newFilter["slbNonMillionStatus"];
     }
     if (newFilter && Object.keys(newFilter).length) {
-      statusfilArray.forEach(el=>{
-        if(el)
-        query.push({ $match: el });
+      statusfilArray.forEach(el => {
+        if (el)
+          query.push({ $match: el });
       })
-console.log(newFilter)
-for (const [key, value] of Object.entries(newFilter)) {
-  query.push({ $match: {
-    [key]:value
-  } });
-}
+      console.log(newFilter)
+      for (const [key, value] of Object.entries(newFilter)) {
+        query.push({
+          $match: {
+            [key]: value
+          }
+        });
+      }
       // for(let fil in newFilter ){
       //   let keyName = fil;
       //   console.log(fil)
@@ -3357,12 +3372,12 @@ for (const [key, value] of Object.entries(newFilter)) {
 
           if (Object.entries(el?.utilizationreport).length === 0) {
             el["utilizationreportStatus"] = "Not Started";
-          } else if ((el?.utilizationreport.isDraft == false && el?.utilizationreport.actionTakenBy == "ULB")||
-          (el?.utilizationreport.actionTakenBy == "STATE" || el?.utilizationreport.actionTakenBy == "MoHUA" )
+          } else if ((el?.utilizationreport.isDraft == false && el?.utilizationreport.actionTakenBy == "ULB") ||
+            (el?.utilizationreport.actionTakenBy == "STATE" || el?.utilizationreport.actionTakenBy == "MoHUA")
           ) {
             // console.log(el)
             el["utilizationreportStatus"] = "Completed";
-          } else if ( (el?.utilizationreport.isDraft == true && el?.utilizationreport.actionTakenBy == "ULB" )) {
+          } else if ((el?.utilizationreport.isDraft == true && el?.utilizationreport.actionTakenBy == "ULB")) {
             el["utilizationreportStatus"] = "In Progress";
           }
           if (Object.entries(el?.audited_annualaccounts).length === 0) {
@@ -3525,17 +3540,16 @@ const formatOutput = (
           el._id.actionTakenByRole == "STATE" &&
           el._id.isSubmit == false)
       ) {
-        underReviewByState = el.count +  underReviewByState;
+        underReviewByState = el.count + underReviewByState;
       } else if (
-        el._id.status == 'APPROVED' || (el._id.actionTakenByRole === "MoHUA" && el._id.status == !'REJECTED'  ))
-       {
-        overall_approvedByState = el.count + overall_approvedByState ;
+        el._id.status == 'APPROVED' || (el._id.actionTakenByRole === "MoHUA" && el._id.status == !'REJECTED')) {
+        overall_approvedByState = el.count + overall_approvedByState;
       }
 
-    
+
     });
     pendingForSubmission =
-    numbers[i] - underReviewByState - overall_approvedByState;
+      numbers[i] - underReviewByState - overall_approvedByState;
   }
 
   let total = 0;
@@ -3567,8 +3581,8 @@ const formatOutput = (
       ) {
         util_underStateReview = el.count + util_underStateReview;
       } else if (
-        (el._id.status === "APPROVED"  || ( el._id.actionTakenByRole === "MoHUA" && el._id.status != "REJECTED" ))
-       
+        (el._id.status === "APPROVED" || (el._id.actionTakenByRole === "MoHUA" && el._id.status != "REJECTED"))
+
       ) {
         util_approvedbyState = el.count + util_approvedbyState;
       } else if (
@@ -3580,13 +3594,13 @@ const formatOutput = (
         util_completedAndPendingSubmission = el.count + util_approvedbyState;
       }
 
-     
+
     });
     util_pendingCompletion =
-    numbers[i] -
-    util_underStateReview -
-    util_approvedbyState -
-    util_completedAndPendingSubmission;
+      numbers[i] -
+      util_underStateReview -
+      util_approvedbyState -
+      util_completedAndPendingSubmission;
   }
 
   let finalOutput = {
@@ -4206,8 +4220,8 @@ const stateULB = (state) => {
   return new Promise(async (res, rej) => {
     let query = [
       {
-        $match:{
-            $or:[{censusCode:{$exists: true, $ne: ""} },{sbCode:{$exists: true, $ne: ""} }]
+        $match: {
+          $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
         }
       },
       {
@@ -4363,7 +4377,7 @@ let calculatePercentage = (masterformData, loggedInUserRole) => {
 };
 
 
-module.exports.roleCorrection = async (req, res)=>{
+module.exports.roleCorrection = async (req, res) => {
 
   const forms = await MasterFormData.find({
     actionTakenByRole: "STATE",
@@ -4374,25 +4388,25 @@ module.exports.roleCorrection = async (req, res)=>{
 
   }).lean();
 
-  let formsWithWrongHistoryArr =  []
+  let formsWithWrongHistoryArr = []
   let updatedFormWithCorrectHistoryArr = []
-  for(let i = 0; i< forms.length; i++){
+  for (let i = 0; i < forms.length; i++) {
 
     let form = forms[i];
-    let formHistory =  form.history;
-    let formLastHistory = form.history[form.history.length-1];
+    let formHistory = form.history;
+    let formLastHistory = form.history[form.history.length - 1];
 
-    if(formLastHistory){
+    if (formLastHistory) {
 
-      if( formLastHistory.actionTakenByRole === "ULB"){
+      if (formLastHistory.actionTakenByRole === "ULB") {
         formLastHistory.actionTakenByRole = "STATE"
         // formsWithWrongHistoryArr.push(formLastHistory);
-        formHistory[formHistory.length -1] = formLastHistory;
+        formHistory[formHistory.length - 1] = formLastHistory;
         let x = await MasterFormData.findOneAndUpdate({
           _id: form._id,
 
-        },{
-          $set:{
+        }, {
+          $set: {
             history: formHistory
           }
         }).lean();
@@ -4403,7 +4417,7 @@ module.exports.roleCorrection = async (req, res)=>{
 
   return res.status(200).json({
     data: formsWithWrongHistoryArr,
-    totalForms :  formsWithWrongHistoryArr.length,
+    totalForms: formsWithWrongHistoryArr.length,
     data2: updatedFormWithCorrectHistoryArr
   })
 
