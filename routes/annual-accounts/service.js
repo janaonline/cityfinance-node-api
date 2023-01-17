@@ -1676,7 +1676,7 @@ exports.getAccounts = async (req, res) => {
         annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
       } else {
         annualAccountData['action'] = 'redirect'
-        annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+        annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
       }
     }
 
