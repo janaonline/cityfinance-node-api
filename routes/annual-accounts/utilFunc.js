@@ -23,7 +23,13 @@ module.exports.calculateTabwiseStatus = (formData) => {
       ) {
         formData.unAudited["status"] = "PENDING";
         formData.audited["status"] = "PENDING";
-      }
+      } else if ( 
+        !formData.unAudited["status"]  &&
+        !formData.audited["status"] 
+    ){
+      formData.unAudited["status"] = "PENDING";
+      formData.audited["status"] = "PENDING";
+    }
     }else if(actionTakenByRole != 'ULB'){
       if(auditedAns){
         let flag = 0;

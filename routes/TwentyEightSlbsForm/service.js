@@ -393,7 +393,7 @@ module.exports.getForm = async (req, res) => {
           return res.status(200).json({
             status: true,
             show: true,
-            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. ` ,
+            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once the ULB Submits this form. ` ,
           });
         }
         }

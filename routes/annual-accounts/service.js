@@ -495,6 +495,12 @@ exports.createUpdate = async (req, res) => {
         formData,
         { new: true, runValidators: true, upsert: true }
       );
+      if (
+        data?.audited?.submit_annual_accounts === false &&
+        data?.unAudited?.submit_annual_accounts === false
+      ) {
+        req.body.status = "N/A"
+      }
       await UpdateMasterSubmitForm(req, "annualAccounts");
       return res.status(200).json({
         status: true,
