@@ -70,9 +70,17 @@ const fiscalRankingSchema = new Schema(
             },
             value: { type: String, default: null }
         },
-        digitalRegtr: enumYesNo,
+
+        waterSupply : enumYesNo,
+        sanitationService : enumYesNo,
+        propertyWaterTax : enumYesNo,
+        propertySanitationTax :enumYesNo,
+
+        // digitalRegtr: enumYesNo,
+        
         registerGis: enumYesNo,
         accountStwre: enumYesNo,
+
         fy_19_20_cash: {
             type: {
                 type: String,
