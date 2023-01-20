@@ -102,7 +102,7 @@ const AnnualAccountDataSchema = new Schema(
     status: {
       type: String,
       enum: {
-        values: ["PENDING", "APPROVED", "REJECTED"],
+        values: ["PENDING", "APPROVED", "REJECTED", "N/A"],
         message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
       },
     },
