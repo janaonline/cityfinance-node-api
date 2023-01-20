@@ -490,17 +490,17 @@ exports.createUpdate = async (req, res) => {
     const submittedForm = await AnnualAccountData.findOne(condition);
     if (formData['design_year'] == '606aaf854dff55e6c075d219') {
       formData.modifiedAt = Date.now();
-      const addedHistory = await AnnualAccountData.findOneAndUpdate(
-        condition,
-        formData,
-        { new: true, runValidators: true, upsert: true }
-      );
       if (
         data?.audited?.submit_annual_accounts === false &&
         data?.unAudited?.submit_annual_accounts === false
       ) {
         req.body.status = "N/A"
       }
+      const addedHistory = await AnnualAccountData.findOneAndUpdate(
+        condition,
+        formData,
+        { new: true, runValidators: true, upsert: true }
+      );
       await UpdateMasterSubmitForm(req, "annualAccounts");
       return res.status(200).json({
         status: true,
