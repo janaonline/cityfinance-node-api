@@ -122,7 +122,7 @@ exports.getView = async function (req, res, next) {
       data['populationFr']['value'] = data.populationFr.value ? data.populationFr.value : twEightSlbs ? twEightSlbs?.population : ""
       data['population11']['value'] = data.population11.value ? data.population11.value : ulbPData ? ulbPData?.population : ""
       data['population11']['readonly'] = ulbPData ? ulbPData?.population > 0 ? true : false : false
-      data['populationFr']['readonly'] = twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
+      data['populationFr']['readonly'] = false
       data['fyData'] = fyData
       viewOne = data
     } else {
@@ -139,7 +139,7 @@ exports.getView = async function (req, res, next) {
         },
         "populationFr": {
           "value": twEightSlbs ? twEightSlbs?.population : "",
-          "readonly": twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
+          "readonly": false
         },
         "webLink": null,
         "nameCmsnr": "",
@@ -147,12 +147,16 @@ exports.getView = async function (req, res, next) {
         "designationOftNodalOfficer": "",
         "email": null,
         "mobile": null,
+        "waterSupply": numberOfQuestion,
+        "sanitationService": numberOfQuestion,
+        "propertyWaterTax": numberOfQuestion,
+        "propertySanitationTax": numberOfQuestion,
         "webUrlAnnual": numberOfQuestion,
-        "digitalRegtr": numberOfQuestion,
         "registerGis": numberOfQuestion,
         "accountStwre": numberOfQuestion,
         "totalOwnRevenueArea": numberOfQuestion,
-        "fy_19_20_cash": {
+        "fy_21_22_cash": {
+          "year": null,
           "type": null,
           "amount": null,
           "status": ""
@@ -161,9 +165,10 @@ exports.getView = async function (req, res, next) {
           "name": null,
           "url": null
         },
-        "fy_19_20_online": {
+        "fy_21_22_online": {
           "type": null,
           "amount": null,
+          "year": null,
           "status": ""
         },
         "fyData": [],
@@ -184,7 +189,7 @@ exports.getView = async function (req, res, next) {
     }
     let fyDynemic = await fiscalRankingFormJson();
     let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
-    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
+    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       for (let key in subData) {
@@ -339,8 +344,8 @@ const ulbLedgersData = (objData) => {
         },
         {
           $match: {
-            code: { $in: ["110", "130", "140", "150", "180", "11001", "410", "412", "210", "220", "230", "240", "200"] },
-            year: { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }
+            code: { $in: ["110", "130", "140", "150", "180", "200", "210", "220", "230", "240", "410", "412", "11001", "11002", "11003"] },
+            year: { $in: ['2017-18', '2018-19', '2019-20', '2020-21', "2021-22"] }
           }
         },
         {
