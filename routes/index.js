@@ -1,14 +1,34 @@
 const express = require("express");
 const router = express.Router();
+const morgan = require("morgan");
+const {logger} = require("../middlewares/loggermiddleware")
+const { verifyToken } = require("./auth/services/verifyToken");
 // @Base Url
 router.use((req, res, next) => {
   req["currentUrl"] = `${req.protocol + "://" + req.headers.host}`;
-  next();
+  logger.setResponseBody(req,res,next)
 });
+morgan.token('request',function(req,res){
+  try{
+    logger.createLog(req,res)
+  }
+  catch(err){
+    console.log("token not created ::",err.message)
+  }
+})
+router.use(morgan(":request"))
+
+
 // @Auth
 const Auth = require("./auth");
 router.use(Auth);
-
+//for demo use only
+router.use("/demo",verifyToken,router.post("/hp",(req,res)=>{
+  return res.json({
+    "success":true,
+    "message":"message fetched"
+  })
+}))
 // @Annual accounts
 const AnnualAccountData = require("./annual-accounts");
 router.use("/annual-accounts", AnnualAccountData);
@@ -248,6 +268,8 @@ const DeleteFileApi = require('./DeleteFileApi');
 router.use('/deleteFile', DeleteFileApi);
 
 const FiscalRanking = require('./FiscalRanking');
+
 router.use('/fiscal-ranking', FiscalRanking);
+
 
 module.exports = router;
