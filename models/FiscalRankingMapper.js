@@ -17,7 +17,27 @@ const fiscalRankingMapperSchema = new Schema(
         type: {
             type: String,
             enum: {
-                values: ["totalRcptActl", "totalRcptBudget", "totalOwnRvnue", "totalProperty", "totalGrossBl", "totalCWIP", "estAdmExpenses", "totalRevExp", "appAnnualBudget", "auditedAnnualFySt"],
+                values: [
+                    "totalRcptActl",
+                    "totalRcptWaterSupply",
+                    "totalRcptSanitation",
+                    "totalRcptBudget",
+                    "totalOwnRvnue",
+                    "totalProperty",
+                    "totalTaxRevWaterSupply",
+                    "totalTaxRevSanitation",
+                    "totalFeeChrgWaterSupply",
+                    "totalFeeChrgSanitation",
+                    "totalCaptlExp",
+                    "totalCaptlExpWaterSupply",
+                    "totalCaptlExpSanitation",
+                    "totalOmExp",
+                    "totalCaptlExpWaterSupply",
+                    "totalOMCaptlExpSanitation",
+                    "totalRevExp",
+                    "appAnnualBudget",
+                    "auditedAnnualFySt"
+                ],
                 message: "ERROR: STATUS BE EITHER",
             },
         },
