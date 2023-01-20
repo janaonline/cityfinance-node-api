@@ -444,7 +444,7 @@ exports.createUpdate = async (req, res) => {
       proData = req.body.unAudited.provisional_data;
       for (const key in proData) {
         if (key == "auditor_report") continue;
-        if (proData[key]['status'] == 'REJECTED') {
+        if (proData[key]?.status == 'REJECTED') {
           proData[key].status = "PENDING";
           proData[key].rejectReason = null;
         }
@@ -457,7 +457,7 @@ exports.createUpdate = async (req, res) => {
     if (req.body.audited.submit_annual_accounts) {
       audData = req.body.audited.provisional_data;
       for (const key in audData) {
-        if (audData[key]['status'] == 'REJECTED') {
+        if (audData[key]?.status == 'REJECTED') {
           audData[key].status = "PENDING";
           audData[key].rejectReason = null;
         }
