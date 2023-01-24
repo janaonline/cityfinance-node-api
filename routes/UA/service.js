@@ -8,7 +8,9 @@ const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const axios = require('axios')
-const {calculateSlbMarks} = require('../Scoring/service')
+const UaFileList = require("../../models/UaFileList")
+const {calculateSlbMarks} = require('../Scoring/service');
+const { ulb } = require('../../util/userTypes');
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -695,3 +697,45 @@ responseObj.odf.score = numeratorOdf / popDataOdf;
     })
 })
 
+module.exports.getRelatedUAFile = catchAsync(async(req,res)=>{
+    let response = {
+        "success":false,
+        "message":""
+    }
+    try{
+        const {ulbId} = req.query
+        if(!ulbId){
+            response.message = "Please provide a ulb id"
+            return res.status(400).json(response)
+        } 
+        let ulbObj = await Ulb.findOne({"_id":ObjectId(ulbId)}).lean()
+        if(!ulbObj || ulbObj === undefined) {
+            response.message = "Ulb not found"; 
+            return res.status(400).json(response);
+        }
+        else if(ulbObj.isUA === "No"){
+            response.message = "Ulb does not have any UA"
+            return res.status(400).json(response);
+        }
+        else{
+            let uaFileArr = await UaFileList.find({"UA":ObjectId(ulbObj.UA)})
+           if(uaFileArr.length > 0){
+                response.success = true
+                response.fileUrls = uaFileArr
+                response.message = "Fetched successfully"
+                return res.status(200).json(response)
+           }
+           else{
+                response.success = true
+                response.fileUrls = []
+                response.message = "File Not found"
+                return res.status(404).json(response)
+           }
+        }
+    }
+    catch(err){
+        console.log("error in getRelatedUAFile :: ",err.message)
+        response.message = err.message
+        res.status(500).json(response)
+    }
+})
