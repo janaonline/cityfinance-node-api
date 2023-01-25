@@ -739,3 +739,34 @@ module.exports.getRelatedUAFile = catchAsync(async(req,res)=>{
         res.status(500).json(response)
     }
 })
+
+module.exports.addUAFile = catchAsync(async(req,res)=>{
+    try{
+        let response = {
+            "success":false,
+            "message":""
+        }
+        let data = {...req.body} 
+        if(!data || data === undefined  || Object.keys(data).length < 1 ){
+            response.message = "data  is required"
+            return res.status(400).json(response)
+        } 
+        try{
+            let UaFileObj = new UaFileList(data)
+            await UaFileObj.save()
+            response.success = true
+            response.message = "Created Successfully"
+            return res.status(201).json(response)
+        }
+        catch(err){
+            console.log("22")
+            console.log(Object.keys(err))
+            response.message = err.message
+            return res.status(500).json(response)
+        }
+
+    }
+    catch(err){
+        console.log("error in addUAFile ::: ",err.message)
+    }
+})
