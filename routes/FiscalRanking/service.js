@@ -204,15 +204,15 @@ exports.getView = async function (req, res, next) {
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = ulbFyAmount;
-                pf['readonly'] = ulbFyAmount >= 0 ? true : false;
+                pf['status'] = "";
+                pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = ulbFyAmount;
-                pf['readonly'] = ulbFyAmount >= 0 ? true : false;
+                pf['status'] = "";
+                pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             }
           } else {
