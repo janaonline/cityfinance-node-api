@@ -767,7 +767,6 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
             "message":""
         }
         let data = {...req.body} 
-        console.log("data :: ",data)
         let design_year = data.Year
         let yearObj = await Year.findOne({"year":design_year})
         if(!yearObj){
