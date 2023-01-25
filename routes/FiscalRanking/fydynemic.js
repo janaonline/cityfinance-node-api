@@ -58,6 +58,7 @@ const fiscalRankingFormJson = () => {
             key: 'FY2019-20',
             postion: '1',
             amount: '',
+            date: null,
             file: '',
             min: 0,
             max: 13,
@@ -66,7 +67,7 @@ const fiscalRankingFormJson = () => {
             code: [],
             readonly: false,
             year: "607697074dff55e6c0be33ba",
-            bottomText: `to be taken from approved Annual Budget `,
+            bottomText: ``,
             placeHolder: ''
           },
           {
@@ -75,6 +76,7 @@ const fiscalRankingFormJson = () => {
             postion: '2',
             amount: '',
             file: '',
+            date: null,
             min: 0,
             max: 13,
             required: true,
@@ -82,7 +84,7 @@ const fiscalRankingFormJson = () => {
             code: [],
             readonly: false,
             year: "606aadac4dff55e6c075c507",
-            bottomText: 'to be taken from approved Annual Budget of ',
+            bottomText: '',
             placeHolder: ''
           },
           {
@@ -91,6 +93,7 @@ const fiscalRankingFormJson = () => {
             postion: '3',
             amount: '',
             file: '',
+            date: null,
             min: 0,
             max: 13,
             required: true,
@@ -98,7 +101,7 @@ const fiscalRankingFormJson = () => {
             code: [],
             readonly: false,
             year: "606aaf854dff55e6c075d219",
-            bottomText: 'to be taken from approved Annual Budget of ',
+            bottomText: '',
             placeHolder: ''
           },
         ]
@@ -1372,7 +1375,6 @@ const fiscalRankingFormJson = () => {
             key: 'appAnnualBudget_2020-21',
             postion: '2',
             amount: '',
-            file: '',
             min: 0,
             max: 13,
             required: true,
@@ -1392,7 +1394,6 @@ const fiscalRankingFormJson = () => {
             key: 'appAnnualBudget_2021-22',
             postion: '3',
             amount: '',
-            file: '',
             min: 0,
             max: 13,
             required: true,
@@ -1412,7 +1413,6 @@ const fiscalRankingFormJson = () => {
             key: 'appAnnualBudget_2022-23',
             postion: '4',
             amount: '',
-            file: '',
             min: 0,
             max: 13,
             required: true,
@@ -1438,7 +1438,10 @@ const fiscalRankingFormJson = () => {
             key: 'auditedAnnualFySt_2018-19',
             postion: '1',
             amount: '',
-            file: '',
+            file: {
+              name: "",
+              url: ""
+            },
             min: 0,
             max: 13,
             required: true,
@@ -1473,7 +1476,6 @@ const fiscalRankingFormJson = () => {
             key: 'auditedAnnualFySt_2020-21',
             postion: '2',
             amount: '',
-            file: '',
             min: 0,
             max: 13,
             required: true,
@@ -1493,7 +1495,6 @@ const fiscalRankingFormJson = () => {
             key: 'auditedAnnualFySt_2021-22',
             postion: '3',
             amount: '',
-            file: '',
             min: 0,
             max: 13,
             required: true,
