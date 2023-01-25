@@ -5,6 +5,7 @@ const fiscalRankingMapperSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         amount: { type: Number, default: null },
+        auditReprtDate: { type: Date, default: null },
         status: {
             type: String,
             default: "PENDING",
@@ -36,7 +37,8 @@ const fiscalRankingMapperSchema = new Schema(
                     "totalOMCaptlExpSanitation",
                     "totalRevExp",
                     "appAnnualBudget",
-                    "auditedAnnualFySt"
+                    "auditedAnnualFySt",
+                    "auditReprtDate"
                 ],
                 message: "ERROR: STATUS BE EITHER",
             },
@@ -49,7 +51,7 @@ const fiscalRankingMapperSchema = new Schema(
             type: String,
             default: "Number",
             enum: {
-                values: ["Number", "PDF", "Excel"],
+                values: ["Number", "PDF", "Excel", "Date"],
                 message: "ERROR: STATUS BE EITHER",
             },
         },

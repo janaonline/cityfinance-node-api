@@ -49,6 +49,60 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
+      auditReprtDate: {
+        key: 'auditReprtDate',
+        label: 'Own Revenue Details',
+        yearData: [
+          {
+            label: 'FY 2019-20',
+            key: 'FY2019-20',
+            postion: '1',
+            amount: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditReprtDate',
+            code: [],
+            readonly: false,
+            year: "607697074dff55e6c0be33ba",
+            bottomText: `to be taken from approved Annual Budget `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2020-21',
+            key: 'FY2020-21',
+            postion: '2',
+            amount: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditReprtDate',
+            code: [],
+            readonly: false,
+            year: "606aadac4dff55e6c075c507",
+            bottomText: 'to be taken from approved Annual Budget of ',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '3',
+            amount: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditReprtDate',
+            code: [],
+            readonly: false,
+            year: "606aaf854dff55e6c075d219",
+            bottomText: 'to be taken from approved Annual Budget of ',
+            placeHolder: ''
+          },
+        ]
+      },
       ownRevDetails: {
         key: 'ownRevDetails',
         label: 'Own Revenue Details',
@@ -772,7 +826,7 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      totalFeeChrgWaterSupply: {
+      totalFeeChrgSanitation: {
         key: 'totalFeeChrgSanitation',
         label: 'Total Fee&User Charge for Sanitation/Sewerage',
         yearData: [
@@ -1311,27 +1365,8 @@ const fiscalRankingFormJson = () => {
       },
       appAnnualBudget: {
         key: 'appAnnualBudget',
-        label: 'Copy of Detailed Approved Annual Budget of',
+        label: 'Copy of Approved Annual Budget in English',
         yearData: [
-          {
-            label: 'FY 2019-20',
-            key: 'appAnnualBudget_2019-20',
-            postion: '1',
-            amount: '',
-            file: {
-              name: "",
-              url: ""
-            },
-            min: '',
-            max: '',
-            required: true,
-            type: 'appAnnualBudget',
-            year: "607697074dff55e6c0be33ba",
-            code: [],
-            readonly: false,
-            bottomText: `Maximum Size  5MB (pdf files only)`,
-            placeHolder: ''
-          },
           {
             label: 'FY 2020-21',
             key: 'appAnnualBudget_2020-21',
@@ -1396,7 +1431,7 @@ const fiscalRankingFormJson = () => {
       },
       auditedAnnualFySt: {
         key: 'auditedAnnualFySt',
-        label: 'Copy of Detailed Audited Annual Accounts for',
+        label: 'Copy of Audited Annual Financial Statements in English',
         yearData: [
           {
             label: 'FY 2018-19',
