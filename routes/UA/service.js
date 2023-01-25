@@ -6,6 +6,7 @@ const Ulb = require('../../models/Ulb')
 const SLBData = require('../../models/XVFcGrantForm')
 const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
+const Year = require("../../models/Year")
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const axios = require('axios')
 const UaFileList = require("../../models/UaFileList")
@@ -739,7 +740,26 @@ module.exports.getRelatedUAFile = catchAsync(async(req,res)=>{
         res.status(500).json(response)
     }
 })
-
+module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
+    let response = {
+        "success":false,
+        "message":""
+    }
+    try{
+        let {uaCode} = req.params
+        let ua = await UA.findOne({"UACode":uaCode})
+        if(!ua){
+            response.message = "UA object not found"
+            return res.status(400).json(response)
+        }
+        response.message = "found"
+        response.ua = ua._id
+        return res.status(200).json(response)
+    }
+    catch(err){
+        console.log("error in getUAById")
+    }
+})
 module.exports.addUAFile = catchAsync(async(req,res)=>{
     try{
         let response = {
@@ -747,11 +767,19 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
             "message":""
         }
         let data = {...req.body} 
+        console.log("data :: ",data)
+        let design_year = data.Year
+        let yearObj = await Year.findOne({"year":design_year})
+        if(!yearObj){
+            response.message = "Year object not found in database"
+            return res.status(400).json(response)
+        }
         if(!data || data === undefined  || Object.keys(data).length < 1 ){
             response.message = "data  is required"
             return res.status(400).json(response)
         } 
         try{
+            data.Year = yearObj._id
             let UaFileObj = new UaFileList(data)
             await UaFileObj.save()
             response.success = true
@@ -759,7 +787,6 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
             return res.status(201).json(response)
         }
         catch(err){
-            console.log("22")
             console.log(Object.keys(err))
             response.message = err.message
             return res.status(500).json(response)
@@ -768,5 +795,7 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
     }
     catch(err){
         console.log("error in addUAFile ::: ",err.message)
+        response.message = err.message
+        return res.status(500).json(response)
     }
 })
