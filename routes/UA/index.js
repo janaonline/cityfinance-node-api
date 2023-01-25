@@ -9,7 +9,7 @@ const { update } = require('./service')
 
 router.get('/getAll', verifyToken, getAll)
 router.get('/get2223', get2223)
-//router.get("/getUA/:uaCode",getUAByuaCode)
+router.get("/getUA/:uaCode",getUAByuaCode)
 router.get('/getUAfile',getRelatedUAFile)
 router.post("/addUAfile",addUAFile)
 router.put('/update', update)
