@@ -9,6 +9,7 @@ const Ulb = require('../../models/Ulb');
 const { fiscalRankingFormJson } = require('./fydynemic');
 
 exports.CreateorUpdate = async (req, res, next) => {
+  // console.log("req.body",req.body)
   try {
     let { ulb, design_year } = req.body;
     if (!ulb && !design_year) {
@@ -219,6 +220,7 @@ exports.getView = async function (req, res, next) {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+                console.log("singleFydata",singleFydata)
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;

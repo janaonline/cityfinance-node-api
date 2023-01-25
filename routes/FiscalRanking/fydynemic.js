@@ -1373,12 +1373,12 @@ const fiscalRankingFormJson = () => {
           {
             label: 'FY 2020-21',
             key: 'appAnnualBudget_2020-21',
-            postion: '2',
+            postion: '1',
             amount: '',
             min: 0,
             max: 13,
             required: true,
-            type: 'totalFeeChrgSanitation',
+            type: 'appAnnualBudget',
             code: [],
             file: {
               name: "",
@@ -1392,12 +1392,12 @@ const fiscalRankingFormJson = () => {
           {
             label: 'FY 2021-22',
             key: 'appAnnualBudget_2021-22',
-            postion: '3',
+            postion: '2',
             amount: '',
             min: 0,
             max: 13,
             required: true,
-            type: 'totalFeeChrgSanitation',
+            type: 'appAnnualBudget',
             code: [],
             file: {
               name: "",
@@ -1411,12 +1411,12 @@ const fiscalRankingFormJson = () => {
           {
             label: 'FY 2022-23',
             key: 'appAnnualBudget_2022-23',
-            postion: '4',
+            postion: '3',
             amount: '',
             min: 0,
             max: 13,
             required: true,
-            type: 'totalFeeChrgSanitation',
+            type: 'appAnnualBudget',
             code: [],
             file: {
               name: "",
