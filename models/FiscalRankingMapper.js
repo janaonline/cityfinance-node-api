@@ -5,7 +5,7 @@ const fiscalRankingMapperSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         amount: { type: Number, default: null },
-        auditReprtDate: { type: Date, default: null },
+        date: { type: Date, default: null }, // audit date
         status: {
             type: String,
             default: "PENDING",
