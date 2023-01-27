@@ -66,7 +66,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         }
 
         if(!data?.data || data?.data.length<=0){
-          return Response.BadRequest(res,"Data fields are required");
+          return Response.BadRequest(res,{},"Data fields are required");
         }
 
         formData.ulb = ObjectId(formData.ulb);

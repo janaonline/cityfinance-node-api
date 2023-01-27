@@ -133,7 +133,7 @@ module.exports.createOrUpdate = async (req, res) => {
       !formData?.categoryWiseData_swm ||
       !formData?.categoryWiseData_wm
       ){
-      return Response.BadRequest(res,"Category wise data fields are required");
+      return Response.BadRequest(res,{},"Category wise data fields are required");
     }
 
     if (req.body.ulb) {
