@@ -199,7 +199,11 @@ exports.getView = async function (req, res, next) {
             if (fyData.length) {
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
               if (singleFydata) {
-                pf['amount'] = singleFydata.amount;
+                if (singleFydata?.date !== null) {
+                  pf['date'] = singleFydata ? singleFydata.date : null;
+                } else {
+                  pf['amount'] = singleFydata ? singleFydata.amount : "";
+                }
                 pf['status'] = singleFydata.status;
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
@@ -220,7 +224,7 @@ exports.getView = async function (req, res, next) {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
-                console.log("singleFydata",singleFydata)
+                console.log("singleFydata", singleFydata)
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
@@ -243,7 +247,11 @@ exports.getView = async function (req, res, next) {
               if (fyData.length) {
                 if (pf.year && pf.type) {
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
-                  pf['amount'] = singleFydata ? singleFydata.amount : "";
+                  if (singleFydata?.date !== null) {
+                    pf['date'] = singleFydata ? singleFydata.date : null;
+                  } else {
+                    pf['amount'] = singleFydata ? singleFydata.amount : "";
+                  }
                   pf['status'] = singleFydata ? singleFydata.status : "";
                   pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : false;
                 }
