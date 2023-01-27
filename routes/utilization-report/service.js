@@ -127,6 +127,15 @@ module.exports.createOrUpdate = async (req, res) => {
     condition.financialYear = financialYear;
     condition.ulb = ulb;
 
+    if(
+      formData?.categoryWiseData_wm?.length<=0 || 
+      formData?.categoryWiseData_swm?.length<=0 || 
+      !formData?.categoryWiseData_swm ||
+      !formData?.categoryWiseData_wm
+      ){
+      return Response.BadRequest(res,"Category wise data fields are required");
+    }
+
     if (req.body.ulb) {
       formData["ulb"] = ObjectId(ulb);
     }
