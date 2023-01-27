@@ -4480,3 +4480,62 @@ module.exports.statusCorrection = async (req, res)=>{
     totalFormsArray
   })
 }
+
+//Query created to set status of Annual Account NA
+// module.exports.statusCorrectionAnnual = async (req, res)=>{
+
+
+//   let forms = await MasterFormData.find(
+//     {
+//       "actionTakenByRole" : "MoHUA",
+//       "status" : "PENDING",
+//       "isSubmit" : false,
+//       "steps.annualAccounts.status": "PENDING",
+//       // "_id": "620cc57fd4ad324699e76581"
+//     }
+//   ).lean();
+//   let totalForms=0, totalFormsArray =[];
+
+//   for(let i =0; i < forms.length; i++){
+//     let form = forms[i];
+//     let formHistory = form["history"];
+//     let formLastHistory = formHistory[formHistory.length-1];
+//     if(formHistory && formHistory.length>0){
+//       if(
+//         formLastHistory["actionTakenByRole"] === "STATE" && 
+//         formLastHistory["status"]=== "APPROVED"
+//         // && (
+//         //     (formLastHistory["steps"]["annualAccounts"]["status"] === "NA" 
+//         //     // ||
+//         //     // formLastHistory["steps"]["annualAccounts"]["status"] === "NA" 
+//         //     ) ||
+//         //    ( 
+//         //     formLastHistory["steps"]["annualAccounts"]["status"] === "N/A"
+//         //     //  ||
+//         //     // formLastHistory["steps"]["annualAccounts"]["status"] === "N/A" 
+//         //   )
+//           // )
+//         ){
+//         totalForms++;
+//           totalFormsArray.push(formLastHistory);
+//           let status =  formLastHistory["steps"]["annualAccounts"]["status"]
+
+//         // let updatedForm = await MasterFormData.findOneAndUpdate({_id: form._id},
+//         //   {
+//         //     $set:{
+//         //       "steps.annualAccounts.status": status
+//         //     }
+//         //   })
+//           // totalFormsArray.push(updatedForm);
+
+
+//       }
+//     }
+
+//   }
+
+//   return res.status(200).json({
+//     totalForms,
+//     totalFormsArray
+//   })
+// }
