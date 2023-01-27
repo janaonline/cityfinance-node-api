@@ -27,6 +27,8 @@ const { canTakenAction } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const { FormNames, YEAR_CONSTANTS } = require('../../util/FormNames');
+const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
+
 var https = require('https');
 var request = require('request')
 function doRequest(url) {
@@ -442,7 +444,7 @@ exports.createUpdate = async (req, res) => {
       proData = req.body.unAudited.provisional_data;
       for (const key in proData) {
         if (key == "auditor_report") continue;
-        if (proData[key]['status'] == 'REJECTED') {
+        if (proData[key]?.status == 'REJECTED') {
           proData[key].status = "PENDING";
           proData[key].rejectReason = null;
         }
@@ -455,7 +457,7 @@ exports.createUpdate = async (req, res) => {
     if (req.body.audited.submit_annual_accounts) {
       audData = req.body.audited.provisional_data;
       for (const key in audData) {
-        if (audData[key]['status'] == 'REJECTED') {
+        if (audData[key]?.status == 'REJECTED') {
           audData[key].status = "PENDING";
           audData[key].rejectReason = null;
         }
@@ -488,6 +490,13 @@ exports.createUpdate = async (req, res) => {
     const submittedForm = await AnnualAccountData.findOne(condition);
     if (formData['design_year'] == '606aaf854dff55e6c075d219') {
       formData.modifiedAt = Date.now();
+      if (
+        data?.audited?.submit_annual_accounts === false &&
+        data?.unAudited?.submit_annual_accounts === false
+      ) {
+        req.body.status = "N/A";
+        formData.status = "N/A"
+      }
       const addedHistory = await AnnualAccountData.findOneAndUpdate(
         condition,
         formData,
@@ -503,6 +512,7 @@ exports.createUpdate = async (req, res) => {
     }
     if (design_year != "606aaf854dff55e6c075d219")
       formData = calculateTabwiseStatus(formData);
+
     if (submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB') {// form already submitted
       return res.status(200).json({
         status: true,
@@ -575,6 +585,10 @@ exports.createUpdate = async (req, res) => {
         }
       }
     } else if (!submittedForm && isDraft) {
+
+      formData.audited.status = "PENDING";
+      formData.unAudited.status = 'PENDING';
+
       const form = await AnnualAccountData.create(formData);
       if (form) {
         formData.createdAt = form.createdAt;
@@ -1649,6 +1663,13 @@ exports.getAccounts = async (req, res) => {
       status = 'Submitted through Open Page'
     }
     let obj = {}
+    let host = "";
+    if (req.headers.host === BackendHeaderHost.Demo) {
+      host = FrontendHeaderHost.Demo;
+    }
+    /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
+    host = host !== "" ? host : req.headers.host;
+
     if (!ulbData.access_2122) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
@@ -1658,7 +1679,7 @@ exports.getAccounts = async (req, res) => {
         annualAccountData['url'] = `Your previous Year's form status is - ${status}`;
       } else {
         annualAccountData['action'] = 'redirect'
-        annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=${req.get("origin")}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+        annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
       }
     }
 
@@ -2286,7 +2307,7 @@ exports.action = async (req, res) => {
       design_year: ObjectId(design_year),
     }).select({
       history: 0,
-    });
+    }).lean();
 
     let allReasons = [];
     let finalStatus = "APPROVED";
@@ -2369,6 +2390,13 @@ exports.action = async (req, res) => {
     //       req.body.unAudited['responseFile_mohua'] = req.body.unAudited.responseFile
     //   }
     // }
+    currentAnnualAccountData.audited = req.body.audited;
+    currentAnnualAccountData.unAudited = req.body.unAudited
+    currentAnnualAccountData.modifiedAt = new Date();
+    currentAnnualAccountData.status= req.body.status;
+    currentAnnualAccountData.actionTakenByRole = actionTakenByRole;
+    currentAnnualAccountData.actionTakenBy = req.body.actionTakenBy;
+
     const newAnnualAccountData = await AnnualAccountData.findOneAndUpdate(
       { ulb: ObjectId(ulb), design_year: ObjectId(design_year) },
       { $set: req.body, $push: { history: currentAnnualAccountData } }

@@ -4422,3 +4422,61 @@ module.exports.roleCorrection = async (req, res) => {
   })
 
 }
+
+module.exports.statusCorrection = async (req, res)=>{
+
+
+  let forms = await MasterFormData.find(
+    {
+      "actionTakenByRole" : "MoHUA",
+      "status" : "PENDING",
+      "isSubmit" : false,
+      "steps.slbForWaterSupplyAndSanitation.status": "PENDING",
+      // "_id": "620cc57fd4ad324699e76581"
+    }
+  ).lean();
+  let totalForms=0, totalFormsArray =[];
+
+  for(let i =0; i < forms.length; i++){
+    let form = forms[i];
+    let formHistory = form["history"];
+    let formLastHistory = formHistory[formHistory.length-1];
+    if(formHistory && formHistory.length>0){
+      if(
+        formLastHistory["actionTakenByRole"] === "STATE" && 
+        formLastHistory["status"]=== "APPROVED"
+        && (
+            (formLastHistory["steps"]["slbForWaterSupplyAndSanitation"]["status"] === "NA" 
+            // ||
+            // formLastHistory["steps"]["annualAccounts"]["status"] === "NA" 
+            ) ||
+           ( 
+            formLastHistory["steps"]["slbForWaterSupplyAndSanitation"]["status"] === "N/A"
+            //  ||
+            // formLastHistory["steps"]["annualAccounts"]["status"] === "N/A" 
+          )
+          )
+        ){
+        totalForms++;
+          totalFormsArray.push(formLastHistory);
+          let status =  formLastHistory["steps"]["slbForWaterSupplyAndSanitation"]["status"]
+
+        let updatedForm = await MasterFormData.findOneAndUpdate({_id: form._id},
+          {
+            $set:{
+              "steps.slbForWaterSupplyAndSanitation.status": status
+            }
+          })
+          totalFormsArray.push(updatedForm);
+
+
+      }
+    }
+
+  }
+
+  return res.status(200).json({
+    totalForms,
+    totalFormsArray
+  })
+}
