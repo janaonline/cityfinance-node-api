@@ -439,7 +439,7 @@ module.exports.delete = catchAsync(async (req, res) => {
 
 })
 
-const sortByPosition = (data, role) => {
+const sortByPosition = (data) => {
     for(let key in data){
         data[key].sort((a, b) => {
             return a.position - b.position;
