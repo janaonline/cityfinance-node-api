@@ -15,6 +15,7 @@ const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
 
 exports.CreateorUpdate = async (req, res, next) => {
+  // console.log("req.body",req.body)
   try {
     let { ulb, design_year } = req.body;
     if (!ulb && !design_year) {
@@ -128,7 +129,7 @@ exports.getView = async function (req, res, next) {
       data['populationFr']['value'] = data.populationFr.value ? data.populationFr.value : twEightSlbs ? twEightSlbs?.population : ""
       data['population11']['value'] = data.population11.value ? data.population11.value : ulbPData ? ulbPData?.population : ""
       data['population11']['readonly'] = ulbPData ? ulbPData?.population > 0 ? true : false : false
-      data['populationFr']['readonly'] = twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
+      data['populationFr']['readonly'] = false
       data['fyData'] = fyData
       viewOne = data
     } else {
@@ -145,7 +146,7 @@ exports.getView = async function (req, res, next) {
         },
         "populationFr": {
           "value": twEightSlbs ? twEightSlbs?.population : "",
-          "readonly": twEightSlbs ? twEightSlbs?.population > 0 ? true : false : false
+          "readonly": false
         },
         "webLink": null,
         "nameCmsnr": "",
@@ -153,12 +154,16 @@ exports.getView = async function (req, res, next) {
         "designationOftNodalOfficer": "",
         "email": null,
         "mobile": null,
+        "waterSupply": numberOfQuestion,
+        "sanitationService": numberOfQuestion,
+        "propertyWaterTax": numberOfQuestion,
+        "propertySanitationTax": numberOfQuestion,
         "webUrlAnnual": numberOfQuestion,
-        "digitalRegtr": numberOfQuestion,
         "registerGis": numberOfQuestion,
         "accountStwre": numberOfQuestion,
         "totalOwnRevenueArea": numberOfQuestion,
-        "fy_19_20_cash": {
+        "fy_21_22_cash": {
+          "year": null,
           "type": null,
           "amount": null,
           "status": ""
@@ -167,9 +172,10 @@ exports.getView = async function (req, res, next) {
           "name": null,
           "url": null
         },
-        "fy_19_20_online": {
+        "fy_21_22_online": {
           "type": null,
           "amount": null,
+          "year": null,
           "status": ""
         },
         "fyData": [],
@@ -190,7 +196,7 @@ exports.getView = async function (req, res, next) {
     }
     let fyDynemic = await fiscalRankingFormJson();
     let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
-    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }, "ulb": ObjectId(req.query.ulb) });
+    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       for (let key in subData) {
@@ -199,27 +205,32 @@ exports.getView = async function (req, res, next) {
             if (fyData.length) {
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
               if (singleFydata) {
-                pf['amount'] = singleFydata.amount;
+                if (singleFydata?.date !== null) {
+                  pf['date'] = singleFydata ? singleFydata.date : null;
+                } else {
+                  pf['amount'] = singleFydata ? singleFydata.amount : "";
+                }
                 pf['status'] = singleFydata.status;
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = ulbFyAmount;
-                pf['readonly'] = ulbFyAmount >= 0 ? true : false;
+                pf['status'] = "";
+                pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = ulbFyAmount;
-                pf['readonly'] = ulbFyAmount >= 0 ? true : false;
+                pf['status'] = "";
+                pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             }
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+                console.log("singleFydata", singleFydata)
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
@@ -242,7 +253,11 @@ exports.getView = async function (req, res, next) {
               if (fyData.length) {
                 if (pf.year && pf.type) {
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
-                  pf['amount'] = singleFydata ? singleFydata.amount : "";
+                  if (singleFydata?.date !== null) {
+                    pf['date'] = singleFydata ? singleFydata.date : null;
+                  } else {
+                    pf['amount'] = singleFydata ? singleFydata.amount : "";
+                  }
                   pf['status'] = singleFydata ? singleFydata.status : "";
                   pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : false;
                 }
@@ -345,8 +360,8 @@ const ulbLedgersData = (objData) => {
         },
         {
           $match: {
-            code: { $in: ["110", "130", "140", "150", "180", "11001", "410", "412", "210", "220", "230", "240", "200"] },
-            year: { $in: ['2016-17', '2017-18', '2018-19', '2019-20'] }
+            code: { $in: ["110", "130", "140", "150", "180", "200", "210", "220", "230", "240", "410", "412", "11001", "11002", "11003"] },
+            year: { $in: ['2017-18', '2018-19', '2019-20', '2020-21', "2021-22"] }
           }
         },
         {

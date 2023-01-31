@@ -68,12 +68,28 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
             },
+            year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
             value: { type: String, default: null }
         },
-        digitalRegtr: enumYesNo,
+        ownRevDetails: {
+            status: {
+                type: String,
+                enum: {
+                    values: ["PENDING", "APPROVED", "REJECTED"],
+                    message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+                },
+            },
+            year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
+            value: { type: String, default: null }
+        },
+        waterSupply: enumYesNo,
+        sanitationService: enumYesNo,
+        propertyWaterTax: enumYesNo,
+        propertySanitationTax: enumYesNo,
+        // digitalRegtr: enumYesNo,
         registerGis: enumYesNo,
         accountStwre: enumYesNo,
-        fy_19_20_cash: {
+        fy_21_22_cash: {
             type: {
                 type: String,
                 enum: {
@@ -89,9 +105,10 @@ const fiscalRankingSchema = new Schema(
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
-            }
+            },
+            year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
         },
-        fy_19_20_online: {
+        fy_21_22_online: {
             type: {
                 type: String,
                 enum: {
@@ -107,7 +124,8 @@ const fiscalRankingSchema = new Schema(
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
-            }
+            },
+            year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
         },
         totalOwnRevenueArea: numberOfQuestion1,
         property_tax_register: numberOfQuestion,

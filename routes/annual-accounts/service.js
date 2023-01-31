@@ -1927,8 +1927,8 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
               el['formStatus'] = statusList[5]
             }
           } else if (el.role == 'MoHUA' && el.isDraft) {
-            el['formStatus'] = statusList[0]
-            // el['formStatus'] = statusList[8]
+            // el['formStatus'] = statusList[0]
+            el['formStatus'] = statusList[8]
           } else if (el.role == 'MoHUA' && !el.isDraft) {
             if (el.status == 'APPROVED') {
               el['formStatus'] = statusList[7]

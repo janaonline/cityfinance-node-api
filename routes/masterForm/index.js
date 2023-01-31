@@ -16,7 +16,8 @@ const {
   update,
   check,
   roleCorrection,
-  statusCorrection
+  statusCorrection,
+  // statusCorrectionAnnual
 } = require("./service");
 router.get('/get/:design_year', verifyToken, get) //ulb login
 router.get('/get/:design_year/:masterform_id', verifyToken, get) // admin login
@@ -38,5 +39,6 @@ router.post('/finalAction', verifyToken, finalAction)
 
 router.post('/roleCorrection', roleCorrection);
 router.post('/statusCorrection', statusCorrection);
+// router.post('/statusCorrectionAnnual', statusCorrectionAnnual);
 
 module.exports = router;
