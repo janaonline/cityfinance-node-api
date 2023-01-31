@@ -5,6 +5,7 @@ const fiscalRankingMapperSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         amount: { type: Number, default: null },
+        date: { type: Date, default: null }, // audit date
         status: {
             type: String,
             default: "PENDING",
@@ -17,7 +18,28 @@ const fiscalRankingMapperSchema = new Schema(
         type: {
             type: String,
             enum: {
-                values: ["totalRcptActl", "totalRcptBudget", "totalOwnRvnue", "totalProperty", "totalGrossBl", "totalCWIP", "estAdmExpenses", "totalRevExp", "appAnnualBudget", "auditedAnnualFySt"],
+                values: [
+                    "totalRcptActl",
+                    "totalRcptWaterSupply",
+                    "totalRcptSanitation",
+                    "totalRcptBudget",
+                    "totalOwnRvnue",
+                    "totalProperty",
+                    "totalTaxRevWaterSupply",
+                    "totalTaxRevSanitation",
+                    "totalFeeChrgWaterSupply",
+                    "totalFeeChrgSanitation",
+                    "totalCaptlExp",
+                    "totalCaptlExpWaterSupply",
+                    "totalCaptlExpSanitation",
+                    "totalOmExp",
+                    "totalCaptlExpWaterSupply",
+                    "totalOMCaptlExpSanitation",
+                    "totalRevExp",
+                    "appAnnualBudget",
+                    "auditedAnnualFySt",
+                    "auditReprtDate"
+                ],
                 message: "ERROR: STATUS BE EITHER",
             },
         },
@@ -29,7 +51,7 @@ const fiscalRankingMapperSchema = new Schema(
             type: String,
             default: "Number",
             enum: {
-                values: ["Number", "PDF", "Excel"],
+                values: ["Number", "PDF", "Excel", "Date"],
                 message: "ERROR: STATUS BE EITHER",
             },
         },
