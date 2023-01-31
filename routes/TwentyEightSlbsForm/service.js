@@ -13,6 +13,7 @@ const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
+const Response = require("../../service").response;
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -62,6 +63,10 @@ module.exports.createOrUpdateForm = async (req, res) =>{
             status: false,
             message: "Ulb and design year is mandatory",
           });
+        }
+
+        if(!data?.data || data?.data.length<=0){
+          return Response.BadRequest(res,{},"Data fields are required");
         }
 
         formData.ulb = ObjectId(formData.ulb);

@@ -325,6 +325,8 @@ module.exports.get = catchAsync(async (req, res) => {
     //group the data 
      tempData = groupByKey(data, "category")
     }
+    
+  
 //sorting the data as per sequence no;
 tempData = sortByPosition(tempData);
 //creating card Data
@@ -438,12 +440,14 @@ module.exports.delete = catchAsync(async (req, res) => {
 })
 
 const sortByPosition = (data) => {
- for(let key in data){
-    data[key].sort((a, b) => {
-        return a.position - b.position;
-    });
- }
-    return data 
+    for(let key in data){
+        data[key].sort((a, b) => {
+            return a.position - b.position;
+        });
+      
+     }
+
+    return data;
 }
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
