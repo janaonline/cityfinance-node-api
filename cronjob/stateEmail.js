@@ -41,33 +41,40 @@ const calculateFormStatus = async () => {
       let stateObj = {
         [states[i].name]: {},
       };
-      const pipeline = [
-        {
-          $match: {
-            design_year: ObjectId(YEAR_CONSTANTS["22_23"]),
-          },
-        },
-        {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulb",
-          },
-        },
-        {
-          $unwind: "$ulb",
-        },
-        {
-          $match: {
-            "ulb.state": ObjectId(states[i]._id),
-          },
-        },
-        
-      ];
+      
   
       for (let j = 0; j < collections.length; j++) {
         let collection = collections[j];
+        let design_year = 'design_year'
+        //Case handled for dur design_year
+        if(collections[j].collection.collectionName === CollectionNames['dur']){
+          design_year = "designYear"
+        }
+        const pipeline = [
+          {
+            $match: {
+              [design_year]: ObjectId(YEAR_CONSTANTS["22_23"]),
+            },
+          },
+          {
+            $lookup: {
+              from: "ulbs",
+              localField: "ulb",
+              foreignField: "_id",
+              as: "ulb",
+            },
+          },
+          {
+            $unwind: "$ulb",
+          },
+          {
+            $match: {
+              "ulb.state": ObjectId(states[i]._id),
+            },
+          },
+          
+        ];
+        
         let formData = await collection.aggregate(pipeline);
         const ulbsCount = await Ulb.find({state:states[i]._id}).countDocuments();
         const obj = {

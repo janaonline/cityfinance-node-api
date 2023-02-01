@@ -720,9 +720,15 @@ module.exports.getRelatedUAFile = catchAsync(async(req,res)=>{
         }
         else{
             let uaFileArr = await UaFileList.find({"UA":ObjectId(ulbObj.UA)})
+            let modifiedUaFileArr = [...uaFileArr]
+            modifiedUaFileArr =  modifiedUaFileArr.map((item)=>{
+                let obj = {...item._doc}
+                obj['modifiedAt'] = new Date(item.modifiedAt).toISOString().substring(0, 10)
+                return obj
+            })
            if(uaFileArr.length > 0){
                 response.success = true
-                response.fileUrls = uaFileArr
+                response.fileUrls = modifiedUaFileArr
                 response.message = "Fetched successfully"
                 return res.status(200).json(response)
            }
