@@ -135,7 +135,7 @@ exports.getView = async function (req, res, next) {
     } else {
       let numberOfQuestion = {
         value: null,
-        status: ""
+        status: "PENDING"
       }
       viewOne = {
         "ulb": null,
@@ -166,7 +166,7 @@ exports.getView = async function (req, res, next) {
           "year": null,
           "type": null,
           "amount": null,
-          "status": ""
+          "status": "PENDING"
         },
         "signedCopyOfFile": {
           "name": null,
@@ -176,20 +176,20 @@ exports.getView = async function (req, res, next) {
           "type": null,
           "amount": null,
           "year": null,
-          "status": ""
+          "status": "PENDING"
         },
         "fyData": [],
         "property_tax_register": {
           "value": "",
-          "status": "",
+          "status": "PENDING",
         },
         "paying_property_tax": {
           "value": "",
-          "status": ""
+          "status": "PENDING"
         },
         "paid_property_tax": {
           "value": "",
-          "status": ""
+          "status": "PENDING"
         },
         "isDraft": null
       }
@@ -710,11 +710,30 @@ function getPopulationCondition(){
   }
 }
 
+function getTotalProjectionQueryForPagination(){
+  try{
+    let total = {
+      "$let": {
+          "vars": {
+              "totalObj": { 
+                  "$arrayElemAt": ['$metaData', 0]           
+              }
+          },
+      "in": '$$totalObj.total'
+      }
+    }
+    return total
+  }
+  catch(err){
+    console.log("error")
+  }
+}
+
 /**
  * function that returns projection query for ulbs only
  * @param {Array} queryArr
  */
-function getProjectionQueries(queryArr,collectionName){
+function getProjectionQueries(queryArr,collectionName,skip,limit){
   try{
     //projection query for conditions
     let projectionQueryWithConditions = {
@@ -731,31 +750,23 @@ function getProjectionQueries(queryArr,collectionName){
         "state_id": "$state._id",
         "stateName": "$state.name",
         "populationType":getPopulationCondition(),
-        "formData": { $ifNull: [`$${collectionName}`, ""] }
-      }
-    }
-    queryArr.push(projectionQueryWithConditions) 
-    //projection query that decides which cols to show
-    let projectionQueryThatDecidesCols = {
-      $project: {
-        ulbName: 1,
-        ulbId: 1,
-        ulbCode: 1,
-        censusCode: 1,
-        UA: 1,
-        UA_id: 1,
-        ulbType: 1,
-        ulbType_id: 1,
-        population: 1,
-        state_id: 1,
-        stateName: 1,
-        populationType: 1,
-        formData: 1,
-        filled:{
+        "formData": { $ifNull: [`$${collectionName}`, ""] },
+        "filled":{
           $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
         }
       }
     }
+    queryArr.push(projectionQueryWithConditions) 
+    getFacetQueryForPagination(queryArr,skip,limit)
+    //projection query that decides which cols to show
+    let projectionQueryThatDecidesCols = {
+      $project: {
+        formData: 1,
+        records:1,
+        total:getTotalProjectionQueryForPagination()
+      }
+    }
+    
     queryArr.push(projectionQueryThatDecidesCols)
   }
   catch(err){
@@ -807,14 +818,23 @@ function getFormQuery(queryArr,collectionName,design_year){
                 {"$eq":["$ulb","$$ulb_id"]}
               ]
             }
-          }}
+          }},
         ]
       }
     }
     obj["$lookup"]["pipeline"].push(getCommonLookupObj("years","design_year","_id","design_year"))
     obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"))
     obj["$lookup"]["as"] = collectionName
+    obj["$lookup"]["pipeline"].push({
+      "$project":{
+        "_id":1,
+        "status":1,
+        "actionTakenByRole":1,
+         "isDraft":1
+      }
+    })
     obj["$lookup"]["pipeline"].push(getUnwindObj(`$${collectionName}`,true))
+   
     queryArr.push(obj)
   }
   catch(err){
@@ -852,6 +872,30 @@ function get_state_query(queryArr,stateId=false){
 }
 
 /**
+ * function facet query that to get the totalCount
+ * @param {Number} skip
+ * @param {Number} limit
+ * @param {Arr} queryArr
+*/
+function getFacetQueryForPagination(queryArr,skip,limit){
+  console.log("skip ::: ",skip)
+  console.log("limit ::: ",limit)
+  let facetObj = {}
+  try{
+    facetObj = {
+      "$facet":{
+        "metaData":[{"$count":'total'}],
+        "records":[{"$skip":parseInt(skip)},{"$limit":parseInt(limit)}]
+      }
+    }
+    queryArr.push(facetObj)
+  }
+  catch(err){
+    console.log("error while getFacetQueryForPagination::",err.message)
+  }
+}
+
+/**
  * function that get aggregate queries according to stages
  * @param {*} collectionName:String
  * @param {*} path :String
@@ -863,9 +907,8 @@ function getAggregateQuery(collectionName,path,year,skip,limit,stateId=null){
     let match_ulb_with_access = {
       "$match":{"access_2223":true}
     }
-    console.log("stateId::",stateId)
-    if(stateId !== null || stateId !== undefined){
-      console.log("inside if")
+    if(stateId !== null && stateId !== undefined){
+      console.log("inside if" , "stateId",typeof stateId)
       match_ulb_with_access["$match"]["state"] = ObjectId(stateId)
     }
     query.push(match_ulb_with_access)
@@ -875,22 +918,9 @@ function getAggregateQuery(collectionName,path,year,skip,limit,stateId=null){
     query.push(getUnwindObj("$UA",true))
     query.push(getCommonLookupObj("ulbtypes","ulbType","_id","ulbType"))
     query.push(getUnwindObj("$ulbType",true))
-    getProjectionQueries(query,collectionName)
+   
+    getProjectionQueries(query,collectionName,skip,limit)
     query.push({"$sort":{"formData":-1}})
-    let paginator = [
-      { $addFields: { "dummy": [] } },
-      {
-        $unwind: {
-          path: "$dummy",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $skip: skip
-      },
-      { $limit: limit }
-    ]
-    query.concat(paginator)
   }
   catch(err){
     console.log("error in getAggregateQuery :::: ",err)
@@ -972,6 +1002,9 @@ function checkValidRequest(formId,stateId,role){
         validation.valid = true
       }
     }
+    if((role === userTypes.mohua)){
+      validation.valid = true
+    }
 
   }
   catch(err){
@@ -1021,6 +1054,7 @@ function checkForRoleAndgetStateId(req,role){
   catch(err){
     console.log("error in checkForRoleAndgetStateId :: ",err.message)
   }
+  return null
 }
 
 
@@ -1038,13 +1072,13 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
   }
   try{
     let cols = getColumns()
+    let total = 0
     let aggregateQuery = {}
-    let skip = req.query.skip ? parseInt(req.query.skip) : 0
-    let limit = req.query.limit ? parseInt(req.query.limit) : 10
+    let skip =  req.query.skip ||  0
+    let limit = req.query.limit || 10
     let {year,stateId,formId,getQuery} = req.query
     let {role} = req.decoded
     if(stateId === undefined || stateId === "null"){
-      console.log("inside function if ")
       stateId = checkForRoleAndgetStateId(req,role)
     }
     let searchFilters = {}
@@ -1053,6 +1087,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
       return res.status(500).json(response)
     }
     if(year === undefined){
+      console.log("6")
       response.message =  "Year parameter is required"
       return res.status(500).json(response)
     }
@@ -1064,39 +1099,43 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     searchFilters = searchQueries(req)
     let keys = calculateKeys(searchFilters['status'], role);
     Object.assign(searchFilters, keys)
-    console.log("searchFilters ::: ",searchFilters)
     let newFilter = await Service.mapFilterNew(searchFilters)
-    console.log("new Filter :: ",newFilter)
     let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
     let {path,collectionName} = formTab
-    console.log("role ::: ",role)
     if(role === userTypes.state){
       /**
        * return ulbs that are related to state only 
        */
-      aggregateQuery = getAggregateQuery(collectionName,path,year,0,10,stateId)
+      aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,stateId)
+      
     }
     else if((role === userTypes.mohua) || (role === userTypes.admin)){
       /**
        * return all ulbs related to the form
        */
-      aggregateQuery = getAggregateQuery(collectionName,path,year)
+      aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit)
     }
-    let data = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
-    data = updateActions(data,role)
+    let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
+    let data = queryResult[0]
+
+    total = data['total']
+    data = updateActions(data['records'],role)
     if(getQuery == 'true') return res.status(200).json({
       query:aggregateQuery
     })
     response.success = true
     response.columnNames = cols
     response.data = data
+    response.total = total
+    response.title = 'Review Fiscal Ranking  Application'
+    response.message = "Fetched successfully"
     return res.status(200).json(response)
   }
   catch(err){
     response.success = false
     response.message = err.message
     console.log("error in getFrForms",err)
-  return res.json(response)
+  return res.status(500).json(response)
   }
 })
