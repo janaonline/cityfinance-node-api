@@ -6,9 +6,12 @@ const Ulb = require('../../models/Ulb')
 const SLBData = require('../../models/XVFcGrantForm')
 const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
+const Year = require("../../models/Year")
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const axios = require('axios')
-const {calculateSlbMarks} = require('../Scoring/service')
+const UaFileList = require("../../models/UaFileList")
+const {calculateSlbMarks} = require('../Scoring/service');
+const { ulb } = require('../../util/userTypes');
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -695,3 +698,109 @@ responseObj.odf.score = numeratorOdf / popDataOdf;
     })
 })
 
+module.exports.getRelatedUAFile = catchAsync(async(req,res)=>{
+    let response = {
+        "success":false,
+        "message":""
+    }
+    try{
+        const {ulbId} = req.query
+        if(!ulbId){
+            response.message = "Please provide a ulb id"
+            return res.status(400).json(response)
+        } 
+        let ulbObj = await Ulb.findOne({"_id":ObjectId(ulbId)}).lean()
+        if(!ulbObj || ulbObj === undefined) {
+            response.message = "Ulb not found"; 
+            return res.status(400).json(response);
+        }
+        else if(ulbObj.isUA === "No"){
+            response.message = "Ulb does not have any UA"
+            return res.status(400).json(response);
+        }
+        else{
+            let uaFileArr = await UaFileList.find({"UA":ObjectId(ulbObj.UA)})
+            let modifiedUaFileArr = [...uaFileArr]
+            modifiedUaFileArr =  modifiedUaFileArr.map((item)=>{
+                let obj = {...item._doc}
+                obj['modifiedAt'] = new Date(item.modifiedAt).toISOString().substring(0, 10)
+                return obj
+            })
+           if(uaFileArr.length > 0){
+                response.success = true
+                response.fileUrls = modifiedUaFileArr
+                response.message = "Fetched successfully"
+                return res.status(200).json(response)
+           }
+           else{
+                response.success = true
+                response.fileUrls = []
+                response.message = "File Not found"
+                return res.status(404).json(response)
+           }
+        }
+    }
+    catch(err){
+        console.log("error in getRelatedUAFile :: ",err.message)
+        response.message = err.message
+        res.status(500).json(response)
+    }
+})
+module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
+    let response = {
+        "success":false,
+        "message":""
+    }
+    try{
+        let {uaCode} = req.params
+        let ua = await UA.findOne({"UACode":uaCode})
+        if(!ua){
+            response.message = "UA object not found"
+            return res.status(400).json(response)
+        }
+        response.message = "found"
+        response.ua = ua._id
+        return res.status(200).json(response)
+    }
+    catch(err){
+        console.log("error in getUAById")
+    }
+})
+module.exports.addUAFile = catchAsync(async(req,res)=>{
+    try{
+        let response = {
+            "success":false,
+            "message":""
+        }
+        let data = {...req.body} 
+        let design_year = data.Year
+        let yearObj = await Year.findOne({"year":design_year})
+        if(!yearObj){
+            response.message = "Year object not found in database"
+            return res.status(400).json(response)
+        }
+        if(!data || data === undefined  || Object.keys(data).length < 1 ){
+            response.message = "data  is required"
+            return res.status(400).json(response)
+        } 
+        try{
+            data.Year = yearObj._id
+            let UaFileObj = new UaFileList(data)
+            await UaFileObj.save()
+            response.success = true
+            response.message = "Created Successfully"
+            return res.status(201).json(response)
+        }
+        catch(err){
+            console.log(Object.keys(err))
+            response.message = err.message
+            return res.status(500).json(response)
+        }
+
+    }
+    catch(err){
+        console.log("error in addUAFile ::: ",err.message)
+        response.message = err.message
+        return res.status(500).json(response)
+    }
+})

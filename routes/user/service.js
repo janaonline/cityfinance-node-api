@@ -239,6 +239,7 @@ module.exports.getAll = async (req, res) => {
                             rejectReason: "$user.rejectReason",
                             modifiedAt: "$user.modifiedAt",
                             createdAt: "$user.createdAt",
+                            isActive: "$user.isDeleted",
                             accountantConatactNumber: "$user.accountantConatactNumber",
                             accountantEmail: "$user.accountantEmail",
                             accountantName: "$user.accountantName",
@@ -331,6 +332,7 @@ module.exports.getAll = async (req, res) => {
                             departmentContactNumber: 1,
                             departmentEmail: 1,
                             address: 1,
+                            isActive:1,
                             state: {
                                 $cond: [
                                     { $eq: ['$state._id', ''] },

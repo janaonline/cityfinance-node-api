@@ -96,6 +96,9 @@ router.use(Category);
 const UtilizationReport = require("./utilization-report");
 router.use(UtilizationReport);
 
+//////  
+router.get("/emailTrigger", require("../cronjob/stateEmail").emailTrigger);
+
 // // @logs
 const SaveLogs = require("./xvfc-grant-request-logs");
 router.use(SaveLogs);
@@ -249,5 +252,7 @@ router.use('/deleteFile', DeleteFileApi);
 
 const FiscalRanking = require('./FiscalRanking');
 router.use('/fiscal-ranking', FiscalRanking);
+
+router.use(require('./s3ServerFile'));
 
 module.exports = router;

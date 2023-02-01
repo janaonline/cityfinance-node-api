@@ -13,6 +13,7 @@ const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
+const Response = require("../../service").response;
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -62,6 +63,10 @@ module.exports.createOrUpdateForm = async (req, res) =>{
             status: false,
             message: "Ulb and design year is mandatory",
           });
+        }
+
+        if(!data?.data || data?.data.length<=0){
+          return Response.BadRequest(res,{},"Data fields are required");
         }
 
         formData.ulb = ObjectId(formData.ulb);
@@ -381,7 +386,7 @@ module.exports.getForm = async (req, res) => {
 
             let msg = userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
               status ? status : "Not Submitted"
-            }. Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
+            }. Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`
             return res.status(200).json({
               status: true,
               show: true,
@@ -393,7 +398,7 @@ module.exports.getForm = async (req, res) => {
           return res.status(200).json({
             status: true,
             show: true,
-            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. ` ,
+            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
           });
         }
         }
@@ -658,4 +663,154 @@ module.exports.getForm = async (req, res) => {
             message: error.message
         })
     }
+}
+
+module.exports.twentyEightSlbFormFormTargetValuesUpdation = async(req, res)=>{
+  try{
+    const slb4Forms = await SLB.find({
+      design_year: YEAR_CONSTANTS["21_22"],
+      // "_id" : ObjectId("620f6bb3d4ad324699e7d0f7"),
+
+    }).lean()     
+    let outputArray = []
+    if(slb4Forms && slb4Forms.length>0){
+      for(let i=0; i< slb4Forms.length; i++){
+          let form = slb4Forms[i];
+
+          let formStatus = calculateStatus(form.status, form.actionTakenByRole,!form.isCompleted,
+            "ULB")
+          
+           /* Checking if the form status is rejected by state or rejected by MoHUA. If it is, then it
+           will not be displayed. */
+          // if([StatusList.Rejected_By_State, StatusList.Rejected_By_MoHUA].includes(formStatus)){
+          //   continue;
+          // }
+            if(form.status=== "NA" || form.status === "N/A"){
+              continue;
+            }
+            if(!form?.waterManagement?.reduction?.target?.["2223"] ){
+              continue
+            }
+
+          // /* Checking if the form status is in the list of statuses. */
+          // if (
+          //   [
+          //     // StatusList.In_Progress,
+          //     StatusList.Approved_By_State,
+          //     StatusList.Under_Review_By_State,
+          //     StatusList.Approved_By_MoHUA,
+          //     StatusList.Under_Review_By_MoHUA,
+          //   ].includes(formStatus)
+          // ) {
+            let slb28Form = await TwentyEightSlbsForm.findOne({
+              ulb: form.ulb,
+            }).lean();
+
+            if (slb28Form) {
+              let slb28FormStatus = calculateStatus(
+                slb28Form.status,
+                slb28Form.actionTakenByRole,
+                slb28Form.isDraft,
+                "ULB"
+              );
+              if (
+                [
+                  StatusList.In_Progress,
+                  StatusList.Rejected_By_MoHUA,
+                  StatusList.Rejected_By_State,
+                ].includes(slb28FormStatus)
+              ) {
+                slb28Form["data"].forEach((element) => {
+                  /* Checking if the element is equal to the previous line item. */
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS[
+                      "Coverage of water supply connections"
+                    ]
+                  ) {
+                    element.target_1.value = form?.waterManagement
+                      ?.houseHoldCoveredPipedSupply?.target["2223"]
+                      ? Number(
+                          form?.waterManagement?.houseHoldCoveredPipedSupply
+                            ?.target["2223"]
+                        )
+                      : "";
+                  }
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS["Per capita supply of water(lpcd)"]
+                  ) {
+                    element.target_1.value = form?.waterManagement
+                      ?.waterSuppliedPerDay.target["2223"]
+                      ? Number(
+                          form?.waterManagement?.waterSuppliedPerDay?.target[
+                            "2223"
+                          ]
+                        )
+                      : "";
+                  }
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS["Extent of non-revenue water (NRW)"]
+                  ) {
+                    element.target_1.value = form?.waterManagement?.reduction
+                      ?.target["2223"]
+                      ? Number(
+                          form?.waterManagement?.reduction?.target["2223"]
+                        )
+                      : "";
+                  }
+                  if (
+                    element["indicatorLineItem"].toString() ===
+                    PrevLineItem_CONSTANTS[
+                      "Coverage of waste water network services"
+                    ]
+                  ) {
+                    element.target_1.value = form?.waterManagement
+                      ?.houseHoldCoveredWithSewerage?.target["2223"]
+                      ? Number(
+                          form?.waterManagement?.houseHoldCoveredWithSewerage
+                            ?.target["2223"]
+                        )
+                      : "";
+                  }
+
+                  
+                });
+
+                let slb28UpdatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
+                  {ulb: form.ulb},
+                  {
+                    $set: {
+                      data: slb28Form["data"],
+                    },
+                  }
+                ).lean();
+                outputArray.push(slb28Form)
+              }
+            }
+          // }
+
+        // /* Checking if the form status is in progress. */
+        //   if([StatusList.In_Progress].includes(formStatus)){
+
+        //   }
+
+
+      }
+    }
+
+    return res.status(200).json({
+      success:true,
+      total: outputArray.length,
+      data: outputArray
+    })
+
+  }catch(error){
+    return res.status(400).json({
+      status: false,
+      show: false,
+      message: error.message
+  })
+  }
 }
