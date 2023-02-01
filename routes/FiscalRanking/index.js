@@ -7,6 +7,6 @@ router.post("/create", verifyToken, CreateorUpdate);
 router.get("/getAll", verifyToken, getAll);
 router.get("/view", verifyToken, getView);
 router.put("/approvedByMohua", verifyToken, approvedByMohua);
-router.get("/get-fr-forms",verifyToken,getFRforms)
+router.get("/get-fr-ulbs",verifyToken,getFRforms)
 
 module.exports = router;

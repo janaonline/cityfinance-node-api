@@ -856,14 +856,16 @@ function get_state_query(queryArr,stateId=false){
  * @param {*} collectionName:String
  * @param {*} path :String
  */
-function getAggregateQuery(collectionName,path,year,skip,limit,stateId=false){
+function getAggregateQuery(collectionName,path,year,skip,limit,stateId=null){
   let query = []
   try{
     //stage one get Matching states
     let match_ulb_with_access = {
       "$match":{"access_2223":true}
     }
-    if(stateId){
+    console.log("stateId::",stateId)
+    if(stateId !== null || stateId !== undefined){
+      console.log("inside if")
       match_ulb_with_access["$match"]["state"] = ObjectId(stateId)
     }
     query.push(match_ulb_with_access)
@@ -950,7 +952,7 @@ function getColumns(){
  * @param {*} role:String
  * @returns a json object with message and validation
  */
-function checkValidRequest(formId,mohuaId,stateId,role){
+function checkValidRequest(formId,stateId,role){
   let validation = {
     valid :false,
     message:"",
@@ -960,20 +962,11 @@ function checkValidRequest(formId,mohuaId,stateId,role){
       validation.valid = false
       validation.message = "Form id is required"
     }
-    console.log("(role === userTypes.state) ::: ",(role === userTypes.state))
     if(role === userTypes.state){
+      
       if((stateId === "") || (stateId === undefined)){
         validation.valid = false
         validation.message = "stateId is required"
-      }
-      else{
-        validation.valid = true
-      }
-    }
-    if(role === userTypes.mohua){
-      if((mohuaId === "") || (mohuaId === undefined)){
-        validation.valid = false
-        validation.message = "mohuaId is required"
       }
       else{
         validation.valid = true
@@ -1014,6 +1007,25 @@ function updateActions(data,role){
 }
 
 /**
+ * if role is state get state id
+ * @param {role} String
+ * @returns 
+ */
+function checkForRoleAndgetStateId(req,role){
+  try{
+    if(role === userTypes.state){
+      console.log("req.decoded.state :: ",req.decoded.state)
+      return req.decoded.state
+    }
+  }
+  catch(err){
+    console.log("error in checkForRoleAndgetStateId :: ",err.message)
+  }
+}
+
+
+
+/**
  * An Api that get FR forms ulb according to state or mohua
  * @param {*} req:Object
  * @param {*} res:Object
@@ -1021,16 +1033,20 @@ function updateActions(data,role){
  */
 module.exports.getFRforms = catchAsync(async(req,res)=>{
   let response = {
-    success : true,
-    message : "",
+    success : false,
+    message : "Some server error occured",
   }
   try{
     let cols = getColumns()
     let aggregateQuery = {}
     let skip = req.query.skip ? parseInt(req.query.skip) : 0
     let limit = req.query.limit ? parseInt(req.query.limit) : 10
-    let {year,mohuaId,stateId,formId,getQuery} = req.query
+    let {year,stateId,formId,getQuery} = req.query
     let {role} = req.decoded
+    if(stateId === undefined || stateId === "null"){
+      console.log("inside function if ")
+      stateId = checkForRoleAndgetStateId(req,role)
+    }
     let searchFilters = {}
     if(role === undefined || role === ""){
       response.message =  "User role not found"
@@ -1040,7 +1056,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
       response.message =  "Year parameter is required"
       return res.status(500).json(response)
     }
-    let validation = checkValidRequest(formId,mohuaId,stateId,role)
+    let validation = checkValidRequest(formId,stateId,role)
     if(!validation.valid){
       response.message = validation.message
       return res.status(500).json(response)
@@ -1048,12 +1064,13 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     searchFilters = searchQueries(req)
     let keys = calculateKeys(searchFilters['status'], role);
     Object.assign(searchFilters, keys)
+    console.log("searchFilters ::: ",searchFilters)
     let newFilter = await Service.mapFilterNew(searchFilters)
-
-    // delete searchFilters
+    console.log("new Filter :: ",newFilter)
     let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
     let {path,collectionName} = formTab
+    console.log("role ::: ",role)
     if(role === userTypes.state){
       /**
        * return ulbs that are related to state only 
