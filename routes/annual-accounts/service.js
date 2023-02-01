@@ -1198,7 +1198,14 @@ exports.dataset = catchAsync(async (req, res) => {
         data.year = year;
         data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}_${fileType}`;
         data.fileUrl = el?.file;
-  
+        
+        let fileLength = 0
+        if(data.fileUrl?.length){
+          for(let fileDoc of data.fileUrl){
+            fileDoc ?  fileLength++ : ""
+          }
+        }
+        if(fileLength > 0)  finalData.push(data);
       })
       }
       
