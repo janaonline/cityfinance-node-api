@@ -5,8 +5,14 @@ const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
+const Service = require('../../service');
+const userTypes = require("../../util/userTypes")
 
+const { calculateKeys,canTakeActionOrViewOnly,calculateStatus } = require('../CommonActionAPI/service');
+const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
+const catchAsync = require('../../util/catchAsync');
+const State = require('../../models/State');
 
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
@@ -129,7 +135,7 @@ exports.getView = async function (req, res, next) {
     } else {
       let numberOfQuestion = {
         value: null,
-        status: ""
+        status: "PENDING"
       }
       viewOne = {
         "ulb": null,
@@ -160,7 +166,7 @@ exports.getView = async function (req, res, next) {
           "year": null,
           "type": null,
           "amount": null,
-          "status": ""
+          "status": "PENDING"
         },
         "signedCopyOfFile": {
           "name": null,
@@ -170,20 +176,20 @@ exports.getView = async function (req, res, next) {
           "type": null,
           "amount": null,
           "year": null,
-          "status": ""
+          "status": "PENDING"
         },
         "fyData": [],
         "property_tax_register": {
           "value": "",
-          "status": "",
+          "status": "PENDING",
         },
         "paying_property_tax": {
           "value": "",
-          "status": ""
+          "status": "PENDING"
         },
         "paid_property_tax": {
           "value": "",
-          "status": ""
+          "status": "PENDING"
         },
         "isDraft": null
       }
@@ -598,4 +604,538 @@ exports.approvedByMohua = async function (req, res, next) {
     })
   }
 }
+/**
+ * if lookup query is simple then use this
+ * @param {*} from 
+ * @param {*} localField 
+ * @param {*} foreignField 
+ * @param {*} as 
+ * @returns an object which with the lookup queries
+ */
+function getCommonLookupObj(from,localField,foreignField,as){
+  let obj = {}
+  try{
+    obj = {
+      "$lookup":{
+        "from": from,
+        "localField": localField,
+        "foreignField": foreignField,
+        "as": as
+     }
+    }
+    return obj
+  }
+  catch(err){
+    console.log("error in get CommonLookup obj")
+    return obj
+  }
+}
+/**
+ * function that returns condition for UA_ID
+ */
+function getUA_id(){
+  try{
+    let obj = {
+      $cond: {
+        if: { $eq: ["$isUA", "Yes"] },
+        then: "$UA._id",
+        else: "NA",
+      },
+    }
+    return obj
+  }
+  catch(err){
+    console.log("error while getting UA_id ::: ",err.message)
+  }
+}
+/**
+ * function that returns condition of UA
+ */
+function getUAcondition(){
+  try{
+    let obj = {
+      $cond: {
+        if: { $eq: ["$isUA", "Yes"] },
+        then: "$UA.name",
+        else: "NA",
+      }
+    }
+    return obj
+  }
+  catch(err){
+    console.log("error in getUAcondtion ::: ",err.message)
+  }
+}
+/**
+ * function that returns condition for census code
+ */
+function getCensusCodeCondition(){
+  try{
+    let obj ={
+      $cond: {
+        if: {
+          $or: [
+            { $eq: ["$censusCode", ""] },
+            { $eq: ["$censusCode", null] },
+          ]
+        },
+        then: "$sbCode",
+        else: "$censusCode"
+      }
+    }
+    return obj
+  }
+  catch(err){
+    console.log("error in getCensusCodeCondition")
+  }
+}
 
+/**
+ * function that returns condition for population type
+ * 
+ */
+function getPopulationCondition(){
+  try{
+    let obj = {
+      $cond: {
+        if: { $eq: ["$isMillionPlus", "Yes"] },
+        then: "Million Plus",
+        else: "Non Million",
+      },
+    }
+    return obj
+  }
+  catch(err){
+    console.log("getPopulationCondition ::: ",err.message)
+  }
+}
+
+function getTotalProjectionQueryForPagination(){
+  try{
+    let total = {
+      "$let": {
+          "vars": {
+              "totalObj": { 
+                  "$arrayElemAt": ['$metaData', 0]           
+              }
+          },
+      "in": '$$totalObj.total'
+      }
+    }
+    return total
+  }
+  catch(err){
+    console.log("error")
+  }
+}
+
+/**
+ * function that returns projection query for ulbs only
+ * @param {Array} queryArr
+ */
+function getProjectionQueries(queryArr,collectionName,skip,limit){
+  try{
+    //projection query for conditions
+    let projectionQueryWithConditions = {
+      "$project":{
+        "ulbName":"$name",
+        "ulbId": "$_id",
+        "ulbCode": "$code",
+        "censusCode":getCensusCodeCondition(),
+        "UA":getUAcondition(),
+        "UA_ID":getUA_id(),
+        "ulbType": "$ulbType.name",
+        "ulbType_id": "$ulbType._id",
+        "population": "$population",
+        "state_id": "$state._id",
+        "stateName": "$state.name",
+        "populationType":getPopulationCondition(),
+        "formData": { $ifNull: [`$${collectionName}`, ""] },
+        "filled":{
+          $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
+        }
+      }
+    }
+    queryArr.push(projectionQueryWithConditions) 
+    getFacetQueryForPagination(queryArr,skip,limit)
+    //projection query that decides which cols to show
+    let projectionQueryThatDecidesCols = {
+      $project: {
+        formData: 1,
+        records:1,
+        total:getTotalProjectionQueryForPagination()
+      }
+    }
+    
+    queryArr.push(projectionQueryThatDecidesCols)
+  }
+  catch(err){
+    console.log("error in getProjectionQueries ::: ",err)
+  }
+}
+
+
+/**
+ * function for unwind
+ * @param {string} key
+ */
+function getUnwindObj(key,preserveNullAndEmptyArrays=false){
+  try{
+    var obj = {
+      "$unwind":key
+    }
+    if(preserveNullAndEmptyArrays){
+      obj = {"$unwind":{}}
+      obj["$unwind"]['path'] = key
+      obj["$unwind"]["preserveNullAndEmptyArrays"] = true
+    }
+    return obj
+  }
+  catch(err){
+    console.log("error in getUnwindObj ::: ",err)
+  }
+}
+
+/**
+ * Get lookup query for accounts
+ * @param {Array} queryArr
+ * @param {String} Array
+ */
+function getFormQuery(queryArr,collectionName,design_year){
+  try{
+    let obj = {
+      "$lookup":{
+        from:collectionName,
+        let :{
+          year : ObjectId(design_year),
+          ulb_id : "$_id"
+        },
+        pipeline:[
+          {"$match":{
+            "$expr":{
+              "$and":[
+                {"$eq":["$design_year","$$year"]},
+                {"$eq":["$ulb","$$ulb_id"]}
+              ]
+            }
+          }},
+        ]
+      }
+    }
+    obj["$lookup"]["pipeline"].push(getCommonLookupObj("years","design_year","_id","design_year"))
+    obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"))
+    obj["$lookup"]["as"] = collectionName
+    obj["$lookup"]["pipeline"].push({
+      "$project":{
+        "_id":1,
+        "status":1,
+        "actionTakenByRole":1,
+         "isDraft":1
+      }
+    })
+    obj["$lookup"]["pipeline"].push(getUnwindObj(`$${collectionName}`,true))
+   
+    queryArr.push(obj)
+  }
+  catch(err){
+    console.log("error in getFormQuery ::: ",err.message)
+    return
+  }
+}
+
+
+/**
+ * pipe line array stage 1 for the state
+ * @param {Array} queryArr 
+ * @param {string} stateId 
+ */
+function get_state_query(queryArr,stateId=false){
+  try{
+
+    //stage1 lookup to get all states with id 
+    let lookUpStage = getCommonLookupObj("states","state","_id","state")
+    queryArr.push(lookUpStage)
+    queryArr.push(getUnwindObj("$state",true))
+    let matchObj = {
+      "$match":{
+        "state.accessToXVFC" : true
+      }
+    }
+    
+    // stage 2 match
+    queryArr.push(matchObj)
+  }
+  catch(err){
+    console.log("error while getting state query :: ",err)
+    return
+  }
+}
+
+/**
+ * function facet query that to get the totalCount
+ * @param {Number} skip
+ * @param {Number} limit
+ * @param {Arr} queryArr
+*/
+function getFacetQueryForPagination(queryArr,skip,limit){
+  console.log("skip ::: ",skip)
+  console.log("limit ::: ",limit)
+  let facetObj = {}
+  try{
+    facetObj = {
+      "$facet":{
+        "metaData":[{"$count":'total'}],
+        "records":[{"$skip":parseInt(skip)},{"$limit":parseInt(limit)}]
+      }
+    }
+    queryArr.push(facetObj)
+  }
+  catch(err){
+    console.log("error while getFacetQueryForPagination::",err.message)
+  }
+}
+
+/**
+ * function that get aggregate queries according to stages
+ * @param {*} collectionName:String
+ * @param {*} path :String
+ */
+function getAggregateQuery(collectionName,path,year,skip,limit,stateId=null){
+  let query = []
+  try{
+    //stage one get Matching states
+    let match_ulb_with_access = {
+      "$match":{"access_2223":true}
+    }
+    if(stateId !== null && stateId !== undefined){
+      console.log("inside if" , "stateId",typeof stateId)
+      match_ulb_with_access["$match"]["state"] = ObjectId(stateId)
+    }
+    query.push(match_ulb_with_access)
+    get_state_query(query,stateId)
+    getFormQuery(query,collectionName,year)
+    query.push(getCommonLookupObj("uas","UA","_id","UA"))
+    query.push(getUnwindObj("$UA",true))
+    query.push(getCommonLookupObj("ulbtypes","ulbType","_id","ulbType"))
+    query.push(getUnwindObj("$ulbType",true))
+   
+    getProjectionQueries(query,collectionName,skip,limit)
+    query.push({"$sort":{"formData":-1}})
+  }
+  catch(err){
+    console.log("error in getAggregateQuery :::: ",err)
+  }
+  return query
+}
+
+
+/**
+ * return filters with search params if any
+ * @param {*} req :Object
+ * @returns javascript object
+ */
+function searchQueries(req){
+  let filter = {}
+  try{
+    filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : ""
+    filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : ""
+    filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType : ""
+    filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType : ""
+    filter['UA'] = req.query.UA != 'null' ? req.query.UA : ""
+    filter['status'] = req.query.status != 'null' ? req.query.status : ""
+    filter['filled_audited'] = req.query.filled1 != 'null' ? req.query.filled1 : ""
+    filter['filled_provisional'] = req.query.filled2 != 'null' ? req.query.filled2 : ""
+  }
+  catch(err){
+    console.log("error in Search Queries function")
+  }
+  return filter
+}
+
+
+/**
+ * Function that returns dynamic column name for tables in the frontend
+ * @returns a javascript object with column names
+ */
+function getColumns(){
+  return {
+    sNo: "S No.",
+    ulbName: "ULB Name",
+    stateName: "State Name",
+    censusCode: "Census/SB Code",
+    ulbType: "ULB Type",
+    populationType: "Population Type",
+    UA: "UA",
+    formStatus: "Form Status",
+    filled: "Filled Status",
+    filled_audited: "Audited Filled Status",
+    filled_provisional: "Provisional Filled Status",
+    action: "Action"
+  }
+}
+
+/**
+ * check by the role if requested parameter is valid or not
+ * * @param {*} formId:String
+ * @param {*} mohuaId:String
+ * @param {*} stateId:String
+ * @param {*} role:String
+ * @returns a json object with message and validation
+ */
+function checkValidRequest(formId,stateId,role){
+  let validation = {
+    valid :false,
+    message:"",
+  }
+  try{
+    if((formId === undefined) || (formId === "")){
+      validation.valid = false
+      validation.message = "Form id is required"
+    }
+    if(role === userTypes.state){
+      
+      if((stateId === "") || (stateId === undefined)){
+        validation.valid = false
+        validation.message = "stateId is required"
+      }
+      else{
+        validation.valid = true
+      }
+    }
+    if((role === userTypes.mohua)){
+      validation.valid = true
+    }
+
+  }
+  catch(err){
+    validation.valid = false
+    validation.message = err.message
+    console.log("error in checkValidRequest ::: ",err.message)
+  }
+  return validation
+}
+
+/**
+ * updates take action and form status field
+ */
+function updateActions(data,role){
+  let modifiedData = [...data]
+  try{
+    modifiedData = data.map(el => {
+      if (!el.formData) {
+        el['formStatus'] = "Not Started";
+        el['cantakeAction'] = false;
+      } else {
+        el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, "ULB");
+        el['cantakeAction'] = (role === "ADMIN" || role === userTypes.state) ? false : canTakeActionOrViewOnly(el, role)
+      }
+      return el
+    })
+  }
+  catch(err){
+    console.log("error in updateActions ::: ",err.message)
+    return data
+  }
+  return modifiedData
+}
+
+/**
+ * if role is state get state id
+ * @param {role} String
+ * @returns 
+ */
+function checkForRoleAndgetStateId(req,role){
+  try{
+    if(role === userTypes.state){
+      console.log("req.decoded.state :: ",req.decoded.state)
+      return req.decoded.state
+    }
+  }
+  catch(err){
+    console.log("error in checkForRoleAndgetStateId :: ",err.message)
+  }
+  return null
+}
+
+
+
+/**
+ * An Api that get FR forms ulb according to state or mohua
+ * @param {*} req:Object
+ * @param {*} res:Object
+ * @returns json response 
+ */
+module.exports.getFRforms = catchAsync(async(req,res)=>{
+  let response = {
+    success : false,
+    message : "Some server error occured",
+  }
+  try{
+    let cols = getColumns()
+    let total = 0
+    let aggregateQuery = {}
+    let skip =  req.query.skip ||  0
+    let limit = req.query.limit || 10
+    let {year,stateId,formId,getQuery} = req.query
+    let {role} = req.decoded
+    if(stateId === undefined || stateId === "null"){
+      stateId = checkForRoleAndgetStateId(req,role)
+    }
+    let searchFilters = {}
+    if(role === undefined || role === ""){
+      response.message =  "User role not found"
+      return res.status(500).json(response)
+    }
+    if(year === undefined){
+      console.log("6")
+      response.message =  "Year parameter is required"
+      return res.status(500).json(response)
+    }
+    let validation = checkValidRequest(formId,stateId,role)
+    if(!validation.valid){
+      response.message = validation.message
+      return res.status(500).json(response)
+    }
+    searchFilters = searchQueries(req)
+    let keys = calculateKeys(searchFilters['status'], role);
+    Object.assign(searchFilters, keys)
+    let newFilter = await Service.mapFilterNew(searchFilters)
+    let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
+    // get dynamic path and collection name
+    let {path,collectionName} = formTab
+    if(role === userTypes.state){
+      /**
+       * return ulbs that are related to state only 
+       */
+      aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,stateId)
+      
+    }
+    else if((role === userTypes.mohua) || (role === userTypes.admin)){
+      /**
+       * return all ulbs related to the form
+       */
+      aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit)
+    }
+    let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
+    let data = queryResult[0]
+
+    total = data['total']
+    data = updateActions(data['records'],role)
+    if(getQuery == 'true') return res.status(200).json({
+      query:aggregateQuery
+    })
+    response.success = true
+    response.columnNames = cols
+    response.data = data
+    response.total = total
+    response.title = 'Review Fiscal Ranking  Application'
+    response.message = "Fetched successfully"
+    return res.status(200).json(response)
+  }
+  catch(err){
+    response.success = false
+    response.message = err.message
+    console.log("error in getFrForms",err)
+  return res.status(500).json(response)
+  }
+})

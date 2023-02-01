@@ -1,7 +1,7 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
 const CollectionNames = require('../../util/collectionName')
-const { calculateStatus } = require('../CommonActionAPI/service')
+const { calculateStatus,canTakeActionOrViewOnly } = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
@@ -1823,41 +1823,41 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
   return oldQuery;
 }
 
-function canTakeActionOrViewOnly(data, userRole) {
-  let status = data['formStatus'];
-  switch (true) {
-    case status == STATUS_LIST.Not_Started:
-      return false;
-      break;
-    case status == STATUS_LIST.In_Progress:
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_State && userRole == 'STATE':
-      return true;
-      break;
-    case status == STATUS_LIST.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-      return false;
-      break;
-    case status == STATUS_LIST.Rejected_By_State:
-      return false;
-      break;
-    case status == STATUS_LIST.Rejected_By_MoHUA:
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'STATE':
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'MoHUA':
-      return true;
-      break;
-    case status == STATUS_LIST.Approved_By_MoHUA:
-      return false;
-      break;
+// function canTakeActionOrViewOnly(data, userRole) {
+//   let status = data['formStatus'];
+//   switch (true) {
+//     case status == STATUS_LIST.Not_Started:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.In_Progress:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_State && userRole == 'STATE':
+//       return true;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Rejected_By_State:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Rejected_By_MoHUA:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'STATE':
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'MoHUA':
+//       return true;
+//       break;
+//     case status == STATUS_LIST.Approved_By_MoHUA:
+//       return false;
+//       break;
 
-    default:
-      break;
-  }
-}
+//     default:
+//       break;
+//   }
+// }
 
 module.exports.get = catchAsync(async (req, res) => {
   let loggedInUserRole = req.decoded.role
