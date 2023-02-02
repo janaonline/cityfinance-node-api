@@ -733,7 +733,7 @@ function getTotalProjectionQueryForPagination(){
  * function that returns projection query for ulbs only
  * @param {Array} queryArr
  */
-function getProjectionQueries(queryArr,collectionName,skip,limit){
+function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
   try{
     //projection query for conditions
     let projectionQueryWithConditions = {
@@ -752,11 +752,12 @@ function getProjectionQueries(queryArr,collectionName,skip,limit){
         "populationType":getPopulationCondition(),
         "formData": { $ifNull: [`$${collectionName}`, ""] },
         "filled":{
-          $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
+          $cond: { if: { $or: [{ $eq: [{"$size":`$${collectionName}`}, 0] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
         }
       }
     }
     queryArr.push(projectionQueryWithConditions) 
+    queryArr.push({"$match":newFilter})
     getFacetQueryForPagination(queryArr,skip,limit)
     //projection query that decides which cols to show
     let projectionQueryThatDecidesCols = {
@@ -900,27 +901,35 @@ function getFacetQueryForPagination(queryArr,skip,limit){
  * @param {*} collectionName:String
  * @param {*} path :String
  */
-function getAggregateQuery(collectionName,path,year,skip,limit,stateId=null){
+function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId=null){
   let query = []
   try{
-    //stage one get Matching states
+    //stage one get Matching ulbs 
     let match_ulb_with_access = {
       "$match":{"access_2223":true}
     }
+    // if state id is provided then it will search ulb with state
     if(stateId !== null && stateId !== undefined){
-      console.log("inside if" , "stateId",typeof stateId)
       match_ulb_with_access["$match"]["state"] = ObjectId(stateId)
     }
     query.push(match_ulb_with_access)
+    // stage 2 get all states realted to ulb
     get_state_query(query,stateId)
+
+    // stage 3 get form data which is filled in this case fiscalranking form
     getFormQuery(query,collectionName,year)
+    // stage 4 get all UA realted to tthis ulb and unwind all ua,s
     query.push(getCommonLookupObj("uas","UA","_id","UA"))
     query.push(getUnwindObj("$UA",true))
+    // stage 5 get all ULBS realted the ulb and unwind it
     query.push(getCommonLookupObj("ulbtypes","ulbType","_id","ulbType"))
     query.push(getUnwindObj("$ulbType",true))
-   
-    getProjectionQueries(query,collectionName,skip,limit)
+    
+    // stage 6 modify the cols ,handle pagination and search queries 
+    getProjectionQueries(query,collectionName,skip,limit,newFilter)
+    // stage 7 sort by formData
     query.push({"$sort":{"formData":-1}})
+    
   }
   catch(err){
     console.log("error in getAggregateQuery :::: ",err)
@@ -1047,7 +1056,6 @@ function updateActions(data,role){
 function checkForRoleAndgetStateId(req,role){
   try{
     if(role === userTypes.state){
-      console.log("req.decoded.state :: ",req.decoded.state)
       return req.decoded.state
     }
   }
@@ -1056,9 +1064,6 @@ function checkForRoleAndgetStateId(req,role){
   }
   return null
 }
-
-
-
 /**
  * An Api that get FR forms ulb according to state or mohua
  * @param {*} req:Object
@@ -1076,7 +1081,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let aggregateQuery = {}
     let skip =  req.query.skip ||  0
     let limit = req.query.limit || 10
-    let {year,stateId,formId,getQuery} = req.query
+    let {design_year:year,state:stateId,formId,getQuery} = req.query
     let {role} = req.decoded
     if(stateId === undefined || stateId === "null"){
       stateId = checkForRoleAndgetStateId(req,role)
@@ -1087,7 +1092,6 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
       return res.status(500).json(response)
     }
     if(year === undefined){
-      console.log("6")
       response.message =  "Year parameter is required"
       return res.status(500).json(response)
     }
@@ -1103,22 +1107,9 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
     let {path,collectionName} = formTab
-    if(role === userTypes.state){
-      /**
-       * return ulbs that are related to state only 
-       */
-      aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,stateId)
-      
-    }
-    else if((role === userTypes.mohua) || (role === userTypes.admin)){
-      /**
-       * return all ulbs related to the form
-       */
-      aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit)
-    }
+    aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId)
     let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
     let data = queryResult[0]
-
     total = data['total']
     data = updateActions(data['records'],role)
     if(getQuery == 'true') return res.status(200).json({
