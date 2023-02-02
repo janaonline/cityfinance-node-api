@@ -752,7 +752,7 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "populationType":getPopulationCondition(),
         "formData": { $ifNull: [`$${collectionName}`, ""] },
         "filled":{
-          $cond: { if: { $or: [{ $eq: ["$formData", []] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
+          $cond: { if: { $or: [{ $eq: [{"$size":`$${collectionName}`}, 0] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
         }
       }
     }
