@@ -17,10 +17,6 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const {FormNames} = require('../../util/FormNames');
 const {calculateTabwiseStatus} = require('../annual-accounts/utilFunc')
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
-    console.log("status ::",status)
-    console.log("actionTakenByRole :: ",actionTakenByRole)
-    console.log("isDraft :: ",isDraft)
-    console.log("formType :: ",formType)
     switch(formType){
         case "ULB":
             switch (true) {
@@ -64,12 +60,42 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
                 case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Rejected_By_MoHUA
                     break;
-                
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
                 default:
                     return StatusList.Not_Started
                     break;
             }
             break;      
+    }
+}
+
+module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
+    switch(formType){
+        case "ULB":
+            switch (true) {
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                    return StatusList.In_Progress
+                    break;
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+                    break;
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
+                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Rejected_By_MoHUA
+                    break;
+                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+
+                default:
+                    return StatusList.Not_Started
+                    break;
+            }
+            break;
+   
     }
 }
 

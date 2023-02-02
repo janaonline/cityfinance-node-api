@@ -8,7 +8,7 @@ const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
 const userTypes = require("../../util/userTypes")
 
-const { calculateKeys,canTakeActionOrViewOnly,calculateStatus } = require('../CommonActionAPI/service');
+const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
@@ -1066,7 +1066,7 @@ function updateActions(data,role){
         el['cantakeAction'] = false;
       } else {
 
-        el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, "ULB");
+        el['formStatus'] = calculateStatusForFiscalRankingForms(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, "ULB");
         el['cantakeAction'] = (role === "ADMIN" || role === userTypes.state) ? false : canTakeActionOrViewOnly(el, role)
       }
       return el
