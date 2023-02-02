@@ -17,6 +17,10 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const {FormNames} = require('../../util/FormNames');
 const {calculateTabwiseStatus} = require('../annual-accounts/utilFunc')
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
+    console.log("status ::",status)
+    console.log("actionTakenByRole :: ",actionTakenByRole)
+    console.log("isDraft :: ",isDraft)
+    console.log("formType :: ",formType)
     switch(formType){
         case "ULB":
             switch (true) {

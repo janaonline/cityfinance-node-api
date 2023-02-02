@@ -710,6 +710,13 @@ function getPopulationCondition(){
   }
 }
 
+
+
+
+/**
+ * it is a projection query that returs total for the facet pagination
+ * @returns json object
+ */
 function getTotalProjectionQueryForPagination(){
   try{
     let total = {
@@ -735,6 +742,11 @@ function getTotalProjectionQueryForPagination(){
  */
 function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
   try{
+  //   let removeEmptyForms = {
+  //     "$match": {
+  //         "formData":{"$exists":true, $not: {$size: 0}}
+  //     }
+  // }
     //projection query for conditions
     let projectionQueryWithConditions = {
       "$project":{
@@ -751,13 +763,29 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "stateName": "$state.name",
         "populationType":getPopulationCondition(),
         "formData": { $ifNull: [`$${collectionName}`, ""] },
-        "filled":{
-          $cond: { if: { $or: [{ $eq: [{"$size":`$${collectionName}`}, 0] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
-        }
       }
     }
-    queryArr.push(projectionQueryWithConditions) 
-    queryArr.push({"$match":newFilter})
+    let showFields = {
+      "filled":{
+        $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
+      },
+    }
+    
+    queryArr.push(projectionQueryWithConditions)
+    let main = projectionQueryWithConditions["$project"]
+    let projectedKeys =  Object.keys(main)
+    for(var projectedKey of projectedKeys){
+      showFields[projectedKey] = 1
+    }
+    queryArr.push({"$project":showFields})
+    if(newFilter && Object.keys(newFilter).length > 0){
+      if(newFilter.sbCode){
+        newFilter['censusCode'] = newFilter.sbCode
+        delete newFilter.sbCode
+      }
+      // Object.assign(removeEmptyForms["$match"],newFilter)
+      queryArr.push({"$match":newFilter})
+    }
     getFacetQueryForPagination(queryArr,skip,limit)
     //projection query that decides which cols to show
     let projectionQueryThatDecidesCols = {
@@ -833,9 +861,7 @@ function getFormQuery(queryArr,collectionName,design_year){
         "actionTakenByRole":1,
          "isDraft":1
       }
-    })
-    obj["$lookup"]["pipeline"].push(getUnwindObj(`$${collectionName}`,true))
-   
+    })   
     queryArr.push(obj)
   }
   catch(err){
@@ -879,14 +905,15 @@ function get_state_query(queryArr,stateId=false){
  * @param {Arr} queryArr
 */
 function getFacetQueryForPagination(queryArr,skip,limit){
-  console.log("skip ::: ",skip)
-  console.log("limit ::: ",limit)
   let facetObj = {}
   try{
     facetObj = {
       "$facet":{
         "metaData":[{"$count":'total'}],
-        "records":[{"$skip":parseInt(skip)},{"$limit":parseInt(limit)}]
+        "records":[
+          {"$skip":parseInt(skip)},
+          {"$limit":parseInt(limit)},
+        ]
       }
     }
     queryArr.push(facetObj)
@@ -918,6 +945,7 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId
 
     // stage 3 get form data which is filled in this case fiscalranking form
     getFormQuery(query,collectionName,year)
+    query.push(getUnwindObj(`$${collectionName}`,true))
     // stage 4 get all UA realted to tthis ulb and unwind all ua,s
     query.push(getCommonLookupObj("uas","UA","_id","UA"))
     query.push(getUnwindObj("$UA",true))
@@ -1029,12 +1057,15 @@ function checkValidRequest(formId,stateId,role){
  */
 function updateActions(data,role){
   let modifiedData = [...data]
+  
   try{
     modifiedData = data.map(el => {
+
       if (!el.formData) {
         el['formStatus'] = "Not Started";
         el['cantakeAction'] = false;
       } else {
+
         el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, "ULB");
         el['cantakeAction'] = (role === "ADMIN" || role === userTypes.state) ? false : canTakeActionOrViewOnly(el, role)
       }
@@ -1104,9 +1135,11 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let keys = calculateKeys(searchFilters['status'], role);
     Object.assign(searchFilters, keys)
     let newFilter = await Service.mapFilterNew(searchFilters)
-    let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
+    //let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
-    let {path,collectionName} = formTab
+    //let {path,collectionName} = formTab
+    let path = "FiscalRanking"
+    let collectionName = "fiscalrankings"
     aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId)
     let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
     let data = queryResult[0]
