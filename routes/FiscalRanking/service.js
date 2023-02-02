@@ -710,6 +710,33 @@ function getPopulationCondition(){
   }
 }
 
+/**
+ * sorting by variable on condition if array length is greater then 0
+ * @param {String} collectionName
+ */
+function getSorterUpdate(collectionName){
+  try{
+    let obj = {"$cond":{
+      "if":{
+          "$eq":[{"$size": `$${collectionName}`},0]
+      },
+      "then":0,
+      "else":1
+  }}
+  return obj
+  }
+  
+  catch(err){
+    console.log("error in getSorterUpdate :: ",err.message)
+    return
+  }
+}
+
+
+/**
+ * it is a projection query that returs total for the facet pagination
+ * @returns json object
+ */
 function getTotalProjectionQueryForPagination(){
   try{
     let total = {
@@ -753,11 +780,18 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "formData": { $ifNull: [`$${collectionName}`, ""] },
         "filled":{
           $cond: { if: { $or: [{ $eq: [{"$size":`$${collectionName}`}, 0] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
-        }
+        },
+        "sorter":getSorterUpdate(collectionName)
       }
     }
     queryArr.push(projectionQueryWithConditions) 
-    queryArr.push({"$match":newFilter})
+    if(newFilter && Object.keys(newFilter).length > 0){
+      if(newFilter.sbCode){
+        newFilter['censusCode'] = newFilter.sbCode
+        delete newFilter.sbCode
+      }
+      queryArr.push({"$match":newFilter})
+    }
     getFacetQueryForPagination(queryArr,skip,limit)
     //projection query that decides which cols to show
     let projectionQueryThatDecidesCols = {
@@ -879,14 +913,16 @@ function get_state_query(queryArr,stateId=false){
  * @param {Arr} queryArr
 */
 function getFacetQueryForPagination(queryArr,skip,limit){
-  console.log("skip ::: ",skip)
-  console.log("limit ::: ",limit)
   let facetObj = {}
   try{
     facetObj = {
       "$facet":{
         "metaData":[{"$count":'total'}],
-        "records":[{"$skip":parseInt(skip)},{"$limit":parseInt(limit)}]
+        "records":[
+          {"$skip":parseInt(skip)},
+          {"$limit":parseInt(limit)},
+          {"$sort":{"sorter":-1}}
+        ]
       }
     }
     queryArr.push(facetObj)
