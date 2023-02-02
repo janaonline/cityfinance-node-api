@@ -1198,8 +1198,14 @@ exports.dataset = catchAsync(async (req, res) => {
         data.year = year;
         data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}_${fileType}`;
         data.fileUrl = el?.file;
-  
-        finalData.push(data);
+        
+        let fileLength = 0
+        if(data.fileUrl?.length){
+          for(let fileDoc of data.fileUrl){
+            fileDoc ?  fileLength++ : ""
+          }
+        }
+        if(fileLength > 0)  finalData.push(data);
       })
       }
       
@@ -1908,34 +1914,11 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
           if (!el.auditor_report) {
             el.auditor_report = 'Not Submitted'
           }
-
-          if (el.role == 'ULB' && el.isDraft) {
-            el['formStatus'] = statusList[0]
-          } else if (el.role == 'ULB' && !el.isDraft) {
-            if (el.audited_answer && el.unaudited_answer) {
-              el['formStatus'] = statusList[1]
-            } else {
-              el['formStatus'] = statusList[2]
-            }
-
-          } else if (el.role == 'STATE' && el.isDraft) {
-            el['formStatus'] = statusList[4]
-          } else if (el.role == 'STATE' && !el.isDraft) {
-            if (el.status == 'APPROVED') {
-              el['formStatus'] = statusList[3]
-            } else if (el.status == 'REJECTED') {
-              el['formStatus'] = statusList[5]
-            }
-          } else if (el.role == 'MoHUA' && el.isDraft) {
-            // el['formStatus'] = statusList[0]
-            el['formStatus'] = statusList[8]
-          } else if (el.role == 'MoHUA' && !el.isDraft) {
-            if (el.status == 'APPROVED') {
-              el['formStatus'] = statusList[7]
-            } else if (el.status == 'REJECTED') {
-              el['formStatus'] = statusList[8] 
-            }
-          }
+          el = calculateCSVFormStatus(statusList,el);
+          // if(el.status && el.role && el.hasOwnProperty('isDraft') && el.isDraft !== null){
+          //   el.formStatus =  calculateStatus(el.status,el.role, el.isDraft,"ULB");
+          // }
+          
         }
 
         for (el of data) {
@@ -2094,36 +2077,39 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
             el.cash_flow = 'Not Submitted'
           }
 
-          if (el.role == 'ULB' && el.isDraft) {
-            el['formStatus'] = statusList[0]
-          } else if (el.role == 'ULB' && !el.isDraft) {
-            if (el.audited_answer && el.unaudited_answer) {
-              el['formStatus'] = statusList[1]
-            } else {
-              el['formStatus'] = statusList[2]
-            }
+          // if (el.role == 'ULB' && el.isDraft) {
+          //   el['formStatus'] = statusList[0]
+          // } else if (el.role == 'ULB' && !el.isDraft) {
+          //   if (el.audited_answer && el.unaudited_answer) {
+          //     el['formStatus'] = statusList[1]
+          //   } else {
+          //     el['formStatus'] = statusList[2]
+          //   }
 
-          } else if (el.role == 'STATE' && el.isDraft) {
-            el['formStatus'] = statusList[4]
-          } else if (el.role == 'STATE' && !el.isDraft) {
-            if (el.status == 'APPROVED') {
-              el['formStatus'] = statusList[3]
-            } else if (el.status == 'REJECTED') {
-              el['formStatus'] = statusList[5]
-            }
+          // } else if (el.role == 'STATE' && el.isDraft) {
+            // el['formStatus'] = statusList[4]
+          // } else if (el.role == 'STATE' && !el.isDraft) {
+          //   if (el.status == 'APPROVED') {
+          //     el['formStatus'] = statusList[3]
+          //   } else if (el.status == 'REJECTED') {
+          //     el['formStatus'] = statusList[5]
+          //   }
 
-          } else if (el.role == 'MoHUA' && el.isDraft) {
-            el['formStatus'] = statusList[8]
-          } else if (el.role == 'MoHUA' && !el.isDraft) {
-            if (el.status == 'APPROVED') {
-              el['formStatus'] = statusList[7]
-            } else if (el.status == 'REJECTED') {
-              el['formStatus'] = statusList[9]
+          // } else if (el.role == 'MoHUA' && el.isDraft) {
+          //   el['formStatus'] = statusList[8]
+          // } else if (el.role == 'MoHUA' && !el.isDraft) {
+          //   if (el.status == 'APPROVED') {
+          //     el['formStatus'] = statusList[7]
+          //   } else if (el.status == 'REJECTED') {
+          //     el['formStatus'] = statusList[9]
 
-            }
-
-          }
-
+          //   }
+          
+        // }
+        el = calculateCSVFormStatus(statusList, el)
+        // if(el.status && el.role && el.hasOwnProperty('isDraft') && el.isDraft !== null){
+        //   el.formStatus =  calculateStatus(el.status,el.role, el.isDraft,"ULB");
+        // }
         }
         for (el of data) {
           res.write(
@@ -2417,6 +2403,37 @@ exports.action = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+function calculateCSVFormStatus(statusList,el) {
+  if (el.role == 'ULB' && el.isDraft) {
+    el['formStatus'] = statusList[0];
+  } else if (el.role == 'ULB' && !el.isDraft) {
+    if (el.audited_answer && el.unaudited_answer) {
+      el['formStatus'] = statusList[1];
+    } else {
+      el['formStatus'] = statusList[2];
+    }
+
+  } else if (el.role == 'STATE' && el.isDraft) {
+    el['formStatus'] = statusList[4];
+  } else if (el.role == 'STATE' && !el.isDraft) {
+    if (el.status == 'APPROVED') {
+      el['formStatus'] = statusList[7];
+    } else if (el.status == 'REJECTED') {
+      el['formStatus'] = statusList[5];
+    }
+  } else if (el.role == 'MoHUA' && el.isDraft) {
+    el['formStatus'] = statusList[0];
+    // el['formStatus'] = statusList[8]
+  } else if (el.role == 'MoHUA' && !el.isDraft) {
+    if (el.status == 'APPROVED') {
+      el['formStatus'] = statusList[6];
+    } else if (el.status == 'REJECTED') {
+      el['formStatus'] = statusList[8];
+    }
+  }
+  return el;
+}
 
 function csvData_Provisional() {
   return (field = {

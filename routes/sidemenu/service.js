@@ -59,6 +59,7 @@ let SUB_CATEGORY_CONSTANTS = {
 }
 
 
+
 const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
     //get 3 parameter formType and compare formType with loggedInUserRole
     if(viewFor === USER_TYPES.ulb){
@@ -336,22 +337,23 @@ module.exports.get = catchAsync(async (req, res) => {
      tempData = groupByKey(data, "category")
     }
     
-    
+      
+
     if (role === "STATE") {
       let subCatTempData = tempData[""];
       let newSubCat = {};
       for (let obj of subCatTempData) {
-        if(obj && obj.name){
-          if(!newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]]){
-            newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]] =  [obj] ;
+        if (obj && obj.name) {
+          if (!newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]]) {
+            newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]] = [obj];
             continue;
           }
           newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]].push(obj);
-         
         }
       }
-      tempData[""] =  newSubCat;
+      tempData[""] = newSubCat;
     }
+
 //sorting the data as per sequence no;
 tempData = sortByPosition(tempData, role);
 //creating card Data
@@ -465,27 +467,26 @@ module.exports.delete = catchAsync(async (req, res) => {
 })
 
 const sortByPosition = (data, role) => {
-  if(role !== "STATE"){
-    for(let key in data){
+  if (role !== "STATE") {
+    for (let key in data) {
+      data[key].sort((a, b) => {
+        return a.position - b.position;
+      });
+    }
+  } else {
+    for (let key in data) {
+      if (key !== "") {
         data[key].sort((a, b) => {
-            return a.position - b.position;
+          return a.position - b.position;
         });
-      
-     }
-  }else{
-
-    for(let key in data){
-     if(key !== ""){
-       data[key].sort((a, b) => {
-           return a.position - b.position;
-       });
-     }else if(key === ""){
-       sortByPosition(data[""], role);
-     }
+      } else if (key === "") {
+        sortByPosition(data[""], role);
+      }
     }
   }
-    return data;
-}
+
+  return data;
+};
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
 
