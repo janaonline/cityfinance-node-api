@@ -1350,7 +1350,7 @@ value = allData.filter(el => {
   })
 }else{
 
- return res.status(200).json({
+ return res.status(400).json({
     success: true,
     data: [slbData],
     message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
