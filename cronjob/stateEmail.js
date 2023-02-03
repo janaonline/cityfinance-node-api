@@ -17,20 +17,23 @@ const {calculateTabStatus} = require('../routes/annual-accounts/utilFunc');
 const ObjectId = require("mongoose").Types.ObjectId;
 
 
+const EMAIL_STATE_IN_ONE_ITERATION = 1;
 
-const calculateFormStatus = async () => {
-    const statesQuery =  State.find({}).lean();
-    const usersQuery  =  User.find({role: "STATE",  isDeleted: false}).lean();
-  
-    const [states, users]  = await Promise.all([statesQuery, usersQuery]);
+const calculateFormStatus = async (states, numOfStatesToSendEmail, startIndex) => {
+  try {
+    // const statesQuery =  State.find({}).lean();
+    let  lastIndex  =  startIndex + numOfStatesToSendEmail
+    // const [states, users]  = await Promise.all([statesQuery, usersQuery]);
     const collections = [DUR, AnnualAccount, TwentyEightSlb, PFMS, ODF, GFC, PropertyTaxOp];
     let stateArray = [];
-    for (let i = 0; i < states.length ; i++) {//states.length
+    for (let i = startIndex; i < lastIndex ; i++) {//states.length
       let emailAddress=[]
+      let filteredUsers  =  await User.find({role: "STATE",  isDeleted: false, state: ObjectId(states[i]['_id'])}).lean();
+
       /* This is filtering the users array and then mapping it to get the email addresses. */
-      let filteredUsers = users.filter((element)=>{
-        return element.state.toString() === states[i]["_id"].toString()
-      })
+      // let filteredUsers = users.filter((element)=>{
+      //   return element.state.toString() === states[i]["_id"].toString()
+      // })
       filteredUsers.forEach((el)=>{
         emailAddress.push(el.departmentEmail);
         emailAddress.push(el.email);
@@ -122,90 +125,115 @@ const calculateFormStatus = async () => {
       stateArray.push(stateObj);
     }
     return stateArray;
+    
+  } catch (error) {
+     console.log(error.message);
+  }
   };
   
   module.exports.emailTrigger = async(req,res)=>{
-  
-    const statesResponse = await calculateFormStatus();
-      // return res.json({
-      //   status: true,
-      //   statesResponse
-      // })
-    statesResponse.forEach((state)=>{
-      let stateName = Object.keys(state)[0];
-      let stateEmailTemplate = Service.emailTemplate.stateUlbFormTrigger(stateName,state );
-      let mailOptions = {
-        Destination: {
-          /* required */
-          // ToAddresses: state[stateName]["emailAddress"],
-          ToAddresses: ["dalbeerk2017@gmail.com"],
-        //   ToAddresses: ["aditya003.ay@gmail.com"],
-  
-        },
-        Message: {
-          /* required */
-          Body: {
-            /* required */
-            Html: {
-              Charset: "UTF-8",
-              Data: stateEmailTemplate.body,
+    try {
+      const states = await State.find({}).lean();
+      let NumberOfTimeLoopExecutes = Number(
+        (states.length / EMAIL_STATE_IN_ONE_ITERATION).toFixed()
+      );
+      
+      /* This is for testing purpose. */
+      if(req.query.test){
+        NumberOfTimeLoopExecutes = req.query.iterate ? Number(req.query.iterate) : 2 ;
+      }
+
+      for (let i = 0; i < NumberOfTimeLoopExecutes; i++) {
+        
+        let startIndex = i*EMAIL_STATE_IN_ONE_ITERATION;
+
+        /* This is for testing purpose. */
+        if(req.query.test){
+          startIndex =  req.query.startIndex ? Number(req.query.startIndex) : "";
+        }
+        const statesResponse = await calculateFormStatus(
+          states,
+          EMAIL_STATE_IN_ONE_ITERATION,
+          startIndex
+        );
+        // return res.json({
+        //   status: true,
+        //   statesResponse
+        // })
+        statesResponse.forEach((state) => {
+          let stateName = Object.keys(state)[0];
+          let stateEmailTemplate = Service.emailTemplate.stateUlbFormTrigger(
+            stateName,
+            state
+          );
+          let mailOptions = {
+            Destination: {
+              /* required */
+              // ToAddresses: state[stateName]["emailAddress"],
+              // ToAddresses: ["dalbeerk2017@gmail.com"],
+                ToAddresses: ["aditya003.ay@gmail.com"],
             },
-          },
-          Subject: {
-            Charset: "UTF-8",
-            Data: stateEmailTemplate.subject,
-          },
-        },
-        Source: process.env.EMAIL,
-        /* required */
-        ReplyToAddresses: [process.env.EMAIL],
-      };
-  
-      Service.sendEmail(mailOptions);
-    })
+            Message: {
+              /* required */
+              Body: {
+                /* required */
+                Html: {
+                  Charset: "UTF-8",
+                  Data: stateEmailTemplate.body,
+                },
+              },
+              Subject: {
+                Charset: "UTF-8",
+                Data: stateEmailTemplate.subject,
+              },
+            },
+            Source: process.env.EMAIL,
+            /* required */
+            ReplyToAddresses: [process.env.EMAIL],
+          };
+
+          Service.sendEmail(mailOptions);
+        });
+      }
+    } catch (error) {
+      console.log(error.message);
+    }
   }
   
   
   const annualAccountStatus = (formData, ulbCount)=>{
-  
-    const obj = {
-      "AnnualAccount_Audited": {
-        [StatusList.Not_Started]: 0,
-        [StatusList.In_Progress]: 0,
-        [StatusList.Under_Review_By_State]: 0,
-        [StatusList.Rejected_By_State]: 0,
-        [StatusList.Under_Review_By_MoHUA]: 0,
-        [StatusList.Rejected_By_MoHUA]: 0,
-        [StatusList.Approved_By_MoHUA]: 0,
-      },
-      "AnnualAccount_UnAudited": {
-        [StatusList.Not_Started]: 0,
-        [StatusList.In_Progress]: 0,
-        [StatusList.Under_Review_By_State]: 0,
-        [StatusList.Rejected_By_State]: 0,
-        [StatusList.Under_Review_By_MoHUA]: 0,
-        [StatusList.Rejected_By_MoHUA]: 0,
-        [StatusList.Approved_By_MoHUA]: 0,
-      },
-    };
-     formData.forEach((form)=> {
-  
-  
-      const [auditedStatus, unAuditedStatus] = calculateTabStatus(form);
-  
-      const auditedForm =  form.hasOwnProperty("audited") ? form["audited"] : "";
-      const unAuditedForm = form.hasOwnProperty("unAudited")  ? form["unAudited"] : "";
-  
-      if(auditedForm){
-  
-        obj["AnnualAccount_Audited"][
-          calculateStatus(
-            auditedStatus,
-            form.actionTakenByRole,
-            form.isDraft,
-            "ULB"
-          )
-        ] =
+    try {
+      
+      const obj = {
+        "AnnualAccount_Audited": {
+          [StatusList.Not_Started]: 0,
+          [StatusList.In_Progress]: 0,
+          [StatusList.Under_Review_By_State]: 0,
+          [StatusList.Rejected_By_State]: 0,
+          [StatusList.Under_Review_By_MoHUA]: 0,
+          [StatusList.Rejected_By_MoHUA]: 0,
+          [StatusList.Approved_By_MoHUA]: 0,
+        },
+        "AnnualAccount_UnAudited": {
+          [StatusList.Not_Started]: 0,
+          [StatusList.In_Progress]: 0,
+          [StatusList.Under_Review_By_State]: 0,
+          [StatusList.Rejected_By_State]: 0,
+          [StatusList.Under_Review_By_MoHUA]: 0,
+          [StatusList.Rejected_By_MoHUA]: 0,
+          [StatusList.Approved_By_MoHUA]: 0,
+        },
+      };
+       formData.forEach((form)=> {
+    
+    
+        const [auditedStatus, unAuditedStatus] = calculateTabStatus(form);
+    
+        const auditedForm =  form.hasOwnProperty("audited") ? form["audited"] : "";
+        const unAuditedForm = form.hasOwnProperty("unAudited")  ? form["unAudited"] : "";
+    
+        if(auditedForm){
+    
           obj["AnnualAccount_Audited"][
             calculateStatus(
               auditedStatus,
@@ -213,17 +241,17 @@ const calculateFormStatus = async () => {
               form.isDraft,
               "ULB"
             )
-          ] + 1;
-      }
-      if(unAuditedForm){
-        obj["AnnualAccount_UnAudited"][
-          calculateStatus(
-            unAuditedStatus,
-            form.actionTakenByRole,
-            form.isDraft,
-            "ULB"
-          )
-        ] =
+          ] =
+            obj["AnnualAccount_Audited"][
+              calculateStatus(
+                auditedStatus,
+                form.actionTakenByRole,
+                form.isDraft,
+                "ULB"
+              )
+            ] + 1;
+        }
+        if(unAuditedForm){
           obj["AnnualAccount_UnAudited"][
             calculateStatus(
               unAuditedStatus,
@@ -231,13 +259,25 @@ const calculateFormStatus = async () => {
               form.isDraft,
               "ULB"
             )
-          ] + 1;
-      }
-     })
-  
-     /* This is calculating the number of forms that are not started. */
-     obj["AnnualAccount_Audited"][StatusList.Not_Started] = ulbCount - formData.length;
-     obj["AnnualAccount_UnAudited"][StatusList.Not_Started] = ulbCount - formData.length;
-  
-     return obj;
+          ] =
+            obj["AnnualAccount_UnAudited"][
+              calculateStatus(
+                unAuditedStatus,
+                form.actionTakenByRole,
+                form.isDraft,
+                "ULB"
+              )
+            ] + 1;
+        }
+       })
+    
+       /* This is calculating the number of forms that are not started. */
+       obj["AnnualAccount_Audited"][StatusList.Not_Started] = ulbCount - formData.length;
+       obj["AnnualAccount_UnAudited"][StatusList.Not_Started] = ulbCount - formData.length;
+    
+       return obj;
+      
+    } catch (error) {
+      console.log(error.message)
+    }
   }
