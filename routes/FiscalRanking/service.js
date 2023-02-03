@@ -1055,19 +1055,16 @@ function checkValidRequest(formId,stateId,role){
 /**
  * updates take action and form status field
  */
-function updateActions(data,role){
+function updateActions(data,role,formType){
   let modifiedData = [...data]
-  
   try{
     modifiedData = data.map(el => {
-
       if (!el.formData) {
         el['formStatus'] = "Not Started";
         el['cantakeAction'] = false;
       } else {
-
-        el['formStatus'] = calculateStatusForFiscalRankingForms(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, "ULB");
-        el['cantakeAction'] = (role === "ADMIN" || role === userTypes.state) ? false : canTakeActionOrViewOnly(el, role)
+        el['formStatus'] = calculateStatusForFiscalRankingForms(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
+        el['cantakeAction'] = (role === "ADMIN" || role === userTypes.state) ? false : canTakeActionOrViewOnly(el, role,true)
       }
       return el
     })
@@ -1114,6 +1111,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let limit = req.query.limit || 10
     let {design_year:year,state:stateId,formId,getQuery} = req.query
     let {role} = req.decoded
+    console.log("role ::::: ",role)
     if(stateId === undefined || stateId === "null"){
       stateId = checkForRoleAndgetStateId(req,role)
     }
@@ -1135,16 +1133,18 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let keys = calculateKeys(searchFilters['status'], role);
     Object.assign(searchFilters, keys)
     let newFilter = await Service.mapFilterNew(searchFilters)
+    // Code that will get the dynamic names when sidemenu is implemented
     //let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
     //let {path,collectionName} = formTab
     let path = "FiscalRanking"
     let collectionName = "fiscalrankings"
+    let formType = "ULB"
     aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId)
     let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
     let data = queryResult[0]
     total = data['total']
-    data = updateActions(data['records'],role)
+    data = updateActions(data['records'],role,formType)
     if(getQuery == 'true') return res.status(200).json({
       query:aggregateQuery
     })
