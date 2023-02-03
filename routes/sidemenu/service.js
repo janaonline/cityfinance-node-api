@@ -314,7 +314,7 @@ module.exports.get = catchAsync(async (req, res) => {
     tempData = data.sort((a, b)=>{
         return a.sequence - b.sequence;
     })
-    let result2=[];
+    // let result2=[];
     for(let i =0 ; i< tempData.length; i++){
         let entity = tempData[i];
         if(entity?.sequence){
@@ -329,8 +329,11 @@ module.exports.get = catchAsync(async (req, res) => {
                 entity.prevUrl = `../${tempData[i-1].url}`;
                 entity.nextUrl = `../${tempData[i+1].url}`;
             }
-            result2.push(entity);
+            // result2.push(entity);
             
+        }
+        if(role === "STATE"){
+          entity.category  = `${entity.category}_${entity.groupSequence}`
         }
     }
     //group the data 
@@ -339,23 +342,24 @@ module.exports.get = catchAsync(async (req, res) => {
     
       
 
-    if (role === "STATE") {
-      let subCatTempData = tempData[""];
-      let newSubCat = {};
-      for (let obj of subCatTempData) {
-        if (obj && obj.name) {
-          if (!newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]]) {
-            newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]] = [obj];
-            continue;
-          }
-          newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]].push(obj);
-        }
-      }
-      tempData[""] = newSubCat;
-    }
+    // if (role === "STATE") {
+    //   let subCatTempData = tempData[""];
+    //   let newSubCat = {};
+    //   for (let obj of subCatTempData) {
+    //     if (obj && obj.name) {
+    //       if (!newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]]) {
+    //         newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]] = [obj];
+    //         continue;
+    //       }
+    //       newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]].push(obj);
+    //     }
+    //   }
+    //   tempData[""] = newSubCat;
+    // }
 
 //sorting the data as per sequence no;
-tempData = sortByPosition(tempData, role);
+tempData = sortByPosition(tempData);
+
 //creating card Data
 if(role=="ULB"){
     data.forEach(el => {
@@ -466,24 +470,13 @@ module.exports.delete = catchAsync(async (req, res) => {
 
 })
 
-const sortByPosition = (data, role) => {
-  if (role !== "STATE") {
+const sortByPosition = (data) => {
     for (let key in data) {
       data[key].sort((a, b) => {
         return a.position - b.position;
       });
     }
-  } else {
-    for (let key in data) {
-      if (key !== "") {
-        data[key].sort((a, b) => {
-          return a.position - b.position;
-        });
-      } else if (key === "") {
-        sortByPosition(data[""], role);
-      }
-    }
-  }
+
 
   return data;
 };
