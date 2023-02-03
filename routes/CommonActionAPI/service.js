@@ -94,7 +94,30 @@ module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole
                     return StatusList.Not_Started
                     break;
             }
+
+        case "MoHua":
+            switch (true) {
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                    return StatusList.In_Progress
+                    break;
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+                    break;
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
+                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Rejected_By_MoHUA
+                    break;
+                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+
+                default:
+                    return StatusList.Not_Started
+                    break;
+            }
             break;
+
    
     }
 }
@@ -732,7 +755,7 @@ function findForm(formArray, stateId){
 //   },
 // ])
 
-module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
+module.exports.canTakeActionOrViewOnly =  (data, userRole,adminLevel=false)=>{
     let status = data['formStatus'];
     switch (true) {
       case status == StatusList.Not_Started:
@@ -743,6 +766,10 @@ module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
         break;
       case status == StatusList.Under_Review_By_State && userRole == 'STATE':
         return true;
+        break;
+        case status == StatusList.Under_Review_By_MoHUA && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            console.log("adminglevel ::: ",adminLevel)
+        return true
         break;
       case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
         return false;
