@@ -197,7 +197,7 @@ module.exports.emailTrigger = async () =>
         );
 
         /* This is for testing purpose. */
-        if(process.env.ENV !== "Prod"){
+        if(process.env.ENV !== "production"){
           state[stateName]['emailAddress'] =  ["dalbeerk2017@gmail.com"]
         }
 
@@ -205,8 +205,8 @@ module.exports.emailTrigger = async () =>
           Destination: {
             /* required */
             // ToAddresses: state[stateName]["emailAddress"],
-            // ToAddresses: ["dalbeerk2017@gmail.com"],
-            ToAddresses: ["aditya003.ay@gmail.com"],
+            ToAddresses: ["dalbeerk2017@gmail.com"],
+            // ToAddresses: ["aditya003.ay@gmail.com"],
           },
           Message: {
             /* required */
