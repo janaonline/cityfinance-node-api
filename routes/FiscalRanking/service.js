@@ -7,13 +7,14 @@ const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
 const userTypes = require("../../util/userTypes")
-
+const converter = require('json-2-csv');
 const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
-
+const fs = require('fs');
+const {fiscalRankingColsNameCsv} = require("../../util/Constants")
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
   try {
@@ -765,19 +766,12 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "formData": { $ifNull: [`$${collectionName}`, ""] },
       }
     }
-    let showFields = {
-      "filled":{
-        $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
-      },
-    }
+   
     
     queryArr.push(projectionQueryWithConditions)
     let main = projectionQueryWithConditions["$project"]
     let projectedKeys =  Object.keys(main)
-    for(var projectedKey of projectedKeys){
-      showFields[projectedKey] = 1
-    }
-    queryArr.push({"$project":showFields})
+    mainProjectionQuery(projectionQueryWithConditions,queryArr)
     if(newFilter && Object.keys(newFilter).length > 0){
       if(newFilter.sbCode){
         newFilter['censusCode'] = newFilter.sbCode
@@ -802,6 +796,60 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
     console.log("error in getProjectionQueries ::: ",err)
   }
 }
+
+/**
+ * query that sends create projection queries for csv data download 
+ */
+function getCsvProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
+  try{
+    let csvProjection = {
+      "$project":{
+        "ULB Name":"$name",
+        "ulbId": "$_id",
+        "City Finance Code": "$code",
+        "Census Code":getCensusCodeCondition(),
+        "UA":getUAcondition(),
+        "UA_ID":getUA_id(),
+        "ULB Type": "$ulbType.name",
+        "ulbType_id": "$ulbType._id",
+        "population": "$population",
+        "state_id": "$state._id",
+        "State Name": "$state.name",
+        "populationType":getPopulationCondition(),
+        "formData": { $ifNull: [`$${collectionName}`, ""] },
+      }
+    }
+    queryArr.push(csvProjection)
+    mainProjectionQuery(csvProjection,queryArr)
+  }
+  catch(err){
+    console.log("error in getCsvProjectionQueries :: ",err.message)
+  }
+}
+
+
+/**
+ * Get projection query for the columns which exists or not
+ */
+function mainProjectionQuery(projectionQueryWithConditions,queryArr){
+  try{
+    let showFields = {
+      "filled":{
+        $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
+      },
+    }
+    let main = projectionQueryWithConditions["$project"]
+    let projectedKeys =  Object.keys(main)
+    for(var projectedKey of projectedKeys){
+      showFields[projectedKey] = 1
+    }
+    queryArr.push({"$project":showFields})
+  }
+  catch(err){
+    console.log("error in mainProjectionQuery :: ",err.message)
+  }
+}
+
 
 
 /**
@@ -830,7 +878,7 @@ function getUnwindObj(key,preserveNullAndEmptyArrays=false){
  * @param {Array} queryArr
  * @param {String} Array
  */
-function getFormQuery(queryArr,collectionName,design_year){
+function getFormQuery(queryArr,collectionName,design_year,csv){
   try{
     let obj = {
       "$lookup":{
@@ -854,14 +902,17 @@ function getFormQuery(queryArr,collectionName,design_year){
     obj["$lookup"]["pipeline"].push(getCommonLookupObj("years","design_year","_id","design_year"))
     obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"))
     obj["$lookup"]["as"] = collectionName
-    obj["$lookup"]["pipeline"].push({
-      "$project":{
-        "_id":1,
-        "status":1,
-        "actionTakenByRole":1,
-         "isDraft":1
-      }
-    })   
+    if(!csv){
+      obj["$lookup"]["pipeline"].push({
+        "$project":{
+          "_id":1,
+          "status":1,
+          "actionTakenByRole":1,
+           "isDraft":1
+        }
+      })
+    }
+       
     queryArr.push(obj)
   }
   catch(err){
@@ -928,7 +979,7 @@ function getFacetQueryForPagination(queryArr,skip,limit){
  * @param {*} collectionName:String
  * @param {*} path :String
  */
-function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId=null){
+function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,csv,stateId=null){
   let query = []
   try{
     //stage one get Matching ulbs 
@@ -944,7 +995,7 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId
     get_state_query(query,stateId)
 
     // stage 3 get form data which is filled in this case fiscalranking form
-    getFormQuery(query,collectionName,year)
+    getFormQuery(query,collectionName,year,csv)
     query.push(getUnwindObj(`$${collectionName}`,true))
     // stage 4 get all UA realted to tthis ulb and unwind all ua,s
     query.push(getCommonLookupObj("uas","UA","_id","UA"))
@@ -954,7 +1005,12 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId
     query.push(getUnwindObj("$ulbType",true))
     
     // stage 6 modify the cols ,handle pagination and search queries 
-    getProjectionQueries(query,collectionName,skip,limit,newFilter)
+    if(csv){
+      getCsvProjectionQueries(query,collectionName,skip,limit,newFilter)
+    }
+    else{
+      getProjectionQueries(query,collectionName,skip,limit,newFilter)
+    }
     // stage 7 sort by formData
     query.push({"$sort":{"formData":-1}})
     
@@ -1092,6 +1148,54 @@ function checkForRoleAndgetStateId(req,role){
   }
   return null
 }
+
+/**
+ * function that create desired data structure for FiscalRanking
+ * @param {Array} data
+ * @param {Object} cols
+ */
+function createDatastructureForCSV(data,cols){
+  try{
+    let objKeys = Object.values(cols)
+    let sampleObj = []
+    for (var record of data){
+      for(var key of objKeys){
+        if(record[key]){
+          temp[cols[key]] = record[key]
+        }
+        else{
+          temp[cols[key]] = ""
+        }
+      }
+      sampleObj.push(temp)
+    }
+    return sampleObj;
+  }
+  catch(err){
+    console.log("createDatastructureForCSV :: ",err.message)
+  }
+}
+
+/**
+ * A function that creates csv
+ * @param {Array}  records
+ */
+function getCsv(records){
+  try{
+    let modifiedData = createDatastructureForCSV(records,fiscalRankingColsNameCsv)
+    converter.json2csv(modifiedData, (err,csv)=>{
+      if(err){
+        console.log(err.message)
+        return 
+      }
+      fs.writeFileSync("sample.csv",csv)
+    }, {});
+  }
+  catch(err){
+    console.log("error in records ::: ",err.message )
+  }
+}
+
 /**
  * An Api that get FR forms ulb according to state or mohua
  * @param {*} req:Object
@@ -1109,9 +1213,9 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let aggregateQuery = {}
     let skip =  req.query.skip ||  0
     let limit = req.query.limit || 10
-    let {design_year:year,state:stateId,formId,getQuery} = req.query
     let {role} = req.decoded
-    console.log("role ::::: ",role)
+    let {design_year:year,state:stateId,formId,getQuery,csv} = req.query
+    csv = ( csv === undefined)  ? false : true
     if(stateId === undefined || stateId === "null"){
       stateId = checkForRoleAndgetStateId(req,role)
     }
@@ -1129,6 +1233,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
       response.message = validation.message
       return res.status(500).json(response)
     }
+   
     searchFilters = searchQueries(req)
     let keys = calculateKeys(searchFilters['status'], role);
     Object.assign(searchFilters, keys)
@@ -1140,14 +1245,17 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let path = "FiscalRanking"
     let collectionName = "fiscalrankings"
     let formType = "ULB"
-    aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId)
-    let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
-    let data = queryResult[0]
-    total = data['total']
-    data = updateActions(data['records'],role,formType)
+    aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,newFilter,csv,stateId)
     if(getQuery == 'true') return res.status(200).json({
       query:aggregateQuery
     })
+    let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
+    let data = csv ? queryResult :queryResult[0]
+    total = !csv ? data['total'] : 0
+    total = data['total']
+    let records = csv ? data :data['records']
+    data = updateActions(records,role,formType)
+    getCsv(data)
     response.success = true
     response.columnNames = cols
     response.data = data
