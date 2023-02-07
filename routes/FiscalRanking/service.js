@@ -117,8 +117,10 @@ exports.getView = async function (req, res, next) {
   try {
     let condition = {};
     if (req.query.ulb && req.query.design_year) {
-      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.design_year) }
+      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.ulb) }
     }
+    console.log("req.query.ulb :: ",req.query.ulb)
+    console.log("dyer >> ",req.query.ulb)
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
     let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
@@ -195,7 +197,9 @@ exports.getView = async function (req, res, next) {
       }
     }
     let fyDynemic = await fiscalRankingFormJson();
-    let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
+
+    let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
+    
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
@@ -203,7 +207,8 @@ exports.getView = async function (req, res, next) {
         for (let pf of subData[key]?.yearData) {
           if (pf?.code?.length > 0) {
             if (fyData.length) {
-              let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+              
+              let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
                   pf['date'] = singleFydata ? singleFydata.date : null;
@@ -214,13 +219,14 @@ exports.getView = async function (req, res, next) {
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = "";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
-                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData ,"key":key });
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = "";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
@@ -229,8 +235,9 @@ exports.getView = async function (req, res, next) {
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
+                
                 let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
-                console.log("singleFydata", singleFydata)
+                
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
@@ -281,9 +288,14 @@ exports.getView = async function (req, res, next) {
  * @param objData - The object that contains the data to be filtered.
  */
 const getUlbLedgerDataFilter = (objData) => {
-  const { code, year, data } = objData;
+  const { code, year, data,key } = objData;
   if (code.length) {
-    let ulbFyData = data.length ? data.filter(el => code.includes(el.code) && el.year_id.toString() === year.toString()) : []
+    let ulbFyData = data.length ? data.filter(
+      (el)=>{
+        return code.includes(parseInt(el.code)) && el.year_id.toString() === year.toString()
+
+      }
+    ) : []
     var sum = ulbFyData.length > 0 ? ulbFyData.reduce((pv, cv) => pv + cv.totalAmount, 0) : '';
     return sum;
   } else {
@@ -312,7 +324,9 @@ const ulbLedgerFy = (condition) => {
             as: "years"
           }
         },
-        { $unwind: "$years" },
+        { $unwind: {
+          "path": "$years",
+        } },
         {
           $project: {
             _id: 0,
@@ -335,6 +349,7 @@ const ulbLedgerFy = (condition) => {
  * @param objData - {
  */
 const ulbLedgersData = (objData) => {
+
   return new Promise(async (resolve, reject) => {
     const { ulb } = objData;
     try {
