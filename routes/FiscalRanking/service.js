@@ -226,7 +226,7 @@ exports.getView = async function (req, res, next) {
               }
             } else {
               if (viewOne.isDraft == null) {
-                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData ,"key":key });
+                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData});
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = "";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
@@ -288,7 +288,7 @@ exports.getView = async function (req, res, next) {
  * @param objData - The object that contains the data to be filtered.
  */
 const getUlbLedgerDataFilter = (objData) => {
-  const { code, year, data,key } = objData;
+  const { code, year, data } = objData;
   if (code.length) {
     let ulbFyData = data.length ? data.filter(
       (el)=>{
