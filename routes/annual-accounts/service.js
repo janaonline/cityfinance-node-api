@@ -1852,6 +1852,18 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
       $unwind: "$state"
     },
     {
+      $addFields: {
+           "audited.year": {
+       $convert:
+         {
+            input: "$audited.year",
+            to: "objectId",
+            onError: "$audited.year",
+         }            
+               }
+      }    
+   },
+    {
       $lookup: {
         from: "years",
         localField: "audited.year",
@@ -2018,6 +2030,18 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
       }
     },
     { $unwind: "$state" },
+    {
+      $addFields: {
+           "unAudited.year": {
+       $convert:
+         {
+            input: "$unAudited.year",
+            to: "objectId",
+            onError: "$unAudited.year",
+         }            
+               }
+      }    
+   },
     {
       $lookup: {
         from: "years",
