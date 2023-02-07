@@ -204,6 +204,7 @@ exports.getView = async function (req, res, next) {
       let subData = fyDynemic[sortKey];
       for (let key in subData) {
         for (let pf of subData[key]?.yearData) {
+          pf['status'] = null
           if (pf?.code?.length > 0) {
             if (fyData.length) {
               
@@ -220,14 +221,14 @@ exports.getView = async function (req, res, next) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = "PENDING";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData});
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = "PENDING";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             }
