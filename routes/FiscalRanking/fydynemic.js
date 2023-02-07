@@ -1,5 +1,4 @@
 const {years} = require("../../service/years")
-console.log("years::",years["2019-20"])
 const fiscalRankingFormJson = () => {
   return {
     goverPar: {
