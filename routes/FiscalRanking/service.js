@@ -221,14 +221,14 @@ exports.getView = async function (req, res, next) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "PENDING";
+                pf['status'] = "";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData});
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "PENDING";
+                pf['status'] = "";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             }
