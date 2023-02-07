@@ -117,10 +117,9 @@ exports.getView = async function (req, res, next) {
   try {
     let condition = {};
     if (req.query.ulb && req.query.design_year) {
-      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.ulb) }
+      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId( req.query.design_year) }
     }
-    console.log("req.query.ulb :: ",req.query.ulb)
-    console.log("dyer >> ",req.query.ulb)
+
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
     let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
@@ -324,9 +323,8 @@ const ulbLedgerFy = (condition) => {
             as: "years"
           }
         },
-        { $unwind: {
-          "path": "$years",
-        } },
+        { $unwind: "$years",
+        },
         {
           $project: {
             _id: 0,
