@@ -291,7 +291,7 @@ const getUlbLedgerDataFilter = (objData) => {
   if (code.length) {
     let ulbFyData = data.length ? data.filter(
       (el)=>{
-        return code.includes(parseInt(el.code)) && el.year_id.toString() === year.toString()
+        return code.includes(el.code) && el.year_id.toString() === year.toString()
 
       }
     ) : []
