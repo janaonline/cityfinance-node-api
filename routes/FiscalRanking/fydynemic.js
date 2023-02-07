@@ -1,3 +1,4 @@
+const {years} = require("../../service/years")
 const fiscalRankingFormJson = () => {
   return {
     goverPar: {
@@ -66,7 +67,7 @@ const fiscalRankingFormJson = () => {
             type: 'auditReprtDate',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: ``,
             placeHolder: ''
           },
@@ -100,7 +101,7 @@ const fiscalRankingFormJson = () => {
             type: 'auditReprtDate',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: '',
             placeHolder: ''
           },
@@ -139,7 +140,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -153,7 +154,7 @@ const fiscalRankingFormJson = () => {
             min: '',
             max: '',
             required: true,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             readonly: false,
             type: '',
             bottomText: ``,
@@ -203,7 +204,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             type: '',
             bottomText: ``,
             placeHolder: '',
@@ -229,7 +230,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptActl',
             code: [],
             readonly: false,
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             bottomText: `to be taken from approved Annual Budget of FY 2021-22`,
             placeHolder: ''
           },
@@ -245,7 +246,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptActl',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from approved Annual Budget of FY 2021-22 `,
             placeHolder: ''
           },
@@ -277,7 +278,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptActl',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: '',
             placeHolder: ''
           },
@@ -299,7 +300,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptWaterSupply',
             code: [],
             readonly: false,
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             bottomText: `to be taken from approved Annual Budget of FY 2020-21 `,
             placeHolder: ''
           },
@@ -315,7 +316,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptWaterSupply',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from approved Annual Budget of FY 2021-22 `,
             placeHolder: ''
           },
@@ -347,7 +348,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptWaterSupply',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: '',
             placeHolder: ''
           },
@@ -369,7 +370,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptSanitation',
             code: [],
             readonly: false,
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             bottomText: `to be taken from approved Annual Budget of FY 2020-21 `,
             placeHolder: ''
           },
@@ -385,7 +386,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptSanitation',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from approved Annual Budget of FY 2021-22 `,
             placeHolder: ''
           },
@@ -417,7 +418,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptSanitation',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: ' ',
             placeHolder: ''
           },
@@ -441,7 +442,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptBudget',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from approved Annual Budget of FY 2021-22 `,
             placeHolder: ''
           },
@@ -473,7 +474,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalRcptBudget',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: ' ',
             placeHolder: ''
           },
@@ -495,7 +496,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOwnRvnue',
             code: ['110', '130', '140', '150', '180'],
             readonly: false,
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             bottomText: `to be taken from AuditedAnnual Budget of FY 2018-19 `,
             placeHolder: ''
           },
@@ -509,7 +510,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalOwnRvnue',
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             code: ['110', '130', '140', '150', '180'],
             readonly: false,
             bottomText: `to be taken from Audited Annual Budget of FY 2019-20 `,
@@ -543,7 +544,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOwnRvnue',
             code: ['110', '130', '140', '150', '180'],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: ' ',
             placeHolder: ''
           },
@@ -563,7 +564,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalProperty',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: ['11001'],
             readonly: false,
             bottomText: `to be taken from Audited Annual Budget of FY 2018-19 `,
@@ -581,7 +582,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalProperty',
             code: ['11001'],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from Audited Annual Budget of FY 2019-20 `,
             placeHolder: ''
           },
@@ -613,7 +614,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOwnRvnue',
             code: ['11001'],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: ' ',
             placeHolder: ''
           }
@@ -633,7 +634,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalTaxRevWaterSupply',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: [11002],
             readonly: false,
             bottomText: `to be taken from Audited Annual Budget of FY 2018-19 `,
@@ -651,7 +652,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalTaxRevWaterSupply',
             code: [11002],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from Audited Annual Budget of FY 2019-20 `,
             placeHolder: ''
           },
@@ -683,7 +684,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalTaxRevWaterSupply',
             code: [11002],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'to be taken from Audited Annual Budget of FY 2021-22 ',
             placeHolder: ''
           }
@@ -703,7 +704,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalTaxRevSanitation',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: [11003],
             readonly: false,
             bottomText: `to be taken from Audited Annual Budget of FY 2018-19 `,
@@ -721,7 +722,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalTaxRevSanitation',
             code: [11003],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from Audited Annual Budget of FY 2019-20 `,
             placeHolder: ''
           },
@@ -753,7 +754,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalTaxRevSanitation',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: ' ',
             placeHolder: ''
           }
@@ -773,7 +774,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalFeeChrgWaterSupply',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: [],
             readonly: false,
             bottomText: `to be taken from Audited Annual Budget of FY 2018-19 `,
@@ -791,7 +792,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalFeeChrgWaterSupply',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from Audited Annual Budget of FY 2019-20 `,
             placeHolder: ''
           },
@@ -823,7 +824,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalFeeChrgWaterSupply',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'to be taken from Audited Annual Budget of FY 2021-22 ',
             placeHolder: ''
           }
@@ -843,7 +844,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalFeeChrgSanitation',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: [],
             readonly: false,
             bottomText: `to be taken from Audited Annual Budget of FY 2018-19 `,
@@ -861,7 +862,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalFeeChrgSanitation',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from Audited Annual Budget of FY 2019-20 `,
             placeHolder: ''
           },
@@ -893,7 +894,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalFeeChrgSanitation',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'to be taken from Audited Annual Budget of FY 2021-22 ',
             placeHolder: ''
           }
@@ -915,8 +916,8 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalCaptlExp',
-            year: "63735a5bd44534713673c1ca",
-            code: [],
+            year: years["2018-19"],
+            code: ["410","412"],
             readonly: false,
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
             placeHolder: ''
@@ -931,9 +932,9 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalCaptlExp',
-            code: [],
+            code:["410","412"],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
             placeHolder: ''
           },
@@ -947,7 +948,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalCaptlExp',
-            code: [],
+            code: ["410","412"],
             readonly: false,
             year: "606aadac4dff55e6c075c507",
             bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ',
@@ -965,7 +966,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCaptlExp',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: '',
             placeHolder: ''
           }
@@ -985,7 +986,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalCaptlExpWaterSupply',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: [],
             readonly: false,
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
@@ -1003,7 +1004,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCaptlExpWaterSupply',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
             placeHolder: ''
           },
@@ -1035,7 +1036,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCaptlExpWaterSupply',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ',
             placeHolder: ''
           }
@@ -1055,7 +1056,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalCaptlExpSanitation',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: [],
             readonly: false,
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
@@ -1073,7 +1074,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCaptlExpSanitation',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
             placeHolder: ''
           },
@@ -1105,7 +1106,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCaptlExpSanitation',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ',
             placeHolder: ''
           }
@@ -1125,8 +1126,8 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalOmExp',
-            year: "63735a5bd44534713673c1ca",
-            code: [230],
+            year: years["2018-19"],
+            code: ['230'],
             readonly: false,
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
             placeHolder: ''
@@ -1141,9 +1142,9 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalOmExp',
-            code: [230],
+            code: ['230'],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
             placeHolder: ''
           },
@@ -1157,7 +1158,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalOmExp',
-            code: [230],
+            code: ['230'],
             readonly: false,
             year: "606aadac4dff55e6c075c507",
             bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ',
@@ -1173,9 +1174,9 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'totalOmExp',
-            code: [230],
+            code: ['230'],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: ' ',
             placeHolder: ''
           }
@@ -1197,7 +1198,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCaptlExpWaterSupply',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
             placeHolder: ''
           },
@@ -1229,7 +1230,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalCaptlExpWaterSupply',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ',
             placeHolder: ''
           }
@@ -1251,7 +1252,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOMCaptlExpSanitation',
             code: [],
             readonly: false,
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
             placeHolder: ''
           },
@@ -1283,7 +1284,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOMCaptlExpSanitation',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ',
             placeHolder: ''
           }
@@ -1303,7 +1304,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             type: 'totalRevExp',
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             code: ['210', '220', '230', '240', '200'],
             readonly: false,
             bottomText: `to be taken from Audited Annual Accounts for FY 2019-20 `,
@@ -1337,7 +1338,7 @@ const fiscalRankingFormJson = () => {
             type: 'totalOMCaptlExpSanitation',
             code: [],
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: ' ',
             placeHolder: ''
           }
@@ -1404,7 +1405,7 @@ const fiscalRankingFormJson = () => {
               url: ""
             },
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'Maximum Size  5MB (pdf files only) ',
             placeHolder: ''
           },
@@ -1446,7 +1447,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'auditedAnnualFySt',
-            year: "63735a5bd44534713673c1ca",
+            year: years["2018-19"],
             code: [],
             readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only) `,
@@ -1465,7 +1466,7 @@ const fiscalRankingFormJson = () => {
             max: '',
             required: true,
             type: 'auditedAnnualFySt',
-            year: "607697074dff55e6c0be33ba",
+            year: years["2019-20"],
             code: [],
             readonly: false,
             bottomText: `Maximum Size  5MB (pdf files only)`,
@@ -1505,7 +1506,7 @@ const fiscalRankingFormJson = () => {
               url: ""
             },
             readonly: false,
-            year: "606aaf854dff55e6c075d219",
+            year: years["2021-22"],
             bottomText: 'Maximum Size  5MB (pdf files only) ',
             placeHolder: ''
           }
