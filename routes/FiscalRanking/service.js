@@ -6,13 +6,15 @@ const UlbLedger = require('../../models/UlbLedger');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
-const userTypes = require("../../util/userTypes")
+const userTypes = require("../../util/userTypes");
+const tabsFiscalRankings = require("../../models/TabsFiscalRankings");
 
 const { calculateKeys,canTakeActionOrViewOnly,calculateStatus } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
+const TabsFiscalRankings = require('../../models/TabsFiscalRankings');
 
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
@@ -70,6 +72,28 @@ exports.CreateorUpdate = async (req, res, next) => {
       message: msg,
     });
   }
+}
+
+module.exports.createTabsFiscalRanking = async (req,res)=>{
+  let response = {
+    success:true,
+    message:""
+  }
+  try{
+    let dataToUpdate = {...req.body}
+    let tabObject = new TabsFiscalRankings(dataToUpdate)
+    await tabObject.save()
+    response.message = "Successfully created"
+    response.success = true
+    return res.status(201).json(response)
+  }
+  catch(err){
+     response.success = false
+     let message =  err.message
+     response.message = message
+    console.log("error in createTabsFiscalRanking:::",err.message)
+  }
+  res.status(400).json(response)
 }
 
 const checkPendingStatus = (data) => {
