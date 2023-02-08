@@ -207,7 +207,6 @@ exports.getView = async function (req, res, next) {
           if (pf?.code?.length > 0) {
             pf['status'] = null
             if (fyData.length) {
-              
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
@@ -221,14 +220,14 @@ exports.getView = async function (req, res, next) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = ulbFyAmount ? "NA":"";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData});
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = ulbFyAmount ? "NA":"";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             }
