@@ -207,7 +207,6 @@ exports.getView = async function (req, res, next) {
           if (pf?.code?.length > 0) {
             pf['status'] = null
             if (fyData.length) {
-              
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
@@ -218,17 +217,16 @@ exports.getView = async function (req, res, next) {
                 pf['status'] = singleFydata.status;
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
-                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-                
+                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });                
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData});
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             }
@@ -245,14 +243,14 @@ exports.getView = async function (req, res, next) {
                 } else {
                   if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                    pf['status'] = chekFile ? "NA" : ""
+                    pf['status'] = chekFile ? "NA" : null
                     pf['readonly'] = chekFile ? true : false;
                   }
                 }
               } else {
                 if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                  pf['status'] = chekFile ? "NA" : "";
+                  pf['status'] = chekFile ? "NA" : null;
                   pf['readonly'] = chekFile ? true : false;
                 }
               }
@@ -265,7 +263,7 @@ exports.getView = async function (req, res, next) {
                   } else {
                     pf['amount'] = singleFydata ? singleFydata.amount : "";
                   }
-                  pf['status'] = singleFydata ? singleFydata.status : "";
+                  pf['status'] = singleFydata ? singleFydata.status : null;
                   pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : false;
                 }
               }
