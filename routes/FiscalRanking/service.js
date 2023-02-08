@@ -204,8 +204,8 @@ exports.getView = async function (req, res, next) {
       let subData = fyDynemic[sortKey];
       for (let key in subData) {
         for (let pf of subData[key]?.yearData) {
-          pf['status'] = null
           if (pf?.code?.length > 0) {
+            pf['status'] = null
             if (fyData.length) {
               
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
