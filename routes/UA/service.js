@@ -754,7 +754,7 @@ module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
     }
     try{
         let {uaCode} = req.params
-        let ua = await UA.findOne({"UACode":uaCode})
+        let ua = await UA.findOne({"UACode":uaCode}).select(["name","_id"])
         if(!ua){
             response.message = "UA object not found"
             return res.status(400).json(response)
@@ -764,7 +764,7 @@ module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
         return res.status(200).json(response)
     }
     catch(err){
-        console.log("error in getUAById")
+        console.log("error in getUAById",err.message)
     }
 })
 module.exports.addUAFile = catchAsync(async(req,res)=>{
