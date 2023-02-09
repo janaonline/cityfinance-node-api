@@ -197,7 +197,7 @@ module.exports.emailTrigger = async () =>
         );
 
         /* This is for testing purpose. */
-        if(process.env.ENV !== "Prod"){
+        if(process.env.ENV !== "production"){
           state[stateName]['emailAddress'] =  ["dalbeerk2017@gmail.com"]
         }
 
@@ -205,8 +205,8 @@ module.exports.emailTrigger = async () =>
           Destination: {
             /* required */
             // ToAddresses: state[stateName]["emailAddress"],
-            // ToAddresses: ["dalbeerk2017@gmail.com"],
-            ToAddresses: ["aditya003.ay@gmail.com"],
+            ToAddresses: ["dalbeerk2017@gmail.com"],
+            // ToAddresses: ["aditya003.ay@gmail.com"],
           },
           Message: {
             /* required */
@@ -253,7 +253,7 @@ const annualAccountStatus = (formData, ulbCount) => {
     },
   };
   formData.forEach((form) => {
-    const [auditedStatus, unAuditedStatus] = calculateTabStatus(form);
+    let [auditedStatus, unAuditedStatus] = calculateTabStatus(form);
 
     const auditedForm = form.hasOwnProperty("audited") ? form["audited"] : "";
     const unAuditedForm = form.hasOwnProperty("unAudited")
@@ -261,6 +261,9 @@ const annualAccountStatus = (formData, ulbCount) => {
       : "";
 
     if (auditedForm) {
+      if(form.status === "REJECTED"){
+        auditedStatus = "REJECTED"
+      }
       obj["AnnualAccount_Audited"][
         calculateStatus(
           auditedStatus,
@@ -279,6 +282,10 @@ const annualAccountStatus = (formData, ulbCount) => {
         ] + 1;
     }
     if (unAuditedForm) {
+      if(form.status === "REJECTED")
+      {
+        unAuditedStatus =  "REJECTED"
+      }
       obj["AnnualAccount_UnAudited"][
         calculateStatus(
           unAuditedStatus,

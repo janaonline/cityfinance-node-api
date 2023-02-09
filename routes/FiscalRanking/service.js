@@ -6,13 +6,15 @@ const UlbLedger = require('../../models/UlbLedger');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
-const userTypes = require("../../util/userTypes")
+const userTypes = require("../../util/userTypes");
+const tabsFiscalRankings = require("../../models/TabsFiscalRankings");
 
 const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
+const TabsFiscalRankings = require('../../models/TabsFiscalRankings');
 
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
@@ -72,6 +74,28 @@ exports.CreateorUpdate = async (req, res, next) => {
   }
 }
 
+module.exports.createTabsFiscalRanking = async (req,res)=>{
+  let response = {
+    success:true,
+    message:""
+  }
+  try{
+    let dataToUpdate = {...req.body}
+    let tabObject = new TabsFiscalRankings(dataToUpdate)
+    await tabObject.save()
+    response.message = "Successfully created"
+    response.success = true
+    return res.status(201).json(response)
+  }
+  catch(err){
+     response.success = false
+     let message =  err.message
+     response.message = message
+    console.log("error in createTabsFiscalRanking:::",err.message)
+  }
+  res.status(400).json(response)
+}
+
 const checkPendingStatus = (data) => {
   return new Promise((resolve, reject) => {
     try {
@@ -112,6 +136,46 @@ const fRMapperCreate = (objData) => {
   })
 }
 
+function getModifiedTabsFiscalRanking(tabs,viewOne){
+  try{
+    let priorTabsForFiscalRanking = {
+      "basicUlbDetails" : "s1",
+      "conInfo" : "s2",
+      "revenueMob" : "s4",
+      "fisGov" : "s5",
+      "upFy" : "s6",
+      "selDec" : "s7"
+  }
+  
+    let modifiedTabs = [...tabs]
+    for(var tab of modifiedTabs){
+      if(tab.id === priorTabsForFiscalRanking["basicUlbDetails"]){
+        tab.data = {
+          "population11":{...viewOne.population11},
+          "populationFr":{...viewOne.populationFr},
+          "webLink":{
+            "value":viewOne.webLink,
+            "status":""
+          },
+          "waterSupply":{...viewOne.waterSupply},
+          "sanitationService":{...viewOne.sanitationService},
+          "propertySanitationTax":{...viewOne.propertySanitationTax},
+          "nameCmsnr":{
+            "value":viewOne.nameCmsnr,
+            "status":""
+          },
+          "propertyWaterTax":{...viewOne.propertyWaterTax}
+        }
+      }
+    }
+    return modifiedTabs
+  }
+  catch(err){
+    console.log("error in getModifiedTabsFiscalRanking ::: ",err.message)
+  }
+}
+
+
 /* A function which is used to get the data from the database. */
 exports.getView = async function (req, res, next) {
   try {
@@ -119,7 +183,6 @@ exports.getView = async function (req, res, next) {
     if (req.query.ulb && req.query.design_year) {
       condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId( req.query.design_year) }
     }
-
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
     let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
@@ -274,7 +337,9 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
-    return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic });
+    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).select("-_id").lean()
+    let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne)
+    return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
     console.log("err", error)
     return res.status(400).json({ status: false, message: "Something error wrong!" });
