@@ -223,6 +223,12 @@ function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic){
       else {
         tab.data = service.getDynamicObjects(tab.key)
       }
+      if(tab.feedback === undefined){
+        tab.feedback = {
+          "status":null,
+          "comment":""
+        }
+      }
     }
     return modifiedTabs
   }
