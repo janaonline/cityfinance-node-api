@@ -13,8 +13,9 @@ const statusType = () => {
 const feedbackSchema = new Schema({
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
     design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+    fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
     status : statusType(),
-    comments:{type:String,default:""}
+    comment:{type:String,default:""}
 })
 
 module.exports = mongoose.model("FeedbackFiscalRanking",feedbackSchema)
