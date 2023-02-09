@@ -25,8 +25,8 @@ const tabsFiscalRankingSchema = new Schema({
         default:""
     },
     feedback:{
-        status:statusType(),
-        comments:{type:String,default:""}
+        type:Schema.Types.ObjectId,
+        ref:'FeedbackFiscalRanking'
     },
     icon:{
         type:String,

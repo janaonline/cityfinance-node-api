@@ -1,15 +1,13 @@
-const mongoose = require('mongoose');
 const ObjectId = require("mongoose").Types.ObjectId;
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
+const feedBackSchema = require("../../models/FeedbackFiscalRanking")
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
 const userTypes = require("../../util/userTypes");
-const tabsFiscalRankings = require("../../models/TabsFiscalRankings");
-
-const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
+const { calculateKeys,canTakeActionOrViewOnly,calculateStatus } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
@@ -145,8 +143,9 @@ function  getBasicObject(value,status=""){
 
 // set this class in a service
 class tabsUpdationServiceFR{
-  constructor(viewOne){
-    this.detail = viewOne
+  constructor(viewOne,fyDynemic){
+    this.detail = {...viewOne}
+    this.dynamicData = {...fyDynemic}
   }
  
  /**
@@ -182,6 +181,14 @@ class tabsUpdationServiceFR{
       email:getBasicObject(this.detail.email,"NA")// because status field is not applicable from frontend in this case
     }
   }
+  getDynamicObjects(key){
+    return this.dynamicData[key]
+  }
+  getDataForSignedDoc(){
+    return {
+      signedCopyOfFile : {...this.detail.signedCopyOfFile}
+    }
+  }
 }
 
 
@@ -190,7 +197,7 @@ class tabsUpdationServiceFR{
  * @param tabs - The tabs that are to be modified.
  * @param viewOne - This is the object that contains all the data for the view.
  */
-function getModifiedTabsFiscalRanking(tabs,viewOne){
+function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic){
   try{
     let priorTabsForFiscalRanking = {
       "basicUlbDetails" : "s1",
@@ -202,13 +209,19 @@ function getModifiedTabsFiscalRanking(tabs,viewOne){
   }
   
     let modifiedTabs = [...tabs]
-    let service = new tabsUpdationServiceFR(viewOne)
+    let service = new tabsUpdationServiceFR(viewOne,fyDynemic)
     for(var tab of modifiedTabs){
       if(tab.id === priorTabsForFiscalRanking["basicUlbDetails"]){
         tab.data = service.getDataForBasicUlbTab()
       }
       else if(tab.id === priorTabsForFiscalRanking['conInfo']){
         tab.data = service.getDataForConInfo()
+      }
+      else if(tab.id === priorTabsForFiscalRanking['selDec']){
+        tab.data = service.getDataForSignedDoc()
+      }
+      else {
+        tab.data = service.getDynamicObjects(tab.key)
       }
     }
     return modifiedTabs
@@ -380,8 +393,12 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
-    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).select("-_id").lean()
-    let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne)
+    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).populate({
+      path:"feedback",
+      model:"FeedbackFiscalRanking",
+      // match:condition
+    }).select("-_id").lean()
+    let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic)
     return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
     console.log("err", error)
