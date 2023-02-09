@@ -9,6 +9,7 @@ const HeadersSchema = new Schema(
       ref: "DashboardMaster",
       required: true,
     },
+    description:{type:String,default:""},
     subHeaders: [
       {
         name: { type: String },
