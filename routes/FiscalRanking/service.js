@@ -146,7 +146,8 @@ function  getBasicObject(value,status=""){
 // set this class in a service
 class tabsUpdationServiceFR{
   constructor(viewOne){
-    this.detail = viewOne
+    this.detail = {...viewOne}
+    this.dynamicData = {...fyDynemic}
   }
  
  /**
@@ -190,7 +191,7 @@ class tabsUpdationServiceFR{
  * @param tabs - The tabs that are to be modified.
  * @param viewOne - This is the object that contains all the data for the view.
  */
-function getModifiedTabsFiscalRanking(tabs,viewOne){
+function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynamic){
   try{
     let priorTabsForFiscalRanking = {
       "basicUlbDetails" : "s1",
@@ -202,13 +203,16 @@ function getModifiedTabsFiscalRanking(tabs,viewOne){
   }
   
     let modifiedTabs = [...tabs]
-    let service = new tabsUpdationServiceFR(viewOne)
+    let service = new tabsUpdationServiceFR(viewOne,fyDynamic)
     for(var tab of modifiedTabs){
       if(tab.id === priorTabsForFiscalRanking["basicUlbDetails"]){
         tab.data = service.getDataForBasicUlbTab()
       }
       else if(tab.id === priorTabsForFiscalRanking['conInfo']){
         tab.data = service.getDataForConInfo()
+      }
+      else if(tab.id === priorTabsForFiscalRanking['revenueMob']){
+        tab.data = service.getDynamicObjects()
       }
     }
     return modifiedTabs
@@ -381,7 +385,7 @@ exports.getView = async function (req, res, next) {
       }
     }
     let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).select("-_id").lean()
-    let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne)
+    let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic)
     return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
     console.log("err", error)
