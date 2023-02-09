@@ -136,6 +136,60 @@ const fRMapperCreate = (objData) => {
   })
 }
 
+function  getBasicObject(value,status=""){
+    return {
+      "status":status,
+      "value":value
+    }
+}
+
+// set this class in a service
+class tabsUpdationServiceFR{
+  constructor(viewOne){
+    this.detail = viewOne
+  }
+ 
+ /**
+  * It returns an object with the same properties as the `detail` object, but with the values of the
+  * properties replaced with the values of the properties of the same name in the `detail` object
+  * @returns An object with the following properties:
+  *   - population11
+  *   - populationFr
+  *   - webLink
+  *   - waterSupply
+  *   - sanitationService
+  *   - propertySanitationTax
+  *   - nameCmsnr
+  *   - propertyWaterTax
+  */
+  getDataForBasicUlbTab(){
+    return {
+      "population11":{...this.detail.population11},
+      "populationFr":{...this.detail.populationFr},
+      "webLink":getBasicObject(this.detail.webLink),
+      "waterSupply":{...this.detail.waterSupply},
+      "sanitationService":{...this.detail.sanitationService},
+      "propertySanitationTax":{...this.detail.propertySanitationTax},
+      "nameCmsnr":getBasicObject(this.detail.nameCmsnr),
+      "propertyWaterTax":{...this.detail.propertyWaterTax}
+    }
+  }
+  getDataForConInfo(){
+    return {
+      nameOfNodalOfficer :getBasicObject(this.detail.nameOfNodalOfficer),
+      designationOftNodalOfficer:getBasicObject(this.detail.designationOftNodalOfficer),
+      mobile:getBasicObject(this.detail.mobile,"NA"), // because status field is not applicable from frontend in this case
+      email:getBasicObject(this.detail.email,"NA")// because status field is not applicable from frontend in this case
+    }
+  }
+}
+
+
+/**
+ * It takes in the tabs and viewOne object and returns the modified tabs
+ * @param tabs - The tabs that are to be modified.
+ * @param viewOne - This is the object that contains all the data for the view.
+ */
 function getModifiedTabsFiscalRanking(tabs,viewOne){
   try{
     let priorTabsForFiscalRanking = {
@@ -148,24 +202,13 @@ function getModifiedTabsFiscalRanking(tabs,viewOne){
   }
   
     let modifiedTabs = [...tabs]
+    let service = new tabsUpdationServiceFR(viewOne)
     for(var tab of modifiedTabs){
       if(tab.id === priorTabsForFiscalRanking["basicUlbDetails"]){
-        tab.data = {
-          "population11":{...viewOne.population11},
-          "populationFr":{...viewOne.populationFr},
-          "webLink":{
-            "value":viewOne.webLink,
-            "status":""
-          },
-          "waterSupply":{...viewOne.waterSupply},
-          "sanitationService":{...viewOne.sanitationService},
-          "propertySanitationTax":{...viewOne.propertySanitationTax},
-          "nameCmsnr":{
-            "value":viewOne.nameCmsnr,
-            "status":""
-          },
-          "propertyWaterTax":{...viewOne.propertyWaterTax}
-        }
+        tab.data = service.getDataForBasicUlbTab()
+      }
+      else if(tab.id === priorTabsForFiscalRanking['conInfo']){
+        tab.data = service.getDataForConInfo()
       }
     }
     return modifiedTabs
