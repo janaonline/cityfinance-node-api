@@ -394,7 +394,7 @@ exports.getView = async function (req, res, next) {
     let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).populate({
       path:"feedback",
       model:"FeedbackFiscalRanking",
-      // match:condition
+      match:condition
     }).select("-_id").lean()
     let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic)
     return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
