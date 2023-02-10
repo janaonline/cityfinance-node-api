@@ -197,10 +197,9 @@ class tabsUpdationServiceFR{
       signedCopyOfFile : {...this.detail.signedCopyOfFile}
     }
   }
- async getFeedbackForTabs(condition,tab){
+ async getFeedbackForTabs(condition,tabId){
     let mainCondition = Object.assign(condition,{"tab":tabId})
     let feedBackObj = await FeedBackFiscalRanking.findOne(mainCondition).select(["status","comment"])
-    console.log(feedBackObj)
     if(feedBackObj != null){
       return feedBackObj
     }
