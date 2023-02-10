@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const statusType = () => {
     return {
         type: String,
-        enum: ["APPROVED", "REJECTED", "PENDING",null],
+        enum: ["APPROVED", "REJECTED",null,"NA"],
         default: null,
     };
   };
