@@ -109,6 +109,7 @@ module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole
                 case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Rejected_By_MoHUA
                     break;
+                    
                 case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
                     return StatusList.Under_Review_By_MoHUA
 
