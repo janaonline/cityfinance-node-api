@@ -236,6 +236,24 @@ function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic){
   }
 }
 
+function assignCalculatedValues(fyDynemic,viewONe){
+  let totalOwnRevenueAreaObj = fyDynemic["goverPar"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
+  let propertyTaxObj =  fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "property_tax_register")
+  let payingPropObj = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paying_property_tax")
+  let paid_property_tax  = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
+  let fy21CashObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
+  let fy21OnlineObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
+
+  Object.assign(totalOwnRevenueAreaObj,viewONe['totalOwnRevenueArea'])
+  Object.assign(propertyTaxObj,viewONe['property_tax_register'])
+  Object.assign(payingPropObj,viewONe['paying_property_tax'])
+  Object.assign(paid_property_tax,viewONe['paid_property_tax'])
+  Object.assign(paid_property_tax,viewONe['paid_property_tax'])
+  Object.assign(fy21CashObj,viewONe['fy_21_22_cash'])
+  Object.assign(fy21OnlineObj,viewONe['fy_21_22_online'])
+
+}
+
 
 /* A function which is used to get the data from the database. */
 exports.getView = async function (req, res, next) {
@@ -320,7 +338,7 @@ exports.getView = async function (req, res, next) {
       }
     }
     let fyDynemic = await fiscalRankingFormJson();
-
+    assignCalculatedValues(fyDynemic,viewOne)
     let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
     
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
@@ -398,7 +416,7 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
-    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).select("-_id").lean()
+    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).lean()
     let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic)
     return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
@@ -1347,12 +1365,13 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
     message:""
   }
   try{
-  let {ulbId,formId,actions,design_year} = req.body
-  let {role} = req.decoded
-  if(role !== userTypes.mohua){
-    response.message = "Not permitted"
-    return res.status(500).json(response)
-  }
+    let {ulbId,formId,actions,design_year} = req.body
+    let {role} = req.decoded
+    if(role !== userTypes.mohua){
+      response.message = "Not permitted"
+      return res.status(500).json(response)
+    }
+    getStatus(actions)
   }
   catch(err){
     console.log("error in actionTakenByMoHua ::: ",err.message)
