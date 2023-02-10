@@ -197,7 +197,8 @@ class tabsUpdationServiceFR{
       signedCopyOfFile : {...this.detail.signedCopyOfFile}
     }
   }
- async getFeedbackForTabs(condition){
+ async getFeedbackForTabs(condition,tab){
+    let mainCondition = Object.assign(condition,{"tab":tabId})
     let feedBackObj = await FeedBackFiscalRanking.findOne(condition).select(["status","comment"])
     console.log(feedBackObj)
     if(feedBackObj != null){
@@ -237,7 +238,7 @@ async function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForF
       else {
         tab.data = service.getDynamicObjects(tab.key)
       }
-      tab.feedback = await  service.getFeedbackForTabs(conditionForFeedbacks)
+      tab.feedback = await  service.getFeedbackForTabs(conditionForFeedbacks,tab._id)
     }
     return modifiedTabs
   }
@@ -1353,7 +1354,6 @@ async function updateQueryForFiscalRanking(yearData,ulbId,formId){
         }
         await FiscalRankingMapper.findOneAndUpdate(filter,payload)
       }
-      
     }
   }
   catch(err){
@@ -1385,7 +1385,6 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           }
           if(obj[k].yearData){
               let yearArr = obj[k].yearData
-              console.log("yearArr :: ",yearArr)
               let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
               temp["status"].push(status)
               updateQueryForFiscalRanking(yearArr,ulbId,formId)
