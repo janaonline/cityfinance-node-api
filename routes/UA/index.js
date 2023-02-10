@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../auth/services/verifyToken')
 
-const { getAll, get2223 ,getRelatedUAFile,addUAFile,getUAByuaCode} = require('./service')
+const { getAll, get2223,getUAByuaCode,getRelatedUAFile,addUAFile } = require('./service')
 const { create } = require('./service')
 const { update } = require('./service')
 
@@ -14,6 +14,9 @@ router.get('/getUAfile',getRelatedUAFile)
 router.post("/addUAfile",addUAFile)
 router.put('/update', update)
 router.post('/create', verifyToken, create)
+router.get("/getUA/:uaCode",getUAByuaCode)
+router.get('/getUAfile',getRelatedUAFile)
+router.post("/addUAfile",addUAFile)
 
 
 module.exports = router;

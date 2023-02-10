@@ -8,8 +8,8 @@ const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
 const Year = require("../../models/Year")
 const SLB28 = require('../../models/TwentyEightSlbsForm')
+const UaFileList = require("../../models/UAFileList")
 const axios = require('axios')
-const UaFileList = require("../../models/UaFileList")
 const {calculateSlbMarks} = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
 const lineItemIndicatorIDs = [
@@ -753,27 +753,28 @@ module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
     }
     try{
         let {uaCode} = req.params
-        let ua = await UA.findOne({"UACode":uaCode})
+        let ua = await UA.findOne({"UACode":uaCode}).select(["name","_id"])
         if(!ua){
             response.message = "UA object not found"
             return res.status(400).json(response)
         }
         response.message = "found"
-        response.ua = ua._id
+        response.ua = ua
         return res.status(200).json(response)
     }
     catch(err){
-        console.log("error in getUAById")
+        console.log("error in getUAById",err.message)
     }
 })
 module.exports.addUAFile = catchAsync(async(req,res)=>{
+    let response = {
+        "success":false,
+        "message":""
+    }
     try{
-        let response = {
-            "success":false,
-            "message":""
-        }
         let data = {...req.body} 
         let design_year = data.Year
+        console.log(data)
         let yearObj = await Year.findOne({"year":design_year})
         if(!yearObj){
             response.message = "Year object not found in database"
