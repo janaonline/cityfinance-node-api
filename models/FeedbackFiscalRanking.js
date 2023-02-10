@@ -15,6 +15,10 @@ const feedbackSchema = new Schema({
     design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
     status : statusType(),
+    tab :{
+        type:Schema.Types.ObjectId,
+        ref:"tabsFiscalRankings"
+    },
     comment:{type:String,default:""}
 })
 

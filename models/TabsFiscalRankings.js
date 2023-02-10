@@ -2,14 +2,6 @@ require("./dbConnect");
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const statusType = () => {
-    return {
-        type: String,
-        enum: ["APPROVED", "REJECTED", "PENDING",null],
-        default: null,
-    };
-  };
-
 
 const tabsFiscalRankingSchema = new Schema({
     label : {
@@ -23,10 +15,6 @@ const tabsFiscalRankingSchema = new Schema({
     key : {
         type:String,
         default:""
-    },
-    feedback:{
-        type:Schema.Types.ObjectId,
-        ref:'FeedbackFiscalRanking'
     },
     icon:{
         type:String,

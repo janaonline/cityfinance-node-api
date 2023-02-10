@@ -7,13 +7,21 @@ const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
 const userTypes = require("../../util/userTypes");
-const { calculateKeys,canTakeActionOrViewOnly,calculateStatus } = require('../CommonActionAPI/service');
+const { calculateKeys,canTakeActionOrViewOnly,calculateStatus,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
 const TabsFiscalRankings = require('../../models/TabsFiscalRankings');
-
+let priorTabsForFiscalRanking = {
+  "basicUlbDetails" : "s1",
+  "conInfo" : "s2",
+  "revenueMob" : "s3",
+  "expPerf" : "s4",
+  "goverPar" : "s5",
+  "uploadFyDoc" : "s6",
+  "selDec" : "s7"
+}
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
   try {
@@ -199,15 +207,6 @@ class tabsUpdationServiceFR{
  */
 function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic){
   try{
-    let priorTabsForFiscalRanking = {
-      "basicUlbDetails" : "s1",
-      "conInfo" : "s2",
-      "revenueMob" : "s4",
-      "fisGov" : "s5",
-      "upFy" : "s6",
-      "selDec" : "s7"
-  }
-  
     let modifiedTabs = [...tabs]
     let service = new tabsUpdationServiceFR(viewOne,fyDynemic)
     for(var tab of modifiedTabs){
@@ -397,11 +396,7 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
-    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).populate({
-      path:"feedback",
-      model:"FeedbackFiscalRanking",
-      match:condition
-    }).select("-_id").lean()
+    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).select("-_id").lean()
     let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic)
     return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
@@ -1173,7 +1168,6 @@ function checkValidRequest(formId,stateId,role){
       validation.message = "Form id is required"
     }
     if(role === userTypes.state){
-      
       if((stateId === "") || (stateId === undefined)){
         validation.valid = false
         validation.message = "stateId is required"
@@ -1184,6 +1178,9 @@ function checkValidRequest(formId,stateId,role){
     }
     if((role === userTypes.mohua)){
       validation.valid = true
+    }
+    if((role === userTypes.ulb)){
+      validation.message = "Not allowed"
     }
 
   }
@@ -1254,7 +1251,6 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let limit = req.query.limit || 10
     let {design_year:year,state:stateId,formId,getQuery} = req.query
     let {role} = req.decoded
-    console.log("role ::::: ",role)
     if(stateId === undefined || stateId === "null"){
       stateId = checkForRoleAndgetStateId(req,role)
     }
@@ -1268,6 +1264,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
       return res.status(500).json(response)
     }
     let validation = checkValidRequest(formId,stateId,role)
+    console.log(validation)
     if(!validation.valid){
       response.message = validation.message
       return res.status(500).json(response)
@@ -1302,7 +1299,61 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
   catch(err){
     response.success = false
     response.message = err.message
-    console.log("error in getFrForms",err)
+    console.log("error in getFrForms",err.message)
   return res.status(500).json(response)
   }
+})
+
+function getStatus(tabs){
+  let conditionalObj = {}  
+  for(var tab of tabs){
+      conditionalObj[tab.key] = {}
+      let key = tab.key
+      let obj = tab.data
+      let temp = {
+          "comment":tab.feedback.comment,
+          "status" : []
+      }
+      for(var k in tab.data){
+          if(obj[k].status === ""){
+              continue
+          }
+          if(obj[k].yearData){
+              let yearArr = obj[k].yearData
+              let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
+              temp["status"].push(status)
+          }
+          conditionalObj[tab.key] = (temp)
+      }
+      
+  }
+  for(var tabName in conditionalObj){
+      if(conditionalObj[tabName].status.length > 0){
+          conditionalObj[tabName].status = conditionalObj[tabName].status.every(item => item == true)
+      }
+      else{
+          conditionalObj[tabName].status =  "NA"
+      }
+  }
+  console.log(conditionalObj)
+  return conditionalObj
+}
+
+module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
+  const response = {
+    success:false,
+    message:""
+  }
+  try{
+  let {ulbId,formId,actions,design_year} = req.body
+  let {role} = req.decoded
+  if(role !== userTypes.mohua){
+    response.message = "Not permitted"
+    return res.status(500).json(response)
+  }
+  }
+  catch(err){
+    console.log("error in actionTakenByMoHua ::: ",err.message)
+  }
+  return res.status(500).json(response)
 })
