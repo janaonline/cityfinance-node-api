@@ -237,7 +237,7 @@ async function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForF
       else {
         tab.data = service.getDynamicObjects(tab.key)
       }
-      tab.feedBack = await  service.getFeedbackForTabs(conditionForFeedbacks)
+      tab.feedback = await  service.getFeedbackForTabs(conditionForFeedbacks)
     }
     return modifiedTabs
   }
