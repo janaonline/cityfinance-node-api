@@ -9,6 +9,6 @@ router.post("/create-tabs",verifyToken,createTabsFiscalRanking)
 router.get("/view", verifyToken, getView);
 router.put("/approvedByMohua", verifyToken, approvedByMohua);
 router.get("/get-fr-ulbs",verifyToken,getFRforms);
-router.post("action-by-mohua",verifyToken,actionTakenByMoHua)
+router.post("/action-by-mohua",verifyToken,actionTakenByMoHua)
 
 module.exports = router;

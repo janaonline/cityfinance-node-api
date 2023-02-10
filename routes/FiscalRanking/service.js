@@ -398,11 +398,7 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
-    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).populate({
-      path:"feedback",
-      model:"FeedbackFiscalRanking",
-      match:condition
-    }).select("-_id").lean()
+    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).select("-_id").lean()
     let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic)
     return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
@@ -1354,10 +1350,12 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
   let {ulbId,formId,actions,design_year} = req.body
   let {role} = req.decoded
   if(role !== userTypes.mohua){
+    response.message = "Not permitted"
     return res.status(500).json(response)
   }
   }
   catch(err){
     console.log("error in actionTakenByMoHua ::: ",err.message)
   }
+  return res.status(500).json(response)
 })
