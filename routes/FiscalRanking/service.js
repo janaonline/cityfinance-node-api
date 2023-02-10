@@ -199,7 +199,7 @@ class tabsUpdationServiceFR{
   }
  async getFeedbackForTabs(condition,tab){
     let mainCondition = Object.assign(condition,{"tab":tabId})
-    let feedBackObj = await FeedBackFiscalRanking.findOne(condition).select(["status","comment"])
+    let feedBackObj = await FeedBackFiscalRanking.findOne(mainCondition).select(["status","comment"])
     console.log(feedBackObj)
     if(feedBackObj != null){
       return feedBackObj
