@@ -2,7 +2,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
-const feedBackSchema = require("../../models/FeedbackFiscalRanking")
+const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking")
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
@@ -197,6 +197,19 @@ class tabsUpdationServiceFR{
       signedCopyOfFile : {...this.detail.signedCopyOfFile}
     }
   }
+ async getFeedbackForTabs(condition){
+    let feedBackObj = await FeedBackFiscalRanking.findOne(condition).select(["status","comment"])
+    console.log(feedBackObj)
+    if(feedBackObj != null){
+      return feedBackObj
+    }
+    else{
+      return {
+        "status":null,
+        "comment":""
+      }
+    }
+  }
 }
 
 
@@ -204,30 +217,27 @@ class tabsUpdationServiceFR{
  * It takes in the tabs and viewOne object and returns the modified tabs
  * @param tabs - The tabs that are to be modified.
  * @param viewOne - This is the object that contains all the data for the view.
+ * @param fyDynemic - object in which all calculations are already done
+ * @param conditionForFeedbacks - conditions which consist tab level feedback
  */
-function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic){
+async function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForFeedbacks){
   try{
     let modifiedTabs = [...tabs]
     let service = new tabsUpdationServiceFR(viewOne,fyDynemic)
     for(var tab of modifiedTabs){
       if(tab.id === priorTabsForFiscalRanking["basicUlbDetails"]){
-        tab.data = service.getDataForBasicUlbTab()
+        tab.data = await service.getDataForBasicUlbTab()
       }
       else if(tab.id === priorTabsForFiscalRanking['conInfo']){
-        tab.data = service.getDataForConInfo()
+        tab.data = await service.getDataForConInfo()
       }
       else if(tab.id === priorTabsForFiscalRanking['selDec']){
-        tab.data = service.getDataForSignedDoc()
+        tab.data = await service.getDataForSignedDoc()
       }
       else {
         tab.data = service.getDynamicObjects(tab.key)
       }
-      if(tab.feedback === undefined){
-        tab.feedback = {
-          "status":null,
-          "comment":""
-        }
-      }
+      tab.feedBack = await  service.getFeedbackForTabs(conditionForFeedbacks)
     }
     return modifiedTabs
   }
@@ -417,7 +427,11 @@ exports.getView = async function (req, res, next) {
       }
     }
     let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).lean()
-    let modifiedTabs = getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic)
+    let conditionForFeedbacks = {
+      fiscal_ranking : data._id || "NA"
+    }
+    Object.assign(conditionForFeedbacks,condition)
+    let modifiedTabs = await getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForFeedbacks)
     return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
     console.log("err", error)
@@ -1324,10 +1338,41 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
   }
 })
 
-function getStatus(tabs){
+async function updateQueryForFiscalRanking(yearData,ulbId,formId){
+  try{
+    for(var years of yearData){
+      if(years.year){
+        let filter = {
+          "year":ObjectId(years.year),
+          "ulb":ulbId,
+          "fiscal_ranking":formId,
+          "type":years.type
+        }
+        let payload = {
+          "status":years.status,
+        }
+        await FiscalRankingMapper.findOneAndUpdate(filter,payload)
+      }
+      
+    }
+  }
+  catch(err){
+    console.log("error in updateQueryForFiscalRanking ::: ",err.message)
+  }
+}
+
+/**
+ * 
+ * @param {array} tabs 
+ * this function takes an array of tabs and calculate status by yearlyData inside objects
+ * @returns a javascript object with key value pair as follows
+ * key : tabId
+ * value : Object {status:true/false/NA, comment:String}
+ */
+async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
   let conditionalObj = {}  
   for(var tab of tabs){
-      conditionalObj[tab.key] = {}
+      conditionalObj[tab._id.toString()] = {}
       let key = tab.key
       let obj = tab.data
       let temp = {
@@ -1340,12 +1385,16 @@ function getStatus(tabs){
           }
           if(obj[k].yearData){
               let yearArr = obj[k].yearData
+              console.log("yearArr :: ",yearArr)
               let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
               temp["status"].push(status)
+              updateQueryForFiscalRanking(yearArr,ulbId,formId)
           }
-          conditionalObj[tab.key] = (temp)
+
+          // FiscalRankingMapper
+          conditionalObj[tab._id.toString()] = (temp)
       }
-      
+
   }
   for(var tabName in conditionalObj){
       if(conditionalObj[tabName].status.length > 0){
@@ -1355,9 +1404,77 @@ function getStatus(tabs){
           conditionalObj[tabName].status =  "NA"
       }
   }
-  console.log(conditionalObj)
   return conditionalObj
 }
+
+
+/**
+ * It takes an object as an argument and checks if the values of the object are undefined, null or
+ * empty. If any of the values are undefined, null or empty, it returns an object with a message and a
+ * boolean value
+ * @param keys - This is the object that you want to check for undefined values.
+ */
+function checkUndefinedValidations(keys){
+  let validation = {
+    valid:false,
+    message:""
+  }
+  try{
+    for(var key in keys){
+      if(keys[key] == undefined || keys[key] === null || keys[key] === "" ){
+        validation.message = `${key} is required`
+        return validation
+      }
+      else{
+        validation.valid = true
+      }
+    }
+  }
+  catch(err){
+    console.log("error in checkUndefiendValidations :: ",err.message)
+  }
+  return validation
+}
+/**
+ * save feedback in database for fiscalRanking
+ * @param {Object} calculatedStatus
+ * @param {String}  ulbId
+ * @param {String} formId
+ * @param {String} design_year
+*/
+async function saveFeedbacks(calculatedStatus,ulbId,formId,design_year){
+  let validator = {
+    success:true,
+    message:""
+  }
+  try{
+    for(var calc in calculatedStatus){
+      let filter = {
+        ulb:ulbId,
+        fiscal_ranking:formId,
+        design_year:design_year,
+        tab:calc
+      }
+      let payload = {
+        ulb:ulbId,
+        fiscal_ranking:formId,
+        design_year:design_year,
+        status:calculatedStatus[calc].status == false || calculatedStatus[calc].status == "NA" ? "REJECTED":"APPROVED" ,
+        tab:calc,
+        comment:calculatedStatus[calc].comment
+      }
+      let feedBack = await FeedBackFiscalRanking.findOneAndUpdate(filter,payload,{upsert:true})
+      validator.message = "fetched successfully"
+    }
+  }
+  catch(err){
+    validator.success = false
+    validator.message = err.message
+    console.log(err.message)
+  }
+  return validator;
+}
+
 
 module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
   const response = {
@@ -1367,13 +1484,36 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
   try{
     let {ulbId,formId,actions,design_year} = req.body
     let {role} = req.decoded
+    let validation = await checkUndefinedValidations({
+      "ulb": ulbId,
+      "formId":formId,
+      "actions":actions,
+      "design_year":design_year
+    })
+    // console.log("validation :: ",(!validation.valid))
+    // if(!validation.valid){
+    //   response.message = validation.message
+    //   return res.status(500).json(response)
+    // }
     if(role !== userTypes.mohua){
       response.message = "Not permitted"
       return res.status(500).json(response)
     }
-    getStatus(actions)
+    let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions,ulbId,formId,design_year)
+    let feedBackResp = await saveFeedbacks(calculationsTabWise,ulbId,formId,design_year)
+    if(feedBackResp.success){
+      response.success  = true
+      response.message = "Details submitted successfully"
+      return res.status(200).json(response)
+    }
+    else{
+      response.success  = false
+      response.message = "Some server error occured"
+    }
+  
   }
   catch(err){
+    response.message = "some server Error occured"
     console.log("error in actionTakenByMoHua ::: ",err.message)
   }
   return res.status(500).json(response)
