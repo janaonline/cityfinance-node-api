@@ -2003,7 +2003,6 @@ module.exports.get = catchAsync(async (req, res) => {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
       el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
     }
-    if(el.formData) delete el?.formData;
   })
 
 
@@ -2180,6 +2179,10 @@ module.exports.get = catchAsync(async (req, res) => {
   }
 
   //  console.log(data)
+  data.forEach(el=> {
+    if(el.formData || el.formData === "" ) delete el.formData;
+
+  })
   return res.status(200).json({
     success: true,
     data: data,
