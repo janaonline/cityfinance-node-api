@@ -818,10 +818,27 @@ function getCsvProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "State Name": "$state.name",
         "populationType":getPopulationCondition(),
         "formData": { $ifNull: [`$${collectionName}`, ""] },
+        "Design Year":`$${collectionName}.design_year.year`,
+        "Created Date":{ "$dateToString": { "format": "%Y-%m-%d", "date": "$fiscalrankings.createdAt" }},
+        "Last Submitted Date":{ "$dateToString": { "format": "%Y-%m-%d", "date": "$fiscalrankings.modifiedAt" }},
+        "Population as per 2011 Census":`$${collectionName}.population11.value`,
+        "Population as on 1st April 2022":`$${collectionName}.population11.value`,
+        "ULB website URL link":`$${collectionName}.webUrlAnnual.value`,
+        "nameCmsnr":`$${collectionName}.nameCmsnr`,
+        "Name of the Nodal Officer":`$${collectionName}.nameOfNodalOfficer`,
+        "Designation of the Nodal Officer":`$${collectionName}.designationOftNodalOfficer`,
+        "Email ID":`$${collectionName}.email`,
+        "Mobile number":`$${collectionName}.mobile`,
+        "Does the ULB handle water supply services?":`$${collectionName}.waterSupply.value`,
+        "Does the ULB handle sanitation service delivery?":`$${collectionName}.sanitationService.value`,
+        "Does your Property Tax include Water Tax?":`$${collectionName}.propertyWaterTax.value`,
+        "Does your Property Tax include Sanitation/Sewerage Tax?":`$${collectionName}.propertySanitationTax.value`,
       }
     }
     queryArr.push(csvProjection)
     mainProjectionQuery(csvProjection,queryArr)
+    queryArr.push({"$skip":parseInt(skip)})
+    queryArr.push({"$limit":parseInt(limit)})
   }
   catch(err){
     console.log("error in getCsvProjectionQueries :: ",err.message)
@@ -1216,7 +1233,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let limit = req.query.limit || 10
     let {role} = req.decoded
     let {design_year:year,state:stateId,formId,getQuery,csv} = req.query
-    csv = ( csv === undefined)  ? false : true
+    csv = ( csv === undefined) || (csv === "false")  ? false : true
     if(stateId === undefined || stateId === "null"){
       stateId = checkForRoleAndgetStateId(req,role)
     }
@@ -1234,7 +1251,6 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
       response.message = validation.message
       return res.status(500).json(response)
     }
-   
     searchFilters = searchQueries(req)
     let keys = calculateKeys(searchFilters['status'], role);
     Object.assign(searchFilters, keys)
@@ -1252,49 +1268,24 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     })
     if(!csv){
       let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
+      let data = csv ? [] :queryResult[0]
+      total = !csv ? data['total'] : 0
+      total = data['total']
+      let records = csv ? [] :data['records']
+      data = updateActions(records,role,formType)
+      response.success = true
+      response.columnNames = cols
+      response.data = data
+      response.total = total
+      response.title = 'Review Fiscal Ranking  Application'
+      response.message = "Fetched successfully"
+      return res.status(200).json(response)
     }
     else{
       response.message = "Currently not implemented"
+      await sendCsv(res,aggregateQuery)
     }
-    //   let filename = "demo.csv"
-    //   res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    //   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    //   // console.log("csvColsFr :",csvColsFr)
-    //   // res.write.apply(this,csvColsFr)
-    //   res.write(csvColsFr.join(","))
-    //   res.flushHeaders();
-    //   // res.write(JSON.stringify(csvColsFr.join(",")))
-    //   let cursor = await Ulb.aggregate(aggregateQuery).allowDiskUse(true).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
-    //   cursor.on("data",function(el){
-    //     let str = []
-    //     // console.log(el)
-        
-    //     for(var key of csvColsFr){
-    //       if(el[key]){
-    //         str.push(el[key])
-    //       }
-    //       else{
-    //         str.push(" ")
-    //       }
-    //     res.write(str.join(",")+"\r\n")
-    //     }
-    //   })
-    //   cursor.on("end",function(el){
-    //     res.end()
-    //   })
-    // }
-    let data = csv ? [] :queryResult[0]
-    total = !csv ? data['total'] : 0
-    total = data['total']
-    let records = csv ? [] :data['records']
-    data = updateActions(records,role,formType)
-    response.success = true
-    response.columnNames = cols
-    response.data = []
-    response.total = total
-    response.title = 'Review Fiscal Ranking  Application'
-    response.message = "Fetched successfully"
-    return res.status(200).json(response)
+    
   }
   catch(err){
     response.success = false
@@ -1303,3 +1294,41 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
   return res.status(500).json(response)
   }
 })
+
+async function sendCsv(res,aggregateQuery){
+  try{
+      let filename = "Fiscal Ranking Review.csv"
+      res.setHeader("Content-disposition", "attachment; filename=" + filename);
+      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+      res.write(csvColsFr.join(","))
+      res.write("\r\n")
+      res.flushHeaders();
+      let cursor = await Ulb.aggregate(aggregateQuery).allowDiskUse(true).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+      cursor.on("data",function(el){
+        let str= ""
+        for(let key of csvColsFr){
+          if(key == "Form Status"){
+              key = "filled"
+          }
+          if(el[key] !== undefined && el[key] !== null){
+            if(key == "filled"){
+              el[key] = el[key] === "Yes"? "filled" :"Not filled"
+            }
+            str += el[key] + ","
+          }
+          else{
+            str += " "+ ","
+          }
+        }
+        if(str !== " "  && str !== undefined){
+          res.write(str+"\r\n")
+        }
+      })
+      cursor.on("end",function(el){
+        res.end()
+      })
+    }
+  catch(err){
+    console.log("error in sendCsv :: ",err.message)
+  }
+}
