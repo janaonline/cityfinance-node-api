@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
 const ObjectId = require("mongoose").Types.ObjectId;
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
+const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking")
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
@@ -16,6 +16,16 @@ const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
 const fs = require('fs');
 const {fiscalRankingColsNameCsv} = require("../../util/Constants")
+const TabsFiscalRankings = require('../../models/TabsFiscalRankings');
+let priorTabsForFiscalRanking = {
+  "basicUlbDetails" : "s1",
+  "conInfo" : "s2",
+  "revenueMob" : "s3",
+  "expPerf" : "s4",
+  "goverPar" : "s5",
+  "uploadFyDoc" : "s6",
+  "selDec" : "s7"
+}
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
   try {
@@ -74,6 +84,28 @@ exports.CreateorUpdate = async (req, res, next) => {
   }
 }
 
+module.exports.createTabsFiscalRanking = async (req,res)=>{
+  let response = {
+    success:true,
+    message:""
+  }
+  try{
+    let dataToUpdate = {...req.body}
+    let tabObject = new TabsFiscalRankings(dataToUpdate)
+    await tabObject.save()
+    response.message = "Successfully created"
+    response.success = true
+    return res.status(201).json(response)
+  }
+  catch(err){
+     response.success = false
+     let message =  err.message
+     response.message = message
+    console.log("error in createTabsFiscalRanking:::",err.message)
+  }
+  res.status(400).json(response)
+}
+
 const checkPendingStatus = (data) => {
   return new Promise((resolve, reject) => {
     try {
@@ -114,12 +146,135 @@ const fRMapperCreate = (objData) => {
   })
 }
 
+function  getBasicObject(value,status=""){
+    return {
+      "status":status,
+      "value":value
+    }
+}
+
+// set this class in a service
+class tabsUpdationServiceFR{
+  constructor(viewOne,fyDynemic){
+    this.detail = {...viewOne}
+    this.dynamicData = {...fyDynemic}
+  }
+ 
+ /**
+  * It returns an object with the same properties as the `detail` object, but with the values of the
+  * properties replaced with the values of the properties of the same name in the `detail` object
+  * @returns An object with the following properties:
+  *   - population11
+  *   - populationFr
+  *   - webLink
+  *   - waterSupply
+  *   - sanitationService
+  *   - propertySanitationTax
+  *   - nameCmsnr
+  *   - propertyWaterTax
+  */
+  getDataForBasicUlbTab(){
+    return {
+      "population11":{...this.detail.population11},
+      "populationFr":{...this.detail.populationFr},
+      "webLink":getBasicObject(this.detail.webLink),
+      "waterSupply":{...this.detail.waterSupply},
+      "sanitationService":{...this.detail.sanitationService},
+      "propertySanitationTax":{...this.detail.propertySanitationTax},
+      "nameCmsnr":getBasicObject(this.detail.nameCmsnr),
+      "propertyWaterTax":{...this.detail.propertyWaterTax}
+    }
+  }
+  getDataForConInfo(){
+    return {
+      nameOfNodalOfficer :getBasicObject(this.detail.nameOfNodalOfficer),
+      designationOftNodalOfficer:getBasicObject(this.detail.designationOftNodalOfficer),
+      mobile:getBasicObject(this.detail.mobile,"NA"), // because status field is not applicable from frontend in this case
+      email:getBasicObject(this.detail.email,"NA")// because status field is not applicable from frontend in this case
+    }
+  }
+  getDynamicObjects(key){
+    return this.dynamicData[key]
+  }
+  getDataForSignedDoc(){
+    return {
+      signedCopyOfFile : {...this.detail.signedCopyOfFile}
+    }
+  }
+ async getFeedbackForTabs(condition,tabId){
+    let mainCondition = Object.assign(condition,{"tab":tabId})
+    let feedBackObj = await FeedBackFiscalRanking.findOne(mainCondition).select(["status","comment"])
+    if(feedBackObj != null){
+      return feedBackObj
+    }
+    else{
+      return {
+        "status":null,
+        "comment":""
+      }
+    }
+  }
+}
+
+
+/**
+ * It takes in the tabs and viewOne object and returns the modified tabs
+ * @param tabs - The tabs that are to be modified.
+ * @param viewOne - This is the object that contains all the data for the view.
+ * @param fyDynemic - object in which all calculations are already done
+ * @param conditionForFeedbacks - conditions which consist tab level feedback
+ */
+async function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForFeedbacks){
+  try{
+    let modifiedTabs = [...tabs]
+    let service = new tabsUpdationServiceFR(viewOne,fyDynemic)
+    for(var tab of modifiedTabs){
+      if(tab.id === priorTabsForFiscalRanking["basicUlbDetails"]){
+        tab.data = await service.getDataForBasicUlbTab()
+      }
+      else if(tab.id === priorTabsForFiscalRanking['conInfo']){
+        tab.data = await service.getDataForConInfo()
+      }
+      else if(tab.id === priorTabsForFiscalRanking['selDec']){
+        tab.data = await service.getDataForSignedDoc()
+      }
+      else {
+        tab.data = service.getDynamicObjects(tab.key)
+      }
+      tab.feedback = await  service.getFeedbackForTabs(conditionForFeedbacks,tab._id)
+    }
+    return modifiedTabs
+  }
+  catch(err){
+    console.log("error in getModifiedTabsFiscalRanking ::: ",err.message)
+  }
+}
+
+function assignCalculatedValues(fyDynemic,viewONe){
+  let totalOwnRevenueAreaObj = fyDynemic["goverPar"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
+  let propertyTaxObj =  fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "property_tax_register")
+  let payingPropObj = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paying_property_tax")
+  let paid_property_tax  = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
+  let fy21CashObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
+  let fy21OnlineObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
+
+  Object.assign(totalOwnRevenueAreaObj,viewONe['totalOwnRevenueArea'])
+  Object.assign(propertyTaxObj,viewONe['property_tax_register'])
+  Object.assign(payingPropObj,viewONe['paying_property_tax'])
+  Object.assign(paid_property_tax,viewONe['paid_property_tax'])
+  Object.assign(paid_property_tax,viewONe['paid_property_tax'])
+  Object.assign(fy21CashObj,viewONe['fy_21_22_cash'])
+  Object.assign(fy21OnlineObj,viewONe['fy_21_22_online'])
+
+}
+
+
 /* A function which is used to get the data from the database. */
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
     if (req.query.ulb && req.query.design_year) {
-      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId(req.query.design_year) }
+      condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId( req.query.design_year) }
     }
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
@@ -197,15 +352,18 @@ exports.getView = async function (req, res, next) {
       }
     }
     let fyDynemic = await fiscalRankingFormJson();
-    let ulbData = await ulbLedgersData({ "ulb": req.query.ulb });
+    assignCalculatedValues(fyDynemic,viewOne)
+    let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
+    
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       for (let key in subData) {
         for (let pf of subData[key]?.yearData) {
           if (pf?.code?.length > 0) {
+            pf['status'] = null
             if (fyData.length) {
-              let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+              let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
                   pf['date'] = singleFydata ? singleFydata.date : null;
@@ -215,24 +373,25 @@ exports.getView = async function (req, res, next) {
                 pf['status'] = singleFydata.status;
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : false;
               } else {
-                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });                
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             } else {
               if (viewOne.isDraft == null) {
-                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData});
                 pf['amount'] = ulbFyAmount;
-                pf['status'] = "";
+                pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
               }
             }
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
+                
                 let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
-                console.log("singleFydata", singleFydata)
+                
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
@@ -240,14 +399,14 @@ exports.getView = async function (req, res, next) {
                 } else {
                   if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                    pf['status'] = chekFile ? "NA" : ""
+                    pf['status'] = chekFile ? "NA" : null
                     pf['readonly'] = chekFile ? true : false;
                   }
                 }
               } else {
                 if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
-                  pf['status'] = chekFile ? "NA" : "";
+                  pf['status'] = chekFile ? "NA" : null;
                   pf['readonly'] = chekFile ? true : false;
                 }
               }
@@ -260,7 +419,7 @@ exports.getView = async function (req, res, next) {
                   } else {
                     pf['amount'] = singleFydata ? singleFydata.amount : "";
                   }
-                  pf['status'] = singleFydata ? singleFydata.status : "";
+                  pf['status'] = singleFydata ? singleFydata.status : null;
                   pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : false;
                 }
               }
@@ -269,7 +428,13 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
-    return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic });
+    let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).lean()
+    let conditionForFeedbacks = {
+      fiscal_ranking : data?._id || null
+    }
+    Object.assign(conditionForFeedbacks,condition)
+    let modifiedTabs = await getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForFeedbacks)
+    return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewOne, fyDynemic,tabs:modifiedTabs });
   } catch (error) {
     console.log("err", error)
     return res.status(400).json({ status: false, message: "Something error wrong!" });
@@ -285,7 +450,12 @@ exports.getView = async function (req, res, next) {
 const getUlbLedgerDataFilter = (objData) => {
   const { code, year, data } = objData;
   if (code.length) {
-    let ulbFyData = data.length ? data.filter(el => code.includes(el.code) && el.year_id.toString() === year.toString()) : []
+    let ulbFyData = data.length ? data.filter(
+      (el)=>{
+        return code.includes(el.code) && el.year_id.toString() === year.toString()
+
+      }
+    ) : []
     var sum = ulbFyData.length > 0 ? ulbFyData.reduce((pv, cv) => pv + cv.totalAmount, 0) : '';
     return sum;
   } else {
@@ -314,7 +484,8 @@ const ulbLedgerFy = (condition) => {
             as: "years"
           }
         },
-        { $unwind: "$years" },
+        { $unwind: "$years",
+        },
         {
           $project: {
             _id: 0,
@@ -337,6 +508,7 @@ const ulbLedgerFy = (condition) => {
  * @param objData - {
  */
 const ulbLedgersData = (objData) => {
+
   return new Promise(async (resolve, reject) => {
     const { ulb } = objData;
     try {
@@ -1104,7 +1276,6 @@ function checkValidRequest(formId,stateId,role){
       validation.message = "Form id is required"
     }
     if(role === userTypes.state){
-      
       if((stateId === "") || (stateId === undefined)){
         validation.valid = false
         validation.message = "stateId is required"
@@ -1115,6 +1286,9 @@ function checkValidRequest(formId,stateId,role){
     }
     if((role === userTypes.mohua)){
       validation.valid = true
+    }
+    if((role === userTypes.ulb)){
+      validation.message = "Not allowed"
     }
 
   }
@@ -1247,6 +1421,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
       return res.status(500).json(response)
     }
     let validation = checkValidRequest(formId,stateId,role)
+    console.log(validation)
     if(!validation.valid){
       response.message = validation.message
       return res.status(500).json(response)
@@ -1290,7 +1465,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
   catch(err){
     response.success = false
     response.message = err.message
-    console.log("error in getFrForms",err)
+    console.log("error in getFrForms",err.message)
   return res.status(500).json(response)
   }
 })
@@ -1332,3 +1507,181 @@ async function sendCsv(res,aggregateQuery){
     console.log("error in sendCsv :: ",err.message)
   }
 }
+async function updateQueryForFiscalRanking(yearData,ulbId,formId){
+  try{
+    for(var years of yearData){
+      if(years.year){
+        let filter = {
+          "year":ObjectId(years.year),
+          "ulb":ulbId,
+          "fiscal_ranking":formId,
+          "type":years.type
+        }
+        let payload = {
+          "status":years.status,
+        }
+        await FiscalRankingMapper.findOneAndUpdate(filter,payload)
+      }
+    }
+  }
+  catch(err){
+    console.log("error in updateQueryForFiscalRanking ::: ",err.message)
+  }
+}
+
+/**
+ * 
+ * @param {array} tabs 
+ * this function takes an array of tabs and calculate status by yearlyData inside objects
+ * @returns a javascript object with key value pair as follows
+ * key : tabId
+ * value : Object {status:true/false/NA, comment:String}
+ */
+async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
+  let conditionalObj = {}  
+  for(var tab of tabs){
+      conditionalObj[tab._id.toString()] = {}
+      let key = tab.key
+      let obj = tab.data
+      let temp = {
+          "comment":tab.feedback.comment,
+          "status" : []
+      }
+      for(var k in tab.data){
+          if(obj[k].status === ""){
+              continue
+          }
+          if(obj[k].yearData){
+              let yearArr = obj[k].yearData
+              let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
+              temp["status"].push(status)
+              updateQueryForFiscalRanking(yearArr,ulbId,formId)
+          }
+
+          // FiscalRankingMapper
+          conditionalObj[tab._id.toString()] = (temp)
+      }
+
+  }
+  for(var tabName in conditionalObj){
+      if(conditionalObj[tabName].status.length > 0){
+          conditionalObj[tabName].status = conditionalObj[tabName].status.every(item => item == true)
+      }
+      else{
+          conditionalObj[tabName].status =  "NA"
+      }
+  }
+  return conditionalObj
+}
+
+
+/**
+ * It takes an object as an argument and checks if the values of the object are undefined, null or
+ * empty. If any of the values are undefined, null or empty, it returns an object with a message and a
+ * boolean value
+ * @param keys - This is the object that you want to check for undefined values.
+ */
+function checkUndefinedValidations(keys){
+  let validation = {
+    valid:false,
+    message:""
+  }
+  try{
+    for(var key in keys){
+      if(keys[key] == undefined || keys[key] === null || keys[key] === "" ){
+        validation.message = `${key} is required`
+        return validation
+      }
+      else{
+        validation.valid = true
+      }
+    }
+  }
+  catch(err){
+    console.log("error in checkUndefiendValidations :: ",err.message)
+  }
+  return validation
+}
+/**
+ * save feedback in database for fiscalRanking
+ * @param {Object} calculatedStatus
+ * @param {String}  ulbId
+ * @param {String} formId
+ * @param {String} design_year
+*/
+async function saveFeedbacks(calculatedStatus,ulbId,formId,design_year){
+  let validator = {
+    success:true,
+    message:""
+  }
+  try{
+    for(var calc in calculatedStatus){
+      let filter = {
+        ulb:ulbId,
+        fiscal_ranking:formId,
+        design_year:design_year,
+        tab:calc
+      }
+      let payload = {
+        ulb:ulbId,
+        fiscal_ranking:formId,
+        design_year:design_year,
+        status:calculatedStatus[calc].status == false || calculatedStatus[calc].status == "NA" ? "REJECTED":"APPROVED" ,
+        tab:calc,
+        comment:calculatedStatus[calc].comment
+      }
+      let feedBack = await FeedBackFiscalRanking.findOneAndUpdate(filter,payload,{upsert:true})
+      validator.message = "fetched successfully"
+    }
+  }
+  catch(err){
+    validator.success = false
+    validator.message = err.message
+    console.log(err.message)
+  }
+  return validator;
+}
+
+
+module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
+  const response = {
+    success:false,
+    message:""
+  }
+  try{
+    let {ulbId,formId,actions,design_year} = req.body
+    let {role} = req.decoded
+    let validation = await checkUndefinedValidations({
+      "ulb": ulbId,
+      "formId":formId,
+      "actions":actions,
+      "design_year":design_year
+    })
+    // console.log("validation :: ",(!validation.valid))
+    // if(!validation.valid){
+    //   response.message = validation.message
+    //   return res.status(500).json(response)
+    // }
+    if(role !== userTypes.mohua){
+      response.message = "Not permitted"
+      return res.status(500).json(response)
+    }
+    let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions,ulbId,formId,design_year)
+    let feedBackResp = await saveFeedbacks(calculationsTabWise,ulbId,formId,design_year)
+    if(feedBackResp.success){
+      response.success  = true
+      response.message = "Details submitted successfully"
+      return res.status(200).json(response)
+    }
+    else{
+      response.success  = false
+      response.message = "Some server error occured"
+    }
+  
+  }
+  catch(err){
+    response.message = "some server Error occured"
+    console.log("error in actionTakenByMoHua ::: ",err.message)
+  }
+  return res.status(500).json(response)
+})
