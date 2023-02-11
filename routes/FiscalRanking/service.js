@@ -6,12 +6,16 @@ const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking")
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
-const userTypes = require("../../util/userTypes");
-const { calculateKeys,canTakeActionOrViewOnly,calculateStatus,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
+const {csvColsFr} = require("../../util/fiscalRankingsConst")
+const userTypes = require("../../util/userTypes")
+// const converter = require('json-2-csv');
+const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
+const fs = require('fs');
+const {fiscalRankingColsNameCsv} = require("../../util/Constants")
 const TabsFiscalRankings = require('../../models/TabsFiscalRankings');
 let priorTabsForFiscalRanking = {
   "basicUlbDetails" : "s1",
@@ -935,19 +939,12 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "formData": { $ifNull: [`$${collectionName}`, ""] },
       }
     }
-    let showFields = {
-      "filled":{
-        $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
-      },
-    }
+   
     
     queryArr.push(projectionQueryWithConditions)
     let main = projectionQueryWithConditions["$project"]
     let projectedKeys =  Object.keys(main)
-    for(var projectedKey of projectedKeys){
-      showFields[projectedKey] = 1
-    }
-    queryArr.push({"$project":showFields})
+    mainProjectionQuery(projectionQueryWithConditions,queryArr)
     if(newFilter && Object.keys(newFilter).length > 0){
       if(newFilter.sbCode){
         newFilter['censusCode'] = newFilter.sbCode
@@ -972,6 +969,77 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
     console.log("error in getProjectionQueries ::: ",err)
   }
 }
+
+/**
+ * query that sends create projection queries for csv data download 
+ */
+function getCsvProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
+  try{
+    let csvProjection = {
+      "$project":{
+        "ULB Name":"$name",
+        "ulbId": "$_id",
+        "City Finance Code": "$code",
+        "Census Code":getCensusCodeCondition(),
+        "UA":getUAcondition(),
+        "UA_ID":getUA_id(),
+        "ULB Type": "$ulbType.name",
+        "ulbType_id": "$ulbType._id",
+        "population": "$population",
+        "state_id": "$state._id",
+        "State Name": "$state.name",
+        "populationType":getPopulationCondition(),
+        "formData": { $ifNull: [`$${collectionName}`, ""] },
+        "Design Year":`$${collectionName}.design_year.year`,
+        "Created Date":{ "$dateToString": { "format": "%Y-%m-%d", "date": "$fiscalrankings.createdAt" }},
+        "Last Submitted Date":{ "$dateToString": { "format": "%Y-%m-%d", "date": "$fiscalrankings.modifiedAt" }},
+        "Population as per 2011 Census":`$${collectionName}.population11.value`,
+        "Population as on 1st April 2022":`$${collectionName}.population11.value`,
+        "ULB website URL link":`$${collectionName}.webUrlAnnual.value`,
+        "nameCmsnr":`$${collectionName}.nameCmsnr`,
+        "Name of the Nodal Officer":`$${collectionName}.nameOfNodalOfficer`,
+        "Designation of the Nodal Officer":`$${collectionName}.designationOftNodalOfficer`,
+        "Email ID":`$${collectionName}.email`,
+        "Mobile number":`$${collectionName}.mobile`,
+        "Does the ULB handle water supply services?":`$${collectionName}.waterSupply.value`,
+        "Does the ULB handle sanitation service delivery?":`$${collectionName}.sanitationService.value`,
+        "Does your Property Tax include Water Tax?":`$${collectionName}.propertyWaterTax.value`,
+        "Does your Property Tax include Sanitation/Sewerage Tax?":`$${collectionName}.propertySanitationTax.value`,
+      }
+    }
+    queryArr.push(csvProjection)
+    mainProjectionQuery(csvProjection,queryArr)
+    queryArr.push({"$skip":parseInt(skip)})
+    queryArr.push({"$limit":parseInt(limit)})
+  }
+  catch(err){
+    console.log("error in getCsvProjectionQueries :: ",err.message)
+  }
+}
+
+
+/**
+ * Get projection query for the columns which exists or not
+ */
+function mainProjectionQuery(projectionQueryWithConditions,queryArr){
+  try{
+    let showFields = {
+      "filled":{
+        $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: "Yes" }
+      },
+    }
+    let main = projectionQueryWithConditions["$project"]
+    let projectedKeys =  Object.keys(main)
+    for(var projectedKey of projectedKeys){
+      showFields[projectedKey] = 1
+    }
+    queryArr.push({"$project":showFields})
+  }
+  catch(err){
+    console.log("error in mainProjectionQuery :: ",err.message)
+  }
+}
+
 
 
 /**
@@ -1000,7 +1068,7 @@ function getUnwindObj(key,preserveNullAndEmptyArrays=false){
  * @param {Array} queryArr
  * @param {String} Array
  */
-function getFormQuery(queryArr,collectionName,design_year){
+function getFormQuery(queryArr,collectionName,design_year,csv){
   try{
     let obj = {
       "$lookup":{
@@ -1024,14 +1092,17 @@ function getFormQuery(queryArr,collectionName,design_year){
     obj["$lookup"]["pipeline"].push(getCommonLookupObj("years","design_year","_id","design_year"))
     obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"))
     obj["$lookup"]["as"] = collectionName
-    obj["$lookup"]["pipeline"].push({
-      "$project":{
-        "_id":1,
-        "status":1,
-        "actionTakenByRole":1,
-         "isDraft":1
-      }
-    })   
+    if(!csv){
+      obj["$lookup"]["pipeline"].push({
+        "$project":{
+          "_id":1,
+          "status":1,
+          "actionTakenByRole":1,
+           "isDraft":1
+        }
+      })
+    }
+       
     queryArr.push(obj)
   }
   catch(err){
@@ -1098,7 +1169,7 @@ function getFacetQueryForPagination(queryArr,skip,limit){
  * @param {*} collectionName:String
  * @param {*} path :String
  */
-function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId=null){
+function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,csv,stateId=null){
   let query = []
   try{
     //stage one get Matching ulbs 
@@ -1114,7 +1185,7 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId
     get_state_query(query,stateId)
 
     // stage 3 get form data which is filled in this case fiscalranking form
-    getFormQuery(query,collectionName,year)
+    getFormQuery(query,collectionName,year,csv)
     query.push(getUnwindObj(`$${collectionName}`,true))
     // stage 4 get all UA realted to tthis ulb and unwind all ua,s
     query.push(getCommonLookupObj("uas","UA","_id","UA"))
@@ -1124,7 +1195,12 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId
     query.push(getUnwindObj("$ulbType",true))
     
     // stage 6 modify the cols ,handle pagination and search queries 
-    getProjectionQueries(query,collectionName,skip,limit,newFilter)
+    if(csv){
+      getCsvProjectionQueries(query,collectionName,skip,limit,newFilter)
+    }
+    else{
+      getProjectionQueries(query,collectionName,skip,limit,newFilter)
+    }
     // stage 7 sort by formData
     query.push({"$sort":{"formData":-1}})
     
@@ -1264,6 +1340,54 @@ function checkForRoleAndgetStateId(req,role){
   }
   return null
 }
+
+/**
+ * function that create desired data structure for FiscalRanking
+ * @param {Array} data
+ * @param {Object} cols
+ */
+function createDatastructureForCSV(data,cols){
+  try{
+    let objKeys = Object.values(cols)
+    let sampleObj = []
+    for (var record of data){
+      for(var key of objKeys){
+        if(record[key]){
+          temp[cols[key]] = record[key]
+        }
+        else{
+          temp[cols[key]] = ""
+        }
+      }
+      sampleObj.push(temp)
+    }
+    return sampleObj;
+  }
+  catch(err){
+    console.log("createDatastructureForCSV :: ",err.message)
+  }
+}
+
+/**
+ * A function that creates csv
+ * @param {Array}  records
+ */
+function getCsv(records){
+  try{
+    let modifiedData = createDatastructureForCSV(records,fiscalRankingColsNameCsv)
+    converter.json2csv(modifiedData, (err,csv)=>{
+      if(err){
+        console.log(err.message)
+        return 
+      }
+      fs.writeFileSync("sample.csv",csv)
+    }, {});
+  }
+  catch(err){
+    console.log("error in records ::: ",err.message )
+  }
+}
+
 /**
  * An Api that get FR forms ulb according to state or mohua
  * @param {*} req:Object
@@ -1281,8 +1405,9 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let aggregateQuery = {}
     let skip =  req.query.skip ||  0
     let limit = req.query.limit || 10
-    let {design_year:year,state:stateId,formId,getQuery} = req.query
     let {role} = req.decoded
+    let {design_year:year,state:stateId,formId,getQuery,csv} = req.query
+    csv = ( csv === undefined) || (csv === "false")  ? false : true
     if(stateId === undefined || stateId === "null"){
       stateId = checkForRoleAndgetStateId(req,role)
     }
@@ -1312,21 +1437,30 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     let path = "FiscalRanking"
     let collectionName = "fiscalrankings"
     let formType = "ULB"
-    aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,newFilter,stateId)
-    let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
-    let data = queryResult[0]
-    total = data['total']
-    data = updateActions(data['records'],role,formType)
+    aggregateQuery = getAggregateQuery(collectionName,path,year,skip,limit,newFilter,csv,stateId)
     if(getQuery == 'true') return res.status(200).json({
       query:aggregateQuery
     })
-    response.success = true
-    response.columnNames = cols
-    response.data = data
-    response.total = total
-    response.title = 'Review Fiscal Ranking  Application'
-    response.message = "Fetched successfully"
-    return res.status(200).json(response)
+    if(!csv){
+      let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
+      let data = csv ? [] :queryResult[0]
+      total = !csv ? data['total'] : 0
+      total = data['total']
+      let records = csv ? [] :data['records']
+      data = updateActions(records,role,formType)
+      response.success = true
+      response.columnNames = cols
+      response.data = data
+      response.total = total
+      response.title = 'Review Fiscal Ranking  Application'
+      response.message = "Fetched successfully"
+      return res.status(200).json(response)
+    }
+    else{
+      response.message = "Currently not implemented"
+      await sendCsv(res,aggregateQuery)
+    }
+    
   }
   catch(err){
     response.success = false
@@ -1336,6 +1470,43 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
   }
 })
 
+async function sendCsv(res,aggregateQuery){
+  try{
+      let filename = "Fiscal Ranking Review.csv"
+      res.setHeader("Content-disposition", "attachment; filename=" + filename);
+      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+      res.write(csvColsFr.join(","))
+      res.write("\r\n")
+      res.flushHeaders();
+      let cursor = await Ulb.aggregate(aggregateQuery).allowDiskUse(true).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+      cursor.on("data",function(el){
+        let str= ""
+        for(let key of csvColsFr){
+          if(key == "Form Status"){
+              key = "filled"
+          }
+          if(el[key] !== undefined && el[key] !== null){
+            if(key == "filled"){
+              el[key] = el[key] === "Yes"? "filled" :"Not filled"
+            }
+            str += el[key] + ","
+          }
+          else{
+            str += " "+ ","
+          }
+        }
+        if(str !== " "  && str !== undefined){
+          res.write(str+"\r\n")
+        }
+      })
+      cursor.on("end",function(el){
+        res.end()
+      })
+    }
+  catch(err){
+    console.log("error in sendCsv :: ",err.message)
+  }
+}
 async function updateQueryForFiscalRanking(yearData,ulbId,formId){
   try{
     for(var years of yearData){
