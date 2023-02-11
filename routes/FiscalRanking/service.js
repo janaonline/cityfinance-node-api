@@ -428,7 +428,7 @@ exports.getView = async function (req, res, next) {
     }
     let tabs = await TabsFiscalRankings.find({}).sort({"displayPriority":1}).lean()
     let conditionForFeedbacks = {
-      fiscal_ranking : data._id || "NA"
+      fiscal_ranking : data?._id || null
     }
     Object.assign(conditionForFeedbacks,condition)
     let modifiedTabs = await getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForFeedbacks)
