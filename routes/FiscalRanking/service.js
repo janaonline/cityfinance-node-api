@@ -6,8 +6,9 @@ const UlbLedger = require('../../models/UlbLedger');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
+const {csvColsFr} = require("../../util/fiscalRankingsConst")
 const userTypes = require("../../util/userTypes")
-const converter = require('json-2-csv');
+// const converter = require('json-2-csv');
 const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson } = require('./fydynemic');
@@ -1249,20 +1250,51 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
     if(getQuery == 'true') return res.status(200).json({
       query:aggregateQuery
     })
-    let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
-    let data = csv ? queryResult :queryResult[0]
-    total = !csv ? data['total'] : 0
-    total = data['total']
-    let records = csv ? data :data['records']
-    data = updateActions(records,role,formType)
-    getCsv(data)
-    response.success = true
-    response.columnNames = cols
-    response.data = data
-    response.total = total
-    response.title = 'Review Fiscal Ranking  Application'
-    response.message = "Fetched successfully"
-    return res.status(200).json(response)
+    if(!csv){
+      let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true)
+    }
+    else{
+      let filename = "demo.csv"
+      res.setHeader("Content-disposition", "attachment; filename=" + filename);
+      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+      // console.log("csvColsFr :",csvColsFr)
+      // res.write.apply(this,csvColsFr)
+      res.write(csvColsFr.join(","))
+      res.flushHeaders();
+      // res.write(JSON.stringify(csvColsFr.join(",")))
+      let cursor = await Ulb.aggregate(aggregateQuery).allowDiskUse(true).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+      cursor.on("data",function(el){
+        let str = []
+        // console.log(el)
+        
+        for(var key of csvColsFr){
+          if(el[key]){
+            str.push(el[key])
+          }
+          else{
+            str.push(" ")
+          }
+        res.write(str.join(",")+"\r\n")
+        }
+      })
+      cursor.on("end",function(el){
+        res.end()
+      })
+    }
+    // let data = csv ? queryResult :queryResult[0]
+    // total = !csv ? data['total'] : 0
+    // total = data['total']
+    // let records = csv ? data :data['records']
+    // data = updateActions(records,role,formType)
+    // queryResult()
+    // getCsv(data)
+    // response.success = true
+    // response.columnNames = cols
+    // response.data = []
+    // response.total = total
+    // response.title = 'Review Fiscal Ranking  Application'
+    // response.message = "Fetched successfully"
+    // return res.status(200).json(response)
   }
   catch(err){
     response.success = false
