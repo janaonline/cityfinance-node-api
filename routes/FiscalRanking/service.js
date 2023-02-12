@@ -6,7 +6,7 @@ const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking")
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const Ulb = require('../../models/Ulb');
 const Service = require('../../service');
-const {csvColsFr} = require("../../util/fiscalRankingsConst")
+const {csvColsFr,getCsvProjectionQueries,updateCsvCols} = require("../../util/fiscalRankingsConst")
 const userTypes = require("../../util/userTypes")
 // const converter = require('json-2-csv');
 const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
@@ -127,6 +127,46 @@ const checkPendingStatus = (data) => {
     }
   })
 }
+
+/**
+ * get Filter query for Fiscal Ranking mapper
+ */
+function filterQuery(type,year){
+  try{
+    return {
+      $filter: {
+      input: '$fiscalrankingmappers',
+      as: 'mapper',
+      cond: {
+              "$and":[
+                  {$eq: ['$$mapper.type', type]},
+                  {$eq: ['$$mapper.design_year', year]}
+              ]
+            }
+      }
+    }
+  }
+  catch(err){
+    console.log("error in filter query")
+  }
+}
+
+function fetchAmountFromQuery(arrVariable){
+  try{
+    return {
+      "$let":{"vars":{
+          "obj":{ $arrayElemAt: [ `$${arrVariable}`, 0 ] },
+         
+      },
+       "in":"$$obj.amount"
+     }
+  }
+  }
+  catch(err){
+    console.log("error in fetchAmountFromQuery ::: ",err.message)
+  }
+}
+
 
 /**
  * It takes in an object with a property called fyData, which is an object with properties that match
@@ -936,6 +976,7 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "state_id": "$state._id",
         "stateName": "$state.name",
         "populationType":getPopulationCondition(),
+        "fsMappers":"$fiscalrankingmappers",
         "formData": { $ifNull: [`$${collectionName}`, ""] },
       }
     }
@@ -970,58 +1011,12 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
   }
 }
 
-/**
- * query that sends create projection queries for csv data download 
- */
-function getCsvProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
-  try{
-    let csvProjection = {
-      "$project":{
-        "ULB Name":"$name",
-        "ulbId": "$_id",
-        "City Finance Code": "$code",
-        "Census Code":getCensusCodeCondition(),
-        "UA":getUAcondition(),
-        "UA_ID":getUA_id(),
-        "ULB Type": "$ulbType.name",
-        "ulbType_id": "$ulbType._id",
-        "population": "$population",
-        "state_id": "$state._id",
-        "State Name": "$state.name",
-        "populationType":getPopulationCondition(),
-        "formData": { $ifNull: [`$${collectionName}`, ""] },
-        "Design Year":`$${collectionName}.design_year.year`,
-        "Created Date":{ "$dateToString": { "format": "%Y-%m-%d", "date": "$fiscalrankings.createdAt" }},
-        "Last Submitted Date":{ "$dateToString": { "format": "%Y-%m-%d", "date": "$fiscalrankings.modifiedAt" }},
-        "Population as per 2011 Census":`$${collectionName}.population11.value`,
-        "Population as on 1st April 2022":`$${collectionName}.population11.value`,
-        "ULB website URL link":`$${collectionName}.webUrlAnnual.value`,
-        "nameCmsnr":`$${collectionName}.nameCmsnr`,
-        "Name of the Nodal Officer":`$${collectionName}.nameOfNodalOfficer`,
-        "Designation of the Nodal Officer":`$${collectionName}.designationOftNodalOfficer`,
-        "Email ID":`$${collectionName}.email`,
-        "Mobile number":`$${collectionName}.mobile`,
-        "Does the ULB handle water supply services?":`$${collectionName}.waterSupply.value`,
-        "Does the ULB handle sanitation service delivery?":`$${collectionName}.sanitationService.value`,
-        "Does your Property Tax include Water Tax?":`$${collectionName}.propertyWaterTax.value`,
-        "Does your Property Tax include Sanitation/Sewerage Tax?":`$${collectionName}.propertySanitationTax.value`,
-      }
-    }
-    queryArr.push(csvProjection)
-    mainProjectionQuery(csvProjection,queryArr)
-    queryArr.push({"$skip":parseInt(skip)})
-    queryArr.push({"$limit":parseInt(limit)})
-  }
-  catch(err){
-    console.log("error in getCsvProjectionQueries :: ",err.message)
-  }
-}
 
 
 /**
  * Get projection query for the columns which exists or not
  */
-function mainProjectionQuery(projectionQueryWithConditions,queryArr){
+function mainProjectionQuery(projectionQueryWithConditions,queryArr,csv){
   try{
     let showFields = {
       "filled":{
@@ -1032,6 +1027,11 @@ function mainProjectionQuery(projectionQueryWithConditions,queryArr){
     let projectedKeys =  Object.keys(main)
     for(var projectedKey of projectedKeys){
       showFields[projectedKey] = 1
+    }
+    if(csv){
+      showFields = updateCsvCols(showFields,fetchAmountFromQuery)
+      //
+
     }
     queryArr.push({"$project":showFields})
   }
@@ -1064,12 +1064,62 @@ function getUnwindObj(key,preserveNullAndEmptyArrays=false){
 }
 
 /**
+ * @param {Array} queryArr
+ * @param {String} Array
+ */
+function rankingFormQuery(queryArr,collectionName){
+  try{
+    let tableQuery  = [
+      {"$match":{
+        "$expr":{"$eq":[ "$fiscal_ranking","$$fr_id"]}
+      }},
+    ]
+    let obj = {
+      "$lookup":{
+        from:collectionName,
+        let :{
+          fr_id : "$fiscalrankings._id"
+        },
+        pipeline:tableQuery
+      }
+    }
+    obj["$lookup"]["pipeline"].push(getCommonLookupObj("years","year","_id","design_year"))
+    obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year",true))
+    obj["$lookup"]["pipeline"].push(
+      {
+        "$project":{
+          "type":"$type",
+          "amount":1,
+          "design_year":"$design_year.year"
+      }
+      }
+    )
+    obj["$lookup"]["as"] = collectionName
+    queryArr.push(obj)
+  }
+  catch(err){
+    console.log("error in rankingFormQuery :: ",err.message)
+  }
+}
+
+
+/**
  * Get lookup query for accounts
  * @param {Array} queryArr
  * @param {String} Array
  */
 function getFormQuery(queryArr,collectionName,design_year,csv){
   try{
+    let tableQuery  = [
+      {"$match":{
+        "$expr":{
+          "$and":[
+            {"$eq":["$design_year","$$year"]},
+            {"$eq":["$ulb","$$ulb_id"]}
+          ]
+        }
+      }},
+    ]
     let obj = {
       "$lookup":{
         from:collectionName,
@@ -1077,16 +1127,7 @@ function getFormQuery(queryArr,collectionName,design_year,csv){
           year : ObjectId(design_year),
           ulb_id : "$_id"
         },
-        pipeline:[
-          {"$match":{
-            "$expr":{
-              "$and":[
-                {"$eq":["$design_year","$$year"]},
-                {"$eq":["$ulb","$$ulb_id"]}
-              ]
-            }
-          }},
-        ]
+        pipeline:tableQuery
       }
     }
     obj["$lookup"]["pipeline"].push(getCommonLookupObj("years","design_year","_id","design_year"))
@@ -1186,7 +1227,11 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,csv,sta
 
     // stage 3 get form data which is filled in this case fiscalranking form
     getFormQuery(query,collectionName,year,csv)
+    // if(csv){
     query.push(getUnwindObj(`$${collectionName}`,true))
+    rankingFormQuery(query,"fiscalrankingmappers")
+    // query.push(getUnwindObj(`$fiscalrankingmappers`,true))
+    // }
     // stage 4 get all UA realted to tthis ulb and unwind all ua,s
     query.push(getCommonLookupObj("uas","UA","_id","UA"))
     query.push(getUnwindObj("$UA",true))
@@ -1196,7 +1241,15 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,csv,sta
     
     // stage 6 modify the cols ,handle pagination and search queries 
     if(csv){
-      getCsvProjectionQueries(query,collectionName,skip,limit,newFilter)
+      let functionalObj = {
+        mainProjectionQuery,
+        getCensusCodeCondition,
+        getUAcondition,
+        getUA_id,
+        getPopulationCondition,
+        filterQuery
+      }
+      getCsvProjectionQueries(functionalObj,query,collectionName,skip,limit,newFilter)
     }
     else{
       getProjectionQueries(query,collectionName,skip,limit,newFilter)
@@ -1472,7 +1525,7 @@ module.exports.getFRforms = catchAsync(async(req,res)=>{
 
 async function sendCsv(res,aggregateQuery){
   try{
-      let filename = "Fiscal Ranking Review.csv"
+      let filename = "Fiscal-Ranking-Review.csv"
       res.setHeader("Content-disposition", "attachment; filename=" + filename);
       res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       res.write(csvColsFr.join(","))
@@ -1480,6 +1533,7 @@ async function sendCsv(res,aggregateQuery){
       res.flushHeaders();
       let cursor = await Ulb.aggregate(aggregateQuery).allowDiskUse(true).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
       cursor.on("data",function(el){
+        console.log(el)
         let str= ""
         for(let key of csvColsFr){
           if(key == "Form Status"){
