@@ -809,11 +809,41 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
     }
 })
 
+/**
+ * create datastructure for rows 
+ */
+function getDataStructAccordingly(durObj,cols){
+    let rows = []
+    console.log(durObj)
+    try{
+        for(var column of cols){
+            let temp = {}
+            if(durObj[column.databaseKey]){
+                temp[column.key] = durObj[column.databaseKey]
+            }
+            if(durObj.projects.length){
+                for(var obj of durObj.projects){
+                    console.log("column.databaseKey :: ",column.databaseKey)
+                if(obj[column.databaseKey]){
+                    temp[column.key] = durObj[column.databaseKey]
+                }
+            }
+            }
+            rows.push(temp)
+            //console.log("temp :: ",temp)
+            
+        }
+        console.log("rows ::: ",rows)
+    }
+    catch(err){
+        console.log("error in getDataStructAccordingly ::: ",err.message)
+    }
+}
 
 module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
     let response = {
         success:false,
-        message :"Some server error occured"
+        message :"Something went wrong"
     }
     let status = 500
     try{
@@ -829,16 +859,23 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
             else if(financial_year === undefined){
                 response.message = "financial year is missing"
             }
-           return response.status(status).json(response)
+           return res.status(status).json(response)
         }
-        let DurObj = await DUR.findOne({ulb:ulbId,designYear:design_year,financialYear:financial_year})
-
-
+        let getAggregateQuery = ""
+        let durObj = await DUR.findOne({
+            ulb:ObjectId(ulbId),
+            designYear:ObjectId(design_year),
+            financialYear:ObjectId(financial_year)
+        }).populate({
+            path:"ulb",
+            model:"Ulb"})
+        console.log("durObj")
+        let rows = getDataStructAccordingly(durObj,columns)
 
     }
     catch(err){
         response.message = err.message
         console.log("error in getInfrastructureProjects")
     }
-    return response.status(status).json(response)
+    return res.status(status).json(response)
 })
