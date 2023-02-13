@@ -1666,15 +1666,15 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
   try{
     for(var calc in calculatedStatus){
       let filter = {
-        ulb:ulbId,
-        fiscal_ranking:formId,
-        design_year:design_year,
+        ulb:ObjectId(ulbId),
+        fiscal_ranking:ObjectId(formId),
+        design_year:ObjectId(design_year),
         tab:calc
       }
       let payload = {
-        ulb:ulbId,
-        fiscal_ranking:formId,
-        design_year:design_year,
+        ulb:ObjectId(ulbId),
+        fiscal_ranking:ObjectId(formId),
+        design_year:ObjectId(design_year),
         status:calculatedStatus[calc].status == false || calculatedStatus[calc].status == "NA" ? "REJECTED":"APPROVED" ,
         tab:calc,
         comment:calculatedStatus[calc].comment
@@ -1684,7 +1684,7 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
       filter["_id"] = filter["fiscal_ranking"]
       delete filter.fiscal_ranking
       let payloadForForm = {
-        "actionTakenBy":userId,
+        "actionTakenBy":ObjectId(userId),
         "actionTakenByRole" : role
       }
       let updateForm = await FiscalRanking.findOneAndUpdate(filter,payloadForForm,{upsert:true})
