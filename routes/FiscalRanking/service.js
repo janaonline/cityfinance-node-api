@@ -1558,15 +1558,11 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
     let payload = {}
     for(let key in obj){
       let status = null
-      console.log("status ::: ",obj[key])
       if(obj[key].status){
         status = obj[key].status
       }
       payload[`${key}.status`] = status 
     }
-    console.log("payload ::: ",payload)
-    console.log(">>>>>>>",)
-    console.log("filter::",filter)
     await FiscalRanking.findOneAndUpdate(filter,payload)
   }
   catch(err){
