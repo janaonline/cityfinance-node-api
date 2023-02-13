@@ -3,6 +3,7 @@ const UA = require('../../models/UA')
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require('../../models/State')
 const Ulb = require('../../models/Ulb')
+const DUR = require("../../models/UtilizationReport")
 const SLBData = require('../../models/XVFcGrantForm')
 const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
@@ -10,6 +11,7 @@ const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
 const Year = require("../../models/Year")
 const axios = require('axios')
+const {columns} = require("./constants.js")
 const {calculateSlbMarks} = require('../Scoring/service')
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
@@ -808,11 +810,35 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
 })
 
 
-module.exports.getInfrastructureProjects = (req,res)=>{
+module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
+    let response = {
+        success:false,
+        message :"Some server error occured"
+    }
+    let status = 500
     try{
-        console.log(">>>>>>")
+        let {ulbId,design_year,financial_year} = req.params
+        let filters = {...req.query}
+        if(ulbId === undefined || design_year === undefined ||  financial_year === undefined){
+            if(ulbId === undefined){
+                response.message = "ulb id is missing"
+            }
+            else if(design_year === undefined){
+                response.message = "design year is missing"
+            }
+            else if(financial_year === undefined){
+                response.message = "financial year is missing"
+            }
+           return response.status(status).json(response)
+        }
+        let DurObj = await DUR.findOne({ulb:ulbId,designYear:design_year,financialYear:financial_year})
+
+
+
     }
     catch(err){
+        response.message = err.message
         console.log("error in getInfrastructureProjects")
     }
-}
+    return response.status(status).json(response)
+})
