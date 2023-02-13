@@ -806,3 +806,13 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
         return res.status(500).json(response)
     }
 })
+
+
+module.exports.getInfrastructureProjects = (req,res)=>{
+    try{
+        console.log(">>>>>>")
+    }
+    catch(err){
+        console.log("error in getInfrastructureProjects")
+    }
+}
