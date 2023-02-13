@@ -343,11 +343,21 @@ exports.getView = async function (req, res, next) {
         },
         "populationFr": {
           "value": twEightSlbs ? twEightSlbs?.population : "",
-          "readonly": false
+          "readonly": false,
+          "status":null
         },
-        "webLink": null,
-        "nameCmsnr": "",
-        "nameOfNodalOfficer": "",
+        "webLink": {
+          "value":null,
+          "status":null
+        },
+        "nameCmsnr": {
+          "value":null,
+          "status":null
+        },
+        "nameOfNodalOfficer": {
+          "value":null,
+          "status":null
+        },
         "designationOftNodalOfficer": "",
         "email": null,
         "mobile": null,
@@ -1394,52 +1404,6 @@ function checkForRoleAndgetStateId(req,role){
   return null
 }
 
-/**
- * function that create desired data structure for FiscalRanking
- * @param {Array} data
- * @param {Object} cols
- */
-function createDatastructureForCSV(data,cols){
-  try{
-    let objKeys = Object.values(cols)
-    let sampleObj = []
-    for (var record of data){
-      for(var key of objKeys){
-        if(record[key]){
-          temp[cols[key]] = record[key]
-        }
-        else{
-          temp[cols[key]] = ""
-        }
-      }
-      sampleObj.push(temp)
-    }
-    return sampleObj;
-  }
-  catch(err){
-    console.log("createDatastructureForCSV :: ",err.message)
-  }
-}
-
-/**
- * A function that creates csv
- * @param {Array}  records
- */
-function getCsv(records){
-  try{
-    let modifiedData = createDatastructureForCSV(records,fiscalRankingColsNameCsv)
-    converter.json2csv(modifiedData, (err,csv)=>{
-      if(err){
-        console.log(err.message)
-        return 
-      }
-      fs.writeFileSync("sample.csv",csv)
-    }, {});
-  }
-  catch(err){
-    console.log("error in records ::: ",err.message )
-  }
-}
 
 /**
  * An Api that get FR forms ulb according to state or mohua
@@ -1585,6 +1549,32 @@ async function updateQueryForFiscalRanking(yearData,ulbId,formId){
 
 /**
  * 
+ */
+async function updateFiscalRankingForm(obj,ulbId,formId,year){
+  try{
+    let filter = {
+      "_id":formId,
+      "year":ObjectId(year),
+      "ulbId":ObjectId(ulbId),
+    }
+    let payload = {}
+    for(let key in obj){
+      let status = null
+      if(obj[key].status){
+        status = obj[key].status
+      }
+      payload[`${key}.status`] = status 
+    }
+    await FiscalRanking.findOneAndUpdate(filter,payload)
+  }
+  catch(err){
+    console.log("error in updateFiscalRankingForm ::: ",err.message)
+  }
+}
+
+
+/**
+ * 
  * @param {array} tabs 
  * this function takes an array of tabs and calculate status by yearlyData inside objects
  * @returns a javascript object with key value pair as follows
@@ -1593,9 +1583,10 @@ async function updateQueryForFiscalRanking(yearData,ulbId,formId){
  */
 async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
   let conditionalObj = {}  
+  let fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea","paid_property_tax"]
   for(var tab of tabs){
       conditionalObj[tab._id.toString()] = {}
-      let key = tab.key
+      let key = tab.id
       let obj = tab.data
       let temp = {
           "comment":tab.feedback.comment,
@@ -1610,6 +1601,11 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
               let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
               temp["status"].push(status)
               updateQueryForFiscalRanking(yearArr,ulbId,formId)
+          }
+          else{
+            if(key === priorTabsForFiscalRanking["basicUlbDetails"]){
+              await updateFiscalRankingForm(tab.data,ulbId,formId,year)
+            }
           }
 
           // FiscalRankingMapper
@@ -1663,7 +1659,7 @@ function checkUndefinedValidations(keys){
  * @param {String} formId
  * @param {String} design_year
 */
-async function saveFeedbacks(calculatedStatus,ulbId,formId,design_year){
+async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,userId,role){
   let validator = {
     success:true,
     message:""
@@ -1685,6 +1681,14 @@ async function saveFeedbacks(calculatedStatus,ulbId,formId,design_year){
         comment:calculatedStatus[calc].comment
       }
       let feedBack = await FeedBackFiscalRanking.findOneAndUpdate(filter,payload,{upsert:true})
+      delete filter.tab
+      filter["_id"] = filter["fiscal_ranking"]
+      delete filter.fiscal_ranking
+      let payloadForForm = {
+        "actionTakenBy":userId,
+        "actionTakenByRole" : role
+      }
+      let updateForm = await FiscalRanking.findOneAndUpdate(filter,payloadForForm,{upsert:true})
       validator.message = "fetched successfully"
     }
   }
@@ -1704,7 +1708,7 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
   }
   try{
     let {ulbId,formId,actions,design_year} = req.body
-    let {role} = req.decoded
+    let {role , _id:userId} = req.decoded
     let validation = await checkUndefinedValidations({
       "ulb": ulbId,
       "formId":formId,
@@ -1712,16 +1716,16 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
       "design_year":design_year
     })
     // console.log("validation :: ",(!validation.valid))
-    // if(!validation.valid){
-    //   response.message = validation.message
-    //   return res.status(500).json(response)
-    // }
+    if(!validation.valid){
+      response.message = validation.message
+      return res.status(500).json(response)
+    }
     if(role !== userTypes.mohua){
       response.message = "Not permitted"
       return res.status(500).json(response)
     }
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions,ulbId,formId,design_year)
-    let feedBackResp = await saveFeedbacks(calculationsTabWise,ulbId,formId,design_year)
+    let feedBackResp = await saveFeedbacksAndForm(calculationsTabWise,ulbId,formId,design_year,userId,role)
     if(feedBackResp.success){
       response.success  = true
       response.message = "Details submitted successfully"
@@ -1734,7 +1738,7 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
   
   }
   catch(err){
-    response.message = "some server Error occured"
+    response.message = "some server error occured"
     console.log("error in actionTakenByMoHua ::: ",err.message)
   }
   return res.status(500).json(response)

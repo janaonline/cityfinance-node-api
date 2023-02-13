@@ -1,4 +1,15 @@
 require("./dbConnect");
+
+const statusSchema = ()=>{
+    return {
+        type: String,
+        default: "PENDING",
+        enum: {
+            values: ["PENDING", "APPROVED", "REJECTED",null],
+            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+        },
+    }
+}
 const enumYesNo = {
     value: {
         type: String,
@@ -46,14 +57,29 @@ const fiscalRankingSchema = new Schema(
         design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         population11: {
             value: { type: Number, default: null },
+            status: statusSchema()
+            
         },
         populationFr: {
             value: { type: Number, default: null },
+            status: statusSchema()
         },
-        webLink: { type: String, default: null },
-        nameCmsnr: { type: String, default: null },
-        nameOfNodalOfficer: { type: String, default: null },
-        designationOftNodalOfficer: { type: String, default: null },
+        webLink: {
+            value : { type: String, default: null },
+            status: statusSchema()
+        },
+        nameCmsnr: {
+            value : {type:String,default:null},
+            status:statusSchema()
+        },
+        nameOfNodalOfficer: {
+            value:{ type: String, default: null },
+            status:statusSchema()
+        },
+        designationOftNodalOfficer: {
+            value: { type: String, default: null },
+            status:statusSchema()
+        },
         email: {
             type: String,
             trim: true,
