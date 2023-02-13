@@ -1553,18 +1553,20 @@ async function updateQueryForFiscalRanking(yearData,ulbId,formId){
 async function updateFiscalRankingForm(obj,ulbId,formId,year){
   try{
     let filter = {
-      "_id":formId,
-      "year":ObjectId(year),
-      "ulbId":ObjectId(ulbId),
+      "_id":ObjectId(formId),
     }
     let payload = {}
     for(let key in obj){
       let status = null
+      console.log("status ::: ",obj[key])
       if(obj[key].status){
         status = obj[key].status
       }
       payload[`${key}.status`] = status 
     }
+    console.log("payload ::: ",payload)
+    console.log(">>>>>>>",)
+    console.log("filter::",filter)
     await FiscalRanking.findOneAndUpdate(filter,payload)
   }
   catch(err){
@@ -1604,6 +1606,7 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           }
           else{
             if(key === priorTabsForFiscalRanking["basicUlbDetails"]){
+              console.log(tab.data)
               await updateFiscalRankingForm(tab.data,ulbId,formId,year)
             }
           }
