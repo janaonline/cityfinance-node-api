@@ -291,14 +291,14 @@ async function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForF
 }
 
 function assignCalculatedValues(fyDynemic,viewONe){
-  let totalOwnRevenueAreaObj = fyDynemic["goverPar"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
+  let totalOwnRevenueAreaObj = fyDynemic["goverPar"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea_22")
   let propertyTaxObj =  fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "property_tax_register")
   let payingPropObj = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paying_property_tax")
   let paid_property_tax  = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
   let fy21CashObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
   let fy21OnlineObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
 
-  Object.assign(totalOwnRevenueAreaObj,viewONe['totalOwnRevenueArea'])
+  Object.assign(totalOwnRevenueAreaObj,viewONe['totalOwnRevenueArea_22'])
   Object.assign(propertyTaxObj,viewONe['property_tax_register'])
   Object.assign(payingPropObj,viewONe['paying_property_tax'])
   Object.assign(paid_property_tax,viewONe['paid_property_tax'])
@@ -316,6 +316,8 @@ exports.getView = async function (req, res, next) {
     if (req.query.ulb && req.query.design_year) {
       condition = { "ulb": ObjectId(req.query.ulb), "design_year": ObjectId( req.query.design_year) }
     }
+    // console.log("ulb :::: ",req.query.ulb)
+    // console.log("design_year :::: ",req.query.design_year)
     let data = await FiscalRanking.findOne(condition, { "history": 0 }).lean();
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, { "population": 1 }).lean();
     let ulbPData = await Ulb.findOne({ "_id": ObjectId(req.query.ulb) }, { "population": 1 }).lean();
@@ -358,9 +360,18 @@ exports.getView = async function (req, res, next) {
           "value":null,
           "status":null
         },
-        "designationOftNodalOfficer": "",
-        "email": null,
-        "mobile": null,
+        "designationOftNodalOfficer": {
+          "value":null,
+          "status":"PENDING"
+        },
+        "email":{
+          "value":null,
+          "status":"PENDING"
+        },
+        "mobile": {
+          "value":null,
+          "status":"PENDING"
+        },
         "waterSupply": numberOfQuestion,
         "sanitationService": numberOfQuestion,
         "propertyWaterTax": numberOfQuestion,
@@ -368,7 +379,7 @@ exports.getView = async function (req, res, next) {
         "webUrlAnnual": numberOfQuestion,
         "registerGis": numberOfQuestion,
         "accountStwre": numberOfQuestion,
-        "totalOwnRevenueArea": numberOfQuestion,
+        "totalOwnRevenueArea_22": numberOfQuestion,
         "fy_21_22_cash": {
           "year": null,
           "type": null,
@@ -724,7 +735,7 @@ exports.getAll = async function (req, res, next) {
             "designationOftNodalOfficer": 1,
             "mobile": 1,
             "webUrlAnnual": 1,
-            "totalOwnRevenueArea": 1,
+            "totalOwnRevenueArea_22": 1,
             "property_tax_register": 1,
             "paying_property_tax": 1,
             "paid_property_tax": 1,
@@ -1591,7 +1602,7 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
 async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
   let conditionalObj = {}  
   let ignorablevariables = ["guidanceNotes"]
-  let fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea","paid_property_tax"]
+  let fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea_22","paid_property_tax"]
   for(var tab of tabs){
       conditionalObj[tab._id.toString()] = {}
       let key = tab.id
@@ -1723,7 +1734,6 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
   }
   try{
     let {ulbId,formId,actions,design_year} = req.body
-    console.log("formId :::",formId)
     let {role , _id:userId} = req.decoded
     let validation = await checkUndefinedValidations({
       "ulb": ulbId,
