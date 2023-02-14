@@ -17,7 +17,6 @@ const State = require('../../models/State');
 const fs = require('fs');
 const {fiscalRankingColsNameCsv} = require("../../util/Constants")
 const TabsFiscalRankings = require('../../models/TabsFiscalRankings');
-const { isGeneratorObject } = require("util/types");
 let priorTabsForFiscalRanking = {
   "basicUlbDetails" : "s1",
   "conInfo" : "s2",
