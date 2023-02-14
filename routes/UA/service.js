@@ -3,15 +3,18 @@ const UA = require('../../models/UA')
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require('../../models/State')
 const Ulb = require('../../models/Ulb')
+const DUR = require("../../models/UtilizationReport")
 const SLBData = require('../../models/XVFcGrantForm')
 const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
 const Year = require("../../models/Year")
 const SLB28 = require('../../models/TwentyEightSlbsForm')
+const UaFileList = require("../../models/UAFileList")
 const axios = require('axios')
-const UaFileList = require("../../models/UaFileList")
 const {calculateSlbMarks} = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
+const {columns} = require("./constants.js")
+const {AggregationServices} = require("../../routes/CommonActionAPI/service")
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -753,27 +756,28 @@ module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
     }
     try{
         let {uaCode} = req.params
-        let ua = await UA.findOne({"UACode":uaCode})
+        let ua = await UA.findOne({"UACode":uaCode}).select(["name","_id"])
         if(!ua){
             response.message = "UA object not found"
             return res.status(400).json(response)
         }
         response.message = "found"
-        response.ua = ua._id
+        response.ua = ua
         return res.status(200).json(response)
     }
     catch(err){
-        console.log("error in getUAById")
+        console.log("error in getUAById",err.message)
     }
 })
 module.exports.addUAFile = catchAsync(async(req,res)=>{
+    let response = {
+        "success":false,
+        "message":""
+    }
     try{
-        let response = {
-            "success":false,
-            "message":""
-        }
         let data = {...req.body} 
         let design_year = data.Year
+        console.log(data)
         let yearObj = await Year.findOne({"year":design_year})
         if(!yearObj){
             response.message = "Year object not found in database"
@@ -803,4 +807,132 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
         response.message = err.message
         return res.status(500).json(response)
     }
+})
+
+/**
+ * create datastructure for rows 
+ */
+function getDataStructAccordingly(durObj,cols){
+    let rows = []
+    console.log(durObj)
+    try{
+        for(var column of cols){
+            let temp = {}
+            if(durObj[column.databaseKey]){
+                temp[column.key] = durObj[column.databaseKey]
+            }
+            if(durObj.projects.length){
+                for(var obj of durObj.projects){
+                    console.log("column.databaseKey :: ",column.databaseKey)
+                if(obj[column.databaseKey]){
+                    temp[column.key] = durObj[column.databaseKey]
+                }
+            }
+            }
+            rows.push(temp)
+            //console.log("temp :: ",temp)
+            
+        }
+        console.log("rows ::: ",rows)
+    }
+    catch(err){
+        console.log("error in getDataStructAccordingly ::: ",err.message)
+    }
+}
+
+function getQueryForUtilizationReports(obj){
+    let {ulbId,design_year,financial_year} = obj
+    let query = []
+    try{
+        let service = AggregationServices
+        //stage 1 get matching query
+        let matchObj = {
+            "$match":{
+                "ulb":ObjectId(ulbId),
+                "designYear":ObjectId(design_year),
+                "financialYear":ObjectId(financial_year)
+            }
+        }
+        query.push(matchObj)
+        // stage 2 get related ulbs and unwind
+        query.push(service.getCommonLookupObj("ulbs","ulb","_id","ulb"))
+        query.push(service.getUnwindObj("$ulb",true))
+        // stage3 unwind Projects array 
+        query.push(service.getUnwindObj("$projects",true))
+        // stage 4 group by rows columns according to requirement 
+        let groupBy = {
+            "$group":{
+                "_id":"$_id",
+                "rows":{
+                    "$push":{
+                        "projectName":"$projects.name",
+                        "implementationAgency":"$ulb.name",
+                        "totalProjectCost":"$projects.cost",
+                        "stateShare": 0,
+                        "ulbShare": 0,
+                        "capitalExpenditureState": 0,
+                        "capitalExpenditureUlb": 0,
+                        "omExpensesState": 0,
+                        "omExpensesUlb": 0,
+                        "sector":"Utilization Reports",
+                        "startDate": service.getCommonDateTransformer("$projects.createdAt"),
+                        "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
+                        "moreInformation":{
+                            "name":"csv file",
+                            "url":"https://democityfinance.in/csvFile.pdf"
+                        },
+                        "projectReport":{
+                            "name":"Project Report file",
+                            "url":"https://democityfinance.in/report.pdf"
+                        },
+                        "creditRating":{
+                            "name":"Credit rating",
+                            "url":"https://democityfinance.in/creditRating.pdf"
+                        }
+                    }
+                }
+            }
+        }
+        query.push(groupBy)
+    }
+    catch(err){
+        console.log("error in getQueryForUtilizationReports ::::",err.message)
+    }
+    return query
+}
+
+
+module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
+    let response = {
+        success:false,
+        message :"Something went wrong"
+    }
+    let status = 500
+    try{
+        let {ulbId,design_year,financial_year} = req.params
+        let filters = {...req.query}
+        if(ulbId === undefined || design_year === undefined ||  financial_year === undefined){
+            if(ulbId === undefined){
+                response.message = "ulb id is missing"
+            }
+            else if(design_year === undefined){
+                response.message = "design year is missing"
+            }
+            else if(financial_year === undefined){
+                response.message = "financial year is missing"
+            }
+           return res.status(status).json(response)
+        }
+        let query = await getQueryForUtilizationReports({ulbId,design_year,financial_year,columns})
+        let dbResponse = await DUR.aggregate(query).allowDiskUse(true)
+        response.rows = dbResponse[0]['rows']
+        response.columns = columns
+        response.message = "Fetched Successfully"
+        return res.status(200).json(response)
+    }
+    catch(err){
+        response.message = err.message
+        console.log("error in getInfrastructureProjects ::: ",err.message)
+    }
+    return res.status(status).json(response)
 })

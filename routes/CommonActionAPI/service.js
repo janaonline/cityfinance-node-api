@@ -795,3 +795,64 @@ module.exports.canTakeActionOrViewOnly =  (data, userRole,adminLevel=false)=>{
         break;
     }
   }
+class AggregationServices{
+    static  dateFormat ="%Y-%m-%d"
+    /**
+    * function for unwind
+    * @param {string} key
+    */
+    static getUnwindObj(key,preserveNullAndEmptyArrays=false){
+        try{
+            var obj = {
+                "$unwind":key
+            }
+            if(preserveNullAndEmptyArrays){
+                obj = {"$unwind":{}}
+                obj["$unwind"]['path'] = key
+                obj["$unwind"]["preserveNullAndEmptyArrays"] = true
+            }
+            return obj
+            }
+        catch(err){
+        console.log("error in getUnwindObj ::: ",err)
+        }
+    }
+    /**
+     * if lookup query is simple then use this
+     * @param {*} from 
+     * @param {*} localField 
+     * @param {*} foreignField 
+     * @param {*} as 
+     * @returns an object which with the lookup queries
+     */
+    static getCommonLookupObj(from,localField,foreignField,as){
+        let obj = {}
+        try{
+            obj = {
+                "$lookup":{
+                "from": from,
+                "localField": localField,
+                "foreignField": foreignField,
+                "as": as
+            }
+            }
+            return obj
+        }
+        catch(err){
+            console.log("error in get CommonLookup obj")
+        return obj
+        }
+    }
+    /**
+     * 
+     * @param {*} field 
+     * @returns an javascript object 
+     */
+    static getCommonDateTransformer(field){
+        return {"$dateToString":{
+            "date":field,
+            "format":this.dateFormat
+        }}
+    }
+}
+module.exports.AggregationServices = AggregationServices
