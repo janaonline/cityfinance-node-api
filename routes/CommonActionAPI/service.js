@@ -756,8 +756,6 @@ class AggregationServices{
      * @returns an javascript object 
      */
     static getCommonDateTransformer(field){
-        console.log(this.dateFormat)
-        
         return {"$dateToString":{
             "date":field,
             "format":this.dateFormat

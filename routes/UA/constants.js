@@ -14,6 +14,10 @@ let columns = [
         }
     },
     {
+        label:"Sector",
+        key:"sector"
+    },
+    {
         label: "Total Project cost",
         key: "totalProjectCost",
         get databaseKey(){

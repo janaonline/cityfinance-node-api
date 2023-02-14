@@ -860,7 +860,7 @@ function getQueryForUtilizationReports(obj){
         query.push(service.getUnwindObj("$ulb",true))
         // stage3 unwind Projects array 
         query.push(service.getUnwindObj("$projects",true))
-        // stage 4 group by rows columns according to requirment 
+        // stage 4 group by rows columns according to requirement 
         let groupBy = {
             "$group":{
                 "_id":"$_id",
@@ -875,10 +875,21 @@ function getQueryForUtilizationReports(obj){
                         "capitalExpenditureUlb": 0,
                         "omExpensesState": 0,
                         "omExpensesUlb": 0,
+                        "sector":"Utilization Reports",
                         "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                         "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
-                        
-                        
+                        "moreInformation":{
+                            "name":"csv file",
+                            "url":"https://democityfinance.in/csvFile.pdf"
+                        },
+                        "projectReport":{
+                            "name":"Project Report file",
+                            "url":"https://democityfinance.in/report.pdf"
+                        },
+                        "creditRating":{
+                            "name":"Credit rating",
+                            "url":"https://democityfinance.in/creditRating.pdf"
+                        }
                     }
                 }
             }
