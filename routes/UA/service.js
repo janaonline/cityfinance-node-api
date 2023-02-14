@@ -13,6 +13,7 @@ const Year = require("../../models/Year")
 const axios = require('axios')
 const {columns} = require("./constants.js")
 const {calculateSlbMarks} = require('../Scoring/service')
+const {AggregationServices} = require("../../routes/CommonActionAPI/service")
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -840,6 +841,57 @@ function getDataStructAccordingly(durObj,cols){
     }
 }
 
+function getQueryForUtilizationReports(obj){
+    let {ulbId,design_year,financial_year} = obj
+    let query = []
+    try{
+        let service = AggregationServices
+        //stage 1 get matching query
+        let matchObj = {
+            "$match":{
+                "ulb":ObjectId(ulbId),
+                "designYear":ObjectId(design_year),
+                "financialYear":ObjectId(financial_year)
+            }
+        }
+        query.push(matchObj)
+        // stage 2 get related ulbs and unwind
+        query.push(service.getCommonLookupObj("ulbs","ulb","_id","ulb"))
+        query.push(service.getUnwindObj("$ulb",true))
+        // stage3 unwind Projects array 
+        query.push(service.getUnwindObj("$projects",true))
+        // stage 4 group by rows columns according to requirment 
+        let groupBy = {
+            "$group":{
+                "_id":"$_id",
+                "rows":{
+                    "$push":{
+                        "projectName":"$projects.name",
+                        "implementationAgency":"$ulb.name",
+                        "totalProjectCost":"$projects.cost",
+                        "stateShare": 0,
+                        "ulbShare": 0,
+                        "capitalExpenditureState": 0,
+                        "capitalExpenditureUlb": 0,
+                        "omExpensesState": 0,
+                        "omExpensesUlb": 0,
+                        "startDate": service.getCommonDateTransformer("$projects.createdAt"),
+                        "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
+                        
+                        
+                    }
+                }
+            }
+        }
+        query.push(groupBy)
+    }
+    catch(err){
+        console.log("error in getQueryForUtilizationReports ::::",err.message)
+    }
+    return query
+}
+
+
 module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
     let response = {
         success:false,
@@ -861,16 +913,13 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
             }
            return res.status(status).json(response)
         }
-        let getAggregateQuery = ""
-        let durObj = await DUR.findOne({
-            ulb:ObjectId(ulbId),
-            designYear:ObjectId(design_year),
-            financialYear:ObjectId(financial_year)
-        }).populate({
-            path:"ulb",
-            model:"Ulb"})
-        console.log("durObj")
-        let rows = getDataStructAccordingly(durObj,columns)
+        let query = await getQueryForUtilizationReports({ulbId,design_year,financial_year,columns})
+        let dbResponse = await DUR.aggregate(query).allowDiskUse(true)
+        response.rows = dbResponse[0]['rows']
+        response.columns = columns
+        response.message = "Fetched Successfully"
+        return res.status(200),json(response)
+
 
     }
     catch(err){
