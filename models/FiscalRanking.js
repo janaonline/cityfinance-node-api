@@ -153,7 +153,7 @@ const fiscalRankingSchema = new Schema(
             },
             year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
         },
-        totalOwnRevenueArea_22: numberOfQuestion1,
+        totalOwnRevenueArea: numberOfQuestion1,
         property_tax_register: numberOfQuestion,
         paying_property_tax: numberOfQuestion,
         paid_property_tax: numberOfQuestion,
