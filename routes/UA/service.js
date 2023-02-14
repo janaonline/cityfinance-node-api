@@ -859,10 +859,16 @@ function getQueryForUtilizationReports(obj){
         query.push(service.getUnwindObj("$ulb",true))
         // stage3 unwind Projects array 
         query.push(service.getUnwindObj("$projects",true))
-        // stage 4 group by rows columns according to requirement 
+        // stage 4 group by rows columns according to requirment 
         let groupBy = {
             "$group":{
                 "_id":"$_id",
+                "projects":{
+                    "$push":{"_id":"$projects._id","projectName":"$projects.name"}
+                },
+                "implementationAgencies":{
+                    "$push":{"_id":"$ulb._id","implementationAgency":"$ulb.name"}
+                },
                 "rows":{
                     "$push":{
                         "projectName":"$projects.name",
@@ -926,6 +932,9 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         let query = await getQueryForUtilizationReports({ulbId,design_year,financial_year,columns})
         let dbResponse = await DUR.aggregate(query).allowDiskUse(true)
         response.rows = dbResponse[0]['rows']
+        response.filters = {}
+        response.filters["projects"] = dbResponse[0]['projects']
+        response.filters['implementationAgencies']= dbResponse[0]['implementationAgencies']
         response.columns = columns
         response.message = "Fetched Successfully"
         return res.status(200).json(response)
