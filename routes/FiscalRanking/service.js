@@ -1526,19 +1526,28 @@ async function sendCsv(res,aggregateQuery){
   }
 }
 async function updateQueryForFiscalRanking(yearData,ulbId,formId){
+  let mainFormContent = ["fy_21_22_online","fy_21_22_cash","webUrlAnnual","registerGis","accountStwre"]
   try{
     for(var years of yearData){
       if(years.year){
         let filter = {
           "year":ObjectId(years.year),
-          "ulb":ulbId,
-          "fiscal_ranking":formId,
+          "ulb":ObjectId(ulbId),
+          "fiscal_ranking":ObjectId(formId),
           "type":years.type
         }
         let payload = {
           "status":years.status,
         }
         await FiscalRankingMapper.findOneAndUpdate(filter,payload)
+      }
+      else if (mainFormContent.includes(years.key)){
+        let filter = {
+          "_id":ObjectId(formId),
+        }
+        let payload = {}
+        payload[`${years.key}.status`] = years.status
+        await FiscalRanking.findOneAndUpdate(filter,payload)
       }
     }
   }
@@ -1581,6 +1590,7 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
  */
 async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
   let conditionalObj = {}  
+  let ignorablevariables = ["guidanceNotes"]
   let fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea","paid_property_tax"]
   for(var tab of tabs){
       conditionalObj[tab._id.toString()] = {}
@@ -1591,6 +1601,9 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           "status" : []
       }
       for(var k in tab.data){
+        if(ignorablevariables.includes(k)){
+          continue 
+        }
           if(obj[k].status === ""){
               continue
           }
@@ -1602,8 +1615,11 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           }
           else{
             if(key === priorTabsForFiscalRanking["basicUlbDetails"]){
-              console.log(tab.data)
               await updateFiscalRankingForm(tab.data,ulbId,formId,year)
+            }
+            
+            else if(key === priorTabsForFiscalRanking["goverPar"]){
+              console.log("tab.data :: ",tab.data)
             }
           }
 
@@ -1666,15 +1682,15 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
   try{
     for(var calc in calculatedStatus){
       let filter = {
-        ulb:ulbId,
-        fiscal_ranking:formId,
-        design_year:design_year,
+        ulb:ObjectId(ulbId),
+        fiscal_ranking:ObjectId(formId),
+        design_year:ObjectId(design_year),
         tab:calc
       }
       let payload = {
-        ulb:ulbId,
-        fiscal_ranking:formId,
-        design_year:design_year,
+        ulb:ObjectId(ulbId),
+        fiscal_ranking:ObjectId(formId),
+        design_year:ObjectId(design_year),
         status:calculatedStatus[calc].status == false || calculatedStatus[calc].status == "NA" ? "REJECTED":"APPROVED" ,
         tab:calc,
         comment:calculatedStatus[calc].comment
@@ -1684,7 +1700,7 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
       filter["_id"] = filter["fiscal_ranking"]
       delete filter.fiscal_ranking
       let payloadForForm = {
-        "actionTakenBy":userId,
+        "actionTakenBy":ObjectId(userId),
         "actionTakenByRole" : role
       }
       let updateForm = await FiscalRanking.findOneAndUpdate(filter,payloadForForm,{upsert:true})
@@ -1707,6 +1723,7 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
   }
   try{
     let {ulbId,formId,actions,design_year} = req.body
+    console.log("formId :::",formId)
     let {role , _id:userId} = req.decoded
     let validation = await checkUndefinedValidations({
       "ulb": ulbId,
