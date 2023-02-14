@@ -82,7 +82,7 @@ let columns = [
     },
     {
         label: "More information",
-        key: "csv",
+        key: "moreInformation",
         get databaseKey(){
             return "csv"
         }
