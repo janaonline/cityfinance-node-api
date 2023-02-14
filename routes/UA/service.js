@@ -918,13 +918,11 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         response.rows = dbResponse[0]['rows']
         response.columns = columns
         response.message = "Fetched Successfully"
-        return res.status(200),json(response)
-
-
+        return res.status(200).json(response)
     }
     catch(err){
         response.message = err.message
-        console.log("error in getInfrastructureProjects")
+        console.log("error in getInfrastructureProjects ::: ",err.message)
     }
     return res.status(status).json(response)
 })

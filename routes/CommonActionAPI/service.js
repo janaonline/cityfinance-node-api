@@ -703,9 +703,7 @@ function findForm(formArray, stateId){
 // ])
 
 class AggregationServices{
-    constructor(){
-        this.dateFormat = "%Y-%m-%d"
-    }
+    static  dateFormat ="%Y-%m-%d"
     /**
     * function for unwind
     * @param {string} key
@@ -758,6 +756,8 @@ class AggregationServices{
      * @returns an javascript object 
      */
     static getCommonDateTransformer(field){
+        console.log(this.dateFormat)
+        
         return {"$dateToString":{
             "date":field,
             "format":this.dateFormat
