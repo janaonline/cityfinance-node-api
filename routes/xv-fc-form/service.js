@@ -1185,6 +1185,7 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
   }
   if(from == "2223"){
     let host = "";
+    host = req.headers.host
     /* Checking if the host is the same as the backend host. If it is, then it sets the host to the
     frontend host. */
     if (req.headers.host === BackendHeaderHost.Demo) {
