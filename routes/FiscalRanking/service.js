@@ -229,8 +229,8 @@ class tabsUpdationServiceFR{
     return {
       nameOfNodalOfficer :getBasicObject(this.detail.nameOfNodalOfficer),
       designationOftNodalOfficer:getBasicObject(this.detail.designationOftNodalOfficer),
-      mobile:getBasicObject(this.detail.mobile,"NA"), // because status field is not applicable from frontend in this case
-      email:getBasicObject(this.detail.email,"NA")// because status field is not applicable from frontend in this case
+      mobile:getBasicObject(this.detail.mobile,"PENDING"), 
+      email:getBasicObject(this.detail.email,"PENDING")
     }
   }
   getDynamicObjects(key){
@@ -1536,8 +1536,7 @@ async function sendCsv(res,aggregateQuery){
     console.log("error in sendCsv :: ",err.message)
   }
 }
-async function updateQueryForFiscalRanking(yearData,ulbId,formId){
-  let mainFormContent = ["fy_21_22_online","fy_21_22_cash","webUrlAnnual","registerGis","accountStwre"]
+async function updateQueryForFiscalRanking(yearData,ulbId,formId,mainFormContent){
   try{
     for(var years of yearData){
       if(years.year){
@@ -1622,9 +1621,10 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
               let yearArr = obj[k].yearData
               let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
               temp["status"].push(status)
-              updateQueryForFiscalRanking(yearArr,ulbId,formId)
+              updateQueryForFiscalRanking(yearArr,ulbId,formId,fiscalRankingKeys)
           }
           else{
+            console.log("key :: ",key)
             if(key === priorTabsForFiscalRanking["basicUlbDetails"]){
               await updateFiscalRankingForm(tab.data,ulbId,formId,year)
             }
@@ -1685,10 +1685,19 @@ function checkUndefinedValidations(keys){
  * @param {String} formId
  * @param {String} design_year
 */
-async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,userId,role){
+async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,userId,role,isDraft){
   let validator = {
     success:true,
     message:""
+  }
+  let mainStatus_arr = []
+  let status = "PENDING"
+  let payloadForForm = {
+    "actionTakenBy":ObjectId(userId),
+    "actionTakenByRole" : role
+  }
+  let filterForForm = {
+    _id:ObjectId(formId),
   }
   try{
     for(var calc in calculatedStatus){
@@ -1710,13 +1719,17 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
       delete filter.tab
       filter["_id"] = filter["fiscal_ranking"]
       delete filter.fiscal_ranking
-      let payloadForForm = {
-        "actionTakenBy":ObjectId(userId),
-        "actionTakenByRole" : role
-      }
-      let updateForm = await FiscalRanking.findOneAndUpdate(filter,payloadForForm,{upsert:true})
-      validator.message = "fetched successfully"
+      mainStatus_arr.push(calculatedStatus[calc].status)
+    } 
+    
+    if(!isDraft){
+      calc = mainStatus_arr.every(item => item == true)
+      status = calc ? "APPROVED" :"REJECTED"
+      payloadForForm["status"] = status
     }
+    console.log(payloadForForm)
+    let updateForm = await FiscalRanking.findOneAndUpdate(filterForForm,payloadForForm)
+    validator.message = "fetched successfully"
   }
   catch(err){
     validator.success = false
@@ -1733,7 +1746,7 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
     message:""
   }
   try{
-    let {ulbId,formId,actions,design_year} = req.body
+    let {ulbId,formId,actions,design_year,isDraft} = req.body
     let {role , _id:userId} = req.decoded
     let validation = await checkUndefinedValidations({
       "ulb": ulbId,
@@ -1751,7 +1764,7 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
       return res.status(500).json(response)
     }
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions,ulbId,formId,design_year)
-    let feedBackResp = await saveFeedbacksAndForm(calculationsTabWise,ulbId,formId,design_year,userId,role)
+    let feedBackResp = await saveFeedbacksAndForm(calculationsTabWise,ulbId,formId,design_year,userId,role,isDraft)
     if(feedBackResp.success){
       response.success  = true
       response.message = "Details submitted successfully"
