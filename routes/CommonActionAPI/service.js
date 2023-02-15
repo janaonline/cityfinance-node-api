@@ -796,7 +796,7 @@ module.exports.canTakeActionOrViewOnly =  (data, userRole,adminLevel=false)=>{
     }
   }
 class AggregationServices{
-    static  dateFormat ="%Y-%m-%d"
+    static  dateFormat ="%d-%m-%Y"
     /**
     * function for unwind
     * @param {string} key
@@ -853,6 +853,16 @@ class AggregationServices{
             "date":field,
             "format":this.dateFormat
         }}
+    }
+    static getCommonSkipObj(number){
+        return {
+            "$skip":number
+        }
+    }
+    static getCommonLimitObj(number){
+        return {
+            "$limit":number
+        }
     }
 }
 module.exports.AggregationServices = AggregationServices

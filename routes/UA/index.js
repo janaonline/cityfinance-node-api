@@ -17,7 +17,7 @@ router.post('/create', verifyToken, create)
 router.get("/getUA/:uaCode",getUAByuaCode)
 router.get('/getUAfile',getRelatedUAFile)
 router.post("/addUAfile",addUAFile)
-router.get("/get-mou-project/:ulbId/:design_year/:financial_year",getInfrastructureProjects)
+router.get("/get-mou-project/:ulbId",getInfrastructureProjects)
 
 
 module.exports = router;
