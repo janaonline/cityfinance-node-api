@@ -10,6 +10,7 @@ const ODF = require('../../models/OdfFormCollection')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
 const Year = require("../../models/Year")
+const {years} = require("../../service/years")
 const axios = require('axios')
 const {columns} = require("./constants.js")
 const {calculateSlbMarks} = require('../Scoring/service')
@@ -810,36 +811,6 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
     }
 })
 
-/**
- * create datastructure for rows 
- */
-function getDataStructAccordingly(durObj,cols){
-    let rows = []
-    console.log(durObj)
-    try{
-        for(var column of cols){
-            let temp = {}
-            if(durObj[column.databaseKey]){
-                temp[column.key] = durObj[column.databaseKey]
-            }
-            if(durObj.projects.length){
-                for(var obj of durObj.projects){
-                    console.log("column.databaseKey :: ",column.databaseKey)
-                if(obj[column.databaseKey]){
-                    temp[column.key] = durObj[column.databaseKey]
-                }
-            }
-            }
-            rows.push(temp)
-            //console.log("temp :: ",temp)
-            
-        }
-        console.log("rows ::: ",rows)
-    }
-    catch(err){
-        console.log("error in getDataStructAccordingly ::: ",err.message)
-    }
-}
 
 function getGroupByQuery(service){
     try{
@@ -847,10 +818,10 @@ function getGroupByQuery(service){
             "$group":{
                 "_id":"$_id",
                 "projects":{
-                    "$push":{"_id":"$projects._id","projectName":"$projects.name"}
+                    "$push":{"_id":"$projects._id","name":"$projects.name"}
                 },
                 "implementationAgencies":{
-                    "$push":{"_id":"$ulb._id","implementationAgency":"$ulb.name"}
+                    "$push":{"_id":"$projects._id","name":"$ulb.name"}
                 },
                 "rows":{
                     "$push":{
@@ -863,7 +834,7 @@ function getGroupByQuery(service){
                         "capitalExpenditureUlb": 0,
                         "omExpensesState": 0,
                         "omExpensesUlb": 0,
-                        "sector":"Utilization Reports",
+                        "sector":"$category.name",
                         "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                         "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
                         "moreInformation":{
@@ -889,8 +860,9 @@ function getGroupByQuery(service){
 }
 
 function getQueryForUtilizationReports(obj){
-    let {ulbId,design_year,financial_year,skip,limit} = obj
+    let {ulbId,skip,limit} = obj
     let query = []
+    let design_year = years['2022-23']
     try{
         let service = AggregationServices
         //stage 1 get matching query
@@ -898,7 +870,6 @@ function getQueryForUtilizationReports(obj){
             "$match":{
                 "ulb":ObjectId(ulbId),
                 "designYear":ObjectId(design_year),
-                "financialYear":ObjectId(financial_year)
             }
         }
         query.push(matchObj)
@@ -907,10 +878,13 @@ function getQueryForUtilizationReports(obj){
         query.push(service.getUnwindObj("$ulb",true))
         // stage3 unwind Projects array 
         query.push(service.getUnwindObj("$projects",true))
-        // stage 4 paginations
+        // stage 4 lookup from category 
+        query.push(service.getCommonLookupObj("categories","projects.category","_id","category"))
+        query.push(service.getUnwindObj("$category",true))
+        // stage 5 paginations
         query.push(service.getCommonSkipObj(skip))
         query.push(service.getCommonLimitObj(limit))
-        // stage 5 group by rows columns according to requirment 
+        // stage 6 group by rows columns according to requirment 
         let groupBy = getGroupByQuery(service)
         query.push(groupBy)
     }
@@ -928,23 +902,17 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
     }
     let status = 500
     try{
-        let {ulbId,design_year,financial_year} = req.params
+        let {ulbId} = req.params
         let filters = {...req.query}
         let skip = filters.skip || 0
         let limit = filters.limit || 10
-        if(ulbId === undefined || design_year === undefined ||  financial_year === undefined){
+        if(ulbId === undefined){
             if(ulbId === undefined){
                 response.message = "ulb id is missing"
             }
-            else if(design_year === undefined){
-                response.message = "design year is missing"
-            }
-            else if(financial_year === undefined){
-                response.message = "financial year is missing"
-            }
            return res.status(status).json(response)
         }
-        let query = await getQueryForUtilizationReports({ulbId,design_year,financial_year,skip,limit})
+        let query = await getQueryForUtilizationReports({ulbId,skip,limit})
         let dbResponse = await DUR.aggregate(query).allowDiskUse(true)
         response.rows = dbResponse[0]['rows']
         response.filters = {}
@@ -952,6 +920,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         response.filters['implementationAgencies']= dbResponse[0]['implementationAgencies']
         response.columns = columns
         response.message = "Fetched Successfully"
+        response.success = true
         return res.status(200).json(response)
     }
     catch(err){
