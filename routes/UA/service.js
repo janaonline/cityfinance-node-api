@@ -841,27 +841,9 @@ function getDataStructAccordingly(durObj,cols){
     }
 }
 
-function getQueryForUtilizationReports(obj){
-    let {ulbId,design_year,financial_year} = obj
-    let query = []
+function getGroupByQuery(service){
     try{
-        let service = AggregationServices
-        //stage 1 get matching query
-        let matchObj = {
-            "$match":{
-                "ulb":ObjectId(ulbId),
-                "designYear":ObjectId(design_year),
-                "financialYear":ObjectId(financial_year)
-            }
-        }
-        query.push(matchObj)
-        // stage 2 get related ulbs and unwind
-        query.push(service.getCommonLookupObj("ulbs","ulb","_id","ulb"))
-        query.push(service.getUnwindObj("$ulb",true))
-        // stage3 unwind Projects array 
-        query.push(service.getUnwindObj("$projects",true))
-        // stage 4 group by rows columns according to requirment 
-        let groupBy = {
+        return {
             "$group":{
                 "_id":"$_id",
                 "projects":{
@@ -900,6 +882,36 @@ function getQueryForUtilizationReports(obj){
                 }
             }
         }
+    }
+    catch(err){
+        console.log("error in getGroupByQuery ::: ",err.message)
+    }
+}
+
+function getQueryForUtilizationReports(obj){
+    let {ulbId,design_year,financial_year,skip,limit} = obj
+    let query = []
+    try{
+        let service = AggregationServices
+        //stage 1 get matching query
+        let matchObj = {
+            "$match":{
+                "ulb":ObjectId(ulbId),
+                "designYear":ObjectId(design_year),
+                "financialYear":ObjectId(financial_year)
+            }
+        }
+        query.push(matchObj)
+        // stage 2 get related ulbs and unwind
+        query.push(service.getCommonLookupObj("ulbs","ulb","_id","ulb"))
+        query.push(service.getUnwindObj("$ulb",true))
+        // stage3 unwind Projects array 
+        query.push(service.getUnwindObj("$projects",true))
+        // stage 4 paginations
+        query.push(service.getCommonSkipObj(skip))
+        query.push(service.getCommonLimitObj(limit))
+        // stage 5 group by rows columns according to requirment 
+        let groupBy = getGroupByQuery(service)
         query.push(groupBy)
     }
     catch(err){
@@ -918,6 +930,8 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
     try{
         let {ulbId,design_year,financial_year} = req.params
         let filters = {...req.query}
+        let skip = filters.skip || 0
+        let limit = filters.limit || 10
         if(ulbId === undefined || design_year === undefined ||  financial_year === undefined){
             if(ulbId === undefined){
                 response.message = "ulb id is missing"
@@ -930,7 +944,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
             }
            return res.status(status).json(response)
         }
-        let query = await getQueryForUtilizationReports({ulbId,design_year,financial_year,columns})
+        let query = await getQueryForUtilizationReports({ulbId,design_year,financial_year,skip,limit})
         let dbResponse = await DUR.aggregate(query).allowDiskUse(true)
         response.rows = dbResponse[0]['rows']
         response.filters = {}
