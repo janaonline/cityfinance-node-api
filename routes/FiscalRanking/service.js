@@ -220,7 +220,7 @@ class tabsUpdationServiceFR{
       "population11":{...this.detail.population11},
       "populationFr":{...this.detail.populationFr},
       "webLink":{...this.detail.webLink},
-      "waterSupply":{...this.detail.waterSupply.value},
+      "waterSupply":{...this.detail.waterSupply},
       "sanitationService":{...this.detail.sanitationService},
       "propertySanitationTax":{...this.detail.propertySanitationTax},
       "nameCmsnr":{...this.detail.nameCmsnr},
