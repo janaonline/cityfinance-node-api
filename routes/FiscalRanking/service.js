@@ -214,8 +214,6 @@ class tabsUpdationServiceFR{
   *   - propertyWaterTax
   */
   getDataForBasicUlbTab(){
-    console.log("this.detail.webLink :: ",this.detail.webLink)
-    console.log("this.detail.nameOfNodalOfficer :: ",this.detail.nameOfNodalOfficer)
     return {
       "population11":{...this.detail.population11},
       "populationFr":{...this.detail.populationFr},
@@ -1583,7 +1581,11 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
         status = obj[key].status
       }
       payload[`${key}.status`] = status 
+      if(key === "signedCopyOfFile"){
+        console.log(payload)
+      }
     }
+    
     await FiscalRanking.findOneAndUpdate(filter,payload)
   }
   catch(err){
@@ -1603,7 +1605,7 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
 async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
   let conditionalObj = {}  
   let ignorablevariables = ["guidanceNotes"]
-  let fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea","paid_property_tax","signedCopyOfFile","fy_21_22_cash","fy_21_22_online","registerGis","accountStwre"]
+  const fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea","paid_property_tax","signedCopyOfFile","fy_21_22_cash","fy_21_22_online","registerGis","accountStwre"]
   for(var tab of tabs){
       conditionalObj[tab._id.toString()] = {}
       let key = tab.id
@@ -1613,12 +1615,9 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           "status" : []
       }
       for(var k in tab.data){
-        if(ignorablevariables.includes(k)){
+        if(ignorablevariables.includes(k) || obj[k].status === ""){
           continue 
         }
-          if(obj[k].status === ""){
-              continue
-          }
           if(obj[k].yearData){
               let yearArr = obj[k].yearData
               let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
@@ -1626,17 +1625,14 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
               updateQueryForFiscalRanking(yearArr,ulbId,formId,fiscalRankingKeys)
           }
           else{
-            console.log("key :: ",key)
-            if(key === priorTabsForFiscalRanking["basicUlbDetails"]){
+            if(key === priorTabsForFiscalRanking["basicUlbDetails"] || fiscalRankingKeys.includes(k)){
+              console.log("tab :: ",tab.data)
               await updateFiscalRankingForm(tab.data,ulbId,formId,year)
-            }
-            
-            else if(key === priorTabsForFiscalRanking["goverPar"]){
-              console.log("tab.data :: ",tab.data)
             }
           }
 
           // FiscalRankingMapper
+          // if()
           conditionalObj[tab._id.toString()] = (temp)
       }
 
@@ -1649,6 +1645,7 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           conditionalObj[tabName].status =  "NA"
       }
   }
+  console.log("conditionalObj :: ",conditionalObj)
   return conditionalObj
 }
 
@@ -1766,6 +1763,7 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
       return res.status(500).json(response)
     }
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions,ulbId,formId,design_year)
+    console.log("calculationsTabWise ::: ",calculationsTabWise)
     let feedBackResp = await saveFeedbacksAndForm(calculationsTabWise,ulbId,formId,design_year,userId,role,isDraft)
     if(feedBackResp.success){
       response.success  = true
