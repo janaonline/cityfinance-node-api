@@ -779,7 +779,6 @@ module.exports.addUAFile = catchAsync(async(req,res)=>{
     try{
         let data = {...req.body} 
         let design_year = data.Year
-        console.log(data)
         let yearObj = await Year.findOne({"year":design_year})
         if(!yearObj){
             response.message = "Year object not found in database"
@@ -817,18 +816,24 @@ function getGroupByQuery(service){
         return {
             "$group":{
                 "_id":"$_id",
+                "sectors":{
+                    "$push":{"_id":"$category._id","name":"$category.name"}
+                },
                 "projects":{
                     "$push":{"_id":"$projects._id","name":"$projects.name"}
                 },
                 "implementationAgencies":{
                     "$push":{"_id":"$projects._id","name":"$ulb.name"}
                 },
-                "rows":{
+                "data":{
                     "$push":{
                         "projectName":"$projects.name",
                         "implementationAgency":"$ulb.name",
                         "totalProjectCost":"$projects.cost",
                         "stateShare": 0,
+                        "ulbId":"$ulb._id",
+                        "projectId":"$projects._id",
+                        "sectorId":"$category._id",
                         "ulbShare": 0,
                         "capitalExpenditureState": 0,
                         "capitalExpenditureUlb": 0,
@@ -859,17 +864,123 @@ function getGroupByQuery(service){
     }
 }
 
+function getFiltersForModule(filters){
+    let filteredObj = {
+        "provided":false,
+        filters:{}
+    }
+    try{
+        if(Object.keys(filters).length > 0){
+            filteredObj["provided"] = true
+            for(var k in filters){
+                console.log("")
+                try{
+                    filteredObj["filters"][k] =  filters[k].map(item => item)
+                }  
+                catch(err){
+                    filteredObj["filters"][k] = [filters[k]]
+                }
+                
+            }
+        }
+    }
+    catch(err){
+        console.log("error in getFiltersForModule ::: ",err.message)
+    }
+    return filteredObj
+}
+
+function getFilterConditions(filters){
+    let filtersName = {
+        "implementationAgencies":"ulbId",
+        "sectors":"sectorId",
+        "projects":"projectId"
+    }
+    try{
+        let obj = {
+            "$or":[]
+        }
+        for(let filter in filters){
+            let filter_arr = filters[filter]
+            
+            for(let id of filter_arr ){
+                let temp = {
+                    "$eq":[`$$row.${filtersName[filter]}`]
+                }
+                temp["$eq"].push(ObjectId(id))
+                obj["$or"].push(temp)
+            }
+            
+        }
+        console.log(JSON.stringify(obj))
+        return obj
+    }
+    catch(err){
+        console.log("error in getFilterConditions ::: ",err.message)
+    }
+}
+
+function getFilteredObjects(filteredObj,limit){
+    try{
+        let obj = {
+            "$filter":{
+                "input":"$data",
+                "as":"row",
+            }
+        }
+        if(filteredObj.provided){
+            obj["$filter"]["cond"] = getFilterConditions(filters)
+        }
+        else{
+            obj["$filter"]["limit"] = limit
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in getFilteredObjects ::: ",err.message)
+    }
+}
+
+function getProjectionQueries(filteredObj,limit){
+    let obj = {
+        "$project":{
+            "_id":1,
+            "filters":1,
+            "rows":"$data",
+            "sectors":1,
+            "projects":1,
+            "implementationAgencies":1
+        }
+    }
+    try{
+        obj["$project"]["rows"] = getFilteredObjects(filteredObj,limit)
+    }
+    catch(err){
+        console.log("error in getProjectionQueries ::: ",err.message)
+    }
+    return obj
+}
+
+
+/**
+ * It takes an object as an argument and returns an array of objects
+ * @param obj - {ulbId,skip,limit,filteredObj}
+ */
 function getQueryForUtilizationReports(obj){
-    let {ulbId,skip,limit} = obj
+    let {ulbId,skip,limit,filteredObj} = obj
     let query = []
     let design_year = years['2022-23']
+    let dataField = {
+        "rows":"data",
+        "filters":["implementationAgencies","projects","sectors"]
+    }
     try{
         let service = AggregationServices
         //stage 1 get matching query
         let matchObj = {
             "$match":{
                 "ulb":ObjectId(ulbId),
-                "designYear":ObjectId(design_year),
+                 //"designYear":ObjectId(design_year),
             }
         }
         query.push(matchObj)
@@ -881,12 +992,17 @@ function getQueryForUtilizationReports(obj){
         // stage 4 lookup from category 
         query.push(service.getCommonLookupObj("categories","projects.category","_id","category"))
         query.push(service.getUnwindObj("$category",true))
-        // stage 5 paginations
-        query.push(service.getCommonSkipObj(skip))
-        query.push(service.getCommonLimitObj(limit))
+        //if filters provided 
+        
         // stage 6 group by rows columns according to requirment 
         let groupBy = getGroupByQuery(service)
+        let projections = getProjectionQueries(filteredObj,limit)
         query.push(groupBy)
+        query.push(service.getCommonSkipObj(skip))
+        query.push(service.getCommonLimitObj(limit))
+        query.push(projections)
+        // stage 5 paginations
+        
     }
     catch(err){
         console.log("error in getQueryForUtilizationReports ::::",err.message)
@@ -904,22 +1020,38 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
     try{
         let {ulbId} = req.params
         let filters = {...req.query}
-        let skip = filters.skip || 0
-        let limit = filters.limit || 10
+        let skip = parseInt(filters.skip) || 0
+        let limit = parseInt(filters.limit) || 10
+        let {getQuery} = filters
+        delete filters['getQuery']
+        delete filters.limit
+        delete filters.skip
+        let filteredObj = getFiltersForModule(filters)
+        // console.log("filteredObj :: ",JSON.stringify(filteredObj)
         if(ulbId === undefined){
             if(ulbId === undefined){
                 response.message = "ulb id is missing"
             }
            return res.status(status).json(response)
         }
-        let query = await getQueryForUtilizationReports({ulbId,skip,limit})
+        let query = await getQueryForUtilizationReports({ulbId,skip,limit,filteredObj})
+        if(getQuery === "true"){
+            return res.status(200).json(query)
+        }
         let dbResponse = await DUR.aggregate(query).allowDiskUse(true)
-        response.rows = dbResponse[0]['rows']
-        response.filters = {}
-        response.filters["projects"] = dbResponse[0]['projects']
-        response.filters['implementationAgencies']= dbResponse[0]['implementationAgencies']
-        response.columns = columns
-        response.message = "Fetched Successfully"
+        if(dbResponse.length){
+            response.rows = dbResponse[0]['rows'] || []
+            response.filters = {}
+            response.filters["projects"] = dbResponse[0]['projects'] || []
+            response.filters['implementationAgencies']= dbResponse[0]['implementationAgencies']
+            response.columns = columns
+            response.message = "Fetched Successfully"
+        }
+        else{
+            response.message = "No data for particular ulb"
+            response.rows = []
+        }
+        
         response.success = true
         return res.status(200).json(response)
     }
