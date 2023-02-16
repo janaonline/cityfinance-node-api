@@ -81,11 +81,17 @@ const fiscalRankingSchema = new Schema(
             status:statusSchema()
         },
         email: {
-            type: String,
-            trim: true,
-            lowercase: true
+            status:statusSchema(),
+            value:{
+                type: String,
+                trim: true,
+                lowercase: true
+            },
         },
-        mobile: { type: String, default: null },
+        mobile: {
+            status:statusSchema(),
+            value:{ type: String, default: null }
+        },
         webUrlAnnual: {
             status: {
                 type: String,
