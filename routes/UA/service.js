@@ -902,7 +902,6 @@ function getFilterConditions(filters){
         }
         for(let filter in filters){
             let filter_arr = filters[filter]
-            
             for(let id of filter_arr ){
                 let temp = {
                     "$eq":[`$$row.${filtersName[filter]}`]
@@ -920,7 +919,7 @@ function getFilterConditions(filters){
     }
 }
 
-function getFilteredObjects(filteredObj,limit){
+function getFilteredObjects(filteredObj){
     try{
         let obj = {
             "$filter":{
@@ -928,12 +927,7 @@ function getFilteredObjects(filteredObj,limit){
                 "as":"row",
             }
         }
-        if(filteredObj.provided){
-            obj["$filter"]["cond"] = getFilterConditions(filters)
-        }
-        else{
-            obj["$filter"]["limit"] = limit
-        }
+        obj["$filter"]["cond"] = getFilterConditions(filteredObj.filters)
         return obj
     }
     catch(err){
@@ -941,19 +935,27 @@ function getFilteredObjects(filteredObj,limit){
     }
 }
 
-function getProjectionQueries(filteredObj,limit){
+
+function getProjectionQueries(service,filteredObj,skip,limit){
     let obj = {
         "$project":{
             "_id":1,
             "filters":1,
+            "total":service.getCommonTotalObj("$data"),
             "rows":"$data",
             "sectors":1,
             "projects":1,
             "implementationAgencies":1
         }
     }
+    // slicing is used for pagination as data structure is totally created with mongodb aggregation
     try{
-        obj["$project"]["rows"] = getFilteredObjects(filteredObj,limit)
+        if(filteredObj.provided){
+            obj["$project"]["rows"] = service.getCommonSliceObj(getFilteredObjects(filteredObj),skip,limit)
+        }
+        else{
+            obj["$project"]["rows"] = service.getCommonSliceObj("$data",skip,limit)
+        }
     }
     catch(err){
         console.log("error in getProjectionQueries ::: ",err.message)
@@ -992,14 +994,11 @@ function getQueryForUtilizationReports(obj){
         // stage 4 lookup from category 
         query.push(service.getCommonLookupObj("categories","projects.category","_id","category"))
         query.push(service.getUnwindObj("$category",true))
-        //if filters provided 
-        
+        //if filters provided
         // stage 6 group by rows columns according to requirment 
         let groupBy = getGroupByQuery(service)
-        let projections = getProjectionQueries(filteredObj,limit)
+        let projections = getProjectionQueries(service,filteredObj,skip,limit)
         query.push(groupBy)
-        query.push(service.getCommonSkipObj(skip))
-        query.push(service.getCommonLimitObj(limit))
         query.push(projections)
         // stage 5 paginations
         
@@ -1027,7 +1026,6 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         delete filters.limit
         delete filters.skip
         let filteredObj = getFiltersForModule(filters)
-        // console.log("filteredObj :: ",JSON.stringify(filteredObj)
         if(ulbId === undefined){
             if(ulbId === undefined){
                 response.message = "ulb id is missing"
@@ -1040,6 +1038,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         }
         let dbResponse = await DUR.aggregate(query).allowDiskUse(true)
         if(dbResponse.length){
+            response.total = dbResponse[0].total
             response.rows = dbResponse[0]['rows'] || []
             response.filters = {}
             response.filters["projects"] = dbResponse[0]['projects'] || []
