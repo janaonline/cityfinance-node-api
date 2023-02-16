@@ -819,10 +819,10 @@ function getGroupByQuery(service){
                     "$push":{"_id":"$category._id","name":"$category.name"}
                 },
                 "projects":{
-                    "$push":{"_id":"$projects._id","name":"$projects.name"}
+                    "$push":{"_id":"$projects._id","name":"$projects.name","sectorId":"$category._id",}
                 },
                 "implementationAgencies":{
-                    "$push":{"_id":"$projects._id","name":"$ulb.name"}
+                    "$push":{"_id":"$ulb._id","name":"$ulb.name"}
                 },
                 "data":{
                     "$push":{
@@ -1040,6 +1040,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
             response.total = dbResponse[0].total
             response.rows = dbResponse[0]['rows'] || []
             response.filters = {}
+            response.filters["sectors"] =  dbResponse[0]['sectors'] 
             response.filters["projects"] = dbResponse[0]['projects'] || []
             response.filters['implementationAgencies']= dbResponse[0]['implementationAgencies']
             response.columns = columns
