@@ -820,10 +820,10 @@ function getGroupByQuery(service){
                     "$push":{"_id":"$category._id","name":"$category.name"}
                 },
                 "projects":{
-                    "$push":{"_id":"$projects._id","name":"$projects.name"}
+                    "$push":{"_id":"$projects._id","name":"$projects.name","sectorId":"$category._id",}
                 },
                 "implementationAgencies":{
-                    "$push":{"_id":"$projects._id","name":"$ulb.name"}
+                    "$push":{"_id":"$ulb._id","name":"$ulb.name"}
                 },
                 "data":{
                     "$push":{
