@@ -1041,6 +1041,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
             response.total = dbResponse[0].total
             response.rows = dbResponse[0]['rows'] || []
             response.filters = {}
+            response.filters["sectors"] =  dbResponse[0]['sectors'] 
             response.filters["projects"] = dbResponse[0]['projects'] || []
             response.filters['implementationAgencies']= dbResponse[0]['implementationAgencies']
             response.columns = columns
