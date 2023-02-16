@@ -1593,6 +1593,21 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
   }
 }
 
+function getStatusesFromObject(obj,element){
+  let status = []
+  try{
+    for(let key in obj){
+      if(obj[key][element]){
+        status.push(obj[key][element])
+      }
+    }
+  }
+  catch(err){
+
+  }
+  return status
+}
+
 
 /**
  * 
@@ -1620,13 +1635,17 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
         }
           if(obj[k].yearData){
               let yearArr = obj[k].yearData
-              let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
+              let status = yearArr.every(item => item.status === "APPROVED")
               temp["status"].push(status)
               updateQueryForFiscalRanking(yearArr,ulbId,formId,fiscalRankingKeys)
           }
           else{
             if(key === priorTabsForFiscalRanking["basicUlbDetails"] || fiscalRankingKeys.includes(k)){
-              console.log("tab :: ",tab.data)
+              // console.log(tab.data)
+              let statueses = getStatusesFromObject(tab.data,"status")
+              // console.log("statueses :: ",statueses)
+              let finalStatus = statueses.every(item => item === "APPROVED" )
+              temp['status'].push(finalStatus)
               await updateFiscalRankingForm(tab.data,ulbId,formId,year)
             }
           }
