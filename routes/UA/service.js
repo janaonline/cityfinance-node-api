@@ -910,7 +910,6 @@ function getFilterConditions(filters){
             }
             
         }
-        console.log(JSON.stringify(obj))
         return obj
     }
     catch(err){
@@ -935,7 +934,7 @@ function getFilteredObjects(filteredObj){
 }
 
 
-function getProjectionQueries(service,filteredObj,skip,limit){
+function getProjectionQueries(service,filteredObj,skip,limit,sortKey){
     let obj = {
         "$project":{
             "_id":1,
@@ -951,9 +950,11 @@ function getProjectionQueries(service,filteredObj,skip,limit){
     try{
         if(filteredObj.provided){
             obj["$project"]["rows"] = service.getCommonSliceObj(getFilteredObjects(filteredObj),skip,limit)
+
         }
         else{
             obj["$project"]["rows"] = service.getCommonSliceObj("$data",skip,limit)
+
         }
     }
     catch(err){
@@ -968,7 +969,7 @@ function getProjectionQueries(service,filteredObj,skip,limit){
  * @param obj - {ulbId,skip,limit,filteredObj}
  */
 function getQueryForUtilizationReports(obj){
-    let {ulbId,skip,limit,filteredObj} = obj
+    let {ulbId,skip,limit,filteredObj,sortKey} = obj
     let query = []
     let design_year = years['2022-23']
     let dataField = {
@@ -993,10 +994,15 @@ function getQueryForUtilizationReports(obj){
         // stage 4 lookup from category 
         query.push(service.getCommonLookupObj("categories","projects.category","_id","category"))
         query.push(service.getUnwindObj("$category",true))
+        if(sortKey.provided){
+            query.push({
+                "$sort":sortKey.filters
+            })
+        }
         //if filters provided
         // stage 6 group by rows columns according to requirment 
         let groupBy = getGroupByQuery(service)
-        let projections = getProjectionQueries(service,filteredObj,skip,limit)
+        let projections = getProjectionQueries(service,filteredObj,skip,limit,sortKey)
         query.push(groupBy)
         query.push(projections)
         // stage 5 paginations
@@ -1008,11 +1014,39 @@ function getQueryForUtilizationReports(obj){
     return query
 }
 
+function getSortByKeys(sortBy,order){
+    let sortFilterKeys = {
+        "totalProjectCost":"projects.cost",
+        "ulbShare":"ulbId"
+    }
+    let sortKey = {
+        "provided":false
+    }
+    try{
+        if((sortBy != undefined) && (order != undefined)){
+            let temp = {}
+            sortKey["provided"] = true
+            temp[sortFilterKeys[sortBy]] = parseInt(order)
+            console.log(temp)
+            sortKey["filters"] =  temp   
+        }
+    }
+    catch(err){
+        console.log("error in getSortByKeys ::: ",err.message)
+    }
+    return sortKey
+}
+
 
 module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
     let response = {
         success:false,
         message :"Something went wrong"
+    }
+    let keysDisplayName = {
+        'sectors':"Sectors", 
+        'projects':"Projects", 
+        'implementationAgencies':"Implemenation Agency"
     }
     let status = 500
     try{
@@ -1020,10 +1054,13 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         let filters = {...req.query}
         let skip = parseInt(filters.skip) || 0
         let limit = parseInt(filters.limit) || 10
-        let {getQuery} = filters
+        let {getQuery,sortBy,order} = filters
+        let sortKey = getSortByKeys(sortBy,order)
         delete filters['getQuery']
         delete filters.limit
         delete filters.skip
+        delete filters.order
+        delete filters.sortBy
         let filteredObj = getFiltersForModule(filters)
         if(ulbId === undefined){
             if(ulbId === undefined){
@@ -1031,7 +1068,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
             }
            return res.status(status).json(response)
         }
-        let query = await getQueryForUtilizationReports({ulbId,skip,limit,filteredObj})
+        let query = await getQueryForUtilizationReports({ulbId,skip,limit,filteredObj,sortKey})
         if(getQuery === "true"){
             return res.status(200).json(query)
         }
@@ -1039,10 +1076,12 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         if(dbResponse.length){
             response.total = dbResponse[0].total
             response.rows = dbResponse[0]['rows'] || []
-            response.filters = {}
-            response.filters["sectors"] =  dbResponse[0]['sectors'] 
-            response.filters["projects"] = dbResponse[0]['projects'] || []
-            response.filters['implementationAgencies']= dbResponse[0]['implementationAgencies']
+            response.filters = []
+            response.filters = ['sectors', 'projects', 'implementationAgencies'].map(el => ({
+                key:el,
+                name: keysDisplayName[el],
+                options: dbResponse[0][el]
+            }))
             response.columns = columns
             response.message = "Fetched Successfully"
         }

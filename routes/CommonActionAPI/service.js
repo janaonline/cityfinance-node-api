@@ -881,5 +881,14 @@ class AggregationServices{
                  else: "NA" } }
 
     }
+    static getCommonSortArrObj(arr,sortBy){
+        console.log("sortBy :: ",sortBy)
+        return {
+            $sortArray :{
+                input:arr,
+                sortBy
+            }
+        }
+    }
 }
 module.exports.AggregationServices = AggregationServices
