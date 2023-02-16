@@ -217,8 +217,8 @@ class tabsUpdationServiceFR{
     return {
       "population11":{...this.detail.population11},
       "populationFr":{...this.detail.populationFr},
-      "webLink":getBasicObject(this.detail.webLink),
-      "waterSupply":{...this.detail.waterSupply},
+      "webLink":getBasicObject(this.detail.webLink.value),
+      "waterSupply":{...this.detail.waterSupply.value},
       "sanitationService":{...this.detail.sanitationService},
       "propertySanitationTax":{...this.detail.propertySanitationTax},
       "nameCmsnr":getBasicObject(this.detail.nameCmsnr),
@@ -227,10 +227,10 @@ class tabsUpdationServiceFR{
   }
   getDataForConInfo(){
     return {
-      nameOfNodalOfficer :getBasicObject(this.detail.nameOfNodalOfficer),
-      designationOftNodalOfficer:getBasicObject(this.detail.designationOftNodalOfficer),
-      mobile:getBasicObject(this.detail.mobile,"PENDING"), 
-      email:getBasicObject(this.detail.email,"PENDING")
+      nameOfNodalOfficer :getBasicObject(this.detail.nameOfNodalOfficer.value,"PENDING"),
+      designationOftNodalOfficer:getBasicObject(this.detail.designationOftNodalOfficer.value,"PENDING"),
+      mobile:getBasicObject(this.detail.mobile.value,"PENDING"), 
+      email:getBasicObject(this.detail.email.value,"PENDING")
     }
   }
   getDynamicObjects(key){
