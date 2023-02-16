@@ -758,6 +758,40 @@ function findForm(formArray, stateId) {
 //   },
 // ])
 
+/**
+ * function that creates csv only for aggregation queries
+ * @param {*} modelName 
+ * @param {*} query 
+ * @param {*} res 
+ * @param {*} cols 
+ */
+function sendCsv(modelName,query,res,cols){
+    try{
+        let cursor = [modelName].aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        res.write(cols.join(","))
+        res.write("\r\n")
+        cursor.on("data",(document)=>{
+            for(let key of cols){
+                if(document[key]){
+                    str += el[key] + ","
+                }
+                else{
+                    str += ""
+                }
+            }
+            res.write(str+"\r\n")
+        })
+        cursor.on("end",(el)=>{
+            res.end()
+        })
+    }
+    catch(err){
+        console.log("error in sendCsv ::: ",err.message)
+    }
+}
+
 module.exports.canTakeActionOrViewOnly =  (data, userRole,adminLevel=false)=>{
     let status = data['formStatus'];
     switch (true) {
@@ -891,4 +925,5 @@ class AggregationServices{
         }
     }
 }
+module.exports.sendCsv  = sendCsv
 module.exports.AggregationServices = AggregationServices
