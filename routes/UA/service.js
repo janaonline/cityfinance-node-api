@@ -7,13 +7,15 @@ const DUR = require("../../models/UtilizationReport")
 const SLBData = require('../../models/XVFcGrantForm')
 const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
+const Year = require("../../models/Year")
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
-const Year = require("../../models/Year")
 const {years} = require("../../service/years")
 const axios = require('axios')
+const sendCsv = require("../../routes/CommonActionAPI/service")
+const {calculateSlbMarks} = require('../Scoring/service');
+const { ulb } = require('../../util/userTypes');
 const {columns} = require("./constants.js")
-const {calculateSlbMarks} = require('../Scoring/service')
 const {AggregationServices} = require("../../routes/CommonActionAPI/service")
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
@@ -749,8 +751,6 @@ module.exports.getRelatedUAFile = catchAsync(async(req,res)=>{
         res.status(500).json(response)
     }
 })
-
-
 module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
     let response = {
         "success":false,
@@ -880,7 +880,6 @@ function getFiltersForModule(filters){
                 catch(err){
                     filteredObj["filters"][k] = [filters[k]]
                 }
-                
             }
         }
     }
@@ -918,11 +917,11 @@ function getFilterConditions(filters){
     }
 }
 
-function getFilteredObjects(filteredObj){
+function getFilteredObjects(filteredObj,arrName){
     try{
         let obj = {
             "$filter":{
-                "input":"$data",
+                "input":arrName,
                 "as":"row",
             }
         }
@@ -936,6 +935,8 @@ function getFilteredObjects(filteredObj){
 
 
 function getProjectionQueries(service,filteredObj,skip,limit,sortKey){
+    let {sectors:sectorObj} = {...filteredObj.filters}
+    let sectorialObj = {"filters":{"sectors":sectorObj}}
     let obj = {
         "$project":{
             "_id":1,
@@ -949,8 +950,12 @@ function getProjectionQueries(service,filteredObj,skip,limit,sortKey){
     }
     // slicing is used for pagination as data structure is totally created with mongodb aggregation
     try{
+        if(sectorObj != undefined){
+            obj["$project"]["projects"] = getFilteredObjects(sectorialObj,"$projects")
+        }
+
         if(filteredObj.provided){
-            obj["$project"]["rows"] = service.getCommonSliceObj(getFilteredObjects(filteredObj),skip,limit)
+            obj["$project"]["rows"] = service.getCommonSliceObj(getFilteredObjects(filteredObj,"$data"),skip,limit)
 
         }
         else{

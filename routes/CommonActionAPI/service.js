@@ -60,12 +60,67 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
                 case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Rejected_By_MoHUA
                     break;
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
 
                 default:
                     return StatusList.Not_Started
                     break;
             }
             break;
+    }
+}
+
+module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
+    switch(formType){
+        case "ULB":
+            switch (true) {
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                    return StatusList.In_Progress
+                    break;
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+                    break;
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
+                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Rejected_By_MoHUA
+                    break;
+                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+
+                default:
+                    return StatusList.Not_Started
+                    break;
+            }
+
+        case "MoHua":
+            switch (true) {
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                    return StatusList.In_Progress
+                    break;
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+                    break;
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
+                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Rejected_By_MoHUA
+                    break;
+                    
+                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+
+                default:
+                    return StatusList.Not_Started
+                    break;
+            }
+            break;
+
+   
     }
 }
 
@@ -703,8 +758,81 @@ function findForm(formArray, stateId) {
 //   },
 // ])
 
-class AggregationServices {
-    static dateFormat = "%d-%m-%Y"
+/**
+ * function that creates csv only for aggregation queries
+ * @param {*} modelName 
+ * @param {*} query 
+ * @param {*} res 
+ * @param {*} cols 
+ */
+function sendCsv(modelName,query,res,cols){
+    try{
+        let cursor = [modelName].aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        res.write(cols.join(","))
+        res.write("\r\n")
+        cursor.on("data",(document)=>{
+            for(let key of cols){
+                if(document[key]){
+                    str += el[key] + ","
+                }
+                else{
+                    str += ""
+                }
+            }
+            res.write(str+"\r\n")
+        })
+        cursor.on("end",(el)=>{
+            res.end()
+        })
+    }
+    catch(err){
+        console.log("error in sendCsv ::: ",err.message)
+    }
+}
+
+module.exports.canTakeActionOrViewOnly =  (data, userRole,adminLevel=false)=>{
+    let status = data['formStatus'];
+    switch (true) {
+      case status == StatusList.Not_Started:
+        return false;
+        break;
+      case status == StatusList.In_Progress:
+        return false;
+        break;
+      case status == StatusList.Under_Review_By_State && userRole == 'STATE':
+        return true;
+        break;
+        case status == StatusList.Under_Review_By_MoHUA && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            console.log("adminglevel ::: ",adminLevel)
+        return true
+        break;
+      case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+        return false;
+        break;
+      case status == StatusList.Rejected_By_State:
+        return false;
+        break;
+      case status == StatusList.Rejected_By_MoHUA:
+        return false;
+        break;
+      case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
+        return false;
+        break;
+      case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
+        return true;
+        break;
+      case status == StatusList.Approved_By_MoHUA:
+        return false;
+        break;
+  
+      default:
+        break;
+    }
+  }
+class AggregationServices{
+    static  dateFormat ="%d-%m-%Y"
     /**
     * function for unwind
     * @param {string} key
@@ -797,4 +925,5 @@ class AggregationServices {
         }
     }
 }
+module.exports.sendCsv  = sendCsv
 module.exports.AggregationServices = AggregationServices
