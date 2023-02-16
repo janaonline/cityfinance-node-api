@@ -214,23 +214,25 @@ class tabsUpdationServiceFR{
   *   - propertyWaterTax
   */
   getDataForBasicUlbTab(){
+    console.log("this.detail.webLink :: ",this.detail.webLink)
+    console.log("this.detail.nameOfNodalOfficer :: ",this.detail.nameOfNodalOfficer)
     return {
       "population11":{...this.detail.population11},
       "populationFr":{...this.detail.populationFr},
-      "webLink":getBasicObject(this.detail.webLink),
+      "webLink":{...this.detail.webLink},
       "waterSupply":{...this.detail.waterSupply},
       "sanitationService":{...this.detail.sanitationService},
       "propertySanitationTax":{...this.detail.propertySanitationTax},
-      "nameCmsnr":getBasicObject(this.detail.nameCmsnr),
+      "nameCmsnr":{...this.detail.nameCmsnr},
       "propertyWaterTax":{...this.detail.propertyWaterTax}
     }
   }
   getDataForConInfo(){
     return {
-      nameOfNodalOfficer :getBasicObject(this.detail.nameOfNodalOfficer),
-      designationOftNodalOfficer:getBasicObject(this.detail.designationOftNodalOfficer),
-      mobile:getBasicObject(this.detail.mobile,"PENDING"), 
-      email:getBasicObject(this.detail.email,"PENDING")
+      nameOfNodalOfficer :{...this.detail.nameOfNodalOfficer},
+      designationOftNodalOfficer:{...this.detail.designationOftNodalOfficer},
+      mobile:{...this.detail.mobile}, 
+      email:{...this.detail.email}
     }
   }
   getDynamicObjects(key){
@@ -346,19 +348,19 @@ exports.getView = async function (req, res, next) {
         "populationFr": {
           "value": twEightSlbs ? twEightSlbs?.population : "",
           "readonly": false,
-          "status":null
+          "status":"PENDING"
         },
         "webLink": {
           "value":null,
-          "status":null
+          "status":"PENDING"
         },
         "nameCmsnr": {
           "value":null,
-          "status":null
+          "status":"PENDING"
         },
         "nameOfNodalOfficer": {
           "value":null,
-          "status":null
+          "status":"PENDING"
         },
         "designationOftNodalOfficer": {
           "value":null,
