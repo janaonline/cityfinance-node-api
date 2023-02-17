@@ -1751,6 +1751,9 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
       status = calc ? "APPROVED" :"REJECTED"
       payloadForForm["status"] = status
     }
+    else{
+      payloadForForm['status'] = "PENDING"
+    }
     let updateForm = await FiscalRanking.findOneAndUpdate(filterForForm,payloadForForm)
     validator.message = "fetched successfully"
   }
