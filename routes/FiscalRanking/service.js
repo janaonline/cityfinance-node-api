@@ -242,8 +242,8 @@ class tabsUpdationServiceFR{
     }
   }
  async getFeedbackForTabs(condition,tabId){
-    let mainCondition = Object.assign(condition,{"tab":tabId})
-    let feedBackObj = await FeedBackFiscalRanking.findOne(mainCondition).select(["status","comment"])
+    let mainCondition = Object.assign(condition,{"tab":ObjectId(tabId)})
+    let feedBackObj = await FeedBackFiscalRanking.findOne(mainCondition).select(["status","comment"]).lean()
     if(feedBackObj != null){
       return feedBackObj
     }
@@ -1593,17 +1593,20 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
   }
 }
 
-function getStatusesFromObject(obj,element){
+function getStatusesFromObject(obj,element,ignoredVariables){
   let status = []
   try{
     for(let key in obj){
-      if(obj[key][element]){
-        status.push(obj[key][element])
+      if(!ignoredVariables.includes(key)){
+        if(obj[key][element]){
+          status.push(obj[key][element])
+        }
       }
+      
     }
   }
   catch(err){
-
+    console.log("error in getStatusesFromObject :: ",err.message)
   }
   return status
 }
@@ -1635,23 +1638,26 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
         }
           if(obj[k].yearData){
               let yearArr = obj[k].yearData
-              let status = yearArr.every(item => item.status === "APPROVED")
+              
+              let status = yearArr.every((item) => {
+                if(Object.keys(item).length){
+                  return item.status === "APPROVED"
+                }
+                else{
+                  return true
+                }
+              } )
               temp["status"].push(status)
               updateQueryForFiscalRanking(yearArr,ulbId,formId,fiscalRankingKeys)
           }
           else{
-            if(key === priorTabsForFiscalRanking["basicUlbDetails"] || fiscalRankingKeys.includes(k)){
-              // console.log(tab.data)
-              let statueses = getStatusesFromObject(tab.data,"status")
-              // console.log("statueses :: ",statueses)
+            if(key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)){
+              let statueses = getStatusesFromObject(tab.data,"status",["population11"])
               let finalStatus = statueses.every(item => item === "APPROVED" )
               temp['status'].push(finalStatus)
               await updateFiscalRankingForm(tab.data,ulbId,formId,year)
             }
           }
-
-          // FiscalRankingMapper
-          // if()
           conditionalObj[tab._id.toString()] = (temp)
       }
 
@@ -1664,7 +1670,6 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           conditionalObj[tabName].status =  "NA"
       }
   }
-  console.log("conditionalObj :: ",conditionalObj)
   return conditionalObj
 }
 
@@ -1733,6 +1738,7 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
         tab:calc,
         comment:calculatedStatus[calc].comment
       }
+
       let feedBack = await FeedBackFiscalRanking.findOneAndUpdate(filter,payload,{upsert:true})
       delete filter.tab
       filter["_id"] = filter["fiscal_ranking"]
@@ -1745,7 +1751,6 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
       status = calc ? "APPROVED" :"REJECTED"
       payloadForForm["status"] = status
     }
-    console.log(payloadForForm)
     let updateForm = await FiscalRanking.findOneAndUpdate(filterForForm,payloadForForm)
     validator.message = "fetched successfully"
   }
@@ -1772,7 +1777,6 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
       "actions":actions,
       "design_year":design_year
     })
-    // console.log("validation :: ",(!validation.valid))
     if(!validation.valid){
       response.message = validation.message
       return res.status(500).json(response)
@@ -1782,7 +1786,6 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
       return res.status(500).json(response)
     }
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions,ulbId,formId,design_year)
-    console.log("calculationsTabWise ::: ",calculationsTabWise)
     let feedBackResp = await saveFeedbacksAndForm(calculationsTabWise,ulbId,formId,design_year,userId,role,isDraft)
     if(feedBackResp.success){
       response.success  = true
