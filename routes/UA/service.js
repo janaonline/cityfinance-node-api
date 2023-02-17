@@ -1044,6 +1044,14 @@ function getSortByKeys(sortBy, order) {
     return sortKey
 }
 
+function createRedisKeys(filterObj){
+    try{
+        return JSON.stringify(filterObj)
+    }
+    catch(err){
+        console.log("error while creating redis keys :: ",err.message)
+    }
+}
 
 module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
     let response = {
@@ -1064,6 +1072,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         let skip = parseInt(filters.skip) || 0
         let limit = parseInt(filters.limit) || 10
         let { getQuery, sortBy, order } = filters
+        let redis_key = createRedisKeys(filters)
         let sortKey = getSortByKeys(sortBy, order)
         delete filters['getQuery']
         delete filters.limit
@@ -1081,14 +1090,13 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         if (getQuery === "true") {
             return res.status(200).json(query)
         }
-        // let redis_key = "testing_key"
-        // let document = await rediesSroreData(redis_key);
-        // if (document) {
-        //     dbResponse = JSON.parse(document)
-        // } else {
-        dbResponse = await DUR.aggregate(query).allowDiskUse(true)
-        // await Redis.set(redis_key, JSON.stringify(dbResponse));
-        // }
+        let document = await rediesSroreData(redis_key);
+        if (document) {
+            dbResponse = JSON.parse(document)
+        } else {
+            dbResponse = await DUR.aggregate(query).allowDiskUse(true)
+            await Redis.set(redis_key, JSON.stringify(dbResponse));
+        }
         if (dbResponse.length) {
             response.total = dbResponse[0].total
             response.rows = dbResponse[0]['rows'] || []
@@ -1104,6 +1112,8 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         else {
             response.message = "No data for particular ulb"
             response.rows = []
+            response.columns = columns
+            response.filters = []
         }
 
         response.success = true
