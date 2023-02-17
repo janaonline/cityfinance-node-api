@@ -5,7 +5,7 @@ const GfcFormCollection = require('../../models/GfcFormCollection');
 const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const PropertyTaxOp = require('../../models/PropertyTaxOp');
-
+const moongose = require('mongoose')
 const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -757,6 +757,28 @@ function findForm(formArray, stateId) {
 //         }  
 //   },
 // ])
+function writeCsv(cols,ele,res){
+    try{
+        let str = ""
+        for(let key of cols){
+            if(ele[key]){
+                str += ele[key] + ","
+            }
+            else{
+                str += ""
+            }
+            
+        }
+        res.write(str+"\r\n")
+    }
+    catch(err){
+        console.log("error in writeCsv :: ",err.message)
+    }
+}
+
+function conditionalCsv(){
+
+}
 
 /**
  * function that creates csv only for aggregation queries
@@ -765,26 +787,27 @@ function findForm(formArray, stateId) {
  * @param {*} res 
  * @param {*} cols 
  */
-function sendCsv(modelName,query,res,cols){
+function sendCsv(filename,modelName,query,res,cols,fromArr){
     try{
-        let cursor = [modelName].aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+
+        let cursor = moongose.model(modelName).aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
         res.write(cols.join(","))
         res.write("\r\n")
         cursor.on("data",(document)=>{
-            for(let key of cols){
-                if(document[key]){
-                    str += el[key] + ","
-                }
-                else{
-                    str += ""
+            if(fromArr){
+                for(let ele of document[fromArr]){
+                    writeCsv(cols,ele,res)
                 }
             }
-            res.write(str+"\r\n")
+            else{
+                writeCsv(cols,document)
+            }
         })
         cursor.on("end",(el)=>{
             res.end()
+            console.log("ended")
         })
     }
     catch(err){
