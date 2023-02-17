@@ -916,12 +916,24 @@ class AggregationServices{
 
     }
     static getCommonSortArrObj(arr,sortBy){
-        console.log("sortBy :: ",sortBy)
         return {
             $sortArray :{
                 input:arr,
                 sortBy
             }
+        }
+    }
+    static getCommonConvertor(value,to){
+        return {
+            $convert :{
+                input : value,
+                to
+            }
+        }
+    }
+    static getCommonConcatObj(arr){
+        return {
+            $concat : arr
         }
     }
 }
