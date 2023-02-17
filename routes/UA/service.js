@@ -845,7 +845,7 @@ function getGroupByQuery(service,ulbId) {
                         "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
                         "moreInformation": {
                             "name": "More information",
-                            "url": apiUrls[process.env.ENV] + "/UA/get-mou-project" + ulbId + "projects="+"$projects._id"
+                            "url": service.getCommonConcatObj([apiUrls[process.env.ENV] + "/UA/get-mou-project/" + ulbId + "?csv=true&projects=",(service.getCommonConvertor("$projects._id","string"))])
                         },
                         "projectReport": {
                             "name": "Project Report file",
