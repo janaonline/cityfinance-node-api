@@ -214,8 +214,6 @@ class tabsUpdationServiceFR{
   *   - propertyWaterTax
   */
   getDataForBasicUlbTab(){
-    console.log("this.detail.webLink :: ",this.detail.webLink)
-    console.log("this.detail.nameOfNodalOfficer :: ",this.detail.nameOfNodalOfficer)
     return {
       "population11":{...this.detail.population11},
       "populationFr":{...this.detail.populationFr},
@@ -244,8 +242,8 @@ class tabsUpdationServiceFR{
     }
   }
  async getFeedbackForTabs(condition,tabId){
-    let mainCondition = Object.assign(condition,{"tab":tabId})
-    let feedBackObj = await FeedBackFiscalRanking.findOne(mainCondition).select(["status","comment"])
+    let mainCondition = Object.assign(condition,{"tab":ObjectId(tabId)})
+    let feedBackObj = await FeedBackFiscalRanking.findOne(mainCondition).select(["status","comment"]).lean()
     if(feedBackObj != null){
       return feedBackObj
     }
@@ -1583,12 +1581,34 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
         status = obj[key].status
       }
       payload[`${key}.status`] = status 
+      if(key === "signedCopyOfFile"){
+        console.log(payload)
+      }
     }
+    
     await FiscalRanking.findOneAndUpdate(filter,payload)
   }
   catch(err){
     console.log("error in updateFiscalRankingForm ::: ",err.message)
   }
+}
+
+function getStatusesFromObject(obj,element,ignoredVariables){
+  let status = []
+  try{
+    for(let key in obj){
+      if(!ignoredVariables.includes(key)){
+        if(obj[key][element]){
+          status.push(obj[key][element])
+        }
+      }
+      
+    }
+  }
+  catch(err){
+    console.log("error in getStatusesFromObject :: ",err.message)
+  }
+  return status
 }
 
 
@@ -1603,7 +1623,7 @@ async function updateFiscalRankingForm(obj,ulbId,formId,year){
 async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
   let conditionalObj = {}  
   let ignorablevariables = ["guidanceNotes"]
-  let fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea","paid_property_tax"]
+  const fiscalRankingKeys = ["ownRevDetails","property_tax_register","paying_property_tax","paid_property_tax","webUrlAnnual","webLink","totalOwnRevenueArea","paid_property_tax","signedCopyOfFile","fy_21_22_cash","fy_21_22_online","registerGis","accountStwre"]
   for(var tab of tabs){
       conditionalObj[tab._id.toString()] = {}
       let key = tab.id
@@ -1613,30 +1633,31 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
           "status" : []
       }
       for(var k in tab.data){
-        if(ignorablevariables.includes(k)){
+        if(ignorablevariables.includes(k) || obj[k].status === ""){
           continue 
         }
-          if(obj[k].status === ""){
-              continue
-          }
           if(obj[k].yearData){
               let yearArr = obj[k].yearData
-              let status = yearArr.some(item => item.status === "APPROVED" || item.status === "REJECTED")
+              
+              let status = yearArr.every((item) => {
+                if(Object.keys(item).length){
+                  return item.status === "APPROVED"
+                }
+                else{
+                  return true
+                }
+              } )
               temp["status"].push(status)
               updateQueryForFiscalRanking(yearArr,ulbId,formId,fiscalRankingKeys)
           }
           else{
-            console.log("key :: ",key)
-            if(key === priorTabsForFiscalRanking["basicUlbDetails"]){
+            if(key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)){
+              let statueses = getStatusesFromObject(tab.data,"status",["population11"])
+              let finalStatus = statueses.every(item => item === "APPROVED" )
+              temp['status'].push(finalStatus)
               await updateFiscalRankingForm(tab.data,ulbId,formId,year)
             }
-            
-            else if(key === priorTabsForFiscalRanking["goverPar"]){
-              console.log("tab.data :: ",tab.data)
-            }
           }
-
-          // FiscalRankingMapper
           conditionalObj[tab._id.toString()] = (temp)
       }
 
@@ -1717,6 +1738,7 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
         tab:calc,
         comment:calculatedStatus[calc].comment
       }
+
       let feedBack = await FeedBackFiscalRanking.findOneAndUpdate(filter,payload,{upsert:true})
       delete filter.tab
       filter["_id"] = filter["fiscal_ranking"]
@@ -1729,7 +1751,9 @@ async function saveFeedbacksAndForm(calculatedStatus,ulbId,formId,design_year,us
       status = calc ? "APPROVED" :"REJECTED"
       payloadForForm["status"] = status
     }
-    console.log(payloadForForm)
+    else{
+      payloadForForm['status'] = "PENDING"
+    }
     let updateForm = await FiscalRanking.findOneAndUpdate(filterForForm,payloadForForm)
     validator.message = "fetched successfully"
   }
@@ -1756,7 +1780,6 @@ module.exports.actionTakenByMoHua = catchAsync(async(req,res)=>{
       "actions":actions,
       "design_year":design_year
     })
-    // console.log("validation :: ",(!validation.valid))
     if(!validation.valid){
       response.message = validation.message
       return res.status(500).json(response)
