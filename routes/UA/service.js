@@ -12,7 +12,7 @@ const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
 const { years } = require("../../service/years")
 const axios = require('axios')
-const {sendCsv} = require("../../routes/CommonActionAPI/service")
+const {sendCsv,apiUrls} = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
 const { columns } = require("./constants.js")
@@ -812,7 +812,7 @@ module.exports.addUAFile = catchAsync(async (req, res) => {
 })
 
 
-function getGroupByQuery(service) {
+function getGroupByQuery(service,ulbId) {
     try {
         return {
             "$group": {
@@ -845,7 +845,7 @@ function getGroupByQuery(service) {
                         "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
                         "moreInformation": {
                             "name": "More information",
-                            "url": "https://democityfinance.in/csvFile.pdf"
+                            "url": apiUrls[process.env.ENV] + "/UA/get-mou-project" + ulbId + "projects="+"$projects._id"
                         },
                         "projectReport": {
                             "name": "Project Report file",
@@ -1008,7 +1008,7 @@ function getQueryForUtilizationReports(obj) {
         }
         //if filters provided
         // stage 6 group by rows columns according to requirment 
-        let groupBy = getGroupByQuery(service)
+        let groupBy = getGroupByQuery(service,ulbId)
         let projections = getProjectionQueries(service, filteredObj, skip, limit, sortKey)
         query.push(groupBy)
         query.push(projections)

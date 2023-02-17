@@ -737,6 +737,12 @@ function findForm(formArray, stateId) {
     return forms;
 }
 
+let apiUrls = {
+    "demo":"https://democityfinanceapi.dhwaniris.in/api/v1/",
+    "staging" : "https://staging.cityfinance.in/api/v1/",
+    "production":"https://cityfinance.in/api/v1/"
+}
+
 // db.getCollection('ulbs').aggregate([
 //     {
 //         $lookup: {
@@ -962,3 +968,4 @@ class AggregationServices{
 }
 module.exports.sendCsv  = sendCsv
 module.exports.AggregationServices = AggregationServices
+module.exports.apiUrls = apiUrls
