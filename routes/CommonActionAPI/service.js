@@ -941,7 +941,7 @@ class AggregationServices{
             $cond: {
                  if: { $isArray: arr }, 
                  then: { $size: arr }, 
-                 else: "NA" } }
+                 else: 0 } }
 
     }
     static getCommonSortArrObj(arr,sortBy){
@@ -963,6 +963,26 @@ class AggregationServices{
     static getCommonConcatObj(arr){
         return {
             $concat : arr
+        }
+    }
+    static getCommonEqObj(tableCol,customVar){
+        return {
+            $eq:[tableCol,customVar]
+        }
+    }
+    static getCommonSumObj(col){
+        return {
+            $sum : col
+        }
+    }
+    static getCommonPrObj(arr){
+        return {
+            $multiply:arr
+        }
+    }
+    static getCommonDivObj(arr){
+        return {
+            $divide:arr
         }
     }
 }
