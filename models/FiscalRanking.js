@@ -1,5 +1,7 @@
 require("./dbConnect");
 
+const {modelSchema} = require('./constants')
+
 const statusSchema = ()=>{
     return {
         type: String,
@@ -57,12 +59,13 @@ const fiscalRankingSchema = new Schema(
         design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         population11: {
             value: { type: Number, default: null },
-            status: statusSchema()
-            
+            status: statusSchema(),
+            modelName:modelSchema()
         },
         populationFr: {
             value: { type: Number, default: null },
-            status: statusSchema()
+            status: statusSchema(),
+            modelName:modelSchema()
         },
         webLink: {
             value : { type: String, default: null },

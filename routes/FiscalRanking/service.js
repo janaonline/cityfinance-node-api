@@ -341,12 +341,14 @@ exports.getView = async function (req, res, next) {
         "design_year": null,
         "population11": {
           "value": ulbPData ? ulbPData?.population : "",
-          "readonly": ulbPData ? ulbPData?.population > 0 ? true : false : false
+          "readonly": ulbPData ? ulbPData?.population > 0 ? true : false : false,
+          "modelName":ulbPData && ulbPData?.population > 0 ? "ULBLedger" : "FiscalRanking"
         },
         "populationFr": {
           "value": twEightSlbs ? twEightSlbs?.population : "",
           "readonly": false,
-          "status":"PENDING"
+          "status":"PENDING",
+          "modelName":ulbPData && ulbPData?.population > 0 ? "ULBLedger" :"FiscalRanking"
         },
         "webLink": {
           "value":null,
@@ -423,6 +425,7 @@ exports.getView = async function (req, res, next) {
         for (let pf of subData[key]?.yearData) {
           if (pf?.code?.length > 0) {
             pf['status'] = null
+            pf["modelName"] = "FiscalRanking"
             if (fyData.length) {
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
               if (singleFydata) {
@@ -438,6 +441,7 @@ exports.getView = async function (req, res, next) {
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
+                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
               }
             } else {
               if (viewOne.isDraft == null) {
@@ -445,6 +449,7 @@ exports.getView = async function (req, res, next) {
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
+                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
               }
             }
           } else {
@@ -1638,7 +1643,6 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
         }
           if(obj[k].yearData){
               let yearArr = obj[k].yearData
-              
               let status = yearArr.every((item) => {
                 if(Object.keys(item).length){
                   return item.status === "APPROVED"
@@ -1646,7 +1650,7 @@ async function calculateAndUpdateStatusForMappers(tabs,ulbId,formId,year){
                 else{
                   return true
                 }
-              } )
+              })
               temp["status"].push(status)
               updateQueryForFiscalRanking(yearArr,ulbId,formId,fiscalRankingKeys)
           }
