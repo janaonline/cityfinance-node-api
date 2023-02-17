@@ -36,7 +36,7 @@ const fiscalRankingMapperSchema = new Schema(
                     "totalCaptlExpSanitation",
                     "totalOmExp",
                     "totalCaptlExpWaterSupply",
-                    "totalOMCaptlExpSanitation",
+                    // "totalOMCaptlExpSanitation",
                     "totalRevExp",
                     "appAnnualBudget",
                     "auditedAnnualFySt",
