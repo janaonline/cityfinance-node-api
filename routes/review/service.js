@@ -2640,6 +2640,16 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
 
       /* Splicing the query_s string starting at the startIndex. */
          query_s.splice(startIndex);
+         query_s.push({
+          $project: {
+            state: "$_id",
+            stateName: "$name",
+            stateCode: "$code",
+            regionalName: 1,
+            filled: "Not Applicable"
+          },
+          
+         })
       }
       let filterApplied_s = Object.keys(filter).length > 0
       if (filterApplied_s) {
