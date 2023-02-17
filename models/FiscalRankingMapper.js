@@ -1,4 +1,5 @@
 require("./dbConnect");
+const {modelSchema} = require('./constants')
 const fiscalRankingMapperSchema = new Schema(
     {
         fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
@@ -15,6 +16,7 @@ const fiscalRankingMapperSchema = new Schema(
             },
         },
         isActive: { type: Boolean, default: 1 },
+        modelName:modelSchema(),
         type: {
             type: String,
             enum: {
