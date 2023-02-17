@@ -843,7 +843,7 @@ function getGroupByQuery(service){
                         "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                         "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
                         "moreInformation":{
-                            "name":"csv file",
+                            "name":"More information",
                             "url":"https://democityfinance.in/csvFile.pdf"
                         },
                         "projectReport":{
@@ -1049,6 +1049,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
         success:false,
         message :"Something went wrong"
     }
+    let menuNames = ['implementationAgencies','sectors', 'projects']
     let keysDisplayName = {
         'sectors':"Sectors", 
         'projects':"Projects", 
@@ -1083,7 +1084,7 @@ module.exports.getInfrastructureProjects = catchAsync(async(req,res)=>{
             response.total = dbResponse[0].total
             response.rows = dbResponse[0]['rows'] || []
             response.filters = []
-            response.filters = ['sectors', 'projects', 'implementationAgencies'].map(el => ({
+            response.filters = menuNames.map(el => ({
                 key:el,
                 name: keysDisplayName[el],
                 options: dbResponse[0][el]
