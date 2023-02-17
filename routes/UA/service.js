@@ -12,7 +12,7 @@ const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
 const { years } = require("../../service/years")
 const axios = require('axios')
-const sendCsv = require("../../routes/CommonActionAPI/service")
+const {sendCsv} = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
 const { columns } = require("./constants.js")
@@ -830,7 +830,7 @@ function getGroupByQuery(service) {
                     "$push": {
                         "projectName": "$projects.name",
                         "implementationAgency": "$ulb.name",
-                        "totalProjectCost": service.getCommonConcatObj([service.getCommonConvertor("$projects.cost","string")," CR"]),
+                        "totalProjectCost":service.getCommonConcatObj(["₹ ",(service.getCommonConvertor("$projects.cost","string"))," CR"]),
                         "stateShare": "₹ 50" + "CR (56%)",
                         "ulbId": "$ulb._id",
                         "projectId": "$projects._id",
@@ -1053,6 +1053,12 @@ function createRedisKeys(filterObj){
     }
 }
 
+function deleteExtraKeys(arr,obj){
+    for(var key of arr){
+        delete obj[key]
+    }
+}
+
 module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
     let response = {
         success: false,
@@ -1071,14 +1077,11 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         let filters = { ...req.query }
         let skip = parseInt(filters.skip) || 0
         let limit = parseInt(filters.limit) || 10
-        let { getQuery, sortBy, order } = filters
+        let { getQuery, sortBy, order,csv } = filters
+        csv = csv === "true" ? true :false;
         let redis_key = createRedisKeys(filters)
         let sortKey = getSortByKeys(sortBy, order)
-        delete filters['getQuery']
-        delete filters.limit
-        delete filters.skip
-        delete filters.order
-        delete filters.sortBy
+        deleteExtraKeys(['getQuery','limit','skip','order','sortBy','csv'],filters)
         let filteredObj = getFiltersForModule(filters)
         if (ulbId === undefined) {
             if (ulbId === undefined) {
@@ -1096,6 +1099,11 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         } else {
             dbResponse = await DUR.aggregate(query).allowDiskUse(true)
             await Redis.set(redis_key, JSON.stringify(dbResponse));
+        }
+        if(csv){
+            let filename = "Projects.csv"
+             await sendCsv(filename,"UtilizationReport",query,res,["projectName","totalProjectCost"],"rows")
+             return;
         }
         if (dbResponse.length) {
             response.total = dbResponse[0].total
