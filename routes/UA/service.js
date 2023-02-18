@@ -11,6 +11,7 @@ const Year = require("../../models/Year")
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
 const { years } = require("../../service/years")
+const GlobalService = require('../../service');
 const axios = require('axios')
 const {sendCsv,apiUrls} = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
@@ -979,17 +980,13 @@ function getQueryForUtilizationReports(obj) {
     let { ulbId, skip, limit, filteredObj, sortKey } = obj
     let query = []
     let design_year = years['2022-23']
-    let dataField = {
-        "rows": "data",
-        "filters": ["implementationAgencies", "projects", "sectors"]
-    }
     try {
         let service = AggregationServices
         //stage 1 get matching query
         let matchObj = {
             "$match": {
                 "ulb": ObjectId(ulbId),
-                //"designYear":ObjectId(design_year),
+                "designYear":ObjectId(design_year),
             }
         }
         query.push(matchObj)
@@ -1024,7 +1021,9 @@ function getQueryForUtilizationReports(obj) {
 function getSortByKeys(sortBy, order) {
     let sortFilterKeys = {
         "totalProjectCost": "projects.cost",
-        "ulbShare": "ulbId"
+        "ulbShare": "ulbId",
+        "totalProjects":"totalProjects",
+        "totalProjectCost":"totalProjectCost"
     }
     let sortKey = {
         "provided": false
@@ -1033,8 +1032,16 @@ function getSortByKeys(sortBy, order) {
         if ((sortBy != undefined) && (order != undefined)) {
             let temp = {}
             sortKey["provided"] = true
-            temp[sortFilterKeys[sortBy]] = parseInt(order)
-            console.log(temp)
+            console.log("typeof(sortBy) ::",typeof(sortBy))
+            if(Array.isArray(sortBy)){
+                for(let key in sortBy){
+                    let name = sortBy[key]
+                    temp[sortFilterKeys[name]] = parseInt(order[key])
+                }
+            }
+            else{
+                temp[sortFilterKeys[sortBy]] = parseInt(order)
+            }
             sortKey["filters"] = temp
         }
     }
@@ -1081,6 +1088,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         csv = csv === "true" ? true :false;
         let redis_key = createRedisKeys(filters)
         let sortKey = getSortByKeys(sortBy, order)
+        
         deleteExtraKeys(['getQuery','limit','skip','order','sortBy','csv'],filters)
         let filteredObj = getFiltersForModule(filters)
         if (ulbId === undefined) {
@@ -1093,7 +1101,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         if (getQuery === "true") {
             return res.status(200).json(query)
         }
-        let document = await rediesSroreData(redis_key);
+        let document = await redisStoreData(redis_key);
         if (document) {
             dbResponse = JSON.parse(document)
         } else {
@@ -1136,7 +1144,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
 
 
 
-const rediesSroreData = (redis_key) => {
+const redisStoreData = (redis_key) => {
     return new Promise((resolve, reject) => {
         Redis.get(redis_key, (err, dk) => {
             if (err) {
@@ -1149,4 +1157,154 @@ const rediesSroreData = (redis_key) => {
     })
 }
 
+function getProjectionForDur(service){
+    let sumQuery = service.getCommonSumObj(service.getCommonSumObj("$DUR.projects.cost"))
+    try{
+        const obj = {
+            "$project":{
+                "ulbName":"$name",
+                "stateName":"$state.name",
+                "totalProjectCost":sumQuery,
+                "totalProjects":service.getCommonTotalObj("$DUR.projects"),
+                "ulbShare" :service.getCommonPrObj(
+                    service.getCommonDivObj([sumQuery,20]),
+                    100
+                )
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in getProjectionForDur :: ",err.message)
+    }
+}
 
+
+function lookupQueryForDur(service,designYear){
+    try{
+        let obj = {
+            "$lookup":{
+                "from":"utilizationreports",
+                "let":{
+                    "ulb_id":"$_id",
+                    "designYear":ObjectId(designYear)
+                },
+                "pipeline":[
+                    {
+                        "$match":{
+                            "$expr":{
+                                "$and":[
+                                    service.getCommonEqObj("$ulb","$$ulb_id"),
+                                    service.getCommonEqObj("$designYear","$$designYear")
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "as":"DUR"
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in lookupQUery :: ",err.message)
+    }
+}
+
+function facetQueryForPagination(skip,limit,filterObj,sortKey){
+    let dataArr = []
+    if(filterObj.provided){
+        dataArr.push(
+            {
+                "$match":filterObj.filters
+            }
+        )
+    }
+    if(sortKey.provided){
+        dataArr.push(
+            {
+                "$sort":sortKey.filters
+            }
+        )
+    }
+    dataArr.push({"$skip":skip})
+    dataArr.push({"$limit":limit})
+    try{
+        let obj = {
+            "$facet":{
+                "total":[{"$count":"total"}],
+                "data":dataArr
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in facetQueryForPagination :: ",err.message)
+    }
+}
+
+function getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit){
+    const service = AggregationServices
+    let query = []
+    try{
+        let match = {
+            "$match":{
+                "access_2223":true
+            }
+        }
+        // stage 1
+        query.push(service.getCommonLookupObj("states","state","_id","state"))
+        query.push(service.getUnwindObj("$state",true))
+        // stage 2
+        query.push(lookupQueryForDur(service,designYear))
+        query.push(service.getUnwindObj("$DUR",true))
+        //stage 3
+        query.push(getProjectionForDur(service))
+        // stage 4
+        query.push(facetQueryForPagination(skip,limit,filterObj,sortKey))
+        query.push({
+            "$project":{
+                "total":{ $arrayElemAt: [ "$total.total", 0 ] },
+                "data":1
+            }
+        })
+    
+    }
+    catch(err){
+        console.log("error in getAllAggregationQuery :: ",err.message)
+    }
+    return query
+}
+
+module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
+    let response = {
+        success:false,
+        message:""
+    }
+    try{
+        let skip = parseInt(req.query.skip) || 0
+        let limit = parseInt(req.query.limit) || 10
+        let {sortBy,order} = req.query
+        let filters = {...req.query}
+        await deleteExtraKeys(["sortBy","order","skip","limit"],filters)
+        filters = await GlobalService.mapFilter(filters)
+        let filterObj = {
+            "provided":Object.keys(filters).length > 0 ? true :false,
+            "filters":Object.keys(filters).length > 0 ? {...filters} :"",
+        }
+        let sortKey = getSortByKeys(sortBy, order)
+        let designYear = years['2022-23']
+        let query = await getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit)
+        let dbResponse = await Ulb.aggregate(query)
+        response.data = dbResponse[0]['data']
+        response.total = dbResponse[0]['total']
+        response.message = "Fetched Successfully"
+        response.success = true
+        return res.status(200).json(response)
+    }
+    catch(err){
+        response.message = "Something went wrong"
+        console.log("error in getIfProjectsWithState :: ",err.message)
+    }
+    res.status(500).json(response)
+})
