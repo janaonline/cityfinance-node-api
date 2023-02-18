@@ -60,12 +60,12 @@ const fiscalRankingSchema = new Schema(
         population11: {
             value: { type: Number, default: null },
             status: statusSchema(),
-            modelName:modelSchema()
+            dataSource:modelSchema()
         },
         populationFr: {
             value: { type: Number, default: null },
             status: statusSchema(),
-            modelName:modelSchema()
+            dataSource:modelSchema()
         },
         webLink: {
             value : { type: String, default: null },
