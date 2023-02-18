@@ -16,7 +16,7 @@ const fiscalRankingMapperSchema = new Schema(
             },
         },
         isActive: { type: Boolean, default: 1 },
-        modelName:modelSchema(),
+        dataSource:modelSchema(),
         type: {
             type: String,
             enum: {

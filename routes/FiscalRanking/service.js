@@ -297,7 +297,6 @@ function assignCalculatedValues(fyDynemic,viewONe){
   let paid_property_tax  = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
   let fy21CashObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
   let fy21OnlineObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
-
   Object.assign(totalOwnRevenueAreaObj,viewONe['totalOwnRevenueArea'])
   Object.assign(propertyTaxObj,viewONe['property_tax_register'])
   Object.assign(payingPropObj,viewONe['paying_property_tax'])
@@ -342,13 +341,13 @@ exports.getView = async function (req, res, next) {
         "population11": {
           "value": ulbPData ? ulbPData?.population : "",
           "readonly": ulbPData ? ulbPData?.population > 0 ? true : false : false,
-          "modelName":ulbPData && ulbPData?.population > 0 ? "ULBLedger" : "FiscalRanking"
+          "dataSource":ulbPData && ulbPData?.population > 0 ? "ULBLedger" : "FiscalRanking"
         },
         "populationFr": {
           "value": twEightSlbs ? twEightSlbs?.population : "",
           "readonly": false,
           "status":"PENDING",
-          "modelName":ulbPData && ulbPData?.population > 0 ? "ULBLedger" :"FiscalRanking"
+          "dataSource":ulbPData && ulbPData?.population > 0 ? "ULBLedger" :"FiscalRanking"
         },
         "webLink": {
           "value":null,
@@ -425,7 +424,7 @@ exports.getView = async function (req, res, next) {
         for (let pf of subData[key]?.yearData) {
           if (pf?.code?.length > 0) {
             pf['status'] = null
-            pf["modelName"] = "FiscalRanking"
+            pf["dataSource"] = "FiscalRanking"
             if (fyData.length) {
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
               if (singleFydata) {
@@ -441,7 +440,7 @@ exports.getView = async function (req, res, next) {
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
-                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
+                pf["dataSource"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
               }
             } else {
               if (viewOne.isDraft == null) {
@@ -449,7 +448,7 @@ exports.getView = async function (req, res, next) {
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
-                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
+                pf["dataSource"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
               }
             }
           } else {
