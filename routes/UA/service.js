@@ -1214,6 +1214,7 @@ function lookupQueryForDur(service,designYear){
 function facetQueryForPagination(skip,limit,filterObj,sortKey){
     let dataArr = []
     if(filterObj.provided){
+        skip = 0
         dataArr.push(
             {
                 "$match":filterObj.filters
@@ -1268,7 +1269,6 @@ function getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit){
                 "data":1
             }
         })
-    
     }
     catch(err){
         console.log("error in getAllAggregationQuery :: ",err.message)
