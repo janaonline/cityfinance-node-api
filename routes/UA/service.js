@@ -1247,6 +1247,11 @@ function getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit){
     const service = AggregationServices
     let query = []
     try{
+        let match = {
+            "$match":{
+                "access_2223":true
+            }
+        }
         // stage 1
         query.push(service.getCommonLookupObj("states","state","_id","state"))
         query.push(service.getUnwindObj("$state",true))
@@ -1271,7 +1276,7 @@ function getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit){
     return query
 }
 
-module.exports.getIfProjectsWithState = catchAsync(async(req,res,next)=>{
+module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
     let response = {
         success:false,
         message:""
