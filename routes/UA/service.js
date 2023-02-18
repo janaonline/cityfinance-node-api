@@ -1051,9 +1051,10 @@ function getSortByKeys(sortBy, order) {
     return sortKey
 }
 
-function createRedisKeys(filterObj){
+function createRedisKeys(filterObj,ulbId){
     try{
-        return JSON.stringify(filterObj)
+        let key = JSON.stringify(filterObj) + JSON.stringify(ulbId)
+        return JSON.stringify(key)
     }
     catch(err){
         console.log("error while creating redis keys :: ",err.message)
@@ -1086,9 +1087,8 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         let limit = parseInt(filters.limit) || 10
         let { getQuery, sortBy, order,csv } = filters
         csv = csv === "true" ? true :false;
-        let redis_key = createRedisKeys(filters)
+        let redis_key = createRedisKeys(filters,ulbId)
         let sortKey = getSortByKeys(sortBy, order)
-        
         deleteExtraKeys(['getQuery','limit','skip','order','sortBy','csv'],filters)
         let filteredObj = getFiltersForModule(filters)
         if (ulbId === undefined) {
