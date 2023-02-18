@@ -73,7 +73,7 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
 }
 
 module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
-    switch(formType){
+    switch (formType) {
         case "ULB":
             switch (true) {
                 case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
@@ -110,7 +110,7 @@ module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole
                 case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Rejected_By_MoHUA
                     break;
-                    
+
                 case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
                     return StatusList.Under_Review_By_MoHUA
 
@@ -120,7 +120,7 @@ module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole
             }
             break;
 
-   
+
     }
 }
 
@@ -738,9 +738,9 @@ function findForm(formArray, stateId) {
 }
 
 let apiUrls = {
-    "demo":"https://democityfinanceapi.dhwaniris.in/api/v1/",
-    "staging" : "https://staging.cityfinance.in/api/v1/",
-    "production":"https://cityfinance.in/api/v1/"
+    "demo": "https://democityfinanceapi.dhwaniris.in/api/v1/",
+    "staging": "https://staging.cityfinance.in/api/v1/",
+    "production": "https://cityfinance.in/api/v1/"
 }
 
 // db.getCollection('ulbs').aggregate([
@@ -763,26 +763,26 @@ let apiUrls = {
 //         }  
 //   },
 // ])
-function writeCsv(cols,ele,res){
-    try{
+function writeCsv(cols, ele, res) {
+    try {
         let str = ""
-        for(let key of cols){
-            if(ele[key]){
+        for (let key of cols) {
+            if (ele[key]) {
                 str += ele[key] + ","
             }
-            else{
+            else {
                 str += ""
             }
-            
+
         }
-        res.write(str+"\r\n")
+        res.write(str + "\r\n")
     }
-    catch(err){
-        console.log("error in writeCsv :: ",err.message)
+    catch (err) {
+        console.log("error in writeCsv :: ", err.message)
     }
 }
 
-function conditionalCsv(){
+function conditionalCsv() {
 
 }
 
@@ -793,75 +793,75 @@ function conditionalCsv(){
  * @param {*} res 
  * @param {*} cols 
  */
-function sendCsv(filename,modelName,query,res,cols,fromArr){
-    try{
+function sendCsv(filename, modelName, query, res, cols, fromArr) {
+    try {
 
         let cursor = moongose.model(modelName).aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
         res.write(cols.join(","))
         res.write("\r\n")
-        cursor.on("data",(document)=>{
-            if(fromArr){
-                for(let ele of document[fromArr]){
-                    writeCsv(cols,ele,res)
+        cursor.on("data", (document) => {
+            if (fromArr) {
+                for (let ele of document[fromArr]) {
+                    writeCsv(cols, ele, res)
                 }
             }
-            else{
-                writeCsv(cols,document)
+            else {
+                writeCsv(cols, document)
             }
         })
-        cursor.on("end",(el)=>{
+        cursor.on("end", (el) => {
             res.end()
             console.log("ended")
         })
     }
-    catch(err){
-        console.log("error in sendCsv ::: ",err.message)
+    catch (err) {
+        console.log("error in sendCsv ::: ", err.message)
     }
 }
 
-module.exports.canTakeActionOrViewOnly =  (data, userRole,adminLevel=false)=>{
+module.exports.canTakeActionOrViewOnly = (data, userRole, adminLevel = false) => {
     let status = data['formStatus'];
     switch (true) {
-      case status == StatusList.Not_Started:
-        return false;
-        break;
-      case status == StatusList.In_Progress:
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_State && userRole == 'STATE':
-        return true;
-        break;
+        case status == StatusList.Not_Started:
+            return false;
+            break;
+        case status == StatusList.In_Progress:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_State && userRole == 'STATE':
+            return true;
+            break;
         case status == StatusList.Under_Review_By_MoHUA && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-            console.log("adminglevel ::: ",adminLevel)
-        return true
-        break;
-      case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-        return false;
-        break;
-      case status == StatusList.Rejected_By_State:
-        return false;
-        break;
-      case status == StatusList.Rejected_By_MoHUA:
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
-        return true;
-        break;
-      case status == StatusList.Approved_By_MoHUA:
-        return false;
-        break;
-  
-      default:
-        break;
+            console.log("adminglevel ::: ", adminLevel)
+            return true
+            break;
+        case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            return false;
+            break;
+        case status == StatusList.Rejected_By_State:
+            return false;
+            break;
+        case status == StatusList.Rejected_By_MoHUA:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
+            return true;
+            break;
+        case status == StatusList.Approved_By_MoHUA:
+            return false;
+            break;
+
+        default:
+            break;
     }
-  }
-class AggregationServices{
-    static  dateFormat ="%d-%m-%Y"
+}
+class AggregationServices {
+    static dateFormat = "%d-%m-%Y"
     /**
     * function for unwind
     * @param {string} key
@@ -908,6 +908,9 @@ class AggregationServices{
             return obj
         }
     }
+
+
+
     /**
      * 
      * @param {*} field 
@@ -937,55 +940,125 @@ class AggregationServices{
         }
     }
     static getCommonTotalObj(arr) {
-        return { 
+        return {
             $cond: {
-                 if: { $isArray: arr }, 
-                 then: { $size: arr }, 
-                 else: 0 } }
+                if: { $isArray: arr },
+                then: { $size: arr },
+                else: 0
+            }
+        }
 
     }
-    static getCommonSortArrObj(arr,sortBy){
+    static getCommonSortArrObj(arr, sortBy) {
         return {
-            $sortArray :{
-                input:arr,
+            $sortArray: {
+                input: arr,
                 sortBy
             }
         }
     }
-    static getCommonConvertor(value,to){
+    static getCommonConvertor(value, to) {
         return {
-            $convert :{
-                input : value,
+            $convert: {
+                input: value,
                 to
             }
         }
     }
-    static getCommonConcatObj(arr){
+    static getCommonConcatObj(arr) {
         return {
-            $concat : arr
+            $concat: arr
         }
     }
-    static getCommonEqObj(tableCol,customVar){
+    static getCommonEqObj(tableCol, customVar) {
         return {
-            $eq:[tableCol,customVar]
+            $eq: [tableCol, customVar]
         }
     }
-    static getCommonSumObj(col){
+    static getCommonSumObj(col) {
         return {
-            $sum : col
+            $sum: col
         }
     }
-    static getCommonPrObj(arr){
+    static getCommonPrObj(arr) {
         return {
-            $multiply:arr
+            $multiply: arr
         }
     }
-    static getCommonDivObj(arr){
+    static getCommonDivObj(arr) {
         return {
-            $divide:arr
+            $divide: arr
         }
+    }
+    static getCommonSubtract(arr){
+        let sub = {$subtract:arr}
+        return {
+            "$cond":{
+                "if":{
+                    "$gte":[sub,0],
+                },
+                "then":sub,
+                "else":0
+            }
+        }
+    }
+    static getCasesForCurrenCon(fieldName,then,value1,value2){
+        let obj =  {
+            "case": {},
+            "then": then
+        }
+        obj['case'] = {
+            "$and": [
+                { "$gte": [`$${fieldName}`, value1] },
+                { "$lt": [`$${fieldName}`, value2] }
+        ]
+        }
+        return obj
+    }
+
+    static getCommonPerCalc(value,totalValue){
+        let cont = {
+            "$multiply":[
+                {"$divide":[value,totalValue]},
+                100
+            ]
+        }
+        return this.getCommonConvertor(
+            {
+                "$cond":{
+                    "if":{
+                        "$gte":[cont,
+                        0
+                    ]
+                    },
+                    "then":cont,
+                    "else":0
+                }
+            },
+            "int"
+        )
+    }
+    static getCommonSubStr(field,start,end){
+        return {
+            "$substr" :[field,start,end]
+        }
+    }
+    static getCommonCurrencyConvertor(fieldName) {
+        let obj =  {
+            "$switch": {
+                "branches": [
+                    
+                ],
+                "default":""
+            },
+            
+        }
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"TH",1000,10000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"LKH",10000,1000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"CR",1000000,100000000))
+        return obj
     }
 }
-module.exports.sendCsv  = sendCsv
+module.exports.sendCsv = sendCsv
 module.exports.AggregationServices = AggregationServices
 module.exports.apiUrls = apiUrls
