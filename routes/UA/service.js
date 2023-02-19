@@ -16,7 +16,7 @@ const axios = require('axios')
 const {sendCsv,apiUrls} = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
-const { columns,csvCols } = require("./constants.js")
+const { columns,csvCols,sortFilterKeys } = require("./constants.js")
 const Redis = require("../../service/redis")
 const { AggregationServices } = require("../../routes/CommonActionAPI/service")
 const lineItemIndicatorIDs = [
@@ -1122,12 +1122,6 @@ async function getQueryForUtilizationReports(obj) {
 }
 
 function getSortByKeys(sortBy, order) {
-    let sortFilterKeys = {
-        "totalProjectCost": "projects.cost",
-        "ulbShare": "ulbShare",
-        "totalProjects":"totalProjects",
-        "totalProjectCost":"totalProjectCost"
-    }
     let sortKey = {
         "provided": false
     }

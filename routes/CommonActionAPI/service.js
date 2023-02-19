@@ -768,8 +768,6 @@ function writeCsv(cols, csvCols,ele, res) {
     try {
         let str = ""
         for (let key of dbCOls) {
-            console.log(key)
-            console.log(ele[key])
             if (ele[key]) {
                 str += ele[key] + ","
             }

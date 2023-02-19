@@ -126,8 +126,17 @@ let csvCols = {
     "creditRating2":"Credit Rating 2"
 }
 
+const sortFilterKeys = {
+    "totalProjectCost": "projects.cost",
+    "ulbShare": "ulbShare",
+    "totalProjects":"totalProjects",
+    "totalProjectCost":"totalProjectCost",
+    "stateName":"stateName",
+    "ulbName":"ulbName"
+}
 
 module.exports = {
     columns,
-    csvCols
+    csvCols,
+    sortFilterKeys
 }
