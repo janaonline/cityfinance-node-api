@@ -103,6 +103,31 @@ let columns = [
     },
 ]
 
+let csvCols = {
+    "stateName":"State Name",
+    "ulbName":"ULB Name",
+    "cfCode":"City Finance Code",
+    "censusCode":"Census Code",
+    "population":"Population Category",
+    "projectName":"Project Name",
+    "implementationAgency":"Implementation Agency",
+    "sector":"Sector",
+    "totalProjectCost":"Total Project cost",
+    "stateShare":"State Share",
+    "ulbShare":"ULB Share(Funding Potential)",
+    "capitalExpenditureState":"Capital Expentiture (State Share)",
+    "capitalExpenditureUlb":"Capital Expentiture (ULB Share)",
+    "omExpensesState":"O&M Expenses (State Share)",
+    "omExpensesUlb":"O&M Expenses (ULB Share)",
+    "startDate":"Project Start Date",
+    "estimatedCompletionDate":"Estimated Project Completion Date",
+    "projectReport.url":"Detailed Project Report",
+    "creditRating1":"Credit Rating 1",
+    "creditRating2":"Credit Rating 2"
+}
+
+
 module.exports = {
-    columns
+    columns,
+    csvCols
 }

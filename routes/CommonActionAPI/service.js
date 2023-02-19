@@ -763,15 +763,18 @@ let apiUrls = {
 //         }  
 //   },
 // ])
-function writeCsv(cols, ele, res) {
+function writeCsv(cols, csvCols,ele, res) {
+    let dbCOls = Object.keys(csvCols)
     try {
         let str = ""
-        for (let key of cols) {
+        for (let key of dbCOls) {
+            console.log(key)
+            console.log(ele[key])
             if (ele[key]) {
                 str += ele[key] + ","
             }
             else {
-                str += ""
+                str += " "+","
             }
 
         }
@@ -782,9 +785,6 @@ function writeCsv(cols, ele, res) {
     }
 }
 
-function conditionalCsv() {
-
-}
 
 /**
  * function that creates csv only for aggregation queries
@@ -793,7 +793,7 @@ function conditionalCsv() {
  * @param {*} res 
  * @param {*} cols 
  */
-function sendCsv(filename, modelName, query, res, cols, fromArr) {
+function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr) {
     try {
 
         let cursor = moongose.model(modelName).aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
@@ -804,11 +804,11 @@ function sendCsv(filename, modelName, query, res, cols, fromArr) {
         cursor.on("data", (document) => {
             if (fromArr) {
                 for (let ele of document[fromArr]) {
-                    writeCsv(cols, ele, res)
+                    writeCsv(cols,csvCols, ele, res)
                 }
             }
             else {
-                writeCsv(cols, document)
+                writeCsv(cols,csvCols, document)
             }
         })
         cursor.on("end", (el) => {
@@ -818,6 +818,7 @@ function sendCsv(filename, modelName, query, res, cols, fromArr) {
     }
     catch (err) {
         console.log("error in sendCsv ::: ", err.message)
+        res.end()
     }
 }
 
