@@ -89,6 +89,7 @@ module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole
                     break;
                 case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
                     return StatusList.Under_Review_By_MoHUA
+                    break;
 
                 default:
                     return StatusList.Not_Started
