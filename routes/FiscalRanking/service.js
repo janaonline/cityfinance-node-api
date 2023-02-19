@@ -980,7 +980,7 @@ function getTotalProjectionQueryForPagination(){
  * function that returns projection query for ulbs only
  * @param {Array} queryArr
  */
-function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
+function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter,csv){
   try{
   //   let removeEmptyForms = {
   //     "$match": {
@@ -1002,11 +1002,13 @@ function getProjectionQueries(queryArr,collectionName,skip,limit,newFilter){
         "state_id": "$state._id",
         "stateName": "$state.name",
         "populationType":getPopulationCondition(),
-        "fsMappers":"$fiscalrankingmappers",
+        
         "formData": { $ifNull: [`$${collectionName}`, ""] },
       }
     }
-   
+    if(csv){
+      projectionQueryWithConditions['$project']["fsMappers"]="$fiscalrankingmappers"
+    }
     
     queryArr.push(projectionQueryWithConditions)
     let main = projectionQueryWithConditions["$project"]
@@ -1278,7 +1280,7 @@ function getAggregateQuery(collectionName,path,year,skip,limit,newFilter,csv,sta
       getCsvProjectionQueries(functionalObj,query,collectionName,skip,limit,newFilter)
     }
     else{
-      getProjectionQueries(query,collectionName,skip,limit,newFilter)
+      getProjectionQueries(query,collectionName,skip,limit,newFilter,csv)
     }
     // stage 7 sort by formData
     query.push({"$sort":{"formData":-1}})
@@ -1513,7 +1515,6 @@ async function sendCsv(res,aggregateQuery){
       res.flushHeaders();
       let cursor = await Ulb.aggregate(aggregateQuery).allowDiskUse(true).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
       cursor.on("data",function(el){
-        console.log(el)
         let str= ""
         for(let key of csvColsFr){
           if(key == "Form Status"){
