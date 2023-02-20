@@ -1423,7 +1423,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         response.message = "Fetched Successfully"
         response.success = true
         console.log(">>>>>>>>>> ",dbResponse)
-        return res.status(200).json(dbResponse)
+        return res.status(200).json(response)
     }
     catch(err){
         response.message = "Something went wrong"
