@@ -1132,13 +1132,20 @@ function getSortByKeys(sortBy, order) {
             if(Array.isArray(sortBy)){
                 for(let key in sortBy){
                     let name = sortBy[key]
-                    temp[sortFilterKeys[name]] = parseInt(order[key])
+                    if(!isNaN(parseInt(order[key]))){
+                        temp[sortFilterKeys[name]] = parseInt(order[key])
+                    }
                 }
             }
             else{
-                temp[sortFilterKeys[sortBy]] = parseInt(order)
+                if(!isNaN(parseInt(order[key]))){
+                    temp[sortFilterKeys[sortBy]] = parseInt(parseInt(order[key]))
+                }
             }
-            sortKey["filters"] = temp
+            if (Object.keys(temp).length > 0){
+                sortKey['provided'] = false
+                sortKey["filters"] = temp
+            }
         }
     }
     catch (err) {
@@ -1290,9 +1297,9 @@ function lookupQueryForDur(service,designYear){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    {
-                                        "$gte":["$grantPosition.receivedDuringYr",1]
-                                    }
+                                    // {
+                                    //     "$gte":["$grantPosition.receivedDuringYr",1]
+                                    // }
                                 ]
                             }
                         }
