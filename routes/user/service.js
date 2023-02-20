@@ -9,7 +9,21 @@ const Constants = require('../../_helper/constants');
 const Service = require('../../service');
 const Response = require('../../service').response;
 const moment = require('moment');
-const util = require('util')
+const util = require('util');
+const ULB = require('../../models/Ulb');
+const STATE = require('../../models/State');
+
+const MODEL_CONSTANT = {
+    ULB: ULB,
+    STATE: STATE,
+    USER: User,
+
+}
+
+const USER_ROLE = {
+    ULB: 'ulb',
+    STATE: 'state'
+}
 module.exports.get = async (req, res) => {
     let user = req.decoded;
     (role = req.body.role), (filter = req.body.filter), (sort = req.body.sort);
@@ -223,6 +237,7 @@ module.exports.getAll = async (req, res) => {
                             state: "$state._id",
                             stateName: "$state.name",
                             stateCode: "$state.code",
+                            stateIsActive: "$state.isActive",
                             ulb: '$_id',
                             ulbName: '$name',
                             ulbCode: '$code',
@@ -240,6 +255,7 @@ module.exports.getAll = async (req, res) => {
                             modifiedAt: "$user.modifiedAt",
                             createdAt: "$user.createdAt",
                             isActive: "$user.isDeleted",
+                            ulbIsActive: "$isActive",
                             accountantConatactNumber: "$user.accountantConatactNumber",
                             accountantEmail: "$user.accountantEmail",
                             accountantName: "$user.accountantName",
@@ -354,6 +370,7 @@ module.exports.getAll = async (req, res) => {
                                     '$state.code'
                                 ]
                             },
+                            stateIsActive: "$state.isActive",
                             ulb: '$ulb._id',
                             ulbName: '$ulb.name',
                             ulbCode: '$ulb.code',
@@ -576,7 +593,7 @@ module.exports.profileUpdate = async (req, res) => {
         let _id = req.params._id ? req.params._id : user._id;
         let userInfo = await User.findOne(
             { _id: ObjectId(_id) },
-            '_id role name email accountantEmail departmentEmail'
+            '_id role name email accountantEmail departmentEmail state ulb'
         )
             .lean()
             .exec();
@@ -593,6 +610,9 @@ module.exports.profileUpdate = async (req, res) => {
                 if (body[key]) {
                     obj[key] = body[key];
                 }
+                // if(body.hasOwnProperty('isActive')){
+                //     obj[key] = body[key]
+                // }
             }
             if (
                 userInfo.role == 'ULB' &&
@@ -627,6 +647,20 @@ module.exports.profileUpdate = async (req, res) => {
                         { _id: userInfo._id },
                         { $set: obj }
                     );
+                    if(body.hasOwnProperty('isActive') && out){
+                        const model = MODEL_CONSTANT[userInfo.role];
+                        const userId = userInfo[USER_ROLE[userInfo.role]]
+                        //setitng isActive true or false based on body provided
+                        const updatedUser = await model.findOneAndUpdate({
+                            _id: userId
+                        },
+                        {
+                            $set:{
+                                isActive: body.isActive
+                            }
+                        }).lean()
+                        // console.log("updatedUser",updatedUser)
+                    }
                     let mail = await Service.emailTemplate.sendProfileUpdateStatusEmail(
                         userInfo,
                         req.currentUrl

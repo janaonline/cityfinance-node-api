@@ -1,7 +1,7 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
 const CollectionNames = require('../../util/collectionName')
-const { calculateStatus } = require('../CommonActionAPI/service')
+const { calculateStatus,canTakeActionOrViewOnly } = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
@@ -41,7 +41,7 @@ function createDynamicColumns(collectionName) {
       columns = `Financial Year, Form Status, Created, Submitted On, Filled Status,Type, Audited/Provisional Year,Balance Sheet_PDF_URL, Balance Sheet_Excel_URL,	Balance Sheet_State Review Status,	Balance Sheet_State_Comments,	Balance Sheet_MoHUA Review Status,	Balance Sheet_MoHUA_Comments,	Balance Sheet_Total Amount of Assets,	Balance Sheet_Total Amount of Fixed Assets,	Balance Sheet_Total Amount of State Grants received,	Balance Sheet_Total Amount of Central Grants received,	Balance Sheet Schedule_PDF_URL,	Balance Sheet Schedule_Excel_URL,	Balance Sheet Schedule_State Review Status,	Balance Sheet Schedule_State_Comments,	Balance Sheet Schedule_MoHUA Review Status,	Balance Sheet Schedule_MoHUA_Comments, Income Expenditure_PDF_URL,	Income Expenditure_Excel_URL, Income Expenditure_State Review Status,	Income Expenditure_State_Comments,	Income Expenditure_MoHUA Review Status,	Income Expenditure_MoHUA_Comments, 	Income Expenditure_Total Amount of Revenue,	Income Expenditure_Total Amount of Expenses,	Income Expenditure Schedule_PDF_URL,	Income Expenditure Schedule_Excel_URL,	Income Expenditure Schedule_State Review Status, Income Expenditure Schedule_State_Comments, 	Income Expenditure Schedule_MoHUA Review Status,	Income Expenditure Schedule_MoHUA_Comments,	Cash Flow Schedule_PDF_URL,	Cash Flow Schedule_Excel_URL,	Cash Flow Schedule_State Review Status,	Cash Flow Schedule_State_Comments, 	Cash Flow Schedule_MoHUA Review Status	,Cash Flow Schedule_MoHUA_Comments,	Auditor Report PDF_URL,	Auditor Report State Review Status,	Auditor Report State_Comments,	Auditor Report MoHUA Review Status	,Auditor Report MoHUA_Comments ,Financials in Standardized Format_Filled Status	,Financials in Standardized Format_Excel URL,	State Comments if Accounts for 2021-22 is selected No, MoHUA Comments if Accounts for 2021-22 is selected No,State Review File_URL,	MoHUA Review File_URL`;
       break;
     case CollectionNames.dur:
-      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Tied grants for year,	Unutilised Tied Grants from previous installment (INR in lakhs),	15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs)	,Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),	Closing balance at the end of year (INR in lakhs),	WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),	WM Rejuvenation of Water Bodies Number of Projects Undertaken,	WM_Rejuvenation of Water Bodies_Total Project Cost Involved,	WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Drinking Water_Number of Projects Undertaken	,WM_Drinking Water_Total Project Cost Involved,	WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Rainwater Harvesting_Number of Projects Undertaken,	WM_Rainwater Harvesting_Total Project Cost Involved	,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Water Recycling_Number of Projects Undertaken,	WM_Water Recycling_Total Project Cost Involved,	SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Sanitation_Number of Projects Undertaken,	SWM_Sanitation_Total Project Cost Involved(INR in lakhs),	SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Solid Waste Management_Number of Projects Undertaken,	SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),	State_Review Status,	State_Comments,	MoHUA Review Status,	MoHUA_Comments,	State_File URL,	MoHUA_File URL `
+      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Tied grants for year,	Unutilised Tied Grants from previous installment (INR in lakhs),	15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs)	,Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),	Closing balance at the end of year (INR in lakhs),	WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),	WM Rejuvenation of Water Bodies Number of Projects Undertaken,	WM_Rejuvenation of Water Bodies_Total Project Cost Involved,	WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Drinking Water_Number of Projects Undertaken	,WM_Drinking Water_Total Project Cost Involved,	WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Rainwater Harvesting_Number of Projects Undertaken,	WM_Rainwater Harvesting_Total Project Cost Involved	,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Water Recycling_Number of Projects Undertaken,	WM_Water Recycling_Total Project Cost Involved,	SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Sanitation_Number of Projects Undertaken,	SWM_Sanitation_Total Project Cost Involved(INR in lakhs),	SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Solid Waste Management_Number of Projects Undertaken,	SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),	Name, Designation, State_Review Status,	State_Comments,	MoHUA Review Status,	MoHUA_Comments,	State_File URL,	MoHUA_File URL `
       break;
     case CollectionNames['28SLB']:
       columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year, Coverage of water supply connections,Per capita supply of water(lpcd) ,Extent of metering of water connections,Extent of non-revenue water (NRW), Continuity of water supply,Efficiency in redressal of customer complaints, Quality of water supplied, Cost recovery in water supply service , Efficiency in collection of water supply-related charges ,Coverage of toilets , Coverage of waste water network services ,Collection efficiency of waste water network , Adequacy of waste water treatment capacity , Quality of waste water treatment, Extent of reuse and recycling of waste water,Efficiency in redressal of customer complaints ,Extent of cost recovery in waste water management  ,Efficiency in collection of waste water charges  ,  Household level coverage of solid waste management services ,Efficiency of collection of municipal solid waste ,Extent of segregation of municipal solid waste ,Extent of municipal solid waste recovered,  Extent of scientific disposal of municipal solid waste  , Extent of cost recovery in SWM services ,Efficiency in redressal of customer complaints ,Efficiency in collection of SWM related user related charges,Coverage of storm water drainage network ,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
@@ -1130,7 +1130,8 @@ async function createDynamicElements(collectionName, formType, entity) {
           let wmData = data?.categoryWiseData_wm;
           let swmData = data?.categoryWiseData_swm;
 
-
+          data.name = removeEscapeChars(data['name']);
+          data.designation = removeEscapeChars(data['designation'])
           entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
             }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
             },${data?.["financialYear"]["year"] ?? ""}, ${(typeof data?.grantPosition?.unUtilizedPrevYr === "number"
@@ -1163,6 +1164,8 @@ async function createDynamicElements(collectionName, formType, entity) {
             },${swmData[1]?.["grantUtilised"] ?? ""
             },${swmData[1]?.["numberOfProjects"] ?? ""
             }, ${swmData[1]?.["totalProjectCost"] ?? ""
+            }, ${data?.name ?? ""
+            }, ${data?.designation ?? ""
             }, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
             },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
             },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
@@ -1824,41 +1827,41 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
   return oldQuery;
 }
 
-function canTakeActionOrViewOnly(data, userRole) {
-  let status = data['formStatus'];
-  switch (true) {
-    case status == STATUS_LIST.Not_Started:
-      return false;
-      break;
-    case status == STATUS_LIST.In_Progress:
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_State && userRole == 'STATE':
-      return true;
-      break;
-    case status == STATUS_LIST.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-      return false;
-      break;
-    case status == STATUS_LIST.Rejected_By_State:
-      return false;
-      break;
-    case status == STATUS_LIST.Rejected_By_MoHUA:
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'STATE':
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'MoHUA':
-      return true;
-      break;
-    case status == STATUS_LIST.Approved_By_MoHUA:
-      return false;
-      break;
+// function canTakeActionOrViewOnly(data, userRole) {
+//   let status = data['formStatus'];
+//   switch (true) {
+//     case status == STATUS_LIST.Not_Started:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.In_Progress:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_State && userRole == 'STATE':
+//       return true;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Rejected_By_State:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Rejected_By_MoHUA:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'STATE':
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'MoHUA':
+//       return true;
+//       break;
+//     case status == STATUS_LIST.Approved_By_MoHUA:
+//       return false;
+//       break;
 
-    default:
-      break;
-  }
-}
+//     default:
+//       break;
+//   }
+// }
 
 module.exports.get = catchAsync(async (req, res) => {
   let loggedInUserRole = req.decoded.role
@@ -1975,13 +1978,14 @@ module.exports.get = catchAsync(async (req, res) => {
     delete ulbColumnNames.filled_provisional
   }
   let isFormOptional = formTab.optional
-  const model = require(`../../models/${path}`)
+  // const model = require(`../../models/${path}`)
   let newFilter = await Service.mapFilterNew(filter);
   if (req.query.status === STATUS_LIST.Not_Started) {// to apply not started filter
     Object.assign(newFilter, { formData: "" });
-  }
+  }  
+  let folderName = formTab?.folderName;
 
-  let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName);
+  let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
   if (getQuery) return res.json({
     query: query[0]
   })
@@ -2179,6 +2183,10 @@ module.exports.get = catchAsync(async (req, res) => {
   }
 
   //  console.log(data)
+  data.forEach(el=> {
+    if(el.formData || el.formData === "" ) delete el.formData;
+
+  })
   return res.status(200).json({
     success: true,
     data: data,
@@ -2237,7 +2245,7 @@ function countStatusData(element, collectionName) {
     }
   }
 }
-const computeQuery = (formName, userRole, isFormOptional, state, design_year, csv, skip, limit, filter, dbCollectionName) => {
+const computeQuery = (formName, userRole, isFormOptional, state, design_year, csv, skip, limit, filter, dbCollectionName, folderName) => {
   let filledQueryExpression = {}
   if (isFormOptional) {
     // if form is optional check if the deciding condition is true or false
@@ -2624,7 +2632,25 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
       ];
 
       query_s = createDynamicQuery(formName, query_s, userRole, csv);
+      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
+      if( folderName === List['FolderName']['IndicatorForWaterSupply'] ){
+        let startIndex = query_s.findIndex((el)=>{
+          return el.hasOwnProperty("$lookup");
+        })
 
+      /* Splicing the query_s string starting at the startIndex. */
+         query_s.splice(startIndex);
+         query_s.push({
+          $project: {
+            state: "$_id",
+            stateName: "$name",
+            stateCode: "$code",
+            regionalName: 1,
+            filled: "Not Applicable"
+          },
+          
+         })
+      }
       let filterApplied_s = Object.keys(filter).length > 0
       if (filterApplied_s) {
         query_s.push({

@@ -1061,3 +1061,39 @@ class AggregationServices {
 module.exports.sendCsv = sendCsv
 module.exports.AggregationServices = AggregationServices
 module.exports.apiUrls = apiUrls
+
+module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
+    let status = data['formStatus'];
+    switch (true) {
+      case status == StatusList.Not_Started:
+        return false;
+        break;
+      case status == StatusList.In_Progress:
+        return false;
+        break;
+      case status == StatusList.Under_Review_By_State && userRole == 'STATE':
+        return true;
+        break;
+      case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+        return false;
+        break;
+      case status == StatusList.Rejected_By_State:
+        return false;
+        break;
+      case status == StatusList.Rejected_By_MoHUA:
+        return false;
+        break;
+      case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
+        return false;
+        break;
+      case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
+        return true;
+        break;
+      case status == StatusList.Approved_By_MoHUA:
+        return false;
+        break;
+  
+      default:
+        break;
+    }
+  }

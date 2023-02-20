@@ -901,7 +901,7 @@ module.exports.read2223 = catchAsync(async (req, res) => {
       obj['url'] = msg;
     } else {
 
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
+      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/ulbform-overview target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
       obj['action'] = 'note'
       obj['url'] = msg;
     }
@@ -931,8 +931,10 @@ module.exports.read2223 = catchAsync(async (req, res) => {
       typeof(fetchedData?.grantPosition.unUtilizedPrevYr) === "number" ? fetchedData.grantPosition.unUtilizedPrevYr = Number(Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)) : ""
       typeof(fetchedData?.grantPosition.receivedDuringYr) === "number"? fetchedData.grantPosition.receivedDuringYr = Number(Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)) : ""
       typeof(fetchedData?.grantPosition.expDuringYr) === "number" ? fetchedData.grantPosition.expDuringYr = Number(Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)) : ""
-      fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
+      // fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
 
+      //new  implementation
+      typeof(fetchedData?.grantPosition.closingBal) === "number" ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
     }
     return res.status(200).json({
       success: true,

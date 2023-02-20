@@ -753,7 +753,7 @@ module.exports.getRelatedUAFile = catchAsync(async (req, res) => {
         res.status(500).json(response)
     }
 })
-module.exports.getUAByuaCode = catchAsync(async (req, res) => {
+module.exports.getUAByuaCode = catchAsync(async(req,res)=>{
     let response = {
         "success": false,
         "message": ""

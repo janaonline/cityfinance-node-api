@@ -49,6 +49,17 @@ let FormModelMapping_State = {
     
 }
 
+let SUB_CATEGORY_CONSTANTS = {
+  "Dashboard": 1,
+  "Grant Transfer Certificate": 2,
+  "Property tax floor rate Notification": 2,
+  "State Finance Commission Notification":2,
+  "Grant Allocation to ULBs": 3,
+  "Submit Claims for 15th FC Grants": 3
+}
+
+
+
 const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
     //get 3 parameter formType and compare formType with loggedInUserRole
     if(viewFor === USER_TYPES.ulb){
@@ -303,7 +314,7 @@ module.exports.get = catchAsync(async (req, res) => {
     tempData = data.sort((a, b)=>{
         return a.sequence - b.sequence;
     })
-    let result2=[];
+    // let result2=[];
     for(let i =0 ; i< tempData.length; i++){
         let entity = tempData[i];
         if(entity?.sequence){
@@ -318,17 +329,37 @@ module.exports.get = catchAsync(async (req, res) => {
                 entity.prevUrl = `../${tempData[i-1].url}`;
                 entity.nextUrl = `../${tempData[i+1].url}`;
             }
-            result2.push(entity);
+            // result2.push(entity);
             
+        }
+        if(role === "STATE"){
+          entity.category  = `${entity.category}_${entity.groupSequence}`
         }
     }
     //group the data 
      tempData = groupByKey(data, "category")
     }
     
-  
+      
+
+    // if (role === "STATE") {
+    //   let subCatTempData = tempData[""];
+    //   let newSubCat = {};
+    //   for (let obj of subCatTempData) {
+    //     if (obj && obj.name) {
+    //       if (!newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]]) {
+    //         newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]] = [obj];
+    //         continue;
+    //       }
+    //       newSubCat[SUB_CATEGORY_CONSTANTS[obj?.name]].push(obj);
+    //     }
+    //   }
+    //   tempData[""] = newSubCat;
+    // }
+
 //sorting the data as per sequence no;
 tempData = sortByPosition(tempData);
+
 //creating card Data
 if(role=="ULB"){
     data.forEach(el => {
@@ -440,15 +471,15 @@ module.exports.delete = catchAsync(async (req, res) => {
 })
 
 const sortByPosition = (data) => {
-    for(let key in data){
-        data[key].sort((a, b) => {
-            return a.position - b.position;
-        });
-      
-     }
+    for (let key in data) {
+      data[key].sort((a, b) => {
+        return a.position - b.position;
+      });
+    }
 
-    return data;
-}
+
+  return data;
+};
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
 

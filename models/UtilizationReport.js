@@ -36,9 +36,9 @@ const UtilizationReportProjectSchema = new Schema({
 });
 const CategoryWiseDataSchema = new Schema({
   category_name: { type: String, default:'' },
-  grantUtilised: { type: String , default:''},
-  numberOfProjects: { type: String, default:'' },
-  totalProjectCost: { type: String, default:'' }
+  grantUtilised: { type: Number , default: null},
+  numberOfProjects: { type: Number, default: null },
+  totalProjectCost: { type: Number, default: null }
 });
 
 const UtilizationReportSchema = new Schema(
@@ -53,7 +53,7 @@ const UtilizationReportSchema = new Schema(
       expDuringYr: {
         type: Number, default: null
       },
-      closingBal: { type: String, default:null },
+      closingBal: { type: Number, default:null },
     },
     projects: { type: [UtilizationReportProjectSchema] },
     categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [

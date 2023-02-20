@@ -66,8 +66,15 @@ module.exports.delete = async function (req, res) {
 module.exports.getStateListWithCoveredUlb = async (req, res) => {
     try {
         let arr = []
+        let {accessToXVFC} = req.query
+        let cond = {
+            isActive: true
+        };
+        if(accessToXVFC){
+            cond['accessToXVFC'] = Boolean(accessToXVFC)
+        }
         let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
-        let states = await State.find({ isActive: true }).exec();
+        let states = await State.find(cond).exec();
         let lineItem = await LineItem.findOne({ code: "1001" }).exec();
         for (var el of states) {
             let obj = {};
