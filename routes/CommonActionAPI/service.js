@@ -5,7 +5,7 @@ const GfcFormCollection = require('../../models/GfcFormCollection');
 const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const PropertyTaxOp = require('../../models/PropertyTaxOp');
-
+const moongose = require('mongoose')
 const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -14,10 +14,10 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const {FormNames} = require('../../util/FormNames');
-const {calculateTabwiseStatus} = require('../annual-accounts/utilFunc')
+const { FormNames } = require('../../util/FormNames');
+const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc')
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
-    switch(formType){
+    switch (formType) {
         case "ULB":
             switch (true) {
                 case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
@@ -60,156 +60,211 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
                 case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Rejected_By_MoHUA
                     break;
-                
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
+
                 default:
                     return StatusList.Not_Started
                     break;
             }
-            break;      
+            break;
+    }
+}
+
+module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
+    switch (formType) {
+        case "ULB":
+            switch (true) {
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                    return StatusList.In_Progress
+                    break;
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+                    break;
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
+                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Rejected_By_MoHUA
+                    break;
+                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+
+                default:
+                    return StatusList.Not_Started
+                    break;
+            }
+
+        case "MoHua":
+            switch (true) {
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                    return StatusList.In_Progress
+                    break;
+                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+                    break;
+                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Approved_By_MoHUA
+                    break;
+                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
+                    return StatusList.Rejected_By_MoHUA
+                    break;
+
+                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
+                    return StatusList.Under_Review_By_MoHUA
+
+                default:
+                    return StatusList.Not_Started
+                    break;
+            }
+            break;
+
+
     }
 }
 
 module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, loggedInUser) => {
     switch (formType) {
-      case "ULB":
-        if (loggedInUser == "STATE") {
-          if (actionTakenByRole == "ULB" && !isDraft) {
-            return true;
-          } else{
-            return false;
-          }
-        } else if (loggedInUser == "MoHUA") {
-          if (
-            actionTakenByRole == "STATE" &&
-            status == "APPROVED" &&
-            !isDraft
-          ) {
-            return true;
-          } else {
-            return false;
-          }
-        } else {
-          return false;
-        }
+        case "ULB":
+            if (loggedInUser == "STATE") {
+                if (actionTakenByRole == "ULB" && !isDraft) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else if (loggedInUser == "MoHUA") {
+                if (
+                    actionTakenByRole == "STATE" &&
+                    status == "APPROVED" &&
+                    !isDraft
+                ) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
 
-        break;
+            break;
 
-      case "STATE":
-        if (loggedInUser == "MoHUA") {
-          if (actionTakenByRole == "STATE" && !isDraft) {
-            return true;
-          } else {
-            return false;
-          }
-        } else {
-          return false;
-        }
+        case "STATE":
+            if (loggedInUser == "MoHUA") {
+                if (actionTakenByRole == "STATE" && !isDraft) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
 
-        break;
+            break;
 
-      default:
-        break;
+        default:
+            break;
     }
-   
+
 }
 
 module.exports.calculateKeys = (formStatus, formType) => {
     let keys = {
-        [`formData.status`]:"",
-        [`formData.actionTakenByRole`]:"",
+        [`formData.status`]: "",
+        [`formData.actionTakenByRole`]: "",
         [`formData.isDraft`]: ""
     };
-    switch(formType){
+    switch (formType) {
         case "ULB":
-            switch(formStatus){
+            switch (formStatus) {
                 case StatusList.In_Progress:
                     keys = {
 
                         [`formData.status`]: "PENDING",
-                        [`formData.actionTakenByRole`]:"ULB",
+                        [`formData.actionTakenByRole`]: "ULB",
                         [`formData.isDraft`]: true
                     }
                     break;
                 case StatusList.Under_Review_By_State:
                     keys = {
-                        [`formData.status`]:"PENDING",
-                        [`formData.actionTakenByRole`]:"ULB",
+                        [`formData.status`]: "PENDING",
+                        [`formData.actionTakenByRole`]: "ULB",
                         [`formData.isDraft`]: false
                     }
                     break;
                 case StatusList.Under_Review_By_MoHUA:
                     keys = {
-                        [`formData.status`]:"APPROVED",
-                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.status`]: "APPROVED",
+                        [`formData.actionTakenByRole`]: "STATE",
                         [`formData.isDraft`]: false
                     }
                     break;
                 case StatusList.Rejected_By_State:
                     keys = {
-                        [`formData.status`]:"REJECTED",
-                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.status`]: "REJECTED",
+                        [`formData.actionTakenByRole`]: "STATE",
                         [`formData.isDraft`]: false
                     }
                     break;
                 case StatusList.Approved_By_MoHUA:
                     keys = {
-                        [`formData.status`]:"APPROVED",
-                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.status`]: "APPROVED",
+                        [`formData.actionTakenByRole`]: "MoHUA",
                         [`formData.isDraft`]: false
                     }
                     break;
                 case StatusList.Rejected_By_MoHUA:
                     keys = {
-                        [`formData.status`]:"REJECTED",
-                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.status`]: "REJECTED",
+                        [`formData.actionTakenByRole`]: "MoHUA",
                         [`formData.isDraft`]: false
                     }
                     break;
-                default:  
+                default:
                     break;
             }
             break;
         case "STATE":
-            switch(formStatus){
+            switch (formStatus) {
                 case StatusList.In_Progress:
                     keys = {
-                        [`formData.isDraft`]:true,
-                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.isDraft`]: true,
+                        [`formData.actionTakenByRole`]: "STATE",
                         [`formData.status`]: "PENDING"
                     }
                     break;
                 case StatusList.Under_Review_By_MoHUA:
                     keys = {
-                        [`formData.isDraft`]:false,
-                        [`formData.actionTakenByRole`]:"STATE",
+                        [`formData.isDraft`]: false,
+                        [`formData.actionTakenByRole`]: "STATE",
                         [`formData.status`]: "PENDING"
                     }
                     break;
                 case StatusList.Approved_By_MoHUA:
                     keys = {
-                        [`formData.isDraft`]:false,
-                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.isDraft`]: false,
+                        [`formData.actionTakenByRole`]: "MoHUA",
                         [`formData.status`]: "APPROVED"
                     }
                     break;
                 case StatusList.Rejected_By_MoHUA:
                     keys = {
-                        [`formData.isDraft`]:false,
-                        [`formData.actionTakenByRole`]:"MoHUA",
+                        [`formData.isDraft`]: false,
+                        [`formData.actionTakenByRole`]: "MoHUA",
                         [`formData.status`]: "REJECTED"
                     }
                     break;
-                default:  
+                default:
                     break;
             }
-            break;    
-        }
-        return keys;
+            break;
+    }
+    return keys;
 }
 
-function getCollectionName(formName){
-    let collection="";
-    switch(formName){
+function getCollectionName(formName) {
+    let collection = "";
+    switch (formName) {
         case "Grant Transfer Certificate":
             collection = GrantTransferCertificate;
             break;
@@ -241,38 +296,38 @@ function getCollectionName(formName){
             collection = PropertyTaxFloorRate;
             break;
         case "State Finance Commission Notification":
-            collection =  StateFinanceCommissionFormation;
+            collection = StateFinanceCommissionFormation;
             break;
     }
     return collection;
 }
 
-module.exports.getForms = async (req, res)=>{
+module.exports.getForms = async (req, res) => {
     try {
         const data = req.body;
-        const masterForm = await Sidemenu.findOne({_id: data.formId});
+        const masterForm = await Sidemenu.findOne({ _id: data.formId });
         const collection = getCollectionName(masterForm.name);
         let condition = {};
-        if (collection === UtilizationReport ){
+        if (collection === UtilizationReport) {
             condition.design_year = "designYear"
         } else {
             condition.design_year = "design_year"
         }
         let forms;
-        if(masterForm.role === "ULB"){
+        if (masterForm.role === "ULB") {
             forms = await collection.find(
-                {ulb :{$in : data.ulb}, [condition.design_year]: data.design_year},
-                {history:0}
-                )
+                { ulb: { $in: data.ulb }, [condition.design_year]: data.design_year },
+                { history: 0 }
+            )
 
-        } else if( masterForm.role === "STATE"){
+        } else if (masterForm.role === "STATE") {
             forms = await collection.find(
-                {state :{$in : data.state}, [condition.design_year]: data.design_year},
-                {history:0}
-                )
+                { state: { $in: data.state }, [condition.design_year]: data.design_year },
+                { history: 0 }
+            )
 
         }
-        if(!forms || forms.length === 0){
+        if (!forms || forms.length === 0) {
             return res.status(400).json({
                 status: false,
                 message: 'Form not found.'
@@ -282,7 +337,7 @@ module.exports.getForms = async (req, res)=>{
             status: true,
             message: 'Success',
             data: forms
-        }) 
+        })
     } catch (error) {
         return res.status(400).json({
             status: false,
@@ -291,120 +346,120 @@ module.exports.getForms = async (req, res)=>{
     }
 }
 
-module.exports.updateForm = async (req, res) =>{
+module.exports.updateForm = async (req, res) => {
     try {
         const data = req.body;
         const user = req.decoded;
-        
-        let ulb="", state = "", stateData ="";
+
+        let ulb = "", state = "", stateData = "";
         let singleForm; //to return updated response for single ulb
-        const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)}).lean();
-        if(user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA'){
-          return  res.status(403).json({
+        const masterForm = await Sidemenu.findOne({ _id: ObjectId(data.formId) }).lean();
+        if (user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA') {
+            return res.status(403).json({
                 success: false,
-                message:"Not AUthorized to perform this action"
+                message: "Not AUthorized to perform this action"
             })
         }
-        if(!masterForm){
+        if (!masterForm) {
             return res.status(400).json({
                 status: false,
                 message: "Form not found"
             })
         }
         const formType = masterForm.role;
-        
+
         const collection = getCollectionName(masterForm.name);
         const formData = {};
         const { role: actionTakenByRole, _id: actionTakenBy } = user;
         formData['actionTakenByRole'] = actionTakenByRole;
         formData['actionTakenBy'] = actionTakenBy;
         formData['status'] = data.status;
-        
+
         //Check if role is other than STATE or MoHUA
-        if(actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA"){
+        if (actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA") {
             return res.status(401).json({
                 status: false,
                 message: "Not authorized"
             })
         }
         //add reject reason and response file based on role
-    //    if(masterForm.name != FormNames.annualAcc ){
-        if(actionTakenByRole === "STATE"){
+        //    if(masterForm.name != FormNames.annualAcc ){
+        if (actionTakenByRole === "STATE") {
             formData['rejectReason_state'] = data.rejectReason;
             formData['responseFile_state'] = data.responseFile;
             // formData['responseFile']['url'] = data.responseFile.url;
-        }else if (actionTakenByRole === "MoHUA"){
+        } else if (actionTakenByRole === "MoHUA") {
             formData['rejectReason_mohua'] = data.rejectReason;
-            formData['responseFile_mohua'] = data.responseFile;     
+            formData['responseFile_mohua'] = data.responseFile;
         }
-    //    }
-        
+        //    }
+
         let condition = {};
-        if (collection === UtilizationReport ){
+        if (collection === UtilizationReport) {
             condition.design_year = "designYear"
         } else {
             condition.design_year = "design_year"
         }
         let forms = "";
         if (formType === "STATE") {
-          forms = await collection
-            .find({
-              state: { $in: data.state },
-              [condition.design_year]: data.design_year,
-            })
-            .lean();
+            forms = await collection
+                .find({
+                    state: { $in: data.state },
+                    [condition.design_year]: data.design_year,
+                })
+                .lean();
         } else if (formType === "ULB") {
-          forms = await collection
-            .find({
-              ulb: { $in: data.ulb },
-              [condition.design_year]: data.design_year,
-            })
-            .lean();
+            forms = await collection
+                .find({
+                    ulb: { $in: data.ulb },
+                    [condition.design_year]: data.design_year,
+                })
+                .lean();
         }
-        let form={}, numberOfFormsUpdated=0;
-        if(formType === "ULB"){
-            for(let i=0; i < data.ulb.length; i++){//update status and add history
+        let form = {}, numberOfFormsUpdated = 0;
+        if (formType === "ULB") {
+            for (let i = 0; i < data.ulb.length; i++) {//update status and add history
                 ulb = data.ulb[i];
                 form = forms[i];
-                if(form === undefined) continue;
+                if (form === undefined) continue;
                 form['actionTakenByRole'] = formData.actionTakenByRole;
                 form['actionTakenBy'] = formData.actionTakenBy;
                 form['status'] = formData.status;
                 form['modifiedAt'] = new Date();
                 form['rejectReason'] = data.rejectReason
-                form['responseFile'] =   data.responseFile
-                if(masterForm.name == "Annual Accounts"){
-     
+                form['responseFile'] = data.responseFile
+                if (masterForm.name == "Annual Accounts") {
+
                     form['common'] = true
-                    if(form.audited.submit_annual_accounts){
-                        for(let key in form.audited.provisional_data){
-                            if(typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
-                                if(form.audited.provisional_data[key]){
-                                    if(actionTakenByRole === "STATE"){
+                    if (form.audited.submit_annual_accounts) {
+                        for (let key in form.audited.provisional_data) {
+                            if (typeof form.audited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null) {
+                                if (form.audited.provisional_data[key]) {
+                                    if (actionTakenByRole === "STATE") {
                                         form.audited.provisional_data[key]['status'] = formData.status
                                         form.audited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
                                         form.audited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
                                     }
-                                    else if(actionTakenByRole === "MoHUA"){
+                                    else if (actionTakenByRole === "MoHUA") {
                                         form.audited.provisional_data[key]['status'] = formData.status
                                         form.audited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
                                         form.audited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
                                     }
                                 }
                             }
-                            
-        
+
+
                         }
                     }
-                    if(form.unAudited.submit_annual_accounts){
-                        for(let key in form.unAudited.provisional_data){
-                            if(typeof form.unAudited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null){
-                                if(form.unAudited.provisional_data[key]){
-                                    if(actionTakenByRole === "STATE"){
+                    if (form.unAudited.submit_annual_accounts) {
+                        for (let key in form.unAudited.provisional_data) {
+                            if (typeof form.unAudited.provisional_data[key] == 'object' && form.audited.provisional_data[key] != null) {
+                                if (form.unAudited.provisional_data[key]) {
+                                    if (actionTakenByRole === "STATE") {
                                         form.unAudited.provisional_data[key]['status'] = formData.status
                                         form.unAudited.provisional_data[key]['rejectReason_state'] = formData.rejectReason_state
                                         form.unAudited.provisional_data[key]['responseFile_state'] = formData.responseFile_state
-                                    }else if(actionTakenByRole === "MoHUA"){
+                                    } else if (actionTakenByRole === "MoHUA") {
                                         form.unAudited.provisional_data[key]['status'] = formData.status
                                         form.unAudited.provisional_data[key]['rejectReason_mohua'] = formData.rejectReason_mohua
                                         form.unAudited.provisional_data[key]['responseFile_mohua'] = formData.responseFile_mohua
@@ -413,153 +468,154 @@ module.exports.updateForm = async (req, res) =>{
                             }
                         }
                     }
-                    if(form.audited){
-                        if(actionTakenByRole === "STATE"){
+                    if (form.audited) {
+                        if (actionTakenByRole === "STATE") {
                             form.audited['status'] = formData.status
                             form.audited['rejectReason_state'] = formData.rejectReason_state
                             form.audited['responseFile_state'] = formData.responseFile_state
-                        }else if(actionTakenByRole === "MoHUA"){
+                        } else if (actionTakenByRole === "MoHUA") {
                             form.audited['status'] = formData.status
                             form.audited['rejectReason_mohua'] = formData.rejectReason_mohua
                             form.audited['responseFile_mohua'] = formData.responseFile_mohua
                         }
                     }
-                    if(form.unAudited){
-                        if(actionTakenByRole === "STATE"){
+                    if (form.unAudited) {
+                        if (actionTakenByRole === "STATE") {
                             form.unAudited['status'] = formData.status
                             form.unAudited['rejectReason_state'] = formData.rejectReason_state
                             form.unAudited['responseFile_state'] = formData.responseFile_state
-                        }else if(actionTakenByRole === "MoHUA"){
+                        } else if (actionTakenByRole === "MoHUA") {
                             form.unAudited['status'] = formData.status
                             form.unAudited['rejectReason_mohua'] = formData.rejectReason_mohua
                             form.unAudited['responseFile_mohua'] = formData.responseFile_mohua
                         }
                     }
                     form = calculateTabwiseStatus(form)
-                    
+
                 }
                 //add reject reason/responseFile for single ulb entry
-                if(masterForm.name != "Annual Accounts" ){
-                if(actionTakenByRole === 'STATE'){
-                    form['rejectReason_state'] = data.rejectReason;
-                    form['responseFile_state'] = data.responseFile;
-                }else if (actionTakenByRole === 'MoHUA'){
-                    form['rejectReason_mohua'] = data.rejectReason;
-                    form['responseFile_mohua'] = data.responseFile;
+                if (masterForm.name != "Annual Accounts") {
+                    if (actionTakenByRole === 'STATE') {
+                        form['rejectReason_state'] = data.rejectReason;
+                        form['responseFile_state'] = data.responseFile;
+                    } else if (actionTakenByRole === 'MoHUA') {
+                        form['rejectReason_mohua'] = data.rejectReason;
+                        form['responseFile_mohua'] = data.responseFile;
+                    }
                 }
-            }
-                delete form['history'] ;
+                delete form['history'];
                 let formHistory = JSON.parse(JSON.stringify(form))
                 delete form["_id"];
                 delete form['ulb'];
                 delete form['design_year'];
                 let updatedForm = await collection.findOneAndUpdate(
-                    {ulb , [condition.design_year]: data.design_year},
-                    {$set: form, $push: {history: formHistory }},
-                    {new: true, runValidators: true}
-                    );
+                    { ulb, [condition.design_year]: data.design_year },
+                    { $set: form, $push: { history: formHistory } },
+                    { new: true, runValidators: true }
+                );
                 numberOfFormsUpdated++;
                 singleForm = updatedForm;
             }
-        }else if( formType === "STATE"){
-            if(masterForm.name === FormNames.gtc){
+        } else if (formType === "STATE") {
+            if (masterForm.name === FormNames.gtc) {
                 if (data.statesData.length > 0) {
-                  form = findTarget(data.statesData[0], forms);
-                  stateData = data.statesData[0];
+                    form = findTarget(data.statesData[0], forms);
+                    stateData = data.statesData[0];
 
-                  form["actionTakenByRole"] = formData.actionTakenByRole;
-                  form["actionTakenBy"] = formData.actionTakenBy;
-                  form["modifiedAt"] = new Date();
-                  form["status"] = formData["status"];
+                    form["actionTakenByRole"] = formData.actionTakenByRole;
+                    form["actionTakenBy"] = formData.actionTakenBy;
+                    form["modifiedAt"] = new Date();
+                    form["status"] = formData["status"];
 
-                  //add reject reason/responseFile for single state entry
-                  if (actionTakenByRole === "MoHUA") {
-                    form["rejectReason_mohua"] = data["rejectReason"] ? data["rejectReason"] : data["rejectReason_mohua"];
-                    form["responseFile_mohua"] = data["responseFile"];
-                    formData['rejectReason_mohua'] = data["rejectReason"] ? data["rejectReason"] : data["rejectReason_mohua"]
-                  }
-                  delete form["history"];
-                  let updatedForm = await collection
-                    .findOneAndUpdate(
-                      stateData,
-                      { $set: formData, $push: { history: form } },
-                      { new: true, runValidators: true }
-                    )
-                    .lean();
-                  numberOfFormsUpdated++;
-                  singleForm = updatedForm;
+                    //add reject reason/responseFile for single state entry
+                    if (actionTakenByRole === "MoHUA") {
+                        form["rejectReason_mohua"] = data["rejectReason"] ? data["rejectReason"] : data["rejectReason_mohua"];
+                        form["responseFile_mohua"] = data["responseFile"];
+                        formData['rejectReason_mohua'] = data["rejectReason"] ? data["rejectReason"] : data["rejectReason_mohua"]
+                    }
+                    delete form["history"];
+                    let updatedForm = await collection
+                        .findOneAndUpdate(
+                            stateData,
+                            { $set: formData, $push: { history: form } },
+                            { new: true, runValidators: true }
+                        )
+                        .lean();
+                    numberOfFormsUpdated++;
+                    singleForm = updatedForm;
                 } else if (data.statesData.length === 0) {
-                  for (let i = 0; i < data.state.length; i++) {
-                          
-                          state = data.state[i];
-                          let stateForms = findForm(forms,state);
-                          for(let j =0 ; j< stateForms.length; j++){
-                                form = stateForms[j];
-                              if (form === undefined || form.actionTakenByRole === "MoHUA"){
+                    for (let i = 0; i < data.state.length; i++) {
+
+                        state = data.state[i];
+                        let stateForms = findForm(forms, state);
+                        for (let j = 0; j < stateForms.length; j++) {
+                            form = stateForms[j];
+                            if (form === undefined || form.actionTakenByRole === "MoHUA") {
                                 continue;
-                              }
-                              
-                              form["actionTakenByRole"] = formData.actionTakenByRole;
-                              form["actionTakenBy"] = formData.actionTakenBy;
-                              form["status"] = formData.status;
-                              form["modifiedAt"] = new Date();
-          
-                              //add reject reason/responseFile for single ulb entry
-                              if (actionTakenByRole === "MoHUA") {
+                            }
+
+                            form["actionTakenByRole"] = formData.actionTakenByRole;
+                            form["actionTakenBy"] = formData.actionTakenBy;
+                            form["status"] = formData.status;
+                            form["modifiedAt"] = new Date();
+
+                            //add reject reason/responseFile for single ulb entry
+                            if (actionTakenByRole === "MoHUA") {
                                 form["rejectReason_mohua"] = data["rejectReason"];
                                 form["responseFile_mohua"] = data.responseFile;
                                 formData['rejectReason_mohua'] = data["rejectReason"]
-                              }
-                              delete form["history"];
-                              let updatedForm = await collection.findOneAndUpdate(
-                                { state, [condition.design_year]: data.design_year,
+                            }
+                            delete form["history"];
+                            let updatedForm = await collection.findOneAndUpdate(
+                                {
+                                    state, [condition.design_year]: data.design_year,
                                     type: form.type,
                                     installment: form.installment,
                                     year: form.year
-                                 },
+                                },
                                 { $set: formData, $push: { history: form } },
                                 { new: true, runValidators: true }
-                              );
-                              numberOfFormsUpdated++;
-                              singleForm = updatedForm;
-                        
-                          }
-                  }
+                            );
+                            numberOfFormsUpdated++;
+                            singleForm = updatedForm;
+
+                        }
+                    }
                 }
             } else {
-                for(let i=0; i < data.state.length; i++){//update status and add history
+                for (let i = 0; i < data.state.length; i++) {//update status and add history
                     state = data.state[i];
                     form = forms[i];
-                    if(form === undefined) continue;
+                    if (form === undefined) continue;
                     form['actionTakenByRole'] = formData.actionTakenByRole;
                     form['actionTakenBy'] = formData.actionTakenBy;
                     form['status'] = formData.status;
                     form['modifiedAt'] = new Date();
-                    
+
                     //add reject reason/responseFile for single ulb entry
-                    if (actionTakenByRole === 'MoHUA'){
+                    if (actionTakenByRole === 'MoHUA') {
                         form['rejectReason_mohua'] = data.rejectReason;
                         form['responseFile_mohua'] = data.responseFile;
                     }
                     delete form['history'];
                     let updatedForm = await collection.findOneAndUpdate(
-                        {state , [condition.design_year]: data.design_year},
-                        {$set: form, $push: {history: form }},
-                        {new: true, runValidators: true}
-                        );
+                        { state, [condition.design_year]: data.design_year },
+                        { $set: form, $push: { history: form } },
+                        { new: true, runValidators: true }
+                    );
                     numberOfFormsUpdated++;
                     singleForm = updatedForm;
                 }
             }
         }
-        if(numberOfFormsUpdated === 1 ){
+        if (numberOfFormsUpdated === 1) {
             return res.status(200).json({
                 status: true,
                 message: `${numberOfFormsUpdated} form ${data.status ?? "updated."}`,
                 data: singleForm
 
             });
-        } else if(numberOfFormsUpdated>1){
+        } else if (numberOfFormsUpdated > 1) {
             return res.status(200).json({
                 status: true,
                 message: `${numberOfFormsUpdated} forms ${data.status ?? "updated."}`,
@@ -579,35 +635,35 @@ module.exports.updateForm = async (req, res) =>{
     }
 }
 
-module.exports.annualaccount = catchAsync(async (req,res)=>{
+module.exports.annualaccount = catchAsync(async (req, res) => {
     const data = req.body;
     const user = req.decoded;
-    let ulb="";
+    let ulb = "";
     let singleUlb; //to return updated response for single ulb
-    const masterForm = await Sidemenu.findOne({_id: ObjectId(data.formId)}).lean();
-    if(user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA'){
-      return  res.status(403).json({
+    const masterForm = await Sidemenu.findOne({ _id: ObjectId(data.formId) }).lean();
+    if (user.role != 'ULB' && user.role != 'STATE' && user.role != 'MoHUA') {
+        return res.status(403).json({
             success: false,
-            message:"Not AUthorized to perform this action"
+            message: "Not AUthorized to perform this action"
         })
     }
 
-    if(!masterForm){
+    if (!masterForm) {
         return res.status(400).json({
             status: false,
             message: "Form not found"
         })
     }
-    
+
     const collection = getCollectionName(masterForm.name);
     const formData = {};
     const { role: actionTakenByRole, _id: actionTakenBy } = user;
     formData['actionTakenByRole'] = actionTakenByRole;
     formData['actionTakenBy'] = actionTakenBy;
     formData['status'] = data.status;
-    
+
     //Check if role is other than STATE or MoHUA
-    if(actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA"){
+    if (actionTakenByRole !== "STATE" && actionTakenByRole !== "MoHUA") {
         return res.status(401).json({
             status: false,
             message: "Not authorized"
@@ -623,22 +679,22 @@ module.exports.annualaccount = catchAsync(async (req,res)=>{
     //     formData['responseFile_mohua'] = data.responseFile;     
     // }
     let condition = {};
-    const forms = await collection.find({ulb :{$in : data.ulb}, [condition.design_year]: data.design_year}).lean();
-    let form={}, numberOfFormsUpdated=0;
-    for(let i=0; i < data.ulb.length; i++){
+    const forms = await collection.find({ ulb: { $in: data.ulb }, [condition.design_year]: data.design_year }).lean();
+    let form = {}, numberOfFormsUpdated = 0;
+    for (let i = 0; i < data.ulb.length; i++) {
         ulb = data.ulb[i];
         form = forms[i];
-        if(form === undefined) continue;
+        if (form === undefined) continue;
         form['actionTakenByRole'] = formData.actionTakenByRole;
         form['actionTakenBy'] = formData.actionTakenBy;
         form['status'] = formData.status;
         form['modifiedAt'] = new Date();
         form['history'] = undefined;
         let updatedForm = await collection.findOneAndUpdate(
-            {ulb , [condition.design_year]: data.design_year},
-            {$set: formData, $push: {history: form }},
-            {new: true, runValidators: true}
-            );
+            { ulb, [condition.design_year]: data.design_year },
+            { $set: formData, $push: { history: form } },
+            { new: true, runValidators: true }
+        );
         numberOfFormsUpdated++;
         singleUlb = updatedForm;
     }//update status and add history
@@ -646,8 +702,8 @@ module.exports.annualaccount = catchAsync(async (req,res)=>{
 })
 
 
-function findTarget(target, arr){
-    let obj ="";
+function findTarget(target, arr) {
+    let obj = "";
     let targetArr = arr.filter((element) => {
         let form = {
             state: element.state,
@@ -663,22 +719,28 @@ function findTarget(target, arr){
             installment: target.installment,
             year: target.year
         }
-        if(JSON.stringify(form) === JSON.stringify(targetObj)){
+        if (JSON.stringify(form) === JSON.stringify(targetObj)) {
             return element;
         }
     })
-    if(targetArr.length === 1){
+    if (targetArr.length === 1) {
         obj = targetArr[0];
     }
     return obj;
 }
 
 
-function findForm(formArray, stateId){
-   let forms = formArray.filter((element)=>{
+function findForm(formArray, stateId) {
+    let forms = formArray.filter((element) => {
         return element.state.toString() === stateId.toString()
     })
     return forms;
+}
+
+let apiUrls = {
+    "demo": "https://democityfinanceapi.dhwaniris.in/api/v1/",
+    "staging": "https://staging.cityfinance.in/api/v1/",
+    "production": "https://cityfinance.in/api/v1/"
 }
 
 // db.getCollection('ulbs').aggregate([
@@ -697,10 +759,308 @@ function findForm(formArray, stateId){
 //             localField: "_id",
 //             foreignField: "ulb",
 //             as: "annualaccountdata",
-            
+
 //         }  
 //   },
 // ])
+function writeCsv(cols, csvCols,ele, res) {
+    let dbCOls = Object.keys(csvCols)
+    try {
+        let str = ""
+        for (let key of dbCOls) {
+            if (ele[key]) {
+                str += ele[key] + ","
+            }
+            else {
+                str += " "+","
+            }
+
+        }
+        res.write(str + "\r\n")
+    }
+    catch (err) {
+        console.log("error in writeCsv :: ", err.message)
+    }
+}
+
+
+/**
+ * function that creates csv only for aggregation queries
+ * @param {*} modelName 
+ * @param {*} query 
+ * @param {*} res 
+ * @param {*} cols 
+ */
+function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr) {
+    try {
+
+        let cursor = moongose.model(modelName).aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        res.write(cols.join(","))
+        res.write("\r\n")
+        cursor.on("data", (document) => {
+            if (fromArr) {
+                for (let ele of document[fromArr]) {
+                    writeCsv(cols,csvCols, ele, res)
+                }
+            }
+            else {
+                writeCsv(cols,csvCols, document)
+            }
+        })
+        cursor.on("end", (el) => {
+            res.end()
+            console.log("ended")
+        })
+    }
+    catch (err) {
+        console.log("error in sendCsv ::: ", err.message)
+        res.end()
+    }
+}
+
+module.exports.canTakeActionOrViewOnly = (data, userRole, adminLevel = false) => {
+    let status = data['formStatus'];
+    switch (true) {
+        case status == StatusList.Not_Started:
+            return false;
+            break;
+        case status == StatusList.In_Progress:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_State && userRole == 'STATE':
+            return true;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            console.log("adminglevel ::: ", adminLevel)
+            return true
+            break;
+        case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            return false;
+            break;
+        case status == StatusList.Rejected_By_State:
+            return false;
+            break;
+        case status == StatusList.Rejected_By_MoHUA:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
+            return true;
+            break;
+        case status == StatusList.Approved_By_MoHUA:
+            return false;
+            break;
+
+        default:
+            break;
+    }
+}
+class AggregationServices {
+    static dateFormat = "%d-%m-%Y"
+    /**
+    * function for unwind
+    * @param {string} key
+    */
+    static getUnwindObj(key, preserveNullAndEmptyArrays = false) {
+        try {
+            var obj = {
+                "$unwind": key
+            }
+            if (preserveNullAndEmptyArrays) {
+                obj = { "$unwind": {} }
+                obj["$unwind"]['path'] = key
+                obj["$unwind"]["preserveNullAndEmptyArrays"] = true
+            }
+            return obj
+        }
+        catch (err) {
+            console.log("error in getUnwindObj ::: ", err)
+        }
+    }
+    /**
+     * if lookup query is simple then use this
+     * @param {*} from 
+     * @param {*} localField 
+     * @param {*} foreignField 
+     * @param {*} as 
+     * @returns an object which with the lookup queries
+     */
+    static getCommonLookupObj(from, localField, foreignField, as) {
+        let obj = {}
+        try {
+            obj = {
+                "$lookup": {
+                    "from": from,
+                    "localField": localField,
+                    "foreignField": foreignField,
+                    "as": as
+                }
+            }
+            return obj
+        }
+        catch (err) {
+            console.log("error in get CommonLookup obj")
+            return obj
+        }
+    }
+
+
+
+    /**
+     * 
+     * @param {*} field 
+     * @returns an javascript object 
+     */
+    static getCommonDateTransformer(field) {
+        return {
+            "$dateToString": {
+                "date": field,
+                "format": this.dateFormat
+            }
+        }
+    }
+    static getCommonSkipObj(number) {
+        return {
+            "$skip": number
+        }
+    }
+    static getCommonLimitObj(number) {
+        return {
+            "$limit": number
+        }
+    }
+    static getCommonSliceObj(arr, from, to) {
+        return {
+            "$slice": [arr, from, to]
+        }
+    }
+    static getCommonTotalObj(arr) {
+        return {
+            $cond: {
+                if: { $isArray: arr },
+                then: { $size: arr },
+                else: 0
+            }
+        }
+
+    }
+    static getCommonSortArrObj(arr, sortBy) {
+        return {
+            $sortArray: {
+                input: arr,
+                sortBy
+            }
+        }
+    }
+    static getCommonConvertor(value, to) {
+        return {
+            $convert: {
+                input: value,
+                to
+            }
+        }
+    }
+    static getCommonConcatObj(arr) {
+        return {
+            $concat: arr
+        }
+    }
+    static getCommonEqObj(tableCol, customVar) {
+        return {
+            $eq: [tableCol, customVar]
+        }
+    }
+    static getCommonSumObj(col) {
+        return {
+            $sum: col
+        }
+    }
+    static getCommonPrObj(arr) {
+        return {
+            $multiply: arr
+        }
+    }
+    static getCommonDivObj(arr) {
+        return {
+            $divide: arr
+        }
+    }
+    static getCommonSubtract(arr){
+        let sub = {$subtract:arr}
+        return {
+            "$cond":{
+                "if":{
+                    "$gte":[sub,0],
+                },
+                "then":sub,
+                "else":0
+            }
+        }
+    }
+    static getCasesForCurrenCon(fieldName,then,value1,value2){
+        let obj =  {
+            "case": {},
+            "then": then
+        }
+        obj['case'] = {
+            "$and": [
+                { "$gte": [`$${fieldName}`, value1] },
+                { "$lt": [`$${fieldName}`, value2] }
+        ]
+        }
+        return obj
+    }
+
+    static getCommonPerCalc(value,totalValue){
+        let cont = {
+            "$multiply":[
+                {"$divide":[value,totalValue]},
+                100
+            ]
+        }
+        return this.getCommonConvertor(
+            {
+                "$cond":{
+                    "if":{
+                        "$gte":[cont,
+                        0
+                    ]
+                    },
+                    "then":cont,
+                    "else":0
+                }
+            },
+            "int"
+        )
+    }
+    static getCommonSubStr(field,start,end){
+        return {
+            "$substr" :[field,start,end]
+        }
+    }
+    static getCommonCurrencyConvertor(fieldName) {
+        let obj =  {
+            "$switch": {
+                "branches": [
+                    
+                ],
+                "default":""
+            },
+            
+        }
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"TH",1000,10000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"LKH",10000,1000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"CR",1000000,100000000))
+        return obj
+    }
+}
+module.exports.sendCsv = sendCsv
+module.exports.AggregationServices = AggregationServices
+module.exports.apiUrls = apiUrls
 
 module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
     let status = data['formStatus'];
