@@ -308,7 +308,7 @@ module.exports.get = catchAsync(async (req, res) => {
         let entity = tempData[i];
         if(entity?.sequence){
 
-            if(entity.sequence === 1){//first entry
+            if(i === 0){//first entry
                 entity.prevUrl = null;
                 entity.nextUrl = `../${tempData[i+1].url}`;
             } else if(i === (tempData.length-1)){//last entry
@@ -318,8 +318,11 @@ module.exports.get = catchAsync(async (req, res) => {
                 entity.prevUrl = `../${tempData[i-1].url}`;
                 entity.nextUrl = `../${tempData[i+1].url}`;
             }
-            result2.push(entity);
+            // result2.push(entity);
             
+        }
+        if(role === "STATE"){
+          entity.category  = `${entity.category}_${entity.groupSequence}`
         }
     }
     //group the data 
