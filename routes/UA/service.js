@@ -1138,8 +1138,8 @@ function getSortByKeys(sortBy, order) {
                 }
             }
             else{
-                if(!isNaN(parseInt(order[key]))){
-                    temp[sortFilterKeys[sortBy]] = parseInt(parseInt(order[key]))
+                if(!isNaN(parseInt(order))){
+                    temp[sortFilterKeys[sortBy]] = parseInt(order)
                 }
             }
             if (Object.keys(temp).length > 0){
@@ -1297,9 +1297,9 @@ function lookupQueryForDur(service,designYear){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    // {
-                                    //     "$gte":["$grantPosition.receivedDuringYr",1]
-                                    // }
+                                    {
+                                        "$gte":["$projects.expenditure",1]
+                                    }
                                 ]
                             }
                         }
@@ -1339,7 +1339,7 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
     try{
         let obj = {
             "$facet":{
-                "total":[{"$count":"total"}],
+                "total":[{"$count":"projects"}],
                 "data":dataArr
             }
         }
@@ -1422,7 +1422,8 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         response.columns = dashboardColumns
         response.message = "Fetched Successfully"
         response.success = true
-        return res.status(200).json(response)
+        console.log(">>>>>>>>>> ",dbResponse)
+        return res.status(200).json(dbResponse)
     }
     catch(err){
         response.message = "Something went wrong"
