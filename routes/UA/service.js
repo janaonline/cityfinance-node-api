@@ -16,7 +16,7 @@ const axios = require('axios')
 const {sendCsv,apiUrls} = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
-const { columns,csvCols,sortFilterKeys } = require("./constants.js")
+const { columns,csvCols,sortFilterKeys,dashboardColumns } = require("./constants.js")
 const Redis = require("../../service/redis")
 const { AggregationServices } = require("../../routes/CommonActionAPI/service")
 const lineItemIndicatorIDs = [
@@ -1343,7 +1343,7 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
     }
 }
 
-function getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit){
+function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
     const service = AggregationServices
     let query = []
     try{
@@ -1381,7 +1381,7 @@ function getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit){
         })
     }
     catch(err){
-        console.log("error in getAllAggregationQuery :: ",err.message)
+        console.log("error in getQueryStateRelated :: ",err.message)
     }
     return query
 }
@@ -1404,13 +1404,14 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         }
         let sortKey = getSortByKeys(sortBy, order)
         let designYear = years['2022-23']
-        let query = await getAllAggregationQuery(designYear,filterObj,sortKey,skip,limit)
+        let query = await getQueryStateRelated(designYear,filterObj,sortKey,skip,limit)
         let dbResponse = await Ulb.aggregate(query)
         response.data = dbResponse[0]['data']
         response.total = dbResponse[0]['total']
+        response.columns = dashboardColumns
         response.message = "Fetched Successfully"
         response.success = true
-        return res.status(200).json(dbResponse)
+        return res.status(200).json(response)
     }
     catch(err){
         response.message = "Something went wrong"

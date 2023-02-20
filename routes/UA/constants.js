@@ -135,8 +135,32 @@ const sortFilterKeys = {
     "ulbName":"ulbName"
 }
 
+const dashboardColumns = [
+    {
+        "label":"State Name",
+        "key":"stateName"
+    },
+    {
+        "label":"City",
+        "key":"ulbName"
+    },
+    {
+        "label":"Total Project Cost INR(CR)",
+        "key":"totalProjectCost"
+    },
+    {
+        "label":"No of Projects",
+        "key":"totalProjects"
+    },
+    {
+        "label":"ULBShare(Funding Potential) INR(CR) ",
+        "key":"ulbShare"
+    }
+]
+
 module.exports = {
     columns,
     csvCols,
-    sortFilterKeys
+    sortFilterKeys,
+    dashboardColumns
 }
