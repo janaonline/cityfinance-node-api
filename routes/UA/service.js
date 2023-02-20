@@ -1095,7 +1095,7 @@ async function getQueryForUtilizationReports(obj) {
         query.push(service.getUnwindObj("$projects", true))
         let fieldstoCalculate = {
             fromValue:"$projects.cost",
-            toValue: "$grantPosition.receivedDuringYr"
+            toValue: "$projects.expenditure"
         }
         query.push(addUlbShare(service,fieldstoCalculate))
         // stage 4 lookup from category 
@@ -1366,7 +1366,11 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
                     "$sum": "$DUR.projects.cost"
                 }
             },
-            toValue:"$DUR.grantPosition.receivedDuringYr"
+            toValue:{
+                "$sum": {
+                    "$sum": "$DUR.projects.expenditure"
+                }
+            }
         }
         query.push(addUlbShare(service,fields))
         //stage 3
