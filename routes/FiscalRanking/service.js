@@ -11,7 +11,7 @@ const userTypes = require("../../util/userTypes")
 // const converter = require('json-2-csv');
 const { calculateKeys,canTakeActionOrViewOnly,calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
-const { fiscalRankingFormJson } = require('./fydynemic');
+const { fiscalRankingFormJson, inputKeys, getInputKeysByType } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
 const fs = require('fs');
@@ -289,6 +289,20 @@ async function getModifiedTabsFiscalRanking(tabs,viewOne,fyDynemic,conditionForF
     console.log("error in getModifiedTabsFiscalRanking ::: ",err.message)
   }
 }
+function statusObj(label,fieldType,type,dataSource,position){
+    return {
+      ...getInputKeysByType(
+        fieldType,
+        type,
+        label,
+        dataSource,
+        position
+        ),
+      value: null,
+      status: "PENDING"
+    }
+}
+      
 
 function assignCalculatedValues(fyDynemic,viewONe){
   let totalOwnRevenueAreaObj = fyDynemic["goverPar"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
@@ -297,6 +311,7 @@ function assignCalculatedValues(fyDynemic,viewONe){
   let paid_property_tax  = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
   let fy21CashObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
   let fy21OnlineObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
+
   Object.assign(totalOwnRevenueAreaObj,viewONe['totalOwnRevenueArea'])
   Object.assign(propertyTaxObj,viewONe['property_tax_register'])
   Object.assign(payingPropObj,viewONe['paying_property_tax'])
@@ -331,52 +346,120 @@ exports.getView = async function (req, res, next) {
       data['fyData'] = fyData
       viewOne = data
     } else {
-      let numberOfQuestion = {
-        value: null,
-        status: "PENDING"
-      }
+      
       viewOne = {
         "ulb": null,
         "design_year": null,
         "population11": {
+          ...getInputKeysByType(
+            "number",
+            "",
+            "Population as per 2011 Census",
+            ulbPData && ulbPData?.population > 0 ? "ULBLedger" :"FiscalRanking",
+            "3"),
           "value": ulbPData ? ulbPData?.population : "",
           "readonly": ulbPData ? ulbPData?.population > 0 ? true : false : false,
-          "dataSource":ulbPData && ulbPData?.population > 0 ? "ULBLedger" : "FiscalRanking"
+          "modelName":ulbPData && ulbPData?.population > 0 ? "ULBLedger" : "FiscalRanking"
         },
         "populationFr": {
+          ...getInputKeysByType(
+            "number",
+            "",
+            "Population as on 1st April 2022",
+            "FiscalRanking",
+            "4"),
           "value": twEightSlbs ? twEightSlbs?.population : "",
           "readonly": false,
           "status":"PENDING",
-          "dataSource":ulbPData && ulbPData?.population > 0 ? "ULBLedger" :"FiscalRanking"
         },
         "webLink": {
+          ...getInputKeysByType(
+            "text",
+            "",
+            "ULB website URL link",
+            "FiscalRanking",
+            "5"),
           "value":null,
           "status":"PENDING"
         },
         "nameCmsnr": {
+          ...getInputKeysByType(
+            "text",
+            "",
+            "Name of Commissioner / Executive Officer",
+            "FiscalRanking",
+            "6"),
           "value":null,
           "status":"PENDING"
         },
         "nameOfNodalOfficer": {
+          ...getInputKeysByType(
+            "text",
+            "",
+            "Name of the Nodal Officer",
+            "FiscalRanking",
+            "1"),
           "value":null,
           "status":"PENDING"
         },
         "designationOftNodalOfficer": {
+          ...getInputKeysByType(
+            "text",
+            "",
+            "Designation of the Nodal Officer",
+            "FiscalRanking",
+            "2"),
           "value":null,
           "status":"PENDING"
         },
         "email":{
+          ...getInputKeysByType(
+            "email",
+            "",
+            "Email",
+            "FiscalRanking",
+            "3"),
           "value":null,
           "status":"PENDING"
         },
         "mobile": {
+          ...getInputKeysByType(
+            "number",
+            "",
+            "Mobile number",
+            "FiscalRanking",
+            "4"),
           "value":null,
           "status":"PENDING"
         },
-        "waterSupply": numberOfQuestion,
-        "sanitationService": numberOfQuestion,
-        "propertyWaterTax": numberOfQuestion,
-        "propertySanitationTax": numberOfQuestion,
+        "waterSupply": statusObj(
+          "Does the ULB handle water supply services?",
+          "radio-toggle",
+          "",
+          "FiscalRanking",
+          "7",
+        ),
+        "sanitationService": statusObj(
+          "Does the ULB handle sanitation service delivery?",
+          "radio-toggle",
+          "",
+          "FiscalRanking",
+          "8",
+        ),
+        "propertyWaterTax": statusObj(
+          "Does your Property Tax include Water Tax?",
+          "radio-toggle",
+          "",
+          "FiscalRanking",
+          "9",
+        ),
+        "propertySanitationTax": statusObj(
+          "Does your Property Tax include Water Tax?",
+          "radio-toggle",
+          "",
+          "FiscalRanking",
+          "9",
+        ),
         "webUrlAnnual": numberOfQuestion,
         "registerGis": numberOfQuestion,
         "accountStwre": numberOfQuestion,
@@ -424,7 +507,7 @@ exports.getView = async function (req, res, next) {
         for (let pf of subData[key]?.yearData) {
           if (pf?.code?.length > 0) {
             pf['status'] = null
-            pf["dataSource"] = "FiscalRanking"
+            pf["modelName"] = "FiscalRanking"
             if (fyData.length) {
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type)); 
               if (singleFydata) {
@@ -440,7 +523,7 @@ exports.getView = async function (req, res, next) {
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
-                pf["dataSource"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
+                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
               }
             } else {
               if (viewOne.isDraft == null) {
@@ -448,7 +531,7 @@ exports.getView = async function (req, res, next) {
                 pf['amount'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA":null;
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
-                pf["dataSource"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
+                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" :"FiscalRanking"
               }
             }
           } else {

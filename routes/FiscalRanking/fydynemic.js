@@ -1515,4 +1515,20 @@ const fiscalRankingFormJson = () => {
     }
   }
 }
+function getInputKeysByType(formType,type,label,dataSource,position){
+  return  {
+    label: label,
+    max: "10",
+    min: "0",
+    placeHolder: "",
+    postion: position,
+    modelName: dataSource, // USER | LEDGER
+    formFieldType: formType, // text | number | radio-toggle | file
+    required: true,
+    type: type,
+    canShow: true
+  }
+}
+
 module.exports.fiscalRankingFormJson = fiscalRankingFormJson;
+module.exports.getInputKeysByType = getInputKeysByType;
