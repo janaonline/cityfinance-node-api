@@ -1298,12 +1298,12 @@ function lookupQueryForDur(service,designYear){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    {
-                                        "$gte":["$projects.expenditure",1]
-                                    },
-                                    {
-                                        "$ne":["$projects.expenditure","$projects.cost"]
-                                    }
+                                    // {
+                                    //     "$gte":["$projects.expenditure",1]
+                                    // },
+                                    // {
+                                    //     "$ne":["$projects.expenditure","$projects.cost"]
+                                    // }
                                 ]
                             }
                         }
@@ -1427,8 +1427,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         response.columns = dashboardColumns
         response.message = "Fetched Successfully"
         response.success = true
-        console.log(">>>>>>>>>> ",dbResponse)
-        return res.status(200).json(response)
+        return res.status(200).json(dbResponse)
     }
     catch(err){
         response.message = "Something went wrong"
