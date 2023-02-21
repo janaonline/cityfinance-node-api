@@ -865,6 +865,19 @@ function addCsvFields(dataObj){
     return dataObj
 }
 
+function getProjectReportDetail(csv){
+    let obj = {
+        "name": "Project Report file",
+        "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+    }
+    if(csv){
+        return "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+    }
+    return obj
+}
+
+
+
 function getGroupByQuery(service,ulbId,csv) {
     try {
         var dataObj = {
@@ -889,10 +902,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "name": "More information",
                     "url": getConcatinatedUrl(service,ulbId)
                 },
-                "projectReport": {
-                    "name": "Project Report file",
-                    "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
-                },
+                "projectReport": getProjectReportDetail(csv),
                 "creditRating": {
                     "name": "Credit rating",
                     "url": "https://democityfinance.in/creditRating.pdf"
@@ -1143,7 +1153,7 @@ function getSortByKeys(sortBy, order) {
                 }
             }
             if (Object.keys(temp).length > 0){
-                sortKey['provided'] = false
+                sortKey['provided'] = true
                 sortKey["filters"] = temp
             }
         }
@@ -1204,13 +1214,13 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         if (getQuery === "true") {
             return res.status(200).json(query)
         }
-        let document = await redisStoreData(redis_key);
-        if (document) {
-            dbResponse = JSON.parse(document)
-        } else {
-            dbResponse = await DUR.aggregate(query).allowDiskUse(true)
-            await Redis.set(redis_key, JSON.stringify(dbResponse));
-        }
+        // let document = await redisStoreData(redis_key);
+        // if (document) {
+        //     dbResponse = JSON.parse(document)
+        // } else {
+        dbResponse = await DUR.aggregate(query).allowDiskUse(true)
+        await Redis.set(redis_key, JSON.stringify(dbResponse));
+        // }
         if(csv){
             let filename = "Projects.csv"
             let dbCols = Object.values(csvCols)
@@ -1270,7 +1280,8 @@ function getProjectionForDur(service){
                 "stateName":"$state.name",
                 "totalProjectCost":sumQuery,
                 "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :"$ulbShare"
+                "ulbShare" :"$ulbShare",
+                // "total":{"$count":"$DUR.ulb"}
             }
         }
         return obj
@@ -1297,9 +1308,12 @@ function lookupQueryForDur(service,designYear){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    {
-                                        "$gte":["$projects.expenditure",1]
-                                    }
+                                    // {
+                                    //     "$gte":["$projects.expenditure",1]
+                                    // },
+                                    // {
+                                    //     "$ne":["$projects.expenditure","$projects.cost"]
+                                    // }
                                 ]
                             }
                         }
@@ -1334,12 +1348,15 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
             }
         )
     }
+    console.log("filterOBJ :: ",filterObj)
+    console.log("sortKey :: ",sortKey)
     dataArr.push({"$skip":skip})
     dataArr.push({"$limit":limit})
     try{
         let obj = {
             "$facet":{
-                "total":[{"$count":"projects"}],
+                "total":[{"$count":"total"}
+            ],
                 "data":dataArr
             }
         }
@@ -1422,12 +1439,11 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         response.columns = dashboardColumns
         response.message = "Fetched Successfully"
         response.success = true
-        console.log(">>>>>>>>>> ",dbResponse)
         return res.status(200).json(response)
     }
     catch(err){
         response.message = "Something went wrong"
-        console.log("error in getIfProjectsWithState :: ",err.message)
+        console.log("error in getIfProjrajaectsWithState :: ",err.message)
     }
     res.status(500).json(response)
 })
