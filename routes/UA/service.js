@@ -865,6 +865,19 @@ function addCsvFields(dataObj){
     return dataObj
 }
 
+function getProjectReportDetail(csv){
+    let obj = {
+        "name": "Project Report file",
+        "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+    }
+    if(csv){
+        return "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+    }
+    return obj
+}
+
+
+
 function getGroupByQuery(service,ulbId,csv) {
     try {
         var dataObj = {
@@ -889,10 +902,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "name": "More information",
                     "url": getConcatinatedUrl(service,ulbId)
                 },
-                "projectReport": {
-                    "name": "Project Report file",
-                    "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
-                },
+                "projectReport": getProjectReportDetail(csv),
                 "creditRating": {
                     "name": "Credit rating",
                     "url": "https://democityfinance.in/creditRating.pdf"
@@ -1204,13 +1214,13 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         if (getQuery === "true") {
             return res.status(200).json(query)
         }
-        let document = await redisStoreData(redis_key);
-        if (document) {
-            dbResponse = JSON.parse(document)
-        } else {
-            dbResponse = await DUR.aggregate(query).allowDiskUse(true)
-            await Redis.set(redis_key, JSON.stringify(dbResponse));
-        }
+        // let document = await redisStoreData(redis_key);
+        // if (document) {
+        //     dbResponse = JSON.parse(document)
+        // } else {
+        dbResponse = await DUR.aggregate(query).allowDiskUse(true)
+        await Redis.set(redis_key, JSON.stringify(dbResponse));
+        // }
         if(csv){
             let filename = "Projects.csv"
             let dbCols = Object.values(csvCols)
