@@ -121,7 +121,7 @@ let csvCols = {
     "omExpensesUlb":"O&M Expenses (ULB Share)",
     "startDate":"Project Start Date",
     "estimatedCompletionDate":"Estimated Project Completion Date",
-    "projectReport.url":"Detailed Project Report",
+    "projectReport":"Detailed Project Report",
     "creditRating1":"Credit Rating 1",
     "creditRating2":"Credit Rating 2"
 }
