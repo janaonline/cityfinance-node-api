@@ -1143,7 +1143,7 @@ function getSortByKeys(sortBy, order) {
                 }
             }
             if (Object.keys(temp).length > 0){
-                sortKey['provided'] = false
+                sortKey['provided'] = true
                 sortKey["filters"] = temp
             }
         }
@@ -1270,7 +1270,8 @@ function getProjectionForDur(service){
                 "stateName":"$state.name",
                 "totalProjectCost":sumQuery,
                 "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :"$ulbShare"
+                "ulbShare" :"$ulbShare",
+                // "total":{"$count":"$DUR.ulb"}
             }
         }
         return obj
@@ -1297,9 +1298,12 @@ function lookupQueryForDur(service,designYear){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    {
-                                        "$gte":["$projects.expenditure",1]
-                                    }
+                                    // {
+                                    //     "$gte":["$projects.expenditure",1]
+                                    // },
+                                    // {
+                                    //     "$ne":["$projects.expenditure","$projects.cost"]
+                                    // }
                                 ]
                             }
                         }
@@ -1334,12 +1338,14 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
             }
         )
     }
+    console.log("sortKey :: ",sortKey)
     dataArr.push({"$skip":skip})
     dataArr.push({"$limit":limit})
     try{
         let obj = {
             "$facet":{
-                "total":[{"$count":"projects"}],
+                "total":[{"$count":"total"}
+            ],
                 "data":dataArr
             }
         }
@@ -1422,8 +1428,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         response.columns = dashboardColumns
         response.message = "Fetched Successfully"
         response.success = true
-        console.log(">>>>>>>>>> ",dbResponse)
-        return res.status(200).json(response)
+        return res.status(200).json(dbResponse)
     }
     catch(err){
         response.message = "Something went wrong"
