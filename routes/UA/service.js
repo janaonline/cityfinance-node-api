@@ -1143,7 +1143,7 @@ function getSortByKeys(sortBy, order) {
                 }
             }
             if (Object.keys(temp).length > 0){
-                sortKey['provided'] = false
+                sortKey['provided'] = true
                 sortKey["filters"] = temp
             }
         }
@@ -1338,6 +1338,7 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
             }
         )
     }
+    console.log("sortKey :: ",sortKey)
     dataArr.push({"$skip":skip})
     dataArr.push({"$limit":limit})
     try{
