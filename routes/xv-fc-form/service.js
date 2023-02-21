@@ -31,18 +31,20 @@ const statusTypes = require('../../util/statusTypes')
 const FORM_STATUS = require("../../util/newStatusList");
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const IndicatorLineItem = require('../../models/indicatorLineItems')
-const {calculateSlbMarks} = require('../Scoring/service')
+const { calculateSlbMarks } = require('../Scoring/service')
 const MasterForm = require('../../models/MasterForm')
-const { calculateStatus} = require('../CommonActionAPI/service')
+const { calculateStatus } = require('../CommonActionAPI/service')
 const TwentyEightSlbForm = require('../../models/TwentyEightSlbsForm');
 const PrevLineItem_CONSTANTS = require('../../util/lineItems')
+const { doRequestServer } = require('./../annual-accounts/service')
 
-const BackendHeaderHost ={
+
+const BackendHeaderHost = {
   Demo: "democityfinanceapi.dhwaniris.in",
   Staging: "staging.cityfinance.in",
   Prod: "cityfinance.in",
 }
-const FrontendHeaderHost ={
+const FrontendHeaderHost = {
   Demo: "democityfinance.dhwaniris.in",
   Staging: "staging.cityfinance.in",
   Prod: "cityfinance.in",
@@ -229,734 +231,734 @@ const time = () => {
 module.exports.getSLBDataUAWise = catchAsync(async (req, res) => {
   let user = req.decoded;
 
-  
-    let { design_year } = req.params;
-    let { ua_id } = req.query;
-    if (!ua_id) {
-      return res.status(400).json({
-        success: false,
-        message: "UA Id NOT FOUND"
-      })
-    }
-    if (!design_year) {
-      return res.status(404).json({
-        success: false,
-        message: "Design Year Not Found",
-      });
-    }
-    // let state = user?.state;
 
-    let query1 = [
-      {
-        $match: {
+  let { design_year } = req.params;
+  let { ua_id } = req.query;
+  if (!ua_id) {
+    return res.status(400).json({
+      success: false,
+      message: "UA Id NOT FOUND"
+    })
+  }
+  if (!design_year) {
+    return res.status(404).json({
+      success: false,
+      message: "Design Year Not Found",
+    });
+  }
+  // let state = user?.state;
 
-          _id: ObjectId(ua_id)
-        }
-      },
+  let query1 = [
+    {
+      $match: {
 
-      {
+        _id: ObjectId(ua_id)
+      }
+    },
 
-        $lookup: {
-          from: "masterforms",
-          localField: "ulb",
-          foreignField: "ulb",
-          as: "masterformData"
-        }
-      },
-      {
-        $unwind: "$masterformData"
-      },
+    {
 
-      {
-        $match: {
-          "masterformData.design_year": ObjectId(design_year),
-          $or: [
-            {
-              $and: [{ "masterformData.actionTakenByRole": "STATE" },
-              { "masterformData.isSubmit": true }]
-            },
+      $lookup: {
+        from: "masterforms",
+        localField: "ulb",
+        foreignField: "ulb",
+        as: "masterformData"
+      }
+    },
+    {
+      $unwind: "$masterformData"
+    },
 
-            {
-              $and: [{ "masterformData.actionTakenByRole": "MoHUA" }, {
-                $or: [
-                  { "masterformData.status": "APPROVED" },
-                  { "masterformData.status": "PENDING" }]
-              }]
-            }]
-        }
-      },
-
-      {
-        $lookup: {
-          from: "xvfcgrantulbforms",
-          localField: "masterformData.ulb",
-          foreignField: "ulb",
-          as: "xvfcformDataApproved"
-
-        }
-      },
-
-      {
-        $unwind: "$xvfcformDataApproved"
-      },
-      {
-
-        $match: {
-          "xvfcformDataApproved.design_year": ObjectId(design_year)
-        }
-      },
-      {
-        $lookup: {
-          from: "users",
-          localField: "xvfcformDataApproved.actionTakenBy",
-          foreignField: "_id",
-          as: "actionTakenBy"
-
-        }
-      },
-      { $unwind: "$actionTakenBy" },
-      {
-        $match: {
-          $or: [{
-            $and: [{ "actionTakenBy.role": "STATE" },
-            { "xvfcformDataApproved.waterManagement.status": "APPROVED" }]
+    {
+      $match: {
+        "masterformData.design_year": ObjectId(design_year),
+        $or: [
+          {
+            $and: [{ "masterformData.actionTakenByRole": "STATE" },
+            { "masterformData.isSubmit": true }]
           },
 
           {
-            $and: [{ "actionTakenBy.role": "MoHUA" }, {
+            $and: [{ "masterformData.actionTakenByRole": "MoHUA" }, {
               $or: [
-                { "xvfcformDataApproved.waterManagement.status": "APPROVED" },
-                { "xvfcformDataApproved.waterManagement.status": "PENDING" }]
+                { "masterformData.status": "APPROVED" },
+                { "masterformData.status": "PENDING" }]
             }]
           }]
+      }
+    },
 
+    {
+      $lookup: {
+        from: "xvfcgrantulbforms",
+        localField: "masterformData.ulb",
+        foreignField: "ulb",
+        as: "xvfcformDataApproved"
 
-        }
-      },
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "xvfcformDataApproved.ulb",
-          foreignField: "_id",
-          as: "approvedULBs"
+      }
+    },
 
-        }
-      },
-      {
-        $unwind: "$approvedULBs"
-      },
-      {
-        $project: {
-          ua:"$name",
-          waterSuppliedPerDay: "$xvfcformDataApproved.waterManagement.waterSuppliedPerDay",
-          reduction: "$xvfcformDataApproved.waterManagement.reduction",
-          houseHoldCoveredWithSewerage:
-            "$xvfcformDataApproved.waterManagement.houseHoldCoveredWithSewerage",
-          houseHoldCoveredPipedSupply:
-            "$xvfcformDataApproved.waterManagement.houseHoldCoveredPipedSupply",
-          ulb: "$approvedULBs",
-population:"$approvedULBs.population"
-        },
-      },
-      {
-        $project: {
-    ua: 1,
-          ulbData:  "$ulb" ,
-            population:"$population",
-          waterSuppliedPerDay2021: {
-        
-              $convert: {
-                input: "$waterSuppliedPerDay.baseline.2021",
-                to: "double",
-              },
-            
-          },
-          waterSuppliedPerDay2122: {
+    {
+      $unwind: "$xvfcformDataApproved"
+    },
+    {
 
-              $convert: {
-                input: "$waterSuppliedPerDay.target.2122",
-                to: "double",
-              },
-           
-          },
-          waterSuppliedPerDay2223: {
-        
-              $convert: {
-                input: "$waterSuppliedPerDay.target.2223",
-                to: "double",
-              },
-          
-          },
-          waterSuppliedPerDay2324: {
-    
-              $convert: {
-                input: "$waterSuppliedPerDay.target.2324",
-                to: "double",
-              },
-       
-          },
-          waterSuppliedPerDay2425: {
-        
-              $convert: {
-                input: "$waterSuppliedPerDay.target.2425",
-                to: "double",
-              },
-         
-          },
-          reduction2021: {
-     
-              $convert: { input: "$reduction.baseline.2021", to: "double" },
-           
-          },
-          reduction2122: {
-     
-              $convert: { input: "$reduction.target.2122", to: "double" },
-        
-          },
-          reduction2223: {
-    
-              $convert: { input: "$reduction.target.2223", to: "double" },
-            
-          },
-          reduction2324: {
-     
-              $convert: { input: "$reduction.target.2324", to: "double" },
-            
-          },
-          reduction2425: {
-     
-              $convert: { input: "$reduction.target.2425", to: "double" },
-            
-          },
-          houseHoldCoveredWithSewerage2021: {
-           
-              $convert: { input: "$houseHoldCoveredWithSewerage.baseline.2021", to: "double" },
-            
-          },
-          houseHoldCoveredWithSewerage2122: {
-      
-              $convert: {
-                input: "$houseHoldCoveredWithSewerage.target.2122",
-                to: "double",
-              },
-        
-          },
-          houseHoldCoveredWithSewerage2223: {
+      $match: {
+        "xvfcformDataApproved.design_year": ObjectId(design_year)
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "xvfcformDataApproved.actionTakenBy",
+        foreignField: "_id",
+        as: "actionTakenBy"
 
-              $convert: {
-                input: "$houseHoldCoveredWithSewerage.target.2223",
-                to: "double",
-              },
-          
-          },
-          houseHoldCoveredWithSewerage2324: {
-      
-              $convert: {
-                input: "$houseHoldCoveredWithSewerage.target.2324",
-                to: "double",
-              },
-            
-          },
-          houseHoldCoveredWithSewerage2425: {
-      
-              $convert: {
-                input: "$houseHoldCoveredWithSewerage.target.2425",
-                to: "double",
-              },
-            
-          },
-          houseHoldCoveredPipedSupply2021: {
-      
-              $convert: {
-                input: "$houseHoldCoveredPipedSupply.baseline.2021",
-                to: "double",
-              },
-       
-          },
-          houseHoldCoveredPipedSupply2122: {
-       
-              $convert: {
-                input: "$houseHoldCoveredPipedSupply.target.2122",
-                to: "double",
-              },
-            
-          },
-          houseHoldCoveredPipedSupply2223: {
-         
-              $convert: {
-                input: "$houseHoldCoveredPipedSupply.target.2223",
-                to: "double",
-              },
-            
-          },
-          houseHoldCoveredPipedSupply2324: {
-
-              $convert: {
-                input: "$houseHoldCoveredPipedSupply.target.2324",
-                to: "double",
-              },
-         
-          },
-          houseHoldCoveredPipedSupply2425: {
-       
-              $convert: {
-                input: "$houseHoldCoveredPipedSupply.target.2425",
-                to: "double",
-              },
-       
-          },
-
+      }
+    },
+    { $unwind: "$actionTakenBy" },
+    {
+      $match: {
+        $or: [{
+          $and: [{ "actionTakenBy.role": "STATE" },
+          { "xvfcformDataApproved.waterManagement.status": "APPROVED" }]
         },
 
-
-      },
-      
-      {
-          $group:{
-         _id:"",
-         ua:{$first:"$ua"},
-         ulbData:{$addToSet:"$ulbData._id"},
-         total:{$sum:1},
-                  "waterSuppliedPerDay2021n":{
-                      $sum:{$multiply:["$waterSuppliedPerDay2021","$population"]}
-                      },
-                      "waterSuppliedPerDay2021d":{$sum:"$population"},
-                      
-                            "waterSuppliedPerDay2122n":{
-                      $sum:{$multiply:["$waterSuppliedPerDay2122","$population"]}
-                      },
-                      "waterSuppliedPerDay2122d":{$sum:"$population"},
-                      
-                          "waterSuppliedPerDay2223n":{
-                      $sum:{$multiply:["$waterSuppliedPerDay2223","$population"]}
-                      },
-                      "waterSuppliedPerDay2223d":{$sum:"$population"},
-                      
-                          "waterSuppliedPerDay2324n":{
-                      $sum:{$multiply:["$waterSuppliedPerDay2324","$population"]}
-                      },
-                      "waterSuppliedPerDay2324d":{$sum:"$population"},
-                      
-                          "waterSuppliedPerDay2425n":{
-                      $sum:{$multiply:["$waterSuppliedPerDay2425","$population"]}
-                      },
-                      "waterSuppliedPerDay2425d":{$sum:"$population"},
-                      
-                          "reduction2021n":{
-                      $sum:{$multiply:["$reduction2021","$population"]}
-                      },
-                      "reduction2021d":{$sum:"$population"},
-                      
-                             "reduction2122n":{
-                      $sum:{$multiply:["$reduction2122","$population"]}
-                      },
-                      "reduction2122d":{$sum:"$population"},
-                      
-                             "reduction2223n":{
-                      $sum:{$multiply:["$reduction2223","$population"]}
-                      },
-                      "reduction2223d":{$sum:"$population"},
-                      
-                             "reduction2324n":{
-                      $sum:{$multiply:["$reduction2324","$population"]}
-                      },
-                      "reduction2324d":{$sum:"$population"},
-                      
-                             "reduction2425n":{
-                      $sum:{$multiply:["$reduction2425","$population"]}
-                      },
-                      "reduction2425d":{$sum:"$population"},
-                      
-                             "houseHoldCoveredWithSewerage2021n":{
-                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2021","$population"]}
-                      },
-                      "houseHoldCoveredWithSewerage2021d":{$sum:"$population"},
-                      
-                       "houseHoldCoveredWithSewerage2122n":{
-                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2122","$population"]}
-                      },
-                      "houseHoldCoveredWithSewerage2122d":{$sum:"$population"},
-                      
-                       "houseHoldCoveredWithSewerage2223n":{
-                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2223","$population"]}
-                      },
-                      "houseHoldCoveredWithSewerage2223d":{$sum:"$population"},
-                      
-                       "houseHoldCoveredWithSewerage2324n":{
-                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2324","$population"]}
-                      },
-                      "houseHoldCoveredWithSewerage2324d":{$sum:"$population"},
-                      
-                       "houseHoldCoveredWithSewerage2425n":{
-                      $sum:{$multiply:["$houseHoldCoveredWithSewerage2425","$population"]}
-                      },
-                      "houseHoldCoveredWithSewerage2425d":{$sum:"$population"},
-                      
-                      
-                           "houseHoldCoveredPipedSupply2021n":{
-                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2021","$population"]}
-                      },
-                      "houseHoldCoveredPipedSupply2021d":{$sum:"$population"},
-                      
-                                  "houseHoldCoveredPipedSupply2122n":{
-                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2122","$population"]}
-                      },
-                      "houseHoldCoveredPipedSupply2122d":{$sum:"$population"},
-                      
-                                  "houseHoldCoveredPipedSupply2223n":{
-                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2223","$population"]}
-                      },
-                      "houseHoldCoveredPipedSupply2223d":{$sum:"$population"},
-                      
-                                  "houseHoldCoveredPipedSupply2324n":{
-                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2324","$population"]}
-                      },
-                      "houseHoldCoveredPipedSupply2324d":{$sum:"$population"},
-                      
-                      
-                                  "houseHoldCoveredPipedSupply2425n":{
-                      $sum:{$multiply:["$houseHoldCoveredPipedSupply2425","$population"]}
-                      },
-                      "houseHoldCoveredPipedSupply2425d":{$sum:"$population"},
-
-                      
-                  }
-              
-          },
-          
-          {
-              $project:{
-                total:1,
-                ulbData:1,
-                ua:1,
-                  waterSuppliedPerDay2021:{
-                    '$cond': [
-                      { '$eq': [ '$waterSuppliedPerDay2021d', 0 ] },
-                      0,
-                      { '$divide': [ '$waterSuppliedPerDay2021n', '$waterSuppliedPerDay2021d' ] }
-                    ]
-                  },
-                    waterSuppliedPerDay2122:{
-                      '$cond': [
-                        { '$eq': [ '$waterSuppliedPerDay2122d', 0 ] },
-                        0,
-                        { '$divide': [ '$waterSuppliedPerDay2122n', '$waterSuppliedPerDay2122d' ] }
-                      ]
-                    },
-                     
-                      waterSuppliedPerDay2223:{
-                        '$cond': [
-                          { '$eq': [ '$waterSuppliedPerDay2223d', 0 ] },
-                          0,
-                          { '$divide': [ '$waterSuppliedPerDay2223n', '$waterSuppliedPerDay2223d' ] }
-                        ]
-                      },
-                      
-                      
-                        waterSuppliedPerDay2324:{
-                          '$cond': [
-                            { '$eq': [ '$waterSuppliedPerDay2324d', 0 ] },
-                            0,
-                            { '$divide': [ '$waterSuppliedPerDay2324n', '$waterSuppliedPerDay2324d' ] }
-                          ]
-                        },
-                         
-                          waterSuppliedPerDay2425: {
-                            '$cond': [
-                              { '$eq': [ '$waterSuppliedPerDay2425d', 0 ] },
-                              0,
-                              { '$divide': [ '$waterSuppliedPerDay2425n', '$waterSuppliedPerDay2425d' ] }
-                            ]
-                          },
-                          
-                          
-                           reduction2021: {
-                            '$cond': [
-                              { '$eq': [ '$reduction2021d', 0 ] },
-                              0,
-                              { '$divide': [ '$reduction2021n', '$reduction2021d' ] }
-                            ]
-                          },
-                            
-                    reduction2122:  {
-                      '$cond': [
-                        { '$eq': [ '$reduction2122d', 0 ] },
-                        0,
-                        { '$divide': [ '$reduction2122n', '$reduction2122d' ] }
-                      ]
-                    },
-                    
-                      reduction2223: {
-                        '$cond': [
-                          { '$eq': [ '$reduction2223d', 0 ] },
-                          0,
-                          { '$divide': [ '$reduction2223n', '$reduction2223d' ] }
-                        ]
-                      },
-                       
-                        reduction2324:  {
-                          '$cond': [
-                            { '$eq': [ '$reduction2324d', 0 ] },
-                            0,
-                            { '$divide': [ '$reduction2324n', '$reduction2324d' ] }
-                          ]
-                        },
-                        
-                          reduction2425:  {
-                            '$cond': [
-                              { '$eq': [ '$reduction2425d', 0 ] },
-                              0,
-                              { '$divide': [ '$reduction2425n', '$reduction2425d' ] }
-                            ]
-                          },
-                          
-                          
-                          
-                          houseHoldCoveredWithSewerage2021: {
-                            '$cond': [
-                              { '$eq': [ '$houseHoldCoveredWithSewerage2021d', 0 ] },
-                              0,
-                              { '$divide': [ '$houseHoldCoveredWithSewerage2021n', '$houseHoldCoveredWithSewerage2021d' ] }
-                            ]
-                          },
-                           
-                    houseHoldCoveredWithSewerage2122: {
-                      '$cond': [
-                        { '$eq': [ '$houseHoldCoveredWithSewerage2122d', 0 ] },
-                        0,
-                        { '$divide': [ '$houseHoldCoveredWithSewerage2122n', '$houseHoldCoveredWithSewerage2122d' ] }
-                      ]
-                    },
-                     
-                     houseHoldCoveredWithSewerage2223: {
-                      '$cond': [
-                        { '$eq': [ '$houseHoldCoveredWithSewerage2223d', 0 ] },
-                        0,
-                        { '$divide': [ '$houseHoldCoveredWithSewerage2223n', '$houseHoldCoveredWithSewerage2223d' ] }
-                      ]
-                    },
-                      
-                       houseHoldCoveredWithSewerage2324:  {
-                        '$cond': [
-                          { '$eq': [ '$houseHoldCoveredWithSewerage2324d', 0 ] },
-                          0,
-                          { '$divide': [ '$houseHoldCoveredWithSewerage2324n', '$houseHoldCoveredWithSewerage2324d' ] }
-                        ]
-                      },
-                       
-                         houseHoldCoveredWithSewerage2425:  {
-                          '$cond': [
-                            { '$eq': [ '$houseHoldCoveredWithSewerage2425d', 0 ] },
-                            0,
-                            { '$divide': [ '$houseHoldCoveredWithSewerage2425n', '$houseHoldCoveredWithSewerage2425d' ] }
-                          ]
-                        },
-                         
-                         
-houseHoldCoveredPipedSupply2021: {
-  '$cond': [
-    { '$eq': [ '$houseHoldCoveredPipedSupply2021d', 0 ] },
-    0,
-    { '$divide': [ '$houseHoldCoveredPipedSupply2021n', '$houseHoldCoveredPipedSupply2021d' ] }
-  ]
-},
- 
-houseHoldCoveredPipedSupply2122: {
-  '$cond': [
-    { '$eq': [ '$houseHoldCoveredPipedSupply2122d', 0 ] },
-    0,
-    { '$divide': [ '$houseHoldCoveredPipedSupply2122n', '$houseHoldCoveredPipedSupply2122d' ] }
-  ]
-},
-
-houseHoldCoveredPipedSupply2223: {
-  '$cond': [
-    { '$eq': [ '$houseHoldCoveredPipedSupply2223d', 0 ] },
-    0,
-    { '$divide': [ '$houseHoldCoveredPipedSupply2223n', '$houseHoldCoveredPipedSupply2223d' ] }
-  ]
-},
-
-houseHoldCoveredPipedSupply2324: {
-  '$cond': [
-    { '$eq': [ '$houseHoldCoveredPipedSupply2324d', 0 ] },
-    0,
-    { '$divide': [ '$houseHoldCoveredPipedSupply2324n', '$houseHoldCoveredPipedSupply2324d' ] }
-  ]
-},
-
-houseHoldCoveredPipedSupply2425: {
-  '$cond': [
-    { '$eq': [ '$houseHoldCoveredPipedSupply2425d', 0 ] },
-    0,
-    { '$divide': [ '$houseHoldCoveredPipedSupply2425n', '$houseHoldCoveredPipedSupply2425d' ] }
-  ]
-},
-
-                          
-                          
-                          
-                  
-                  }
-              }
-
-    ]
-
-    let query2 = [
-      {
-
-        $match: {
-          _id: ObjectId(ua_id)
-        },
-      },
-      {
-        $unwind: "$ulb"
-      },
-
-      {
-        $lookup: {
-          from: "masterforms",
-          localField: "ulb",
-          foreignField: "ulb",
-          as: "masterformData"
-        }
-      },
-      {
-        $unwind: {
-          path: "$masterformData",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-
-      {
-        $match:
         {
-          $or: [
-            { "masterformData.design_year": ObjectId(design_year) },
-            { masterformData: { $exists: false } }
+          $and: [{ "actionTakenBy.role": "MoHUA" }, {
+            $or: [
+              { "xvfcformDataApproved.waterManagement.status": "APPROVED" },
+              { "xvfcformDataApproved.waterManagement.status": "PENDING" }]
+          }]
+        }]
+
+
+      }
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "xvfcformDataApproved.ulb",
+        foreignField: "_id",
+        as: "approvedULBs"
+
+      }
+    },
+    {
+      $unwind: "$approvedULBs"
+    },
+    {
+      $project: {
+        ua: "$name",
+        waterSuppliedPerDay: "$xvfcformDataApproved.waterManagement.waterSuppliedPerDay",
+        reduction: "$xvfcformDataApproved.waterManagement.reduction",
+        houseHoldCoveredWithSewerage:
+          "$xvfcformDataApproved.waterManagement.houseHoldCoveredWithSewerage",
+        houseHoldCoveredPipedSupply:
+          "$xvfcformDataApproved.waterManagement.houseHoldCoveredPipedSupply",
+        ulb: "$approvedULBs",
+        population: "$approvedULBs.population"
+      },
+    },
+    {
+      $project: {
+        ua: 1,
+        ulbData: "$ulb",
+        population: "$population",
+        waterSuppliedPerDay2021: {
+
+          $convert: {
+            input: "$waterSuppliedPerDay.baseline.2021",
+            to: "double",
+          },
+
+        },
+        waterSuppliedPerDay2122: {
+
+          $convert: {
+            input: "$waterSuppliedPerDay.target.2122",
+            to: "double",
+          },
+
+        },
+        waterSuppliedPerDay2223: {
+
+          $convert: {
+            input: "$waterSuppliedPerDay.target.2223",
+            to: "double",
+          },
+
+        },
+        waterSuppliedPerDay2324: {
+
+          $convert: {
+            input: "$waterSuppliedPerDay.target.2324",
+            to: "double",
+          },
+
+        },
+        waterSuppliedPerDay2425: {
+
+          $convert: {
+            input: "$waterSuppliedPerDay.target.2425",
+            to: "double",
+          },
+
+        },
+        reduction2021: {
+
+          $convert: { input: "$reduction.baseline.2021", to: "double" },
+
+        },
+        reduction2122: {
+
+          $convert: { input: "$reduction.target.2122", to: "double" },
+
+        },
+        reduction2223: {
+
+          $convert: { input: "$reduction.target.2223", to: "double" },
+
+        },
+        reduction2324: {
+
+          $convert: { input: "$reduction.target.2324", to: "double" },
+
+        },
+        reduction2425: {
+
+          $convert: { input: "$reduction.target.2425", to: "double" },
+
+        },
+        houseHoldCoveredWithSewerage2021: {
+
+          $convert: { input: "$houseHoldCoveredWithSewerage.baseline.2021", to: "double" },
+
+        },
+        houseHoldCoveredWithSewerage2122: {
+
+          $convert: {
+            input: "$houseHoldCoveredWithSewerage.target.2122",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredWithSewerage2223: {
+
+          $convert: {
+            input: "$houseHoldCoveredWithSewerage.target.2223",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredWithSewerage2324: {
+
+          $convert: {
+            input: "$houseHoldCoveredWithSewerage.target.2324",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredWithSewerage2425: {
+
+          $convert: {
+            input: "$houseHoldCoveredWithSewerage.target.2425",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredPipedSupply2021: {
+
+          $convert: {
+            input: "$houseHoldCoveredPipedSupply.baseline.2021",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredPipedSupply2122: {
+
+          $convert: {
+            input: "$houseHoldCoveredPipedSupply.target.2122",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredPipedSupply2223: {
+
+          $convert: {
+            input: "$houseHoldCoveredPipedSupply.target.2223",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredPipedSupply2324: {
+
+          $convert: {
+            input: "$houseHoldCoveredPipedSupply.target.2324",
+            to: "double",
+          },
+
+        },
+        houseHoldCoveredPipedSupply2425: {
+
+          $convert: {
+            input: "$houseHoldCoveredPipedSupply.target.2425",
+            to: "double",
+          },
+
+        },
+
+      },
+
+
+    },
+
+    {
+      $group: {
+        _id: "",
+        ua: { $first: "$ua" },
+        ulbData: { $addToSet: "$ulbData._id" },
+        total: { $sum: 1 },
+        "waterSuppliedPerDay2021n": {
+          $sum: { $multiply: ["$waterSuppliedPerDay2021", "$population"] }
+        },
+        "waterSuppliedPerDay2021d": { $sum: "$population" },
+
+        "waterSuppliedPerDay2122n": {
+          $sum: { $multiply: ["$waterSuppliedPerDay2122", "$population"] }
+        },
+        "waterSuppliedPerDay2122d": { $sum: "$population" },
+
+        "waterSuppliedPerDay2223n": {
+          $sum: { $multiply: ["$waterSuppliedPerDay2223", "$population"] }
+        },
+        "waterSuppliedPerDay2223d": { $sum: "$population" },
+
+        "waterSuppliedPerDay2324n": {
+          $sum: { $multiply: ["$waterSuppliedPerDay2324", "$population"] }
+        },
+        "waterSuppliedPerDay2324d": { $sum: "$population" },
+
+        "waterSuppliedPerDay2425n": {
+          $sum: { $multiply: ["$waterSuppliedPerDay2425", "$population"] }
+        },
+        "waterSuppliedPerDay2425d": { $sum: "$population" },
+
+        "reduction2021n": {
+          $sum: { $multiply: ["$reduction2021", "$population"] }
+        },
+        "reduction2021d": { $sum: "$population" },
+
+        "reduction2122n": {
+          $sum: { $multiply: ["$reduction2122", "$population"] }
+        },
+        "reduction2122d": { $sum: "$population" },
+
+        "reduction2223n": {
+          $sum: { $multiply: ["$reduction2223", "$population"] }
+        },
+        "reduction2223d": { $sum: "$population" },
+
+        "reduction2324n": {
+          $sum: { $multiply: ["$reduction2324", "$population"] }
+        },
+        "reduction2324d": { $sum: "$population" },
+
+        "reduction2425n": {
+          $sum: { $multiply: ["$reduction2425", "$population"] }
+        },
+        "reduction2425d": { $sum: "$population" },
+
+        "houseHoldCoveredWithSewerage2021n": {
+          $sum: { $multiply: ["$houseHoldCoveredWithSewerage2021", "$population"] }
+        },
+        "houseHoldCoveredWithSewerage2021d": { $sum: "$population" },
+
+        "houseHoldCoveredWithSewerage2122n": {
+          $sum: { $multiply: ["$houseHoldCoveredWithSewerage2122", "$population"] }
+        },
+        "houseHoldCoveredWithSewerage2122d": { $sum: "$population" },
+
+        "houseHoldCoveredWithSewerage2223n": {
+          $sum: { $multiply: ["$houseHoldCoveredWithSewerage2223", "$population"] }
+        },
+        "houseHoldCoveredWithSewerage2223d": { $sum: "$population" },
+
+        "houseHoldCoveredWithSewerage2324n": {
+          $sum: { $multiply: ["$houseHoldCoveredWithSewerage2324", "$population"] }
+        },
+        "houseHoldCoveredWithSewerage2324d": { $sum: "$population" },
+
+        "houseHoldCoveredWithSewerage2425n": {
+          $sum: { $multiply: ["$houseHoldCoveredWithSewerage2425", "$population"] }
+        },
+        "houseHoldCoveredWithSewerage2425d": { $sum: "$population" },
+
+
+        "houseHoldCoveredPipedSupply2021n": {
+          $sum: { $multiply: ["$houseHoldCoveredPipedSupply2021", "$population"] }
+        },
+        "houseHoldCoveredPipedSupply2021d": { $sum: "$population" },
+
+        "houseHoldCoveredPipedSupply2122n": {
+          $sum: { $multiply: ["$houseHoldCoveredPipedSupply2122", "$population"] }
+        },
+        "houseHoldCoveredPipedSupply2122d": { $sum: "$population" },
+
+        "houseHoldCoveredPipedSupply2223n": {
+          $sum: { $multiply: ["$houseHoldCoveredPipedSupply2223", "$population"] }
+        },
+        "houseHoldCoveredPipedSupply2223d": { $sum: "$population" },
+
+        "houseHoldCoveredPipedSupply2324n": {
+          $sum: { $multiply: ["$houseHoldCoveredPipedSupply2324", "$population"] }
+        },
+        "houseHoldCoveredPipedSupply2324d": { $sum: "$population" },
+
+
+        "houseHoldCoveredPipedSupply2425n": {
+          $sum: { $multiply: ["$houseHoldCoveredPipedSupply2425", "$population"] }
+        },
+        "houseHoldCoveredPipedSupply2425d": { $sum: "$population" },
+
+
+      }
+
+    },
+
+    {
+      $project: {
+        total: 1,
+        ulbData: 1,
+        ua: 1,
+        waterSuppliedPerDay2021: {
+          '$cond': [
+            { '$eq': ['$waterSuppliedPerDay2021d', 0] },
+            0,
+            { '$divide': ['$waterSuppliedPerDay2021n', '$waterSuppliedPerDay2021d'] }
           ]
-        }
-      },
+        },
+        waterSuppliedPerDay2122: {
+          '$cond': [
+            { '$eq': ['$waterSuppliedPerDay2122d', 0] },
+            0,
+            { '$divide': ['$waterSuppliedPerDay2122n', '$waterSuppliedPerDay2122d'] }
+          ]
+        },
 
+        waterSuppliedPerDay2223: {
+          '$cond': [
+            { '$eq': ['$waterSuppliedPerDay2223d', 0] },
+            0,
+            { '$divide': ['$waterSuppliedPerDay2223n', '$waterSuppliedPerDay2223d'] }
+          ]
+        },
+
+
+        waterSuppliedPerDay2324: {
+          '$cond': [
+            { '$eq': ['$waterSuppliedPerDay2324d', 0] },
+            0,
+            { '$divide': ['$waterSuppliedPerDay2324n', '$waterSuppliedPerDay2324d'] }
+          ]
+        },
+
+        waterSuppliedPerDay2425: {
+          '$cond': [
+            { '$eq': ['$waterSuppliedPerDay2425d', 0] },
+            0,
+            { '$divide': ['$waterSuppliedPerDay2425n', '$waterSuppliedPerDay2425d'] }
+          ]
+        },
+
+
+        reduction2021: {
+          '$cond': [
+            { '$eq': ['$reduction2021d', 0] },
+            0,
+            { '$divide': ['$reduction2021n', '$reduction2021d'] }
+          ]
+        },
+
+        reduction2122: {
+          '$cond': [
+            { '$eq': ['$reduction2122d', 0] },
+            0,
+            { '$divide': ['$reduction2122n', '$reduction2122d'] }
+          ]
+        },
+
+        reduction2223: {
+          '$cond': [
+            { '$eq': ['$reduction2223d', 0] },
+            0,
+            { '$divide': ['$reduction2223n', '$reduction2223d'] }
+          ]
+        },
+
+        reduction2324: {
+          '$cond': [
+            { '$eq': ['$reduction2324d', 0] },
+            0,
+            { '$divide': ['$reduction2324n', '$reduction2324d'] }
+          ]
+        },
+
+        reduction2425: {
+          '$cond': [
+            { '$eq': ['$reduction2425d', 0] },
+            0,
+            { '$divide': ['$reduction2425n', '$reduction2425d'] }
+          ]
+        },
+
+
+
+        houseHoldCoveredWithSewerage2021: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredWithSewerage2021d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredWithSewerage2021n', '$houseHoldCoveredWithSewerage2021d'] }
+          ]
+        },
+
+        houseHoldCoveredWithSewerage2122: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredWithSewerage2122d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredWithSewerage2122n', '$houseHoldCoveredWithSewerage2122d'] }
+          ]
+        },
+
+        houseHoldCoveredWithSewerage2223: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredWithSewerage2223d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredWithSewerage2223n', '$houseHoldCoveredWithSewerage2223d'] }
+          ]
+        },
+
+        houseHoldCoveredWithSewerage2324: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredWithSewerage2324d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredWithSewerage2324n', '$houseHoldCoveredWithSewerage2324d'] }
+          ]
+        },
+
+        houseHoldCoveredWithSewerage2425: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredWithSewerage2425d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredWithSewerage2425n', '$houseHoldCoveredWithSewerage2425d'] }
+          ]
+        },
+
+
+        houseHoldCoveredPipedSupply2021: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredPipedSupply2021d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredPipedSupply2021n', '$houseHoldCoveredPipedSupply2021d'] }
+          ]
+        },
+
+        houseHoldCoveredPipedSupply2122: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredPipedSupply2122d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredPipedSupply2122n', '$houseHoldCoveredPipedSupply2122d'] }
+          ]
+        },
+
+        houseHoldCoveredPipedSupply2223: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredPipedSupply2223d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredPipedSupply2223n', '$houseHoldCoveredPipedSupply2223d'] }
+          ]
+        },
+
+        houseHoldCoveredPipedSupply2324: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredPipedSupply2324d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredPipedSupply2324n', '$houseHoldCoveredPipedSupply2324d'] }
+          ]
+        },
+
+        houseHoldCoveredPipedSupply2425: {
+          '$cond': [
+            { '$eq': ['$houseHoldCoveredPipedSupply2425d', 0] },
+            0,
+            { '$divide': ['$houseHoldCoveredPipedSupply2425n', '$houseHoldCoveredPipedSupply2425d'] }
+          ]
+        },
+
+
+
+
+
+      }
+    }
+
+  ]
+
+  let query2 = [
+    {
+
+      $match: {
+        _id: ObjectId(ua_id)
+      },
+    },
+    {
+      $unwind: "$ulb"
+    },
+
+    {
+      $lookup: {
+        from: "masterforms",
+        localField: "ulb",
+        foreignField: "ulb",
+        as: "masterformData"
+      }
+    },
+    {
+      $unwind: {
+        path: "$masterformData",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+
+    {
+      $match:
       {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb"
+        $or: [
+          { "masterformData.design_year": ObjectId(design_year) },
+          { masterformData: { $exists: false } }
+        ]
+      }
+    },
+
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb",
+        foreignField: "_id",
+        as: "ulb"
+
+      }
+    },
+    { $unwind: "$ulb" }
+
+
+
+  ]
+
+
+  let { output1, output2 } = await new Promise(async (resolve, reject) => {
+    let prms1 = new Promise(async (rslv, rjct) => {
+      console.log(util.inspect(query1, { showHidden: false, depth: null }))
+
+      let output = await UA.aggregate(query1);
+
+      if (output.length > 0) {
+        console.log('1')
+        // console.log(util.inspect(output, { showHidden: false, depth: null }))
+        rslv(output);
+
+      } else {
+        rjct({ message: "DATA NOT FOUND" });
+      }
+    });
+    let prms2 = new Promise(async (rslv, rjct) => {
+      console.log(util.inspect(query2, { showHidden: false, depth: null }))
+
+      let output = await UA.aggregate(query2);
+      let ulbA = []
+      let ulbB = []
+      let ulbC = []
+      if (output.length > 0) {
+        console.log("4");
+        let outputTemplate = {
+          pendingCompletion: ulbA,
+          completedAndpendingSubmission: ulbB,
+          underStateReview: ulbC,
 
         }
-      },
-      { $unwind: "$ulb" }
-
-
-
-    ]
-
-
-    let { output1, output2 } = await new Promise(async (resolve, reject) => {
-      let prms1 = new Promise(async (rslv, rjct) => {
-        console.log(util.inspect(query1, { showHidden: false, depth: null }))
-        
-        let output = await UA.aggregate(query1);
-
-        if (output.length > 0) {
-          console.log('1')
-          // console.log(util.inspect(output, { showHidden: false, depth: null }))
-          rslv(output);
-
-        } else {
-          rjct({ message: "DATA NOT FOUND" });
-        }
-      });
-      let prms2 = new Promise(async (rslv, rjct) => {
-        console.log(util.inspect(query2, { showHidden: false, depth: null }))
-        
-        let output = await UA.aggregate(query2);
-        let ulbA = []
-        let ulbB = []
-        let ulbC = []
-        if (output.length > 0) {
-          console.log("4");
-          let outputTemplate = {
-            pendingCompletion: ulbA,
-            completedAndpendingSubmission: ulbB,
-            underStateReview: ulbC,
-
-          }
-          output.forEach(el => {
-            if (!el.hasOwnProperty('masterformData')) {
+        output.forEach(el => {
+          if (!el.hasOwnProperty('masterformData')) {
+            ulbA.push({
+              name: el.ulb.name,
+              censusCode: el.ulb.censusCode,
+              sbCode: el.ulb.sbCode
+            })
+          } else {
+            if (el.masterformData.steps.slbForWaterSupplyAndSanitation.isSubmit == null) {
               ulbA.push({
                 name: el.ulb.name,
                 censusCode: el.ulb.censusCode,
                 sbCode: el.ulb.sbCode
               })
-            } else {
-              if (el.masterformData.steps.slbForWaterSupplyAndSanitation.isSubmit == null) {
-                ulbA.push({
-                  name: el.ulb.name,
-                  censusCode: el.ulb.censusCode,
-                  sbCode: el.ulb.sbCode
-                })
-              } else if (
-                el.masterformData.steps.slbForWaterSupplyAndSanitation.isSubmit
-                &&
-                el.masterformData.actionTakenByRole == 'ULB'
-                &&
-                !el.masterformData.isSubmit
-              ) {
-                ulbB.push({
-                  name: el.ulb.name,
-                  censusCode: el.ulb.censusCode,
-                  sbCode: el.ulb.sbCode
-                })
-              } else if (
-                (el.masterformData.isSubmit && el.masterformData.actionTakenByRole == 'ULB') ||
-                (!el.masterformData.isSubmit && el.masterformData.actionTakenByRole == 'STATE')
+            } else if (
+              el.masterformData.steps.slbForWaterSupplyAndSanitation.isSubmit
+              &&
+              el.masterformData.actionTakenByRole == 'ULB'
+              &&
+              !el.masterformData.isSubmit
+            ) {
+              ulbB.push({
+                name: el.ulb.name,
+                censusCode: el.ulb.censusCode,
+                sbCode: el.ulb.sbCode
+              })
+            } else if (
+              (el.masterformData.isSubmit && el.masterformData.actionTakenByRole == 'ULB') ||
+              (!el.masterformData.isSubmit && el.masterformData.actionTakenByRole == 'STATE')
 
-              ) {
-                ulbC.push({
-                  name: el.ulb.name,
-                  censusCode: el.ulb.censusCode,
-                  sbCode: el.ulb.sbCode
-                })
-              }
+            ) {
+              ulbC.push({
+                name: el.ulb.name,
+                censusCode: el.ulb.censusCode,
+                sbCode: el.ulb.sbCode
+              })
             }
-          })
-          console.log(util.inspect(outputTemplate, { showHidden: false, depth: null }))
-          rslv(outputTemplate);
-        } else {
-          rjct({ message: "DATA NOT FOUND" });
-          console.log("5");
-        }
-      });
-
-      Promise.all([prms1, prms2]).then(
-        (outputs) => {
-          let output1 = outputs[0];
-
-          let output2 = outputs[1];
-
-          if (output1 && output2) {
-            resolve({ output1, output2 });
-          } else {
-            reject({ message: "No Data Found" });
           }
-        },
-        (e) => {
-          reject(e);
-        }
-      );
+        })
+        console.log(util.inspect(outputTemplate, { showHidden: false, depth: null }))
+        rslv(outputTemplate);
+      } else {
+        rjct({ message: "DATA NOT FOUND" });
+        console.log("5");
+      }
     });
 
-    // let ulbData = extractUlbData(output2);
-    let finalOutput = [...output1, output2]
-    return res.status(200).json({
-      success: true,
-      message: "Data Found Successfully",
-      data: finalOutput,
-    });
-  
+    Promise.all([prms1, prms2]).then(
+      (outputs) => {
+        let output1 = outputs[0];
+
+        let output2 = outputs[1];
+
+        if (output1 && output2) {
+          resolve({ output1, output2 });
+        } else {
+          reject({ message: "No Data Found" });
+        }
+      },
+      (e) => {
+        reject(e);
+      }
+    );
+  });
+
+  // let ulbData = extractUlbData(output2);
+  let finalOutput = [...output1, output2]
+  return res.status(200).json({
+    success: true,
+    message: "Data Found Successfully",
+    data: finalOutput,
+  });
+
 });
 
 extractUlbData = (arr2) => {
@@ -1064,7 +1066,7 @@ module.exports.create = catchAsync(async (req, res) => {
           /* Checking if the ulbData object is not null and if the isCompleted property is true.
             then update 22-23 28slb form with latest values  
           */
-          if(ulbData?.isCompleted){
+          if (ulbData?.isCompleted) {
             query.design_year = design_year_2223;
             let slb28Form = await TwentyEightSlbForm.findOne(query).lean();
             if (slb28Form) {
@@ -1088,15 +1090,15 @@ module.exports.create = catchAsync(async (req, res) => {
                   if (
                     element["indicatorLineItem"].toString() ===
                     PrevLineItem_CONSTANTS[
-                      "Coverage of water supply connections"
+                    "Coverage of water supply connections"
                     ]
                   ) {
                     element.target_1.value = ulbData?.waterManagement
                       .houseHoldCoveredPipedSupply.target["2223"]
                       ? Number(
-                          ulbData?.waterManagement.houseHoldCoveredPipedSupply
-                            ?.target["2223"]
-                        )
+                        ulbData?.waterManagement.houseHoldCoveredPipedSupply
+                          ?.target["2223"]
+                      )
                       : "";
                   }
                   if (
@@ -1106,10 +1108,10 @@ module.exports.create = catchAsync(async (req, res) => {
                     element.target_1.value = ulbData?.waterManagement
                       .waterSuppliedPerDay.target["2223"]
                       ? Number(
-                          ulbData?.waterManagement.waterSuppliedPerDay?.target[
-                            "2223"
-                          ]
-                        )
+                        ulbData?.waterManagement.waterSuppliedPerDay?.target[
+                        "2223"
+                        ]
+                      )
                       : "";
                   }
                   if (
@@ -1119,22 +1121,22 @@ module.exports.create = catchAsync(async (req, res) => {
                     element.target_1.value = ulbData?.waterManagement.reduction
                       .target["2223"]
                       ? Number(
-                          ulbData?.waterManagement.reduction?.target["2223"]
-                        )
+                        ulbData?.waterManagement.reduction?.target["2223"]
+                      )
                       : "";
                   }
                   if (
                     element["indicatorLineItem"].toString() ===
                     PrevLineItem_CONSTANTS[
-                      "Coverage of waste water network services"
+                    "Coverage of waste water network services"
                     ]
                   ) {
                     element.target_1.value = ulbData?.waterManagement
                       .houseHoldCoveredWithSewerage.target["2223"]
                       ? Number(
-                          ulbData?.waterManagement.houseHoldCoveredWithSewerage
-                            ?.target["2223"]
-                        )
+                        ulbData?.waterManagement.houseHoldCoveredWithSewerage
+                          ?.target["2223"]
+                      )
                       : "";
                   }
                 });
@@ -1160,7 +1162,7 @@ module.exports.create = catchAsync(async (req, res) => {
   }
 });
 
-const design_year_2122 = ObjectId("606aaf854dff55e6c075d219") 
+const design_year_2122 = ObjectId("606aaf854dff55e6c075d219")
 const design_year_2223 = ObjectId("606aafb14dff55e6c075d3ae")
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded,
@@ -1171,19 +1173,19 @@ module.exports.get = catchAsync(async (req, res) => {
     design_year = req.query?.design_year,
     { ulb } = req.params,
     actionAllowed = ["ADMIN", "MoHUA", "PARTNER", "STATE", "ULB"];
-    let role = req.decoded.role
-let from = req.query?.from
-if(!ulb){
-  ulb = req.decoded.ulb
-}
-let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
+  let role = req.decoded.role
+  let from = req.query?.from
+  if (!ulb) {
+    ulb = req.decoded.ulb
+  }
+  let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
   if (!design_year || design_year === "") {
     return res.status(400).json({
       success: false,
       message: "Design Year Not Found!",
     });
   }
-  if(from == "2223"){
+  if (from == "2223") {
     let host = "";
     /* Checking if the host is the same as the backend host. If it is, then it sets the host to the
     frontend host. */
@@ -1217,9 +1219,8 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
         return res.status(400).json({
           status: true,
           show: true,
-          message: `Your Previous Year's form status is - ${
-            status ? status : "Not Submitted"
-          }. Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
+          message: `Your Previous Year's form status is - ${status ? status : "Not Submitted"
+            }. Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
         });
       }
     } else {
@@ -1230,132 +1231,132 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
       });
     }
     const lineItems = await IndicatorLineItem.find({
-      isPartOfSLB : true
+      isPartOfSLB: true
     }).select("_id").lean()
     const lineItemIDs = []
-     lineItems.forEach(el=> {
+    lineItems.forEach(el => {
       lineItemIDs.push(el._id)
     })
-    let userData = await User.findOne({isNodalOfficer: true, state:ulbData.state })
-let slbData = await XVFCGrantULBData.findOne({
-  design_year: design_year_2122,
-  ulb: ObjectId(ulb),
-}).lean()
-let status =""
+    let userData = await User.findOne({ isNodalOfficer: true, state: ulbData.state })
+    let slbData = await XVFCGrantULBData.findOne({
+      design_year: design_year_2122,
+      ulb: ObjectId(ulb),
+    }).lean()
+    let status = ""
 
-if(!slbData){
+    if (!slbData) {
 
-  return res.status(400).json({
-    success: false,
-     message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
-  })
-}
-status = slbData['waterManagement']['status']
-let twoEightSlbData = await SLB28.findOne({
-  design_year: design_year_2223,
-  ulb: ObjectId(ulb),
-  status:"APPROVED",
-
-}).lean()
-if(twoEightSlbData){
-  let allData = twoEightSlbData['data'];
-  // let filteredData = allData.filter(el => {
-  //   if (lineItemIDs.includes(el.indicatorLineItem))
-  //   return el
-    
-  // })
-  for(let key in slbData['waterManagement']){
-   let value = {}
-    if(key == "houseHoldCoveredPipedSupply"){
-value = allData.filter(el => {
-  return( el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b53a")
-})
-      Object.assign( slbData['waterManagement'][key], {
-        "achieved": {
-          "2122":String(value[0]['actual']['value'])
-        }
+      return res.status(400).json({
+        success: false,
+        message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
       })
-     
-    }else if(key == "waterSuppliedPerDay"){
-      value = allData.filter(el => {
-        return el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b53c"
-      })
-            Object.assign( slbData['waterManagement'][key], {
-              "achieved": {
-                "2122":String(value[0]['actual']['value'])
-              }
-            })
-
-    }else if(key == "reduction"){
-      value = allData.filter(el => {
-        return el.indicatorLineItem.toString() ==  "6284d6f65da0fa64b423b540"
-      })
-            Object.assign( slbData['waterManagement'][key], {
-              "achieved": {
-                "2122":String(value[0]['actual']['value'])
-              }
-            })
-    }else if(key == "houseHoldCoveredWithSewerage"){
-      value = allData.filter(el => {
-        return el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b52a"
-      })
-            Object.assign( slbData['waterManagement'][key], {
-              "achieved": {
-                "2122":String(value[0]['actual']['value'])
-              }
-            })
     }
-  }
-  //calculateScore
-  let scores =  []
-  scores = calculateSlbMarks(slbData.waterManagement)
-  for(let key in slbData['waterManagement']){
-    let value = {}
-     if(key == "houseHoldCoveredPipedSupply"){
- 
-       Object.assign( slbData['waterManagement'][key], {
-         "score": {
-           "2122":scores[3]
-         }
-       })
-      
-     }else if(key == "waterSuppliedPerDay"){
-      
-             Object.assign( slbData['waterManagement'][key], {
-               "score": {
-                 "2122":scores[0]
-               }
-             })
- 
-     }else if(key == "reduction"){
-   
-             Object.assign( slbData['waterManagement'][key], {
-               "score": {
-                 "2122":scores[1]
-               }
-             })
-     }else if(key == "houseHoldCoveredWithSewerage"){
-     
-             Object.assign( slbData['waterManagement'][key], {
-               "score": {
-                 "2122":scores[2]
-               }
-             })
-     }
-   }
-  return res.status(200).json({
-    success: true,
-    data: [slbData],
-    message:""
-  })
-}else{
+    status = slbData['waterManagement']['status']
+    let twoEightSlbData = await SLB28.findOne({
+      design_year: design_year_2223,
+      ulb: ObjectId(ulb),
+      status: "APPROVED",
 
- return res.status(200).json({
-    success: true,
-    data: [slbData],
-    message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
-  })
-}
+    }).lean()
+    if (twoEightSlbData) {
+      let allData = twoEightSlbData['data'];
+      // let filteredData = allData.filter(el => {
+      //   if (lineItemIDs.includes(el.indicatorLineItem))
+      //   return el
+
+      // })
+      for (let key in slbData['waterManagement']) {
+        let value = {}
+        if (key == "houseHoldCoveredPipedSupply") {
+          value = allData.filter(el => {
+            return (el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b53a")
+          })
+          Object.assign(slbData['waterManagement'][key], {
+            "achieved": {
+              "2122": String(value[0]['actual']['value'])
+            }
+          })
+
+        } else if (key == "waterSuppliedPerDay") {
+          value = allData.filter(el => {
+            return el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b53c"
+          })
+          Object.assign(slbData['waterManagement'][key], {
+            "achieved": {
+              "2122": String(value[0]['actual']['value'])
+            }
+          })
+
+        } else if (key == "reduction") {
+          value = allData.filter(el => {
+            return el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b540"
+          })
+          Object.assign(slbData['waterManagement'][key], {
+            "achieved": {
+              "2122": String(value[0]['actual']['value'])
+            }
+          })
+        } else if (key == "houseHoldCoveredWithSewerage") {
+          value = allData.filter(el => {
+            return el.indicatorLineItem.toString() == "6284d6f65da0fa64b423b52a"
+          })
+          Object.assign(slbData['waterManagement'][key], {
+            "achieved": {
+              "2122": String(value[0]['actual']['value'])
+            }
+          })
+        }
+      }
+      //calculateScore
+      let scores = []
+      scores = calculateSlbMarks(slbData.waterManagement)
+      for (let key in slbData['waterManagement']) {
+        let value = {}
+        if (key == "houseHoldCoveredPipedSupply") {
+
+          Object.assign(slbData['waterManagement'][key], {
+            "score": {
+              "2122": scores[3]
+            }
+          })
+
+        } else if (key == "waterSuppliedPerDay") {
+
+          Object.assign(slbData['waterManagement'][key], {
+            "score": {
+              "2122": scores[0]
+            }
+          })
+
+        } else if (key == "reduction") {
+
+          Object.assign(slbData['waterManagement'][key], {
+            "score": {
+              "2122": scores[1]
+            }
+          })
+        } else if (key == "houseHoldCoveredWithSewerage") {
+
+          Object.assign(slbData['waterManagement'][key], {
+            "score": {
+              "2122": scores[2]
+            }
+          })
+        }
+      }
+      return res.status(200).json({
+        success: true,
+        data: [slbData],
+        message: ""
+      })
+    } else {
+
+      return res.status(200).json({
+        success: true,
+        data: [slbData],
+        message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
+      })
+    }
   }
   if (user.role != "ULB" && ulb) {
     let query = {
@@ -1647,28 +1648,28 @@ module.exports.slbDownload = catchAsync(async (req, res) => {
     'waterManagement.houseHoldCoveredPipedSupply.target.2425'
   ];
   try {
-    const cursor = await XVFCGrantULBData.find({},{waterManagement : 1,status : 1,actionTakenByRole : 1})
-    .populate([
-      {
-        path: "ulb",
-        select: "_id name code state",
-        populate: {
-          path: "state",
-          select: "_id name code",
+    const cursor = await XVFCGrantULBData.find({}, { waterManagement: 1, status: 1, actionTakenByRole: 1 })
+      .populate([
+        {
+          path: "ulb",
+          select: "_id name code state",
+          populate: {
+            path: "state",
+            select: "_id name code",
+          },
         },
-      },
-      {
-        path: "design_year",
-        select: "year"
-      }
-    ]);
+        {
+          path: "design_year",
+          select: "year"
+        }
+      ]);
     let mainArr = [];
-    if(cursor.length > 0){
-      new Promise(async (resolve,reject) => {
+    if (cursor.length > 0) {
+      new Promise(async (resolve, reject) => {
         await cursor.forEach(async (result) => {
           let arr = [];
           for (resData of headersKey) {
-            if(resData == 'status'){
+            if (resData == 'status') {
               if (result.actionTakenByRole == "ULB") {
                 arr.push(FORM_STATUS.In_Progress);
               } else if (result.actionTakenByRole == "ULB") {
@@ -1689,16 +1690,16 @@ module.exports.slbDownload = catchAsync(async (req, res) => {
                 } else if (result.status == "REJECTED") {
                   arr.push(FORM_STATUS.Rejected_By_MoHUA);
                 }
-              }else{
+              } else {
                 arr.push("NA");
               }
-            }else{
-              let ineerdData = await innerListGet(result,resData);
+            } else {
+              let ineerdData = await innerListGet(result, resData);
               arr.push(ineerdData);
             }
           }
           mainArr.push(arr.toString());
-          if(mainArr.length === cursor.length){
+          if (mainArr.length === cursor.length) {
             resolve(mainArr);
           }
         });
@@ -2951,29 +2952,29 @@ module.exports.action = async (req, res) => {
               // (mailOptions.to = ulbEmails.join()),
               //   (mailOptions.subject = UlbTemplate.subject),
               //   (mailOptions.html = UlbTemplate.body);
-                   mailOptions =     {
-                  Destination: {
-                    /* required */
-                    ToAddresses: ulbEmails.join()
-                  },
-                  Message: {
-                    /* required */
-                    Body: {
-                      /* required */
-                      Html: {
-                        Charset: "UTF-8",
-                        Data: UlbTemplate.body
-                      },
-                    },
-                    Subject: {
-                      Charset: 'UTF-8',
-                      Data: UlbTemplate.subject
-                    }
-                  },
-                  Source: process.env.EMAIL,
+              mailOptions = {
+                Destination: {
                   /* required */
-                  ReplyToAddresses: [process.env.EMAIL],
-                }
+                  ToAddresses: ulbEmails.join()
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data: UlbTemplate.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data: UlbTemplate.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
               Service.sendEmail(mailOptions);
               /** STATE TRIGGER */
               let stateEmails = [];
@@ -2994,7 +2995,7 @@ module.exports.action = async (req, res) => {
                 // mailOptions.to = stateEmails.join();
                 // mailOptions.subject = stateTemplate.subject;
                 // mailOptions.html = stateTemplate.body;
-                mailOptions =     {
+                mailOptions = {
                   Destination: {
                     /* required */
                     ToAddresses: stateEmails.join()
@@ -3034,29 +3035,29 @@ module.exports.action = async (req, res) => {
               // (mailOptions.to = ulbUser.email),
               //   (mailOptions.subject = UlbTemplate.subject),
               //   (mailOptions.html = UlbTemplate.body);
-                mailOptions =     {
-                  Destination: {
-                    /* required */
-                    ToAddresses: [ulbUser.email]
-                  },
-                  Message: {
-                    /* required */
-                    Body: {
-                      /* required */
-                      Html: {
-                        Charset: "UTF-8",
-                        Data: UlbTemplate.body
-                      },
-                    },
-                    Subject: {
-                      Charset: 'UTF-8',
-                      Data: UlbTemplate.subject
-                    }
-                  },
-                  Source: process.env.EMAIL,
+              mailOptions = {
+                Destination: {
                   /* required */
-                  ReplyToAddresses: [process.env.EMAIL],
-                }
+                  ToAddresses: [ulbUser.email]
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data: UlbTemplate.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data: UlbTemplate.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
               Service.sendEmail(mailOptions);
               /** STATE TRIGGER */
               let MohuaUser = await User.find({
@@ -3074,29 +3075,29 @@ module.exports.action = async (req, res) => {
                 // (mailOptions.to = d.email),
                 //   (mailOptions.subject = MohuaTemplate.subject),
                 //   (mailOptions.html = MohuaTemplate.body);
-                  mailOptions =     {
-                    Destination: {
-                      /* required */
-                      ToAddresses: [d.email]
-                    },
-                    Message: {
-                      /* required */
-                      Body: {
-                        /* required */
-                        Html: {
-                          Charset: "UTF-8",
-                          Data: MohuaTemplate.body
-                        },
-                      },
-                      Subject: {
-                        Charset: 'UTF-8',
-                        Data: MohuaTemplate.subject
-                      }
-                    },
-                    Source: process.env.EMAIL,
+                mailOptions = {
+                  Destination: {
                     /* required */
-                    ReplyToAddresses: [process.env.EMAIL],
-                  }
+                    ToAddresses: [d.email]
+                  },
+                  Message: {
+                    /* required */
+                    Body: {
+                      /* required */
+                      Html: {
+                        Charset: "UTF-8",
+                        Data: MohuaTemplate.body
+                      },
+                    },
+                    Subject: {
+                      Charset: 'UTF-8',
+                      Data: MohuaTemplate.subject
+                    }
+                  },
+                  Source: process.env.EMAIL,
+                  /* required */
+                  ReplyToAddresses: [process.env.EMAIL],
+                }
                 Service.sendEmail(mailOptions);
               }
 
@@ -3119,7 +3120,7 @@ module.exports.action = async (req, res) => {
                 // mailOptions.to = stateEmails.join();
                 // mailOptions.subject = stateTemplate.subject;
                 // mailOptions.html = stateTemplate.body;
-                mailOptions =     {
+                mailOptions = {
                   Destination: {
                     /* required */
                     ToAddresses: stateEmails.join()
@@ -3160,7 +3161,7 @@ module.exports.action = async (req, res) => {
               }
             }
             if (data["status"] == "REJECTED" && user.role == "MoHUA") {
-              let mailOptions 
+              let mailOptions
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
@@ -3175,29 +3176,29 @@ module.exports.action = async (req, res) => {
               // (mailOptions.to = ulbEmails.join()),
               //   (mailOptions.subject = UlbTemplate.subject),
               //   (mailOptions.html = UlbTemplate.body);
-                mailOptions =     {
-                  Destination: {
-                    /* required */
-                    ToAddresses: ulbEmails.join()
-                  },
-                  Message: {
-                    /* required */
-                    Body: {
-                      /* required */
-                      Html: {
-                        Charset: "UTF-8",
-                        Data: UlbTemplate.body
-                      },
-                    },
-                    Subject: {
-                      Charset: 'UTF-8',
-                      Data: UlbTemplate.subject
-                    }
-                  },
-                  Source: process.env.EMAIL,
+              mailOptions = {
+                Destination: {
                   /* required */
-                  ReplyToAddresses: [process.env.EMAIL],
-                }
+                  ToAddresses: ulbEmails.join()
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data: UlbTemplate.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data: UlbTemplate.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
               Service.sendEmail(mailOptions);
 
               /** STATE TRIGGER */
@@ -3220,7 +3221,7 @@ module.exports.action = async (req, res) => {
                 // mailOptions.to = stateEmails.join();
                 // mailOptions.subject = stateTemplate.subject;
                 // mailOptions.html = stateTemplate.body;
-                mailOptions =     {
+                mailOptions = {
                   Destination: {
                     /* required */
                     ToAddresses: stateEmails.join()
@@ -3247,7 +3248,7 @@ module.exports.action = async (req, res) => {
               }
             }
             if (data["status"] == "REJECTED" && user.role == "STATE") {
-              let mailOptions 
+              let mailOptions
               /** ULB TRIGGER */
               let ulbEmails = [];
               let UlbTemplate = await Service.emailTemplate.xvUploadRejectUlb(
@@ -3262,29 +3263,29 @@ module.exports.action = async (req, res) => {
               // (mailOptions.to = ulbEmails.join()),
               //   (mailOptions.subject = UlbTemplate.subject),
               //   (mailOptions.html = UlbTemplate.body);
-                mailOptions =     {
-                  Destination: {
-                    /* required */
-                    ToAddresses: ulbEmails.join()
-                  },
-                  Message: {
-                    /* required */
-                    Body: {
-                      /* required */
-                      Html: {
-                        Charset: "UTF-8",
-                        Data: UlbTemplate.body
-                      },
-                    },
-                    Subject: {
-                      Charset: 'UTF-8',
-                      Data: UlbTemplate.subject
-                    }
-                  },
-                  Source: process.env.EMAIL,
+              mailOptions = {
+                Destination: {
                   /* required */
-                  ReplyToAddresses: [process.env.EMAIL],
-                }
+                  ToAddresses: ulbEmails.join()
+                },
+                Message: {
+                  /* required */
+                  Body: {
+                    /* required */
+                    Html: {
+                      Charset: "UTF-8",
+                      Data: UlbTemplate.body
+                    },
+                  },
+                  Subject: {
+                    Charset: 'UTF-8',
+                    Data: UlbTemplate.subject
+                  }
+                },
+                Source: process.env.EMAIL,
+                /* required */
+                ReplyToAddresses: [process.env.EMAIL],
+              }
               Service.sendEmail(mailOptions);
 
               /** STATE TRIGGER */
@@ -3307,7 +3308,7 @@ module.exports.action = async (req, res) => {
                 // mailOptions.to = stateEmails.join();
                 // mailOptions.subject = stateTemplate.subject;
                 // mailOptions.html = stateTemplate.body;
-                mailOptions =     {
+                mailOptions = {
                   Destination: {
                     /* required */
                     ToAddresses: stateEmails.join()
@@ -3407,7 +3408,7 @@ module.exports.multipleApprove = async (req, res) => {
         { _id: ObjectId(prevState._id) },
         { $set: data, $push: { history: history } }
       );
-      let mailOptions 
+      let mailOptions
       /** ULB TRIGGER */
       let ulbEmails = [];
       let UlbTemplate = await Service.emailTemplate.xvUploadApprovalMoHUA(
@@ -3418,29 +3419,29 @@ module.exports.multipleApprove = async (req, res) => {
       // (mailOptions.to = ulbEmails.join()),
       //   (mailOptions.subject = UlbTemplate.subject),
       //   (mailOptions.html = UlbTemplate.body);
-        mailOptions =     {
-          Destination: {
-            /* required */
-            ToAddresses: ulbEmails.join()
-          },
-          Message: {
-            /* required */
-            Body: {
-              /* required */
-              Html: {
-                Charset: "UTF-8",
-                Data: UlbTemplate.body
-              },
-            },
-            Subject: {
-              Charset: 'UTF-8',
-              Data: UlbTemplate.subject
-            }
-          },
-          Source: process.env.EMAIL,
+      mailOptions = {
+        Destination: {
           /* required */
-          ReplyToAddresses: [process.env.EMAIL],
-        }
+          ToAddresses: ulbEmails.join()
+        },
+        Message: {
+          /* required */
+          Body: {
+            /* required */
+            Html: {
+              Charset: "UTF-8",
+              Data: UlbTemplate.body
+            },
+          },
+          Subject: {
+            Charset: 'UTF-8',
+            Data: UlbTemplate.subject
+          }
+        },
+        Source: process.env.EMAIL,
+        /* required */
+        ReplyToAddresses: [process.env.EMAIL],
+      }
       Service.sendEmail(mailOptions);
       /** STATE TRIGGER */
       let stateEmails = [];
@@ -3461,7 +3462,7 @@ module.exports.multipleApprove = async (req, res) => {
         // mailOptions.to = stateEmails.join();
         // mailOptions.subject = stateTemplate.subject;
         // mailOptions.html = stateTemplate.body;
-        mailOptions =     {
+        mailOptions = {
           Destination: {
             /* required */
             ToAddresses: stateEmails.join()
@@ -3558,7 +3559,7 @@ module.exports.multipleReject = async (req, res) => {
       //   (mailOptions.subject = UlbTemplate.subject),
       //   (mailOptions.html = UlbTemplate.body);
       // console.log(mailOptions);
-      mailOptions =     {
+      mailOptions = {
         Destination: {
           /* required */
           ToAddresses: ulbEmails.join()
@@ -3602,7 +3603,7 @@ module.exports.multipleReject = async (req, res) => {
         // mailOptions.to = stateEmails.join();
         // mailOptions.subject = stateTemplate.subject;
         // mailOptions.html = stateTemplate.body;
-        mailOptions =     {
+        mailOptions = {
           Destination: {
             /* required */
             ToAddresses: stateEmails.join()
@@ -4716,56 +4717,56 @@ module.exports.addFlag = async (req, res) => {
   ])
 }
 
-module.exports.getUAwiseCSV = catchAsync (async (req,res) => {
-let uaIDs = await UA.find().select("_id").lean()
+module.exports.getUAwiseCSV = catchAsync(async (req, res) => {
+  let uaIDs = await UA.find().select("_id").lean()
 
-let finalData = []
-let x = 1;
-let data = await axios.post('https://cityfinance.in/api/v1/login', {
-  "email":"admin@cityfinance.in",
-  "password":"admin007@cityfinance"
-})
+  let finalData = []
+  let x = 1;
+  let data = await axios.post('https://cityfinance.in/api/v1/login', {
+    "email": "admin@cityfinance.in",
+    "password": "admin007@cityfinance"
+  })
 
-for(let el of uaIDs ){
-  await axios.get(`https://cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
-  { params:{}, headers: { "x-access-token": data?.data?.token } }
-  ).then(function(response) {
- 
-
-   finalData.push(response.data.data)
-
-}).catch(function(error) {
+  for (let el of uaIDs) {
+    await axios.get(`https://cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
+      { params: {}, headers: { "x-access-token": data?.data?.token } }
+    ).then(function (response) {
 
 
-});
+      finalData.push(response.data.data)
 
-}
-  
-  
+    }).catch(function (error) {
 
- console.log(util.inspect(finalData, {showHidden: false, depth: null}))
-let printData = {}
-let totalDataa = []
- finalData.forEach(el => {
-   Object.assign(printData, el[0]);
-   if(el[1].completedAndpendingSubmission.length){
-    let arr = []
-    el[1].completedAndpendingSubmission.forEach(el2 => {
-  
-      arr.push(el2.name)
-      
-    })
-    Object.assign(printData, {"pending": arr })
 
-   }
-totalDataa.push(printData)
-printData = {}
- })
- console.log('printData',totalDataa)
-res.status(200).json({
-  success: true,
-  data: totalDataa
-})
+    });
+
+  }
+
+
+
+  console.log(util.inspect(finalData, { showHidden: false, depth: null }))
+  let printData = {}
+  let totalDataa = []
+  finalData.forEach(el => {
+    Object.assign(printData, el[0]);
+    if (el[1].completedAndpendingSubmission.length) {
+      let arr = []
+      el[1].completedAndpendingSubmission.forEach(el2 => {
+
+        arr.push(el2.name)
+
+      })
+      Object.assign(printData, { "pending": arr })
+
+    }
+    totalDataa.push(printData)
+    printData = {}
+  })
+  console.log('printData', totalDataa)
+  res.status(200).json({
+    success: true,
+    data: totalDataa
+  })
 })
 
 exports.newFormAction = async (req, res) => {
@@ -4807,3 +4808,72 @@ exports.newFormAction = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+module.exports.fileDeFuncFiles = async (req, res) => {
+  let query = [
+    {
+      $lookup: {
+        from: "states",
+        localField: "state",
+        foreignField: "_id",
+        as: "state"
+      }
+    },
+    { $unwind: "$state" },
+    {
+      $project: {
+        _id: "$state._id",
+        stateName: "$state.name",
+        stateCode: "$state.code",
+        grantTransferCertificate: { $arrayElemAt: ["$grantTransferCertificate", 0] },
+        serviceLevelBenchmarks: { $arrayElemAt: ["$serviceLevelBenchmarks", 0] },
+        utilizationReport: { $arrayElemAt: ["$utilizationReport", 0] },
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        stateName: 1,
+        stateCode: 1,
+        grantTransferCertificate: "$grantTransferCertificate.url",
+        serviceLevelBenchmarks: "$serviceLevelBenchmarks.url",
+        utilizationReport: "$utilizationReport.url",
+      }
+    }
+  ]
+  let data = await XVStateForm.aggregate(query);
+  let documnetcounter = 0;
+  working = 0;
+  notWorking = 0;
+  let arr = []
+  for (let el of data) {
+    for (let key in el) {
+      if (key != '_id' && key != 'stateName' && key != 'stateCode' && el[key]) {
+        documnetcounter++;
+        let url = el[key];
+        try {
+          let response = await doRequestServer(url);
+          let obj = {
+            stateName: "",
+            stateCode: "",
+            key: "",
+            url: ""
+          }
+          obj.stateName = el.stateName;
+          obj.stateCode = el.stateCode;
+          obj.key = key;
+          obj.url = response;
+          arr.push(obj);
+        } catch (error) {
+          console.log("error", error)
+          // `error` will be whatever you passed to `reject()` at the top
+        }
+      }
+    }
+  }
+  return res.send({
+    data: arr,
+    number: arr.length,
+    total: documnetcounter
+  });
+}
