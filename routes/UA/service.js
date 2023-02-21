@@ -1338,6 +1338,7 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
             }
         )
     }
+    console.log("filterOBJ :: ",filterObj)
     console.log("sortKey :: ",sortKey)
     dataArr.push({"$skip":skip})
     dataArr.push({"$limit":limit})
@@ -1428,11 +1429,11 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         response.columns = dashboardColumns
         response.message = "Fetched Successfully"
         response.success = true
-        return res.status(200).json(dbResponse)
+        return res.status(200).json(response)
     }
     catch(err){
         response.message = "Something went wrong"
-        console.log("error in getIfProjectsWithState :: ",err.message)
+        console.log("error in getIfProjrajaectsWithState :: ",err.message)
     }
     res.status(500).json(response)
 })
