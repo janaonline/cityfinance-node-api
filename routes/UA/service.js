@@ -1270,7 +1270,8 @@ function getProjectionForDur(service){
                 "stateName":"$state.name",
                 "totalProjectCost":sumQuery,
                 "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :"$ulbShare"
+                "ulbShare" :"$ulbShare",
+                // "total":{"$count":"$DUR.ulb"}
             }
         }
         return obj
@@ -1299,6 +1300,9 @@ function lookupQueryForDur(service,designYear){
                                     service.getCommonEqObj("$designYear","$$designYear"),
                                     {
                                         "$gte":["$projects.expenditure",1]
+                                    },
+                                    {
+                                        "$ne":["$projects.expenditure","$projects.cost"]
                                     }
                                 ]
                             }
@@ -1339,7 +1343,8 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
     try{
         let obj = {
             "$facet":{
-                "total":[{"$count":"projects"}],
+                "total":[{"$count":"total"}
+            ],
                 "data":dataArr
             }
         }
