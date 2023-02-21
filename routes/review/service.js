@@ -2007,6 +2007,9 @@ module.exports.get = catchAsync(async (req, res) => {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
       el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
     }
+    if(folderName && folderName === List['FolderName']['IndicatorForWaterSupply']){
+      delete el.formStatus
+    }
   })
 
 
@@ -2187,6 +2190,10 @@ module.exports.get = catchAsync(async (req, res) => {
     if(el.formData || el.formData === "" ) delete el.formData;
 
   })
+
+  if(folderName && folderName === List['FolderName']['IndicatorForWaterSupply']){
+    delete stateColumnNames.formStatus;
+  }
   return res.status(200).json({
     success: true,
     data: data,
