@@ -130,7 +130,7 @@ const sortFilterKeys = {
     "totalProjectCost": "projects.cost",
     "ulbShare": "ulbShare",
     "totalProjects":"totalProjects",
-    "totalProjectCost":"totalProjectCost",
+    "totalProjectCost":"projectCost",
     "stateName":"stateName",
     "ulbName":"ulbName"
 }
