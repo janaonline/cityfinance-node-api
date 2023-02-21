@@ -64,7 +64,7 @@ module.exports.createOrUpdateForm = async (req, res)=>{
                 if(!element){
                     return res.status(400).json({
                         status: false,
-                        message: "Range should be in between 0 and 9999999999"
+                        message: "Range should be in between 0 and 999999999999999"
                     })
                 }
             }
@@ -226,13 +226,13 @@ function
 validate(data){
     let result = [];
     if(data.collection2019_20){
-        result.push(data.collection2019_20 >= 0 && data.collection2019_20 < 9999999999);
+        result.push(data.collection2019_20 >= 0 && data.collection2019_20 < 999999999999999);
     } else if(data.collection2020_21){
-        result.push(data.collection2020_21 >= 0 && data.collection2020_21 < 9999999999);
+        result.push(data.collection2020_21 >= 0 && data.collection2020_21 < 999999999999999);
     } else if( data.collection2021_22){
-        result.push(data.collection2021_22 >= 0 && data.collection2021_22 < 9999999999); 
+        result.push(data.collection2021_22 >= 0 && data.collection2021_22 < 999999999999999); 
     }else if(data.target2022_23 ){
-        result.push(data.target2022_23 >= 0 && data.target2022_23 < 9999999999);
+        result.push(data.target2022_23 >= 0 && data.target2022_23 < 999999999999999);
     }
     return result;
 }

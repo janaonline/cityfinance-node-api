@@ -319,7 +319,7 @@ module.exports.get = catchAsync(async (req, res) => {
         let entity = tempData[i];
         if(entity?.sequence){
 
-            if(entity.sequence === 1){//first entry
+            if(i === 0){//first entry
                 entity.prevUrl = null;
                 entity.nextUrl = `../${tempData[i+1].url}`;
             } else if(i === (tempData.length-1)){//last entry
