@@ -1061,9 +1061,6 @@ class AggregationServices {
 }
 module.exports.sendCsv = sendCsv
 module.exports.AggregationServices = AggregationServices
-<<<<<<< HEAD
-module.exports.apiUrls = apiUrls
-=======
 module.exports.apiUrls = apiUrls
 
 module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
@@ -1101,4 +1098,3 @@ module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
         break;
     }
   }
->>>>>>> e68ea3cb77cefaa07df8ac75ab909c287400fecc
