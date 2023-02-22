@@ -893,16 +893,16 @@ function getGroupByQuery(service,ulbId,csv) {
                 "projectName": "$projects.name",
                 "implementationAgency": "$ulb.name",
                 "totalProjectCost":getStringConvertedAmount(service,"$projectCostInCr","$projectCost",csv),
-                "stateShare": csv ? "500000": "₹ 50" + " Cr (56%)",
+                "stateShare": csv ? "500000000": "₹ 50" + " Cr (56%)",
                 "ulbId": "$ulb._id",
                 "projectId": "$projects._id",
                 "stateName":"$state.name",
                 "sectorId": "$category._id",
                 "ulbShare": getUlbShare(service,csv),
-                "capitalExpenditureState": csv ? "980000": "₹ 98 Cr",
-                "capitalExpenditureUlb": csv ? "1000000":"₹ 100 Cr",
-                "omExpensesState": csv ? "870000":"₹ 67 Cr",
-                "omExpensesUlb": csv ? "9950450":"₹ 88 Cr",
+                "capitalExpenditureState": csv ? "980000000": "₹ 98 Cr",
+                "capitalExpenditureUlb": csv ? "100000000":"₹ 100 Cr",
+                "omExpensesState": csv ? "670000000":"₹ 67 Cr",
+                "omExpensesUlb": csv ? "880000000":"₹ 88 Cr",
                 "sector": "$category.name",
                 "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                 "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
@@ -910,6 +910,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "name": "More information",
                     "url": getConcatinatedUrl(service,ulbId)
                 },
+                "links":"$links.link",
                 "projectReport": getProjectReportDetail(csv),
                 "creditRating": {
                     "name": "Credit rating",
@@ -1110,7 +1111,7 @@ async function getQueryForUtilizationReports(obj) {
         // stage 2 get related ulbs and unwind
         query.push(service.getCommonLookupObj("ulbs", "ulb", "_id", "ulb"))
         query.push(service.getUnwindObj("$ulb", true))
-
+        query.push(service.getCommonLookupObj("creditratings", "ulb._id", "ulb", "links"))
         // add state if query is for csv 
         if(csv){
             query.push(addCensusCode())
@@ -1204,14 +1205,15 @@ function deleteExtraKeys(arr,obj){
 
 function changeDocument(document){
     let obj = {...document}
-    if(obj['creditRatings'] && obj['creditRatings'].length){
-        let arr = obj['creditRatings']
+    if(obj['links'] && obj['links'].length){
+        let arr = obj['links']
         for(var  rating in arr){
-            obj[`creditRating1${rating}`]  = arr[rating]
+            let r = parseInt(rating) + 1
+            obj[`creditRating${r}`]  = arr[rating]
         }
     }
     else{
-       for(let i=0; i<3 ; i++){
+       for(let i=0; i<4 ; i++){
         obj[`creditRating${i+1}`] = '' 
        }
     }
