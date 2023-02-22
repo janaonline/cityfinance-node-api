@@ -13,7 +13,7 @@ module.exports.login = async (req, res) => {
     let ulb, role;
     let user = await getUSer(req.body);
     let state;
-    if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
+    if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) }).lean();
 
     if (state && state['accessToXVFC'] == false) {
       return res.status(403).json({
@@ -24,6 +24,11 @@ module.exports.login = async (req, res) => {
     if (user.role === "ULB") {
       ulb = await Ulb.findOne({ _id: ObjectId(user.ulb), isActive: true });
       role = user.role;
+      if(!ulb){
+        return res
+          .status(400)
+          .json({ success: false, message: "User not found" });
+      }
     }
     let sessionId = ObjectId.isValid(req.headers.sessionid) ? req.headers.sessionid : null;
     let isMatch = true;

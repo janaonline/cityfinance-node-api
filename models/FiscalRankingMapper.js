@@ -1,10 +1,11 @@
 require("./dbConnect");
+const { modelSchema } = require('./constants')
 const fiscalRankingMapperSchema = new Schema(
     {
         fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
-        amount: { type: Number, default: null },
+        value: { type: Number, default: null },
         date: { type: Date, default: null }, // audit date
         status: {
             type: String,
@@ -15,6 +16,7 @@ const fiscalRankingMapperSchema = new Schema(
             },
         },
         isActive: { type: Boolean, default: 1 },
+        dataSource: modelSchema(),
         type: {
             type: String,
             enum: {
@@ -34,7 +36,6 @@ const fiscalRankingMapperSchema = new Schema(
                     "totalCaptlExpSanitation",
                     "totalOmExp",
                     "totalCaptlExpWaterSupply",
-                    "totalOMCaptlExpSanitation",
                     "totalRevExp",
                     "appAnnualBudget",
                     "auditedAnnualFySt",

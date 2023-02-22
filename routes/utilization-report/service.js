@@ -127,6 +127,15 @@ module.exports.createOrUpdate = async (req, res) => {
     condition.financialYear = financialYear;
     condition.ulb = ulb;
 
+    if(
+      formData?.categoryWiseData_wm?.length<=0 || 
+      formData?.categoryWiseData_swm?.length<=0 || 
+      !formData?.categoryWiseData_swm ||
+      !formData?.categoryWiseData_wm
+      ){
+      return Response.BadRequest(res,{},"Category wise data fields are required");
+    }
+
     if (req.body.ulb) {
       formData["ulb"] = ObjectId(ulb);
     }
@@ -887,12 +896,12 @@ module.exports.read2223 = catchAsync(async (req, res) => {
       obj['action'] = 'not_show';
       obj['url'] = ``;
     } else if (status == FORM_STATUS.Under_Review_By_State) {
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
+      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
       obj['action'] = 'note';
       obj['url'] = msg;
     } else {
 
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
+      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/utilisation-report target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
       obj['action'] = 'note'
       obj['url'] = msg;
     }

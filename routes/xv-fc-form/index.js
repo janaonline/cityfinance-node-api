@@ -63,8 +63,6 @@ router.post(
     ufdService.multipleReject
 );
 router.get('/state', verifyToken, ufdService.state);
-router.get('/fileDeFuncFiles', ufdService.fileDeFuncFiles);
-
 router.post(
     '/upload-financial-source',
     verifyToken,
