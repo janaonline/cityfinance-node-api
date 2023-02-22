@@ -1030,17 +1030,6 @@ class AggregationServices {
         return obj
     }
 
-    static getRoundOfValue(value,upto){
-        try{
-            return {
-                "$round":[value,upto]
-            }
- 
-        }
-        catch(err){
-            console.log("error in getRoundOfValue ",err.message )
-        }
-    }
     static getCommonPerCalc(value,totalValue){
         let cont = {
             "$multiply":[

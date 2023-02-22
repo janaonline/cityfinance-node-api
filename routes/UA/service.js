@@ -1085,7 +1085,6 @@ function addConvertedAmount(service,field,fieldName,type){
     let obj = {
         "$addFields":{}
     }
-    console.log(service.convertToCr,990)
     obj['$addFields'][fieldName] = type=="lakhs"? convertIntoLakhs(field) :service.convertToCr(field)
     return obj
 }
