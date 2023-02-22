@@ -814,43 +814,47 @@ module.exports.addUAFile = catchAsync(async (req, res) => {
 
 //function for DUR project queries starts here 
 
-function getStringConvertedAmount(service,field,csv){
-    if(csv){
-        return field
+function getStringConvertedAmount(service,field,field2,csv){
+    try{
+        if(csv){
+            return field2
+        }
+        return service.getCommonConcatObj([
+            "₹ ",
+            (service.getCommonConvertor(field,"string"))
+            ,
+            " ",
+            "Cr"
+        ])
     }
-    return service.getCommonConcatObj([
-        "₹ ",
-        service.getCommonSubStr(
-            (service.getCommonConvertor(field,"string")),
-            0,
-            2
-        )
-        ,
-        " ",
-        service.getCommonCurrencyConvertor(field.replace("$",""))
-    ])
+    catch(err){
+        console.log("error in getStringConvertedAmount ",err.message)
+    }
 }
 
+
+
 function getUlbShare(service,csv){
-    if(csv){
-        return "$ulbShare"
+    try{
+        if(csv){
+            return "$ulbShare"
+        }
+        return service.getCommonConcatObj([
+            getStringConvertedAmount(service,"$ulbShareInCr","$ulbShare",csv),
+            
+            " (",
+            service.getCommonConvertor(
+                service.getCommonPerCalc("$ulbShare","$projectCost"),
+                "string"
+            ),
+            ")",
+            "%"
+        ])
     }
-    return service.getCommonConcatObj([
-        "₹ ",
-        service.getCommonSubStr(
-            (service.getCommonConvertor("$ulbShare","string")),
-            0,
-            2
-        ),      
-        service.getCommonCurrencyConvertor("ulbShare"),
-        " (",
-        service.getCommonConvertor(
-            service.getCommonPerCalc("$ulbShare","$projects.cost"),
-            "string"
-        ),
-        ")",
-        "%"
-    ])
+    catch(err){
+        console.log("error in getUlbShare :: ",err.message)
+    }
+    
 }
 
 function getConcatinatedUrl(service,ulbId){
@@ -865,23 +869,40 @@ function addCsvFields(dataObj){
     return dataObj
 }
 
+function getProjectReportDetail(csv){
+    let obj = {
+        "name": "Project Report file",
+        "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+    }
+    if(csv){
+        return "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+    }
+    return obj
+}
+
+function convertIntoLakhs(field){
+    return {
+        "$multiply":[field,100000]
+    }
+}
+
 function getGroupByQuery(service,ulbId,csv) {
     try {
         var dataObj = {
             "$push": {
                 "projectName": "$projects.name",
                 "implementationAgency": "$ulb.name",
-                "totalProjectCost":getStringConvertedAmount(service,"$projects.cost",csv),
-                "stateShare": "₹ 50" + "CR (56%)",
+                "totalProjectCost":getStringConvertedAmount(service,"$projectCostInCr","$projectCost",csv),
+                "stateShare": csv ? "500000": "₹ 50" + " Cr (56%)",
                 "ulbId": "$ulb._id",
                 "projectId": "$projects._id",
                 "stateName":"$state.name",
                 "sectorId": "$category._id",
                 "ulbShare": getUlbShare(service,csv),
-                "capitalExpenditureState": "₹ 98 CR",
-                "capitalExpenditureUlb": "₹ 100 CR",
-                "omExpensesState": "₹ 67 CR",
-                "omExpensesUlb": "₹ 88 CR",
+                "capitalExpenditureState": csv ? "980000": "₹ 98 Cr",
+                "capitalExpenditureUlb": csv ? "1000000":"₹ 100 Cr",
+                "omExpensesState": csv ? "870000":"₹ 67 Cr",
+                "omExpensesUlb": csv ? "9950450":"₹ 88 Cr",
                 "sector": "$category.name",
                 "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                 "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
@@ -889,10 +910,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "name": "More information",
                     "url": getConcatinatedUrl(service,ulbId)
                 },
-                "projectReport": {
-                    "name": "Project Report file",
-                    "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
-                },
+                "projectReport": getProjectReportDetail(csv),
                 "creditRating": {
                     "name": "Credit rating",
                     "url": "https://democityfinance.in/creditRating.pdf"
@@ -908,13 +926,13 @@ function getGroupByQuery(service,ulbId,csv) {
             "$group": {
                 "_id": "$_id",
                 "sectors": {
-                    "$push": { "_id": "$category._id", "name": "$category.name" }
+                    "$addToSet": { "_id": "$category._id", "name": "$category.name" }
                 },
                 "projects": {
-                    "$push": { "_id": "$projects._id", "name": "$projects.name", "sectorId": "$category._id", }
+                    "$addToSet": { "_id": "$projects._id", "name": "$projects.name", "sectorId": "$category._id", }
                 },
                 "implementationAgencies": {
-                    "$push": { "_id": "$ulb._id", "name": "$ulb.name" }
+                    "$addToSet": { "_id": "$ulb._id", "name": "$ulb.name" }
                 },
                 "data": dataObj
             }
@@ -1062,6 +1080,15 @@ function addCensusCode(){
     return obj
 }
 
+function addConvertedAmount(service,field,fieldName,type){
+    let obj = {
+        "$addFields":{}
+    }
+    console.log(service.convertToCr,990)
+    obj['$addFields'][fieldName] = type=="lakhs"? convertIntoLakhs(field) :service.convertToCr(field)
+    return obj
+}
+
 /**
  * It takes an object as an argument and returns an array of objects
  * @param obj - {ulbId,skip,limit,filteredObj}
@@ -1093,11 +1120,17 @@ async function getQueryForUtilizationReports(obj) {
         
         // stage3 unwind Projects array 
         query.push(service.getUnwindObj("$projects", true))
+        query.push(addConvertedAmount(service,"$projects.cost","projectCost","lakhs"))
+        query.push(addConvertedAmount(service,"$projects.expenditure","projectExpenditure","lakhs"))
+        query.push(addConvertedAmount(service,"$projectCost","projectCostInCr","crore"))
+        query.push(addConvertedAmount(service,"$projectExpenditure","projectExpenditureInCr","crore"))
         let fieldstoCalculate = {
-            fromValue:"$projects.cost",
-            toValue: "$projects.expenditure"
+            fromValue:"$projectCost",
+            toValue: "$projectExpenditure"
         }
+        query.push()
         query.push(addUlbShare(service,fieldstoCalculate))
+        query.push(addConvertedAmount(service,"$ulbShare","ulbShareInCr","crore"))
         // stage 4 lookup from category 
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "category"))
         query.push(service.getUnwindObj("$category", true))
@@ -1113,7 +1146,6 @@ async function getQueryForUtilizationReports(obj) {
         query.push(groupBy)
         query.push(projections)
         // stage 5 paginations
-
     }
     catch (err) {
         console.log("error in getQueryForUtilizationReports ::::", err.message)
@@ -1170,6 +1202,22 @@ function deleteExtraKeys(arr,obj){
     }
 }
 
+function changeDocument(document){
+    let obj = {...document}
+    if(obj['creditRatings'] && obj['creditRatings'].length){
+        let arr = obj['creditRatings']
+        for(var  rating in arr){
+            obj[`creditRating1${rating}`]  = arr[rating]
+        }
+    }
+    else{
+       for(let i=0; i<3 ; i++){
+        obj[`creditRating${i+1}`] = '' 
+       }
+    }
+    return obj
+}
+
 module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
     let response = {
         success: false,
@@ -1204,17 +1252,17 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         if (getQuery === "true") {
             return res.status(200).json(query)
         }
-        let document = await redisStoreData(redis_key);
-        if (document) {
-            dbResponse = JSON.parse(document)
-        } else {
-            dbResponse = await DUR.aggregate(query).allowDiskUse(true)
-            await Redis.set(redis_key, JSON.stringify(dbResponse));
-        }
+        // let document = await redisStoreData(redis_key);
+        // if (document) {
+        //     dbResponse = JSON.parse(document)
+        // } else {
+        dbResponse = await DUR.aggregate(query).allowDiskUse(true)
+        await Redis.set(redis_key, JSON.stringify(dbResponse));
+        // }
         if(csv){
             let filename = "Projects.csv"
             let dbCols = Object.values(csvCols)
-             await sendCsv(filename,"UtilizationReport",query,res,dbCols,csvCols,"rows")
+             await sendCsv(filename,"UtilizationReport",query,res,dbCols,csvCols,"rows",changeDocument)
              return;
         }
         if (dbResponse.length) {
@@ -1270,7 +1318,10 @@ function getProjectionForDur(service){
                 "stateName":"$state.name",
                 "totalProjectCost":sumQuery,
                 "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :"$ulbShare",
+                "ulbShare" :service.getCommonConvertor("$ulbShare","int"),
+                "expenditureTotal":{
+                    $sum :"$DUR.projects.expenditure"
+                },
                 // "total":{"$count":"$DUR.ulb"}
             }
         }
@@ -1338,15 +1389,22 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
             }
         )
     }
-    console.log("filterOBJ :: ",filterObj)
-    console.log("sortKey :: ",sortKey)
     dataArr.push({"$skip":skip})
     dataArr.push({"$limit":limit})
     try{
         let obj = {
             "$facet":{
-                "total":[{"$count":"total"}
-            ],
+                "total": [
+                    { $group: {
+                      _id: null,
+                      total: { $sum: 
+                        { $cond: 
+                            { if:  
+                                { $gt: ["$ulbShare", 0 ] } , 
+                                then: 1, 
+                                else: 0 } } },
+                    }}
+                ],
                 "data":dataArr
             }
         }

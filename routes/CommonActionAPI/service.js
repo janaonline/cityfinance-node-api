@@ -764,11 +764,15 @@ let apiUrls = {
 //         }  
 //   },
 // ])
-function writeCsv(cols, csvCols,ele, res) {
+function writeCsv(cols, csvCols,ele, res,cb) {
     let dbCOls = Object.keys(csvCols)
     try {
         let str = ""
         for (let key of dbCOls) {
+            console.log("ele :: ",ele)
+            if(cb){
+                ele = cb(ele)
+            }
             if (ele[key]) {
                 str += ele[key] + ","
             }
@@ -792,7 +796,7 @@ function writeCsv(cols, csvCols,ele, res) {
  * @param {*} res 
  * @param {*} cols 
  */
-function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr) {
+function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr,cb=null) {
     try {
 
         let cursor = moongose.model(modelName).aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
@@ -803,11 +807,11 @@ function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr) {
         cursor.on("data", (document) => {
             if (fromArr) {
                 for (let ele of document[fromArr]) {
-                    writeCsv(cols,csvCols, ele, res)
+                    writeCsv(cols,csvCols, ele, res,cb)
                 }
             }
             else {
-                writeCsv(cols,csvCols, document)
+                writeCsv(cols,csvCols, document,res,cb)
             }
         })
         cursor.on("end", (el) => {
@@ -990,6 +994,9 @@ class AggregationServices {
             $divide: arr
         }
     }
+    static convertToCr(value){
+        return this.getCommonDivObj([value,10000000])
+    }
     static getCommonSubtract(arr){
         let sub = {$subtract:arr}
         return {
@@ -1043,19 +1050,19 @@ class AggregationServices {
             "$substr" :[field,start,end]
         }
     }
-    static getCommonCurrencyConvertor(fieldName) {
+    static getCommonCurrencyConvertor(fieldName,arr,def) {
         let obj =  {
             "$switch": {
                 "branches": [
                     
                 ],
-                "default":""
+                "default":def
             },
             
         }
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"TH",1000,10000))
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"LKH",10000,1000000))
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,"CR",1000000,100000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[0],1000,10000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[1],10000,1000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[2],1000000,100000000))
         return obj
     }
 }
