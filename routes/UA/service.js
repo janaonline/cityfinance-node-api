@@ -1412,7 +1412,6 @@ function lookupQueryForDur(service,designYear){
 
 function facetQueryForPagination(skip,limit,sortKey){
     let dataArr = []
-    console.log("sortKey :: ",sortKey)
     if(sortKey.provided){
         dataArr.push(
             {
