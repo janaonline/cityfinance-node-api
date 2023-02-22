@@ -1421,7 +1421,6 @@ function facetQueryForPagination(skip,limit,sortKey){
     }
     dataArr.push({"$skip":skip})
     dataArr.push({"$limit":limit})
-    console.log("dataAr :: ",dataArr)
     try{
         let obj = {
             "$facet":{
