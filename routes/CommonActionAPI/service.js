@@ -987,6 +987,67 @@ class AggregationServices {
             $multiply: arr
         }
     }
+    static convertIntoLakhs(field){
+        return {
+            "$multiply":[field,100000]
+        }
+    }
+    static filterArr(fieldName,fromField,cond){
+        try{
+            let obj =  {
+                "$addFields":{}
+            }
+            obj["$addFields"][fieldName] = this.getCommonFilterObj(fromField,cond)
+            return obj
+        }
+        catch(err){
+            console.log("error in conditionProj :: ",err.message)
+        }
+    }
+    static getCommonFilterObj(field,cond){
+        try{
+            return {
+                "$filter":{
+                    "input":field,
+                    "as":"item",
+                    "cond":cond
+                }
+            }
+        }
+        catch(err){
+            console.log("error in getCommonFilterObj :: ",err.message)
+        }
+    }
+    static addMultipleFields(obj,arrayForm){
+        let temp = []
+        try{
+            let returnable = {
+                "$addFields":{}
+            }
+            for(var field in obj){
+                let fieldName = obj[field]['field']
+                let type = obj[field]['type']
+                returnable["$addFields"][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
+                if(arrayForm){
+                    let tempObj = {"$addFields":{}}
+                        tempObj["$addFields"][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
+                    temp.push(tempObj)
+                }
+            }
+            return arrayForm ? temp : returnable
+        }
+        catch(err){
+            console.log("error in addMultipleFields :: ",err.message)
+        }
+    }
+
+    static addConvertedAmount(field,fieldName,type){
+        let obj = {
+            "$addFields":{}
+        }
+        obj['$addFields'][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
+        return obj
+    }
     static getCondObj(value,then){
         return {
             "$cond":{

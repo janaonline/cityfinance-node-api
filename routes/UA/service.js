@@ -844,7 +844,7 @@ function getUlbShare(service,csv){
             
             " (",
             service.getCommonConvertor(
-                service.getCommonPerCalc("$ulbShare","$projectCost"),
+                service.getCommonPerCalc("$ulbShare","$totalProjectCost"),
                 "string"
             ),
             ")",
@@ -880,29 +880,25 @@ function getProjectReportDetail(csv){
     return obj
 }
 
-function convertIntoLakhs(field){
-    return {
-        "$multiply":[field,100000]
-    }
-}
 
 function getGroupByQuery(service,ulbId,csv) {
+    // cpExpStateInCr
     try {
         var dataObj = {
             "$push": {
                 "projectName": "$projects.name",
                 "implementationAgency": "$ulb.name",
-                "totalProjectCost":getStringConvertedAmount(service,"$projectCostInCr","$projectCost",csv),
+                "totalProjectCost":getStringConvertedAmount(service,"$projectCostInCr","$totalProjectCost",csv),
                 "stateShare": csv ? "500000000": "₹ 50" + " Cr (56%)",
                 "ulbId": "$ulb._id",
                 "projectId": "$projects._id",
                 "stateName":"$state.name",
                 "sectorId": "$category._id",
                 "ulbShare": getUlbShare(service,csv),
-                "capitalExpenditureState": csv ? "980000000": "₹ 98 Cr",
-                "capitalExpenditureUlb": csv ? "100000000":"₹ 100 Cr",
-                "omExpensesState": csv ? "670000000":"₹ 67 Cr",
-                "omExpensesUlb": csv ? "880000000":"₹ 88 Cr",
+                "capitalExpenditureState": getStringConvertedAmount(service,"$cpExpStateInCr","$cpExpState",csv),
+                "capitalExpenditureUlb":getStringConvertedAmount(service,"$cpExpUlbInCr","$cpExpUlb",csv),
+                "omExpensesState": getStringConvertedAmount(service,"$omExpStateInCr","$omExpState",csv),
+                "omExpensesUlb": getStringConvertedAmount(service,"$omExpUlbInCr","$omExpUlb",csv),
                 "sector": "$category.name",
                 "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                 "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
@@ -977,7 +973,7 @@ function getFilterConditions(filters) {
     }
     try {
         let obj = {
-            "$or": []
+            "$and": []
         }
         for (let filter in filters) {
             let filter_arr = filters[filter]
@@ -986,7 +982,7 @@ function getFilterConditions(filters) {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
                 temp["$eq"].push(ObjectId(id))
-                obj["$or"].push(temp)
+                obj["$and"].push(temp)
             }
 
         }
@@ -1055,7 +1051,15 @@ function addUlbShare(service,fields){
     try{
         return {
             "$addFields":{
-                "ulbShare":service.getCommonSubtract([fromValue,toValue])
+                "ulbShare":{
+                    "$cond":{
+                        "if":{
+                            "$gt":[toValue,0]
+                        },
+                        "then":service.getCommonSubtract([fromValue,toValue]),
+                        "else":0
+                    }
+                }
             }
         }
     }
@@ -1081,11 +1085,42 @@ function addCensusCode(){
     return obj
 }
 
-function addConvertedAmount(service,field,fieldName,type){
-    let obj = {
-        "$addFields":{}
+function getFieldTypeToAdd(fieldName,convertTo){
+    try{
+        return {
+            "field":fieldName,
+            "type":convertTo
+        }
     }
-    obj['$addFields'][fieldName] = type=="lakhs"? convertIntoLakhs(field) :service.convertToCr(field)
+    catch(err){
+        console.log("error in fieldName ::: ",err.message)
+    }
+}
+
+function getExpendituresField(){
+    let obj = {}
+    try{
+        obj = {
+            "$projects.cost" : getFieldTypeToAdd("totalProjectCost","lakhs"),
+            "$projects.expenditure":getFieldTypeToAdd("projectExpenditure","lakhs"),
+            "$totalProjectCost":getFieldTypeToAdd("projectCostInCr","crore"),
+            "$projectExpenditure":getFieldTypeToAdd("projectExpenditureInCr","crore"),
+            //
+            "$projects.capitalExpenditureState":getFieldTypeToAdd("cpExpState","lakhs"),
+            "$projects.capitalExpenditureUlb":getFieldTypeToAdd("cpExpUlb","lakhs"),
+            "$projects.omExpensesState":getFieldTypeToAdd("omExpState","lakhs"),
+            "$projects.omExpensesUlb":getFieldTypeToAdd("omExpUlb","lakhs"),//
+            "$projects.capitalExpenditureState":getFieldTypeToAdd("cpExpState","lakhs"),
+            //
+            "$cpExpState":getFieldTypeToAdd("cpExpStateInCr","crore"),
+            "$cpExpUlb":getFieldTypeToAdd("cpExpUlbInCr","crore"),
+            "$omExpState":getFieldTypeToAdd("omExpStateInCr","crore"),
+            "$omExpUlb":getFieldTypeToAdd("omExpUlbInCr","crore"),//
+        }
+    }
+    catch(err){
+        console.log("error in getExpenditure :: ",err.message)
+    }
     return obj
 }
 
@@ -1119,17 +1154,22 @@ async function getQueryForUtilizationReports(obj) {
         }
         
         // stage3 unwind Projects array 
+        let condObj = {
+            "$and":[
+                {"$gt": ["$$item.cost","$$item.expenditure"]},
+                {"$gt": ["$$item.expenditure",0]},
+            ]
+        }
+        query.push(service.filterArr("projects","$projects",condObj))
         query.push(service.getUnwindObj("$projects", true))
-        query.push(addConvertedAmount(service,"$projects.cost","projectCost","lakhs"))
-        query.push(addConvertedAmount(service,"$projects.expenditure","projectExpenditure","lakhs"))
-        query.push(addConvertedAmount(service,"$projectCost","projectCostInCr","crore"))
-        query.push(addConvertedAmount(service,"$projectExpenditure","projectExpenditureInCr","crore"))
+        let fieldsToAdd = getExpendituresField()
+        query = query.concat(service.addMultipleFields(fieldsToAdd,true))
         let fieldstoCalculate = {
-            fromValue:"$projectCost",
+            fromValue:"$totalProjectCost",
             toValue: "$projectExpenditure"
         }
         query.push(addUlbShare(service,fieldstoCalculate))
-        query.push(addConvertedAmount(service,"$ulbShare","ulbShareInCr","crore"))
+        query.push(service.addConvertedAmount("$ulbShare","ulbShareInCr","crore"))
         // stage 4 lookup from category 
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "category"))
         query.push(service.getUnwindObj("$category", true))
@@ -1377,7 +1417,7 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
             "ulbShare":{"$gte":1}
         }
     }
-    if(filterObj.provided){
+    if(filterObj.provided){facetQueryForPagination
         skip = 0
         Object.assign(matchObj["$match"],filterObj.filters)
     }
