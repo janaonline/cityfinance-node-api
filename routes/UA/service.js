@@ -1410,18 +1410,8 @@ function lookupQueryForDur(service,designYear){
     }
 }
 
-function facetQueryForPagination(skip,limit,filterObj,sortKey){
+function facetQueryForPagination(skip,limit,sortKey){
     let dataArr = []
-    let matchObj = {
-        "$match":{
-            "ulbShare":{"$gte":1}
-        }
-    }
-    if(filterObj.provided){facetQueryForPagination
-        skip = 0
-        Object.assign(matchObj["$match"],filterObj.filters)
-    }
-    dataArr.push(matchObj)
     if(sortKey.provided){
         dataArr.push(
             {
@@ -1487,8 +1477,21 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
         query.push(addUlbShare(service,fields))
         //stage 3
         query.push(getProjectionForDur(service))
+        // stage match if filters provided
+        let matchObj = {
+            "$match":{
+                "ulbShare":{"$gte":1}
+            }
+        }
+        if(filterObj.provided){
+            skip = 0
+            Object.assign(matchObj["$match"],filterObj.filters)
+        }
+
+        query.push(matchObj)
+       
         // stage 4
-        query.push(facetQueryForPagination(skip,limit,filterObj,sortKey))
+        query.push(facetQueryForPagination(skip,limit,sortKey))
         query.push({
             "$project":{
                 "total":{ $arrayElemAt: [ "$total.total", 0 ] },
@@ -1505,7 +1508,10 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
 module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
     let response = {
         success:false,
-        message:""
+        message:"",
+        columns : dashboardColumns,
+        total : 0,
+        data:[]
     }
     try{
         let skip = parseInt(req.query.skip) || 0
@@ -1524,14 +1530,14 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         let dbResponse = await Ulb.aggregate(query)
         response.data = dbResponse[0]['data']
         response.total = dbResponse[0]['total']
-        response.columns = dashboardColumns
+        
         response.message = "Fetched Successfully"
         response.success = true
         return res.status(200).json(response)
     }
     catch(err){
         response.message = "Something went wrong"
-        console.log("error in getIfProjrajaectsWithState :: ",err.message)
+        console.log("error in getInfProjectsWithState :: ",err.message)
     }
     res.status(500).json(response)
 })
