@@ -910,6 +910,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "name": "More information",
                     "url": getConcatinatedUrl(service,ulbId)
                 },
+                "links":"$links.link",
                 "projectReport": getProjectReportDetail(csv),
                 "creditRating": {
                     "name": "Credit rating",
@@ -1110,7 +1111,7 @@ async function getQueryForUtilizationReports(obj) {
         // stage 2 get related ulbs and unwind
         query.push(service.getCommonLookupObj("ulbs", "ulb", "_id", "ulb"))
         query.push(service.getUnwindObj("$ulb", true))
-
+        query.push(service.getCommonLookupObj("creditratings", "ulb._id", "ulb", "links"))
         // add state if query is for csv 
         if(csv){
             query.push(addCensusCode())
@@ -1204,14 +1205,15 @@ function deleteExtraKeys(arr,obj){
 
 function changeDocument(document){
     let obj = {...document}
-    if(obj['creditRatings'] && obj['creditRatings'].length){
-        let arr = obj['creditRatings']
+    if(obj['links'] && obj['links'].length){
+        let arr = obj['links']
         for(var  rating in arr){
-            obj[`creditRating1${rating}`]  = arr[rating]
+            let r = parseInt(rating) + 1
+            obj[`creditRating${r}`]  = arr[rating]
         }
     }
     else{
-       for(let i=0; i<3 ; i++){
+       for(let i=0; i<4 ; i++){
         obj[`creditRating${i+1}`] = '' 
        }
     }
