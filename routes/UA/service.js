@@ -1129,7 +1129,6 @@ async function getQueryForUtilizationReports(obj) {
             fromValue:"$projectCost",
             toValue: "$projectExpenditure"
         }
-        query.push()
         query.push(addUlbShare(service,fieldstoCalculate))
         query.push(addConvertedAmount(service,"$ulbShare","ulbShareInCr","crore"))
         // stage 4 lookup from category 

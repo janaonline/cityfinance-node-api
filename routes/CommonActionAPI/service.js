@@ -1030,8 +1030,18 @@ class AggregationServices {
         return obj
     }
 
+    static getRoundOfValue(value,upto){
+        try{
+            return {
+                "$round":[value,upto]
+            }
+ 
+        }
+        catch(err){
+            console.log("error in getRoundOfValue ",err.message )
+        }
+    }
     static getCommonPerCalc(value,totalValue){
-        this.getCondObj(value,this.getCommonDivObj([value,10000000]))
         let cont = {
             "$multiply":[
                 this.getCondObj(value,this.getCommonDivObj([value,totalValue])),
