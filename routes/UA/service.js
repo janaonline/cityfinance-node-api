@@ -926,13 +926,13 @@ function getGroupByQuery(service,ulbId,csv) {
             "$group": {
                 "_id": "$_id",
                 "sectors": {
-                    "$push": { "_id": "$category._id", "name": "$category.name" }
+                    "$addToSet": { "_id": "$category._id", "name": "$category.name" }
                 },
                 "projects": {
-                    "$push": { "_id": "$projects._id", "name": "$projects.name", "sectorId": "$category._id", }
+                    "$addToSet": { "_id": "$projects._id", "name": "$projects.name", "sectorId": "$category._id", }
                 },
                 "implementationAgencies": {
-                    "$push": { "_id": "$ulb._id", "name": "$ulb.name" }
+                    "$addToSet": { "_id": "$ulb._id", "name": "$ulb.name" }
                 },
                 "data": dataObj
             }
@@ -1318,7 +1318,10 @@ function getProjectionForDur(service){
                 "stateName":"$state.name",
                 "totalProjectCost":sumQuery,
                 "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :"$ulbShare",
+                "ulbShare" :service.getCommonConvertor("$ulbShare","int"),
+                "expenditureTotal":{
+                    $sum :"$DUR.projects.expenditure"
+                },
                 // "total":{"$count":"$DUR.ulb"}
             }
         }
@@ -1386,15 +1389,22 @@ function facetQueryForPagination(skip,limit,filterObj,sortKey){
             }
         )
     }
-    console.log("filterOBJ :: ",filterObj)
-    console.log("sortKey :: ",sortKey)
     dataArr.push({"$skip":skip})
     dataArr.push({"$limit":limit})
     try{
         let obj = {
             "$facet":{
-                "total":[{"$count":"total"}
-            ],
+                "total": [
+                    { $group: {
+                      _id: null,
+                      total: { $sum: 
+                        { $cond: 
+                            { if:  
+                                { $gt: ["$ulbShare", 0 ] } , 
+                                then: 1, 
+                                else: 0 } } },
+                    }}
+                ],
                 "data":dataArr
             }
         }
