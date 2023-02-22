@@ -1318,8 +1318,10 @@ function getProjectionForDur(service){
                 "stateName":"$state.name",
                 "totalProjectCost":sumQuery,
                 "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :"$ulbShare",
-                "expenditureTotal":{$sum :"$DUR.projects.expenditure"},
+                "ulbShare" :service.getCommonConvertor("$ulbShare","int"),
+                "expenditureTotal":{
+                    $sum :"$DUR.projects.expenditure"
+                },
                 // "total":{"$count":"$DUR.ulb"}
             }
         }
@@ -1485,7 +1487,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         response.columns = dashboardColumns
         response.message = "Fetched Successfully"
         response.success = true
-        return res.status(200).json(dbResponse)
+        return res.status(200).json(response)
     }
     catch(err){
         response.message = "Something went wrong"
