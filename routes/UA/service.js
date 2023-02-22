@@ -1529,7 +1529,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         let query = await getQueryStateRelated(designYear,filterObj,sortKey,skip,limit)
         let dbResponse = await Ulb.aggregate(query)
         response.data = dbResponse[0]['data']
-        response.total = dbResponse[0]['total']
+        response.total = dbResponse[0]['total'] || 0
         
         response.message = "Fetched Successfully"
         response.success = true
