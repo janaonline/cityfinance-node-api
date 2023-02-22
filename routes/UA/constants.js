@@ -25,7 +25,7 @@ let columns = [
         }
     },
     {
-        label: "State Share",
+        label: "State Share & Central Assistance",
         key: "stateShare",
         get databaseKey(){
             return "share"
@@ -39,7 +39,7 @@ let columns = [
         }
     },
     {
-        label: "Capital Expentiture (State Share)",
+        label: "Capital Expenditure (State State & Central Assistance)",
         key: "capitalExpenditureState",
         get databaseKey(){
             return "cpExp"
@@ -53,7 +53,7 @@ let columns = [
         }
     },
     {
-        label: "O&M Expenses (State Share)",
+        label: "O&M Expenses (State State & Central Assistance)",
         key: "omExpensesState",
         get databaseKey(){
             return "omExpState"
@@ -127,10 +127,10 @@ let csvCols = {
 }
 
 const sortFilterKeys = {
-    "totalProjectCost": "projects.cost",
+    // "totalProjectCost": "projects.cost",
     "ulbShare": "ulbShare",
     "totalProjects":"totalProjects",
-    "totalProjectCost":"projectCost",
+    "totalProjectCost":"totalProjectCost",
     "stateName":"stateName",
     "ulbName":"ulbName"
 }
