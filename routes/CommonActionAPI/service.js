@@ -1031,7 +1031,6 @@ class AggregationServices {
     }
 
     static getCommonPerCalc(value,totalValue){
-        this.getCondObj(value,this.getCommonDivObj([value,10000000]))
         let cont = {
             "$multiply":[
                 this.getCondObj(value,this.getCommonDivObj([value,totalValue])),
