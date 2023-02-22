@@ -1484,7 +1484,6 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
             }
         }
         if(filterObj.provided){
-            skip = 0
             Object.assign(matchObj["$match"],filterObj.filters)
         }
 
