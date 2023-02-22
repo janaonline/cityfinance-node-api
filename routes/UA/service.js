@@ -1430,7 +1430,7 @@ function facetQueryForPagination(skip,limit,sortKey){
                       total: { $sum: 
                         { $cond: 
                             { if:  
-                                { $gt: ["$ulbShare", 1 ] } , 
+                                { $gt: ["$ulbShare", 0 ] } , 
                                 then: 1, 
                                 else: 0 } } },
                     }}
