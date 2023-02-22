@@ -127,10 +127,10 @@ let csvCols = {
 }
 
 const sortFilterKeys = {
-    "totalProjectCost": "projects.cost",
+    // "totalProjectCost": "projects.cost",
     "ulbShare": "ulbShare",
     "totalProjects":"totalProjects",
-    "totalProjectCost":"projectCost",
+    "totalProjectCost":"totalProjectCost",
     "stateName":"stateName",
     "ulbName":"ulbName"
 }

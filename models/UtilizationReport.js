@@ -28,6 +28,10 @@ const UtilizationReportProjectSchema = new Schema({
   },
   cost: { type: Number, default: 0 },
   expenditure: { type: Number, default: 0 },
+  capitalExpenditureState:{type:Number,default:0},
+  capitalExpenditureUlb:{type:Number,default:0},
+  omExpensesState:{type:Number,default:0},
+  omExpensesUlb:{type:Number,default:0},
   // engineerName: { type: String },
   // engineerContact: { type: String },
   modifiedAt: { type: Date, default: Date.now() },
@@ -119,7 +123,6 @@ const UtilizationReportSchema = new Schema(
     responseFile_mohua:pdfSchema(),
     rejectReason_state:{ type: String, default: "" },
     rejectReason_mohua: { type: String, default: "" },
-
     responseFile: pdfSchema(),
     history: { type: Array, default: [] },
     modifiedAt: { type: Date, default: Date.now() },
