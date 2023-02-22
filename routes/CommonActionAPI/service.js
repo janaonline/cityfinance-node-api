@@ -987,13 +987,22 @@ class AggregationServices {
             $multiply: arr
         }
     }
+    static getCondObj(value,then){
+        return {
+            "$cond":{
+                "if":{"$gt":[value,0]},
+                "then":then,
+                "else":0
+            }
+        }
+    }
     static getCommonDivObj(arr) {
         return {
             $divide: arr
         }
     }
     static convertToCr(value){
-        return this.getCommonDivObj([value,10000000])
+        return this.getCondObj(value,this.getCommonDivObj([value,10000000]))
     }
     static getCommonSubtract(arr){
         let sub = {$subtract:arr}
@@ -1022,9 +1031,10 @@ class AggregationServices {
     }
 
     static getCommonPerCalc(value,totalValue){
+        this.getCondObj(value,this.getCommonDivObj([value,10000000]))
         let cont = {
             "$multiply":[
-                {"$divide":[value,totalValue]},
+                this.getCondObj(value,this.getCommonDivObj([value,totalValue])),
                 100
             ]
         }
