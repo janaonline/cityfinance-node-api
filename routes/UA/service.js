@@ -974,7 +974,7 @@ function getFilterConditions(filters) {
     }
     try {
         let obj = {
-            "$and": []
+            "$or": []
         }
         for (let filter in filters) {
             let filter_arr = filters[filter]
@@ -983,7 +983,7 @@ function getFilterConditions(filters) {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
                 temp["$eq"].push(ObjectId(id))
-                obj["$and"].push(temp)
+                obj["$or"].push(temp)
             }
 
         }
