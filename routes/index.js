@@ -253,4 +253,7 @@ router.use('/fiscal-ranking', FiscalRanking);
 const MasterStatus = require('./MasterStatus');
 router.use('/master-status', MasterStatus)
 
+const MasterSkipValue = require('./MasterSkipValues');
+router.use('/master-skip-value', MasterSkipValue)
+
 module.exports = router;

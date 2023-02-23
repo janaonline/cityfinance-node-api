@@ -1,9 +1,9 @@
-const MasterStatus = require('../../models/MasterStatus');
+const MasterSkipValue = require('../../models/MasterSkipValue');
 const Response = require('../../service/response')
 
 module.exports.createValue = async(req,res)=>{
     try {
-        const output = await MasterStatus.create(req.body);
+        const output = await MasterSkipValue.create(req.body);
         if(!output)  Response.BadRequest(res, {}, "Cannot create status")
         return Response.OK(res, output, "Success")
     } catch (error) {
@@ -13,7 +13,7 @@ module.exports.createValue = async(req,res)=>{
 
 module.exports.getAll = async (req, res) =>{
     try {
-        let output = await MasterStatus.find({},{status:1, statusId:1}).lean();
+        let output = await MasterSkipValue.find({},{skipId:1, value: 1, category:1}).lean();
         if(!output || output.length === 0) return Response.BadRequest(res, {}, "Failed")
         return Response.OK(res, output, "Success")
     } catch (error) {
@@ -25,7 +25,7 @@ module.exports.getValue = async (req, res) =>{
     try {
         const {_id} = req.query
         if(!_id) return Response.BadRequest(res, {}, "Pass Mandatory Fields");
-        let output = await MasterStatus.findOne({statusId: _id},{status:1, statusId:1}).lean();
+        let output = await MasterSkipValue.findOne({skipId: _id},{skipId:1, value: 1, category:1}).lean();
         if(!output) return Response.BadRequest(res, {}, "Failed")
         return Response.OK(res, output, "Success")
     } catch (error) {
