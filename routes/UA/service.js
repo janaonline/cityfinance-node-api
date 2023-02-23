@@ -858,14 +858,23 @@ function getUlbShare(service,csv){
 }
 
 function getConcatinatedUrl(service,ulbId){
-    return service.getCommonConcatObj([apiUrls[process.env.ENV] + "/UA/get-mou-project/" + ulbId + "?csv=true&projects=",(service.getCommonConvertor("$projects._id","string"))])
+    return service.getCommonConcatObj([apiUrls[process.env.ENV] + "/UA/get-mou-project/" + ulbId + "?csv=true&projects=",(service.getCommonConvertor("$amrProjects._id","string"))])
 }
 
-function addCsvFields(dataObj){
-    dataObj['$push']['ulbName'] = "$ulb.name",
-    dataObj['$push']['censusCode'] = "$censuscode"
-    dataObj['$push']['cfCode'] =  "$ulb.code"
-    dataObj["$push"]['population'] = "$ulb.population"
+function addCsvFields(dataObj,fieldName){
+    dataObj["$group"][fieldName]['$addToSet']['ulbName'] = "$ulb.name",
+    dataObj["$group"][fieldName]['$addToSet']['censusCode'] = "$censuscode"
+    dataObj["$group"][fieldName]['$addToSet']['cfCode'] =  "$ulb.code"
+    dataObj["$group"][fieldName]["$addToSet"]['population'] = {
+        "$cond":{
+            "if":{
+                "$eq":["isMillionPlus","No"],
+            },
+            "then":"Non-million",
+            "else":"Million"
+        }
+    }
+    dataObj["$group"][fieldName]["$addToSet"]['stateName'] = "$state.name"
     return dataObj
 }
 
@@ -879,47 +888,83 @@ function getProjectReportDetail(csv){
     }
     return obj
 }
-
-
-function getGroupByQuery(service,ulbId,csv) {
-    // cpExpStateInCr
-    try {
-        var dataObj = {
-            "$push": {
-                "projectName": "$projects.name",
-                "implementationAgency": "$ulb.name",
-                "totalProjectCost":"$totalProjectCost",
-                "stateShare": "$stateSh",
-                "ulbId": "$ulb._id",
-                "projectId": "$projects._id",
-                "stateName":"$state.name",
-                "sectorId": "$category._id",
-                "ulbShare": "$ulbShare",
-                "projectExpenditure":"$projectExpenditure",
-                "capitalExpenditureState": "$cpExpState",
-                "capitalExpenditureUlb":"$cpExpUlb",
-                "omExpensesState": "$omExpState",
-                "omExpensesUlb": "$omExpUlb",
-                "sector": "$category.name",
-                "startDate": service.getCommonDateTransformer("$projects.createdAt"),
-                "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
-                "moreInformation": {
-                    "name": "More information",
-                    "url": getConcatinatedUrl(service,ulbId)
+function amrProjects(service,csv,ulbId){
+    try{
+        let configObj  ={
+            "projectName":"$amrProjects.name",
+            "projectId": "$amrProjects._id",
+            "totalProjectCost":"$amrProjects.cost",
+            "implementationAgency":"$ulb.name",
+            "capitalExpenditureState": "$amrProjects.capitalExpenditureState",
+            "capitalExpenditureUlb": "$amrProjects.capitalExpenditureUlb",
+            "omExpensesState": "$amrProjects.omExpensesState",
+            "omExpensesUlb": "$amrProjects.omExpensesUlb",
+            "stateShare": "$amrProjects.stateShare",
+            "expenditure": "$amrProjects.expenditure",
+            "ulbShare":"$durUlbShare",
+            "sector":"$amrProjects.category.name",
+            "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
+            "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
+            "moreInformation": {
+                "name": "More information",
+                "url": getConcatinatedUrl(service,ulbId)
+            },
+            "projectReport":getProjectReportDetail(csv)
+        }
+        let obj =  {
+            "$cond":{
+                "if":{
+                        "$or":[
+                            {'$eq': ['$amrProjects.name', null]}, 
+                            {'$gt': ['$amrProjects.name', null]},
+                        ]
                 },
-                "links":"$links.link",
-                "projectReport": getProjectReportDetail(csv),
-                "creditRating": {
-                    "name": "Credit rating",
-                    "url": "https://democityfinance.in/creditRating.pdf"
-                }
+                "then":configObj,
+                "else":"$$REMOVE"
+                
             }
         }
-
-        if(csv){
-            dataObj =  addCsvFields(dataObj)
-            //add some fields in projection for csv
+        if(!csv){
+            return obj
         }
+        return configObj
+    }
+    catch(err){
+        console.log("error in amrProjects :: ",err.message)
+    }
+}
+
+function durProjects(csv){
+    let configObj = {
+        "projectName":"$projects.name",
+        "projectId": "$projects._id",
+        "implementationAgency":"$ulb.name",
+        "totalProjectCost":"$projects.cost",
+        "expenditure": "$projects.expenditure",
+        "ulbShare": "$ulbShare",
+        "sector":"$category.name"
+    }
+    let obj = {
+        "$cond":{
+            "if":{
+                "$or":[
+                    {'$eq': ['$projects.name', null]}, 
+                    {'$gt': ['$projects.name', null]},
+                ]
+            },
+            "then":configObj,
+            "else":"$$REMOVE"
+        }
+    }
+    if(!csv){
+        return obj
+    }
+    return configObj
+}
+
+function getGroupByQuery(service,ulbId,csv) {
+
+    try {
         let obj = {
             "$group": {
                 "_id": "$_id",
@@ -932,8 +977,45 @@ function getGroupByQuery(service,ulbId,csv) {
                 "implementationAgencies": {
                     "$addToSet": { "_id": "$ulb._id", "name": "$ulb.name" }
                 },
-                "data": dataObj
+                "amrprojectsNames": {
+                    "$addToSet": {
+                        "_id": "$amrProjects._id",
+                        "name": "$amrProjects.name",
+                        "sectorId": "$amrProjects.category._id"
+                    }
+                },
+                "durProjectsNames": {
+                    "$addToSet": {
+                        "_id": "$projects._id",
+                        "name": "$projects.name",
+                       
+                    }
+                },
+                "amrProjectData": {
+                    "$addToSet": amrProjects(service,csv,ulbId)
+                },
+                "durProjects": {
+                    "$addToSet": durProjects(csv)
+                },
+                // "startDate": service.getCommonDateTransformer("$projects.createdAt"),
+                // "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
+                
+                "links":{
+                    "$push":"$links.link"
+                }
+                // "projectReport": getProjectReportDetail(csv),
+                // "creditRating": {
+                //     "name": "Credit rating",
+                //     "url": "https://democityfinance.in/creditRating.pdf"
+                // }
+
             }
+            
+        }
+        if(csv){
+            console.log(obj)
+            obj = addCsvFields(obj,"amrProjectData")
+            obj = addCsvFields(obj,"durProjects") 
         }
         return obj
     }
@@ -1014,31 +1096,21 @@ function getFilteredObjects(filteredObj, arrName) {
 function getProjectionQueries(service, filteredObj, skip, limit, sortKey) {
     let { sectors: sectorObj } = { ...filteredObj.filters }
     let sectorialObj = { "filters": { "sectors": sectorObj } }
-    let obj = {
-        "$project": {
-            "_id": 1,
-            "filters": 1,
-            "total": service.getCommonTotalObj("$data"),
-            "rows": "$data",
-            "sectors": 1,
-            "projects": 1,
-            "implementationAgencies": 1
-        }
-    }
+    
     // slicing is used for pagination as data structure is totally created with mongodb aggregation
     try {
-        if (sectorObj != undefined) {
-            obj["$project"]["projects"] = getFilteredObjects(sectorialObj, "$projects")
+        let obj = {
+            "$project": {
+                "_id": 1,
+                "filters": 1,
+                "total": service.getCommonTotalObj("$results"),
+                "rows": "$rows",
+                "sectors": 1,
+                "projects": 1,
+                "implementationAgencies": 1
+            }
         }
-
-        if (filteredObj.provided) {
-            obj["$project"]["rows"] = service.getCommonSliceObj(getFilteredObjects(filteredObj, "$data"), skip, limit)
-
-        }
-        else {
-            obj["$project"]["rows"] = service.getCommonSliceObj("$data", skip, limit)
-
-        }
+        return obj
     }
     catch (err) {
         console.log("error in getProjectionQueries ::: ", err.message)
@@ -1046,23 +1118,23 @@ function getProjectionQueries(service, filteredObj, skip, limit, sortKey) {
     return obj
 }
 
-function addUlbShare(service,fields){
+function addUlbShare(service,fields,fieldName='ulbShare'){
     let {fromValue,toValue} = fields
     
     try{
-        return {
-            "$addFields":{
-                "ulbShare":{
-                    "$cond":{
-                        "if":{
-                            "$gt":[toValue,0]
-                        },
-                        "then":service.getCommonSubtract([fromValue,toValue]),
-                        "else":0
-                    }
-                }
+        let obj = {
+            "$addFields":{}
+        }
+        obj['$addFields'][fieldName] = {
+            "$cond":{
+                "if":{
+                    "$gt":[toValue,0]
+                },
+                "then":service.getCommonSubtract([fromValue,toValue]),
+                "else":0
             }
         }
+        return obj
     }
     catch(err){
         console.log("error while getting ulbShare",err.message)
@@ -1126,6 +1198,90 @@ function getExpendituresField(){
     return obj
 }
 
+function queryPipelineLookup(service,fromTable,as){
+    let obj = {}
+    try{
+        obj = {
+            "$lookup":{}
+        }
+        obj["$lookup"]["from"] = fromTable,
+        obj["$lookup"]["let"] = {
+            "ulb_id":"$ulb._id"
+        }
+        obj["$lookup"]['pipeline'] = [
+            {
+                "$match":{
+                    "$expr":{
+                        "$eq":["$ulb","$$ulb_id"]
+                    }
+                }
+            }
+        ]
+        obj["$lookup"]['pipeline'].push(
+            service.getCommonLookupObj("categories","category","_id","category")
+        )
+        obj["$lookup"]['pipeline'].push(service.getUnwindObj("$category",true))
+        obj["$lookup"]["as"] = as
+        return obj
+    }
+    catch(err){
+        console.log("error in queryPipeLineLookup :: ",err.message)
+    }
+    return obj
+}
+
+function getDataAccToFilters(filteredObj){
+    try{
+        let obj = {
+            "$addFields":{
+                "results":"$data"
+            }
+        }
+        if(filteredObj.provided){
+            let filters = getFilteredObjects(filteredObj,"$data")
+            obj["$addFields"]["results"] = filters
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in getDataAccToFilters :: ",err.message)
+        return {}
+    }
+}
+
+function getPaginatedResults(skip,limit){
+    try{
+        let obj = {
+            "$addFields":{
+                "rows": {
+                    "$slice": ["$results", skip, limit]
+                }
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in getPaginatedResults: :: ",err.message)
+        return {}
+    }
+}
+
+function concatArrays(){
+    try{
+        let obj = {
+            "$addFields": {
+                "data": { "$concatArrays": ["$amrProjectData", "$durProjects"] },
+                "projects": { "$concatArrays": ["$amrprojectsNames", "$durProjectsNames"] },
+                "sectorNames": "$sectors"
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in addFIeldsQuery :: ",err.message)
+    }
+}
+
 /**
  * It takes an object as an argument and returns an array of objects
  * @param obj - {ulbId,skip,limit,filteredObj}
@@ -1141,6 +1297,7 @@ async function getQueryForUtilizationReports(obj) {
             "$match": {
                 "ulb": ObjectId(ulbId),
                 "designYear":ObjectId(design_year),
+                // "isDraft":false,
             }
         }
         query.push(matchObj)
@@ -1148,13 +1305,14 @@ async function getQueryForUtilizationReports(obj) {
         query.push(service.getCommonLookupObj("ulbs", "ulb", "_id", "ulb"))
         query.push(service.getUnwindObj("$ulb", true))
         query.push(service.getCommonLookupObj("creditratings", "ulb._id", "ulb", "links"))
+        query.push(queryPipelineLookup(service,"amrutprojects","amrProjects"))
+        query.push(service.getUnwindObj("$amrProjects", true))
         // add state if query is for csv 
         if(csv){
             query.push(addCensusCode())
             query.push(service.getCommonLookupObj("states", "ulb.state", "_id", "state"))
             query.push(service.getUnwindObj("$state", true))
         }
-        
         // stage3 unwind Projects array 
         let condObj = {
             "$and":[
@@ -1162,29 +1320,39 @@ async function getQueryForUtilizationReports(obj) {
                 {"$gt": ["$$item.expenditure",0]},
             ]
         }
+        let fieldsForCalc = {
+            "fromValue":"$amrProjects.cost",
+            "toValue":"$amrProjects.expenditure"
+        }
+        query.push(addUlbShare(service,fieldsForCalc,"durUlbShare"))
         query.push(service.filterArr("projects","$projects",condObj))
         query.push(service.getUnwindObj("$projects", true))
-        let fieldsToAdd = getExpendituresField()
-        query = query.concat(service.addMultipleFields(fieldsToAdd,true))
+        query.push(service.addFields("totalProjectCost","$projects.cost"))
+        // let fieldsToAdd = getExpendituresField()
+        // query = query.concat(service.addMultipleFields(fieldsToAdd,true))
         let fieldstoCalculate = {
             fromValue:"$totalProjectCost",
-            toValue: "$projectExpenditure"
+            toValue: "$projects.expenditure"
         }
         query.push(addUlbShare(service,fieldstoCalculate))
-        query.push(service.addConvertedAmount("$ulbShare","ulbShareInlkh","lakhs"))
+        // query.push(service.addConvertedAmount("$ulbShare","ulbShareInlkh","lakhs"))
         // stage 4 lookup from category 
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "category"))
         query.push(service.getUnwindObj("$category", true))
-        if (sortKey.provided) {
-            query.push({
-                "$sort": sortKey.filters
-            })
-        }
+        
+        // if (sortKey.provided) {
+        //     query.push({
+        //         "$sort": sortKey.filters
+        //     })
+        // }
         //if filters provided
-        // stage 6 group by rows columns according to requirment 
         let groupBy = getGroupByQuery(service,ulbId,csv)
+        
         let projections = getProjectionQueries(service, filteredObj, skip, limit, sortKey)
         query.push(groupBy)
+        query.push(concatArrays())
+        query.push(getDataAccToFilters(filteredObj))
+        query.push(getPaginatedResults(skip,limit))
         query.push(projections)
         // stage 5 paginations
     }
@@ -1299,7 +1467,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         //     dbResponse = JSON.parse(document)
         // } else {
         dbResponse = await DUR.aggregate(query).allowDiskUse(true)
-        await Redis.set(redis_key, JSON.stringify(dbResponse));
+        // await Redis.set(redis_key, JSON.stringify(dbResponse));
         // }
         if(csv){
             let filename = "Projects.csv"
