@@ -420,7 +420,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           "Mobile number",
           dataSource,
-          "4"),
+          "4", 10, 10),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
       }
@@ -571,16 +571,15 @@ exports.getView = async function (req, res, next) {
 
     let fyDynemic = await fiscalRankingFormJson();
     await assignCalculatedValues(fyDynemic, viewOne)
-
     let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       for (let key in subData) {
         for (let pf of subData[key]?.yearData) {
+          pf['status'] = null
+          pf["modelName"] = "FiscalRanking"
           if (pf?.code?.length > 0) {
-            pf['status'] = null
-            pf["modelName"] = "FiscalRanking"
             if (fyData.length) {
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
               if (singleFydata) {
@@ -644,6 +643,7 @@ exports.getView = async function (req, res, next) {
               }
             }
           }
+          console.log("subData", pf); process.exit()
         }
       }
     }
