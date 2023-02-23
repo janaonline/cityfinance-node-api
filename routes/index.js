@@ -250,4 +250,7 @@ router.use('/deleteFile', DeleteFileApi);
 const FiscalRanking = require('./FiscalRanking');
 router.use('/fiscal-ranking', FiscalRanking);
 
+const MasterStatus = require('./MasterStatus');
+router.use('/master-status', MasterStatus)
+
 module.exports = router;
