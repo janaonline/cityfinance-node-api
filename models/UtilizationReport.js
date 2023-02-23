@@ -28,6 +28,7 @@ const UtilizationReportProjectSchema = new Schema({
   },
   cost: { type: Number, default: 0 },
   expenditure: { type: Number, default: 0 },
+  stateShare:{type:Number,default:0},
   capitalExpenditureState:{type:Number,default:0},
   capitalExpenditureUlb:{type:Number,default:0},
   omExpensesState:{type:Number,default:0},

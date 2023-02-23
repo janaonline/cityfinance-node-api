@@ -840,7 +840,7 @@ function getUlbShare(service,csv){
             return "$ulbShare"
         }
         return service.getCommonConcatObj([
-            getStringConvertedAmount(service,"$ulbShareInCr","$ulbShare",csv),
+            getStringConvertedAmount(service,"$ulbShareInlkh","$ulbShare",csv),
             
             " (",
             service.getCommonConvertor(
@@ -888,17 +888,18 @@ function getGroupByQuery(service,ulbId,csv) {
             "$push": {
                 "projectName": "$projects.name",
                 "implementationAgency": "$ulb.name",
-                "totalProjectCost":getStringConvertedAmount(service,"$projectCostInCr","$totalProjectCost",csv),
-                "stateShare": csv ? "500000000": "₹ 50" + " Cr (56%)",
+                "totalProjectCost":"$totalProjectCost",
+                "stateShare": "$stateSh",
                 "ulbId": "$ulb._id",
                 "projectId": "$projects._id",
                 "stateName":"$state.name",
                 "sectorId": "$category._id",
-                "ulbShare": getUlbShare(service,csv),
-                "capitalExpenditureState": getStringConvertedAmount(service,"$cpExpStateInCr","$cpExpState",csv),
-                "capitalExpenditureUlb":getStringConvertedAmount(service,"$cpExpUlbInCr","$cpExpUlb",csv),
-                "omExpensesState": getStringConvertedAmount(service,"$omExpStateInCr","$omExpState",csv),
-                "omExpensesUlb": getStringConvertedAmount(service,"$omExpUlbInCr","$omExpUlb",csv),
+                "ulbShare": "$ulbShare",
+                "projectExpenditure":"$projectExpenditure",
+                "capitalExpenditureState": "$cpExpState",
+                "capitalExpenditureUlb":"$cpExpUlb",
+                "omExpensesState": "$omExpState",
+                "omExpensesUlb": "$omExpUlb",
                 "sector": "$category.name",
                 "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                 "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
@@ -973,7 +974,7 @@ function getFilterConditions(filters) {
     }
     try {
         let obj = {
-            "$and": []
+            "$or": []
         }
         for (let filter in filters) {
             let filter_arr = filters[filter]
@@ -982,7 +983,7 @@ function getFilterConditions(filters) {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
                 temp["$eq"].push(ObjectId(id))
-                obj["$and"].push(temp)
+                obj["$or"].push(temp)
             }
 
         }
@@ -1103,9 +1104,10 @@ function getExpendituresField(){
         obj = {
             "$projects.cost" : getFieldTypeToAdd("totalProjectCost","lakhs"),
             "$projects.expenditure":getFieldTypeToAdd("projectExpenditure","lakhs"),
-            "$totalProjectCost":getFieldTypeToAdd("projectCostInCr","crore"),
-            "$projectExpenditure":getFieldTypeToAdd("projectExpenditureInCr","crore"),
+            // "$totalProjectCost":getFieldTypeToAdd("projectCostInCr","crore"),
+            // "$projectExpenditure":getFieldTypeToAdd("projectExpenditureInCr","crore"),
             //
+            "$projects.stateShare":getFieldTypeToAdd("stateSh","lakhs"),
             "$projects.capitalExpenditureState":getFieldTypeToAdd("cpExpState","lakhs"),
             "$projects.capitalExpenditureUlb":getFieldTypeToAdd("cpExpUlb","lakhs"),
             "$projects.omExpensesState":getFieldTypeToAdd("omExpState","lakhs"),
@@ -1169,7 +1171,7 @@ async function getQueryForUtilizationReports(obj) {
             toValue: "$projectExpenditure"
         }
         query.push(addUlbShare(service,fieldstoCalculate))
-        query.push(service.addConvertedAmount("$ulbShare","ulbShareInCr","crore"))
+        query.push(service.addConvertedAmount("$ulbShare","ulbShareInlkh","lakhs"))
         // stage 4 lookup from category 
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "category"))
         query.push(service.getUnwindObj("$category", true))
