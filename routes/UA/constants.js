@@ -67,6 +67,10 @@ let columns = [
         }
     },
     {
+        label:"Central Assistance",
+        key:"expenditure"
+    },
+    {
         label: "Project Start Date",
         key: "startDate",
         get databaseKey(){
