@@ -902,6 +902,7 @@ function amrProjects(service,csv,ulbId){
             "stateShare": "$amrProjects.stateShare",
             "expenditure": "$amrProjects.expenditure",
             "ulbShare":"$amrUlbShare",
+            "sectorId": "$amrProjects.category._id",
             "sector":"$amrProjects.category.name",
             "divideTo":100,
             "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
@@ -910,7 +911,11 @@ function amrProjects(service,csv,ulbId){
                 "name": "More information",
                 "url": getConcatinatedUrl(service,ulbId)
             },
-            "projectReport":getProjectReportDetail(csv)
+            "projectReport":getProjectReportDetail(csv),
+            "creditRating": {
+                    "name": "Credit rating",
+                    "url": "https://democityfinance.in/creditRating.pdf"
+                }
         }
         let obj =  {
             "$cond":{
@@ -943,8 +948,13 @@ function durProjects(csv){
         "totalProjectCost":"$projects.cost",
         "expenditure": "$projects.expenditure",
         "ulbShare": "$ulbShare",
+        "sectorId": "$category._id",
         "sector":"$category.name",
-        "divideTo":100
+        "divideTo":100,
+        "creditRating": {
+            "name": "Credit rating",
+            "url": "https://democityfinance.in/creditRating.pdf"
+        }
     }
     let obj = {
         "$cond":{
@@ -969,8 +979,11 @@ function getGroupByQuery(service,ulbId,csv) {
         let obj = {
             "$group": {
                 "_id": "$_id",
-                "sectors": {
+                "durSectors": {
                     "$addToSet": { "_id": "$category._id", "name": "$category.name" }
+                },
+                "amrSectors":{
+                    "$addToSet": { "_id": "$amrProjects.category._id", "name": "$amrProjects.category.name" }
                 },
                 "projects": {
                     "$addToSet": { "_id": "$projects._id", "name": "$projects.name", "sectorId": "$category._id", }
@@ -1005,10 +1018,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "$push":"$links.link"
                 }
                 // "projectReport": getProjectReportDetail(csv),
-                // "creditRating": {
-                //     "name": "Credit rating",
-                //     "url": "https://democityfinance.in/creditRating.pdf"
-                // }
+                
 
             }
             
@@ -1038,6 +1048,7 @@ function getFiltersForModule(filters) {
                     filteredObj["filters"][k] = filters[k].map(item => item)
                 }
                 catch (err) {
+                    console.log("err.message",err.message)
                     filteredObj["filters"][k] = [filters[k]]
                 }
             }
@@ -1055,10 +1066,15 @@ function getFilterConditions(filters) {
         "sectors": "sectorId",
         "projects": "projectId"
     }
+    console.log(filters)
     try {
         let obj = {
-            "$or": []
+            "$and": [],
+            "$or":[]
         }
+        let keys = Object.keys(filters)
+        console.log(keys)
+        let lengthofObj = Object.keys(filters).length
         for (let filter in filters) {
             let filter_arr = filters[filter]
             for (let id of filter_arr) {
@@ -1066,9 +1082,15 @@ function getFilterConditions(filters) {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
                 temp["$eq"].push(ObjectId(id))
-                obj["$or"].push(temp)
+                if(lengthofObj == 1 && keys.includes("projects")){
+                    delete obj["$and"]
+                    obj["$or"].push(temp)
+                }
+                else{
+                    delete obj["$or"]
+                    obj["$and"].push(temp)
+                }
             }
-
         }
         return obj
     }
@@ -1232,6 +1254,7 @@ function queryPipelineLookup(service,fromTable,as){
 }
 
 function getDataAccToFilters(filteredObj){
+    console.log("filteredObj ::: ",filteredObj)
     try{
         let obj = {
             "$addFields":{
@@ -1273,7 +1296,7 @@ function concatArrays(){
             "$addFields": {
                 "data": { "$concatArrays": ["$amrProjectData", "$durProjects"] },
                 "projects": { "$concatArrays": ["$amrprojectsNames", "$durProjectsNames"] },
-                "sectorNames": "$sectors"
+                "sectors": {"$concatArrays":["$amrSectors","$durSectors"]}
             }
         }
         return obj
