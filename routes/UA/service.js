@@ -965,7 +965,7 @@ function durProjects(csv){
                 ]
             },
             "then":configObj,
-            "else":"$$REMOVE"
+            "else":"$$REMOVE",
         }
     }
     if(!csv){
@@ -984,9 +984,6 @@ function getGroupByQuery(service,ulbId,csv) {
                 },
                 "amrSectors":{
                     "$addToSet": { "_id": "$amrProjects.category._id", "name": "$amrProjects.category.name" }
-                },
-                "projects": {
-                    "$addToSet": { "_id": "$projects._id", "name": "$projects.name", "sectorId": "$category._id", }
                 },
                 "implementationAgencies": {
                     "$addToSet": { "_id": "$ulb._id", "name": "$ulb.name" }
@@ -1313,7 +1310,7 @@ function concatArrays(){
 async function getQueryForUtilizationReports(obj) {
     let { ulbId, skip, limit, filteredObj, sortKey,csv} = obj
     let query = []
-    let design_year = years['2022-23']
+    let design_year = years['2021-22']
     try {
         let service = AggregationServices
         //stage 1 get matching query
