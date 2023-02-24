@@ -940,7 +940,7 @@ function amrProjects(service,csv,ulbId){
     }
 }
 
-function durProjects(csv){
+function durProjects(service,csv,ulbId){
     let configObj = {
         "projectName":"$projects.name",
         "projectId": "$projects._id",
@@ -954,7 +954,11 @@ function durProjects(csv){
         "creditRating": {
             "name": "Credit rating",
             "url": "https://democityfinance.in/creditRating.pdf"
-        }
+        },
+        "moreInformation": {
+            "name": "More information",
+            "url": getConcatinatedUrl(service,ulbId)
+        },
     }
     let obj = {
         "$cond":{
@@ -1006,7 +1010,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "$addToSet": amrProjects(service,csv,ulbId)
                 },
                 "durProjects": {
-                    "$addToSet": durProjects(csv)
+                    "$addToSet": durProjects(service,csv,ulbId)
                 },
                 // "startDate": service.getCommonDateTransformer("$projects.createdAt"),
                 // "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
