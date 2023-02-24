@@ -909,7 +909,7 @@ function amrProjects(service,csv,ulbId){
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
             "moreInformation": {
                 "name": "More information",
-                "url": getConcatinatedUrl(service,ulbId)
+                "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
             },
             "projectReport":getProjectReportDetail(csv),
             "creditRating": {
@@ -957,7 +957,7 @@ function durProjects(service,csv,ulbId){
         },
         "moreInformation": {
             "name": "More information",
-            "url": getConcatinatedUrl(service,ulbId)
+            "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
         },
     }
     let obj = {
