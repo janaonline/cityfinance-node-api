@@ -901,7 +901,7 @@ function amrProjects(service,csv,ulbId){
             "omExpensesUlb": "$amrProjects.omExpensesUlb",
             "stateShare": "$amrProjects.stateShare",
             "expenditure": "$amrProjects.expenditure",
-            "ulbShare":"$durUlbShare",
+            "ulbShare":"$amrUlbShare",
             "sector":"$amrProjects.category.name",
             "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
@@ -1320,11 +1320,12 @@ async function getQueryForUtilizationReports(obj) {
                 {"$gt": ["$$item.expenditure",0]},
             ]
         }
+        query.push(service.addFields("amrProjectCost","$amrProjects.cost"))
         let fieldsForCalc = {
             "fromValue":"$amrProjects.cost",
             "toValue":"$amrProjects.expenditure"
         }
-        query.push(addUlbShare(service,fieldsForCalc,"durUlbShare"))
+        query.push(service.addFields("amrUlbShare","$amrProjects.ulbShare"))
         query.push(service.filterArr("projects","$projects",condObj))
         query.push(service.getUnwindObj("$projects", true))
         query.push(service.addFields("totalProjectCost","$projects.cost"))
@@ -1340,11 +1341,13 @@ async function getQueryForUtilizationReports(obj) {
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "category"))
         query.push(service.getUnwindObj("$category", true))
         
-        // if (sortKey.provided) {
-        //     query.push({
-        //         "$sort": sortKey.filters
-        //     })
-        // }
+        if (sortKey.provided) {
+            query.push({
+                "$sort": {
+                    "ulbShare":1
+                }
+            })
+        }
         //if filters provided
         let groupBy = getGroupByQuery(service,ulbId,csv)
         
@@ -1360,6 +1363,68 @@ async function getQueryForUtilizationReports(obj) {
         console.log("error in getQueryForUtilizationReports ::::", err.message)
     }
     return query
+}
+
+function appendMultipleSorters(sortBy,order){
+    try{
+        let multipleKeys = {
+            "totalProjectCost":["totalProjectCost","amrProjectCost"],
+            "ulbShare":["amrUlbShare","ulbShare"]
+        }
+        let temp = {}
+        let keysObj = multipleKeys[sortBy]
+        for (let keys of  keysObj){
+                temp[keys] = parseInt(order)
+        }
+        return temp
+    }
+    catch(err){
+        console.log("error in appendMultipleSorters :: ",err.message)
+    }
+}
+
+function getSortByKeysForMergedTable(sortBy, order) {
+    let sortKey = {
+        "provided": false
+    }
+    let multipleKeys = {
+        "totalProjectCost":["totalProjectCost","amrProjectCost"],
+        "ulbShare":["amrUlbShare","ulbShare"]
+    }
+    try {
+        if ((sortBy != undefined) && (order != undefined)) {
+            let temp = {}
+            sortKey["provided"] = true
+            if(Array.isArray(sortBy)){
+                for(let key in sortBy){
+                    let temp2 = {}
+                    let name = sortBy[key]
+                    if(!isNaN(parseInt(order[key]))){
+                        // console.log("sorter::",order[key])
+                        console.log("")
+                        temp2 = appendMultipleSorters(name,order)
+                        Object.assign(temp,temp2)
+                        // temp[sortFilterKeys[name]] = parseInt(order[key])
+                    }
+                }
+            }
+            else{
+                if(!isNaN(parseInt(order))){
+                    temp = appendMultipleSorters(sortBy,order)
+
+                }
+            }
+            if (Object.keys(temp).length > 0){
+                sortKey['provided'] = true
+                sortKey["filters"] = temp
+            }
+        }
+    }
+    catch (err) {
+        console.log("error in getSortByKeysForMergedTable ::: ", err.message)
+    }
+    console.log(sortKey)
+    return sortKey
 }
 
 function getSortByKeys(sortBy, order) {
@@ -1392,6 +1457,7 @@ function getSortByKeys(sortBy, order) {
     catch (err) {
         console.log("error in getSortByKeys ::: ", err.message)
     }
+    console.log(sortKey)
     return sortKey
 }
 
@@ -1449,7 +1515,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         let { getQuery, sortBy, order,csv } = filters
         csv = csv === "true" ? true :false;
         let redis_key = createRedisKeys(filters,ulbId)
-        let sortKey = getSortByKeys(sortBy, order)
+        let sortKey = getSortByKeysForMergedTable(sortBy,order)
         deleteExtraKeys(['getQuery','limit','skip','order','sortBy','csv'],filters)
         let filteredObj = getFiltersForModule(filters)
         if (ulbId === undefined) {
@@ -1459,6 +1525,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
             return res.status(status).json(response)
         }
         let query = await getQueryForUtilizationReports({ ulbId, skip, limit, filteredObj, sortKey,csv })
+        
         if (getQuery === "true") {
             return res.status(200).json(query)
         }
