@@ -258,4 +258,7 @@ router.use(require('./s3ServerFile'));
 const CommonHistory = require('./CommonHistory')
 router.use('/common-history', CommonHistory)
 
+
+router.use(require('./Master'))
+
 module.exports = router;
