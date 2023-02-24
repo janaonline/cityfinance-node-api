@@ -1297,7 +1297,7 @@ async function getQueryForUtilizationReports(obj) {
             "$match": {
                 "ulb": ObjectId(ulbId),
                 "designYear":ObjectId(design_year),
-                // "isDraft":false,
+                "isDraft":false,
             }
         }
         query.push(matchObj)
