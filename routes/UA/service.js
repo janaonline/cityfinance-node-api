@@ -1003,6 +1003,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "$addToSet": {
                         "_id": "$projects._id",
                         "name": "$projects.name",
+                        "sectorId": "$category._id"
                        
                     }
                 },
@@ -1062,12 +1063,12 @@ function getFiltersForModule(filters) {
 }
 
 function getFilterConditions(filters) {
-    let filtersName = {
+   let filtersName = {
         "implementationAgencies": "ulbId",
         "sectors": "sectorId",
         "projects": "projectId"
     }
-    console.log(filters)
+    console.log(">>>>>>>filters>>>>",filters)
     try {
         let obj = {
             "$and": [],
@@ -1083,7 +1084,7 @@ function getFilterConditions(filters) {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
                 temp["$eq"].push(ObjectId(id))
-                if(lengthofObj == 1 && keys.includes("projects")){
+                if(lengthofObj == 1 && (keys.includes("projects"))){
                     delete obj["$and"]
                     obj["$or"].push(temp)
                 }
@@ -1093,6 +1094,7 @@ function getFilterConditions(filters) {
                 }
             }
         }
+        console.log("obj::",obj)
         return obj
     }
     catch (err) {
@@ -1314,7 +1316,7 @@ function concatArrays(){
 async function getQueryForUtilizationReports(obj) {
     let { ulbId, skip, limit, filteredObj, sortKey,csv} = obj
     let query = []
-    let design_year = years['2021-22']
+    let design_year = years['2022-23']
     try {
         let service = AggregationServices
         //stage 1 get matching query
