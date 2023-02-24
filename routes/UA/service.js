@@ -921,19 +921,19 @@ function amrProjects(service,csv,ulbId){
             "$cond":{
                 "if":{
                         "$or":[
-                            {'$eq': ['$amrProjects.name', null]}, 
-                            {'$gt': ['$amrProjects.name', null]},
+                            {'$eq': ['$amrProjects', null]}, 
+                            {'$gt': ['$amrProjects', null]},
                         ]
                 },
-                "then":configObj,
-                "else":"$$REMOVE"
+                "then":"$$REMOVE",
+                "else":configObj
                 
             }
         }
-        if(!csv){
-            return obj
-        }
-        return configObj
+        // if(!csv){
+        //     return configObj
+        // }
+        return obj
     }
     catch(err){
         console.log("error in amrProjects :: ",err.message)
@@ -968,14 +968,14 @@ function durProjects(service,csv,ulbId){
                     {'$gt': ['$projects.name', null]},
                 ]
             },
-            "then":configObj,
-            "else":"$$REMOVE",
+            "then":"$$REMOVE",
+            "else":configObj,
         }
     }
-    if(!csv){
-        return obj
-    }
-    return configObj
+    // if(!csv){
+    //     return configObj
+    // }
+    return obj
 }
 
 function getGroupByQuery(service,ulbId,csv) {
@@ -1068,7 +1068,6 @@ function getFilterConditions(filters) {
         "sectors": "sectorId",
         "projects": "projectId"
     }
-    console.log(">>>>>>>filters>>>>",filters)
     try {
         let obj = {
             "$and": [],
@@ -1297,9 +1296,9 @@ function concatArrays(){
     try{
         let obj = {
             "$addFields": {
-                "data": { "$concatArrays": ["$amrProjectData", "$durProjects"] },
-                "projects": { "$concatArrays": ["$amrprojectsNames", "$durProjectsNames"] },
-                "sectors": {"$concatArrays":["$amrSectors","$durSectors"]}
+                "data": { "$setUnion": ["$amrProjectData", "$durProjects"] },
+                "projects": { "$setUnion": ["$amrprojectsNames", "$durProjectsNames"] },
+                "sectors": {"$setUnion":["$amrSectors","$durSectors"]}
             }
         }
         return obj
@@ -1551,7 +1550,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
             }
             return res.status(status).json(response)
         }
-        let query = await getQueryForUtilizationReports({ ulbId, skip, limit, filteredObj, sortKey,csv })
+        let query = await getQueryCityRelated({ ulbId, skip, limit, filteredObj, sortKey,csv })
         
         if (getQuery === "true") {
             return res.status(200).json(query)
@@ -1560,9 +1559,10 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         // if (document) {
         //     dbResponse = JSON.parse(document)
         // } else {
-        dbResponse = await DUR.aggregate(query).allowDiskUse(true)
+        dbResponse = await Ulb.aggregate(query).allowDiskUse(true)
         // await Redis.set(redis_key, JSON.stringify(dbResponse));
         // }
+        console.log("dbResponse :: ",dbResponse)
         if(csv){
             let filename = "Projects.csv"
             let dbCols = Object.values(csvCols)
@@ -1637,7 +1637,7 @@ function getProjectionForDur(service){
 }
 
 
-function lookupQueryForDur(service,designYear){
+function lookupQueryForDur(service,designYear,project=false){
     try{
         let obj = {
             "$lookup":{
@@ -1667,6 +1667,15 @@ function lookupQueryForDur(service,designYear){
                 ],
                 "as":"DUR"
             }
+        }
+        if(project){
+            obj['$lookup']['pipeline'].push(
+                {
+                    "$project":{
+                        "projects":1
+                    }
+                }
+            )
         }
         return obj
     }
@@ -1709,7 +1718,57 @@ function facetQueryForPagination(skip,limit,sortKey){
         console.log("error in facetQueryForPagination :: ",err.message)
     }
 }
-
+// new Query >>>>>>>>>>>>>>>>>
+function getQueryCityRelated(obj){
+    let service = AggregationServices
+    let { ulbId, skip, limit, filteredObj, sortKey,csv} = obj
+    let designYear = years['2022-23']
+    try{
+        let query = []
+        let matchQuery = {
+            "$match":{
+                "_id":ObjectId(ulbId)
+            }  
+       }
+       query.push(matchQuery)
+        query.push(lookupQueryForDur(service,designYear,true))
+        query.push(service.getUnwindObj("$DUR",true))
+        query.push(service.getCommonLookupObj("amrutprojects", "_id", "ulb", "amrProjects"))
+        query.push(service.getUnwindObj("$amrProjects",true))
+        query.push(service.addFields("projects","$DUR.projects"))
+        query.push(service.addFields("amrProjects","$amrProjects"))
+        query.push(service.getUnwindObj("$projects",true))
+        query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "projectCategory"))
+        query.push(service.getUnwindObj("$projectCategory",true))
+        query.push(service.getCommonLookupObj("categories", "amrProjects.category", "_id", "amrProjects.category"))
+        query.push(service.getUnwindObj("$amrProjects.category",true))
+        let fieldsForCalc = {
+            "fromValue":"$amrProjects.cost",
+            "toValue":"$amrProjects.expenditure"
+        }
+        query.push(service.addFields("amrUlbShare","$amrProjects.ulbShare"))
+        query.push(service.addFields("totalProjectCost","$projects.cost"))
+        // let fieldsToAdd = getExpendituresField()
+        // query = query.concat(service.addMultipleFields(fieldsToAdd,true))
+        let fieldstoCalculate = {
+            fromValue:"$totalProjectCost",
+            toValue: "$projects.expenditure"
+        }
+        query.push(addUlbShare(service,fieldstoCalculate))
+        let groupBy = getGroupByQuery(service,ulbId,csv)
+        let projections = getProjectionQueries(service, filteredObj, skip, limit, sortKey)
+        query.push(groupBy)
+        query.push(concatArrays())
+        query.push(getDataAccToFilters(filteredObj))
+        query.push(getPaginatedResults(skip,limit))
+        query.push(projections)
+        return query
+    }
+    catch(err){
+        console.log("error in getQueryCityRelated:::",err.message)
+    }
+}
+///ends 
 function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
     const service = AggregationServices
     let query = []
@@ -1723,7 +1782,7 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
         query.push(service.getCommonLookupObj("states","state","_id","state"))
         query.push(service.getUnwindObj("$state",true))
         // stage 2
-        query.push(lookupQueryForDur(service,designYear))
+        query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
 
         // add fields 
@@ -1797,7 +1856,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         
         response.message = "Fetched Successfully"
         response.success = true
-        return res.status(200).json(response)
+        return res.status(200).json(query)
     }
     catch(err){
         response.message = "Something went wrong"
