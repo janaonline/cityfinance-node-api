@@ -13,6 +13,7 @@ const AmrutProjectsSchema = new Schema({
     capitalExpenditureUlb:{type:Number,default:0},
     omExpensesState:{type:Number,default:0},
     omExpensesUlb:{type:Number,default:0},
+    ulbShare:{type:Number,default:0},
     startDate: { type: Date},
     endDate: { type: Date, },
     isActive: { type: Boolean, default: 1 },
