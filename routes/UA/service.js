@@ -903,6 +903,7 @@ function amrProjects(service,csv,ulbId){
             "expenditure": "$amrProjects.expenditure",
             "ulbShare":"$amrUlbShare",
             "sector":"$amrProjects.category.name",
+            "divideTo":100,
             "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
             "moreInformation": {
@@ -942,7 +943,8 @@ function durProjects(csv){
         "totalProjectCost":"$projects.cost",
         "expenditure": "$projects.expenditure",
         "ulbShare": "$ulbShare",
-        "sector":"$category.name"
+        "sector":"$category.name",
+        "divideTo":100
     }
     let obj = {
         "$cond":{
@@ -963,7 +965,6 @@ function durProjects(csv){
 }
 
 function getGroupByQuery(service,ulbId,csv) {
-
     try {
         let obj = {
             "$group": {
@@ -1626,12 +1627,13 @@ function lookupQueryForDur(service,designYear){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    // {
-                                    //     "$gte":["$projects.expenditure",1]
-                                    // },
-                                    // {
-                                    //     "$ne":["$projects.expenditure","$projects.cost"]
-                                    // }
+                                    service.getCommonEqObj("$isDraft",false),
+                                    {
+                                        "$gte":["$projects.expenditure",1]
+                                    },
+                                    {
+                                        "$lt":["$projects.expenditure","$projects.cost"]
+                                    }
                                 ]
                             }
                         }
