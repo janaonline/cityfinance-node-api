@@ -263,4 +263,7 @@ router.use('/master-status', MasterStatus)
 const MasterSkipValue = require('./MasterSkipValues');
 router.use('/master-skip-value', MasterSkipValue)
 
+
+router.use(require('./Master'))
+
 module.exports = router;
