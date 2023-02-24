@@ -1058,6 +1058,18 @@ class AggregationServices {
             }
         }
     }
+    static addFields(fieldName,field){
+        try{
+            let obj =  {
+                "$addFields":{}
+            }
+            obj['$addFields'][fieldName] = field
+            return obj
+        } 
+        catch(err){
+            console.log("error in addFields :: ",err.message)
+        }
+    }
     static getCommonDivObj(arr) {
         return {
             $divide: arr
