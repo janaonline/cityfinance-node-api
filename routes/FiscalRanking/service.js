@@ -1,4 +1,5 @@
 const ObjectId = require("mongoose").Types.ObjectId;
+const mongose = require("mongoose");
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
@@ -1706,27 +1707,40 @@ async function sendCsv(res, aggregateQuery) {
     console.log("error in sendCsv :: ", err.message)
   }
 }
-async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent) {
+async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm) {
   try {
     for (var years of yearData) {
+      let upsert = false
       if (years.year) {
+        let payload = {}
         let filter = {
           "year": ObjectId(years.year),
           "ulb": ObjectId(ulbId),
           "fiscal_ranking": ObjectId(formId),
           "type": years.type
         }
-        let payload = {
-          "status": years.status,
+        if (updateForm) {
+          upsert = true
+          payload['value'] = years.value
         }
-        await FiscalRankingMapper.findOneAndUpdate(filter, payload)
+        else{
+          payload["status"]= years.status
+        }
+        await FiscalRankingMapper.findOneAndUpdate(filter, payload,{"upsert":upsert})
       }
       else if (mainFormContent.includes(years.key)) {
+        let payload = {}
         let filter = {
           "_id": ObjectId(formId),
         }
-        let payload = {}
-        payload[`${years.key}.status`] = years.status
+        if (updateForm) {
+          payload[`${years.key}.value`] = years.value
+          // payload['value'] = years.value
+        }
+        else{
+          payload[`${years.key}.status`] = years.status
+        }
+       
         await FiscalRanking.findOneAndUpdate(filter, payload)
       }
     }
@@ -1739,21 +1753,26 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
 /**
  * 
  */
-async function updateFiscalRankingForm(obj, ulbId, formId, year) {
+async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm) {
   try {
     let filter = {
       "_id": ObjectId(formId),
     }
     let payload = {}
     for (let key in obj) {
-      let status = null
-      if (obj[key].status) {
-        status = obj[key].status
+      if (updateForm) {
+        payload[`${key}.value`] = obj[key].value
       }
-      payload[`${key}.status`] = status
-      if (key === "signedCopyOfFile") {
-        console.log(payload)
+      else{
+        let status = null
+        if (obj[key].status) {
+          status = obj[key].status
+        }
+        payload[`${key}.status`] = status
       }
+      // if (key === "signedCopyOfFile") {
+      //   console.log(payload)
+      // }
     }
 
     await FiscalRanking.findOneAndUpdate(filter, payload)
@@ -1790,56 +1809,65 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
  * key : tabId
  * value : Object {status:true/false/NA, comment:String}
  */
-async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year) {
-  let conditionalObj = {}
-  let ignorablevariables = ["guidanceNotes"]
-  const fiscalRankingKeys = ["ownRevDetails", "property_tax_register", "paying_property_tax", "paid_property_tax", "webUrlAnnual", "webLink", "totalOwnRevenueArea", "paid_property_tax", "signedCopyOfFile", "fy_21_22_cash", "fy_21_22_online", "registerGis", "accountStwre"]
-  for (var tab of tabs) {
-    conditionalObj[tab._id.toString()] = {}
-    let key = tab.id
-    let obj = tab.data
-    let temp = {
-      "comment": tab.feedback.comment,
-      "status": []
-    }
-    for (var k in tab.data) {
-      if (ignorablevariables.includes(k) || obj[k].status === "") {
-        continue
+async function calculateAndUpdateStatusForMappers(session,tabs, ulbId, formId, year, updateForm) {
+  try {
+    let conditionalObj = {}
+    let ignorablevariables = ["guidanceNotes"]
+    const fiscalRankingKeys = ["ownRevDetails", "property_tax_register", "paying_property_tax", "paid_property_tax", "webUrlAnnual", "webLink", "totalOwnRevenueArea", "paid_property_tax", "signedCopyOfFile", "fy_21_22_cash", "fy_21_22_online", "registerGis", "accountStwre"]
+    for (var tab of tabs) {
+      conditionalObj[tab._id.toString()] = {}
+      let key = tab.id
+      let obj = tab.data
+      let temp = {
+        "comment": tab.feedback.comment,
+        "status": []
       }
-      if (obj[k].yearData) {
-        let yearArr = obj[k].yearData
-        let status = yearArr.every((item) => {
-          if (Object.keys(item).length) {
-            return item.status === "APPROVED"
+      for (var k in tab.data) {
+        if (ignorablevariables.includes(k) || obj[k].status === "") {
+          continue
+        }
+        if (obj[k].yearData) {
+          let yearArr = obj[k].yearData
+          let status = yearArr.every((item) => {
+            if (Object.keys(item).length) {
+              return item.status === "APPROVED"
+            }
+            else {
+              return true
+            }
+          })
+          temp["status"].push(status)
+          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm)
+        }
+        else {
+          if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
+            let statueses = getStatusesFromObject(tab.data, "status", ["population11"])
+            let finalStatus = statueses.every(item => item === "APPROVED")
+            temp['status'].push(finalStatus)
+            await updateFiscalRankingForm(tab.data, ulbId, formId, year, updateForm)
           }
-          else {
-            return true
-          }
-        })
-        temp["status"].push(status)
-        updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys)
+        }
+        conditionalObj[tab._id.toString()] = (temp)
+      }
+
+    }
+    for (var tabName in conditionalObj) {
+      if (conditionalObj[tabName].status.length > 0) {
+        conditionalObj[tabName].status = conditionalObj[tabName].status.every(item => item == true)
       }
       else {
-        if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
-          let statueses = getStatusesFromObject(tab.data, "status", ["population11"])
-          let finalStatus = statueses.every(item => item === "APPROVED")
-          temp['status'].push(finalStatus)
-          await updateFiscalRankingForm(tab.data, ulbId, formId, year)
-        }
+        conditionalObj[tabName].status = "NA"
       }
-      conditionalObj[tab._id.toString()] = (temp)
     }
-
+    await session.commitTransaction()
+    await session.endSession()
+    return conditionalObj
   }
-  for (var tabName in conditionalObj) {
-    if (conditionalObj[tabName].status.length > 0) {
-      conditionalObj[tabName].status = conditionalObj[tabName].status.every(item => item == true)
-    }
-    else {
-      conditionalObj[tabName].status = "NA"
-    }
+  catch (err) {
+    await session.abortTransaction()
+    await session.endSession()
+    console.log("error in calculatAndUpdateStatusForMappers :: ", err.message)
   }
-  return conditionalObj
 }
 
 
@@ -1957,7 +1985,9 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.message = "Not permitted"
       return res.status(500).json(response)
     }
-    let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year)
+    const session = await mongoose.startSession();
+    await session.startTransaction()
+    let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, false)
     let feedBackResp = await saveFeedbacksAndForm(calculationsTabWise, ulbId, formId, design_year, userId, role, isDraft)
     if (feedBackResp.success) {
       response.success = true
@@ -1971,8 +2001,59 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
 
   }
   catch (err) {
+    await session.abortTransaction()
+    await session.endSession()
     response.message = "some server error occured"
     console.log("error in actionTakenByMoHua ::: ", err.message)
+  }
+  return res.status(500).json(response)
+})
+
+
+module.exports.createForm = catchAsync(async (req, res) => {
+  const response = {
+    success: false,
+    message: ""
+  }
+  const session = await mongoose.startSession();
+  await session.startTransaction()
+  try {
+    let { ulbId, formId, actions, design_year, isDraft } = req.body
+    if(formId === undefined){
+      let form = await FiscalRanking.create(
+        {
+          ulb:ObjectId(ulbId),
+          design_year:ObjectId(design_year)
+        }
+      )
+      form.save()
+      formId = form._id
+    }
+    let { role, _id: userId } = req.decoded
+    let validation = await checkUndefinedValidations({
+      "ulb": ulbId,
+      "actions": actions,
+      "design_year": design_year
+    })
+    if (!validation.valid) {
+      response.message = validation.message
+      return res.status(500).json(response)
+    }
+    if (role !== userTypes.mohua) {
+      response.message = "Not permitted"
+      return res.status(500).json(response)
+    }
+    
+    let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, true)
+    response.status = true
+    response.message = "Form submitted successfully"
+    return res.status(200).json(response)
+  }
+  catch (err) {
+   await session.abortTransaction()
+    await session.endSession()
+    console.log("error in createForm ::: ", err.message)
+    response.message = "some server error occured"
   }
   return res.status(500).json(response)
 })
