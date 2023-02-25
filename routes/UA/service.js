@@ -909,7 +909,7 @@ function amrProjects(service,csv,ulbId){
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
             "moreInformation": {
                 "name": "More information",
-                "url": getConcatinatedUrl(service,ulbId)
+                "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
             },
             "projectReport":getProjectReportDetail(csv),
             "creditRating": {
@@ -925,14 +925,14 @@ function amrProjects(service,csv,ulbId){
                             {'$gt': ['$amrProjects', null]},
                         ]
                 },
-                "then":"$$REMOVE",
-                "else":configObj
+                "then":configObj,
+                "else":"$$REMOVE"
                 
             }
         }
-        // if(!csv){
-        //     return configObj
-        // }
+        if(!csv){
+            return configObj
+        }
         return obj
     }
     catch(err){
@@ -948,8 +948,8 @@ function durProjects(service,csv,ulbId){
         "totalProjectCost":"$projects.cost",
         "expenditure": "$projects.expenditure",
         "ulbShare": "$ulbShare",
-        "sectorId": "$category._id",
-        "sector":"$category.name",
+        "sectorId": "$projectCategory._id",
+        "sector":"$projectCategory.name",
         "divideTo":100,
         "creditRating": {
             "name": "Credit rating",
@@ -957,7 +957,7 @@ function durProjects(service,csv,ulbId){
         },
         "moreInformation": {
             "name": "More information",
-            "url": getConcatinatedUrl(service,ulbId)
+            "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"[process.env.ENV] + "/UA/get-mou-project/"
         },
     }
     let obj = {
@@ -968,13 +968,13 @@ function durProjects(service,csv,ulbId){
                     {'$gt': ['$projects.name', null]},
                 ]
             },
-            "then":"$$REMOVE",
-            "else":configObj,
+            "then":configObj,
+            "else":"$$REMOVE",
         }
     }
-    // if(!csv){
-    //     return configObj
-    // }
+    if(!csv){
+        return configObj
+    }
     return obj
 }
 
@@ -984,13 +984,13 @@ function getGroupByQuery(service,ulbId,csv) {
             "$group": {
                 "_id": "$_id",
                 "durSectors": {
-                    "$addToSet": { "_id": "$category._id", "name": "$category.name" }
+                    "$addToSet": { "_id": "$projectCategory._id", "name": "$projectCategory.name" }
                 },
                 "amrSectors":{
                     "$addToSet": { "_id": "$amrProjects.category._id", "name": "$amrProjects.category.name" }
                 },
                 "implementationAgencies": {
-                    "$addToSet": { "_id": "$ulb._id", "name": "$ulb.name" }
+                    "$addToSet": { "_id": "$_id", "name": "$name" }
                 },
                 "amrprojectsNames": {
                     "$addToSet": {
@@ -1003,7 +1003,7 @@ function getGroupByQuery(service,ulbId,csv) {
                     "$addToSet": {
                         "_id": "$projects._id",
                         "name": "$projects.name",
-                        "sectorId": "$category._id"
+                        "sectorId": "$projectCategory._id"
                        
                     }
                 },
@@ -1071,29 +1071,23 @@ function getFilterConditions(filters) {
     try {
         let obj = {
             "$and": [],
-            "$or":[]
         }
         let keys = Object.keys(filters)
-        console.log(keys)
         let lengthofObj = Object.keys(filters).length
         for (let filter in filters) {
+            let tempObj = {}
+            tempObj["$or"] = []
             let filter_arr = filters[filter]
             for (let id of filter_arr) {
                 let temp = {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
                 temp["$eq"].push(ObjectId(id))
-                if(lengthofObj == 1 && (keys.includes("projects"))){
-                    delete obj["$and"]
-                    obj["$or"].push(temp)
-                }
-                else{
-                    delete obj["$or"]
-                    obj["$and"].push(temp)
-                }
+                tempObj["$or"].push(temp)
+                
             }
+            obj["$and"].push(tempObj)
         }
-        console.log("obj::",obj)
         return obj
     }
     catch (err) {
@@ -1255,8 +1249,27 @@ function queryPipelineLookup(service,fromTable,as){
     return obj
 }
 
+function getFilteredProjects(filteredObj){
+    let { sectors: sectorObj } = { ...filteredObj.filters }
+    let sectorialObj = { "filters": { "sectors": sectorObj } }
+    try{
+        let obj = {
+            "$addFields":{
+                "projects":"$projects"
+            }
+        }
+        if(sectorObj){
+            let filters = getFilteredObjects(sectorialObj,"$projects")
+            obj["$addFields"]["projects"] = filters
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in getProjectsFilters :: ",err.message)
+    }
+}
+
 function getDataAccToFilters(filteredObj){
-    console.log("filteredObj ::: ",filteredObj)
     try{
         let obj = {
             "$addFields":{
@@ -1380,6 +1393,7 @@ async function getQueryForUtilizationReports(obj) {
         let projections = getProjectionQueries(service, filteredObj, skip, limit, sortKey)
         query.push(groupBy)
         query.push(concatArrays())
+        
         query.push(getDataAccToFilters(filteredObj))
         query.push(getPaginatedResults(skip,limit))
         query.push(projections)
@@ -1562,7 +1576,6 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         dbResponse = await Ulb.aggregate(query).allowDiskUse(true)
         // await Redis.set(redis_key, JSON.stringify(dbResponse));
         // }
-        console.log("dbResponse :: ",dbResponse)
         if(csv){
             let filename = "Projects.csv"
             let dbCols = Object.values(csvCols)
@@ -1739,6 +1752,7 @@ function getQueryCityRelated(obj){
         query.push(service.addFields("amrProjects","$amrProjects"))
         query.push(service.getUnwindObj("$projects",true))
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "projectCategory"))
+        query.push(service.getCommonLookupObj("creditratings", "ulb._id", "ulb", "links"))
         query.push(service.getUnwindObj("$projectCategory",true))
         query.push(service.getCommonLookupObj("categories", "amrProjects.category", "_id", "amrProjects.category"))
         query.push(service.getUnwindObj("$amrProjects.category",true))
@@ -1759,6 +1773,7 @@ function getQueryCityRelated(obj){
         let projections = getProjectionQueries(service, filteredObj, skip, limit, sortKey)
         query.push(groupBy)
         query.push(concatArrays())
+        query.push(getFilteredProjects(filteredObj))
         query.push(getDataAccToFilters(filteredObj))
         query.push(getPaginatedResults(skip,limit))
         query.push(projections)
