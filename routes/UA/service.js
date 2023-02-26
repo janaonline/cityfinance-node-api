@@ -921,8 +921,8 @@ function amrProjects(service,csv,ulbId){
             "$cond":{
                 "if":{
                         "$or":[
-                            {'$eq': ['$amrProjects', null]}, 
-                            {'$gt': ['$amrProjects', null]},
+                            {'$eq': ['$amrProjects.name', null]}, 
+                            {'$gt': ['$amrProjects.name', null]},
                         ]
                 },
                 "then":configObj,
