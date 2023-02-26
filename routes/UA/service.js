@@ -799,7 +799,7 @@ module.exports.addUAFile = catchAsync(async (req, res) => {
             return res.status(201).json(response)
         }
         catch (err) {
-            console.log(Object.keys(err))
+            // console.log(Object.keys(err))
             response.message = err.message
             return res.status(500).json(response)
         }
@@ -862,13 +862,13 @@ function getConcatinatedUrl(service,ulbId){
 }
 
 function addCsvFields(dataObj,fieldName){
-    dataObj["$group"][fieldName]['$addToSet']['ulbName'] = "$ulb.name",
+    dataObj["$group"][fieldName]['$addToSet']['ulbName'] = "$name",
     dataObj["$group"][fieldName]['$addToSet']['censusCode'] = "$censuscode"
-    dataObj["$group"][fieldName]['$addToSet']['cfCode'] =  "$ulb.code"
+    dataObj["$group"][fieldName]['$addToSet']['cfCode'] =  "$code"
     dataObj["$group"][fieldName]["$addToSet"]['population'] = {
         "$cond":{
             "if":{
-                "$eq":["isMillionPlus","No"],
+                "$eq":["$isMillionPlus","No"],
             },
             "then":"Non-million",
             "else":"Million"
@@ -894,7 +894,7 @@ function amrProjects(service,csv,ulbId){
             "projectName":"$amrProjects.name",
             "projectId": "$amrProjects._id",
             "totalProjectCost":"$amrProjects.cost",
-            "implementationAgency":"$ulb.name",
+            "implementationAgency":"$name",
             "capitalExpenditureState": "$amrProjects.capitalExpenditureState",
             "capitalExpenditureUlb": "$amrProjects.capitalExpenditureUlb",
             "omExpensesState": "$amrProjects.omExpensesState",
@@ -921,8 +921,8 @@ function amrProjects(service,csv,ulbId){
             "$cond":{
                 "if":{
                         "$or":[
-                            {'$eq': ['$amrProjects', null]}, 
-                            {'$gt': ['$amrProjects', null]},
+                            {'$eq': ['$amrProjects.name', null]}, 
+                            {'$gt': ['$amrProjects.name', null]},
                         ]
                 },
                 "then":configObj,
@@ -931,9 +931,9 @@ function amrProjects(service,csv,ulbId){
             }
         }
         if(!csv){
-            return configObj
+            return obj
         }
-        return obj
+        return configObj
     }
     catch(err){
         console.log("error in amrProjects :: ",err.message)
@@ -944,7 +944,7 @@ function durProjects(service,csv,ulbId){
     let configObj = {
         "projectName":"$projects.name",
         "projectId": "$projects._id",
-        "implementationAgency":"$ulb.name",
+        "implementationAgency":"$name",
         "totalProjectCost":"$projects.cost",
         "expenditure": "$projects.expenditure",
         "ulbShare": "$ulbShare",
@@ -973,9 +973,9 @@ function durProjects(service,csv,ulbId){
         }
     }
     if(!csv){
-        return configObj
+        return obj
     }
-    return obj
+    return configObj
 }
 
 function getGroupByQuery(service,ulbId,csv) {
@@ -1026,7 +1026,6 @@ function getGroupByQuery(service,ulbId,csv) {
             
         }
         if(csv){
-            console.log(obj)
             obj = addCsvFields(obj,"amrProjectData")
             obj = addCsvFields(obj,"durProjects") 
         }
@@ -1166,10 +1165,10 @@ function addCensusCode(){
             "censuscode":{
                 "$cond":{
                     "if":{
-                       "$eq":["$ulb.censusCode",null]
+                       "$eq":["$censusCode",null]
                     },
-                    "then":"$ulb.sbCode",
-                    "else":"$ulb.censusCode"
+                    "then":"$sbCode",
+                    "else":"$censusCode"
                 }
             }
         }
@@ -1579,7 +1578,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         if(csv){
             let filename = "Projects.csv"
             let dbCols = Object.values(csvCols)
-             await sendCsv(filename,"UtilizationReport",query,res,dbCols,csvCols,"rows",changeDocument)
+             await sendCsv(filename,"Ulb",query,res,dbCols,csvCols,"rows",changeDocument)
              return;
         }
         if (dbResponse.length) {
@@ -1744,6 +1743,11 @@ function getQueryCityRelated(obj){
             }  
        }
        query.push(matchQuery)
+       if(csv){
+        query.push(addCensusCode())
+        query.push(service.getCommonLookupObj("states", "state", "_id", "state"))
+        query.push(service.getUnwindObj("$state", true))
+    }
         query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
         query.push(service.getCommonLookupObj("amrutprojects", "_id", "ulb", "amrProjects"))
