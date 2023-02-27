@@ -1896,7 +1896,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         
         response.message = "Fetched Successfully"
         response.success = true
-        return res.status(200).json(query)
+        return res.status(200).json(response)
     }
     catch(err){
         response.message = "Something went wrong"
