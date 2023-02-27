@@ -1722,6 +1722,7 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
         if (updateForm) {
           upsert = true
           payload['value'] = years.value
+          payload['file']  = years.file
         }
         else{
           payload["status"]= years.status
