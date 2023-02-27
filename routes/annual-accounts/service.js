@@ -2617,3 +2617,61 @@ function addKeysToObj(formData) {
     }
   }
 }
+module.exports.annualMiddleware = catchAsync((req,res)=>{
+  try{
+    let body = req.body
+    let sampleObj=   [{
+      "answer": [
+        {
+          "label": "",
+          "textValue": "2023-02-28",
+          "value": "2023-02-28"
+        }
+      ],
+      "input_type": "2",
+      "nestedAnswer": [],
+      "order": "2",
+      "shortKey": "audited.bal_sheet.excel"
+    },
+    {
+    "answer": [
+      {
+        "label": "",
+        "textValue": "gulswv hjsjbgvfs",
+        "value": ""
+      }
+    ],
+    "input_type": "1",
+    "nestedAnswer": [],
+    "order": "7",
+    "pattern": "",
+    "shortKey": "comment"
+  },
+    ]
+    let payload = {}
+    let keys = {
+        "0":"label",
+        "1":"textValue",
+        "2":"value"
+    }
+    for(let objects of body){
+      let shortKey = objects.shortKey
+      let splittedShortKey = shortKey.split(".")
+      let inputType = keys[objects.input_type]
+      if(splittedShortKey.length > 1){
+        let obj = splittedShortKey.reduceRight((obj, key) => ({[key]: obj}), objects['answer'][0][inputType])
+        Object.assign(payload,obj)
+      }
+      else{
+        let temp = {}
+        temp[shortKey] = objects['answer'][0][inputType]
+        Object.assign(payload,temp)
+      }
+    }
+    req.body = payload
+    console.log(payload)
+  }
+  catch(err){
+    console.log("error in annualMiddleware")
+  }
+})
