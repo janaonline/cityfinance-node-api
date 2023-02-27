@@ -904,7 +904,7 @@ function amrProjects(service,csv,ulbId){
             "ulbShare":"$amrUlbShare",
             "sectorId": "$amrProjects.category._id",
             "sector":"$amrProjects.category.name",
-            "divideTo":100,
+            "divideTo":1,
             "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
             "moreInformation": {
@@ -1859,18 +1859,30 @@ function addTotalData(service){
         return {}
     }
 }
-
+function convertCostIntoCrore(service,field){
+    try{
+        let obj = {
+            "$addFields":{
+                "ulbShare":service.getCommonDivObj([field,10])
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in convertCostIntoCrore ::: ",err.message)
+    }
+}
 function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
     const service = AggregationServices
     let query = []
     let fields = {
         fromValue:{
-            "$sum": {
+            "$sum":{
                 "$sum": "$DUR.projects.cost"
             }
         },
         toValue:{
-            "$sum": {
+            "$sum":{
                 "$sum": "$DUR.projects.expenditure"
             }
         }
@@ -1890,6 +1902,7 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
         //
         query.push(service.getCommonLookupObj("amrutprojects","_id","ulb","amrProjects"))
         query.push(addUlbShare(service,fields))
+        query.push(convertCostIntoCrore(service,"$ulbShare"))
         query.push(addTotalData(service))
         query.push(createFields(service))
         // add fields 
