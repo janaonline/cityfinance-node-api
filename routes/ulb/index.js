@@ -45,4 +45,6 @@ router.get('/getUlbDatafromGeoUrban', Ulb.getUlbDatafromGeoUrban)
 
 //truncate sbCode
 router.get('/truncateSbCode',Ulb.truncateSbCode)
+
+router.put('/bulkUpdate', verifyToken,Ulb.bulkUpdate);
 module.exports = router;
