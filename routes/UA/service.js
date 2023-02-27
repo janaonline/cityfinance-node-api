@@ -1658,9 +1658,9 @@ function getProjectionForDur(service){
             "$project":{
                 "ulbName":"$name",
                 "stateName":"$state.name",
-                "totalProjectCost":sumQuery,
-                "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :service.getCommonConvertor("$ulbShare","int"),
+                "totalProjectCost":1,
+                "totalProjects":1,
+                "ulbShare" :service.getCommonConvertor("$totalUlbShare","int"),
                 "expenditureTotal":{
                     $sum :"$DUR.projects.expenditure"
                 },
@@ -1809,9 +1809,72 @@ function getQueryCityRelated(obj){
     }
 }
 ///ends 
+
+function createFields(service){
+    let obj = {}
+    try{
+         obj = {
+            "$addFields": {
+                "totalProjectCost":{"$sum":["$totalCostAmrProjects","$totalDurCost"]},
+                "totalProjects":{
+                    "$sum":["$totalDurProjects","$totalAmrProjects"]
+                },
+                "totalUlbShare":{
+                    "$sum":["$totalUlbShare","$ulbShare"]
+                }
+            }
+         }
+        return obj
+    }
+    catch(err){
+        console.log("error while creating fields :: ",err.message)
+        return {}
+    }
+}
+
+function addTotalData(service){
+    let obj = {}
+    try{
+        obj = {
+            "$addFields":{
+                "totalAmrProjects":service.getCommonTotalObj("$amrProjects"),
+                "totalCostAmrProjects":{
+                    "$sum":"$amrProjects.cost"
+                },
+                "totalUlbShare":{
+                    "$sum":"$amrProjects.ulbShare"
+                },
+                "totalDurProjects":service.getCommonTotalObj("$projects"),
+                "totalDurCost":{
+                    "$sum": {
+                        "$sum": "$DUR.projects.cost"
+                    }
+                },
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in addTotalData ::: ",err.message)
+        return {}
+    }
+}
+
 function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
     const service = AggregationServices
     let query = []
+    let fields = {
+        fromValue:{
+            "$sum": {
+                "$sum": "$DUR.projects.cost"
+            }
+        },
+        toValue:{
+            "$sum": {
+                "$sum": "$DUR.projects.expenditure"
+            }
+        }
+    }
     try{
         let match = {
             "$match":{
@@ -1824,24 +1887,18 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
         // stage 2
         query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
-
-        // add fields 
-        let fields = {
-            fromValue:{
-                "$sum": {
-                    "$sum": "$DUR.projects.cost"
-                }
-            },
-            toValue:{
-                "$sum": {
-                    "$sum": "$DUR.projects.expenditure"
-                }
-            }
-        }
+        //
+        query.push(service.getCommonLookupObj("amrutprojects","ulb","_id","amrProjects"))
         query.push(addUlbShare(service,fields))
+        query.push(addTotalData(service))
+        query.push(createFields(service))
+        // add fields 
+        
+       
         //stage 3
         query.push(getProjectionForDur(service))
-        // stage match if filters provided
+        // stage match if filters provided 
+
         let matchObj = {
             "$match":{
                 "ulbShare":{"$gte":1}
@@ -1890,6 +1947,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         let sortKey = getSortByKeys(sortBy, order)
         let designYear = years['2022-23']
         let query = await getQueryStateRelated(designYear,filterObj,sortKey,skip,limit)
+        return res.status(200).json(query)
         let dbResponse = await Ulb.aggregate(query)
         response.data = dbResponse[0]['data']
         response.total = dbResponse[0]['total'] || 0
