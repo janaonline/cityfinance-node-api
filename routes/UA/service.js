@@ -1320,6 +1320,32 @@ function concatArrays(){
     }
 }
 
+
+function filterNoUlbShare(){
+    try{
+        let obj = {
+            "$addFields":{
+                "projects":{
+                    "$filter":{
+                        "input":"$DUR.projects",
+                        "as":"row",
+                        "cond":{
+                            "$and":[
+                                {"$gt":["$$row.expenditure",0]},
+                                {"$lt":["$$row.expenditure","$$row.cost"]},
+                                ]
+                        }
+                    }
+                }
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in filterNoUlbShare :: ",err.message)
+    }
+}
+
 /**
  * It takes an object as an argument and returns an array of objects
  * @param obj - {ulbId,skip,limit,filteredObj}
@@ -1665,13 +1691,7 @@ function lookupQueryForDur(service,designYear,project=false){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    service.getCommonEqObj("$isDraft",false),
-                                    {
-                                        "$gte":["$projects.expenditure",1]
-                                    },
-                                    {
-                                        "$lt":["$projects.expenditure","$projects.cost"]
-                                    }
+                                    service.getCommonEqObj("$isDraft",false)
                                 ]
                             }
                         }
@@ -1752,7 +1772,8 @@ function getQueryCityRelated(obj){
         query.push(service.getUnwindObj("$DUR",true))
         query.push(service.getCommonLookupObj("amrutprojects", "_id", "ulb", "amrProjects"))
         query.push(service.getUnwindObj("$amrProjects",true))
-        query.push(service.addFields("projects","$DUR.projects"))
+        query.push(filterNoUlbShare())
+        // query.push(service.addFields("projects","$DUR.projects"))
         query.push(service.addFields("amrProjects","$amrProjects"))
         query.push(service.getUnwindObj("$projects",true))
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "projectCategory"))
