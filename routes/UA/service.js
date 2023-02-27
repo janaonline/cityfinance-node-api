@@ -1844,7 +1844,7 @@ function addTotalData(service){
                 "totalUlbShare":{
                     "$sum":"$amrProjects.ulbShare"
                 },
-                "totalDurProjects":service.getCommonTotalObj("$projects"),
+                "totalDurProjects":service.getCommonTotalObj("$DUR.projects"),
                 "totalDurCost":{
                     "$sum": {
                         "$sum": "$DUR.projects.cost"
@@ -1888,13 +1888,12 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
         query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
         //
-        query.push(service.getCommonLookupObj("amrutprojects","ulb","_id","amrProjects"))
+        query.push(service.getCommonLookupObj("amrutprojects","_id","ulb","amrProjects"))
         query.push(addUlbShare(service,fields))
         query.push(addTotalData(service))
         query.push(createFields(service))
         // add fields 
-        
-       
+
         //stage 3
         query.push(getProjectionForDur(service))
         // stage match if filters provided 
@@ -1947,7 +1946,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         let sortKey = getSortByKeys(sortBy, order)
         let designYear = years['2022-23']
         let query = await getQueryStateRelated(designYear,filterObj,sortKey,skip,limit)
-        return res.status(200).json(query)
+        // return res.status(200).json(query)
         let dbResponse = await Ulb.aggregate(query)
         response.data = dbResponse[0]['data']
         response.total = dbResponse[0]['total'] || 0
