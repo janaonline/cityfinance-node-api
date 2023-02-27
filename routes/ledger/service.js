@@ -10,26 +10,26 @@ const AnnualAccount = require("../../models/AnnualAccounts");
 const util = require("util");
 
 module.exports.lastUpdated = async (req, res) => {
-  try {
-    const { ulb, state } = req.query;
-    let match = {};
-    if (ulb) {
-      match = { ulb };
+    try {
+        const { ulb, state } = req.query;
+        let match = {};
+        if (ulb) {
+            match = { ulb };
+        }
+        if (state) {
+            let ulbIds = await Ulb.find({ state }).select({ _id: 1 });
+            match = { ulb: { $in: ulbIds.map((value) => value._id) } };
+        }
+        let modifiedAtData = await UlbLedger.find(match).sort({ modifiedAt: -1 }).limit(1);
+        let financialYearData = await UlbLedger.find(match).sort({ financialYear: -1 }).limit(1);
+        return res.status(200).json({
+            success: true,
+            data: modifiedAtData[0]?.modifiedAt,
+            year: financialYearData[0]?.financialYear,
+        });
+    } catch (error) {
+        return res.status(500).json({ msg: "server Error", error });
     }
-    if (state) {
-      let ulbIds = await Ulb.find({ state }).select({ _id: 1 });
-      match = { ulb: { $in: ulbIds.map((value) => value._id) } };
-    }
-    let modifiedAtData = await UlbLedger.find(match).sort({ modifiedAt: -1 }).limit(1);
-    let financialYearData = await UlbLedger.find(match).sort({ financialYear: -1 }).limit(1);
-    return res.status(200).json({
-      success: true,
-      data: modifiedAtData[0]?.modifiedAt,
-      year: financialYearData[0]?.financialYear,
-    });
-  } catch (error) {
-    return res.status(500).json({ msg: "server Error", error });
-  }
 };
 
 // Get Income expenditure report
@@ -504,7 +504,7 @@ module.exports.addLog = function (req, res) {
     });
 };
 
-module.exports.report =  async (req, res) => {
+module.exports.report = async (req, res) => {
     let { fy } = req.query
     // let FY = fy;
     let filename = "Report_20" + `${fy}` + ".csv";
@@ -517,504 +517,506 @@ module.exports.report =  async (req, res) => {
     );
 
     // Flush the headers before we start pushing the CSV content
-if(fy == '15-16' || fy == '16-17'|| fy == '17-18'|| fy == '18-19' ){
-    let query_datacollectionform = [
-        {
-            $lookup: {
-                from: "ulbs",
-                localField: "ulb",
-                foreignField: "_id",
-                as: "ulb"
-            }
-        },
-        { $unwind: "$ulb" },
-        {
-            $lookup: {
-                from: "states",
-                localField: "ulb.state",
-                foreignField: "_id",
-                as: "state"
-            }
-        },
-        { $unwind: "$state" },
-        
-        {
-            $project: {
-                "15-16": "$documents.financial_year_2015_16",
-                "16-17": "$documents.financial_year_2016_17",
-                "17-18": "$documents.financial_year_2017_18",
-                "18-19": "$documents.financial_year_2018_19",
-                "ulb": "$ulb.name",
-                "code": "$ulb.code",
-                state:"$state.name"
-            }
-        },
+    if (fy == '15-16' || fy == '16-17' || fy == '17-18' || fy == '18-19') {
+        let query_datacollectionform = [
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            { $unwind: "$ulb" },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "ulb.state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
 
-        {
-            $project: {
-                "15-16_pdf": "$15-16.pdf",
-                "16-17_pdf": "$16-17.pdf",
-                "17-18_pdf": "$17-18.pdf",
-                "18-19_pdf": "$18-19.pdf",
-                "15-16_excel": "$15-16.excel",
-                "16-17_excel": "$16-17.excel",
-                "17-18_excel": "$17-18.excel",
-                "18-19_excel": "$18-19.excel",
-                "ulb": 1,
-                "code": 1,
-                state:1
-            }
-        },
-        {
-            $unwind: `$${fy}_pdf`
-        },
-        {
-            $unwind: {
-                path: `$${fy}_excel`,
-                preserveNullAndEmptyArrays: true
-            }
-        },
-
-
-        {
-            $group: {
-                "_id": "$ulb",
-                fileUrlpdf: { $last: `$${fy}_pdf.url` },
-                fileNamepdf: { $last: `$${fy}_pdf.name` },
-                fileUrlexcel: { $last: `$${fy}_excel.url` },
-                fileNameexcel: { $last: `$${fy}_excel.name` },
-                code: { $first: "$code" },
-                state: { $first: "$state" }
-            }
-        },
-        {
-            $lookup: {
-               from: "ledgerlogs",
-               let: {
-                  firstUser: `20${fy}`,
-                  secondUser: "$code"
-               },
-               pipeline: [
-                  {
-                     $match: {
-                        $expr: {
-                           $and: [
-                              {
-                                 $eq: [
-                                    "$year",
-                                    "$$firstUser"
-                                 ]
-                              },
-                              {
-                                 $eq: [
-                                    "$ulb_code",
-                                    "$$secondUser"
-                                 ]
-                              }
-                           ]
-                        }
-                     }
-                  }
-               ],
-               as: "ledgerlogs"
-            }
-         },
-        {
-            $unwind: {
-                path: "$ledgerlogs",
-                preserveNullAndEmptyArrays: true
+            {
+                $project: {
+                    "15-16": "$documents.financial_year_2015_16",
+                    "16-17": "$documents.financial_year_2016_17",
+                    "17-18": "$documents.financial_year_2017_18",
+                    "18-19": "$documents.financial_year_2018_19",
+                    "ulb": "$ulb.name",
+                    "code": "$ulb.code",
+                    state: "$state.name"
+                }
             },
 
-        },
-
-        {
-            $project: {
-                fileUrlpdf: 1,
-                fileNamepdf: 1,
-                fileUrlexcel: 1,
-                fileNameexcel: 1,
-                year:`20${fy}`,
-                code: 1,
-                state:1,
-                logCreated: { $ifNull: ["$ledgerlogs", "No"] }
-            }
-        },
-
-        {
-            $project: {
-                fileUrlpdf: 1,
-                fileNamepdf: 1,
-                fileUrlexcel: 1,
-                fileNameexcel: 1,
-                year:1,
-
-                state:1,
-                code: 1,
-                logcreated: {
-                    $cond: {
-                        if: { $eq: ["$logCreated", "No"] },
-                        then: "No",
-                        else: "Yes",
-                    },
-                },
-            }
-
-        },
-
-    ]
-    let FY = fy.replace('-', '_')
-    let ledgerData;
-    let query_ledgerLog = [
-
-        {
-            $match:{
-                year:`20${fy}`
-                }
-            }
-        ,
-        {
-            $lookup:{
-                from:"ulbs",
-                localField:"ulb_code",
-                foreignField:"code",
-                as:"ulb"
+            {
+                $project: {
+                    "15-16_pdf": "$15-16.pdf",
+                    "16-17_pdf": "$16-17.pdf",
+                    "17-18_pdf": "$17-18.pdf",
+                    "18-19_pdf": "$18-19.pdf",
+                    "15-16_excel": "$15-16.excel",
+                    "16-17_excel": "$16-17.excel",
+                    "17-18_excel": "$17-18.excel",
+                    "18-19_excel": "$18-19.excel",
+                    "ulb": 1,
+                    "code": 1,
+                    state: 1
                 }
             },
             {
-                $unwind:"$ulb"
-                },
-                {
-                    '$lookup': {
-                      from: 'states',
-                      localField: 'ulb.state',
-                      foreignField: '_id',
-                      as: 'state'
-                    }
-                  },
-                  { '$unwind': '$state' },
-                
-                {
-                    $lookup:{
-                        from:"datacollectionforms",
-                        localField:"ulb._id",
-                        foreignField:"ulb",
-                        as:"datacollectionform"
-                        }
+                $unwind: `$${fy}_pdf`
+            },
+            {
+                $unwind: {
+                    path: `$${fy}_excel`,
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+
+            {
+                $group: {
+                    "_id": "$ulb",
+                    fileUrlpdf: { $last: `$${fy}_pdf.url` },
+                    fileNamepdf: { $last: `$${fy}_pdf.name` },
+                    fileUrlexcel: { $last: `$${fy}_excel.url` },
+                    fileNameexcel: { $last: `$${fy}_excel.name` },
+                    code: { $first: "$code" },
+                    state: { $first: "$state" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "ledgerlogs",
+                    let: {
+                        firstUser: `20${fy}`,
+                        secondUser: "$code"
                     },
-                    {
-                        $unwind:{
-                            path:"$datacollectionform",
-                            preserveNullAndEmptyArrays: true
-                            }
-                        },
-                        
+                    pipeline: [
                         {
-                            $project:{
-                                year:1,
-                                ulb_code:1,
-                                state:"$state.name",
-                                audit_status:1,
-                                ulbName:"$ulb.name",
-                                standardized_excel:"$excel_url",
-                                rawPDF: {$ifNull:[`$datacollectionform.documents.financial_year_20${FY}.pdf`,[]]},
-                                rawExcel:{$ifNull:[`$datacollectionform.documents.financial_year_20${FY}.excel`,[]]},
-                             
-                                }
-                            },
-             
-                            
-                            {
-                                $group:{
-                                    _id:{
-                                        year:"$year",
-                                        ulb_code:"$ulb_code"
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        {
+                                            $eq: [
+                                                "$year",
+                                                "$$firstUser"
+                                            ]
                                         },
-                                rawPDF: {$last:"$rawPDF"},
-                                rawExcel: {$last:"$rawExcel"},
-                                standardized_excelStatus: {$first:"Yes"},
-                                ulbName: {$first:"$ulbName"},  
-                                state:{$first: "$state"}         
-                                    }
-                                },
-                                {
-                                    $project:{
-ulbName:1,
-state:1,
-standardized_excelStatus: 1,
-rawExcel:{$ifNull:[{$arrayElemAt:["$rawExcel",0]}, ""]},
-rawPDF:{$ifNull:[{$arrayElemAt:["$rawPDF",0]}, ""]}
+                                        {
+                                            $eq: [
+                                                "$ulb_code",
+                                                "$$secondUser"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: "ledgerlogs"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$ledgerlogs",
+                    preserveNullAndEmptyArrays: true
+                },
 
-                                    }
-                                },
-                                {
-                                    $project:{
-                                
-ulbName:1,
-standardized_excelStatus: 1,
-year:`20${fy}`,
-state:1,
-rawExcel_name:{$ifNull:["$rawExcel.name",  null]},
-rawExcel_url:{$ifNull:["$rawExcel.url",null]},
-rawPDF_name:{$ifNull:["$rawPDF.name",null]},
-rawPDF_url:{$ifNull:["$rawPDF.url",null]}
+            },
 
-                                    
-                                    
-                                    }
-                        
-                                    }
-                                
-                        
+            {
+                $project: {
+                    fileUrlpdf: 1,
+                    fileNamepdf: 1,
+                    fileUrlexcel: 1,
+                    fileNameexcel: 1,
+                    year: `20${fy}`,
+                    code: 1,
+                    state: 1,
+                    logCreated: { $ifNull: ["$ledgerlogs", "No"] }
+                }
+            },
+
+            {
+                $project: {
+                    fileUrlpdf: 1,
+                    fileNamepdf: 1,
+                    fileUrlexcel: 1,
+                    fileNameexcel: 1,
+                    year: 1,
+
+                    state: 1,
+                    code: 1,
+                    logcreated: {
+                        $cond: {
+                            if: { $eq: ["$logCreated", "No"] },
+                            then: "No",
+                            else: "Yes",
+                        },
+                    },
+                }
+
+            },
+
         ]
-    
-        ledgerData =  await  LedgerLogModel.aggregate(query_ledgerLog)
-        console.log(util.inspect(query_ledgerLog, {showHidden: false, depth:  null}))
-        console.log(util.inspect(query_datacollectionform, {showHidden: false, depth:  null}))
-    DataCollectionForms.aggregate(query_datacollectionform).exec((err, data) => {
-        if (err) {
-            res.json({
-                success: false,
-                msg: "Invalid Payload",
-                data: err.toString(),
-            });
-        } else {
-            res.flushHeaders();
-            for (let el of data) {
-                if(el.logcreated == 'No'){
+        let FY = fy.replace('-', '_')
+        let ledgerData;
+        let query_ledgerLog = [
+
+            {
+                $match: {
+                    year: `20${fy}`
+                }
+            }
+            ,
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb_code",
+                    foreignField: "code",
+                    as: "ulb"
+                }
+            },
+            {
+                $unwind: "$ulb"
+            },
+            {
+                '$lookup': {
+                    from: 'states',
+                    localField: 'ulb.state',
+                    foreignField: '_id',
+                    as: 'state'
+                }
+            },
+            { '$unwind': '$state' },
+
+            {
+                $lookup: {
+                    from: "datacollectionforms",
+                    localField: "ulb._id",
+                    foreignField: "ulb",
+                    as: "datacollectionform"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$datacollectionform",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+            {
+                $project: {
+                    year: 1,
+                    ulb_code: 1,
+                    state: "$state.name",
+                    audit_status: 1,
+                    ulbName: "$ulb.name",
+                    standardized_excel: "$excel_url",
+                    rawPDF: { $ifNull: [`$datacollectionform.documents.financial_year_20${FY}.pdf`, []] },
+                    rawExcel: { $ifNull: [`$datacollectionform.documents.financial_year_20${FY}.excel`, []] },
+
+                }
+            },
+
+
+            {
+                $group: {
+                    _id: {
+                        year: "$year",
+                        ulb_code: "$ulb_code"
+                    },
+                    rawPDF: { $last: "$rawPDF" },
+                    rawExcel: { $last: "$rawExcel" },
+                    standardized_excelStatus: { $first: "Yes" },
+                    ulbName: { $first: "$ulbName" },
+                    state: { $first: "$state" }
+                }
+            },
+            {
+                $project: {
+                    ulbName: 1,
+                    state: 1,
+                    standardized_excelStatus: 1,
+                    rawExcel: { $ifNull: [{ $arrayElemAt: ["$rawExcel", 0] }, ""] },
+                    rawPDF: { $ifNull: [{ $arrayElemAt: ["$rawPDF", 0] }, ""] }
+
+                }
+            },
+            {
+                $project: {
+
+                    ulbName: 1,
+                    standardized_excelStatus: 1,
+                    year: `20${fy}`,
+                    state: 1,
+                    rawExcel_name: { $ifNull: ["$rawExcel.name", null] },
+                    rawExcel_url: { $ifNull: ["$rawExcel.url", null] },
+                    rawPDF_name: { $ifNull: ["$rawPDF.name", null] },
+                    rawPDF_url: { $ifNull: ["$rawPDF.url", null] }
+
+
+
+                }
+
+            }
+
+
+        ]
+
+        ledgerData = await LedgerLogModel.aggregate(query_ledgerLog)
+        console.log(util.inspect(query_ledgerLog, { showHidden: false, depth: null }))
+        console.log(util.inspect(query_datacollectionform, { showHidden: false, depth: null }))
+        DataCollectionForms.aggregate(query_datacollectionform).exec((err, data) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    msg: "Invalid Payload",
+                    data: err.toString(),
+                });
+            } else {
+                res.flushHeaders();
+                for (let el of data) {
+                    if (el.logcreated == 'No') {
+                        res.write(
+                            el._id +
+                            "," +
+                            el.code +
+                            "," +
+                            el.state +
+                            "," +
+                            el.year +
+                            "," +
+                            el.logcreated +
+                            "\r\n"
+                        );
+                    }
+
+                }
+                // res.flushHeaders();
+                console.log(ledgerData[0])
+                for (let el of ledgerData) {
+                    // console.log(el?.ulbName,el?._id?.ulb_code,el?.standardized_excelStatus )
                     res.write(
-                        el._id +
+                        el?.ulbName +
                         "," +
-                        el.code +
+                        el?._id?.ulb_code +
                         "," +
                         el.state +
                         "," +
-                        el.year +
+                        el?.year +
                         "," +
-                        el.logcreated +
+                        el?.standardized_excelStatus +
                         "\r\n"
                     );
                 }
-           
+                console.log(ledgerData.length, '+', data.length)
+                res.end();
             }
-            // res.flushHeaders();
-            console.log(ledgerData[0])
-            for(let el of ledgerData){
-// console.log(el?.ulbName,el?._id?.ulb_code,el?.standardized_excelStatus )
-                       res.write(
-                    el?.ulbName +
-                    "," +
-                    el?._id?.ulb_code +
-                    "," +
-el.state +
-"," +
-                    el?.year +
-                    "," +
-                    el?.standardized_excelStatus +
-                    "\r\n"
-                );
-            }
-            console.log(ledgerData.length, '+', data.length )
-            res.end();
-        }
-    });
+        });
 
-}else {
-    let query;
-if(fy == '19-20'){
- query = [
-    {
-        $match:{
-            $and:[
-            {"audited.provisional_data":{$exists: true}},
-            
-               {"audited.provisional_data.bal_sheet.pdf.url":{$ne: null}},
-                   {"audited.provisional_data.bal_sheet_schedules.pdf.url":{$ne: null}},
-                    {"audited.provisional_data.inc_exp.pdf.url":{$ne: null}},
-                       {"audited.provisional_data.inc_exp_schedules.pdf.url":{$ne: null}},
-      {"audited.provisional_data.cash_flow.pdf.url":{$ne: null}},
-      {"audited.provisional_data.auditor_report.pdf.url":{$ne: null}},
-    
-            ]
-    
-            }
-        },
-    
-    {
-        $lookup:{
-            from:"ulbs",
-            localField:"ulb",
-            foreignField:"_id",
-            as:"ulb"
-            }
-        },
-        {
-            $unwind:"$ulb"
-            },
-              {
-        $lookup:{
-            from:"states",
-            localField:"ulb.state",
-            foreignField:"_id",
-            as:"state"
-            }
-        },
-        {
-            $unwind:"$state"
-            },
-             {
-          $lookup: {
-            from: "ledgerlogs",
-            let: {
-              firstUser: "2019-20",
-              secondUser: "$ulb.code",
-            
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      {
-                        $eq: ["$year", "$$firstUser"],
-                      },
-                      {
-                        $eq: ["$ulb_code", "$$secondUser"],
-                      },
-                     
-                    ],
-                  },
-                },
-              },
-            ],
-            as: "ledgerlog",
-          },
-        },
-            
-          
-                {$unwind:{
-                    path:"$ledgerlog",
-                    preserveNullAndEmptyArrays:true
-                    }
-                    },
-                    
-                    {
-                        $project:{
-                            ulbName:"$ulb.name",
-                            ulbCode:  {$cond: { if: { $eq: [ "$ulb.censusCode", null ] }, then: "$ulb.sbCode", else: "$ulb.censusCode" }},
-                            state: "$state.name",
-                            Code: "$ulb.code",
-                            standardized_excel: {$cond: { if: { $lte: ["$ledgerlog", null] }, then: "No", else: "Yes" }},
-                           
-                            
-                            }
-                        }
-    ]
-}else if(fy == '20-21'){
-    query = [
-        {
-            $match:{
-                $and:[
-                {"unAudited.provisional_data":{$exists: true}},
-                
-                   {"unAudited.provisional_data.bal_sheet.pdf.url":{$ne: null}},
-                       {"unAudited.provisional_data.bal_sheet_schedules.pdf.url":{$ne: null}},
-                        {"unAudited.provisional_data.inc_exp.pdf.url":{$ne: null}},
-                           {"unAudited.provisional_data.inc_exp_schedules.pdf.url":{$ne: null}},
-          {"unAudited.provisional_data.cash_flow.pdf.url":{$ne: null}},
-          
-        
-                ]
-        
-                }
-            },
-        
-        {
-            $lookup:{
-                from:"ulbs",
-                localField:"ulb",
-                foreignField:"_id",
-                as:"ulb"
-                }
-            },
-            {
-                $unwind:"$ulb"
-                },
-                  {
-            $lookup:{
-                from:"states",
-                localField:"ulb.state",
-                foreignField:"_id",
-                as:"state"
-                }
-            },
-            {
-                $unwind:"$state"
-                },
-                 {
-              $lookup: {
-                from: "ledgerlogs",
-                let: {
-                  firstUser: "2020-21",
-                  secondUser: "$ulb.code",
-                
-                },
-                pipeline: [
-                  {
+    } else {
+        let query;
+        if (fy == '19-20') {
+            query = [
+                {
                     $match: {
-                      $expr: {
                         $and: [
-                          {
-                            $eq: ["$year", "$$firstUser"],
-                          },
-                          {
-                            $eq: ["$ulb_code", "$$secondUser"],
-                          },
-                         
-                        ],
-                      },
-                    },
-                  },
-                ],
-                as: "ledgerlog",
-              },
-            },
-                
-              
-                    {$unwind:{
-                        path:"$ledgerlog",
-                        preserveNullAndEmptyArrays:true
-                        }
+                            { "audited.provisional_data": { $exists: true } },
+
+                            { "audited.provisional_data.bal_sheet.pdf.url": { $ne: null } },
+                            { "audited.provisional_data.bal_sheet_schedules.pdf.url": { $ne: null } },
+                            { "audited.provisional_data.inc_exp.pdf.url": { $ne: null } },
+                            { "audited.provisional_data.inc_exp_schedules.pdf.url": { $ne: null } },
+                            { "audited.provisional_data.cash_flow.pdf.url": { $ne: null } },
+                            { "audited.provisional_data.auditor_report.pdf.url": { $ne: null } },
+
+                        ]
+
+                    }
+                },
+
+                {
+                    $lookup: {
+                        from: "ulbs",
+                        localField: "ulb",
+                        foreignField: "_id",
+                        as: "ulb"
+                    }
+                },
+                {
+                    $unwind: "$ulb"
+                },
+                {
+                    $lookup: {
+                        from: "states",
+                        localField: "ulb.state",
+                        foreignField: "_id",
+                        as: "state"
+                    }
+                },
+                {
+                    $unwind: "$state"
+                },
+                {
+                    $lookup: {
+                        from: "ledgerlogs",
+                        let: {
+                            firstUser: "2019-20",
+                            secondUser: "$ulb.code",
+
                         },
-                        
-                        {
-                            $project:{
-                                ulbName:"$ulb.name",
-                                ulbCode:  {$cond: { if: { $eq: [ "$ulb.censusCode", null ] }, then: "$ulb.sbCode", else: "$ulb.censusCode" }},
-                                state: "$state.name",
-                                Code: "$ulb.code",
-                                standardized_excel: {$cond: { if: { $lte: ["$ledgerlog", null] }, then: "No", else: "Yes" }},
-                                
-                                }
-                            }
-        ]
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            {
+                                                $eq: ["$year", "$$firstUser"],
+                                            },
+                                            {
+                                                $eq: ["$ulb_code", "$$secondUser"],
+                                            },
 
-}else{
-    return res.json({success: false, message:'Invalid Input'})
-}
-let year = `20${fy}`
+                                        ],
+                                    },
+                                },
+                            },
+                        ],
+                        as: "ledgerlog",
+                    },
+                },
 
-    AnnualAccount.aggregate(query).exec((err, data) => {
-        if (err) {
-            res.json({
-                success: false,
-                msg: "Invalid Payload",
-                data: err.toString(),
-            });
+
+                {
+                    $unwind: {
+                        path: "$ledgerlog",
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+
+                {
+                    $project: {
+                        ulbName: "$ulb.name",
+                        ulbCode: { $cond: { if: { $eq: ["$ulb.censusCode", null] }, then: "$ulb.sbCode", else: "$ulb.censusCode" } },
+                        state: "$state.name",
+                        Code: "$ulb.code",
+                        standardized_excel: { $cond: { if: { $lte: ["$ledgerlog", null] }, then: "No", else: "Yes" } },
+
+
+                    }
+                }
+            ]
+        } else if (fy == '20-21') {
+            query = [
+                {
+                    $match: {
+                        $and: [
+                            { "unAudited.provisional_data": { $exists: true } },
+
+                            { "unAudited.provisional_data.bal_sheet.pdf.url": { $ne: null } },
+                            { "unAudited.provisional_data.bal_sheet_schedules.pdf.url": { $ne: null } },
+                            { "unAudited.provisional_data.inc_exp.pdf.url": { $ne: null } },
+                            { "unAudited.provisional_data.inc_exp_schedules.pdf.url": { $ne: null } },
+                            { "unAudited.provisional_data.cash_flow.pdf.url": { $ne: null } },
+
+
+                        ]
+
+                    }
+                },
+
+                {
+                    $lookup: {
+                        from: "ulbs",
+                        localField: "ulb",
+                        foreignField: "_id",
+                        as: "ulb"
+                    }
+                },
+                {
+                    $unwind: "$ulb"
+                },
+                {
+                    $lookup: {
+                        from: "states",
+                        localField: "ulb.state",
+                        foreignField: "_id",
+                        as: "state"
+                    }
+                },
+                {
+                    $unwind: "$state"
+                },
+                {
+                    $lookup: {
+                        from: "ledgerlogs",
+                        let: {
+                            firstUser: "2020-21",
+                            secondUser: "$ulb.code",
+
+                        },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            {
+                                                $eq: ["$year", "$$firstUser"],
+                                            },
+                                            {
+                                                $eq: ["$ulb_code", "$$secondUser"],
+                                            },
+
+                                        ],
+                                    },
+                                },
+                            },
+                        ],
+                        as: "ledgerlog",
+                    },
+                },
+
+
+                {
+                    $unwind: {
+                        path: "$ledgerlog",
+                        preserveNullAndEmptyArrays: true
+                    }
+                },
+
+                {
+                    $project: {
+                        ulbName: "$ulb.name",
+                        ulbCode: { $cond: { if: { $eq: ["$ulb.censusCode", null] }, then: "$ulb.sbCode", else: "$ulb.censusCode" } },
+                        state: "$state.name",
+                        Code: "$ulb.code",
+                        standardized_excel: { $cond: { if: { $lte: ["$ledgerlog", null] }, then: "No", else: "Yes" } },
+
+                    }
+                }
+            ]
+
         } else {
-            console.log(data.length)
-            res.flushHeaders();
-            for (let el of data) {
-             
+            return res.json({ success: false, message: 'Invalid Input' })
+        }
+        let year = `20${fy}`
+
+        AnnualAccount.aggregate(query).exec((err, data) => {
+            if (err) {
+                res.json({
+                    success: false,
+                    msg: "Invalid Payload",
+                    data: err.toString(),
+                });
+            } else {
+                console.log(data.length)
+                res.flushHeaders();
+                for (let el of data) {
+
                     res.write(
                         el.ulbName +
                         "," +
@@ -1027,18 +1029,18 @@ let year = `20${fy}`
                         el.standardized_excel +
                         "\r\n"
                     );
-                
-           
+
+
+                }
+
+                res.end();
             }
+        });
 
-            res.end();
-        }
-    });
-
-}
+    }
 
 
-  
+
 
 }
 

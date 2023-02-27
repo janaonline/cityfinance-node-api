@@ -60,12 +60,12 @@ const fiscalRankingSchema = new Schema(
         population11: {
             value: { type: Number, default: null },
             status: statusSchema(),
-            modelName:modelSchema()
+            dataSource:modelSchema()
         },
         populationFr: {
             value: { type: Number, default: null },
             status: statusSchema(),
-            modelName:modelSchema()
+            dataSource:modelSchema()
         },
         webLink: {
             value : { type: String, default: null },
@@ -132,7 +132,7 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'Cash'/ 'Cheque'/ 'DD'",
                 },
             },
-            amount: { type: Number, default: null },
+            value: { type: Number, default: null },
             status: {
                 default: "PENDING",
                 type: String,
@@ -151,7 +151,7 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'UPI'/ 'Netbanking'/ 'Credit Card'/ 'Debit Card'/ 'Others'",
                 },
             },
-            amount: { type: Number, default: null },
+            value: { type: Number, default: null },
             status: {
                 type: String,
                 default: "PENDING",

@@ -1,8 +1,8 @@
-const modelSchema = ()=>{
+const modelSchema = () => {
     return {
-        type:String,
-        enum:{
-            values :["ULBLedger","FiscalRanking"]
+        type: String,
+        enum: {
+            values: ["ULBLedger", "FiscalRanking", "Ulb", "TwentyEightSlbForm"]
         }
     }
 }
