@@ -13,7 +13,7 @@ module.exports.login = async (req, res) => {
     let ulb, role;
     let user = await getUSer(req.body);
     let state;
-    if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
+    if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) }).lean();
 
     if (state && state['accessToXVFC'] == false) {
       return res.status(403).json({

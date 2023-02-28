@@ -12,6 +12,12 @@ const statusType = () => {
   };
 };
 
+const pdfSchema = ()=>{
+  return {
+    url: { type: String},
+    name: { type: String}
+  }
+}
 const uas = new Schema({
   ua: { type: Schema.Types.ObjectId, ref: "uas", required: true },
   projectExecute: [
@@ -68,6 +74,7 @@ const uas = new Schema({
     type: String,
     default: "",
   },
+  responseFile: pdfSchema(),
   status: statusType(),
   _id: false,
 });

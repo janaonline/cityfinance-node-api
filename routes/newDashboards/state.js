@@ -1646,6 +1646,10 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       message: "Missing Information",
     });
   }
+  let sortValue = -1;
+  if(sortBy){
+    sortValue = sortBy === "top10" ? -1 : 1;  
+  }
   let matchId =
     filterId ??
     (await IndicatorLineItems.findOne({ name: filterName }).lean())._id;
@@ -1655,6 +1659,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       year: financialYear,
     },
   };
+  let limitObj;
   if (ulb?.length > 0) {
     matchObj.$match.ulb = ObjectId(ulb[0]);
   }
@@ -1688,7 +1693,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       $unwind: "$ulbType",
     },
     {
-      $sort: { value: -1 },
+      $sort: { value: sortValue },
     },
     {
       $project: {
@@ -1701,6 +1706,13 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       },
     },
   ];
+
+  if(sortBy){
+    limitObj = {
+      $limit: 10
+    }
+    query.push(limitObj);
+  }
   let tp_data = [],
     m_data = [],
     mc_data = [],

@@ -1185,6 +1185,7 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
   }
   if(from == "2223"){
     let host = "";
+    host = req.headers.host
     /* Checking if the host is the same as the backend host. If it is, then it sets the host to the
     frontend host. */
     if (req.headers.host === BackendHeaderHost.Demo) {
@@ -1219,14 +1220,14 @@ let ulbData = await Ulb.findOne({_id: ObjectId(ulb)}).lean();
           show: true,
           message: `Your Previous Year's form status is - ${
             status ? status : "Not Submitted"
-          }. Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
+          }. Kindly submit form for previous year at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`,
         });
       }
     } else {
       return res.status(400).json({
         status: true,
         show: true,
-        message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/ulbform/slbs target="_blank">Click here</a> in order to submit form`,
+        message: `Your Previous Year's form status is - "Not Submitted". Kindly submit form for previous year at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`,
       });
     }
     const lineItems = await IndicatorLineItem.find({
@@ -1247,17 +1248,24 @@ if(!slbData){
 
   return res.status(400).json({
     success: false,
-     message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
+    status: true,
+    show: true,
+     message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/ulbform-overview target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
   })
 }
 status = slbData['waterManagement']['status']
 let twoEightSlbData = await SLB28.findOne({
   design_year: design_year_2223,
   ulb: ObjectId(ulb),
-  status:"APPROVED",
 
-}).lean()
+}).lean();
+let twoEightSlbDataStatus;
 if(twoEightSlbData){
+  twoEightSlbDataStatus = calculateStatus(twoEightSlbData.status, twoEightSlbData.actionTakenByRole,twoEightSlbData.isDraft,
+   "ULB")
+}
+if(twoEightSlbData && [FORM_STATUS.Under_Review_By_MoHUA, FORM_STATUS.Approved_By_MoHUA,
+].includes(twoEightSlbDataStatus)){
   let allData = twoEightSlbData['data'];
   // let filteredData = allData.filter(el => {
   //   if (lineItemIDs.includes(el.indicatorLineItem))
@@ -1350,10 +1358,12 @@ value = allData.filter(el => {
   })
 }else{
 
- return res.status(200).json({
+ return res.status(400).json({
     success: true,
     data: [slbData],
-    message: role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit SLBs Form for the previous year at - <a href=https://${req.headers.host}/ulbform/slbs target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to mark your response once the ULB Submits this form. `
+    status: true,
+    show: true,
+    message: role == "ULB" ? `Dear User, Your 28 SLBs form status is - ${twoEightSlbDataStatus ? twoEightSlbDataStatus : 'Not Submitted'}. Kindly submit 28 SLBs Form at - <a href=https://${req.headers.host}/ulbform2223/28SLBsForm target="_blank">Click Here!</a> in order to submit this year's form. ` : `Dear User, The ${ulbData.name} has not yet filled this form. You will be able to view this form once ULB's previous year SLBs for Water Supply and Sanitation and this year's 28 SLBs form is APPROVED by State or MoHUA. `
   })
 }
   }

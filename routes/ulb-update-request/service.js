@@ -93,6 +93,7 @@ module.exports.create = async (req, res) => {
             'population',
             'location',
             'amrut',
+            'isActive'
         ];
         let obj = {};
         for (key of keys) {

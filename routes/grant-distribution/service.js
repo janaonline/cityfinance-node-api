@@ -43,8 +43,8 @@ exports.getGrantDistribution = async (req, res) => {
     if (!grantDistribution) {
       return Response.BadRequest(res, null, "No GrantDistribution found");
     }
-   if(design_year !== YEAR_CONSTANTS['22_23']){
-      grantDistribution =  grantDistribution[grantDistribution.length-1];
+    if(design_year !== YEAR_CONSTANTS['22_23']){
+        grantDistribution =  grantDistribution[grantDistribution.length-1];
     }
     return Response.OK(res, grantDistribution, "Success");
   } catch (err) {
