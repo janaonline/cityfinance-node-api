@@ -1762,7 +1762,12 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm) {
     let payload = {}
     for (let key in obj) {
       if (updateForm) {
-        payload[`${key}.value`] = obj[key].value
+        if(key === "signedCopyOfFile"){
+          payload[key]= obj[key]
+        }
+        else{
+          payload[`${key}.value`] = obj[key].value
+        }
       }
       else{
         let status = null
@@ -2010,7 +2015,46 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   return res.status(500).json(response)
 })
 
+async function checkIfFormIdExistsOrNot(formId){
+  let validation = {
+    message : "",
+    valid:true,
+    formId : null
+  }
+  try{
+    if(formId === undefined){
+      let form = await FiscalRanking.create(
+        {
+          ulb:ObjectId(ulbId),
+          design_year:ObjectId(design_year)
+        }
+      )
+      form.save()
+      validation.message = "form created"
+      validation.valid = true
+      validation.formId = form._id
+    }
+    else{
+      let form = await FiscalRanking.findOne({"_id":formId})
+      if(form){
+        validation.message = "form exists"
+        validation.valid = true
+        validation.formId = form._id
+      }
+      else{
+        validation.message = "No form exists for the form Id"
+        validation.valid = false
+        validation.formId = form._id
+      }
+    }
+    return validation
 
+  }
+  catch(err){
+    console.log("error in checkIfFormIdExistsornot ::: ",err.message)
+  }
+  return validation
+}
 module.exports.createForm = catchAsync(async (req, res) => {
   const response = {
     success: false,
@@ -2020,22 +2064,19 @@ module.exports.createForm = catchAsync(async (req, res) => {
   await session.startTransaction()
   try {
     let { ulbId, formId, actions, design_year, isDraft } = req.body
-    if(formId === undefined){
-      let form = await FiscalRanking.create(
-        {
-          ulb:ObjectId(ulbId),
-          design_year:ObjectId(design_year)
-        }
-      )
-      form.save()
-      formId = form._id
-    }
+    let formIdValidations =  await checkIfFormIdExistsOrNot(formId)
     let { role, _id: userId } = req.decoded
+    if(!formIdValidations.valid){
+      response.message = formIdValidations.message
+      return res.status(500).json(response)
+    }
+    
     let validation = await checkUndefinedValidations({
       "ulb": ulbId,
       "actions": actions,
       "design_year": design_year
     })
+    formId = formIdValidations.formId
     if (!validation.valid) {
       response.message = validation.message
       return res.status(500).json(response)
