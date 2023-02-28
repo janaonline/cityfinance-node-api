@@ -12,6 +12,8 @@ const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
 const { years } = require("../../service/years")
 const GlobalService = require('../../service');
+const Year = require("../../models/Year");
+const MasterForm = require('../../models/MasterForm');
 const axios = require('axios')
 const {sendCsv,apiUrls} = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
@@ -178,8 +180,10 @@ module.exports.update = catchAsync(async (req, res) => {
     })
 
 })
+
+
 const design_year_2122 = ObjectId("606aaf854dff55e6c075d219")
-module.exports.get2223 = catchAsync(async (req, res) => {
+module.exports.get2223 = catchAsync(async(req,res)=>{
     let uaId = req.query.ua;
     let design_year = req.query.design_year;
     let slbApproved = {
@@ -193,44 +197,44 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     }, gfcApproved = {
         count: 0,
         ulbs: [
-
+         
         ]
     }, gfcPending = {
         count: 0,
         ulbs: [
-
+       
         ]
-    }, odfPending = {
+    },odfPending = {
         count: 0,
         ulbs: [
-
+           
         ]
-    }, odfApproved = {
+    } , odfApproved = {
         count: 0,
         ulbs: [
-
+        
         ]
     }
-    if (!uaId || !design_year) {
+    if(!uaId || !design_year ){
         return res.status(404).json({
             success: false,
-            message: "UA ID and Design Year is Required"
+            message:"UA ID and Design Year is Required"
         })
     }
     let responseObj = {
-        totalUlbs: 0,
-        fourSLB: {
+        totalUlbs:0,
+        fourSLB:{
             data: {},
             approved: {
                 count: 2,
                 ulbs: [
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     },
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     }
                 ]
             },
@@ -238,28 +242,28 @@ module.exports.get2223 = catchAsync(async (req, res) => {
                 count: 2,
                 ulbs: [
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     },
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     }
                 ]
             }
         },
-        gfc: {
+        gfc:{
             score: 0,
             approved: {
                 count: 2,
                 ulbs: [
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     },
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     }
                 ]
             },
@@ -267,28 +271,28 @@ module.exports.get2223 = catchAsync(async (req, res) => {
                 count: 2,
                 ulbs: [
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     },
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     }
                 ]
             }
         },
-        odf: {
-            score: 0,
+        odf:{
+            score:0,
             approved: {
                 count: 2,
                 ulbs: [
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     },
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     }
                 ]
             },
@@ -296,414 +300,466 @@ module.exports.get2223 = catchAsync(async (req, res) => {
                 count: 2,
                 ulbs: [
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     },
                     {
-                        ulbName: "",
-                        censusCode: ""
+                        ulbName:"",
+                        censusCode:""
                     }
                 ]
             }
         }
     }
 
-    let uaData = await UA.findOne({ _id: ObjectId(uaId) }).lean()
+    let uaData = await UA.findOne({_id: ObjectId(uaId)}).lean()
     let ulbs = []
-    let slbTotalScore = 0, gfcScore = 0, odfScore = 0;
+    let slbTotalScore = 0, gfcScore=0, odfScore=0;
 
     ulbs = uaData.ulb;
-    responseObj.totalUlbs = ulbs.length
-    let slbdata = await Ulb.aggregate([
-        {
-            $match: {
+    responseObj.totalUlbs = ulbs.length;
+    // if(ulbs.length <=0){
+    //     return 
+    // }
 
-                _id: { $in: ulbs }
-            }
-        },
-        {
-            $lookup: {
-                from: "xvfcgrantulbforms",
-                let: {
-                    firstUser: design_year_2122,
-                    secondUser: "$_id",
-                },
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: {
-                                $and: [
-                                    {
-                                        $eq: ["$design_year", "$$firstUser"],
-                                    },
-                                    {
-                                        $eq: ["$ulb", "$$secondUser"],
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                ],
-                as: "xvfcgrantulbforms",
-            },
-        },
-        {
-            $unwind: {
-                path: "$xvfcgrantulbforms",
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-    ])
-    let TEslbdata = await Ulb.aggregate([
-        {
-            $match: {
+// let slbdata = await Ulb.aggregate([
+//     {
+//         $match :{
 
-                _id: { $in: ulbs }
-            }
-        },
-        {
-            $lookup: {
-                from: "twentyeightslbforms",
-                let: {
-                    firstUser: ObjectId(design_year),
-                    secondUser: "$_id",
-                },
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: {
-                                $and: [
-                                    {
-                                        $eq: ["$design_year", "$$firstUser"],
-                                    },
-                                    {
-                                        $eq: ["$ulb", "$$secondUser"],
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                ],
-                as: "twentyeightslbforms",
-            },
-        },
-        {
-            $unwind: {
-                path: "$twentyeightslbforms",
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-    ])
-    console.log('1')
-    if (slbdata.length) {
-        slbdata.forEach(el => {
-            console.log('2')
+//             _id: {$in:ulbs}
+//         }
+//     },
+//     {
+//         $lookup: {
+//           from: "xvfcgrantulbforms",
+//           let: {
+//             firstUser: design_year_2122,
+//             secondUser: "$_id",
+//           },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     {
+//                       $eq: ["$design_year", "$$firstUser"],
+//                     },
+//                     {
+//                       $eq: ["$ulb", "$$secondUser"],
+//                     },
+//                   ],
+//                 },
+//               },
+//             },
+//           ],
+//           as: "xvfcgrantulbforms",
+//         },
+//       },
+//       {
+//         $unwind: {
+//           path: "$xvfcgrantulbforms",
+//           preserveNullAndEmptyArrays: true,
+//         },
+//       },
+// ])
+let masterFormData = await Ulb.aggregate([
+    {
+        $match :{
 
-            if (el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length > 0) {
-                if (TEslbdata.length) {
-                    TEslbdata.forEach(el2 => {
-                        if (el2.hasOwnProperty("twentyeightslbforms") && Object.keys(el2.twentyeightslbforms).length > 0) {
-                            if (el._id.toString() == el2._id.toString()) {
-                                if (el.xvfcgrantulbforms.waterManagement.status == "APPROVED" && el2.twentyeightslbforms.status == "APPROVED") {
-                                    slbApproved.count += 1;
-                                    slbApproved.ulbs.push({
-                                        ulbName: el.name,
-                                        censusCode: el.censusCode ?? el.sbCode
-                                    })
-                                } else {
-                                    slbPending.count += 1
-                                    slbPending.ulbs.push({
-                                        ulbName: el.name,
-                                        censusCode: el.censusCode ?? el.sbCode
-                                    })
-                                }
-                            }
-                        }
-
-                    })
-                }
-            } else {
-                slbPending.count += 1
-                slbPending.ulbs.push({
-                    ulbName: el.name,
-                    censusCode: el.censusCode ?? el.sbCode
-                })
-            }
-
-        });
-    }
-
-    let gfcData = await Ulb.aggregate([
-        {
-            $match: {
-
-                _id: { $in: ulbs }
-            }
-        },
-        {
-            $lookup: {
-                from: "gfcformcollections",
-                let: {
-                    firstUser: ObjectId(design_year),
-                    secondUser: "$_id",
-                },
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: {
-                                $and: [
-                                    {
-                                        $eq: ["$design_year", "$$firstUser"],
-                                    },
-                                    {
-                                        $eq: ["$ulb", "$$secondUser"],
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                ],
-                as: "gfcformcollections",
-            },
-        },
-        {
-            $unwind: {
-                path: "$gfcformcollections",
-                preserveNullAndEmptyArrays: true,
-            },
-        },
-        {
-            $lookup: {
-
-                from: "ratings",
-                localField: "gfcformcollections.rating",
-                foreignField: "_id",
-                as: "rating"
-            }
-        }, {
-            $unwind: "$rating"
+            _id: {$in:ulbs}
         }
-    ])
-    if (gfcData) {
-        gfcData.forEach(el => {
-            if (el.hasOwnProperty("gfcformcollections") && Object.keys(el.gfcformcollections).length > 0) {
-                if (el.gfcformcollections.status == "APPROVED") {
-                    gfcApproved.count += 1;
-                    gfcApproved.ulbs.push({
-                        ulbName: el.name,
-                        censusCode: el.censusCode ?? el.sbCode
-                    })
-                } else {
-                    gfcPending.count += 1
-                    gfcPending.ulbs.push({
-                        ulbName: el.name,
-                        censusCode: el.censusCode ?? el.sbCode
-                    })
-                }
-            } else {
-                gfcPending.count += 1
-                gfcPending.ulbs.push({
-                    ulbName: el.name,
-                    censusCode: el.censusCode ?? el.sbCode
-                })
-            }
-
-        });
-    }
-
-    let odfData = await Ulb.aggregate([
-        {
-            $match: {
-
-                _id: { $in: ulbs }
-            }
-        },
-        {
-            $lookup: {
-                from: "odfformcollections",
-                let: {
-                    firstUser: ObjectId(design_year),
-                    secondUser: "$_id",
-                },
-                pipeline: [
+    },
+    {
+        $lookup: {
+          from: "masterforms",
+          let: {
+            firstUser: design_year_2122,
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
                     {
-                        $match: {
-                            $expr: {
-                                $and: [
-                                    {
-                                        $eq: ["$design_year", "$$firstUser"],
-                                    },
-                                    {
-                                        $eq: ["$ulb", "$$secondUser"],
-                                    },
-                                ],
-                            },
-                        },
+                      $eq: ["$design_year", "$$firstUser"],
                     },
-                ],
-                as: "odfformcollections",
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
             },
+          ],
+          as: "masterforms",
         },
-        {
-            $unwind: {
-                path: "$odfformcollections",
-                preserveNullAndEmptyArrays: true,
-            },
+      },
+      {
+        $unwind: {
+          path: "$masterforms",
+          preserveNullAndEmptyArrays: true,
         },
-        {
-            $lookup: {
+      },
+])
+let TEslbdata = await Ulb.aggregate([
+    {
+        $match :{
 
-                from: "ratings",
-                localField: "odfformcollections.rating",
-                foreignField: "_id",
-                as: "rating"
-            }
-        }, {
-            $unwind: "$rating"
+            _id: {$in:ulbs}
         }
-    ])
-    if (odfData) {
-        odfData.forEach(el => {
-            if (el.hasOwnProperty("odfformcollections") && Object.keys(el.odfformcollections).length > 0) {
-                if (el.odfformcollections.status == "APPROVED") {
-                    odfApproved.count += 1;
-                    odfApproved.ulbs.push({
-                        ulbName: el.name,
-                        censusCode: el.censusCode ?? el.sbCode
-                    })
-                } else {
-                    odfPending.count += 1
-                    odfPending.ulbs.push({
-                        ulbName: el.name,
-                        censusCode: el.censusCode ?? el.sbCode
-                    })
-                }
-            } else {
-                odfPending.count += 1
-                odfPending.ulbs.push({
-                    ulbName: el.name,
-                    censusCode: el.censusCode ?? el.sbCode
-                })
-            }
+    },
+    {
+        $lookup: {
+          from: "twentyeightslbforms",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "twentyeightslbforms",
+        },
+      },
+      {
+        $unwind: {
+          path: "$twentyeightslbforms",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+])
+console.log('1')
+if(masterFormData.length){
+  masterFormData.forEach((el) => {
+    console.log("2");
 
-        });
-    }
-
-    console.log(slbApproved, slbPending, gfcApproved, gfcPending, odfPending, odfApproved)
-    responseObj.fourSLB.approved = slbApproved
-    responseObj.fourSLB.pending = slbPending
-    responseObj.gfc.approved = gfcApproved
-    responseObj.gfc.pending = gfcPending
-    responseObj.odf.approved = odfApproved
-    responseObj.odf.pending = odfPending
-
-    if (responseObj.fourSLB.pending.count === ulbs.length ||
-        responseObj.gfc.pending.count === ulbs.length ||
-        responseObj.odf.pending.count === ulbs.length
+    if (
+      el.hasOwnProperty("masterforms") &&
+      Object.keys(el.masterforms).length > 0
     ) {
-        return res.status(200).json({
-            data: responseObj,
-            message: "Insufficient Data",
-            ans: 0
-        })
+      if (TEslbdata.length) {
+        TEslbdata.forEach((el2) => {
+          if (
+            el2.hasOwnProperty("twentyeightslbforms") &&
+            Object.keys(el2.twentyeightslbforms).length > 0
+          ) {
+            if (el._id.toString() == el2._id.toString()) {
+              if (
+                el.masterforms.status == "APPROVED" &&
+                el2.twentyeightslbforms.status == "APPROVED"
+              ) {
+                slbApproved.count += 1;
+                slbApproved.ulbs.push({
+                  ulbName: el.name,
+                  censusCode: el.censusCode ?? el.sbCode,
+                });
+              } else {
+                slbPending.count += 1;
+                slbPending.ulbs.push({
+                  ulbName: el.name,
+                  censusCode: el.censusCode ?? el.sbCode,
+                });
+              }
+            }
+          }
+        });
+      }
+    } else {
+      slbPending.count += 1;
+      slbPending.ulbs.push({
+        ulbName: el.name,
+        censusCode: el.censusCode ?? el.sbCode,
+      });
+    }
+  });
+}
+
+let gfcData = await Ulb.aggregate([
+    {
+        $match :{
+
+            _id: {$in:ulbs}
+        }
+    },
+    {
+        $lookup: {
+          from: "gfcformcollections",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "gfcformcollections",
+        },
+      },
+      {
+        $unwind: {
+          path: "$gfcformcollections",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+
+            from:"ratings",
+            localField:"gfcformcollections.rating",
+            foreignField:"_id",
+            as:"rating"
+        }
+      },{
+        $unwind:"$rating"
+      }
+])
+if(gfcData){
+    gfcData.forEach(el => {
+    if(el.hasOwnProperty("gfcformcollections") && Object.keys(el.gfcformcollections).length >0){
+if(el.gfcformcollections.status == "APPROVED"){
+    gfcApproved.count += 1;
+    gfcApproved.ulbs.push({
+        ulbName:el.name,
+        censusCode:el.censusCode ?? el.sbCode
+    })
+}else {
+    gfcPending.count += 1
+gfcPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+}
+    }else{
+gfcPending.count += 1
+gfcPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+    }
+    
+});
+}
+
+let odfData = await Ulb.aggregate([
+    {
+        $match :{
+
+            _id: {$in:ulbs}
+        }
+    },
+    {
+        $lookup: {
+          from: "odfformcollections",
+          let: {
+            firstUser: ObjectId(design_year),
+            secondUser: "$_id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$design_year", "$$firstUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$secondUser"],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "odfformcollections",
+        },
+      },
+      {
+        $unwind: {
+          path: "$odfformcollections",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+
+            from:"ratings",
+            localField:"odfformcollections.rating",
+            foreignField:"_id",
+            as:"rating"
+        }
+      },{
+        $unwind:"$rating"
+      }
+])
+if(odfData){
+    odfData.forEach(el => {
+    if(el.hasOwnProperty("odfformcollections") && Object.keys(el.odfformcollections).length >0){
+if(el.odfformcollections.status == "APPROVED"){
+    odfApproved.count += 1;
+    odfApproved.ulbs.push({
+        ulbName:el.name,
+        censusCode:el.censusCode ?? el.sbCode
+    })
+}else {
+    odfPending.count += 1
+odfPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+}
+    }else{
+odfPending.count += 1
+odfPending.ulbs.push({
+    ulbName:el.name,
+    censusCode:el.censusCode ?? el.sbCode
+})
+    }
+    
+});
+}
+
+console.log(slbApproved, slbPending, gfcApproved, gfcPending,odfPending, odfApproved )
+responseObj.fourSLB.approved = slbApproved
+responseObj.fourSLB.pending = slbPending
+responseObj.gfc.approved = gfcApproved
+responseObj.gfc.pending = gfcPending
+responseObj.odf.approved = odfApproved
+responseObj.odf.pending = odfPending
+
+if(responseObj.fourSLB.pending.count === ulbs.length ||
+    responseObj.gfc.pending.count === ulbs.length ||
+    responseObj.odf.pending.count === ulbs.length 
+    ){
+return res.status(200).json({
+    data: responseObj,
+    message:"Insufficient Data",
+    ans:0
+})
     }
 
-    let slbWeigthed = {}
-    // console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
-    await axios.get(`https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
-        console.log('Data Fetched');
-        slbWeigthed = response.data.data[0]
+let slbWeigthed ={}
+// console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
+ await axios.get(`https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
+            console.log('Data Fetched');
+             slbWeigthed = response.data.data[0]
+            
+            })
+              .catch(function (error) {
+                console.log('Not Fetched', error.message);
+              })
 
+
+  Object.assign(responseObj.fourSLB.data, slbWeigthed )
+  let usableData = []
+  let arr = []
+  let filteredData = []
+  TEslbdata.forEach(el => {
+ if (el.hasOwnProperty("twentyeightslbforms")) {
+   filteredData = el.twentyeightslbforms.data.filter((el2) =>
+     lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
+   );
+ }
+ arr.push({
+   data: filteredData,
+   population: el.population,
+ });
+
+
+  })  
+  let numerator = [{id:"",value:0},{id:"",value:0},{id:"",value:0},{id:"",value:0}], popData = [{id:"",value:0},{id:"",value:0},{id:"",value:0},{id:"",value:0}]
+arr.forEach(el => {
+    el.data.forEach((el2, index)=> {
+        numerator[index]['id']  = el2.indicatorLineItem.toString()
+        numerator[index]['value'] += el2.actual.value * el.population
+        popData[index]['value'] += el.population
+        popData[index]['id'] = el2.indicatorLineItem.toString()
     })
-        .catch(function (error) {
-            console.log('Not Fetched', error.message);
+})
+
+
+
+
+let wtAvgSLB = []
+numerator.forEach((el, index)=> {
+    wtAvgSLB.push({value:numerator[index].value/popData[index].value, id:numerator[index].id })
+    if(el.id == lineItemIndicatorIDs[0]){
+        Object.assign(slbWeigthed, {
+            "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[index].value,
         })
 
-
-    Object.assign(responseObj.fourSLB.data, slbWeigthed)
-    let usableData = []
-    let arr = []
-    let filteredData = []
-    TEslbdata.forEach(el => {
-        if (el.hasOwnProperty("twentyeightslbforms")) {
-            filteredData = el.twentyeightslbforms.data.filter((el2) =>
-                lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
-            );
-        }
-        arr.push({
-            data: filteredData,
-            population: el.population,
-        });
-
-
-    })
-    let numerator = [{ id: "", value: 0 }, { id: "", value: 0 }, { id: "", value: 0 }, { id: "", value: 0 }], popData = [{ id: "", value: 0 }, { id: "", value: 0 }, { id: "", value: 0 }, { id: "", value: 0 }]
-    arr.forEach(el => {
-        el.data.forEach((el2, index) => {
-            numerator[index]['id'] = el2.indicatorLineItem.toString()
-            numerator[index]['value'] += el2.actual.value * el.population
-            popData[index]['value'] += el.population
-            popData[index]['id'] = el2.indicatorLineItem.toString()
+    }else if(el.id == lineItemIndicatorIDs[1]){
+        Object.assign(slbWeigthed, {
+            "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[index].value,
         })
-    })
+    }else if(el.id == lineItemIndicatorIDs[2]){
+        Object.assign(slbWeigthed, {
+            "waterSuppliedPerDay_actual2122": wtAvgSLB[index].value,
+        })
+    }else if(el.id == lineItemIndicatorIDs[3]){
+        Object.assign(slbWeigthed, {
+            "reduction_actual2122": wtAvgSLB[index].value,
+        })
+    }
+})
+//   Object.assign(slbWeigthed, {
+//     "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
+//     "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
+//     "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
+//     "reduction_actual2122": wtAvgSLB[3]
+//   })
+  let scores = calculateSlbMarks(slbWeigthed)
+Object.assign(slbWeigthed, {
+    "houseHoldCoveredWithSewerage_score": scores[2],
+    "houseHoldCoveredPipedSupply_score": scores[3],
+    "waterSuppliedPerDay_score": scores[0],
+    "reduction_score": scores[1],
+  })
+  let numeratorGFC = 0, popDataGFC = 0
+  gfcData.forEach((el2, index)=> {
+    numeratorGFC += el2.rating.marks * el2.population
+    popDataGFC += el2.population
+})
+responseObj.gfc.score = numeratorGFC / popDataGFC;
 
-
-
-
-    let wtAvgSLB = []
-    numerator.forEach((el, index) => {
-        wtAvgSLB.push({ value: numerator[index].value / popData[index].value, id: numerator[index].id })
-        if (el.id == lineItemIndicatorIDs[0]) {
-            Object.assign(slbWeigthed, {
-                "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[index].value,
-            })
-
-        } else if (el.id == lineItemIndicatorIDs[1]) {
-            Object.assign(slbWeigthed, {
-                "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[index].value,
-            })
-        } else if (el.id == lineItemIndicatorIDs[2]) {
-            Object.assign(slbWeigthed, {
-                "waterSuppliedPerDay_actual2122": wtAvgSLB[index].value,
-            })
-        } else if (el.id == lineItemIndicatorIDs[3]) {
-            Object.assign(slbWeigthed, {
-                "reduction_actual2122": wtAvgSLB[index].value,
-            })
-        }
-    })
-    //   Object.assign(slbWeigthed, {
-    //     "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[0],
-    //     "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[1],
-    //     "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
-    //     "reduction_actual2122": wtAvgSLB[3]
-    //   })
-    let scores = calculateSlbMarks(slbWeigthed)
-    Object.assign(slbWeigthed, {
-        "houseHoldCoveredWithSewerage_score": scores[2],
-        "houseHoldCoveredPipedSupply_score": scores[3],
-        "waterSuppliedPerDay_score": scores[0],
-        "reduction_score": scores[1],
-    })
-    let numeratorGFC = 0, popDataGFC = 0
-    gfcData.forEach((el2, index) => {
-        numeratorGFC += el2.rating.marks * el2.population
-        popDataGFC += el2.population
-    })
-    responseObj.gfc.score = numeratorGFC / popDataGFC;
-
-    let numeratorOdf = 0, popDataOdf = 0
-    odfData.forEach((el2, index) => {
-        numeratorOdf += el2.rating.marks * el2.population
-        popDataOdf += el2.population
-    })
-    responseObj.odf.score = numeratorOdf / popDataOdf;
-    responseObj.fourSLB.data = slbWeigthed
+let numeratorOdf = 0, popDataOdf = 0
+  odfData.forEach((el2, index)=> {
+    numeratorOdf += el2.rating.marks * el2.population
+    popDataOdf += el2.population
+})
+responseObj.odf.score = numeratorOdf / popDataOdf;
+  responseObj.fourSLB.data = slbWeigthed
     return res.status(200).json({
         success: true,
         data: responseObj
     })
 })
+
 
 module.exports.getRelatedUAFile = catchAsync(async (req, res) => {
     let response = {
