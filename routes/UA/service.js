@@ -8,7 +8,8 @@ const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const UaFileList = require("../../models/UAFileList")
-const Year = require("../../models/Year")
+const Year = require("../../models/Year");
+const MasterForm = require('../../models/MasterForm');
 const axios = require('axios')
 const {calculateSlbMarks} = require('../Scoring/service')
 const lineItemIndicatorIDs = [
@@ -170,6 +171,8 @@ module.exports.update = catchAsync(async (req, res) => {
     })
 
 })
+
+
 const design_year_2122 = ObjectId("606aaf854dff55e6c075d219")
 module.exports.get2223 = catchAsync(async(req,res)=>{
     let uaId = req.query.ua;
@@ -305,8 +308,52 @@ module.exports.get2223 = catchAsync(async(req,res)=>{
     let slbTotalScore = 0, gfcScore=0, odfScore=0;
 
     ulbs = uaData.ulb;
-    responseObj.totalUlbs = ulbs.length
-let slbdata = await Ulb.aggregate([
+    responseObj.totalUlbs = ulbs.length;
+    // if(ulbs.length <=0){
+    //     return 
+    // }
+
+// let slbdata = await Ulb.aggregate([
+//     {
+//         $match :{
+
+//             _id: {$in:ulbs}
+//         }
+//     },
+//     {
+//         $lookup: {
+//           from: "xvfcgrantulbforms",
+//           let: {
+//             firstUser: design_year_2122,
+//             secondUser: "$_id",
+//           },
+//           pipeline: [
+//             {
+//               $match: {
+//                 $expr: {
+//                   $and: [
+//                     {
+//                       $eq: ["$design_year", "$$firstUser"],
+//                     },
+//                     {
+//                       $eq: ["$ulb", "$$secondUser"],
+//                     },
+//                   ],
+//                 },
+//               },
+//             },
+//           ],
+//           as: "xvfcgrantulbforms",
+//         },
+//       },
+//       {
+//         $unwind: {
+//           path: "$xvfcgrantulbforms",
+//           preserveNullAndEmptyArrays: true,
+//         },
+//       },
+// ])
+let masterFormData = await Ulb.aggregate([
     {
         $match :{
 
@@ -315,7 +362,7 @@ let slbdata = await Ulb.aggregate([
     },
     {
         $lookup: {
-          from: "xvfcgrantulbforms",
+          from: "masterforms",
           let: {
             firstUser: design_year_2122,
             secondUser: "$_id",
@@ -336,12 +383,12 @@ let slbdata = await Ulb.aggregate([
               },
             },
           ],
-          as: "xvfcgrantulbforms",
+          as: "masterforms",
         },
       },
       {
         $unwind: {
-          path: "$xvfcgrantulbforms",
+          path: "$masterforms",
           preserveNullAndEmptyArrays: true,
         },
       },
@@ -387,42 +434,49 @@ let TEslbdata = await Ulb.aggregate([
       },
 ])
 console.log('1')
-if(slbdata.length){
-slbdata.forEach(el => {
-    console.log('2')
-    
-    if(el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length >0){
-        if(TEslbdata.length){
-            TEslbdata.forEach(el2 => {
-                if(el2.hasOwnProperty("twentyeightslbforms") && Object.keys(el2.twentyeightslbforms).length >0){
-                    if(el._id.toString() == el2._id.toString()){
-                        if(el.xvfcgrantulbforms.waterManagement.status == "APPROVED" && el2.twentyeightslbforms.status == "APPROVED"){
-                            slbApproved.count += 1;
-                            slbApproved.ulbs.push({
-                                ulbName:el.name,
-                                censusCode:el.censusCode ?? el.sbCode
-                            }) 
-                        }else{
-                            slbPending.count += 1
-slbPending.ulbs.push({
-    ulbName:el.name,
-    censusCode:el.censusCode ?? el.sbCode
-})
-                        }
-                    }
-                }
-               
-            })
-        }
-    }else{
-slbPending.count += 1
-slbPending.ulbs.push({
-    ulbName:el.name,
-    censusCode:el.censusCode ?? el.sbCode
-})
+if(masterFormData.length){
+  masterFormData.forEach((el) => {
+    console.log("2");
+
+    if (
+      el.hasOwnProperty("masterforms") &&
+      Object.keys(el.masterforms).length > 0
+    ) {
+      if (TEslbdata.length) {
+        TEslbdata.forEach((el2) => {
+          if (
+            el2.hasOwnProperty("twentyeightslbforms") &&
+            Object.keys(el2.twentyeightslbforms).length > 0
+          ) {
+            if (el._id.toString() == el2._id.toString()) {
+              if (
+                el.masterforms.status == "APPROVED" &&
+                el2.twentyeightslbforms.status == "APPROVED"
+              ) {
+                slbApproved.count += 1;
+                slbApproved.ulbs.push({
+                  ulbName: el.name,
+                  censusCode: el.censusCode ?? el.sbCode,
+                });
+              } else {
+                slbPending.count += 1;
+                slbPending.ulbs.push({
+                  ulbName: el.name,
+                  censusCode: el.censusCode ?? el.sbCode,
+                });
+              }
+            }
+          }
+        });
+      }
+    } else {
+      slbPending.count += 1;
+      slbPending.ulbs.push({
+        ulbName: el.name,
+        censusCode: el.censusCode ?? el.sbCode,
+      });
     }
-    
-});
+  });
 }
 
 let gfcData = await Ulb.aggregate([
