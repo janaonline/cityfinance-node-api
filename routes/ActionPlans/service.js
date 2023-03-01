@@ -10,6 +10,7 @@ const Year = require('../../models/Year');
 const {canTakenAction} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const StateMasterForm = require('../../models/StateMasterForm')
+const { YEAR_CONSTANTS } = require("../../util/FormNames");
 
 
 function response(form, res, successMsg ,errMsg){
@@ -373,7 +374,8 @@ exports.action = async (req, res) => {
       isActive: true,
     }).select({
       history: 0,
-    });
+    }).lean();
+    let formData = req.body;
 
     let finalStatus = "APPROVED",
       allRejectReasons = [];
@@ -392,6 +394,32 @@ exports.action = async (req, res) => {
       }
     });
     req.body.status = finalStatus;
+
+    if(design_year === YEAR_CONSTANTS['22_23']){
+
+      formData.actionTakenByRole = req.decoded.role;
+      formData.actionTakenBy ? formData.actionTakenBy = ObjectId(formData.actionTakenBy): ""
+      formData.state ? formData.state = ObjectId(formData.state): ""
+      formData.design_year ? formData.design_year = ObjectId(formData.design_year): ""
+      formData.createdAt =  currentActionPlans.createdAt
+      formData.actionTakenBy ? formData.actionTakenBy = ObjectId(formData.actionTakenBy): ""
+
+      delete formData.canTakeAction;
+
+      const updatedForm = await ActionPlans.findOneAndUpdate(
+        {
+          state: ObjectId(state),
+          design_year: ObjectId(design_year),
+        },
+        { $set: req.body, $push: { history: formData } }
+      ).lean();
+
+      if(!updatedForm){
+        return Response.BadRequest(res, {}, "Action not Submitted");  
+      }
+      return Response.OK(res, updatedForm, "Action Submitted!");
+
+    }
 
     const newActionPlans = await ActionPlans.findOneAndUpdate(
       {
