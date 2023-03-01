@@ -1185,3 +1185,15 @@ module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
         break;
     }
   }
+
+  module.exports.getCurrentFinancialYear = ()=> {
+    var fiscalyear = "";
+    var today = new Date();
+    if ((today.getMonth() + 1) <= 3) {
+      fiscalyear = (today.getFullYear() - 1) + "-" + today.toLocaleDateString('en', {year: '2-digit'})
+  
+    } else {
+      fiscalyear = today.getFullYear() + "-" + (parseInt(today.toLocaleDateString('en', {year: '2-digit'})) + 1)
+    }
+    return fiscalyear
+  }

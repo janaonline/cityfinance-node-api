@@ -140,6 +140,10 @@ const LinkPfmsState = require("./LinkPfmsState");
 router.use(LinkPfmsState);
 
 
+//tabs
+const Tabs = require("./Tabs");
+router.use(Tabs)
+
 //SideMenu
 const Sidemenu = require("./sidemenu");
 router.use(Sidemenu);
