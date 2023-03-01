@@ -4,8 +4,6 @@ module.exports = {
     create: (modelName) => {
         return async (req, res, next) => {
             try {
-                // console.log("req.body",req.body);process.exit();
-
                 let data = await dbModels[modelName].create(req.body);
                 return res.status(200).json({
                     status: true,
