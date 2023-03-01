@@ -5,6 +5,7 @@ const moment = require("moment");
 const {response} = require('../../util/response');
 const {canTakenAction} = require('../CommonActionAPI/service');
 const Service = require('../../service');
+const {years} = require("../../service/years")
 const {FormNames} = require('../../util/FormNames');
 const User = require('../../models/User');
 const doRequest = require('../../util/doRequest')
@@ -208,15 +209,16 @@ module.exports.createOrUpdateForm = async (req, res) => {
     }
 }
 
-module.exports.getForm = async (req, res) => {
+module.exports.getForm = async (req, res,next) => {
     try {
         const { isGfc } = req.query;
         let role = req.decoded.role;
         const ulb = ObjectId(req.query.ulb);
         const design_year = ObjectId(req.query.design_year);
+        console.log(req.query)
         let collection = (isGfc=== 'true') ? GfcFormCollection : OdfFormCollection;
         if (ulb && design_year) {
-            let form = await collection.findOne({ulb, design_year}).lean();
+            let form = await collection.findOne({ulb, design_year},{history:0}).lean();
             if(!form){
                 return res.status(400).json({
                     status: false,
@@ -227,10 +229,12 @@ module.exports.getForm = async (req, res) => {
             if(form.certDate !== null && form.certDate !== ""){
                 form.certDate = dateFormatter(form?.certDate);
             }
-            return res.status(200).json({
-                success: true,
-                data: form
-            });
+            req.form = form
+            next()
+            // return res.status(200).json({
+            //     success: true,
+            //     data: form
+            // });
         }
     } catch (error) {
         res.status(400).json({
