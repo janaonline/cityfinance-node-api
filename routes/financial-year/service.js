@@ -133,49 +133,12 @@ function yearSorter(a,b){
 
 module.exports.access = catchAsync(async function (req, res) {
     try {
-        const options = { sort: [{'design_year.createdAt':-1}] };
-        console.log(options)
         let years = await Tabs.find({}).populate({
-            "path": "design_year",
-            "options": options
+            "path": "design_year"
         })
-        let stateUrls = years.map(returnYearUrl, { "type": "stateUrl" })
         let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
         const yearList = ['2020-21', '2021-22', '2022-23', '2023-24', '2024-25']
         const role = req.decoded.role;
-
-        // const MoHUA_arr = [
-        //     {
-        //         year: yearList[0],
-        //         url: "/fc_grant"
-        //     },
-        //     {
-        //         year: yearList[1],
-        //         url: "/mohua"
-        //     },
-        //     {
-        //         year: yearList[2],
-        //         url: "/mohua2223/review-grant-app"
-        //     },
-
-
-        // ]
-        // let STATE_arr = [
-        //     {
-        //         year: yearList[0],
-        //         url: "/fc_grant"
-        //     },
-        //     {
-        //         year: yearList[1],
-        //         url: "/stateform/dashboard"
-        //     },
-        //     {
-        //         year: yearList[2],
-        //         url: "/stateform2223/dashboard"
-        //     },
-
-        // ]
-
         const entity_id = req.decoded._id;
         let arr = []
         let userData
@@ -183,41 +146,16 @@ module.exports.access = catchAsync(async function (req, res) {
             case "ULB":
                 userData = await User.findOne({ _id: ObjectId(entity_id) }).lean();
                 let ulbData = await Ulb.findOne({ _id: userData.ulb }).lean();
-                let access_2021 = ulbData?.access_2021,
-                    access_2122 = ulbData?.access_2122,
-                    access_2223 = ulbData?.access_2223,
-                    access_2324 = ulbData?.access_2324,
-                    access_2425 = ulbData?.access_2425
                 let accessibleYears = await getAccesibleKeys(ulbData)
                 let ulbProfileVerified = userData.isVerified2223;
                 let ULB_arr = await years.map(returnYearUrl, { "type": "ulbUrl", "role": "ulb", "verified": ulbProfileVerified })
-                // const ULB_arr = [
-                //     {
-                //         year: yearList[0],
-                //         url: "/fc_grant"
-                //     },
-                //     {
-                //         year: yearList[1],
-                //         url: "/ulbform/overview"
-                //     },
-                //     {
-                //         year: yearList[2],
-                //         url: ulbProfileVerified ? "/ulbform2223/overview" : "/profile-update"
-                //     },
-
-                // ]
-                // let otArr = ULB_arr.filter(item => item.)
                 let outputArr = await ULB_arr.filter(item => accessibleYears.includes(item.year))
-                // if (access_2021) outputArr.push(ULB_arr[0])
-                // if (access_2122) outputArr.push(ULB_arr[1])
-                // if (access_2223) outputArr.push(ULB_arr[2])
                 arr = outputArr
                 break;
             case "STATE":
                 userData = await User.findOne({ _id: ObjectId(entity_id) }).lean();
                 let profileVerified = userData.isVerified2223;
                 let STATE_arr = await years.map(returnYearUrl, { "type": "stateUrl", "role": "state", "verified": profileVerified })
-                // STATE_arr[2]['url'] = profileVerified ? STATE_arr[2]?.url : '/profile-update';
                 arr = STATE_arr
                 break;
             case "MoHUA":
