@@ -1,42 +1,57 @@
 const { years } = require("../../service/years")
-const { getFlatObj } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const ObjectId = require("mongoose").Types.ObjectId;
 
-function addValuesIfFormExists(jsonFormat, inputType, answerObj, flattedForm) {
-  try {
-    let obj = { ...jsonFormat }
-    for (let key in obj) {
-      let questions = obj[key].question
-      for (let question of questions) {
-        let answer = []
-        let obj = { ...answerObj }
-        let answerKey = inputType[question.input_type]
-        let shortKey = question.shortKey.replace(" ", "")
-        obj[answerKey] = flattedForm[shortKey]
-        answer.push(obj)
-        question['selectedValue'] = answer
-      }
+
+module.exports.changeRequestBody = (req,res,next)=>{
+  try{
+    let {design_year} = req.body
+    let {data} = req.body 
+    if (design_year == years['2022-23']) {
+      req.body = payloadParser(data)
     }
-    return obj
+    next()
   }
-  catch (err) {
-    console.log("addValueIfFormExists ::: ", err.message)
+  catch(err){
+    console.log("error in changeRequestBody ::::: ",err.message)
   }
 }
 
+// function mutuateGetPayload(jsonFormat, flattedForm) {
+//   let answerObj = {
+//     "label": "",
+//     "textValue": "",
+//     "value": "",
+//   }
+//   let inputType = {
+//     "1": "label",
+//     "2": "textValue",
+//     "3": "value"
+//   }
+//   try {
+//     let obj = { ...jsonFormat }
+//     for (let key in obj) {
+//       let questions = obj[key].question
+//       for (let question of questions) {
+//         let answer = []
+//         let obj = { ...answerObj }
+//         let answerKey = inputType[question.input_type]
+//         let shortKey = question.shortKey.replace(" ", "")
+//         obj[answerKey] = flattedForm[shortKey]
+//         answer.push(obj)
+//         question['selectedValue'] = answer
+//       }
+//     }
+//     return obj
+//   }
+//   catch (err) {
+//     console.log("addValueIfFormExists ::: ", err.message)
+//   }
+// }
+
 
 module.exports.changeFormGetStructure = async (req, res, next) => {
-  let answerObj = {
-    "label": "",
-    "textValue": "",
-    "value": "",
-  }
-  let inputType = {
-    "1": "label",
-    "2": "textValue",
-    "3": "value"
-  }
   let response = {
     success : false,
     data:{},
@@ -54,7 +69,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)
-        await addValuesIfFormExists(obj, inputType, answerObj, flattedForm)
+        await mutuateGetPayload(obj, flattedForm)
       }
       responseStatus = 200
       response.success = true
