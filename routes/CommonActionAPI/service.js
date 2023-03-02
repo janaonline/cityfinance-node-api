@@ -1187,7 +1187,7 @@ module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
     }
   }
 
-  module.exports.getCurrentFinancialYear = ()=> {
+module.exports.getCurrentFinancialYear = ()=> {
     var fiscalyear = "";
     var today = new Date();
     if ((today.getMonth() + 1) <= 3) {
@@ -1198,3 +1198,33 @@ module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
     }
     return fiscalyear
   }
+
+function traverseAndFlatten(currentNode, target, flattenedKey) {
+    /**
+     * TODO:
+     * Pending case for handling array data inside some field
+     */
+    for (var key in currentNode) {
+        if (currentNode.hasOwnProperty(key)) {
+            var newKey;
+            if (flattenedKey === undefined) {
+                newKey = key;
+            } else {
+                newKey = flattenedKey + '.' + key;
+            }
+            var value = currentNode[key];
+            if (typeof value === "object") {
+                traverseAndFlatten(value, target, newKey);
+            } else {
+                target[newKey] = value;
+            }
+        }
+    }
+}
+
+module.exports.getFlatObj = (obj)=>{
+    let flattendObj = {}
+    traverseAndFlatten(obj,flattendObj)
+    // let flattenArr = []
+    return flattendObj
+}

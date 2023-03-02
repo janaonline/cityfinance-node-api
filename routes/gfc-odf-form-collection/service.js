@@ -208,29 +208,40 @@ module.exports.createOrUpdateForm = async (req, res) => {
     }
 }
 
-module.exports.getForm = async (req, res) => {
+module.exports.getForm = async (req, res, next) => {
     try {
-        const { isGfc } = req.query;
+        const { isGfc, formId } = req.query;
         let role = req.decoded.role;
         const ulb = ObjectId(req.query.ulb);
         const design_year = ObjectId(req.query.design_year);
         let collection = (isGfc === 'true') ? GfcFormCollection : OdfFormCollection;
         if (ulb && design_year) {
-            let form = await collection.findOne({ ulb, design_year }).lean();
-            if (!form) {
+            let form = await collection.findOne({ ulb, design_year }, { history: 0 }).lean();
+            if (!form && !formId) {
                 return res.status(400).json({
                     status: false,
                     message: "Form not found!"
                 })
             }
-            Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB", role) })
-            if (form.certDate !== null && form.certDate !== "") {
-                form.certDate = dateFormatter(form?.certDate);
+            if (form) {
+                Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB", role) })
+                if (form.certDate !== null && form.certDate !== "") {
+                    form.certDate = dateFormatter(form?.certDate);
+                }
+                req.form = form
+                // if (!formId) {
+                //     return res.status(200).json({
+                //         success: true,
+                //         data: form
+                //     });
+                // } else {
+                
             }
-            return res.status(200).json({
-                success: true,
-                data: form
-            });
+             next()
+        
+            
+
+            // }
         }
     } catch (error) {
         res.status(400).json({
