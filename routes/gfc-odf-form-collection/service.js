@@ -26,11 +26,9 @@ module.exports.createOrUpdateForm = async (req, res) => {
         const isGfc = data.isGfc;  // flag to check which collection to use 
         let collection = isGfc ? GfcFormCollection : OdfFormCollection;
         const formName = isGfc ? FormNames["gfc"] : FormNames["odf"];
-
         const { _id: actionTakenBy, role: actionTakenByRole, name: ulbName } = user;
         formData['actionTakenBy'] = ObjectId(actionTakenBy);
         formData['actionTakenByRole'] = actionTakenByRole;
-
         if (formData.rating === "") {
             formData.rating = null;
         }
@@ -66,7 +64,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
 
         let emailAddress = [];
         let ulbUserData = {},
-            stateUserData = {};
+        stateUserData = {};
         for (let i = 0; i < userData.length; i++) {//getting email address from the data
             if (userData[i]) {
                 if (userData[i].role === "ULB") {
@@ -112,7 +110,6 @@ module.exports.createOrUpdateForm = async (req, res) => {
             /* required */
             ReplyToAddresses: [process.env.EMAIL],
         };
-
         let savedBody = new collection(formData);
         if (data.ulb && data.design_year) {
             const submittedForm = await collection.findOne(condition);
@@ -184,7 +181,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
 
                     //email trigger after form submission
                     Service.sendEmail(mailOptions);
-
+                    
                     return res.status(201).json({
                         success: true,
                         message: "Form saved",
