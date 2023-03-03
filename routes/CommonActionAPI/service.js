@@ -1259,7 +1259,8 @@ function returnParsedObj(objects) {
         let keys = {
             "1": "label",
             "2": "textValue",
-            "3": "value"
+            "3": "value",
+            "11":["value","label"],
         }
         let shortKey = objects.shortKey.replace(" ","")
         let splittedShortKey = shortKey.split(".")
@@ -1279,6 +1280,15 @@ function returnParsedObj(objects) {
             let temp = {}
             let answers = objects['answer'].length
             let value = objects['answer'][0][inputType]
+            // console.log("isArray(inputType) :: ",isArray(inputType))
+            if( Array.isArray(inputType)){
+                console.log("????????",objects['answer'][0]['label'])
+                console.log("00000000000000",objects['answer'][0]['value'])
+                value = {
+                    "name":objects['answer'][0]['label'],
+                    "url":objects['answer'][0]['value'],
+                }
+            }
             if (answers > 1) {
                 value = objects['answer'].map(item => item[inputType])
             }
