@@ -1186,6 +1186,32 @@ module.exports.canTakeActionOrViewOnly = (data, userRole) => {
     }
 }
 
+module.exports.saveCurrentStatus = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { body } = params;
+            let currentStatus = await CurrentStatus.create(body).lean(); resolve(1);
+        } 
+        catch (error) { 
+            reject(error); 
+        }
+    });
+}; 
+
+
+module.exports.saveStatusHistory = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { body } = params;
+            let currentStatus = await StatusHistory.create(body).lean(); resolve(1);
+        } 
+        catch (error) { 
+            reject(error); 
+        }
+    });
+};
+
+
 module.exports.getCurrentFinancialYear = () => {
     var fiscalyear = "";
     var today = new Date();
@@ -1303,7 +1329,8 @@ function mutuateGetPayload(jsonFormat,flattedForm) {
         let inputType = {
             "1": "label",
             "2": "textValue",
-            "3": "value"
+            "3": "value",
+            "11":["value","label"],
         }
         let obj = { ...jsonFormat }
         for (let key in obj) {
@@ -1312,17 +1339,44 @@ function mutuateGetPayload(jsonFormat,flattedForm) {
                 let answer = []
                 let obj = { ...answerObj }
                 let answerKey = inputType[question.input_type]
-                let shortKey = question.shortKey.replace(" ", "")
-                obj[answerKey] = flattedForm[shortKey]
+                if(Array.isArray(answerKey)){
+                    let mainKey = question.shortKey.split(".")[0].replace(" ","")
+                    let name = mainKey + "."+ "name"
+                    let url = mainKey + "."+"url"
+                    obj['label'] = flattedForm[name]
+                    obj['value'] = flattedForm[url]
+                }
+                else{
+                    let shortKey = question.shortKey.replace(" ", "")
+                    obj[answerKey] = flattedForm[shortKey]
+                }
                 answer.push(obj)
                 question['selectedValue'] = answer
             }
         }
+        console.log(obj)
         return obj
     }
     catch (err) {
         console.log("addValueIfFormExists ::: ", err.message)
     }
 }
+
+// function checkForUndefinedVaribales(obj){
+//     let validator = {
+//         message :"",
+//         success :false
+//     }
+//     try{
+//         for(let valid in validator){
+//             if(validator[valid] === undefined){
+
+//             }
+//         }      
+//     }
+//     catch(err){
+//         console.log("error in check for undefined variables :: ",err.message)
+//     }
+// }
 
 module.exports.mutuateGetPayload = mutuateGetPayload

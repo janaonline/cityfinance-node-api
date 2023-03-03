@@ -8,7 +8,7 @@ module.exports.changeRequestBody = (req,res,next)=>{
   try{
     let {design_year} = req.body
     let {data} = req.body 
-    if (design_year == years['2022-23']) {
+    if (design_year == years['2023-24']) {
       req.body = payloadParser(data)
     }
     next()
@@ -65,9 +65,10 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
     let obj = formJson ? formJson.data : {}
     let flattedForm =  []
     let form = req.form
-    if (design_year == years['2022-23']) {
+    if (design_year == years['2023-24']) {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
+        console.log("form :::: ",form)
         flattedForm = getFlatObj(form)
         await mutuateGetPayload(obj, flattedForm)
       }
