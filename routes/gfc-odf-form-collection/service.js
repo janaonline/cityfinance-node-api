@@ -112,7 +112,6 @@ module.exports.createOrUpdateForm = async (req, res) => {
             ReplyToAddresses: [process.env.EMAIL],
         };
         let savedBody = new collection(formData);
-        console.log(">>>>>>data :::::::",data)
         if (data.ulb && data.design_year) {
             const submittedForm = await collection.findOne(condition);
             if ((submittedForm) && submittedForm.isDraft === false &&
@@ -122,7 +121,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     message: "Form already submitted."
                 })
             } else {
-                if ((!submittedForm) && formData.isDraft === false) { // final submit in first attempt   
+                if ((!submittedForm) && !formData.isDraft) { // final submit in first attempt   
                     savedBody["ulbSubmit"] = new Date();
                     const formSubmit = await collection.create(savedBody);
                     formData['createdAt'] = formSubmit.createdAt;

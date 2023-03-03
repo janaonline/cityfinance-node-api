@@ -1282,8 +1282,6 @@ function returnParsedObj(objects) {
             let value = objects['answer'][0][inputType]
             // console.log("isArray(inputType) :: ",isArray(inputType))
             if( Array.isArray(inputType)){
-                console.log("????????",objects['answer'][0]['label'])
-                console.log("00000000000000",objects['answer'][0]['value'])
                 value = {
                     "name":objects['answer'][0]['label'],
                     "url":objects['answer'][0]['value'],
@@ -1364,7 +1362,6 @@ function mutuateGetPayload(jsonFormat,flattedForm) {
                 question['selectedValue'] = answer
             }
         }
-        console.log(obj)
         return obj
     }
     catch (err) {

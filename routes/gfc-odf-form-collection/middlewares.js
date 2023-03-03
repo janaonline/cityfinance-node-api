@@ -68,7 +68,6 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
     if (design_year == years['2023-24']) {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
-        console.log("form :::: ",form)
         flattedForm = getFlatObj(form)
         await mutuateGetPayload(obj, flattedForm)
       }
