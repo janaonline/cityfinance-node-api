@@ -111,6 +111,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
             ReplyToAddresses: [process.env.EMAIL],
         };
         let savedBody = new collection(formData);
+        console.log(">>>>>>data :::::::",data)
         if (data.ulb && data.design_year) {
             const submittedForm = await collection.findOne(condition);
             if ((submittedForm) && submittedForm.isDraft === false &&
@@ -197,6 +198,10 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 })
             }
         }
+        return res.status(400).json({
+            success:false,
+            message : "Some server error occured"
+        })
     } catch (error) {
         return res.status(400).json({
             success: false,
