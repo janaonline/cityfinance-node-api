@@ -16,6 +16,17 @@ const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
 const { FormNames } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc')
+var answerObj = {
+    "label": "",
+    "textValue": "",
+    "value": "",
+}
+var inputType = {
+    "1": "label",
+    "2": "textValue",
+    "3": "value",
+    "11": ["value", "label"],
+}
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
@@ -1192,12 +1203,12 @@ module.exports.saveCurrentStatus = (params) => {
         try {
             const { body } = params;
             let currentStatus = await CurrentStatus.create(body).lean(); resolve(1);
-        } 
-        catch (error) { 
-            reject(error); 
+        }
+        catch (error) {
+            reject(error);
         }
     });
-}; 
+};
 
 
 module.exports.saveStatusHistory = (params) => {
@@ -1205,9 +1216,9 @@ module.exports.saveStatusHistory = (params) => {
         try {
             const { body } = params;
             let currentStatus = await StatusHistory.create(body).lean(); resolve(1);
-        } 
-        catch (error) { 
-            reject(error); 
+        }
+        catch (error) {
+            reject(error);
         }
     });
 };
@@ -1255,15 +1266,32 @@ module.exports.getFlatObj = (obj) => {
     return flattendObj
 }
 
+module.exports.saveCurrentStatus = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try { const { body } = params; 
+        let currentStatus = await CurrentStatus.create(body).lean(); resolve(1); }
+        catch (error) { reject(error); }
+    });
+};
+module.exports.saveStatusHistory = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { body } = params;
+            let currentStatus = await StatusHistory.create(body).lean(); resolve(1);
+        } catch (error) { reject(error); }
+    });
+};
+
+
 function returnParsedObj(objects) {
     try {
         let keys = {
             "1": "label",
             "2": "textValue",
             "3": "value",
-            "11":["value","label"],
+            "11": ["value", "label"],
         }
-        let shortKey = objects.shortKey.replace(" ","")
+        let shortKey = objects.shortKey.replace(" ", "")
         let splittedShortKey = shortKey.split(".")
         let inputType = keys[objects.input_type]
         if (splittedShortKey.length > 1) {
@@ -1282,10 +1310,10 @@ function returnParsedObj(objects) {
             let answers = objects['answer'].length
             let value = objects['answer'][0][inputType]
             // console.log("isArray(inputType) :: ",isArray(inputType))
-            if( Array.isArray(inputType)){
+            if (Array.isArray(inputType)) {
                 value = {
-                    "name":objects['answer'][0]['label'],
-                    "url":objects['answer'][0]['value'],
+                    "name": objects['answer'][0]['label'],
+                    "url": objects['answer'][0]['value'],
                 }
             }
             if (answers > 1) {
@@ -1327,38 +1355,50 @@ function payloadParser(body) {
     }
 }
 module.exports.payloadParser = payloadParser
-
-function mutuateGetPayload(jsonFormat,flattedForm,keysToBeDeleted) {
-    try {  
-        let answerObj = {
-            "label": "",
-            "textValue": "",
-            "value": "",
-        }
-        let inputType = {
-            "1": "label",
-            "2": "textValue",
-            "3": "value",
-            "11":["value","label"],
-        }
-        let obj = [ ...jsonFormat ]
-        obj[0] = appendExtraKeys(keysToBeDeleted,obj[0],flattedForm)
-        deleteKeys(flattedForm,keysToBeDeleted)
+module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query)=>{
+    try{
+        let obj = [...jsonFormat]
+        obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
+        // await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
             let questions = obj[key].question
-            if(obj[key].question){
-                for (let question of questions){
+            if (obj[key].question) {
+                for (let question of questions) {
+                    let answer = []
+                    let obj = { ...answerObj }
+                    obj = await handleCasesByInputType(question)
+                }
+            }
+        }
+        // await deleteKeys(flattedForm, keysToBeDeleted)
+        return obj
+    }
+    catch(err){
+        console.log("error in mutateJson ::: ",err.message)
+    }
+}
+async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted) {
+    try {
+        
+        let obj = [...jsonFormat]
+        obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
+        await deleteKeys(flattedForm, keysToBeDeleted)
+        for (let key in obj) {
+            let questions = obj[key].question
+            if (obj[key].question) {
+                for (let question of questions) {
                     let answer = []
                     let obj = { ...answerObj }
                     let answerKey = inputType[question.input_type]
-                    if(Array.isArray(answerKey)){
-                        let mainKey = question.shortKey.split(".")[0].replace(" ","")
-                        let name = mainKey + "."+ "name"
-                        let url = mainKey + "."+"url"
+                    question = await handleCasesByInputType(question)
+                    if (Array.isArray(answerKey)) {
+                        let mainKey = question.shortKey.split(".")[0].replace(" ", "")
+                        let name = mainKey + "." + "name"
+                        let url = mainKey + "." + "url"
                         obj['label'] = flattedForm[name]
                         obj['value'] = flattedForm[url]
                     }
-                    else{
+                    else {
                         let shortKey = question.shortKey.replace(" ", "")
                         obj[answerKey] = flattedForm[shortKey]
                     }
@@ -1374,48 +1414,89 @@ function mutuateGetPayload(jsonFormat,flattedForm,keysToBeDeleted) {
     }
 }
 
-// function checkForUndefinedVaribales(obj){
-//     let validator = {
-//         message :"",
-//         success :false
-//     }
-//     try{
-//         for(let valid in validator){
-//             if(validator[valid] === undefined){
+async function handleCasesByInputType(question){
+    try{
+        switch(question.input_type){
+            case "3":
+                if(question.modelName){
+                  obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
+                }
+                break
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in handleCases ::: ",err.message)
+    }
+}
 
-//             }
-//         }      
-//     }
-//     catch(err){
-//         console.log("error in check for undefined variables :: ",err.message)
-//     }
-// }
+async function appendAnswerOptions(modelName,obj,modelFilter){
+    try{
+        let documents = await moongose.model(modelName).find(modelFilter).lean()
+        obj['answer_option'] = documents.map((item,index)=>{
+            return {
+                "name":item.name,
+                "did":[],
+                "_id":item._id,
+                "viewSequence":index+1
+            }
+        })
+        return obj
+    }
+    catch(err){
+        console.log("error in appendFromModel ::: ",err.message)
+    }
+}
+
+function checkForUndefinedVaribales(obj) {
+    let validator = {
+        message: "",
+        success: true
+    }
+    try {
+        for (let key in obj) {
+            if (!validator[key]) {
+                validator.success = false
+                validator.message = `${key} is required`
+                return validator
+            }
+        }
+        validator.message = ""
+    }
+    catch (err) {
+        console.log("error in check for undefined variables :: ", err.message)
+    }
+    return validator
+}
 
 module.exports.mutuateGetPayload = mutuateGetPayload
 
-function appendExtraKeys(keys,jsonObj,form){
-    let obj = {...jsonObj}
-    try{
-        for(let key of keys){
-            if(Object.keys(form).includes(key.replace(" ",""))){
+function appendExtraKeys(keys, jsonObj, form) {
+    let obj = { ...jsonObj }
+    try {
+        for (let key of keys) {
+            if (Object.keys(form).includes(key.replace(" ", ""))) {
                 obj[key] = form[key]
+            }
+            else{
+                obj[key] = ""
             }
         }
     }
-    catch(err){
-        console.log("error in appendExtraKeys ::: ",err.message)
+    catch (err) {
+        console.log("error in appendExtraKeys ::: ", err.message)
     }
     return obj
 }
 
-function deleteKeys(obj,delKeys){
-    try{
-        for(let del of delKeys){
+function deleteKeys(obj, delKeys) {
+    try {
+        for (let del of delKeys) {
             delete obj[del]
         }
-        
+
     }
-    catch(err){
-        console.log("error in deleteKeys ::::: ",err.message)
+    catch (err) {
+        console.log("error in deleteKeys ::::: ", err.message)
     }
 }
