@@ -1328,8 +1328,8 @@ function payloadParser(body) {
 }
 module.exports.payloadParser = payloadParser
 
-function mutuateGetPayload(jsonFormat,flattedForm) {
-    try {
+function mutuateGetPayload(jsonFormat,flattedForm,keysToBeDeleted) {
+    try {  
         let answerObj = {
             "label": "",
             "textValue": "",
@@ -1341,26 +1341,30 @@ function mutuateGetPayload(jsonFormat,flattedForm) {
             "3": "value",
             "11":["value","label"],
         }
-        let obj = { ...jsonFormat }
+        let obj = [ ...jsonFormat ]
+        obj[0] = appendExtraKeys(keysToBeDeleted,obj[0],flattedForm)
+        deleteKeys(flattedForm,keysToBeDeleted)
         for (let key in obj) {
             let questions = obj[key].question
-            for (let question of questions){
-                let answer = []
-                let obj = { ...answerObj }
-                let answerKey = inputType[question.input_type]
-                if(Array.isArray(answerKey)){
-                    let mainKey = question.shortKey.split(".")[0].replace(" ","")
-                    let name = mainKey + "."+ "name"
-                    let url = mainKey + "."+"url"
-                    obj['label'] = flattedForm[name]
-                    obj['value'] = flattedForm[url]
+            if(obj[key].question){
+                for (let question of questions){
+                    let answer = []
+                    let obj = { ...answerObj }
+                    let answerKey = inputType[question.input_type]
+                    if(Array.isArray(answerKey)){
+                        let mainKey = question.shortKey.split(".")[0].replace(" ","")
+                        let name = mainKey + "."+ "name"
+                        let url = mainKey + "."+"url"
+                        obj['label'] = flattedForm[name]
+                        obj['value'] = flattedForm[url]
+                    }
+                    else{
+                        let shortKey = question.shortKey.replace(" ", "")
+                        obj[answerKey] = flattedForm[shortKey]
+                    }
+                    answer.push(obj)
+                    question['selectedValue'] = answer
                 }
-                else{
-                    let shortKey = question.shortKey.replace(" ", "")
-                    obj[answerKey] = flattedForm[shortKey]
-                }
-                answer.push(obj)
-                question['selectedValue'] = answer
             }
         }
         return obj
@@ -1388,3 +1392,30 @@ function mutuateGetPayload(jsonFormat,flattedForm) {
 // }
 
 module.exports.mutuateGetPayload = mutuateGetPayload
+
+function appendExtraKeys(keys,jsonObj,form){
+    let obj = {...jsonObj}
+    try{
+        for(let key of keys){
+            if(Object.keys(form).includes(key.replace(" ",""))){
+                obj[key] = form[key]
+            }
+        }
+    }
+    catch(err){
+        console.log("error in appendExtraKeys ::: ",err.message)
+    }
+    return obj
+}
+
+function deleteKeys(obj,delKeys){
+    try{
+        for(let del of delKeys){
+            delete obj[del]
+        }
+        
+    }
+    catch(err){
+        console.log("error in deleteKeys ::::: ",err.message)
+    }
+}

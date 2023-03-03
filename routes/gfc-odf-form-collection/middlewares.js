@@ -6,11 +6,14 @@ const ObjectId = require("mongoose").Types.ObjectId;
 
 module.exports.changeRequestBody = (req,res,next)=>{
   try{
+    let bodyData = {...req.body}
+    delete bodyData['data']
     let {design_year} = req.body
     let {data} = req.body 
     if (design_year == years['2023-24']) {
       req.body = payloadParser(data)
     }
+    Object.assign(req.body,bodyData)
     next()
   }
   catch(err){
@@ -69,7 +72,9 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)
-        await mutuateGetPayload(obj, flattedForm)
+        // console.log("flattedForm ::",flattedForm)
+        let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
+        obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted)
       }
       responseStatus = 200
       response.success = true

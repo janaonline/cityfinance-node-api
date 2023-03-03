@@ -385,7 +385,6 @@ module.exports.defunct = async (req, res) => {
         await Promise.all(
             slice.map(async el => {
                 for (let key in el) {
-
                     if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
                         documnetcounter++;
                         let url = el[key];
