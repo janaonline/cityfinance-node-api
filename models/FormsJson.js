@@ -11,7 +11,9 @@ const FormsJson = new Schema(
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 FormsJson.index(
-    {design_year: 1 },
+    {design_year: 1 ,
+    formId:1
+    },
     { unique: true }
 );
 module.exports = mongoose.model("formjson", FormsJson);
