@@ -1378,18 +1378,17 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query)=>{
 }
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted) {
     try {
-        
         let obj = [...jsonFormat]
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
             let questions = obj[key].question
-            if (obj[key].question) {
-                for (let question of questions) {
+            if (questions) {
+                for (let question of questions) {    
                     let answer = []
                     let obj = { ...answerObj }
                     let answerKey = inputType[question.input_type]
-                    question = await handleCasesByInputType(question)
+                    await handleCasesByInputType(question)
                     if (Array.isArray(answerKey)) {
                         let mainKey = question.shortKey.split(".")[0].replace(" ", "")
                         let name = mainKey + "." + "name"
@@ -1402,14 +1401,16 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted) {
                         obj[answerKey] = flattedForm[shortKey]
                     }
                     answer.push(obj)
+                    // console.log("answer LL ",answer)
                     question['selectedValue'] = answer
+                    // console.log(">>>>>>>>.question :: ",question)
                 }
             }
         }
         return obj
     }
     catch (err) {
-        console.log("addValueIfFormExists ::: ", err.message)
+        console.log("mutuateGetPayload ::: ", err.message)
     }
 }
 
