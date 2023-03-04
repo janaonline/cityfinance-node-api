@@ -1,6 +1,7 @@
 const { years } = require("../../service/years")
 const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
+// const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
 
 
@@ -62,9 +63,16 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
   }
   responseStatus = 500
   try {
-    let jsonFormId = req.query.formId ? parseInt(req.query.formId) : "0"
+
+    // let sideMenuId = req.query.formId ? parseInt(req.query.formId) : null
+    // let sideMenuObj = await SideMenu.findOne({
+    //   "_id" :sideMenuId
+    // })
+    // let jsonFormType = sideMenuObj.collectionName
+    // let formJson = await FormsJson.findOne({ type: jsonFormType }).lean()
+    let jsonFormId = req.query.formId ? parseInt(req.query.formId) : null
     let design_year = req.query.design_year
-    let formJson = await FormsJson.findOne({ formId: jsonFormId }).lean()
+    let formJson = await FormsJson.findOne({ formId: jsonFormId ,design_year:ObjectId(design_year) }).lean()
     let obj = formJson ? formJson.data : {}
     let flattedForm =  []
     let form = req.form
@@ -73,7 +81,6 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)
-        // console.log("flattedForm ::",flattedForm)
         obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted)
       }
       responseStatus = 200
