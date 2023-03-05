@@ -76,16 +76,16 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
     let obj = formJson ? formJson.data : {}
     let flattedForm =  []
     let form = req.form
+    let {role} = req.decoded 
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
-    console.log("form :::::::::",form)
     if (design_year == years['2023-24']) {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)
-        obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted)
+        obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
       }
       else{
-        obj = await mutateJson(obj,keysToBeDeleted,req.query)
+        obj = await mutateJson(obj,keysToBeDeleted,req.query,role)
       }
       responseStatus = 200
       response.success = true

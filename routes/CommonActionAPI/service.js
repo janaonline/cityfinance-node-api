@@ -10,6 +10,7 @@ const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Sidemenu = require('../../models/Sidemenu');
+const userTypes = require("../../util/userTypes")
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
@@ -1354,9 +1355,31 @@ function payloadParser(body) {
     }
 }
 module.exports.payloadParser = payloadParser
-module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query)=>{
+
+function roleWiseJson(json,role){
+    let removableObjects = [
+        "responseFile",
+        "status",
+        "rejectReason",
+        "rejectReason_state",
+        "rejectReason_mohua",
+        "responseFile_state",
+        "responseFile_mohua"
+    ]
+    try{
+        if(role === userTypes.ulb){
+            json.question = json.question.filter(item => !removableObjects.includes(item.shortKey) )
+        }
+    }
+    catch(err){
+        console.log("error in roleWiseJson ::: ",err.message)
+    }
+}
+
+module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
     try{
         let obj = [...jsonFormat]
+        roleWiseJson(obj[0],role)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
         // await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -1376,9 +1399,12 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query)=>{
         console.log("error in mutateJson ::: ",err.message)
     }
 }
-async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted) {
+async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
         let obj = [...jsonFormat]
+        // if(flattedForm.actionTakenByRole == userTypes.ulb){
+        //     roleWiseJson(obj[0],role)
+        // }
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
