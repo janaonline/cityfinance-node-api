@@ -10,12 +10,16 @@ const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Sidemenu = require('../../models/Sidemenu');
+const userTypes = require("../../util/userTypes")
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
 const { FormNames } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc')
+var modifiedShortKeys = {
+    "cert_declaration":"cert"
+}
 var answerObj = {
     "label": "",
     "textValue": "",
@@ -26,6 +30,7 @@ var inputType = {
     "2": "textValue",
     "3": "value",
     "11": ["value", "label"],
+    "14":"value"
 }
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
@@ -1285,21 +1290,16 @@ module.exports.saveStatusHistory = (params) => {
 
 function returnParsedObj(objects) {
     try {
-        let keys = {
-            "1": "label",
-            "2": "textValue",
-            "3": "value",
-            "11": ["value", "label"],
-        }
+        let keys = {...inputType}
         let shortKey = objects.shortKey.replace(" ", "")
         let splittedShortKey = shortKey.split(".")
-        let inputType = keys[objects.input_type]
+        let inputName = keys[objects.input_type]
         if (splittedShortKey.length > 1) {
             let answers = objects['answer']
-            let value = objects['answer'][0][inputType]
+            let value = objects['answer'][0][inputName]
 
             if (answers.length > 1) {
-                value = objects['answer'].map(item => item[inputType])
+                value = objects['answer'].map(item => item[inputName])
             }
             let obj = splittedShortKey.reduceRight((obj, key) => ({ [key]: obj }), value)
             return obj
@@ -1308,18 +1308,22 @@ function returnParsedObj(objects) {
         else {
             let temp = {}
             let answers = objects['answer'].length
-            let value = objects['answer'][0][inputType]
-            // console.log("isArray(inputType) :: ",isArray(inputType))
-            if (Array.isArray(inputType)) {
+            let value = objects['answer'][0][inputName]
+            if (Array.isArray(inputName)) {
                 value = {
                     "name": objects['answer'][0]['label'],
                     "url": objects['answer'][0]['value'],
                 }
             }
             if (answers > 1) {
-                value = objects['answer'].map(item => item[inputType])
+                value = objects['answer'].map(item => item[inputName])
+            }
+            let modifiedKeys = Object.keys(modifiedShortKeys)
+            if(modifiedKeys.includes(shortKey)){
+                shortKey = modifiedShortKeys[shortKey]
             }
             temp[shortKey] = value
+            console.log(temp)
             return temp
         }
     }
@@ -1355,9 +1359,31 @@ function payloadParser(body) {
     }
 }
 module.exports.payloadParser = payloadParser
-module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query)=>{
+
+function roleWiseJson(json,role){
+    let removableObjects = [
+        "responseFile",
+        "status",
+        "rejectReason",
+        "rejectReason_state",
+        "rejectReason_mohua",
+        "responseFile_state",
+        "responseFile_mohua"
+    ]
+    try{
+        if(role === userTypes.ulb){
+            json.question = json.question.filter(item => !removableObjects.includes(item.shortKey) )
+        }
+    }
+    catch(err){
+        console.log("error in roleWiseJson ::: ",err.message)
+    }
+}
+
+module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
     try{
         let obj = [...jsonFormat]
+        roleWiseJson(obj[0],role)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
         // await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -1377,9 +1403,63 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query)=>{
         console.log("error in mutateJson ::: ",err.message)
     }
 }
-async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted) {
+
+const handleValues = (question,obj,flattedForm)=>{
+    let answerKey = inputType[question.input_type]
+    try{
+        switch (question.input_type){
+            case "11":
+                handleFileCase(question,obj,flattedForm)
+                break
+            case "14":
+                handledateCase(question,obj,flattedForm)
+                break
+            default:
+                let shortKey = question.shortKey.replace(" ", "")
+                obj[answerKey] = flattedForm[shortKey]
+                break
+        }
+    }
+    catch(err){
+        console.log("error in handleValues ::: ",err.message)
+    }
+}
+
+function handledateCase(question,obj,flattedForm){
+    try{
+        
+        let mainKey = question.shortKey
+        question['modelValue'] = flattedForm[mainKey]
+        question['value'] = flattedForm[mainKey]
+        obj['textValue'] = flattedForm[mainKey]
+        obj['value'] = flattedForm[mainKey]
+    }
+    catch(err){
+        console.log("error in dateCase :::: ",err.message)
+    }
+}
+
+function handleFileCase(question,obj,flattedForm){
+    try{
+        let mainKey = question.shortKey.split(".")[0].replace(" ", "")
+        let name = mainKey + "." + "name"
+        let url = mainKey + "." + "url"
+        obj['label'] = flattedForm[name]
+        obj['value'] = flattedForm[url]
+        question['modelValue'] = flattedForm[url]
+        question['value'] = flattedForm[url]
+    }
+    catch(err){
+        console.log("error in handleObjectCase :: ",err.message)
+    }
+}
+
+async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
         let obj = [...jsonFormat]
+        // if(flattedForm.actionTakenByRole == userTypes.ulb){
+            roleWiseJson(obj[0],role)
+        // }
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -1390,17 +1470,13 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted) {
                     let obj = { ...answerObj }
                     let answerKey = inputType[question.input_type]
                     await handleCasesByInputType(question)
-                    if (Array.isArray(answerKey)) {
-                        let mainKey = question.shortKey.split(".")[0].replace(" ", "")
-                        let name = mainKey + "." + "name"
-                        let url = mainKey + "." + "url"
-                        obj['label'] = flattedForm[name]
-                        obj['value'] = flattedForm[url]
-                    }
-                    else {
-                        let shortKey = question.shortKey.replace(" ", "")
-                        obj[answerKey] = flattedForm[shortKey]
-                    }
+                    // if (Array.isArray(answerKey)) {
+                    await handleValues(question,obj,flattedForm)
+                    // }
+                    // else {
+                    //     let shortKey = question.shortKey.replace(" ", "")
+                    //     obj[answerKey] = flattedForm[shortKey]
+                    // }
                     answer.push(obj)
                     // console.log("answer LL ",answer)
                     question['selectedValue'] = answer
@@ -1423,6 +1499,8 @@ async function handleCasesByInputType(question){
                   obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
                 }
                 break
+            case "11":
+                
         }
         return obj
     }

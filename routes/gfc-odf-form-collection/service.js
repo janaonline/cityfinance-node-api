@@ -36,8 +36,10 @@ module.exports.createOrUpdateForm = async (req, res) => {
             formData.rating = ObjectId(formData.rating);
         }
         if (formData.certDate) {
+            
             formData.certDate = new Date(formData.certDate);
             formData.certDate.toISOString();
+            console.log("formData ::: ",formData.certDate)
         }
         if (formData.ulb) {
             formData.ulb = ObjectId(formData.ulb);
@@ -172,6 +174,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     formData['createdAt'] = formSubmit.createdAt;
                     formData['modifiedAt'] = new Date();
                     formData['ulbSubmit'] = new Date();
+                    
                     if (formData['certDate'] === "") {
                         formData['certDate'] = null;
                     }
