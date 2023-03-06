@@ -1499,6 +1499,7 @@ async function handleCasesByInputType(question){
                 }
                 break
             case "11":
+                break
                 
         }
         return obj
@@ -1511,14 +1512,25 @@ async function handleCasesByInputType(question){
 async function appendAnswerOptions(modelName,obj,modelFilter){
     try{
         let documents = await moongose.model(modelName).find(modelFilter).lean()
-        obj['answer_option'] = documents.map((item,index)=>{
-            return {
+        let answerOptions = []
+        let childOptions = []
+         documents.forEach((item,index)=>{
+            let  answerObj = {
                 "name":item.name,
                 "did":[],
                 "_id":item._id,
                 "viewSequence":index+1
             }
+             childObj = {
+                "type":item._id,
+                "value":item.name,
+                "order":index+1
+            }
+            answerOptions.push(answerObj)
+            childOptions.push(childObj)
         })
+        obj['answer_option'] = answerOptions 
+        obj['child'] = childOptions
         return obj
     }
     catch(err){
