@@ -10,12 +10,28 @@ const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Sidemenu = require('../../models/Sidemenu');
+const userTypes = require("../../util/userTypes")
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
 const { FormNames } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc')
+var modifiedShortKeys = {
+    "cert_declaration":"cert"
+}
+var answerObj = {
+    "label": "",
+    "textValue": "",
+    "value": "",
+}
+var inputType = {
+    "1": "label",
+    "2": "textValue",
+    "3": "value",
+    "11": ["value", "label"],
+    "14":"value"
+}
 module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
@@ -763,19 +779,19 @@ let apiUrls = {
 //         }  
 //   },
 // ])
-function writeCsv(cols, csvCols,ele, res,cb) {
+function writeCsv(cols, csvCols, ele, res, cb) {
     let dbCOls = Object.keys(csvCols)
     try {
         let str = ""
         for (let key of dbCOls) {
-            if(cb){
+            if (cb) {
                 ele = cb(ele)
             }
             if (ele[key]) {
                 str += ele[key] + ","
             }
             else {
-                str += " "+","
+                str += " " + ","
             }
 
         }
@@ -794,7 +810,7 @@ function writeCsv(cols, csvCols,ele, res,cb) {
  * @param {*} res 
  * @param {*} cols 
  */
-function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr,cb=null) {
+function sendCsv(filename, modelName, query, res, cols, csvCols, fromArr, cb = null) {
     try {
 
         let cursor = moongose.model(modelName).aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
@@ -805,11 +821,11 @@ function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr,cb=null)
         cursor.on("data", (document) => {
             if (fromArr) {
                 for (let ele of document[fromArr]) {
-                    writeCsv(cols,csvCols, ele, res,cb)
+                    writeCsv(cols, csvCols, ele, res, cb)
                 }
             }
             else {
-                writeCsv(cols,csvCols, document,res,cb)
+                writeCsv(cols, csvCols, document, res, cb)
             }
         })
         cursor.on("end", (el) => {
@@ -987,86 +1003,86 @@ class AggregationServices {
             $multiply: arr
         }
     }
-    static convertIntoLakhs(field){
+    static convertIntoLakhs(field) {
         return {
-            "$multiply":[field,100000]
+            "$multiply": [field, 100000]
         }
     }
-    static filterArr(fieldName,fromField,cond){
-        try{
-            let obj =  {
-                "$addFields":{}
+    static filterArr(fieldName, fromField, cond) {
+        try {
+            let obj = {
+                "$addFields": {}
             }
-            obj["$addFields"][fieldName] = this.getCommonFilterObj(fromField,cond)
+            obj["$addFields"][fieldName] = this.getCommonFilterObj(fromField, cond)
             return obj
         }
-        catch(err){
-            console.log("error in conditionProj :: ",err.message)
+        catch (err) {
+            console.log("error in conditionProj :: ", err.message)
         }
     }
-    static getCommonFilterObj(field,cond){
-        try{
+    static getCommonFilterObj(field, cond) {
+        try {
             return {
-                "$filter":{
-                    "input":field,
-                    "as":"item",
-                    "cond":cond
+                "$filter": {
+                    "input": field,
+                    "as": "item",
+                    "cond": cond
                 }
             }
         }
-        catch(err){
-            console.log("error in getCommonFilterObj :: ",err.message)
+        catch (err) {
+            console.log("error in getCommonFilterObj :: ", err.message)
         }
     }
-    static addMultipleFields(obj,arrayForm){
+    static addMultipleFields(obj, arrayForm) {
         let temp = []
-        try{
+        try {
             let returnable = {
-                "$addFields":{}
+                "$addFields": {}
             }
-            for(var field in obj){
+            for (var field in obj) {
                 let fieldName = obj[field]['field']
                 let type = obj[field]['type']
-                returnable["$addFields"][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
-                if(arrayForm){
-                    let tempObj = {"$addFields":{}}
-                        tempObj["$addFields"][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
+                returnable["$addFields"][fieldName] = type == "lakhs" ? this.convertIntoLakhs(field) : this.convertToCr(field)
+                if (arrayForm) {
+                    let tempObj = { "$addFields": {} }
+                    tempObj["$addFields"][fieldName] = type == "lakhs" ? this.convertIntoLakhs(field) : this.convertToCr(field)
                     temp.push(tempObj)
                 }
             }
             return arrayForm ? temp : returnable
         }
-        catch(err){
-            console.log("error in addMultipleFields :: ",err.message)
+        catch (err) {
+            console.log("error in addMultipleFields :: ", err.message)
         }
     }
 
-    static addConvertedAmount(field,fieldName,type){
+    static addConvertedAmount(field, fieldName, type) {
         let obj = {
-            "$addFields":{}
+            "$addFields": {}
         }
-        obj['$addFields'][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
+        obj['$addFields'][fieldName] = type == "lakhs" ? this.convertIntoLakhs(field) : this.convertToCr(field)
         return obj
     }
-    static getCondObj(value,then){
+    static getCondObj(value, then) {
         return {
-            "$cond":{
-                "if":{"$gt":[value,0]},
-                "then":then,
-                "else":0
+            "$cond": {
+                "if": { "$gt": [value, 0] },
+                "then": then,
+                "else": 0
             }
         }
     }
-    static addFields(fieldName,field){
-        try{
-            let obj =  {
-                "$addFields":{}
+    static addFields(fieldName, field) {
+        try {
+            let obj = {
+                "$addFields": {}
             }
             obj['$addFields'][fieldName] = field
             return obj
-        } 
-        catch(err){
-            console.log("error in addFields :: ",err.message)
+        }
+        catch (err) {
+            console.log("error in addFields :: ", err.message)
         }
     }
     static getCommonDivObj(arr) {
@@ -1074,23 +1090,23 @@ class AggregationServices {
             $divide: arr
         }
     }
-    static convertToCr(value){
-        return this.getCondObj(value,this.getCommonDivObj([value,10000000]))
+    static convertToCr(value) {
+        return this.getCondObj(value, this.getCommonDivObj([value, 10000000]))
     }
-    static getCommonSubtract(arr){
-        let sub = {$subtract:arr}
+    static getCommonSubtract(arr) {
+        let sub = { $subtract: arr }
         return {
-            "$cond":{
-                "if":{
-                    "$gte":[sub,0],
+            "$cond": {
+                "if": {
+                    "$gte": [sub, 0],
                 },
-                "then":sub,
-                "else":0
+                "then": sub,
+                "else": 0
             }
         }
     }
-    static getCasesForCurrenCon(fieldName,then,value1,value2){
-        let obj =  {
+    static getCasesForCurrenCon(fieldName, then, value1, value2) {
+        let obj = {
             "case": {},
             "then": then
         }
@@ -1098,51 +1114,51 @@ class AggregationServices {
             "$and": [
                 { "$gte": [`$${fieldName}`, value1] },
                 { "$lt": [`$${fieldName}`, value2] }
-        ]
+            ]
         }
         return obj
     }
 
-    static getCommonPerCalc(value,totalValue){
+    static getCommonPerCalc(value, totalValue) {
         let cont = {
-            "$multiply":[
-                this.getCondObj(value,this.getCommonDivObj([value,totalValue])),
+            "$multiply": [
+                this.getCondObj(value, this.getCommonDivObj([value, totalValue])),
                 100
             ]
         }
         return this.getCommonConvertor(
             {
-                "$cond":{
-                    "if":{
-                        "$gte":[cont,
-                        0
-                    ]
+                "$cond": {
+                    "if": {
+                        "$gte": [cont,
+                            0
+                        ]
                     },
-                    "then":cont,
-                    "else":0
+                    "then": cont,
+                    "else": 0
                 }
             },
             "int"
         )
     }
-    static getCommonSubStr(field,start,end){
+    static getCommonSubStr(field, start, end) {
         return {
-            "$substr" :[field,start,end]
+            "$substr": [field, start, end]
         }
     }
-    static getCommonCurrencyConvertor(fieldName,arr,def) {
-        let obj =  {
+    static getCommonCurrencyConvertor(fieldName, arr, def) {
+        let obj = {
             "$switch": {
                 "branches": [
-                    
+
                 ],
-                "default":def
+                "default": def
             },
-            
+
         }
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[0],1000,10000))
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[1],10000,1000000))
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[2],1000000,100000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName, arr[0], 1000, 10000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName, arr[1], 10000, 1000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName, arr[2], 1000000, 100000000))
         return obj
     }
 }
@@ -1150,53 +1166,79 @@ module.exports.sendCsv = sendCsv
 module.exports.AggregationServices = AggregationServices
 module.exports.apiUrls = apiUrls
 
-module.exports.canTakeActionOrViewOnly =  (data, userRole)=>{
+module.exports.canTakeActionOrViewOnly = (data, userRole) => {
     let status = data['formStatus'];
     switch (true) {
-      case status == StatusList.Not_Started:
-        return false;
-        break;
-      case status == StatusList.In_Progress:
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_State && userRole == 'STATE':
-        return true;
-        break;
-      case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-        return false;
-        break;
-      case status == StatusList.Rejected_By_State:
-        return false;
-        break;
-      case status == StatusList.Rejected_By_MoHUA:
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
-        return true;
-        break;
-      case status == StatusList.Approved_By_MoHUA:
-        return false;
-        break;
-  
-      default:
-        break;
-    }
-  }
+        case status == StatusList.Not_Started:
+            return false;
+            break;
+        case status == StatusList.In_Progress:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_State && userRole == 'STATE':
+            return true;
+            break;
+        case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            return false;
+            break;
+        case status == StatusList.Rejected_By_State:
+            return false;
+            break;
+        case status == StatusList.Rejected_By_MoHUA:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
+            return true;
+            break;
+        case status == StatusList.Approved_By_MoHUA:
+            return false;
+            break;
 
-module.exports.getCurrentFinancialYear = ()=> {
+        default:
+            break;
+    }
+}
+
+module.exports.saveCurrentStatus = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { body } = params;
+            let currentStatus = await CurrentStatus.create(body).lean(); resolve(1);
+        }
+        catch (error) {
+            reject(error);
+        }
+    });
+};
+
+
+module.exports.saveStatusHistory = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { body } = params;
+            let currentStatus = await StatusHistory.create(body).lean(); resolve(1);
+        }
+        catch (error) {
+            reject(error);
+        }
+    });
+};
+
+
+module.exports.getCurrentFinancialYear = () => {
     var fiscalyear = "";
     var today = new Date();
     if ((today.getMonth() + 1) <= 3) {
-      fiscalyear = (today.getFullYear() - 1) + "-" + today.toLocaleDateString('en', {year: '2-digit'})
-  
+        fiscalyear = (today.getFullYear() - 1) + "-" + today.toLocaleDateString('en', { year: '2-digit' })
+
     } else {
-      fiscalyear = today.getFullYear() + "-" + (parseInt(today.toLocaleDateString('en', {year: '2-digit'})) + 1)
+        fiscalyear = today.getFullYear() + "-" + (parseInt(today.toLocaleDateString('en', { year: '2-digit' })) + 1)
     }
     return fiscalyear
-  }
+}
 
 function traverseAndFlatten(currentNode, target, flattenedKey) {
     /**
@@ -1221,9 +1263,318 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
     }
 }
 
-module.exports.getFlatObj = (obj)=>{
+module.exports.getFlatObj = (obj) => {
     let flattendObj = {}
-    traverseAndFlatten(obj,flattendObj)
+    traverseAndFlatten(obj, flattendObj)
     // let flattenArr = []
     return flattendObj
+}
+
+module.exports.saveCurrentStatus = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try { const { body } = params; 
+        let currentStatus = await CurrentStatus.create(body).lean(); resolve(1); }
+        catch (error) { reject(error); }
+    });
+};
+module.exports.saveStatusHistory = (params) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const { body } = params;
+            let currentStatus = await StatusHistory.create(body).lean(); resolve(1);
+        } catch (error) { reject(error); }
+    });
+};
+
+
+function returnParsedObj(objects) {
+    try {
+        let keys = {...inputType}
+        let shortKey = objects.shortKey.replace(" ", "")
+        let splittedShortKey = shortKey.split(".")
+        let inputName = keys[objects.input_type]
+        if (splittedShortKey.length > 1) {
+            let answers = objects['answer']
+            let value = objects['answer'][0][inputName]
+
+            if (answers.length > 1) {
+                value = objects['answer'].map(item => item[inputName])
+            }
+            let obj = splittedShortKey.reduceRight((obj, key) => ({ [key]: obj }), value)
+            return obj
+            // Object.assign(payload,obj)
+        }
+        else {
+            let temp = {}
+            let answers = objects['answer'].length
+            let value = objects['answer'][0][inputName]
+            if (Array.isArray(inputName)) {
+                value = {
+                    "name": objects['answer'][0]['label'],
+                    "url": objects['answer'][0]['value'],
+                }
+            }
+            if (answers > 1) {
+                value = objects['answer'].map(item => item[inputName])
+            }
+            let modifiedKeys = Object.keys(modifiedShortKeys)
+            if(modifiedKeys.includes(shortKey)){
+                shortKey = modifiedShortKeys[shortKey]
+            }
+            temp[shortKey] = value
+            console.log(temp)
+            return temp
+        }
+    }
+    catch (err) {
+        console.log("error in returnParsedObj ::: ", err.message)
+    }
+}
+
+
+function payloadParser(body) {
+    try {
+        let payload = {}
+        let modifiedBody = [...body]
+        for (let objects of modifiedBody) {
+            let temp = returnParsedObj(objects)
+            if (objects.child) {
+                temp['data'] = []
+                for (let childern of objects.child) {
+                    let index = modifiedBody.findIndex((item) => item.order === childern)
+                    let object = modifiedBody[index]
+                    modifiedBody.splice(index, 1)
+                    let temp2 = returnParsedObj(object)
+                    temp['data'].push(temp2)
+                }
+            }
+            Object.assign(payload, temp)
+        }
+        return payload
+    }
+
+    catch (err) {
+        console.log("error in payloadParser ::: ", err.message)
+    }
+}
+module.exports.payloadParser = payloadParser
+
+function roleWiseJson(json,role){
+    let removableObjects = [
+        "responseFile",
+        "status",
+        "rejectReason",
+        "rejectReason_state",
+        "rejectReason_mohua",
+        "responseFile_state",
+        "responseFile_mohua"
+    ]
+    try{
+        if(role === userTypes.ulb){
+            json.question = json.question.filter(item => !removableObjects.includes(item.shortKey) )
+        }
+    }
+    catch(err){
+        console.log("error in roleWiseJson ::: ",err.message)
+    }
+}
+
+module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
+    try{
+        let obj = [...jsonFormat]
+        roleWiseJson(obj[0],role)
+        obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
+        // await deleteKeys(flattedForm, keysToBeDeleted)
+        for (let key in obj) {
+            let questions = obj[key].question
+            if (obj[key].question) {
+                for (let question of questions) {
+                    let answer = []
+                    let obj = { ...answerObj }
+                    obj = await handleCasesByInputType(question)
+                }
+            }
+        }
+        // await deleteKeys(flattedForm, keysToBeDeleted)
+        return obj
+    }
+    catch(err){
+        console.log("error in mutateJson ::: ",err.message)
+    }
+}
+
+const handleValues = (question,obj,flattedForm)=>{
+    let answerKey = inputType[question.input_type]
+    try{
+        switch (question.input_type){
+            case "11":
+                handleFileCase(question,obj,flattedForm)
+                break
+            case "14":
+                handledateCase(question,obj,flattedForm)
+                break
+            default:
+                let shortKey = question.shortKey.replace(" ", "")
+                obj[answerKey] = flattedForm[shortKey]
+                break
+        }
+    }
+    catch(err){
+        console.log("error in handleValues ::: ",err.message)
+    }
+}
+
+function handledateCase(question,obj,flattedForm){
+    try{
+        
+        let mainKey = question.shortKey
+        question['modelValue'] = flattedForm[mainKey]
+        question['value'] = flattedForm[mainKey]
+        obj['textValue'] = flattedForm[mainKey]
+        obj['value'] = flattedForm[mainKey]
+    }
+    catch(err){
+        console.log("error in dateCase :::: ",err.message)
+    }
+}
+
+function handleFileCase(question,obj,flattedForm){
+    try{
+        let mainKey = question.shortKey.split(".")[0].replace(" ", "")
+        let name = mainKey + "." + "name"
+        let url = mainKey + "." + "url"
+        obj['label'] = flattedForm[name]
+        obj['value'] = flattedForm[url]
+        question['modelValue'] = flattedForm[url]
+        question['value'] = flattedForm[url]
+    }
+    catch(err){
+        console.log("error in handleObjectCase :: ",err.message)
+    }
+}
+
+async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
+    try {
+        let obj = [...jsonFormat]
+        // if(flattedForm.actionTakenByRole == userTypes.ulb){
+            roleWiseJson(obj[0],role)
+        // }
+        obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
+        await deleteKeys(flattedForm, keysToBeDeleted)
+        for (let key in obj) {
+            let questions = obj[key].question
+            if (questions) {
+                for (let question of questions) {    
+                    let answer = []
+                    let obj = { ...answerObj }
+                    let answerKey = inputType[question.input_type]
+                    await handleCasesByInputType(question)
+                    // if (Array.isArray(answerKey)) {
+                    await handleValues(question,obj,flattedForm)
+                    // }
+                    // else {
+                    //     let shortKey = question.shortKey.replace(" ", "")
+                    //     obj[answerKey] = flattedForm[shortKey]
+                    // }
+                    answer.push(obj)
+                    // console.log("answer LL ",answer)
+                    question['selectedValue'] = answer
+                    // console.log(">>>>>>>>.question :: ",question)
+                }
+            }
+        }
+        return obj
+    }
+    catch (err) {
+        console.log("mutuateGetPayload ::: ", err.message)
+    }
+}
+
+async function handleCasesByInputType(question){
+    try{
+        switch(question.input_type){
+            case "3":
+                if(question.modelName){
+                  obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
+                }
+                break
+            case "11":
+                
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in handleCases ::: ",err.message)
+    }
+}
+
+async function appendAnswerOptions(modelName,obj,modelFilter){
+    try{
+        let documents = await moongose.model(modelName).find(modelFilter).lean()
+        obj['answer_option'] = documents.map((item,index)=>{
+            return {
+                "name":item.name,
+                "did":[],
+                "_id":item._id,
+                "viewSequence":index+1
+            }
+        })
+        return obj
+    }
+    catch(err){
+        console.log("error in appendFromModel ::: ",err.message)
+    }
+}
+
+function checkForUndefinedVaribales(obj) {
+    let validator = {
+        message: "",
+        success: true
+    }
+    try {
+        for (let key in obj) {
+            if (!validator[key]) {
+                validator.success = false
+                validator.message = `${key} is required`
+                return validator
+            }
+        }
+        validator.message = ""
+    }
+    catch (err) {
+        console.log("error in check for undefined variables :: ", err.message)
+    }
+    return validator
+}
+
+module.exports.mutuateGetPayload = mutuateGetPayload
+
+function appendExtraKeys(keys, jsonObj, form) {
+    let obj = { ...jsonObj }
+    try {
+        for (let key of keys) {
+            if (Object.keys(form).includes(key.replace(" ", ""))) {
+                obj[key] = form[key]
+            }
+            else{
+                obj[key] = ""
+            }
+        }
+    }
+    catch (err) {
+        console.log("error in appendExtraKeys ::: ", err.message)
+    }
+    return obj
+}
+
+function deleteKeys(obj, delKeys) {
+    try {
+        for (let del of delKeys) {
+            delete obj[del]
+        }
+
+    }
+    catch (err) {
+        console.log("error in deleteKeys ::::: ", err.message)
+    }
 }
