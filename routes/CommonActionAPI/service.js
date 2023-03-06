@@ -1531,7 +1531,6 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
         })
         obj['answer_option'] = answerOptions 
         obj['child'] = childOptions
-        
         return obj
     }
     catch(err){
