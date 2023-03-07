@@ -71,7 +71,10 @@ const OdfFormCollectionSchema = new Schema({
 }
 );
 OdfFormCollectionSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
-OdfFormCollectionSchema.pre("findOneAndUpdate",(doc)=>{
-    console.log("doc ::::: ",doc)
-})
+// OdfFormCollectionSchema.pre("findOneAndUpdate",(doc)=>{
+//     console.log("doc ::::: ",this)
+// })
+// OdfFormCollectionSchema.pre("save",(doc)=>{
+//     console.log("doc ::::: ",this)
+// })
 module.exports = mongoose.model('OdfFormCollection', OdfFormCollectionSchema)
