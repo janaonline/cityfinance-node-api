@@ -46,3 +46,10 @@ module.exports.FORM_LEVEL = {
     "tab": 2,
     "question": 3
 }
+
+
+module.exports.MODEL_PATH = {
+    1: "AnnualAccounts",
+    2: "OdfFormCollection",
+    3: "GfcFromCollection"
+}

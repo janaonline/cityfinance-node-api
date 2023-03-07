@@ -4,7 +4,7 @@
   const moment = require("moment");
   const { response } = require("../../util/response");
   const Response = require("../../service").response;
-
+  const mongoose = require('mongoose');
   const { canTakenAction } = require("../CommonActionAPI/service");
   const Service = require("../../service");
   const { years } = require("../../service/years");
@@ -123,111 +123,140 @@ module.exports.createOrUpdateForm = async (req, res) => {
       let savedBody = new collection(formData);
 
       if (data.design_year === YEAR_CONSTANTS["23_24"] && data.ulb) {
-        const formBodyStatus = formData.status;
-        savedBody.status = "";
-        let formData2324 = await collection
-          .findOne({ ulb: data.ulb, design_year: data.design_year })
-          .lean();
-        let formCurrentStatus;
-        if (!formData2324) {
-          formCurrentStatus = {
-            status: MASTER_STATUS["Not Started"],
-          };
-        } else {
-          formCurrentStatus = await CurrentStatus.findOne({
-            recordId: formData2324._id,
-          }).lean();
-        }
 
-        if (
-          [
-            MASTER_STATUS["Not Started"],
-            MASTER_STATUS["In Progress"],
-            MASTER_STATUS["Rejected by State"],
-            MASTER_STATUS["Rejected by MoHUA"],
-          ].includes(formCurrentStatus.status)
-        ) {
-          let formSubmit;
+        // const session = await mongoose.startSession();
+        // await session.startTransaction();
 
-          savedBody["ulbSubmit"] =
-            formBodyStatus === MASTER_STATUS["Under Review by State"]
-              ? new Date()
-              : "";
-          formData["ulbSubmit"] = savedBody["ulbSubmit"];
-          if (formData2324) {
-            formSubmit = await collection.findOneAndUpdate(
-              {
-                _id: formData2324._id,
-              },
-              {
-                $set: formData,
-              },
-              {
-                new: true,
-              }
-            );
+        try {
+          const formBodyStatus = formData.status;
+          savedBody.status = "";
+          let formData2324 = await collection
+            .findOne({ ulb: data.ulb, design_year: data.design_year })
+            .lean();
+          let formCurrentStatus;
+          if (!formData2324) {
+            formCurrentStatus = {
+              status: MASTER_STATUS["Not Started"],
+            };
           } else {
-            formSubmit = await collection.create(savedBody);
+            formCurrentStatus = await CurrentStatus.findOne({
+              recordId: formData2324._id,
+            }).lean();
           }
 
-          if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-            let currentStatusData = {
-              formId: masterFormId,
-              recordId: ObjectId(formSubmit._id),
-              status: MASTER_STATUS["In Progress"],
-              level: FORM_LEVEL["form"],
-              shortKey: "form_level",
-              rejectReason: formSubmit.rejectReason,
-              responseFile: formSubmit.responseFile,
-              actionTakenByRole: actionTakenByRole,
-              actionTakenBy: ObjectId(actionTakenBy),
-            };
-            await saveCurrentStatus({ body: currentStatusData });
-            return Response.OK(res, {}, "Form Submitted");
-          } else if (
-            formBodyStatus === MASTER_STATUS["Under Review by State"]
+          if (formCurrentStatus &&
+            [
+              MASTER_STATUS["Not Started"],
+              MASTER_STATUS["In Progress"],
+              MASTER_STATUS["Rejected by State"],
+              MASTER_STATUS["Rejected by MoHUA"],
+            ].includes(formCurrentStatus.status)
           ) {
-            let bodyData = {
-              formId: masterFormId,
-              recordId: ObjectId(formSubmit._id),
-              data: formSubmit,
-            };
-            /* Saving the form history of the user. */
-            await saveFormHistory({ body: bodyData });
+            let formSubmit;
 
-            let currentStatusData = {
-              formId: masterFormId,
-              recordId: ObjectId(formSubmit._id),
-              status: MASTER_STATUS["Under Review by State"],
-              level: FORM_LEVEL["form"],
-              shortKey: "form_level",
-              rejectReason: formSubmit.rejectReason,
-              responseFile: formSubmit.responseFile,
-              actionTakenByRole: actionTakenByRole,
-              actionTakenBy: ObjectId(actionTakenBy),
-            };
-            await saveCurrentStatus({ body: currentStatusData });
+            savedBody["ulbSubmit"] =
+              formBodyStatus === MASTER_STATUS["Under Review by State"]
+                ? new Date()
+                : "";
+            formData["ulbSubmit"] = savedBody["ulbSubmit"];
+            if (formData2324) {
+              formSubmit = await collection.findOneAndUpdate(
+                {
+                  _id: formData2324._id,
+                },
+                {
+                  $set: formData,
+                },
+                {
+                  new: true,
+                  // session: session
+                }
+              );
+            } else {
+              formSubmit = await collection.create([savedBody],
+                // { session }
+                );
+            }
 
-            let statusHistory = {
-              formId: 1,
-              recordId: ObjectId(formSubmit._id),
-              data: currentStatusData,
-            };
-            await saveStatusHistory({ body: statusHistory });
-            return Response.OK(res, {}, "Form Submitted");
+            if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+              let currentStatusData = {
+                formId: masterFormId,
+                recordId: ObjectId(formSubmit._id),
+                status: MASTER_STATUS["In Progress"],
+                level: FORM_LEVEL["form"],
+                shortKey: "form_level",
+                rejectReason: formSubmit.rejectReason,
+                responseFile: formSubmit.responseFile,
+                actionTakenByRole: actionTakenByRole,
+                actionTakenBy: ObjectId(actionTakenBy),
+              };
+              await saveCurrentStatus({ body: currentStatusData, 
+                // session
+               });
+
+              // await session.commitTransaction();
+              return Response.OK(res, {}, "Form Submitted");
+            } else if (
+              formBodyStatus === MASTER_STATUS["Under Review by State"]
+            ) {
+              let bodyData = {
+                formId: masterFormId,
+                recordId: ObjectId(formSubmit._id),
+                data: formSubmit,
+              };
+              /* Saving the form history of the user. */
+              await saveFormHistory({ body: bodyData , 
+                // session
+              });
+
+              let currentStatusData = {
+                formId: masterFormId,
+                recordId: ObjectId(formSubmit._id),
+                status: MASTER_STATUS["Under Review by State"],
+                level: FORM_LEVEL["form"],
+                shortKey: "form_level",
+                rejectReason: formSubmit.rejectReason,
+                responseFile: formSubmit.responseFile,
+                actionTakenByRole: actionTakenByRole,
+                actionTakenBy: ObjectId(actionTakenBy),
+              };
+              await saveCurrentStatus({ body: currentStatusData , 
+                // session
+              });
+
+              let statusHistory = {
+                formId: 1,
+                recordId: ObjectId(formSubmit._id),
+                shortKey: "form_level",
+                data: currentStatusData,
+              };
+              await saveStatusHistory({ body: statusHistory ,
+                //  session 
+                });
+              
+              // await session.commitTransaction();
+              return Response.OK(res, {}, "Form Submitted");
+            }
+          } else if (
+            ![
+              MASTER_STATUS["Approved by MoHUA"],
+              MASTER_STATUS["Under Review by MoHUA"],
+              MASTER_STATUS["Under Review by State"],
+            ].includes(formData2324.status)
+          ) {
+            return res.status(200).json({
+              status: true,
+              message: "Form already submitted.",
+            });
           }
-        } else if (
-          ![
-            MASTER_STATUS["Approved by MoHUA"],
-            MASTER_STATUS["Under Review by MoHUA"],
-            MASTER_STATUS["Under Review by State"],
-          ].includes(formData2324.status)
-        ) {
-          return res.status(200).json({
-            status: true,
-            message: "Form already submitted.",
+        } catch (error) {
+          // await session.abortTransaction();
+          return res.status(400).json({
+            success: false,
+            message: error.message,
           });
         }
+        // await session.endSession();
       }
       if (data.ulb && data.design_year) {
           const submittedForm = await collection.findOne(condition);

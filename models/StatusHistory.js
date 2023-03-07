@@ -7,6 +7,7 @@ const StatusHistorySchema = new Schema(
     recordId: {
         type: Schema.Types.ObjectId,
     },
+    shortKey: {type: String},
     data:{
         type: Array,
         default: []
