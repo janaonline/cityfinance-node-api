@@ -5,14 +5,14 @@ const FormsJson = require("../../models/FormsJson");
 const ObjectId = require("mongoose").Types.ObjectId;
 
 
-module.exports.changeRequestBody = (req,res,next)=>{
+module.exports.changeRequestBody = async (req,res,next)=>{
   try{
     let bodyData = {...req.body}
     delete bodyData['data']
     let {design_year} = req.body
     let {data} = req.body 
     if (design_year == years['2023-24']) {
-      req.body = payloadParser(data)
+      req.body =await  payloadParser(data,req)
     }
     Object.assign(req.body,bodyData)
     next()
@@ -77,6 +77,13 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
     let flattedForm =  []
     let form = req.form
     let {role} = req.decoded 
+    let responseData = [
+      {
+        "_id": req?.form?._id ,
+        "formId": req.query.formId,
+        "language":[]
+      }
+    ]
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
     if (design_year == years['2023-24']) {
       if (form) {
@@ -87,9 +94,11 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       else{
         obj = await mutateJson(obj,keysToBeDeleted,req.query,role)
       }
+      responseData[0]['language'] = obj
       responseStatus = 200
       response.success = true
-      response.data = obj
+      response.data = responseData
+      response.message = 'Form Questionare!'
       res.status(responseStatus).json(response)
     }
     else {
