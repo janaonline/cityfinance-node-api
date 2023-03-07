@@ -19,4 +19,37 @@ module.exports.YEAR_CONSTANTS = {
     "20_21": "606aadac4dff55e6c075c507",
     "21_22":"606aaf854dff55e6c075d219",
     "22_23":"606aafb14dff55e6c075d3ae",
+    "23_24": "606aafc14dff55e6c075d3ec"
+}
+
+
+module.exports.MASTER_STATUS = {
+    "Not Started": 1,
+    "In Progress": 2,
+    "Under Review by State": 3,
+    "Under Review by MoHUA": 4,
+    "Rejected by State": 5,
+    "Approved by MoHUA": 6,
+    "Rejected by MoHUA":7
+}
+
+
+module.exports.FORMIDs = {
+    "AnnualAccount": 1,
+    "ODF": 2,
+    "GFC":3
+}
+
+
+module.exports.FORM_LEVEL = {
+    "form": 1,
+    "tab": 2,
+    "question": 3
+}
+
+
+module.exports.MODEL_PATH = {
+    1: "AnnualAccounts",
+    2: "OdfFormCollection",
+    3: "GfcFromCollection"
 }

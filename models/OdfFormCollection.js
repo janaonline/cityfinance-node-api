@@ -1,6 +1,14 @@
 require('./dbConnect');
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const {getKeyByValue} = require("../util/masterFunctions")
+const ratings = {
+    "1" : "No Rating",
+    "2" :"ODF+",
+    "3": "ODF",
+    "4" : "ODF++",
+    "5" :"Non ODF"
+}
 
 const pdfSchema = () => {
     return {
@@ -41,7 +49,7 @@ const OdfFormCollectionSchema = new Schema({
     status:{
         type: String,
         enum: {
-            values: ['APPROVED', 'REJECTED', 'PENDING'],
+            values: ['APPROVED', 'REJECTED', 'PENDING',""],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         }
     },
@@ -52,9 +60,10 @@ const OdfFormCollectionSchema = new Schema({
         type: Boolean,
         default: true,
     },
+    odfRating:{type:String,default:""},
+    marks : {type:Number,default:""},
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
-    
     responseFile_state:pdfSchema(),
     responseFile_mohua:pdfSchema(),
     rejectReason_state:{ type: String, default: "" },
@@ -63,10 +72,32 @@ const OdfFormCollectionSchema = new Schema({
         type: Array,
         default: [],
     },
+    
  }
 ,{
     timestamps:{createdAt: "createdAt", updatedAt:"modifiedAt"}
 }
 );
 OdfFormCollectionSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
+
+// OdfFormCollectionSchema.post("findOne",function(result){
+//     if(bject.values(ratings).includes(result)){
+//         let key = getKeyByValue(ratings,result.odfRating)
+//         result.odfRating = key
+//     }
+// })
+
+// OdfFormCollectionSchema.pre("findOneAndUpdate",function(next){
+//     let obj = this._update["$set"]
+//     if(Object.keys(ratings).includes(obj.odfRating)){
+//         obj.odfRating = ratings[obj.odfRating]
+//     }
+//     next()
+// })
+// OdfFormCollectionSchema.pre("save",function(next){
+//     if(Object.keys(ratings).includes(this.odfRating)){
+//         this.odfRating = ratings[this.odfRating]
+//     }
+//     next()
+// })
 module.exports = mongoose.model('OdfFormCollection', OdfFormCollectionSchema)

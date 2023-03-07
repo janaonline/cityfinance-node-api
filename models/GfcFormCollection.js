@@ -41,7 +41,7 @@ const GfcFormCollectionSchema = new Schema({
     status:{
         type: String,
         enum: {
-            values: ['APPROVED', 'REJECTED', 'PENDING'],
+            values: ['APPROVED', 'REJECTED', 'PENDING',""],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         }
     },
@@ -52,6 +52,8 @@ const GfcFormCollectionSchema = new Schema({
     ulbSubmit: {
         type: Date,
     },
+    gfcRating:{type:String,default:""},
+    marks : {type:Number,default:""},
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
     responseFile_state:pdfSchema(),
