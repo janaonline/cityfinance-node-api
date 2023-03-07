@@ -52,9 +52,10 @@ const OdfFormCollectionSchema = new Schema({
         type: Boolean,
         default: true,
     },
+    odfRating:{type:String,default:""},
+    marks : {type:Number,default:""},
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
-    
     responseFile_state:pdfSchema(),
     responseFile_mohua:pdfSchema(),
     rejectReason_state:{ type: String, default: "" },
@@ -63,10 +64,14 @@ const OdfFormCollectionSchema = new Schema({
         type: Array,
         default: [],
     },
+    
  }
 ,{
     timestamps:{createdAt: "createdAt", updatedAt:"modifiedAt"}
 }
 );
 OdfFormCollectionSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
+OdfFormCollectionSchema.pre("findOneAndUpdate",(doc)=>{
+    console.log("doc ::::: ",doc)
+})
 module.exports = mongoose.model('OdfFormCollection', OdfFormCollectionSchema)

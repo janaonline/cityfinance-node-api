@@ -52,6 +52,8 @@ const GfcFormCollectionSchema = new Schema({
     ulbSubmit: {
         type: Date,
     },
+    gfcRating:{type:String,default:""},
+    marks : {type:Number,default:""},
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
     responseFile_state:pdfSchema(),
