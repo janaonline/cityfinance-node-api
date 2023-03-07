@@ -7,9 +7,7 @@ module.exports.saveFormHistory = (params) => {
   return new Promise(async (resolve, reject) => {
     try {
       const { body, session } = params;
-      let masterFormHistory = await FormHistory.create([body], {
-        //  session 
-        });
+      let masterFormHistory = await FormHistory.create(body);
       resolve(1);
     } catch (error) {
       reject(error);
@@ -41,7 +39,7 @@ module.exports.saveStatusHistory = (params) => {
   return new Promise(async (resolve, reject) => {
     try {
       const { body , session} = params;
-      let currentStatus = await StatusHistory.create([body], 
+      let currentStatus = await StatusHistory.create(body, 
         // { session }
         );
       resolve(1);
