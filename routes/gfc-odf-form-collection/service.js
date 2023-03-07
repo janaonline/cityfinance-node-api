@@ -359,49 +359,46 @@ module.exports.createOrUpdateForm = async (req, res) => {
 
 module.exports.getForm = async (req, res, next) => {
   try {
-    const { isGfc } = req.query;
-    let role = req.decoded.role;
-    const ulb = ObjectId(req.query.ulb);
-    const design_year = ObjectId(req.query.design_year);
-    console.log(req.query);
-    let collection = isGfc === "true" ? GfcFormCollection : OdfFormCollection;
-    if (ulb && design_year) {
-      let form = await collection
-        .findOne({ ulb, design_year }, { history: 0 })
-        .lean();
-      if (!form) {
-        return res.status(400).json({
-          status: false,
-          message: "Form not found!",
-        });
-      }
-      Object.assign(form, {
-        canTakeAction: canTakenAction(
-          form["status"],
-          form["actionTakenByRole"],
-          form["isDraft"],
-          "ULB",
-          role
-        ),
-      });
-      if (form.certDate !== null && form.certDate !== "") {
-        form.certDate = dateFormatter(form?.certDate);
-      }
-      req.form = form;
-      next();
-      // return res.status(200).json({
-      //     success: true,
-      //     data: form
-      // });
-    }
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+      const { isGfc, formId } = req.query;
+      let role = req.decoded.role;
+      const ulb = ObjectId(req.query.ulb);
+      const design_year = ObjectId(req.query.design_year);
+      let collection = (isGfc === 'true') ? GfcFormCollection : OdfFormCollection;
+      if (ulb && design_year) {
+          let form = await collection.findOne({ ulb, design_year }, { history: 0 }).lean();
+          if (!form && !formId) {
+              return res.status(400).json({
+                  status: false,
+                  message: "Form not found!"
+              })
+          }
+          if (form) {
+              Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB", role) })
+              if (form.certDate !== null && form.certDate !== "") {
+                  form.certDate = dateFormatter(form?.certDate);
+              }
+              req.form = form
+              // if (!formId) {
+              //     return res.status(200).json({
+              //         success: true,
+              //         data: form
+              //     });
+              // } else {
+              
+          }
+           next()
+      
+          
 
+          // }
+      }
+  } catch (error) {
+      res.status(400).json({
+          success: false,
+          message: error.message
+      });
+  }
+}
 module.exports.getCSV = async (req, res) => {
   const { isGfc } = req.query;
   let collection = isGfc === "true" ? GfcFormCollection : OdfFormCollection;
