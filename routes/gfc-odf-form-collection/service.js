@@ -173,7 +173,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 }
               );
             } else {
-              formSubmit = await collection.create([savedBody],
+              formSubmit = await collection.create(savedBody,
                 // { session }
                 );
             }
