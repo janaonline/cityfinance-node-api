@@ -1402,9 +1402,9 @@ function roleWiseJson(json,role){
         "responseFile_mohua"
     ]
     try{
-        if(role === userTypes.ulb){
+        // if(role === userTypes.ulb){
             json.question = json.question.filter(item => !removableObjects.includes(item.shortKey) )
-        }
+        // }
     }
     catch(err){
         console.log("error in roleWiseJson ::: ",err.message)
@@ -1516,7 +1516,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
     try {
         let obj = [...jsonFormat]
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
-            roleWiseJson(obj[0],role)
+        roleWiseJson(obj[0],role)
         // }
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
