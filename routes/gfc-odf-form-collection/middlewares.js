@@ -81,7 +81,8 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       {
         "_id": req?.form?._id ,
         "formId": req.query.formId,
-        "language":[]
+        "language":[],
+        "canTakeAction":true
       }
     ]
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
@@ -89,6 +90,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)
+        responseData[0].canTakeAction = req.form.canTakeAction
         obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
       }
       else{

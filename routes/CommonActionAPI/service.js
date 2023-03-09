@@ -15,7 +15,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, YEAR_CONSTANTS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -1529,6 +1529,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
         // }
+        console.log("flattedForm ::: ",flattedForm)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
