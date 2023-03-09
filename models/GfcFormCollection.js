@@ -45,6 +45,10 @@ const GfcFormCollectionSchema = new Schema({
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         }
     },
+    currentFormStatus: {
+      type: Number,
+      required: true  
+    },
     isDraft:{
         type: Boolean,
         default: true,

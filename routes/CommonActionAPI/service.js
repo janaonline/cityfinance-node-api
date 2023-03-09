@@ -15,7 +15,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -190,6 +190,44 @@ module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, l
     }
 
 }
+
+module.exports.canTakenActionMaster = (params) => {
+  let { status, formType, loggedInUser } = params;
+  switch (formType) {
+    case "ULB":
+      if (loggedInUser == "STATE") {
+        if (status === MASTER_STATUS["Under Review by State"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else if (loggedInUser == "MoHUA") {
+        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+      break;
+
+    case "STATE":
+      if (loggedInUser == "MoHUA") {
+        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+      break;
+
+    default:
+      break;
+  }
+};
 
 module.exports.calculateKeys = (formStatus, formType) => {
     let keys = {
@@ -1623,7 +1661,7 @@ function deleteKeys(obj, delKeys) {
     }
 }
 
-module.exports.masterAction =  async(req, res) => {
+module.exports.masterAction =  async (req, res) => {
     try {
       let { decoded: userData, body: bodyData } = req;
 
@@ -1660,29 +1698,6 @@ module.exports.masterAction =  async(req, res) => {
       return Response.BadRequest(res, {}, error.message);
     }
 }
-
-// x=
-// {
-//     form_level: 1,
-//     design_year : "",
-//     formId: 1,
-//     ulbs: ["", ""],
-//     responses: [
-//         {
-//         shortKey: "bal_sheet",
-//         status: "Under Review By MoHUA",
-//         rejectReason: "",
-//         responseFile: ""
-//         }
-//     ],
-//     multi: true,
-//     shortKeys: ["bal_sheet"]
-// }
-
-// // Single  form action=> based on formLevel we can have several object in responses array for different short key for question and tab level form
-
-// //Review table action =>  responses array will contain single object with multi key=> true and short keys in the array
-
 
 async function takeActionOnForms(params, res) {
     try {
@@ -1815,4 +1830,36 @@ async function saveStatus(
     } catch (error) {
       return  error.message; 
     }
+}
+
+module.exports.getMasterAction = async (req, res) => {
+    let { decoded: userData, query: queryData } = req;
+
+      let { role } = userData;
+      let {formId, ulb,design_year} =  queryData;
+      
+      if(!formId || !bodyData.hasOwnProperty("multi")  || !responses || !ulbs || !ulbs.length || !design_year || !form_level){
+        return Response.BadRequest(res, {}, "All fields are mandatory")
+      }
+      let path = modelPath(formId);
+      let condition = {
+        ulb: {$in: ulbs},
+        design_year: design_year,
+      };
+
+      const model = require(`../../models/${path}`);
+      const formData = await model.find(condition).lean();
+    //   let level = form_level;
+      if(!formData || !formData.length){
+        return Response.BadRequest(res, {}, "No Form Found!")
+      }
+
+      let params = {
+        status: form.currentFormStatus,
+        formType: "ULB",
+        loggedInUser: role,
+      };
+      Object.assign(form, {
+        canTakenAction: canTakenActionMaster(params),
+      });
 }
