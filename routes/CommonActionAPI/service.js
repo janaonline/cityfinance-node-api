@@ -1515,6 +1515,18 @@ function handleFileCase(question,obj,flattedForm){
     }
 }
 
+async function deleteExtraKeys(question){
+    let filterKey = ["modelName","modelFilter"]
+    try{
+        filterKey.forEach((item)=>{
+            delete question[item]
+        })
+    }
+    catch(err){
+        console.log("error in deleteExtraKeys :: ",err.message)
+    }
+}
+
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
         let obj = [...jsonFormat]
@@ -1541,6 +1553,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
                     answer.push(obj)
                     // console.log("answer LL ",answer)
                     question['selectedValue'] = answer
+                   await deleteExtraKeys(question)
                     // console.log(">>>>>>>>.question :: ",question)
                 }
                 let modifiedKeys = Object.keys(modifiedShortKeys)
