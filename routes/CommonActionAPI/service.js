@@ -1252,31 +1252,62 @@ module.exports.getFlatObj = (obj) => {
     return flattendObj
 }
 
+class PayloadManager{
+    constructor(temp,shortKey,objects,req,shortKeysWithModelName){
+        this.temp = temp
+        this.shortKey = shortKey
+        this.objects = objects
+        this.req = req
+        this.shortKeysWithModelName = shortKeysWithModelName
+        this.inputName = inputType[objects.input_type]
+        this.value = objects['answer'][0][this.inputName]
+    }
+    async getValuesFromModel(){
+        try{
+            if(Object.keys(this.shortKeysWithModelName).includes(this.shortKey)){
+                let modelName = shortKeysWithModelName[this.shortKey]
+                let filters = {}
+                if(Object.keys(this.req.body).includes("isGfc")){
+                    filters['formName'] = this.req.body.isGfc ? "gfc" :"odf"
+                    filters['option_id'] = parseInt(this.value)
+                }
+                let ratingObj = await moongose.model(modelName).findOne(filters)
+                let mainvalue = ratingObj._id
+                return mainvalue
+            }
+        }
+        catch(err){
+            console.log("getValuesFromModel :::::::: ",err.message)
+        }
+    }
+    async handleFileObjects(){
+        try{
+            if (Array.isArray(this.inputName)) {
+                let mainvalue = {
+                    "name": this.objects['answer'][0]['label'],
+                    "url": this.objects['answer'][0]['value'],
+                }
+                return mainvalue
+            }
+        }
+        catch(err){
+            console.log("error in handleFileObjects ::: ",err.message)
+        }
+    }
+}
 
 
 async function decideValues(temp,shortKey,objects,req){
     try{
+        let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
         let value = objects['answer'][0][inputName]
         switch (objects.input_type){
             case "3":
-                if(Object.keys(shortKeysWithModelName).includes(shortKey)){
-                    let modelName = shortKeysWithModelName[shortKey]
-                    let filters = {option_id:parseInt(value)}
-                    if(Object.keys(req.body).includes("isGfc")){
-                        filters['formName'] = req.body.isGfc ? "gfc" :"odf"
-                    }
-                    let ratingObj = await moongose.model(modelName).findOne(filters)
-                    value = ratingObj._id
-                }
+                value = await service.getValuesFromModel()
                 break
             case "11":
-                if (Array.isArray(inputName)) {
-                    value = {
-                        "name": objects['answer'][0]['label'],
-                        "url": objects['answer'][0]['value'],
-                    }
-                }
+                value = await service.handleFileObjects()
                 break
             default:
                 temp[shortKey] = value
