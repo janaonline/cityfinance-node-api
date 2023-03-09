@@ -15,7 +15,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, YEAR_CONSTANTS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -1257,15 +1257,18 @@ module.exports.getFlatObj = (obj) => {
 
 async function decideValues(temp,shortKey,objects,req){
     try{
+        
         let inputName = inputType[objects.input_type]
         let value = objects['answer'][0][inputName]
         switch (objects.input_type){
             case "3":
                 if(Object.keys(shortKeysWithModelName).includes(shortKey)){
                     let modelName = shortKeysWithModelName[shortKey]
-                    let filters = {option_id:parseInt(value)}
+                    let filters = {}
                     if(Object.keys(req.body).includes("isGfc")){
                         filters['formName'] = req.body.isGfc ? "gfc" :"odf"
+                        filters['option_id'] = parseInt(value)
+                        filters['financialYear'] = ObjectId(req.body.design_year)
                     }
                     let ratingObj = await moongose.model(modelName).findOne(filters)
                     value = ratingObj._id
@@ -1499,6 +1502,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
         // }
+        console.log("flattedForm ::: ",flattedForm)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
