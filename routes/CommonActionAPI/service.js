@@ -1420,7 +1420,10 @@ async function handleSelectCase(question,obj,flattedForm){
             if(tempObj){
                 obj['label'] = tempObj['name']
                 obj['value'] = tempObj['_id']
+                question['modelValue'] = tempObj['_id']
+                question['value'] = tempObj['_id']
             }
+            
         }
         return obj
         // console.log("question :: ",question)
