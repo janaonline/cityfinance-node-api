@@ -1,6 +1,14 @@
 require('./dbConnect');
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
+const {getKeyByValue} = require("../util/masterFunctions")
+const ratings = {
+    "1" : "No Rating",
+    "2" :"ODF+",
+    "3": "ODF",
+    "4" : "ODF++",
+    "5" :"Non ODF"
+}
 
 const pdfSchema = () => {
     return {
@@ -71,8 +79,25 @@ const OdfFormCollectionSchema = new Schema({
 }
 );
 OdfFormCollectionSchema.index({ ulb: 1, design_year: 1 }, { unique: true });
-OdfFormCollectionSchema.pre("findOneAndUpdate",(next)=>{
-    // console.log("doc ::::: ",doc)
-    next()
-})
+
+// OdfFormCollectionSchema.post("findOne",function(result){
+//     if(bject.values(ratings).includes(result)){
+//         let key = getKeyByValue(ratings,result.odfRating)
+//         result.odfRating = key
+//     }
+// })
+
+// OdfFormCollectionSchema.pre("findOneAndUpdate",function(next){
+//     let obj = this._update["$set"]
+//     if(Object.keys(ratings).includes(obj.odfRating)){
+//         obj.odfRating = ratings[obj.odfRating]
+//     }
+//     next()
+// })
+// OdfFormCollectionSchema.pre("save",function(next){
+//     if(Object.keys(ratings).includes(this.odfRating)){
+//         this.odfRating = ratings[this.odfRating]
+//     }
+//     next()
+// })
 module.exports = mongoose.model('OdfFormCollection', OdfFormCollectionSchema)

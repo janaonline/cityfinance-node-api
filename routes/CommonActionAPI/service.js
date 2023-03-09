@@ -24,6 +24,9 @@ const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../u
 var modifiedShortKeys = {
     "cert_declaration":"cert"
 }
+var shortKeysWithModelName = {
+    "rating":"Rating"
+}
 var answerObj = {
     "label": "",
     "textValue": "",
@@ -1251,7 +1254,42 @@ module.exports.getFlatObj = (obj) => {
 
 
 
-function returnParsedObj(objects) {
+async function decideValues(temp,shortKey,objects,req){
+    try{
+        let inputName = inputType[objects.input_type]
+        let value = objects['answer'][0][inputName]
+        switch (objects.input_type){
+            case "3":
+                if(Object.keys(shortKeysWithModelName).includes(shortKey)){
+                    let modelName = shortKeysWithModelName[shortKey]
+                    let filters = {option_id:parseInt(value)}
+                    if(Object.keys(req.body).includes("isGfc")){
+                        filters['formName'] = req.body.isGfc ? "gfc" :"odf"
+                    }
+                    let ratingObj = await moongose.model(modelName).findOne(filters)
+                    value = ratingObj._id
+                }
+                break
+            case "11":
+                if (Array.isArray(inputName)) {
+                    value = {
+                        "name": objects['answer'][0]['label'],
+                        "url": objects['answer'][0]['value'],
+                    }
+                }
+                break
+            default:
+                temp[shortKey] = value
+                break
+        }
+        temp[shortKey] = value
+    }
+    catch(err){
+        console.log("error in decideValues ::: ",err.message)
+    }
+}
+
+async function returnParsedObj(objects,req) {
     try {
         let keys = {...inputType}
         let shortKey = objects.shortKey.replace(" ", "")
@@ -1266,27 +1304,21 @@ function returnParsedObj(objects) {
             }
             let obj = splittedShortKey.reduceRight((obj, key) => ({ [key]: obj }), value)
             return obj
-            // Object.assign(payload,obj)
         }
         else {
             let temp = {}
             let answers = objects['answer'].length
             let value = objects['answer'][0][inputName]
-            if (Array.isArray(inputName)) {
-                value = {
-                    "name": objects['answer'][0]['label'],
-                    "url": objects['answer'][0]['value'],
-                }
-            }
+            
             if (answers > 1) {
                 value = objects['answer'].map(item => item[inputName])
             }
             let modifiedKeys = Object.keys(modifiedShortKeys)
+            
             if(modifiedKeys.includes(shortKey)){
                 shortKey = modifiedShortKeys[shortKey]
             }
-            temp[shortKey] = value
-            console.log(temp)
+            await decideValues(temp,shortKey,objects,req)
             return temp
         }
     }
@@ -1296,19 +1328,19 @@ function returnParsedObj(objects) {
 }
 
 
-function payloadParser(body) {
+async function payloadParser(body,req) {
     try {
         let payload = {}
         let modifiedBody = [...body]
         for (let objects of modifiedBody) {
-            let temp = returnParsedObj(objects)
+            let temp = await  returnParsedObj(objects,req)
             if (objects.child) {
                 temp['data'] = []
                 for (let childern of objects.child) {
                     let index = modifiedBody.findIndex((item) => item.order === childern)
                     let object = modifiedBody[index]
                     modifiedBody.splice(index, 1)
-                    let temp2 = returnParsedObj(object)
+                    let temp2 = await returnParsedObj(object,req)
                     temp['data'].push(temp2)
                 }
             }
@@ -1334,12 +1366,33 @@ function roleWiseJson(json,role){
         "responseFile_mohua"
     ]
     try{
-        if(role === userTypes.ulb){
+        // if(role === userTypes.ulb){
             json.question = json.question.filter(item => !removableObjects.includes(item.shortKey) )
-        }
+        // }
     }
     catch(err){
         console.log("error in roleWiseJson ::: ",err.message)
+    }
+}
+
+async function handleSelectCase(question,obj,flattedForm){
+    try{
+        if(question.modelName){
+            let value = flattedForm[question.shortKey]
+            let tempObj = question.answer_option.find(item => item.option_id == value)
+            if(tempObj){
+                obj['label'] = tempObj['name']
+                obj['value'] = tempObj['_id']
+                question['modelValue'] = tempObj['_id']
+                question['value'] = tempObj['_id']
+            }
+            
+        }
+        return obj
+        // console.log("question :: ",question)
+    }
+    catch(err){
+        console.log("error in handleSelectCase ::: ",err.message)
     }
 }
 
@@ -1355,7 +1408,7 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
                 for (let question of questions) {
                     let answer = []
                     let obj = { ...answerObj }
-                    obj = await handleCasesByInputType(question)
+                    obj = await handleCasesByInputType(question,obj)
                 }
             }
         }
@@ -1367,21 +1420,25 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
     }
 }
 
-const handleValues = (question,obj,flattedForm)=>{
+const handleValues = async(question,obj,flattedForm)=>{
     let answerKey = inputType[question.input_type]
     try{
         switch (question.input_type){
             case "11":
-                handleFileCase(question,obj,flattedForm)
+                await handleFileCase(question,obj,flattedForm)
                 break
             case "14":
-                handledateCase(question,obj,flattedForm)
+                await handledateCase(question,obj,flattedForm)
+                break
+            case "3":
+                await handleSelectCase(question,obj,flattedForm)
                 break
             default:
                 let shortKey = question.shortKey.replace(" ", "")
                 obj[answerKey] = flattedForm[shortKey]
                 break
         }
+        return obj
     }
     catch(err){
         console.log("error in handleValues ::: ",err.message)
@@ -1405,10 +1462,15 @@ function handledateCase(question,obj,flattedForm){
 function handleFileCase(question,obj,flattedForm){
     try{
         let mainKey = question.shortKey.split(".")[0].replace(" ", "")
+        let modifiedKeys = Object.keys(modifiedShortKeys)
+        if(modifiedKeys.includes(mainKey)){
+            mainKey = modifiedShortKeys[mainKey]
+        }
         let name = mainKey + "." + "name"
         let url = mainKey + "." + "url"
         obj['label'] = flattedForm[name]
         obj['value'] = flattedForm[url]
+        obj['textValue'] = flattedForm[url]
         question['modelValue'] = flattedForm[url]
         question['value'] = flattedForm[url]
     }
@@ -1421,7 +1483,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
     try {
         let obj = [...jsonFormat]
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
-            roleWiseJson(obj[0],role)
+        roleWiseJson(obj[0],role)
         // }
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
@@ -1445,6 +1507,8 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
                     question['selectedValue'] = answer
                     // console.log(">>>>>>>>.question :: ",question)
                 }
+                let modifiedKeys = Object.keys(modifiedShortKeys)
+                let modifiedObjects =  questions.filter(item => modifiedKeys.includes(item.shortKey))
             }
         }
         return obj
@@ -1456,20 +1520,24 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
 
 async function handleCasesByInputType(question){
     try{
+        let obj = {...answerObj}
         switch(question.input_type){
             case "3":
                 if(question.modelName){
-                  obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
+                obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
                 }
                 break
-            case "11":
+            // case "11":
+            //     console.log("inside this case")
+            //     break
+            default:
+                obj = {...answerObj}
                 break
-                
         }
         return obj
     }
     catch(err){
-        console.log("error in handleCases ::: ",err.message)
+        console.log("error in handleCasesByInputType ::: ",err.message)
     }
 }
 
@@ -1482,19 +1550,19 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
             let  answerObj = {
                 "name":item.name,
                 "did":[],
-                "_id":item._id,
+                "_id":JSON.stringify(index+1),
+                "option_id":item._id,
                 "viewSequence":index+1
             }
              childObj = {
                 "type":item._id,
                 "value":item.name,
-                "order":index+1
+                "order":JSON.stringify(index+1)
             }
             answerOptions.push(answerObj)
-            childOptions.push(childObj)
         })
         obj['answer_option'] = answerOptions 
-        obj['child'] = childOptions
+        // obj['child'] = childOptions
         return obj
     }
     catch(err){

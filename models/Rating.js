@@ -22,7 +22,8 @@ const ratingSchema = new Schema({
     isActive: {type: Boolean, default: true},
     value: {type: Number, required: true},
     createdAt: { type: Date },
-    modifiedAt: { type: Date }
+    modifiedAt: { type: Date },
+    option_id :{type: Number},
 
 }, 
     {timestamps: {createdAt: "createdAt", updatedAt: "modifiedAt"}

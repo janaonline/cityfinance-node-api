@@ -52,3 +52,7 @@ module.exports.saveStatusHistory = (params) => {
 module.exports.modelPath = (formId) => {
   return MODEL_PATH[formId];
 };
+
+module.exports.getKeyByValue = (object, value)=>{
+  return Object.keys(object).find(key => object[key] === value);
+}
