@@ -1409,6 +1409,7 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
                     let answer = []
                     let obj = { ...answerObj }
                     obj = await handleCasesByInputType(question,obj)
+                    await deleteExtraKeys(question)
                 }
             }
         }
