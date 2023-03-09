@@ -15,7 +15,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, MASTER_STATUS } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -1294,15 +1294,18 @@ module.exports.getFlatObj = (obj) => {
 
 async function decideValues(temp,shortKey,objects,req){
     try{
+        
         let inputName = inputType[objects.input_type]
         let value = objects['answer'][0][inputName]
         switch (objects.input_type){
             case "3":
                 if(Object.keys(shortKeysWithModelName).includes(shortKey)){
                     let modelName = shortKeysWithModelName[shortKey]
-                    let filters = {option_id:parseInt(value)}
+                    let filters = {}
                     if(Object.keys(req.body).includes("isGfc")){
                         filters['formName'] = req.body.isGfc ? "gfc" :"odf"
+                        filters['option_id'] = parseInt(value)
+                        filters['financialYear'] = ObjectId(req.body.design_year)
                     }
                     let ratingObj = await moongose.model(modelName).findOne(filters)
                     value = ratingObj._id
@@ -1447,6 +1450,7 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
                     let answer = []
                     let obj = { ...answerObj }
                     obj = await handleCasesByInputType(question,obj)
+                    await deleteExtraKeys(question)
                 }
             }
         }
@@ -1517,21 +1521,36 @@ function handleFileCase(question,obj,flattedForm){
     }
 }
 
+async function deleteExtraKeys(question){
+    let filterKey = ["modelName","modelFilter"]
+    try{
+        filterKey.forEach((item)=>{
+            delete question[item]
+        })
+    }
+    catch(err){
+        console.log("error in deleteExtraKeys :: ",err.message)
+    }
+}
+
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
         let obj = [...jsonFormat]
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
         // }
+        console.log("flattedForm ::: ",flattedForm)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
             let questions = obj[key].question
             if (questions) {
+                
                 for (let question of questions) {    
                     let answer = []
                     let obj = { ...answerObj }
                     let answerKey = inputType[question.input_type]
+                    //question object is getting modified here
                     await handleCasesByInputType(question)
                     // if (Array.isArray(answerKey)) {
                     await handleValues(question,obj,flattedForm)
@@ -1543,6 +1562,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
                     answer.push(obj)
                     // console.log("answer LL ",answer)
                     question['selectedValue'] = answer
+                   await deleteExtraKeys(question)
                     // console.log(">>>>>>>>.question :: ",question)
                 }
                 let modifiedKeys = Object.keys(modifiedShortKeys)
