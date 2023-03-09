@@ -15,8 +15,12 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames } = require('../../util/FormNames');
-const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc')
+const { FormNames, FORM_LEVEL } = require('../../util/FormNames');
+const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
+const {modelPath} = require('../../util/masterFunctions')
+const Response = require("../../service").response;
+const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
+
 var modifiedShortKeys = {
     "cert_declaration":"cert"
 }
@@ -1202,31 +1206,6 @@ module.exports.canTakeActionOrViewOnly = (data, userRole) => {
     }
 }
 
-module.exports.saveCurrentStatus = (params) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const { body } = params;
-            let currentStatus = await CurrentStatus.create(body).lean(); resolve(1);
-        }
-        catch (error) {
-            reject(error);
-        }
-    });
-};
-
-
-module.exports.saveStatusHistory = (params) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const { body } = params;
-            let currentStatus = await StatusHistory.create(body).lean(); resolve(1);
-        }
-        catch (error) {
-            reject(error);
-        }
-    });
-};
-
 
 module.exports.getCurrentFinancialYear = () => {
     var fiscalyear = "";
@@ -1270,21 +1249,6 @@ module.exports.getFlatObj = (obj) => {
     return flattendObj
 }
 
-module.exports.saveCurrentStatus = (params) => {
-    return new Promise(async (resolve, reject) => {
-        try { const { body } = params; 
-        let currentStatus = await CurrentStatus.create(body).lean(); resolve(1); }
-        catch (error) { reject(error); }
-    });
-};
-module.exports.saveStatusHistory = (params) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const { body } = params;
-            let currentStatus = await StatusHistory.create(body).lean(); resolve(1);
-        } catch (error) { reject(error); }
-    });
-};
 
 
 function returnParsedObj(objects) {
@@ -1588,5 +1552,199 @@ function deleteKeys(obj, delKeys) {
     }
     catch (err) {
         console.log("error in deleteKeys ::::: ", err.message)
+    }
+}
+
+module.exports.masterAction =  async(req, res) => {
+    try {
+      let { decoded: userData, body: bodyData } = req;
+
+      let { role: actionTakenByRole, _id: actionTakenBy } = userData;
+      let {formId, multi, shortKeys, responses, ulbs, form_level, design_year} =  bodyData;
+      
+      if(!formId || !bodyData.hasOwnProperty("multi") || !shortKeys || !responses || !ulbs || !ulbs.length || !design_year || !form_level){
+        return Response.BadRequest(res, {}, "All fields are mandatory")
+      }
+      let path = modelPath(formId);
+      let condition = {
+        ulb: {$in: ulbs},
+        design_year: design_year,
+      };
+
+      const model = require(`../../models/${path}`);
+      const formData = await model.find(condition).lean();
+    //   let level = form_level;
+      if(!formData || !formData.length){
+        return Response.BadRequest(res, {}, "No Form Found!")
+      }
+    //   if(multi){
+        let params = {formData, actionTakenByRole, actionTakenBy,bodyData}
+          let actionResponse = await takeActionOnForms(params,res)
+    //   } else {
+    //     let [form] = formData; 
+    //   }
+      if(actionResponse === formData.length){
+        return Response.OK(res, {}, "Action Successful");
+      }else{
+        return Response.BadRequest(res, {}, actionResponse);
+      }
+    } catch (error) {
+      return Response.BadRequest(res, {}, error.message);
+    }
+}
+
+// x=
+// {
+//     form_level: 1,
+//     design_year : "",
+//     formId: 1,
+//     ulbs: ["", ""],
+//     responses: [
+//         {
+//         shortKey: "bal_sheet",
+//         status: "Under Review By MoHUA",
+//         rejectReason: "",
+//         responseFile: ""
+//         }
+//     ],
+//     multi: true,
+//     shortKeys: ["bal_sheet"]
+// }
+
+// // Single  form action=> based on formLevel we can have several object in responses array for different short key for question and tab level form
+
+// //Review table action =>  responses array will contain single object with multi key=> true and short keys in the array
+
+
+async function takeActionOnForms(params, res) {
+    try {
+        let {
+            bodyData,
+            actionTakenBy,
+            actionTakenByRole,
+            formData,
+          } = params;
+          let {
+            formId,
+            multi,
+            shortKeys,
+            responses,
+            form_level,
+            } = bodyData
+          let count = 0;
+          for (let form of formData) {
+            let bodyData = {
+              formId,
+              recordId: ObjectId(form._id),
+              data: form,
+            };
+            /* Saving the form history of the user. */
+            let formHistoryResponse = await saveFormHistory({ body: bodyData });
+            if(formHistoryResponse !== 1)  throw( "Action failed to save form history!");
+            let saveStatusResponse;
+            if (form_level === FORM_LEVEL["form"]) {
+              let [response] = responses;
+              let [shortKey] = shortKeys
+              saveStatusResponse = await saveStatus(
+                formId,
+                form,
+                response,
+                form_level,
+                actionTakenByRole,
+                actionTakenBy,
+                multi,
+                shortKey,
+                res
+              );
+            } else if (form_level === FORM_LEVEL["question"]) {
+              if (multi) {
+                let [response] = responses;
+                for (let shortKey of shortKeys) {
+                    saveStatusResponse = await saveStatus(
+                    formId,
+                    form,
+                    response,
+                    form_level,
+                    actionTakenByRole,
+                    actionTakenBy,
+                    multi,
+                    shortKey,
+                    res
+                  );
+                }
+              } else {
+                for (let response of responses) {
+                    saveStatusResponse = await saveStatus(
+                    formId,
+                    form,
+                    response,
+                    form_level,
+                    actionTakenByRole,
+                    actionTakenBy,
+                    multi,
+                    shortKey,
+                    res
+                  );
+                }
+              }
+            } else if (form_level === FORM_LEVEL["tab"]) {
+            
+            }
+            if(saveStatusResponse !== 1){
+                  throw("Action failed to save status!");
+            } else {
+                count++;
+            }
+          }
+        return count;
+    } catch (error) {
+      return  error.message;
+    }
+ }
+
+async function saveStatus(
+  formId,
+  form,
+  response,
+  form_level,
+  actionTakenByRole,
+  actionTakenBy,
+  multi,
+  shortKey,
+  res
+) {
+    try {
+        let currentStatusData = {
+            formId,
+            recordId: ObjectId(form._id),
+            shortKey: response.shortKey,
+            status: response.status,
+            level: form_level,
+            rejectReason: response.rejectReason,
+            responseFile: response.responseFile,
+            actionTakenByRole: actionTakenByRole,
+            actionTakenBy: ObjectId(actionTakenBy),
+          };
+        
+          (multi && form_level === FORM_LEVEL["question"]) ? currentStatusData["shortKey"] = shortKey : ""
+          let currentStatus = await saveCurrentStatus({ body: currentStatusData });
+          
+          let statusHistory = {
+            formId,
+            recordId: ObjectId(form._id),
+            shortKey: response.shortKey,
+            data: currentStatusData,
+          };
+        
+          (multi && form_level === FORM_LEVEL["question"]) ? statusHistory["shortKey"] = shortKey  : ""
+
+          let statusHistoryData = await saveStatusHistory({ body: statusHistory });
+          if (currentStatus === 1 && statusHistoryData === 1){
+            return 1;
+          }
+          return 0;
+          
+    } catch (error) {
+      return  error.message; 
     }
 }

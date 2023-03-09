@@ -15,5 +15,5 @@ const FormHistorySchema = new Schema(
   },
   { timestamp: { createdAt: "createdAt" } }
 );
-FormHistorySchema.index({recordId:1}, {unique: true})
+FormHistorySchema.index({recordId:1})
 module.exports = mongoose.model("FormHistory", FormHistorySchema);
