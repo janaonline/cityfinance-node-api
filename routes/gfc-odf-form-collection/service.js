@@ -185,8 +185,8 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 status: MASTER_STATUS["In Progress"],
                 level: FORM_LEVEL["form"],
                 shortKey: "form_level",
-                rejectReason: formSubmit.rejectReason,
-                responseFile: formSubmit.responseFile,
+                rejectReason: "",
+                responseFile: "",
                 actionTakenByRole: actionTakenByRole,
                 actionTakenBy: ObjectId(actionTakenBy),
               };
@@ -215,8 +215,8 @@ module.exports.createOrUpdateForm = async (req, res) => {
                 status: MASTER_STATUS["Under Review by State"],
                 level: FORM_LEVEL["form"],
                 shortKey: "form_level",
-                rejectReason: formSubmit.rejectReason,
-                responseFile: formSubmit.responseFile,
+                rejectReason: "",
+                responseFile: "",
                 actionTakenByRole: actionTakenByRole,
                 actionTakenBy: ObjectId(actionTakenBy),
               };
