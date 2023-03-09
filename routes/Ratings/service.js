@@ -85,8 +85,9 @@ module.exports.createFormRating = async (req, res)=>{
 }
 module.exports.getFormRatings = async (req, res)=>{
     try {
-        const { formName} = req.query;
-        let condition ={};
+        let { formName,financialYear} = req.query;
+        financialYear = financialYear ? financialYear :null
+        let condition ={ "financialYear":financialYear};
         condition.formName = (formName === 'gfc') ? 'gfc' : 'odf';
         const ratings = await Rating.find(condition);
         //forms received
@@ -105,6 +106,7 @@ module.exports.getFormRatings = async (req, res)=>{
         })
 
     } catch (error) {
+        console.log(error.message)
         res.status(400)
             .json({
                 success: false,

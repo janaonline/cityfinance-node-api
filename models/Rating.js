@@ -24,6 +24,7 @@ const ratingSchema = new Schema({
     createdAt: { type: Date },
     modifiedAt: { type: Date },
     option_id :{type: Number},
+    financialYear:{ type: Schema.Types.ObjectId, ref: "Year",default:null}
 
 }, 
     {timestamps: {createdAt: "createdAt", updatedAt: "modifiedAt"}
