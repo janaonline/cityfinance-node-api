@@ -14,6 +14,8 @@ const {
   GrantPositionDesiMalvalueUpdate
 } = require("./service");
 
+const {changeGetApiForm} = require("./middlewars")
+
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
 //Middleware
@@ -46,7 +48,7 @@ router.post("/utilization-report/action", verifyToken, userAuth, action);
 //custom report 
 router.get("/dur/report", report);
 //2223
-router.get("/utilReport", verifyToken, read2223);
+router.get("/utilReport", verifyToken, read2223,changeGetApiForm);
 
 router.get("/repair_data",dataRepair);
 

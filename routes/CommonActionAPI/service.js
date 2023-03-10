@@ -20,12 +20,16 @@ const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
+var formIdCollections= {
+    "80":"PropertyTaxOp"
+}
 
 var modifiedShortKeys = {
     "cert_declaration":"cert"
 }
+
 var shortKeysWithModelName = {
-    "rating":"Rating"
+    "rating":{"modelName":"Rating","identifier":"option_id"},
 }
 var answerObj = {
     "label": "",
@@ -1266,6 +1270,9 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
      * Pending case for handling array data inside some field
      */
     for (var key in currentNode) {
+        if(typeof(key) === "number"){
+            target.parent_arr.push(key)
+        }
         if (currentNode.hasOwnProperty(key)) {
             var newKey;
             if (flattenedKey === undefined) {
@@ -1285,6 +1292,7 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
 
 module.exports.getFlatObj = (obj) => {
     let flattendObj = {}
+    flattendObj['parent_arr'] = []
     traverseAndFlatten(obj, flattendObj)
     // let flattenArr = []
     return flattendObj
@@ -1299,15 +1307,17 @@ class PayloadManager{
         this.shortKeysWithModelName = shortKeysWithModelName
         this.inputName = inputType[objects.input_type]
         this.value = objects['answer'][0][this.inputName]
+        this.formId = req.body.formId
     }
     async getValuesFromModel(){
         try{
             if(Object.keys(this.shortKeysWithModelName).includes(this.shortKey)){
-                let modelName = shortKeysWithModelName[this.shortKey]
+                let modelName = shortKeysWithModelName[this.shortKey].modelName
+                let identifier = shortKeysWithModelName[this.shortKey].identifier
                 let filters = {}
+                filters[identifier] = parseInt(this.value)
                 if(Object.keys(this.req.body).includes("isGfc")){
                     filters['formName'] = this.req.body.isGfc ? "gfc" :"odf"
-                    filters['option_id'] = parseInt(this.value)
                 }
                 let ratingObj = await moongose.model(modelName).findOne(filters)
                 let mainvalue = ratingObj._id
@@ -1332,6 +1342,18 @@ class PayloadManager{
             console.log("error in handleFileObjects ::: ",err.message)
         }
     }
+    async handleRadioButtons(){
+        try{
+            // let collectionName = formIdCollections[this.req.body.formId]
+            // let enums = mongoose.model(collectionName).schema.path(this.shortKey).enumValues.filter(item => item != "")
+            // console.log("enums :: ",enums)
+            let label =  this.objects['answer'][0]['label']
+            return this.value 
+        }
+        catch(err){
+            console.log("error in handleRadioButtons ::: ",err.message)
+        }
+    }
 }
 
 
@@ -1346,6 +1368,9 @@ async function decideValues(temp,shortKey,objects,req){
                 break
             case "11":
                 value = await service.handleFileObjects()
+                break
+            case "5":
+                value = await service.handleRadioButtons()
                 break
             default:
                 temp[shortKey] = value
@@ -1471,6 +1496,7 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
         roleWiseJson(obj[0],role)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
         // await deleteKeys(flattedForm, keysToBeDeleted)
+        
         for (let key in obj) {
             let questions = obj[key].question
             if (obj[key].question) {
@@ -1489,7 +1515,6 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
         console.log("error in mutateJson ::: ",err.message)
     }
 }
-
 const handleValues = async(question,obj,flattedForm)=>{
     let answerKey = inputType[question.input_type]
     try{
@@ -1567,7 +1592,6 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
         // }
-        console.log("flattedForm ::: ",flattedForm)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -1603,6 +1627,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         console.log("mutuateGetPayload ::: ", err.message)
     }
 }
+
 
 async function handleCasesByInputType(question){
     try{

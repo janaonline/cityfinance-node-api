@@ -819,7 +819,7 @@ function utilReportObject() {
 
   return obj;
 }
-module.exports.read2223 = catchAsync(async (req, res) => {
+module.exports.read2223 = catchAsync(async (req, res,next) => {
   let ulb = req.query.ulb;
   let design_year = req.query.design_year;
   let role = req.decoded.role;
@@ -936,26 +936,29 @@ module.exports.read2223 = catchAsync(async (req, res) => {
       //new  implementation
       typeof(fetchedData?.grantPosition.closingBal) === "number" ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
     }
-    return res.status(200).json({
-      success: true,
-      data: fetchedData
-    })
+    req.form = fetchedData
+    next()
+    // return res.status(200).json({
+    //   success: true,
+    //   data: fetchedData
+    // })
   } else {
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
     sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
-    console.log(sampleData)
     sampleData = sampleData.toObject()
     // sampleData = sampleData.lean()
     sampleData['url'] = obj['url']
     sampleData['action'] = obj['action']
     sampleData['canTakeAction'] = false;
     // Object.assign(sampleData,obj )
-    return res.status(200).json({
-      success: true,
-      data: sampleData
-    })
+    req.form = sampleData
+    next()
+    // return res.status(200).json({
+    //   success: true,
+    //   data: sampleData
+    // })
   }
 
 })
