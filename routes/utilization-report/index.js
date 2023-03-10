@@ -14,7 +14,7 @@ const {
   GrantPositionDesiMalvalueUpdate
 } = require("./service");
 
-const {changeGetApiForm} = require("./middlewars")
+const {changeGetApiForm} = require("./middlewares")
 
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 

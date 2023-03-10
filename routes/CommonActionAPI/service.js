@@ -1270,16 +1270,26 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
      * TODO:
      * Pending case for handling array data inside some field
      */
-    for (var key in currentNode) {
-        if(typeof(key) === "number"){
-            target.parent_arr.push(key)
+    for (let key in currentNode) {
+        let iterator = Number(key)
+        if(!isNaN(iterator)){
+            let iteratorKey = flattenedKey.split(".")[0]
+            if(iteratorKey != "_id"){
+                target.parent_arr.add(iteratorKey)
+            }
         }
         if (currentNode.hasOwnProperty(key)) {
             var newKey;
             if (flattenedKey === undefined) {
                 newKey = key;
             } else {
+                let iteratorObjKey = flattenedKey.split(".")[0]
                 newKey = flattenedKey + '.' + key;
+                if(iteratorObjKey != "_id" && !target.parent_arr.has(iteratorObjKey)){
+                    target.parent_obj.add(iteratorObjKey)
+                }
+                
+            // }
             }
             var value = currentNode[key];
             if (typeof value === "object") {
@@ -1293,9 +1303,12 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
 
 module.exports.getFlatObj = (obj) => {
     let flattendObj = {}
-    flattendObj['parent_arr'] = []
+    flattendObj['parent_arr'] = new Set()
+    flattendObj['parent_obj'] = new Set()
     traverseAndFlatten(obj, flattendObj)
     // let flattenArr = []
+    flattendObj['parent_arr'] = Array.from(flattendObj['parent_arr'])
+    flattendObj['parent_obj'] = Array.from(flattendObj['parent_obj'])
     return flattendObj
 }
 
@@ -1516,6 +1529,27 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
         console.log("error in mutateJson ::: ",err.message)
     }
 }
+function appendChildQues(question,obj,flattedForm){
+    try{
+        let childElements = question.childQuestionData
+        if(question.order === "1"){
+            console.log(": ::: ",childElements[0])
+        }
+        console.log("flattedForm :::: ",flattedForm)
+    }
+    catch(err){
+        console.log("error in getChildrens :::: ",err.message)
+    }
+}
+const handleChildCase = async(question,obj,flattedForm)=>{
+    try{
+        let order = question.order
+        appendChildQues(question,obj,flattedForm)
+    }
+    catch(err){
+        console.log("error in handleChildCase :::: ",err.message)
+    }
+}
 const handleValues = async(question,obj,flattedForm)=>{
     let answerKey = inputType[question.input_type]
     try{
@@ -1529,6 +1563,8 @@ const handleValues = async(question,obj,flattedForm)=>{
             case "3":
                 await handleSelectCase(question,obj,flattedForm)
                 break
+            case "20":
+                await handleChildCase(question,obj,flattedForm)
             default:
                 let shortKey = question.shortKey.replace(" ", "")
                 obj[answerKey] = flattedForm[shortKey]
