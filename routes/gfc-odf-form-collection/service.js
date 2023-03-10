@@ -5,7 +5,7 @@
   const { response } = require("../../util/response");
   const Response = require("../../service").response;
   const mongoose = require('mongoose');
-  const { canTakenAction } = require("../CommonActionAPI/service");
+  const { canTakenAction , canTakenActionMaster} = require("../CommonActionAPI/service");
   const Service = require("../../service");
   const { years } = require("../../service/years");
   const { FormNames, YEAR_CONSTANTS , MASTER_STATUS, FORMIDs, FORM_LEVEL} = require("../../util/FormNames");
@@ -129,7 +129,8 @@ module.exports.createOrUpdateForm = async (req, res) => {
 
         try {
           const formBodyStatus = formData.status;
-          savedBody.status = "";
+          savedBody.status = formData.status = "";
+          savedBody.currentFormStatus = formData.currentFormStatus = formBodyStatus;
           let formData2324 = await collection
             .findOne({ ulb: data.ulb, design_year: data.design_year })
             .lean();
@@ -373,20 +374,39 @@ module.exports.getForm = async (req, res, next) => {
               })
           }
           if (form) {
-              Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB", role) })
-              if (form.certDate !== null && form.certDate !== "") {
-                  form.certDate = dateFormatter(form?.certDate);
-              }
-              req.form = form
-              // if (!formId) {
-              //     return res.status(200).json({
-              //         success: true,
-              //         data: form
-              //     });
-              // } else {
-              
+            if (design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+              let params = {
+                status: form.currentFormStatus,
+                formType: "ULB",
+                loggedInUser: role,
+              };
+              Object.assign(form, {
+                canTakeAction: canTakenActionMaster(params),
+              });
+            } else {
+              Object.assign(form, {
+                canTakeAction: canTakenAction(
+                  form["status"],
+                  form["actionTakenByRole"],
+                  form["isDraft"],
+                  "ULB",
+                  role
+                ),
+              });
+            }
+            if (form.certDate !== null && form.certDate !== "") {
+              form.certDate = dateFormatter(form?.certDate);
+            }
+            req.form = form;
+
+            // if (!formId) {
+            //     return res.status(200).json({
+            //         success: true,
+            //         data: form
+            //     });
+            // } else {
           }
-           next()
+          next();
       
           
 

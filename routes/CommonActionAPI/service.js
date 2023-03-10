@@ -15,11 +15,12 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, YEAR_CONSTANTS } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
+const CurrentStatus = require('../../models/CurrentStatus');
 
 var modifiedShortKeys = {
     "cert_declaration":"cert"
@@ -190,6 +191,44 @@ module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, l
     }
 
 }
+
+module.exports.canTakenActionMaster = (params) => {
+  let { status, formType, loggedInUser } = params;
+  switch (formType) {
+    case "ULB":
+      if (loggedInUser == "STATE") {
+        if (status === MASTER_STATUS["Under Review by State"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else if (loggedInUser == "MoHUA") {
+        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+      break;
+
+    case "STATE":
+      if (loggedInUser == "MoHUA") {
+        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+      break;
+
+    default:
+      break;
+  }
+};
 
 module.exports.calculateKeys = (formStatus, formType) => {
     let keys = {
@@ -1643,7 +1682,7 @@ function deleteKeys(obj, delKeys) {
     }
 }
 
-module.exports.masterAction =  async(req, res) => {
+module.exports.masterAction =  async (req, res) => {
     try {
       let { decoded: userData, body: bodyData } = req;
 
@@ -1680,29 +1719,6 @@ module.exports.masterAction =  async(req, res) => {
       return Response.BadRequest(res, {}, error.message);
     }
 }
-
-// x=
-// {
-//     form_level: 1,
-//     design_year : "",
-//     formId: 1,
-//     ulbs: ["", ""],
-//     responses: [
-//         {
-//         shortKey: "bal_sheet",
-//         status: "Under Review By MoHUA",
-//         rejectReason: "",
-//         responseFile: ""
-//         }
-//     ],
-//     multi: true,
-//     shortKeys: ["bal_sheet"]
-// }
-
-// // Single  form action=> based on formLevel we can have several object in responses array for different short key for question and tab level form
-
-// //Review table action =>  responses array will contain single object with multi key=> true and short keys in the array
-
 
 async function takeActionOnForms(params, res) {
     try {
@@ -1834,5 +1850,46 @@ async function saveStatus(
           
     } catch (error) {
       return  error.message; 
+    }
+}
+
+module.exports.getMasterAction = async (req, res) => {
+    try {
+      let { decoded: userData, body: bodyData } = req;
+
+      let { role } = userData;
+      let { formId, ulb, design_year } = bodyData;
+
+      if (!formId || !ulb || !design_year) {
+        return Response.BadRequest(res, {}, "All fields are mandatory");
+      }
+      let path = modelPath(formId);
+      let condition = {
+        ulb,
+        design_year: design_year,
+      };
+
+      const model = require(`../../models/${path}`);
+      const form = await model.findOne(condition,{_id:1}).lean();
+      if (!form) {
+        return Response.BadRequest(res, {}, "No Form Found!");
+      }
+      const currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      if(!currentStatusResponse || !currentStatusResponse.length){
+        return Response.BadRequest(res, {}, "No Response Found!");
+      }
+    //   let params = {
+    //     status: form.currentFormStatus,
+    //     formType: "ULB",
+    //     loggedInUser: role,
+    //   };
+    //   Object.assign(form, {
+    //     canTakenAction: canTakenActionMaster(params),
+    //   });
+
+      return Response.OK(res, currentStatusResponse);
+    } catch (error) {
+        return Response.BadRequest(res, {}, error.message);
+
     }
 }
