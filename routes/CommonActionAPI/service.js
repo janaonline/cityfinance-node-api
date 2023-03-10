@@ -20,6 +20,7 @@ const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
+const CurrentStatus = require('../../models/CurrentStatus');
 var formIdCollections= {
     "80":"PropertyTaxOp"
 }
@@ -1906,33 +1907,42 @@ async function saveStatus(
 }
 
 module.exports.getMasterAction = async (req, res) => {
-    let { decoded: userData, query: queryData } = req;
+    try {
+      let { decoded: userData, body: bodyData } = req;
 
       let { role } = userData;
-      let {formId, ulb,design_year} =  queryData;
-      
-      if(!formId || !bodyData.hasOwnProperty("multi")  || !responses || !ulbs || !ulbs.length || !design_year || !form_level){
-        return Response.BadRequest(res, {}, "All fields are mandatory")
+      let { formId, ulb, design_year } = bodyData;
+
+      if (!formId || !ulb || !design_year) {
+        return Response.BadRequest(res, {}, "All fields are mandatory");
       }
       let path = modelPath(formId);
       let condition = {
-        ulb: {$in: ulbs},
+        ulb,
         design_year: design_year,
       };
 
       const model = require(`../../models/${path}`);
-      const formData = await model.find(condition).lean();
-    //   let level = form_level;
-      if(!formData || !formData.length){
-        return Response.BadRequest(res, {}, "No Form Found!")
+      const form = await model.findOne(condition,{_id:1}).lean();
+      if (!form) {
+        return Response.BadRequest(res, {}, "No Form Found!");
       }
+      const currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      if(!currentStatusResponse || !currentStatusResponse.length){
+        return Response.BadRequest(res, {}, "No Response Found!");
+      }
+    //   let params = {
+    //     status: form.currentFormStatus,
+    //     formType: "ULB",
+    //     loggedInUser: role,
+    //   };
+    //   Object.assign(form, {
+    //     canTakenAction: canTakenActionMaster(params),
+    //   });
 
-      let params = {
-        status: form.currentFormStatus,
-        formType: "ULB",
-        loggedInUser: role,
-      };
-      Object.assign(form, {
-        canTakenAction: canTakenActionMaster(params),
-      });
+      return Response.OK(res, currentStatusResponse);
+    } catch (error) {
+        return Response.BadRequest(res, {}, error.message);
+
+    }
 }
