@@ -53,6 +53,10 @@ const OdfFormCollectionSchema = new Schema({
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         }
     },
+    currentFormStatus: {
+        type: Number,
+        required: true  
+    },
     ulbSubmit:{
         type: Date,
     },
