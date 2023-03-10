@@ -35,9 +35,10 @@ module.exports.MASTER_STATUS = {
 
 
 module.exports.FORMIDs = {
-    "AnnualAccount": 1,
-    "ODF": 2,
-    "GFC":3
+    "ODF": 1,
+    "GFC":2,
+    "PTO":3,
+    "AnnualAccount": 4,
 }
 
 
