@@ -657,7 +657,10 @@ exports.getView = async function (req, res, next) {
             } else {
               if (fyData.length) {
                 if (pf.year && pf.type) {
+                  console.log(pf.year)
+                  console.log(pf.type)
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+                  console.log("singleFydata :: ",singleFydata)
                   if (singleFydata?.date !== null) {
                     pf['date'] = singleFydata ? singleFydata.date : null;
                   } else {
@@ -685,7 +688,7 @@ exports.getView = async function (req, res, next) {
       "isDraft": viewOne.isDraft,
       "tabs": modifiedTabs
     }
-    return res.status(200).json({ status: false, message: "Success fetched data!", "data": viewData });
+    return res.status(200).json({ status: true, message: "Success fetched data!", "data": viewData });
   } catch (error) {
     console.log("err", error)
     return res.status(400).json({ status: false, message: "Something error wrong!" });
