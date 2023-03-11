@@ -675,7 +675,7 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
-    let tabs = await fiscalRankingTabs()
+    let tabs = await TabsFiscalRankings.find({}).sort({displayPriority:-1}).lean()
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null
     }
@@ -2116,13 +2116,14 @@ module.exports.createForm = catchAsync(async (req, res) => {
     }
     
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, true)
-    response.status = true
+    response.success = true
     response.message = "Form submitted successfully"
     return res.status(200).json(response)
   }
   catch (err) {
    await session.abortTransaction()
     await session.endSession()
+    console.log(err.message)
     response.message = "some server error occured"
     if(err.type && (err.type === "ValidationError")){
       response.message = err.message
