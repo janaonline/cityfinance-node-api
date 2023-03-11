@@ -22,7 +22,8 @@ let priorTabsForFiscalRanking = {
   "basicUlbDetails": "s1",
   "conInfo": "s2",
   "financialInformation":"s3",
-  "selDec": "s4"
+  "uploadFyDoc": "s4",
+  "selDec":"s5"
 }
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)

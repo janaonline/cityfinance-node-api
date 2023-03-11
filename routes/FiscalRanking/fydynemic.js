@@ -1636,27 +1636,11 @@ let fiscalRankingTabs = () => {
     "displayPriority": 3
   },
   {
-    "key": "expPerf",
-    "icon": "",
-    "text": "",
-    "label": "Expenditure Performance Parameters",
-    "id": "s4",
-    "displayPriority": 4,
-  },
-  {
-    "key": "goverPar",
-    "icon": "",
-    "text": "",
-    "label": "Fiscal Governance Parameters",
-    "id": "s5",
-    "displayPriority": 5,
-  },
-  {
     "key": "uploadFyDoc",
     "icon": "",
     "text": "",
     "label": "Upload Financial Documents",
-    "id": "s6",
+    "id": "s4",
     "displayPriority": 6
   },
   {
@@ -1664,7 +1648,7 @@ let fiscalRankingTabs = () => {
     "icon": "",
     "text": "",
     "label": "Self Declaration",
-    "id": "s7",
+    "id": "s5",
     "displayPriority": 7
   }]
 }
