@@ -217,6 +217,8 @@ class tabsUpdationServiceFR {
     return {
       "population11": { ...this.detail.population11 },
       "populationFr": { ...this.detail.populationFr },
+      "auditorName": { ...this.detail.auditorName },
+      "caMembershipNo":{...this.detail.caMembershipNo},
       "webLink": { ...this.detail.webLink },
       "waterSupply": { ...this.detail.waterSupply },
       "sanitationService": { ...this.detail.sanitationService },
@@ -378,6 +380,28 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
       }
+      case "auditorName":
+        return {
+          ...getInputKeysByType(
+            "text",
+            "",
+            "Auditor Name",
+            dataSource,
+            "7"),
+          ...obj,
+          "readonly": getReadOnly(obj.status, isDraft)
+      }
+      case "caMembershipNo":
+        return {
+          ...getInputKeysByType(
+            "text",
+            "",
+            "Ca Membership number",
+            dataSource,
+            "8"),
+          ...obj,
+          "readonly": getReadOnly(obj.status, isDraft)
+      }
     case "nameOfNodalOfficer":
       return {
         ...getInputKeysByType(
@@ -429,7 +453,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "radio-toggle",
           "",
           dataSource,
-          "7",
+          "9",
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -441,7 +465,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "radio-toggle",
           "",
           dataSource,
-          "8",
+          "10",
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -453,7 +477,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "radio-toggle",
           "",
           dataSource,
-          "9",
+          "11",
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -465,7 +489,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "radio-toggle",
           "",
           dataSource,
-          "9",
+          "12",
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -552,12 +576,15 @@ exports.getView = async function (req, res, next) {
       "propertySanitationTax",
       "property_tax_register",
       "paying_property_tax",
-      "paid_property_tax"
+      "paid_property_tax",
+      "auditorName",
+      "caMembershipNo"
     ];
 
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
+        
         viewOne[keys[index]] = getColumnWiseData(keys[index], obj, viewOne.isDraft, "FiscalRanking")
       } else {
         viewOne[keys[index]] = getColumnWiseData(keys[index], {
