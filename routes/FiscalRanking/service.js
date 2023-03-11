@@ -361,7 +361,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
     case "webLink":
       return {
         ...getInputKeysByType(
-          "text",
+          "url",
           "",
           "ULB website URL link",
           dataSource,
@@ -603,10 +603,12 @@ exports.getView = async function (req, res, next) {
       let subData = fyDynemic[sortKey];
       for (let key in subData) {
         for (let pf of subData[key]?.yearData) {
+          
           if (pf?.code?.length > 0) {
             pf['status'] = null
             pf["modelName"] = "FiscalRanking"
             if (fyData.length) {
+              
               let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
@@ -657,17 +659,15 @@ exports.getView = async function (req, res, next) {
             } else {
               if (fyData.length) {
                 if (pf.year && pf.type) {
-                  console.log(pf.year)
-                  console.log(pf.type)
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
-                  console.log("singleFydata :: ",singleFydata)
-                  if (singleFydata?.date !== null) {
-                    pf['date'] = singleFydata ? singleFydata.date : null;
-                  } else {
+                  if(singleFydata ){
+                    if (singleFydata?.date !== null) {
+                      pf['date'] = singleFydata ? singleFydata.date : null;
+                    } 
                     pf['value'] = singleFydata ? singleFydata.value : "";
-                  }
-                  pf['status'] = singleFydata ? singleFydata.status : "PENDING";
-                  pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                    pf['status'] = singleFydata ? singleFydata.status : "PENDING";
+                    pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                }
                 }
               }
             }
