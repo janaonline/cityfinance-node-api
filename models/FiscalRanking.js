@@ -83,6 +83,14 @@ const fiscalRankingSchema = new Schema(
             value: { type: String, default: null },
             status:statusSchema()
         },
+        auditorName:{
+            status:statusSchema(),
+            value: { type: String, default: null },
+        },
+        caMembershipNo:{
+            status:statusSchema(),
+            value: { type: String, default: null },
+        },
         email: {
             status:statusSchema(),
             value:{

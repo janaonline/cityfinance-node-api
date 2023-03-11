@@ -21,11 +21,8 @@ const TabsFiscalRankings = require('../../models/TabsFiscalRankings');
 let priorTabsForFiscalRanking = {
   "basicUlbDetails": "s1",
   "conInfo": "s2",
-  "revenueMob": "s3",
-  "expPerf": "s4",
-  "goverPar": "s5",
-  "uploadFyDoc": "s6",
-  "selDec": "s7"
+  "financialInformation":"s3",
+  "selDec": "s4"
 }
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
@@ -305,14 +302,13 @@ function statusObj(label, fieldType, type, dataSource, position) {
   }
 }
 
-
 function assignCalculatedValues(fyDynemic, viewONe) {
-  let totalOwnRevenueAreaObj = fyDynemic["goverPar"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
-  let propertyTaxObj = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "property_tax_register")
-  let payingPropObj = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paying_property_tax")
-  let paid_property_tax = fyDynemic["goverPar"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
-  let fy21CashObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
-  let fy21OnlineObj = fyDynemic["goverPar"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
+  let totalOwnRevenueAreaObj = fyDynemic["financialInformation"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
+  let propertyTaxObj = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "property_tax_register")
+  let payingPropObj = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "paying_property_tax")
+  let paid_property_tax = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
+  let fy21CashObj = fyDynemic["financialInformation"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
+  let fy21OnlineObj = fyDynemic["financialInformation"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
 
   Object.assign(totalOwnRevenueAreaObj, viewONe['totalOwnRevenueArea'])
   Object.assign(propertyTaxObj, viewONe['property_tax_register'])

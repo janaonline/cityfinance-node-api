@@ -1,7 +1,7 @@
 const { years } = require("../../service/years")
 const fiscalRankingFormJson = () => {
   return {
-    goverPar: {
+    financialInformation: {
       normalData: {
         key: 'normalData',
         label: '',
@@ -224,8 +224,7 @@ const fiscalRankingFormJson = () => {
           },
         ]
       },
-    },
-    revenueMob: {
+
       totalRecActual: {
         key: 'totalRecActual',
         label: 'Total Receipts (Actual)',
@@ -950,9 +949,7 @@ const fiscalRankingFormJson = () => {
             placeHolder: ''
           }
         ]
-      }
-    },
-    expPerf: {
+      },
       totalCaptlExp: {
         key: 'totalCaptlExp',
         label: 'Total Capital Expenditure',
@@ -1631,10 +1628,10 @@ let fiscalRankingTabs = () => {
     "displayPriority": 2,
   },
   {
-    "key": "revenueMob",
+    "key": "financialInformation",
     "icon": "",
     "text": "",
-    "label": "Revenue Mobilization Parameters",
+    "label": "Financial Information",
     "id": "s3",
     "displayPriority": 3
   },
