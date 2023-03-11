@@ -1,4 +1,5 @@
 const { years } = require("../../service/years")
+module.exports.notRequiredValidations = ['caMembershipNo']
 const fiscalRankingFormJson = () => {
   return {
     financialInformation: {

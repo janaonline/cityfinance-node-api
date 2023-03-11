@@ -12,7 +12,7 @@ const userTypes = require("../../util/userTypes")
 // const converter = require('json-2-csv');
 const { calculateKeys, canTakeActionOrViewOnly, calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
-const { fiscalRankingFormJson, inputKeys, getInputKeysByType, fiscalRankingTabs } = require('./fydynemic');
+const { fiscalRankingFormJson, inputKeys, getInputKeysByType, fiscalRankingTabs,notRequiredValidations } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
 const fs = require('fs');
@@ -1763,6 +1763,9 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm) {
           payload[key]= obj[key]
         }
         else{
+          if(!obj[key].value && !notRequiredValidations.includes(key)){
+            throw {"message": `value for field ${key} is required` ,"type":"ValidationError"}
+          }
           payload[`${key}.value`] = obj[key].value
         }
       }
@@ -1773,15 +1776,13 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm) {
         }
         payload[`${key}.status`] = status
       }
-      // if (key === "signedCopyOfFile") {
-      //   console.log(payload)
-      // }
     }
 
     await FiscalRanking.findOneAndUpdate(filter, payload)
   }
   catch (err) {
-    console.log("error in updateFiscalRankingForm ::: ", err.message)
+    console.log("error in updateFiscalRankingForm ::: ", err)
+    throw err
   }
 }
 
@@ -1794,7 +1795,6 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
           status.push(obj[key][element])
         }
       }
-
     }
   }
   catch (err) {
@@ -1802,7 +1802,6 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
   }
   return status
 }
-
 
 /**
  * 
@@ -1867,8 +1866,9 @@ async function calculateAndUpdateStatusForMappers(session,tabs, ulbId, formId, y
     return conditionalObj
   }
   catch (err) {
-    await session.abortTransaction()
-    await session.endSession()
+    // await session.abortTransaction()
+    // await session.endSession()
+    throw err
     console.log("error in calculatAndUpdateStatusForMappers :: ", err.message)
   }
 }
@@ -2004,15 +2004,15 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
 
   }
   catch (err) {
-    await session.abortTransaction()
-    await session.endSession()
+    // await session.abortTransaction()
+    // await session.endSession()
     response.message = "some server error occured"
     console.log("error in actionTakenByMoHua ::: ", err.message)
   }
   return res.status(500).json(response)
 })
 
-async function checkIfFormIdExistsOrNot(formId){
+async function checkIfFormIdExistsOrNot(formId,ulbId,design_year){
   let validation = {
     message : "",
     valid:true,
@@ -2048,6 +2048,11 @@ async function checkIfFormIdExistsOrNot(formId){
 
   }
   catch(err){
+    validation.message = "Some error occured"
+    if(err.code && err.code === 11000){
+      validation.message = "form for this ulb and design year already exists"
+    }
+    validation.valid = false
     console.log("error in checkIfFormIdExistsornot ::: ",err.message)
   }
   return validation
@@ -2061,7 +2066,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   await session.startTransaction()
   try {
     let { ulbId, formId, actions, design_year, isDraft } = req.body
-    let formIdValidations =  await checkIfFormIdExistsOrNot(formId)
+    let formIdValidations =  await checkIfFormIdExistsOrNot(formId,ulbId,design_year)
     let { role, _id: userId } = req.decoded
     if(!formIdValidations.valid){
       response.message = formIdValidations.message
@@ -2078,10 +2083,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message
       return res.status(500).json(response)
     }
-    if (role !== userTypes.mohua) {
-      response.message = "Not permitted"
-      return res.status(500).json(response)
-    }
     
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, true)
     response.status = true
@@ -2091,8 +2092,10 @@ module.exports.createForm = catchAsync(async (req, res) => {
   catch (err) {
    await session.abortTransaction()
     await session.endSession()
-    console.log("error in createForm ::: ", err.message)
     response.message = "some server error occured"
+    if(err.type && (err.type === "ValidationError")){
+      response.message = err.message
+    }
   }
   return res.status(500).json(response)
 })
