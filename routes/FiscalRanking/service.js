@@ -679,6 +679,7 @@ exports.getView = async function (req, res, next) {
     Object.assign(conditionForFeedbacks, condition)
     let modifiedTabs = await getModifiedTabsFiscalRanking(tabs, viewOne, fyDynemic, conditionForFeedbacks);
     let viewData = {
+      "_id":viewOne._id ? viewOne._id :null,
       "ulb": viewOne.ulb,
       "design_year": viewOne.design_year,
       "isDraft": viewOne.isDraft,
