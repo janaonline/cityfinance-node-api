@@ -601,7 +601,9 @@ exports.getView = async function (req, res, next) {
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
+      // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
+
         for (let pf of subData[key]?.yearData) {
           
           if (pf?.code?.length > 0) {
