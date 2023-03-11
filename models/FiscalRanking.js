@@ -10,6 +10,7 @@ const statusSchema = ()=>{
             values: ["PENDING", "APPROVED", "REJECTED",null],
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         },
+        
     }
 }
 const enumYesNo = {
@@ -18,7 +19,8 @@ const enumYesNo = {
         enum: {
             values: ["Yes", "No", null],
             message: "ERROR: STATUS BE EITHER 'Yes'/ 'No'",
-        }
+        },
+        default:null,
     },
     status: {
         type: String,
@@ -58,17 +60,17 @@ const fiscalRankingSchema = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         population11: {
-            value: { type: Number, default: null },
+            value: { type: Number},
             status: statusSchema(),
             dataSource:modelSchema()
         },
         populationFr: {
-            value: { type: Number, default: null },
+            value: { type: Number, default: null},
             status: statusSchema(),
             dataSource:modelSchema()
         },
         webLink: {
-            value : { type: String, default: null },
+            value : { type: String, default: null},
             status: statusSchema()
         },
         nameCmsnr: {
@@ -102,6 +104,14 @@ const fiscalRankingSchema = new Schema(
         mobile: {
             status:statusSchema(),
             value:{ type: String, default: null }
+        },
+        auditorName:{
+            status:statusSchema(),
+            value:{ type: String}
+        },
+        caMembershipNo:{
+            status:statusSchema(),
+            value:{type:String}
         },
         webUrlAnnual: {
             status: {
@@ -158,8 +168,9 @@ const fiscalRankingSchema = new Schema(
                     values: ["UPI", "Netbanking", "Credit Card", "Debit Card", "Others"],
                     message: "ERROR: STATUS BE EITHER 'UPI'/ 'Netbanking'/ 'Credit Card'/ 'Debit Card'/ 'Others'",
                 },
+                
             },
-            value: { type: Number, default: null },
+            value: { type: Number, default: null},
             status: {
                 type: String,
                 default: "PENDING",
