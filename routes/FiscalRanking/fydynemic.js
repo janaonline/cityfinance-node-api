@@ -4205,6 +4205,7 @@ const fiscalRankingFormJson = () => {
         key: 'fixedAsset',
         label: 'Total Fixed Assets (Gross Block)',
         displayPriority:"23",
+        calculatedFrom:["22.1","22.3"],
         yearData: [
           {
             label: 'FY 2018-19',
@@ -6057,6 +6058,34 @@ const fiscalRankingFormJson = () => {
           {}
         ]
 
+      },
+      accountStwreProof:{
+        key: 'accountStwreProof',
+        label: 'Please upload proof?',
+        displayPriority:"36",
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'accountStwreProof',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "file",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
       },
       fy_21_22_cash:{
         label: 'Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD',
