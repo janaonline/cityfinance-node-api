@@ -12,7 +12,7 @@ const userTypes = require("../../util/userTypes")
 // const converter = require('json-2-csv');
 const { calculateKeys, canTakeActionOrViewOnly, calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
-const { fiscalRankingFormJson, inputKeys, getInputKeysByType, fiscalRankingTabs,notRequiredValidations } = require('./fydynemic');
+const { fiscalRankingFormJson, inputKeys, getInputKeysByType,jsonObject, fiscalRankingTabs,notRequiredValidations } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
 const fs = require('fs');
@@ -306,20 +306,20 @@ function statusObj(label, fieldType, type, dataSource, position) {
 }
 
 function assignCalculatedValues(fyDynemic, viewONe) {
-  let totalOwnRevenueAreaObj = fyDynemic["financialInformation"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
-  let propertyTaxObj = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "property_tax_register")
-  let payingPropObj = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "paying_property_tax")
-  let paid_property_tax = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
-  let fy21CashObj = fyDynemic["financialInformation"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
-  let fy21OnlineObj = fyDynemic["financialInformation"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
+  // let totalOwnRevenueAreaObj = fyDynemic["financialInformation"]["ownRevDetails"]["yearData"].find(item => item.key === "totalOwnRevenueArea")
+  // let propertyTaxObj = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "property_tax_register")
+  // let payingPropObj = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "paying_property_tax")
+  // let paid_property_tax = fyDynemic["financialInformation"]["propertyDetails"]["yearData"].find(item => item.key === "paid_property_tax")
+  // let fy21CashObj = fyDynemic["financialInformation"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_cash")
+  // let fy21OnlineObj = fyDynemic["financialInformation"]["ownRevenAmt"]["yearData"].find(item => item.key === "fy_21_22_online")
 
-  Object.assign(totalOwnRevenueAreaObj, viewONe['totalOwnRevenueArea'])
-  Object.assign(propertyTaxObj, viewONe['property_tax_register'])
-  Object.assign(payingPropObj, viewONe['paying_property_tax'])
-  Object.assign(paid_property_tax, viewONe['paid_property_tax'])
-  Object.assign(paid_property_tax, viewONe['paid_property_tax'])
-  Object.assign(fy21CashObj, viewONe['fy_21_22_cash'])
-  Object.assign(fy21OnlineObj, viewONe['fy_21_22_online'])
+  // Object.assign(totalOwnRevenueAreaObj, viewONe['totalOwnRevenueArea'])
+  // Object.assign(propertyTaxObj, viewONe['property_tax_register'])
+  // Object.assign(payingPropObj, viewONe['paying_property_tax'])
+  // Object.assign(paid_property_tax, viewONe['paid_property_tax'])
+  // Object.assign(paid_property_tax, viewONe['paid_property_tax'])
+  // Object.assign(fy21CashObj, viewONe['fy_21_22_cash'])
+  // Object.assign(fy21OnlineObj, viewONe['fy_21_22_online'])
 
 }
 
@@ -603,9 +603,7 @@ exports.getView = async function (req, res, next) {
       let subData = fyDynemic[sortKey];
       // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
-
         for (let pf of subData[key]?.yearData) {
-          
           if (pf?.code?.length > 0) {
             pf['status'] = null
             pf["modelName"] = "FiscalRanking"
