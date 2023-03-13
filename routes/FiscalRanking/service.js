@@ -684,8 +684,8 @@ exports.getView = async function (req, res, next) {
     let modifiedTabs = await getModifiedTabsFiscalRanking(tabs, viewOne, fyDynemic, conditionForFeedbacks);
     let viewData = {
       "_id":viewOne._id ? viewOne._id :null,
-      "ulb": viewOne.ulb,
-      "design_year": viewOne.design_year,
+      "ulb": viewOne.ulb ? viewOne.ulb :  req.query.ulb,
+      "design_year": viewOne.design_year ? viewOne.design_year : req.query.design_year,
       "isDraft": viewOne.isDraft,
       "tabs": modifiedTabs
     }
@@ -2053,7 +2053,7 @@ async function checkIfFormIdExistsOrNot(formId,ulbId,design_year){
     formId : null
   }
   try{
-    if(formId === undefined){
+    if(!formId){
       let form = await FiscalRanking.create(
         {
           ulb:ObjectId(ulbId),
