@@ -5777,7 +5777,7 @@ const fiscalRankingFormJson = () => {
             year: years["2018-19"],
             code: [],
             readonly: false,
-            formFieldType: "number",
+            formFieldType: "date",
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
             placeHolder: ''
           },
