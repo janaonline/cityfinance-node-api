@@ -6818,8 +6818,8 @@ function createJson(objects) {
   }
   return json
 }
-let json = createJson(objects)
-let sorted = json.sort((a, b) => { return (+a.displayPriority > +b.displayPriority ? 1 : -1) })
+// let json = createJson(objects)
+// let sorted = json.sort((a, b) => { return (+a.displayPriority > +b.displayPriority ? 1 : -1) })
 
 
 module.exports.jsonObject = jsonObject
