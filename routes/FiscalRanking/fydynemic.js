@@ -6,229 +6,229 @@ function convertToString(str){
 const fiscalRankingFormJson = () => {
   return {
     financialInformation: {
-      normalData: {
-        key: 'normalData',
-        label: '',
-        yearData: [
-          {
-            label: 'ULB website URL link where Copy of Audited Annual Accounts of FY 2019-20  to FY 2020-21 are available',
-            key: 'webUrlAnnual',
-            postion: '1',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "text",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'text'
-          },
-          {
-            label: 'Is the property tax register GIS-based?',
-            key: 'registerGis',
-            postion: '2',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "radio",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'radio'
-          },
-          {
-            label: 'Do you use accounting software?',
-            key: 'accountStwre',
-            postion: '3',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "radio",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'radio'
-          }
-        ]
-      },
-      auditReprtDate: {
-        key: 'auditReprtDate',
-        label: 'Own Revenue Details',
-        yearData: [
-          {
-            label: 'FY 2019-20',
-            key: 'FY2019-20',
-            postion: '1',
-            value: '',
-            date: null,
-            file: '',
-            min: 0,
-            max: 13,
-            required: true,
-            formFieldType: "date",
-            type: 'auditReprtDate',
-            code: [],
-            readonly: false,
-            year: "607697074dff55e6c0be33ba",
-            bottomText: ``,
-            placeHolder: ''
-          },
-          {
-            label: 'FY 2020-21',
-            key: 'FY2020-21',
-            postion: '2',
-            value: '',
-            file: '',
-            date: null,
-            min: 0,
-            max: 13,
-            required: true,
-            type: 'auditReprtDate',
-            formFieldType: "date",
-            code: [],
-            readonly: false,
-            year: "606aadac4dff55e6c075c507",
-            bottomText: '',
-            placeHolder: ''
-          },
-          {
-            label: 'FY 2021-22',
-            key: 'FY2021-22',
-            postion: '3',
-            value: '',
-            file: '',
-            date: null,
-            min: 0,
-            max: 13,
-            required: true,
-            type: 'auditReprtDate',
-            formFieldType: "date",
-            code: [],
-            readonly: false,
-            year: "606aaf854dff55e6c075d219",
-            bottomText: '',
-            placeHolder: ''
-          },
-        ]
-      },
-      ownRevDetails: {
-        key: 'ownRevDetails',
-        label: 'Own Revenue Details',
-        yearData: [
-          {
-            label: 'Total Own Revenue Arrears as on 31st March 2022',
-            key: 'totalOwnRevenueArea',
-            postion: '1',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "number",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'number'
-          }
-        ]
-      },
-      ownRevenAmt: {
-        key: 'ownRevenAmt',
-        label: 'Own Revenue Collection Amount',
-        yearData: [
-          {
-            label: 'FY 2021-22 - by Cash/Cheque/DD',
-            key: 'fy_21_22_cash',
-            postion: '2',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "number",
-            year: "606aaf854dff55e6c075d219",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'number'
-          },
-          {
-            label: 'FY 2021-22 - by Online (UPI,Netbanking,Credit Card,Debit Card,others)',
-            key: 'fy_21_22_online',
-            postion: '3',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            year: "606aaf854dff55e6c075d219",
-            readonly: false,
-            formFieldType: "number",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'number'
-          }
-        ]
-      },
-      propertyDetails: {
-        key: 'propertyDetails',
-        label: 'Property Details',
+      // normalData: {
+      //   key: 'normalData',
+      //   label: '',
+      //   yearData: [
+      //     {
+      //       label: 'ULB website URL link where Copy of Audited Annual Accounts of FY 2019-20  to FY 2020-21 are available',
+      //       key: 'webUrlAnnual',
+      //       postion: '1',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "text",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'text'
+      //     },
+      //     {
+      //       label: 'Is the property tax register GIS-based?',
+      //       key: 'registerGis',
+      //       postion: '2',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "radio",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'radio'
+      //     },
+      //     {
+      //       label: 'Do you use accounting software?',
+      //       key: 'accountStwre',
+      //       postion: '3',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "radio",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'radio'
+      //     }
+      //   ]
+      // },
+      // auditReprtDate: {
+      //   key: 'auditReprtDate',
+      //   label: 'Own Revenue Details',
+      //   yearData: [
+      //     {
+      //       label: 'FY 2019-20',
+      //       key: 'FY2019-20',
+      //       postion: '1',
+      //       value: '',
+      //       date: null,
+      //       file: '',
+      //       min: 0,
+      //       max: 13,
+      //       required: true,
+      //       formFieldType: "date",
+      //       type: 'auditReprtDate',
+      //       code: [],
+      //       readonly: false,
+      //       year: "607697074dff55e6c0be33ba",
+      //       bottomText: ``,
+      //       placeHolder: ''
+      //     },
+      //     {
+      //       label: 'FY 2020-21',
+      //       key: 'FY2020-21',
+      //       postion: '2',
+      //       value: '',
+      //       file: '',
+      //       date: null,
+      //       min: 0,
+      //       max: 13,
+      //       required: true,
+      //       type: 'auditReprtDate',
+      //       formFieldType: "date",
+      //       code: [],
+      //       readonly: false,
+      //       year: "606aadac4dff55e6c075c507",
+      //       bottomText: '',
+      //       placeHolder: ''
+      //     },
+      //     {
+      //       label: 'FY 2021-22',
+      //       key: 'FY2021-22',
+      //       postion: '3',
+      //       value: '',
+      //       file: '',
+      //       date: null,
+      //       min: 0,
+      //       max: 13,
+      //       required: true,
+      //       type: 'auditReprtDate',
+      //       formFieldType: "date",
+      //       code: [],
+      //       readonly: false,
+      //       year: "606aaf854dff55e6c075d219",
+      //       bottomText: '',
+      //       placeHolder: ''
+      //     },
+      //   ]
+      // },
+      // ownRevDetails: {
+      //   key: 'ownRevDetails',
+      //   label: 'Own Revenue Details',
+      //   yearData: [
+      //     {
+      //       label: 'Total Own Revenue Arrears as on 31st March 2022',
+      //       key: 'totalOwnRevenueArea',
+      //       postion: '1',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "number",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'number'
+      //     }
+      //   ]
+      // },
+      // ownRevenAmt: {
+      //   key: 'ownRevenAmt',
+      //   label: 'Own Revenue Collection Amount',
+      //   yearData: [
+      //     {
+      //       label: 'FY 2021-22 - by Cash/Cheque/DD',
+      //       key: 'fy_21_22_cash',
+      //       postion: '2',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "number",
+      //       year: "606aaf854dff55e6c075d219",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'number'
+      //     },
+      //     {
+      //       label: 'FY 2021-22 - by Online (UPI,Netbanking,Credit Card,Debit Card,others)',
+      //       key: 'fy_21_22_online',
+      //       postion: '3',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       year: "606aaf854dff55e6c075d219",
+      //       readonly: false,
+      //       formFieldType: "number",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'number'
+      //     }
+      //   ]
+      // },
+      // propertyDetails: {
+      //   key: 'propertyDetails',
+      //   label: 'Property Details',
         
-        yearData: [
-          {
-            label: 'Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)',
-            key: 'property_tax_register',
-            postion: '1',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "number",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'number'
-          },
-          {
-            label: 'Number of Properties exemt from paying Property Tax (as on 1st April 2022)',
-            key: 'paying_property_tax',
-            postion: '2',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "number",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'number'
-          },
-          {
-            label: 'Number of Properties for which Property Tax has been paid  (for FY 2021-22)',
-            key: 'paid_property_tax',
-            postion: '3',
-            value: '',
-            min: '',
-            max: '',
-            required: true,
-            readonly: false,
-            formFieldType: "number",
-            year: "606aaf854dff55e6c075d219",
-            type: '',
-            bottomText: ``,
-            placeHolder: '',
-            input: 'number'
-          },
-        ]
-      },
+      //   yearData: [
+      //     {
+      //       label: 'Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)',
+      //       key: 'property_tax_register',
+      //       postion: '1',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "number",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'number'
+      //     },
+      //     {
+      //       label: 'Number of Properties exemt from paying Property Tax (as on 1st April 2022)',
+      //       key: 'paying_property_tax',
+      //       postion: '2',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "number",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'number'
+      //     },
+      //     {
+      //       label: 'Number of Properties for which Property Tax has been paid  (for FY 2021-22)',
+      //       key: 'paid_property_tax',
+      //       postion: '3',
+      //       value: '',
+      //       min: '',
+      //       max: '',
+      //       required: true,
+      //       readonly: false,
+      //       formFieldType: "number",
+      //       year: "606aaf854dff55e6c075d219",
+      //       type: '',
+      //       bottomText: ``,
+      //       placeHolder: '',
+      //       input: 'number'
+      //     },
+      //   ]
+      // },
       totalRecActual: {
         key: 'totalRecActual',
         label: 'Total Receipts (Actual)',
@@ -2617,7 +2617,7 @@ const fiscalRankingFormJson = () => {
       cfcGrant:{
         key: 'cfcGrant',
         label: 'Central Finance Commission (CFC) grants',
-        displayPriority: convertToString("5.01"),
+        displayPriority: convertToString("5.11"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2692,7 +2692,7 @@ const fiscalRankingFormJson = () => {
       cssGrant:{
         key: 'cssGrant',
         label: 'Centrally sponsored schemes (CSS) grants',
-        displayPriority: convertToString("5.02") ,
+        displayPriority: convertToString("5.12") ,
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2767,7 +2767,7 @@ const fiscalRankingFormJson = () => {
       centralscheme:{
         key: 'centralscheme',
         label: 'Central sector scheme grants',
-        displayPriority: convertToString("5.03") ,
+        displayPriority: convertToString("5.13") ,
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2842,7 +2842,7 @@ const fiscalRankingFormJson = () => {
       centralTransfer:{
         key: 'centralTransfer',
         label: 'Other central transfers (combined)',
-        displayPriority: convertToString("5.04") ,
+        displayPriority: convertToString("5.14") ,
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2992,7 +2992,7 @@ const fiscalRankingFormJson = () => {
       sfcGrant:{
         key: 'sfcGrant',
         label: 'State Finance Commission (SFC) grants',
-        displayPriority: convertToString("5.2.1") ,
+        displayPriority: convertToString("5.21") ,
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3067,7 +3067,7 @@ const fiscalRankingFormJson = () => {
       stateScheme:{
         key: 'stateScheme',
         label: 'Transfers under State schemes',
-        displayPriority: convertToString("5.2.2") ,
+        displayPriority: convertToString("5.22") ,
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3142,7 +3142,7 @@ const fiscalRankingFormJson = () => {
       otherStateTrans:{
         key: 'otherStateTrans',
         label: 'Other state transfers (combined)',
-        displayPriority: convertToString("5.2.3") ,
+        displayPriority: convertToString("5.23") ,
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3217,7 +3217,7 @@ const fiscalRankingFormJson = () => {
       otherGrant:{
         key: 'otherGrant',
         label: 'All other revenue grants, contributions & subsidies (combined)',
-        displayPriority: convertToString("5.3") ,
+        displayPriority: convertToString("5.33") ,
         yearData: [
           {
             label: 'FY 2018-19',
