@@ -5758,188 +5758,687 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
+      auditAnnualReport: {
+        key: 'auditAnnualReport',
+        label: 'Own Revenue Details',
+        displayPriority:"30",
+        yearData: [
+          {
+            label: 'FY 2019-20',
+            key: 'FY2019-20',
+            postion: '1',
+            value: '',
+            date: null,
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            formFieldType: "date",
+            type: 'auditAnnualReport',
+            code: [],
+            readonly: false,
+            year: "607697074dff55e6c0be33ba",
+            bottomText: ``,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2020-21',
+            key: 'FY2020-21',
+            postion: '2',
+            value: '',
+            file: '',
+            date: null,
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditAnnualReport',
+            formFieldType: "date",
+            code: [],
+            readonly: false,
+            year: "606aadac4dff55e6c075c507",
+            bottomText: '',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '3',
+            value: '',
+            file: '',
+            date: null,
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditAnnualReport',
+            formFieldType: "date",
+            code: [],
+            readonly: false,
+            year: "606aaf854dff55e6c075d219",
+            bottomText: '',
+            placeHolder: ''
+          },
+        ]
+      },
+      totalOwnRevenueArea:{
+        key: 'totalOwnRevenueArea',
+        label: 'Total Own Revenue Arrears as on 31st March 2022',
+        displayPriority:"31",
+        yearData: [
+          {
+            label: 'FY 2018-19',
+            key: 'FY2018-19',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'totalOwnRevenueArea',
+            year: years["2018-19"],
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2019-20',
+            key: 'FY2019-20',
+            postion: '2',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'totalOwnRevenueArea',
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            year: years["2019-20"],
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2020-21',
+            key: 'FY2020-21',
+            postion: '3',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'totalOwnRevenueArea',
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            year: "606aadac4dff55e6c075c507",
+            bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '4',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'totalOwnRevenueArea',
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            year: years["2021-22"],
+            bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ',
+            placeHolder: ''
+          }
+        ]
+      },
+      webUrlAnnual:{
+        key: 'webUrlAnnual',
+        label: 'ULB website URL link where Audited Accounts are available',
+        displayPriority:"32",
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'webUrlAnnual',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "text",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2019-20',
+            key: 'FY2019-20',
+            postion: '2',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'webUrlAnnual',
+            code: [],
+            readonly: false,
+            formFieldType: "text",
+            year: years["2019-20"],
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2020-21',
+            key: 'FY2020-21',
+            postion: '3',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'webUrlAnnual',
+            code: [],
+            readonly: false,
+            formFieldType: "text",
+            year: "606aadac4dff55e6c075c507",
+            bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '4',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'webUrlAnnual',
+            code: [],
+            readonly: false,
+            formFieldType: "text",
+            year: years["2021-22"],
+            bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ',
+            placeHolder: ''
+          }
+        ]
+      },
+      registerGis:{
+        key: 'registerGis',
+        label: 'Is the property tax register GIS-based?',
+        displayPriority:"33",
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'registerGis',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "radio-toggle",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+        ]
+      },
+      registerGisProof:{
+        key: 'registerGisProof',
+        label: 'Please upload proof?',
+        displayPriority:"34",
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'registerGisProof',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "file",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
+      },
+      accountStwre:{
+        label: 'Do you use accounting software? ( Eg.Tally, State-prescribed ERP etc)',
+        key: 'accountStwre',
+        displayPriority:"35",
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'accountStwre',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "radio-toggle",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
+
+      },
+      fy_21_22_cash:{
+        label: 'Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD',
+        key: 'fy_21_22_cash',
+        displayPriority:"37",
+        postion: '2',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        year: "606aaf854dff55e6c075d219",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number',
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'fy_21_22_cash',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
+      },
+      fy_21_22_online:{
+        label: 'Own Revenue collection amount for FY 2021-22 - by Online modes/channels',
+        key: 'fy_21_22_online',
+        postion: '3',
+        displayPriority:"38",
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        year: "606aaf854dff55e6c075d219",
+        readonly: false,
+        formFieldType: "number",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number',
+        yearData: [
+          {
+            label: 'FY 2018-19',
+            key: 'FY2018-19',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'accountStwre',
+            year: years["2018-19"],
+            code: [],
+            readonly: false,
+            formFieldType: "radio-toggle",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
+      },
+      property_tax_register:{
+        label: 'Number of Properties assessed/listed as per Property Tax Register',
+        key: 'property_tax_register',
+        displayPriority:"39",
+        postion: '1',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number',
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'property_tax_register',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "radio-toggle",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
+      },
+      paying_property_tax:{
+        label: 'Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)',
+        key: 'paying_property_tax',
+        postion: '1',
+        displayPriority:"40",
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number',
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'paying_property_tax',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
+      },
+      paid_property_tax: {
+        label: 'Number of Properties exempt from paying Property Tax',
+        key: 'paid_property_tax',
+        postion: '3',
+        displayPriority:"41",
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        year: "606aaf854dff55e6c075d219",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number',
+        yearData: [
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'paid_property_tax',
+            year: years["2021-22"],
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {},
+          {},
+          {},
+          {}
+        ]
+      },
+   
+},
+uploadFyDoc: {
+  guidanceNotes: {
+    key: 'guidanceNotes',
+    label: 'Guidance Notes:',
+    displayPriority:"1",
+    yearData: [
+      {
+        title: '',
+        pos: '1',
+        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
+      },
+      {
+        title: '',
+        pos: '2',
+        desc: `Annual Budgets should be the detailed final approved version and should be in English language.`
+      },
+      {
+        title: '',
+        pos: '3',
+        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
+      }
+    ]
   },
-  uploadFyDoc: {
-    guidanceNotes: {
-      key: 'guidanceNotes',
-      label: 'Guidance Notes:',
-      displayPriority:"1",
-      yearData: [
-        {
-          title: '',
-          pos: '1',
-          desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
+  appAnnualBudget: {
+    key: 'appAnnualBudget',
+    label: 'Copy of Approved Annual Budget in English',
+    displayPriority:"2",
+    yearData: [
+      {
+        label: 'FY 2020-21',
+        key: 'appAnnualBudget_2020-21',
+        postion: '1',
+        value: '',
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'appAnnualBudget',
+        code: [],
+        file: {
+          name: "",
+          url: ""
         },
-        {
-          title: '',
-          pos: '2',
-          desc: `Annual Budgets should be the detailed final approved version and should be in English language.`
+        readonly: false,
+        formFieldType: "file",
+        year: "606aadac4dff55e6c075c507",
+        bottomText: 'Maximum Size  5MB (pdf files only)',
+        placeHolder: ''
+      },
+      {
+        label: 'FY 2021-22',
+        key: 'appAnnualBudget_2021-22',
+        postion: '2',
+        value: '',
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'appAnnualBudget',
+        code: [],
+        file: {
+          name: "",
+          url: ""
         },
-        {
-          title: '',
-          pos: '3',
-          desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
-        }
-      ]
-    },
-    appAnnualBudget: {
-      key: 'appAnnualBudget',
-      label: 'Copy of Approved Annual Budget in English',
-      displayPriority:"2",
-      yearData: [
-        {
-          label: 'FY 2020-21',
-          key: 'appAnnualBudget_2020-21',
-          postion: '1',
-          value: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'appAnnualBudget',
-          code: [],
-          file: {
-            name: "",
-            url: ""
-          },
-          readonly: false,
-          formFieldType: "file",
-          year: "606aadac4dff55e6c075c507",
-          bottomText: 'Maximum Size  5MB (pdf files only)',
-          placeHolder: ''
+        readonly: false,
+        formFieldType: "file",
+        year: years["2021-22"],
+        bottomText: 'Maximum Size  5MB (pdf files only) ',
+        placeHolder: ''
+      },
+      {
+        label: 'FY 2022-23',
+        key: 'appAnnualBudget_2022-23',
+        postion: '3',
+        value: '',
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'appAnnualBudget',
+        formFieldType: "file",
+        code: [],
+        file: {
+          name: "",
+          url: ""
         },
-        {
-          label: 'FY 2021-22',
-          key: 'appAnnualBudget_2021-22',
-          postion: '2',
-          value: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'appAnnualBudget',
-          code: [],
-          file: {
-            name: "",
-            url: ""
-          },
-          readonly: false,
-          formFieldType: "file",
-          year: years["2021-22"],
-          bottomText: 'Maximum Size  5MB (pdf files only) ',
-          placeHolder: ''
+        readonly: false,
+        year: "606aafb14dff55e6c075d3ae",
+        bottomText: 'Maximum Size  5MB (pdf files only) ',
+        placeHolder: ''
+      }
+    ]
+  },
+  auditedAnnualFySt: {
+    key: 'auditedAnnualFySt',
+    label: 'Copy of Audited Annual Financial Statements in English',
+    displayPriority:"3",
+    yearData: [
+      {
+        label: 'FY 2018-19',
+        key: 'auditedAnnualFySt_2018-19',
+        postion: '1',
+        value: '',
+        file: {
+          name: "",
+          url: ""
         },
-        {
-          label: 'FY 2022-23',
-          key: 'appAnnualBudget_2022-23',
-          postion: '3',
-          value: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'appAnnualBudget',
-          formFieldType: "file",
-          code: [],
-          file: {
-            name: "",
-            url: ""
-          },
-          readonly: false,
-          year: "606aafb14dff55e6c075d3ae",
-          bottomText: 'Maximum Size  5MB (pdf files only) ',
-          placeHolder: ''
-        }
-      ]
-    },
-    auditedAnnualFySt: {
-      key: 'auditedAnnualFySt',
-      label: 'Copy of Audited Annual Financial Statements in English',
-      displayPriority:"3",
-      yearData: [
-        {
-          label: 'FY 2018-19',
-          key: 'auditedAnnualFySt_2018-19',
-          postion: '1',
-          value: '',
-          file: {
-            name: "",
-            url: ""
-          },
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'auditedAnnualFySt',
-          year: years["2018-19"],
-          code: [],
-          readonly: false,
-          formFieldType: "file",
-          bottomText: `Maximum Size  5MB (pdf files only) `,
-          placeHolder: ''
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'auditedAnnualFySt',
+        year: years["2018-19"],
+        code: [],
+        readonly: false,
+        formFieldType: "file",
+        bottomText: `Maximum Size  5MB (pdf files only) `,
+        placeHolder: ''
+      },
+      {
+        label: 'FY 2019-20',
+        key: 'auditedAnnualFySt_2019-20',
+        postion: '1',
+        value: '',
+        file: {
+          name: "",
+          url: ""
         },
-        {
-          label: 'FY 2019-20',
-          key: 'auditedAnnualFySt_2019-20',
-          postion: '1',
-          value: '',
-          file: {
-            name: "",
-            url: ""
-          },
-          min: '',
-          max: '',
-          required: true,
-          type: 'auditedAnnualFySt',
-          year: years["2019-20"],
-          code: [],
-          readonly: false,
-          formFieldType: "file",
-          bottomText: `Maximum Size  5MB (pdf files only)`,
-          placeHolder: ''
+        min: '',
+        max: '',
+        required: true,
+        type: 'auditedAnnualFySt',
+        year: years["2019-20"],
+        code: [],
+        readonly: false,
+        formFieldType: "file",
+        bottomText: `Maximum Size  5MB (pdf files only)`,
+        placeHolder: ''
+      },
+      {
+        label: 'FY 2020-21',
+        key: 'auditedAnnualFySt_2020-21',
+        postion: '2',
+        value: '',
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'auditedAnnualFySt',
+        code: [],
+        file: {
+          name: "",
+          url: ""
         },
-        {
-          label: 'FY 2020-21',
-          key: 'auditedAnnualFySt_2020-21',
-          postion: '2',
-          value: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'auditedAnnualFySt',
-          code: [],
-          file: {
-            name: "",
-            url: ""
-          },
-          readonly: false,
-          formFieldType: "file",
-          year: "606aadac4dff55e6c075c507",
-          bottomText: 'Maximum Size  5MB (pdf files only) ',
-          placeHolder: ''
+        readonly: false,
+        formFieldType: "file",
+        year: "606aadac4dff55e6c075c507",
+        bottomText: 'Maximum Size  5MB (pdf files only) ',
+        placeHolder: ''
+      },
+      {
+        label: 'FY 2021-22',
+        key: 'auditedAnnualFySt_2021-22',
+        postion: '3',
+        value: '',
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'auditedAnnualFySt',
+        code: [],
+        file: {
+          name: "",
+          url: ""
         },
-        {
-          label: 'FY 2021-22',
-          key: 'auditedAnnualFySt_2021-22',
-          postion: '3',
-          value: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'auditedAnnualFySt',
-          code: [],
-          file: {
-            name: "",
-            url: ""
-          },
-          readonly: false,
-          formFieldType: "file",
-          year: years["2021-22"],
-          bottomText: 'Maximum Size  5MB (pdf files only) ',
-          placeHolder: ''
-        }
-      ]
-    },
-  }    
+        readonly: false,
+        formFieldType: "file",
+        year: years["2021-22"],
+        bottomText: 'Maximum Size  5MB (pdf files only) ',
+        placeHolder: ''
+      }
+    ]
+  },
+}   
 }
 }
-function getInputKeysByType(formType, type, label, dataSource = null, position) {
+function getInputKeysByType(formType, type, label, dataSource = null, position,required=true) {
   return {
     label: label,
     max: "10",
@@ -5948,7 +6447,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position) 
     postion: position,
     modelName: dataSource, // USER | LEDGER
     formFieldType: formType, // text | number | radio-toggle | file
-    required: true,
+    required: required,
     type: type,
     canShow: true
   }
@@ -5996,6 +6495,272 @@ let fiscalRankingTabs = () => {
     "displayPriority": 7
   }]
 }
+function jsonObject(obj){
+  try{
+      let returnable = {}
+      returnable[obj.key] = {
+          key:obj.key,
+          label:obj.label,
+          displayPriority:obj.displayPriority,
+          years:[]
+      }
+      for(let index in obj.years){
+          let year = obj.years[index]
+          let temp = {
+                label: `FY ${year}`,
+               key: `FY${year}`,
+                postion: index,
+                value: obj.cb?obj.cb:'',
+                min: '',
+                max: '',
+                required: obj.isReq,
+                year: years[year],
+                readonly: obj.readOnly,
+                formFieldType: obj.fieldType,
+                type: obj.key,
+                bottomText: ``,
+                placeHolder: '',
+                input: "number"
+              }
+          
+          returnable[obj.key]['years'].push(temp)
+      }
+      return returnable
+  }
+  catch(err){
+      console.log("error in jsonObject :: ",err.message)
+  }
+}
+
+let formObj = {
+  normalData: {
+    key: 'normalData',
+    label: '',
+    yearData: [
+      {
+        label: 'ULB website URL link where Copy of Audited Annual Accounts of FY 2019-20  to FY 2020-21 are available',
+        key: 'webUrlAnnual',
+        postion: '1',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "text",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'text'
+      },
+      {
+        label: 'Is the property tax register GIS-based?',
+        key: 'registerGis',
+        postion: '2',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "radio",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'radio'
+      },
+      {
+        label: 'Do you use accounting software?',
+        key: 'accountStwre',
+        postion: '3',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "radio",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'radio'
+      }
+    ]
+  },
+  auditReprtDate: {
+    key: 'auditReprtDate',
+    label: 'Own Revenue Details',
+    yearData: [
+      {
+        label: 'FY 2019-20',
+        key: 'FY2019-20',
+        postion: '1',
+        value: '',
+        date: null,
+        file: '',
+        min: 0,
+        max: 13,
+        required: true,
+        formFieldType: "date",
+        type: 'auditReprtDate',
+        code: [],
+        readonly: false,
+        year: "607697074dff55e6c0be33ba",
+        bottomText: ``,
+        placeHolder: ''
+      },
+      {
+        label: 'FY 2020-21',
+        key: 'FY2020-21',
+        postion: '2',
+        value: '',
+        file: '',
+        date: null,
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'auditReprtDate',
+        formFieldType: "date",
+        code: [],
+        readonly: false,
+        year: "606aadac4dff55e6c075c507",
+        bottomText: '',
+        placeHolder: ''
+      },
+      {
+        label: 'FY 2021-22',
+        key: 'FY2021-22',
+        postion: '3',
+        value: '',
+        file: '',
+        date: null,
+        min: 0,
+        max: 13,
+        required: true,
+        type: 'auditReprtDate',
+        formFieldType: "date",
+        code: [],
+        readonly: false,
+        year: "606aaf854dff55e6c075d219",
+        bottomText: '',
+        placeHolder: ''
+      },
+    ]
+  },
+  ownRevDetails: {
+    key: 'ownRevDetails',
+    label: 'Own Revenue Details',
+    yearData: [
+      {
+        label: 'Total Own Revenue Arrears as on 31st March 2022',
+        key: 'totalOwnRevenueArea',
+        postion: '1',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number'
+      }
+    ]
+  },
+  ownRevenAmt: {
+    key: 'ownRevenAmt',
+    label: 'Own Revenue Collection Amount',
+    yearData: [
+      {
+        label: 'FY 2021-22 - by Cash/Cheque/DD',
+        key: 'fy_21_22_cash',
+        postion: '2',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        year: "606aaf854dff55e6c075d219",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number'
+      },
+      {
+        label: 'FY 2021-22 - by Online (UPI,Netbanking,Credit Card,Debit Card,others)',
+        key: 'fy_21_22_online',
+        postion: '3',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        year: "606aaf854dff55e6c075d219",
+        readonly: false,
+        formFieldType: "number",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number'
+      }
+    ]
+  },
+  propertyDetails: {
+    key: 'propertyDetails',
+    label: 'Property Details',
+    
+    yearData: [
+      {
+        label: 'Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)',
+        key: 'property_tax_register',
+        postion: '1',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number'
+      },
+      {
+        label: 'Number of Properties exemt from paying Property Tax (as on 1st April 2022)',
+        key: 'paying_property_tax',
+        postion: '2',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number'
+      },
+      {
+        label: 'Number of Properties for which Property Tax has been paid  (for FY 2021-22)',
+        key: 'paid_property_tax',
+        postion: '3',
+        value: '',
+        min: '',
+        max: '',
+        required: true,
+        readonly: false,
+        formFieldType: "number",
+        year: "606aaf854dff55e6c075d219",
+        type: '',
+        bottomText: ``,
+        placeHolder: '',
+        input: 'number'
+      },
+    ]
+  },
+}
+
+
+
+module.exports.jsonObject = jsonObject
 module.exports.fiscalRankingTabs = fiscalRankingTabs;
 module.exports.fiscalRankingFormJson = fiscalRankingFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
