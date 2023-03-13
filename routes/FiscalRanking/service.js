@@ -610,7 +610,7 @@ exports.getView = async function (req, res, next) {
             pf["modelName"] = "FiscalRanking"
             if (fyData.length) {
               
-              let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+              let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
                   pf['date'] = singleFydata ? singleFydata.date : null;
@@ -638,7 +638,8 @@ exports.getView = async function (req, res, next) {
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
-                let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
+                console.log("Pf ::",pf)
+                let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
