@@ -5,7 +5,7 @@ const fiscalRankingMapperSchema = new Schema(
         fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
-        value: { type: Number, default: null },
+        value: { type: Schema.Types.Mixed, default: null },
         date: { type: Date, default: null }, // audit date
         status: {
             type: String,
@@ -111,9 +111,9 @@ const fiscalRankingMapperSchema = new Schema(
         },
         typeofdata: {
             type: String,
-            default: "Number",
+            default: "number",
             enum: {
-                values: ["Number", "PDF", "Excel", "Date"],
+                values: ["number", "file", "date","radio-toggle","text","url"],
                 message: "ERROR: STATUS BE EITHER",
             },
         },
