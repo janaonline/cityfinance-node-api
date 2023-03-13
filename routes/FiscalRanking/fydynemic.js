@@ -6021,7 +6021,10 @@ const fiscalRankingFormJson = () => {
             key: 'FY2021-22',
             postion: '1',
             value: '',
-            file: '',
+            file: {
+              name: "",
+              url: ""
+            },
             min: 0,
             max: '',
             required: true,
@@ -6084,7 +6087,10 @@ const fiscalRankingFormJson = () => {
             key: 'FY2021-22',
             postion: '1',
             value: '',
-            file: '',
+            file: {
+              name: "",
+              url: ""
+            },
             min: 0,
             max: 999999999999999,
             required: true,
