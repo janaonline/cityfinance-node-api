@@ -1736,7 +1736,7 @@ async function sendCsv(res, aggregateQuery) {
     console.log("error in sendCsv :: ", err.message)
   }
 }
-async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm) {
+async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm,isDraft) {
   try {
     for (var years of yearData) {
       let upsert = false
@@ -1784,7 +1784,7 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
 /**
  * 
  */
-async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm) {
+async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm,isDraft) {
   try {
     let filter = {
       "_id": ObjectId(formId),
@@ -1796,7 +1796,7 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm) {
           payload[key]= obj[key]
         }
         else{
-          if(!obj[key].value && !notRequiredValidations.includes(key)){
+          if(!obj[key].value && !notRequiredValidations.includes(key) && !isDraft){
             throw {"message": `value for field ${key} is required` ,"type":"ValidationError"}
           }
           payload[`${key}.value`] = obj[key].value
@@ -1844,7 +1844,7 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
  * key : tabId
  * value : Object {status:true/false/NA, comment:String}
  */
-async function calculateAndUpdateStatusForMappers(session,tabs, ulbId, formId, year, updateForm) {
+async function calculateAndUpdateStatusForMappers(session,tabs, ulbId, formId, year, updateForm,isDraft) {
   try {
     let conditionalObj = {}
     let ignorablevariables = ["guidanceNotes"]
@@ -1873,14 +1873,14 @@ async function calculateAndUpdateStatusForMappers(session,tabs, ulbId, formId, y
             }
           })
           temp["status"].push(status)
-          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm)
+          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm,isDraft)
         }
         else {
           if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
             let statueses = getStatusesFromObject(tab.data, "status", ["population11"])
             let finalStatus = statueses.every(item => item === "APPROVED")
             temp['status'].push(finalStatus)
-            await updateFiscalRankingForm(tab.data, ulbId, formId, year, updateForm)
+            await updateFiscalRankingForm(tab.data, ulbId, formId, year, updateForm,isDraft)
           }
         }
         conditionalObj[tab._id.toString()] = (temp)
@@ -2024,7 +2024,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     }
     const session = await mongoose.startSession();
     await session.startTransaction()
-    let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, false)
+    let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, false,isDraft)
     let feedBackResp = await saveFeedbacksAndForm(calculationsTabWise, ulbId, formId, design_year, userId, role, isDraft)
     if (feedBackResp.success) {
       response.success = true
@@ -2046,7 +2046,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   return res.status(500).json(response)
 })
 
-async function checkIfFormIdExistsOrNot(formId,ulbId,design_year){
+async function checkIfFormIdExistsOrNot(formId,ulbId,design_year,isDraft){
   let validation = {
     message : "",
     valid:true,
@@ -2057,7 +2057,8 @@ async function checkIfFormIdExistsOrNot(formId,ulbId,design_year){
       let form = await FiscalRanking.create(
         {
           ulb:ObjectId(ulbId),
-          design_year:ObjectId(design_year)
+          design_year:ObjectId(design_year),
+          isDraft
         }
       )
       form.save()
@@ -2066,7 +2067,7 @@ async function checkIfFormIdExistsOrNot(formId,ulbId,design_year){
       validation.formId = form._id
     }
     else{
-      let form = await FiscalRanking.findOne({"_id":formId})
+      let form = await FiscalRanking.findOneAndUpdate({"_id":formId},{"isDraft":isDraft})
       if(form){
         validation.message = "form exists"
         validation.valid = true
@@ -2100,7 +2101,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   await session.startTransaction()
   try {
     let { ulbId, formId, actions, design_year, isDraft } = req.body
-    let formIdValidations =  await checkIfFormIdExistsOrNot(formId,ulbId,design_year)
+    let formIdValidations =  await checkIfFormIdExistsOrNot(formId,ulbId,design_year,isDraft)
     let { role, _id: userId } = req.decoded
     if(!formIdValidations.valid){
       response.message = formIdValidations.message
@@ -2118,7 +2119,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       return res.status(500).json(response)
     }
     
-    let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, true)
+    let calculationsTabWise = await calculateAndUpdateStatusForMappers(session,actions, ulbId, formId, design_year, true,isDraft)
     response.success = true
     response.message = "Form submitted successfully"
     return res.status(200).json(response)
