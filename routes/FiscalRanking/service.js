@@ -1739,7 +1739,6 @@ async function sendCsv(res, aggregateQuery) {
 async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm) {
   try {
     for (var years of yearData) {
-      console.log("years :::",years.type)
       let upsert = false
       if (years.year) {
         let payload = {}
@@ -1758,7 +1757,6 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
           payload["status"]= years.status
         }
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload,{"upsert":upsert})
-        console.log(up)
       }
       else if (mainFormContent.includes(years.key)) {
         let payload = {}
