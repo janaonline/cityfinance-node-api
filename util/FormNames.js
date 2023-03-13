@@ -33,6 +33,15 @@ module.exports.MASTER_STATUS = {
     "Rejected by MoHUA":7
 }
 
+module.exports.MASTER_STATUS_ID = {
+  1: "Not Started",
+  2: "In Progress",
+  3: "Under Review by State",
+  4: "Under Review by MoHUA",
+  5: "Rejected by State",
+  6: "Approved by MoHUA",
+  7: "Rejected by MoHUA",
+};
 
 module.exports.FORMIDs = {
     "ODF": 1,
