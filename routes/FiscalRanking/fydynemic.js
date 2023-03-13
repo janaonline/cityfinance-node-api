@@ -535,7 +535,22 @@ const fiscalRankingFormJson = () => {
         displayPriority:"29",
         yearData: [
           {
-          },
+            label: 'FY 2018-19',
+            key: 'FY2018-19',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'totalRecBudgetEst',
+            year: years["2018-19"],
+            code: [],
+            readonly: true,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },  
           {
             label: 'FY 2019-20',
             key: 'FY2019-20',
@@ -4567,6 +4582,23 @@ const fiscalRankingFormJson = () => {
         displayPriority:convertToString("10.1"),
         yearData: [
           {
+          label: 'FY 2018-19',
+          key: 'FY2018-19',
+          postion: '1',
+          value: '',
+          file: '',
+          min: 0,
+          max: 13,
+          required: true,
+          type: 'totalOMCaptlExpWaterSupply',
+          year: years["2018-19"],
+          code: [],
+          readonly: true,
+          formFieldType: "number",
+          bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+          placeHolder: ''
+        },  
+          {
             label: 'FY 2019-20',
             key: 'FY2019-20',
             postion: '2',
@@ -4624,6 +4656,23 @@ const fiscalRankingFormJson = () => {
         label: 'O & M Expenditure for Sanitation/Sewerage',
         displayPriority: "10.2",
         yearData: [
+          {
+            label: 'FY 2018-19',
+            key: 'FY2018-19',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'totalOMCaptlExpSanitation',
+            year: years["2018-19"],
+            code: [],
+            readonly: true,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
           {
             label: 'FY 2019-20',
             key: 'FY2019-20',
