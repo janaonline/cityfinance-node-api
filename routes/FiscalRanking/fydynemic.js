@@ -1,6 +1,6 @@
 const { years } = require("../../service/years")
 module.exports.notRequiredValidations = ['caMembershipNo']
-function convertToString(str){
+function convertToString(str) {
   return str
 }
 const fiscalRankingFormJson = () => {
@@ -179,7 +179,7 @@ const fiscalRankingFormJson = () => {
       // propertyDetails: {
       //   key: 'propertyDetails',
       //   label: 'Property Details',
-        
+
       //   yearData: [
       //     {
       //       label: 'Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)',
@@ -232,7 +232,7 @@ const fiscalRankingFormJson = () => {
       totalRecActual: {
         key: 'totalRecActual',
         label: 'Total Receipts (Actual)',
-        displayPriority:"26",
+        displayPriority: "26",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -307,7 +307,7 @@ const fiscalRankingFormJson = () => {
       totalRcptWaterSupply: {  /// new add
         key: 'totalRcptWaterSupply',
         label: 'Total Receipts (Actual) for Water Supply',
-        displayPriority:"27",
+        displayPriority: "27",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -382,7 +382,7 @@ const fiscalRankingFormJson = () => {
       sewerageTax: {  /// new add
         key: 'sewerageTax',
         label: 'Sewerage tax',
-        displayPriority:"1.4",
+        displayPriority: "1.4",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -457,7 +457,7 @@ const fiscalRankingFormJson = () => {
       totalRcptSanitation: {  /// new add
         key: 'totalRcptSanitation',
         label: 'Total Receipts (Actual) for Sanitation/Sewerage',
-        displayPriority:"28",
+        displayPriority: "28",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -532,7 +532,7 @@ const fiscalRankingFormJson = () => {
       totalRecBudgetEst: {
         key: 'totalRecBudgetEst',
         label: 'Total Receipts (Budget Estimate)',
-        displayPriority:"29",
+        displayPriority: "29",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -550,7 +550,7 @@ const fiscalRankingFormJson = () => {
             formFieldType: "number",
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
             placeHolder: ''
-          },  
+          },
           {
             label: 'FY 2019-20',
             key: 'FY2019-20',
@@ -607,7 +607,7 @@ const fiscalRankingFormJson = () => {
       totalOwnRevenues: {
         key: 'totalOwnRevenues',
         label: 'Total Own Revenues ',
-        displayPriority:"20",
+        displayPriority: "20",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -682,7 +682,7 @@ const fiscalRankingFormJson = () => {
       propertyTax: {
         key: 'propertyTax',
         label: 'Property Tax',
-        displayPriority:"1.1",
+        displayPriority: "1.1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -757,7 +757,7 @@ const fiscalRankingFormJson = () => {
       waterTax: {
         key: 'waterTax',
         label: 'Water tax',
-        displayPriority:"1.2",
+        displayPriority: "1.2",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -829,10 +829,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      taxRevenue:{
+      taxRevenue: {
         key: 'taxRevenue',
         label: 'Tax Revenue',
-        displayPriority:"1",
+        displayPriority: "1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -907,7 +907,7 @@ const fiscalRankingFormJson = () => {
       drainageTax: {
         key: 'drainageTax',
         label: 'Drainage tax',
-        displayPriority:"1.3",
+        displayPriority: "1.3",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -982,7 +982,7 @@ const fiscalRankingFormJson = () => {
       profTax: {
         key: 'profTax',
         label: 'Professional tax',
-        displayPriority:"1.5",
+        displayPriority: "1.5",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1057,7 +1057,7 @@ const fiscalRankingFormJson = () => {
       entertainTax: {
         key: 'entertainTax',
         label: 'Entertainment tax',
-        displayPriority:"1.6",
+        displayPriority: "1.6",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1132,7 +1132,7 @@ const fiscalRankingFormJson = () => {
       advTax: {
         key: 'advTax',
         label: 'Advertisement tax',
-        displayPriority:"1.7",
+        displayPriority: "1.7",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1204,10 +1204,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherTaxRev:{
+      otherTaxRev: {
         key: 'otherTaxRev',
         label: 'All other tax revenues (combined)',
-        displayPriority:"1.8",
+        displayPriority: "1.8",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1279,10 +1279,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      feeUserChrg:{
+      feeUserChrg: {
         key: 'feeUserChrg',
         label: 'Fees & User charges',
-        displayPriority:"2",
+        displayPriority: "2",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1354,10 +1354,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      waterSupplyFee:{
+      waterSupplyFee: {
         key: 'waterSupplyFee',
         label: 'Fees & user charges from Water supply',
-        displayPriority:"2.1",
+        displayPriority: "2.1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1429,10 +1429,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      sanitationFee:{
+      sanitationFee: {
         key: 'sanitationFee',
         label: 'Fees & user charges from Sanitation/seweragee',
-        displayPriority:"2.2",
+        displayPriority: "2.2",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1504,10 +1504,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      garbageFee:{
+      garbageFee: {
         key: 'garbageFee',
         label: 'Fees & user charges from Garbage collection / Solid waste managemente',
-        displayPriority:"2.3",
+        displayPriority: "2.3",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1579,10 +1579,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherFee:{
+      otherFee: {
         key: 'otherFee',
         label: 'All other fees & user charges (combined)',
-        displayPriority:"2.4",
+        displayPriority: "2.4",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1654,10 +1654,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      rentInc:{
+      rentInc: {
         key: 'rentInc',
         label: 'Rental Income from Municipal Properties',
-        displayPriority:"3",
+        displayPriority: "3",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1729,10 +1729,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      assignedCompensation:{
+      assignedCompensation: {
         key: 'assignedCompensation',
         label: 'Assigned Revenues & Compensation',
-        displayPriority:"4",
+        displayPriority: "4",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1804,10 +1804,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      octroiCompensation:{
+      octroiCompensation: {
         key: 'octroiCompensation',
         label: 'Compensation in lieu of Octroi',
-        displayPriority:"4.1",
+        displayPriority: "4.1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1879,10 +1879,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherCompensation:{
+      otherCompensation: {
         key: 'otherCompensation',
         label: 'All other assigned revenues & compensation (combined)',
-        displayPriority:"4.2",
+        displayPriority: "4.2",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -1954,10 +1954,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      revGrants:{
+      revGrants: {
         key: 'revGrants',
         label: 'Revenue Grants, Contributions & Subsidies',
-        displayPriority:"5",
+        displayPriority: "5",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2029,10 +2029,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      centralGrant:{
+      centralGrant: {
         key: 'centralGrant',
         label: 'Revenue Grants from Union/Central Government',
-        displayPriority:"5.1",
+        displayPriority: "5.1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2104,10 +2104,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      faLandBuild:{
+      faLandBuild: {
         key: 'faLandBuild',
         label: 'Land & Buildings',
-        displayPriority:"23.1",
+        displayPriority: "23.1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2179,10 +2179,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      faOther:{
+      faOther: {
         key: 'faOther',
         label: 'Other Fixed Assets',
-        displayPriority:"23.2",
+        displayPriority: "23.2",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2254,10 +2254,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      debtOs:{
+      debtOs: {
         key: 'debtOs',
         label: 'Total Debt outstanding',
-        displayPriority:"24",
+        displayPriority: "24",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2329,10 +2329,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      assetsSale:{
+      assetsSale: {
         key: 'assetsSale',
         label: 'Income from Sale of Assets',
-        displayPriority:"25",
+        displayPriority: "25",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2404,10 +2404,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      incmLandSale:{
+      incmLandSale: {
         key: 'incmLandSale',
         label: 'Income from Sale of Land',
-        displayPriority:"25.1",
+        displayPriority: "25.1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2479,10 +2479,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      incmOtherAssets:{
+      incmOtherAssets: {
         key: 'incmOtherAssets',
         label: 'Income from Sale of Other Assets',
-        displayPriority:"25.2",
+        displayPriority: "25.2",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2554,7 +2554,7 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      cfcGrant:{
+      cfcGrant: {
         key: 'cfcGrant',
         label: 'Central Finance Commission (CFC) grants',
         displayPriority: convertToString("5.11"),
@@ -2629,10 +2629,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      cssGrant:{
+      cssGrant: {
         key: 'cssGrant',
         label: 'Centrally sponsored schemes (CSS) grants',
-        displayPriority: convertToString("5.12") ,
+        displayPriority: convertToString("5.12"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2704,10 +2704,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      centralscheme:{
+      centralscheme: {
         key: 'centralscheme',
         label: 'Central sector scheme grants',
-        displayPriority: convertToString("5.13") ,
+        displayPriority: convertToString("5.13"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2779,10 +2779,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      centralTransfer:{
+      centralTransfer: {
         key: 'centralTransfer',
         label: 'Other central transfers (combined)',
-        displayPriority: convertToString("5.14") ,
+        displayPriority: convertToString("5.14"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2854,10 +2854,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      stateGrant:{
+      stateGrant: {
         key: 'stateGrant',
         label: 'Revenue Grants from State Government',
-        displayPriority: convertToString("5.2") ,
+        displayPriority: convertToString("5.2"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -2929,10 +2929,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      sfcGrant:{
+      sfcGrant: {
         key: 'sfcGrant',
         label: 'State Finance Commission (SFC) grants',
-        displayPriority: convertToString("5.21") ,
+        displayPriority: convertToString("5.21"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3004,10 +3004,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      stateScheme:{
+      stateScheme: {
         key: 'stateScheme',
         label: 'Transfers under State schemes',
-        displayPriority: convertToString("5.22") ,
+        displayPriority: convertToString("5.22"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3079,10 +3079,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherStateTrans:{
+      otherStateTrans: {
         key: 'otherStateTrans',
         label: 'Other state transfers (combined)',
-        displayPriority: convertToString("5.23") ,
+        displayPriority: convertToString("5.23"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3154,10 +3154,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherGrant:{
+      otherGrant: {
         key: 'otherGrant',
         label: 'All other revenue grants, contributions & subsidies (combined)',
-        displayPriority: convertToString("5.3") ,
+        displayPriority: convertToString("5.3"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3170,7 +3170,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'otherGrant',
             year: years["2018-19"],
-            code: [100,150,170,171,180],
+            code: [100, 150, 170, 171, 180],
             readonly: false,
             formFieldType: "number",
             bottomText: `to be taken from Audited Annual Budget of FY 2018-19 `,
@@ -3186,7 +3186,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'otherGrant',
-            code: [100,150,170,171,180],
+            code: [100, 150, 170, 171, 180],
             readonly: false,
             formFieldType: "number",
             year: years["2019-20"],
@@ -3203,7 +3203,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'otherGrant',
-            code: [100,150,170,171,180],
+            code: [100, 150, 170, 171, 180],
             readonly: false,
             formFieldType: "number",
             year: years['2020-21'],
@@ -3220,7 +3220,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'otherGrant',
-            code: [100,150,170,171,180],
+            code: [100, 150, 170, 171, 180],
             readonly: false,
             formFieldType: "number",
             year: years["2021-22"],
@@ -3229,10 +3229,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherIncome:{
+      otherIncome: {
         key: 'otherIncome',
         label: 'Other income (incl. Sale & Hire charges, Income from Investments, Interest earned, etc.)',
-        displayPriority: convertToString("6") ,
+        displayPriority: convertToString("6"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3304,10 +3304,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      totalIncome:{
+      totalIncome: {
         key: 'totalIncome',
         label: 'TOTAL INCOME (sum of 1 to 6)',
-        displayPriority: convertToString("7") ,
+        displayPriority: convertToString("7"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3379,10 +3379,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      establishExpense:{
+      establishExpense: {
         key: 'establishExpense',
         label: 'Establishment Expenses',
-        displayPriority: convertToString("8") ,
+        displayPriority: convertToString("8"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3454,10 +3454,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      categoryA:{
+      categoryA: {
         key: 'categoryA',
         label: 'Towards category A',
-        displayPriority: convertToString("8.1") ,
+        displayPriority: convertToString("8.1"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3529,10 +3529,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      categoryB:{
+      categoryB: {
         key: 'categoryB',
         label: 'Towards category B',
-        displayPriority: convertToString("8.2") ,
+        displayPriority: convertToString("8.2"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3604,10 +3604,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      categoryC:{
+      categoryC: {
         key: 'categoryC',
         label: 'Towards category C',
-        displayPriority: convertToString("8.3") ,
+        displayPriority: convertToString("8.3"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3679,10 +3679,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherEstExpense:{
+      otherEstExpense: {
         key: 'otherEstExpense',
         label: 'Other establishment expenses (combined)',
-        displayPriority: convertToString("8.4") ,
+        displayPriority: convertToString("8.4"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -3754,10 +3754,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      adminExpense:{
+      adminExpense: {
         key: 'adminExpense',
         label: 'Administrative Expenses',
-        displayPriority: convertToString("9") ,
+        displayPriority: convertToString("9"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4054,7 +4054,7 @@ const fiscalRankingFormJson = () => {
       totalCaptlExp: {
         key: 'totalCaptlExp',
         label: 'Total Capital Expenditure',
-        displayPriority:"22",
+        displayPriority: "22",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4201,11 +4201,11 @@ const fiscalRankingFormJson = () => {
       //     }
       //   ]
       // },
-      fixedAsset:{
+      fixedAsset: {
         key: 'fixedAsset',
         label: 'Total Fixed Assets (Gross Block)',
-        displayPriority:"23",
-        calculatedFrom:["22.1","22.3"],
+        displayPriority: "23",
+        calculatedFrom: ["22.1", "22.3"],
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4277,10 +4277,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      CaptExpOther:{
+      CaptExpOther: {
         key: 'CaptExpOther',
         label: 'Other Capital Expenditure (combined)',
-        displayPriority:"22.3",
+        displayPriority: "22.3",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4355,7 +4355,7 @@ const fiscalRankingFormJson = () => {
       totalOmExp: {
         key: 'totalOmExp',
         label: 'Operations & Maintenance',
-        displayPriority:convertToString("10"),
+        displayPriority: convertToString("10"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4427,10 +4427,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      omExpOther:{
+      omExpOther: {
         key: 'omExpOther',
         label: 'All other O&M expenses (combined)',
-        displayPriority:convertToString("10.3"),
+        displayPriority: convertToString("10.3"),
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4502,103 +4502,103 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      grossBeforePrior:{
-      key: 'grossBeforePrior',
-      label: 'Gross surplus/ (deficit) of income over expenditure before Prior Period Items',
-      displayPriority:convertToString("15"),
-      yearData: [
-        {
-          label: 'FY 2018-19',
-          key: 'FY2018-19',
-          postion: '1',
-          value: '',
-          file: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'grossBeforePrior',
-          year: years["2018-19"],
-          code: [],
-          readonly: true,
-          formFieldType: "number",
-          bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
-          placeHolder: ''
-        },
-        {
-          label: 'FY 2019-20',
-          key: 'FY2019-20',
-          postion: '2',
-          value: '',
-          file: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'grossBeforePrior',
-          code: [],
-          readonly: true,
-          formFieldType: "number",
-          year: years["2019-20"],
-          bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
-          placeHolder: ''
-        },
-        {
-          label: 'FY 2020-21',
-          key: 'FY2020-21',
-          postion: '3',
-          value: '',
-          file: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'grossBeforePrior',
-          code: [],
-          readonly: true,
-          formFieldType: "number",
-          year: years['2020-21'],
-          bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ',
-          placeHolder: ''
-        },
-        {
-          label: 'FY 2021-22',
-          key: 'FY2021-22',
-          postion: '4',
-          value: '',
-          file: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'grossBeforePrior',
-          code: [],
-          readonly: true,
-          formFieldType: "number",
-          year: years["2021-22"],
-          bottomText: ' ',
-          placeHolder: ''
-        }
-      ]
-    },
+      grossBeforePrior: {
+        key: 'grossBeforePrior',
+        label: 'Gross surplus/ (deficit) of income over expenditure before Prior Period Items',
+        displayPriority: convertToString("15"),
+        yearData: [
+          {
+            label: 'FY 2018-19',
+            key: 'FY2018-19',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'grossBeforePrior',
+            year: years["2018-19"],
+            code: [],
+            readonly: true,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2019-20',
+            key: 'FY2019-20',
+            postion: '2',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'grossBeforePrior',
+            code: [],
+            readonly: true,
+            formFieldType: "number",
+            year: years["2019-20"],
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2020-21',
+            key: 'FY2020-21',
+            postion: '3',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'grossBeforePrior',
+            code: [],
+            readonly: true,
+            formFieldType: "number",
+            year: years['2020-21'],
+            bottomText: 'to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '4',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'grossBeforePrior',
+            code: [],
+            readonly: true,
+            formFieldType: "number",
+            year: years["2021-22"],
+            bottomText: ' ',
+            placeHolder: ''
+          }
+        ]
+      },
       totalOMCaptlExpWaterSupply: {
         key: 'totalOMCaptlExpWaterSupply',
         label: 'O & M Expenditure for Water Supply',
-        displayPriority:convertToString("10.1"),
+        displayPriority: convertToString("10.1"),
         yearData: [
           {
-          label: 'FY 2018-19',
-          key: 'FY2018-19',
-          postion: '1',
-          value: '',
-          file: '',
-          min: 0,
-          max: 13,
-          required: true,
-          type: 'totalOMCaptlExpWaterSupply',
-          year: years["2018-19"],
-          code: [],
-          readonly: true,
-          formFieldType: "number",
-          bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
-          placeHolder: ''
-        },  
+            label: 'FY 2018-19',
+            key: 'FY2018-19',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'totalOMCaptlExpWaterSupply',
+            year: years["2018-19"],
+            code: [],
+            readonly: true,
+            formFieldType: "number",
+            bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
+            placeHolder: ''
+          },
           {
             label: 'FY 2019-20',
             key: 'FY2019-20',
@@ -4787,7 +4787,7 @@ const fiscalRankingFormJson = () => {
       finExpense: {
         key: 'finExpense',
         label: 'Interest & Finance Expenses',
-        displayPriority:"11",
+        displayPriority: "11",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4862,7 +4862,7 @@ const fiscalRankingFormJson = () => {
       misExpense: {
         key: 'misExpense',
         label: 'Depreciation, Provisions & Write off, Miscellaneous Expenses',
-        displayPriority:"12",
+        displayPriority: "12",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4875,7 +4875,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'misExpense',
             year: years["2018-19"],
-            code: [270,271,272],
+            code: [270, 271, 272],
             readonly: false,
             formFieldType: "number",
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
@@ -4891,7 +4891,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'misExpense',
-            code: [270,271,272],
+            code: [270, 271, 272],
             readonly: false,
             formFieldType: "number",
             year: years["2019-20"],
@@ -4908,7 +4908,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'misExpense',
-            code: [270,271,272],
+            code: [270, 271, 272],
             readonly: false,
             formFieldType: "number",
             year: years['2020-21'],
@@ -4925,7 +4925,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'misExpense',
-            code: [270,271,272],
+            code: [270, 271, 272],
             readonly: false,
             formFieldType: "number",
             year: years["2021-22"],
@@ -4934,10 +4934,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      otherExpense:{
+      otherExpense: {
         key: 'otherExpense',
         label: 'Other expenses (incl. Programme Expenses, Revenue Grants, Contributions & Subsidies)',
-        displayPriority:"13",
+        displayPriority: "13",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -4950,7 +4950,7 @@ const fiscalRankingFormJson = () => {
             required: true,
             type: 'otherExpense',
             year: years["2018-19"],
-            code: [200,250,260],
+            code: [200, 250, 260],
             readonly: false,
             formFieldType: "number",
             bottomText: `to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 `,
@@ -4966,7 +4966,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'otherExpense',
-            code: [200,250,260],
+            code: [200, 250, 260],
             readonly: false,
             formFieldType: "number",
             year: years["2019-20"],
@@ -4983,7 +4983,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'otherExpense',
-            code: [200,250,260],
+            code: [200, 250, 260],
             readonly: false,
             formFieldType: "number",
             year: years['2020-21'],
@@ -5000,7 +5000,7 @@ const fiscalRankingFormJson = () => {
             max: 13,
             required: true,
             type: 'otherExpense',
-            code: [200,250,260],
+            code: [200, 250, 260],
             readonly: false,
             formFieldType: "number",
             year: years["2021-22"],
@@ -5009,10 +5009,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      totalExpend:{
+      totalExpend: {
         key: 'totalExpend',
         label: 'TOTAL EXPENDITURE (sum of 8 to 13)',
-        displayPriority:"14",
+        displayPriority: "14",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5084,10 +5084,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      grossAfterPrior:{
+      grossAfterPrior: {
         key: 'grossAfterPrior',
         label: 'Gross surplus/ (deficit) of income over expenditure before Prior Period Items',
-        displayPriority:"17",
+        displayPriority: "17",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5159,10 +5159,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      priorItems:{
+      priorItems: {
         key: 'priorItems',
         label: 'Add: Prior Period Items (Net)',
-        displayPriority:"16",
+        displayPriority: "16",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5234,10 +5234,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      reservFunds:{
+      reservFunds: {
         key: 'reservFunds',
         label: 'Less: Transfer to Reserve Funds',
-        displayPriority:"18",
+        displayPriority: "18",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5309,10 +5309,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      netBal:{
+      netBal: {
         key: 'netBal',
         label: 'Net Balance Being Surplus/ Deficit Carried Over to Municipal Accounts',
-        displayPriority:"19",
+        displayPriority: "19",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5384,10 +5384,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      OwnRvnue:{
+      OwnRvnue: {
         key: 'OwnRvnue',
         label: 'Total Own Revenues (sum of 1 to 3 above)',
-        displayPriority:"20",
+        displayPriority: "20",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5459,10 +5459,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      RvnueExp:{
+      RvnueExp: {
         key: 'RvnueExp',
         label: 'Total Revenue Expenditure (14 above)',
-        displayPriority:"21",
+        displayPriority: "21",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5534,10 +5534,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      CaptlExp:{
+      CaptlExp: {
         key: 'CaptlExp',
         label: 'Total Revenue Expenditure (14 above)',
-        displayPriority:"22",
+        displayPriority: "22",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5609,10 +5609,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      CaptlExpWaterSupply:{
+      CaptlExpWaterSupply: {
         key: 'CaptlExpWaterSupply',
         label: 'Capital Expenditure for Water Supply',
-        displayPriority:"22.1",
+        displayPriority: "22.1",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5684,10 +5684,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      CaptlExpSanitation:{
+      CaptlExpSanitation: {
         key: 'CaptlExpSanitation',
         label: 'Capital Expenditure for Water Supply',
-        displayPriority:"22.2",
+        displayPriority: "22.2",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5762,7 +5762,7 @@ const fiscalRankingFormJson = () => {
       auditAnnualReport: {
         key: 'auditAnnualReport',
         label: 'Own Revenue Details',
-        displayPriority:"30",
+        displayPriority: "30",
         yearData: [
           {
             label: 'FY 2019-20',
@@ -5820,10 +5820,10 @@ const fiscalRankingFormJson = () => {
           },
         ]
       },
-      totalOwnRevenueArea:{
+      totalOwnRevenueArea: {
         key: 'totalOwnRevenueArea',
         label: 'Total Own Revenue Arrears as on 31st March 2022',
-        displayPriority:"31",
+        displayPriority: "31",
         yearData: [
           {
             label: 'FY 2018-19',
@@ -5895,10 +5895,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      webUrlAnnual:{
+      webUrlAnnual: {
         key: 'webUrlAnnual',
         label: 'ULB website URL link where Audited Accounts are available',
-        displayPriority:"32",
+        displayPriority: "32",
         yearData: [
           {
             label: 'FY 2021-22',
@@ -5970,10 +5970,10 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      registerGis:{
+      registerGis: {
         key: 'registerGis',
         label: 'Is the property tax register GIS-based?',
-        displayPriority:"33",
+        displayPriority: "33",
         yearData: [
           {
             label: 'FY 2021-22',
@@ -5994,10 +5994,10 @@ const fiscalRankingFormJson = () => {
           },
         ]
       },
-      registerGisProof:{
+      registerGisProof: {
         key: 'registerGisProof',
         label: 'Please upload proof?',
-        displayPriority:"34",
+        displayPriority: "34",
         yearData: [
           {
             label: 'FY 2021-22',
@@ -6022,10 +6022,10 @@ const fiscalRankingFormJson = () => {
           {}
         ]
       },
-      accountStwre:{
+      accountStwre: {
         label: 'Do you use accounting software? ( Eg.Tally, State-prescribed ERP etc)',
         key: 'accountStwre',
-        displayPriority:"35",
+        displayPriority: "35",
         value: '',
         min: '',
         max: '',
@@ -6059,10 +6059,10 @@ const fiscalRankingFormJson = () => {
         ]
 
       },
-      accountStwreProof:{
+      accountStwreProof: {
         key: 'accountStwreProof',
         label: 'Please upload proof?',
-        displayPriority:"36",
+        displayPriority: "36",
         yearData: [
           {
             label: 'FY 2021-22',
@@ -6087,10 +6087,10 @@ const fiscalRankingFormJson = () => {
           {}
         ]
       },
-      fy_21_22_cash:{
+      fy_21_22_cash: {
         label: 'Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD',
         key: 'fy_21_22_cash',
-        displayPriority:"37",
+        displayPriority: "37",
         postion: '2',
         value: '',
         min: '',
@@ -6127,11 +6127,11 @@ const fiscalRankingFormJson = () => {
           {}
         ]
       },
-      fy_21_22_online:{
+      fy_21_22_online: {
         label: 'Own Revenue collection amount for FY 2021-22 - by Online modes/channels',
         key: 'fy_21_22_online',
         postion: '3',
-        displayPriority:"38",
+        displayPriority: "38",
         value: '',
         min: '',
         max: '',
@@ -6167,10 +6167,10 @@ const fiscalRankingFormJson = () => {
           {}
         ]
       },
-      property_tax_register:{
+      property_tax_register: {
         label: 'Number of Properties assessed/listed as per Property Tax Register',
         key: 'property_tax_register',
-        displayPriority:"39",
+        displayPriority: "39",
         postion: '1',
         value: '',
         min: '',
@@ -6206,11 +6206,11 @@ const fiscalRankingFormJson = () => {
           {}
         ]
       },
-      paying_property_tax:{
+      paying_property_tax: {
         label: 'Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)',
         key: 'paying_property_tax',
         postion: '1',
-        displayPriority:"40",
+        displayPriority: "40",
         value: '',
         min: '',
         max: '',
@@ -6249,7 +6249,7 @@ const fiscalRankingFormJson = () => {
         label: 'Number of Properties exempt from paying Property Tax',
         key: 'paid_property_tax',
         postion: '3',
-        displayPriority:"41",
+        displayPriority: "41",
         value: '',
         min: '',
         max: '',
@@ -6285,189 +6285,189 @@ const fiscalRankingFormJson = () => {
           {}
         ]
       },
-   
-},
-uploadFyDoc: {
-  guidanceNotes: {
-    key: 'guidanceNotes',
-    label: 'Guidance Notes:',
-    displayPriority:"1",
-    yearData: [
-      {
-        title: '',
-        pos: '1',
-        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
+
+    },
+    uploadFyDoc: {
+      guidanceNotes: {
+        key: 'guidanceNotes',
+        label: 'Guidance Notes:',
+        displayPriority: "1",
+        yearData: [
+          {
+            title: '',
+            pos: '1',
+            desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
+          },
+          {
+            title: '',
+            pos: '2',
+            desc: `Annual Budgets should be the detailed final approved version and should be in English language.`
+          },
+          {
+            title: '',
+            pos: '3',
+            desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
+          }
+        ]
       },
-      {
-        title: '',
-        pos: '2',
-        desc: `Annual Budgets should be the detailed final approved version and should be in English language.`
+      appAnnualBudget: {
+        key: 'appAnnualBudget',
+        label: 'Copy of Approved Annual Budget in English',
+        displayPriority: "2",
+        yearData: [
+          {
+            label: 'FY 2020-21',
+            key: 'appAnnualBudget_2020-21',
+            postion: '1',
+            value: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'appAnnualBudget',
+            code: [],
+            file: {
+              name: "",
+              url: ""
+            },
+            readonly: false,
+            formFieldType: "file",
+            year: years['2020-21'],
+            bottomText: 'Maximum Size  5MB (pdf files only)',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'appAnnualBudget_2021-22',
+            postion: '2',
+            value: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'appAnnualBudget',
+            code: [],
+            file: {
+              name: "",
+              url: ""
+            },
+            readonly: false,
+            formFieldType: "file",
+            year: years["2021-22"],
+            bottomText: 'Maximum Size  5MB (pdf files only) ',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2022-23',
+            key: 'appAnnualBudget_2022-23',
+            postion: '3',
+            value: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'appAnnualBudget',
+            formFieldType: "file",
+            code: [],
+            file: {
+              name: "",
+              url: ""
+            },
+            readonly: false,
+            year: "606aafb14dff55e6c075d3ae",
+            bottomText: 'Maximum Size  5MB (pdf files only) ',
+            placeHolder: ''
+          }
+        ]
       },
-      {
-        title: '',
-        pos: '3',
-        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
-      }
-    ]
-  },
-  appAnnualBudget: {
-    key: 'appAnnualBudget',
-    label: 'Copy of Approved Annual Budget in English',
-    displayPriority:"2",
-    yearData: [
-      {
-        label: 'FY 2020-21',
-        key: 'appAnnualBudget_2020-21',
-        postion: '1',
-        value: '',
-        min: 0,
-        max: 13,
-        required: true,
-        type: 'appAnnualBudget',
-        code: [],
-        file: {
-          name: "",
-          url: ""
-        },
-        readonly: false,
-        formFieldType: "file",
-        year: years['2020-21'],
-        bottomText: 'Maximum Size  5MB (pdf files only)',
-        placeHolder: ''
+      auditedAnnualFySt: {
+        key: 'auditedAnnualFySt',
+        label: 'Copy of Audited Annual Financial Statements in English',
+        displayPriority: "3",
+        yearData: [
+          {
+            label: 'FY 2018-19',
+            key: 'auditedAnnualFySt_2018-19',
+            postion: '1',
+            value: '',
+            file: {
+              name: "",
+              url: ""
+            },
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditedAnnualFySt',
+            year: years["2018-19"],
+            code: [],
+            readonly: false,
+            formFieldType: "file",
+            bottomText: `Maximum Size  5MB (pdf files only) `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2019-20',
+            key: 'auditedAnnualFySt_2019-20',
+            postion: '1',
+            value: '',
+            file: {
+              name: "",
+              url: ""
+            },
+            min: '',
+            max: '',
+            required: true,
+            type: 'auditedAnnualFySt',
+            year: years["2019-20"],
+            code: [],
+            readonly: false,
+            formFieldType: "file",
+            bottomText: `Maximum Size  5MB (pdf files only)`,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2020-21',
+            key: 'auditedAnnualFySt_2020-21',
+            postion: '2',
+            value: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditedAnnualFySt',
+            code: [],
+            file: {
+              name: "",
+              url: ""
+            },
+            readonly: false,
+            formFieldType: "file",
+            year: years['2020-21'],
+            bottomText: 'Maximum Size  5MB (pdf files only) ',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'auditedAnnualFySt_2021-22',
+            postion: '3',
+            value: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'auditedAnnualFySt',
+            code: [],
+            file: {
+              name: "",
+              url: ""
+            },
+            readonly: false,
+            formFieldType: "file",
+            year: years["2021-22"],
+            bottomText: 'Maximum Size  5MB (pdf files only) ',
+            placeHolder: ''
+          }
+        ]
       },
-      {
-        label: 'FY 2021-22',
-        key: 'appAnnualBudget_2021-22',
-        postion: '2',
-        value: '',
-        min: 0,
-        max: 13,
-        required: true,
-        type: 'appAnnualBudget',
-        code: [],
-        file: {
-          name: "",
-          url: ""
-        },
-        readonly: false,
-        formFieldType: "file",
-        year: years["2021-22"],
-        bottomText: 'Maximum Size  5MB (pdf files only) ',
-        placeHolder: ''
-      },
-      {
-        label: 'FY 2022-23',
-        key: 'appAnnualBudget_2022-23',
-        postion: '3',
-        value: '',
-        min: 0,
-        max: 13,
-        required: true,
-        type: 'appAnnualBudget',
-        formFieldType: "file",
-        code: [],
-        file: {
-          name: "",
-          url: ""
-        },
-        readonly: false,
-        year: "606aafb14dff55e6c075d3ae",
-        bottomText: 'Maximum Size  5MB (pdf files only) ',
-        placeHolder: ''
-      }
-    ]
-  },
-  auditedAnnualFySt: {
-    key: 'auditedAnnualFySt',
-    label: 'Copy of Audited Annual Financial Statements in English',
-    displayPriority:"3",
-    yearData: [
-      {
-        label: 'FY 2018-19',
-        key: 'auditedAnnualFySt_2018-19',
-        postion: '1',
-        value: '',
-        file: {
-          name: "",
-          url: ""
-        },
-        min: 0,
-        max: 13,
-        required: true,
-        type: 'auditedAnnualFySt',
-        year: years["2018-19"],
-        code: [],
-        readonly: false,
-        formFieldType: "file",
-        bottomText: `Maximum Size  5MB (pdf files only) `,
-        placeHolder: ''
-      },
-      {
-        label: 'FY 2019-20',
-        key: 'auditedAnnualFySt_2019-20',
-        postion: '1',
-        value: '',
-        file: {
-          name: "",
-          url: ""
-        },
-        min: '',
-        max: '',
-        required: true,
-        type: 'auditedAnnualFySt',
-        year: years["2019-20"],
-        code: [],
-        readonly: false,
-        formFieldType: "file",
-        bottomText: `Maximum Size  5MB (pdf files only)`,
-        placeHolder: ''
-      },
-      {
-        label: 'FY 2020-21',
-        key: 'auditedAnnualFySt_2020-21',
-        postion: '2',
-        value: '',
-        min: 0,
-        max: 13,
-        required: true,
-        type: 'auditedAnnualFySt',
-        code: [],
-        file: {
-          name: "",
-          url: ""
-        },
-        readonly: false,
-        formFieldType: "file",
-        year: years['2020-21'],
-        bottomText: 'Maximum Size  5MB (pdf files only) ',
-        placeHolder: ''
-      },
-      {
-        label: 'FY 2021-22',
-        key: 'auditedAnnualFySt_2021-22',
-        postion: '3',
-        value: '',
-        min: 0,
-        max: 13,
-        required: true,
-        type: 'auditedAnnualFySt',
-        code: [],
-        file: {
-          name: "",
-          url: ""
-        },
-        readonly: false,
-        formFieldType: "file",
-        year: years["2021-22"],
-        bottomText: 'Maximum Size  5MB (pdf files only) ',
-        placeHolder: ''
-      }
-    ]
-  },
-}   
+    }
+  }
 }
-}
-function getInputKeysByType(formType, type, label, dataSource = null, position,required=true) {
+function getInputKeysByType(formType, type, label, dataSource = null, position, required = true) {
   return {
     label: label,
     max: "10",
@@ -6524,40 +6524,40 @@ let fiscalRankingTabs = () => {
     "displayPriority": 7
   }]
 }
-function jsonObject(obj){
-  try{
-      let returnable = {}
-      returnable[obj.key] = {
-          key:obj.key,
-          label:obj.label,
-          displayPriority:obj.displayPriority,
-          years:[]
+function jsonObject(obj) {
+  try {
+    let returnable = {}
+    returnable[obj.key] = {
+      key: obj.key,
+      label: obj.label,
+      displayPriority: obj.displayPriority,
+      years: []
+    }
+    for (let index in obj.years) {
+      let year = obj.years[index]
+      let temp = {
+        label: `FY ${year}`,
+        key: `FY${year}`,
+        postion: index,
+        value: obj.cb ? obj.cb : '',
+        min: '',
+        max: '',
+        required: obj.isReq,
+        year: years[year],
+        readonly: obj.readOnly,
+        formFieldType: obj.fieldType,
+        type: obj.key,
+        bottomText: ``,
+        placeHolder: '',
+        input: "number"
       }
-      for(let index in obj.years){
-          let year = obj.years[index]
-          let temp = {
-                label: `FY ${year}`,
-               key: `FY${year}`,
-                postion: index,
-                value: obj.cb?obj.cb:'',
-                min: '',
-                max: '',
-                required: obj.isReq,
-                year: years[year],
-                readonly: obj.readOnly,
-                formFieldType: obj.fieldType,
-                type: obj.key,
-                bottomText: ``,
-                placeHolder: '',
-                input: "number"
-              }
-          
-          returnable[obj.key]['years'].push(temp)
-      }
-      return returnable
+
+      returnable[obj.key]['years'].push(temp)
+    }
+    return returnable
   }
-  catch(err){
-      console.log("error in jsonObject :: ",err.message)
+  catch (err) {
+    console.log("error in jsonObject :: ", err.message)
   }
 }
 
@@ -6735,7 +6735,7 @@ let formObj = {
   propertyDetails: {
     key: 'propertyDetails',
     label: 'Property Details',
-    
+
     yearData: [
       {
         label: 'Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)',
@@ -6787,6 +6787,39 @@ let formObj = {
   },
 }
 
+function createJson(objects) {
+  let json = []
+  for (let key in objects) {
+    let temp = {}
+    temp['key'] = key
+    let obj = objects[key]
+    temp['label'] = obj['label']
+    temp['codes'] = new Set()
+    temp['years'] = []
+    temp['formFieldType'] = 'number'
+    temp['required'] = true
+    temp['displayPriority'] = obj['displayPriority']
+    temp['input'] = "number"
+    for (var k of obj.yearData) {
+      if (k.label) {
+        let year = k.label.split(" ")[1]
+        temp['years'].push(year)
+      }
+      if (k.code) {
+        for (code of k.code) {
+          // console.log(code)
+          temp['codes'].add(code)
+        }
+      }
+
+    }
+    temp['codes'] = Array.from(temp['codes'])
+    json.push(temp)
+  }
+  return json
+}
+let json = createJson(objects)
+let sorted = json.sort((a, b) => { return (+a.displayPriority > +b.displayPriority ? 1 : -1) })
 
 
 module.exports.jsonObject = jsonObject
