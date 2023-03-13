@@ -595,7 +595,7 @@ exports.getView = async function (req, res, next) {
     }
 
     let fyDynemic = await fiscalRankingFormJson();
-    await assignCalculatedValues(fyDynemic, viewOne)
+    // await assignCalculatedValues(fyDynemic, viewOne)
 
     let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
     let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'] }, "ulb": ObjectId(req.query.ulb) });
