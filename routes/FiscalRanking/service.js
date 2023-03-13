@@ -604,7 +604,9 @@ exports.getView = async function (req, res, next) {
       let subData = fyDynemic[sortKey];
       // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
+        
         for (let pf of subData[key]?.yearData) {
+          
           if (pf?.code?.length > 0) {
             pf['status'] = null
             pf["modelName"] = "FiscalRanking"
@@ -659,12 +661,18 @@ exports.getView = async function (req, res, next) {
               }
             } else {
               if (fyData.length) {
+                
                 if (pf.year && pf.type) {
+                  
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
                   if(singleFydata ){
                     if (singleFydata?.date !== null) {
                       pf['date'] = singleFydata ? singleFydata.date : null;
                     } 
+                    pf['file'] = singleFydata ? singleFydata.file : {
+                      "name":"",
+                      "url":""
+                    }
                     pf['value'] = singleFydata ? singleFydata.value : "";
                     pf['status'] = singleFydata ? singleFydata.status : "PENDING";
                     pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
@@ -1750,6 +1758,7 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
         }
         if (updateForm) {
           upsert = true
+          
           payload['value'] = years.value
           payload['date'] = years.date
           payload['file']  = years.file
@@ -1791,6 +1800,7 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm,isDr
     }
     let payload = {}
     for (let key in obj) {
+      
       if (updateForm) {
         if(key === "signedCopyOfFile"){
           payload[key]= obj[key]
