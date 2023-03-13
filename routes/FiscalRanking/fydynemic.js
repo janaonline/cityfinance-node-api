@@ -6019,7 +6019,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
       },
       accountStwre: {
@@ -6055,7 +6054,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
 
       },
@@ -6084,7 +6082,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
       },
       fy_21_22_cash: {
@@ -6124,7 +6121,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
       },
       fy_21_22_online: {
@@ -6164,7 +6160,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
       },
       property_tax_register: {
@@ -6203,7 +6198,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
       },
       paying_property_tax: {
@@ -6242,7 +6236,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
       },
       paid_property_tax: {
@@ -6282,7 +6275,6 @@ const fiscalRankingFormJson = () => {
           {},
           {},
           {},
-          {}
         ]
       },
 
