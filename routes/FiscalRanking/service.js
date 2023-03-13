@@ -398,9 +398,10 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
             "",
             "Ca Membership number",
             dataSource,
-            "8"),
+            "8",
+            false),
           ...obj,
-          "readonly": getReadOnly(obj.status, isDraft)
+          "readonly": false
       }
     case "nameOfNodalOfficer":
       return {
@@ -1738,6 +1739,7 @@ async function sendCsv(res, aggregateQuery) {
 async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm) {
   try {
     for (var years of yearData) {
+      console.log("years :::",years.type)
       let upsert = false
       if (years.year) {
         let payload = {}
@@ -1755,7 +1757,8 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
         else{
           payload["status"]= years.status
         }
-        await FiscalRankingMapper.findOneAndUpdate(filter, payload,{"upsert":upsert})
+        let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload,{"upsert":upsert})
+        console.log(up)
       }
       else if (mainFormContent.includes(years.key)) {
         let payload = {}
@@ -1847,6 +1850,7 @@ async function calculateAndUpdateStatusForMappers(session,tabs, ulbId, formId, y
     let conditionalObj = {}
     let ignorablevariables = ["guidanceNotes"]
     const fiscalRankingKeys = ["ownRevDetails", "property_tax_register", "paying_property_tax", "paid_property_tax", "webUrlAnnual", "webLink", "totalOwnRevenueArea", "paid_property_tax", "signedCopyOfFile", "fy_21_22_cash", "fy_21_22_online", "registerGis", "accountStwre"]
+    
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {}
       let key = tab.id
