@@ -638,7 +638,6 @@ exports.getView = async function (req, res, next) {
           } else {
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
-                console.log("Pf ::",pf)
                 let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
