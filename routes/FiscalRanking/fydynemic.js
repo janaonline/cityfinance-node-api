@@ -379,6 +379,81 @@ const fiscalRankingFormJson = () => {
           },
         ]
       },
+      sewerageTax: {  /// new add
+        key: 'sewerageTax',
+        label: 'Sewerage tax',
+        displayPriority:"1.4",
+        yearData: [
+          {
+            label: 'FY 2018-19',
+            key: 'FY2018-RcptActl19',
+            postion: '1',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'sewerageTax',
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            year: "63735a5bd44534713673c1ca",
+            bottomText: `to be taken from approved Annual Budget of FY 2020-21 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2019-20',
+            key: 'FY2019-20',
+            postion: '2',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'sewerageTax',
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            year: "607697074dff55e6c0be33ba",
+            bottomText: `to be taken from approved Annual Budget of FY 2021-22 `,
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2020-21',
+            key: 'FY2020-21',
+            postion: '3',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'sewerageTax',
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            year: "606aadac4dff55e6c075c507",
+            bottomText: 'to be taken from approved Annual Budget of FY 2022-23 ',
+            placeHolder: ''
+          },
+          {
+            label: 'FY 2021-22',
+            key: 'FY2021-22',
+            postion: '4',
+            value: '',
+            file: '',
+            min: 0,
+            max: 13,
+            required: true,
+            type: 'sewerageTax',
+            code: [],
+            readonly: false,
+            formFieldType: "number",
+            year: "606aaf854dff55e6c075d219",
+            bottomText: '',
+            placeHolder: ''
+          },
+        ]
+      },
       totalRcptSanitation: {  /// new add
         key: 'totalRcptSanitation',
         label: 'Total Receipts (Actual) for Sanitation/Sewerage',
@@ -589,8 +664,8 @@ const fiscalRankingFormJson = () => {
           },
         ]
       },
-      totalPropTaxRevenue: {
-        key: 'totalPropTaxRevenue',
+      propertyTax: {
+        key: 'propertyTax',
         label: 'Total Property Tax Revenue ',
         displayPriority:"1.1",
         yearData: [
@@ -603,7 +678,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalProperty',
+            type: 'propertyTax',
             year: "63735a5bd44534713673c1ca",
             code: ['11001'],
             readonly: false,
@@ -620,7 +695,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalProperty',
+            type: 'propertyTax',
             code: ['11001'],
             readonly: false,
             formFieldType: "number",
@@ -637,7 +712,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalProperty',
+            type: 'propertyTax',
             code: ['11001'],
             readonly: false,
             formFieldType: "number",
@@ -654,7 +729,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalProperty',
+            type: 'propertyTax',
             code: ['11001'],
             readonly: false,
             formFieldType: "number",
@@ -664,8 +739,8 @@ const fiscalRankingFormJson = () => {
           }
         ]
       },
-      totalTaxRevWaterSupply: {
-        key: 'totalTaxRevWaterSupply',
+      waterTax: {
+        key: 'waterTax',
         label: 'Total tax Revenue for Water Supply',
         displayPriority:"1.2",
         yearData: [
@@ -678,7 +753,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalTaxRevWaterSupply',
+            type: 'waterTax',
             year: years["2018-19"],
             code: [11002],
             readonly: false,
@@ -695,7 +770,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalTaxRevWaterSupply',
+            type: 'waterTax',
             code: [11002],
             readonly: false,
             formFieldType: "number",
@@ -712,7 +787,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalTaxRevWaterSupply',
+            type: 'waterTax',
             code: [11002],
             readonly: false,
             formFieldType: "number",
@@ -729,7 +804,7 @@ const fiscalRankingFormJson = () => {
             min: 0,
             max: 13,
             required: true,
-            type: 'totalTaxRevWaterSupply',
+            type: 'waterTax',
             code: [11002],
             readonly: false,
             formFieldType: "number",
@@ -1266,7 +1341,7 @@ const fiscalRankingFormJson = () => {
       },
       feeUserChrg:{
         key: 'feeUserChrg',
-        label: 'All other tax revenues (combined)',
+        label: 'Fees & User charges',
         displayPriority:"2",
         yearData: [
           {
