@@ -441,7 +441,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
     case "mobile":
       return {
         ...getInputKeysByType(
-          "mobile",
+          "number",
           "",
           "Mobile number",
           dataSource,
