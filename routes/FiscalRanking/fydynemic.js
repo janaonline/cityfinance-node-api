@@ -6100,8 +6100,8 @@ const fiscalRankingFormJson = () => {
                 yearData: [
                     {
                         title: '',
-                        pos: '3',
-                        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
+                        pos: '1',
+                        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
                     },
                     {
                         title: '',
@@ -6110,10 +6110,9 @@ const fiscalRankingFormJson = () => {
                     },
                     {
                         title: '',
-                        pos: '1',
-                        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
-                    },
-                    
+                        pos: '3',
+                        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
+                    }
                 ]
             },
             appAnnualBudget: {
