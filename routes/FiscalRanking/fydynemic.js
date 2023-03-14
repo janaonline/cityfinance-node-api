@@ -5467,6 +5467,7 @@ const fiscalRankingFormJson = () => {
                   "min": 0,
                   "max": 999999999999999,
                   "required": true,
+                  "date":null,
                   "type": "auditAnnualReport",
                   "year": "63735a5bd44534713673c1ca",
                   "code": [],
