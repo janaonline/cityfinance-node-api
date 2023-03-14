@@ -551,10 +551,12 @@ function doRequest(url) {
             method: 'HEAD'
         }
         request(options, (error, resp, body) => {
-            if (!error && resp?.statusCode == 404) {
-                resolve(url)
+            if (!error && resp?.statusCode == 200) {
+                reject(url)
+            } else if (resp?.statusCode == undefined) {
+                reject(url)
             } else {
-                reject(url);
+                resolve(url);
             }
         });
     });
