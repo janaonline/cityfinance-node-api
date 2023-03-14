@@ -1,9 +1,32 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,modifiedShortKeys } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
 
+
+function modifyData(data){
+  try{
+    let keys = Object.keys(modifiedShortKeys)
+    let removable = ''
+    
+    let objects = data.filter((item) => keys.includes(item.shortKey) || keys.includes(modifiedShortKeys[item.shortKey])) 
+    console.log("objects :::: ",objects)
+    for(let obj of objects){
+      let answerArr = obj.answer
+      for(let answerObj of answerArr){
+        if (!answerObj.value){
+          removable = obj.shortKey
+        }
+      }
+    }
+    let returnableData = data.filter(item => item.shortKey != removable)
+    return returnableData
+  }
+  catch(err){
+    console.log("error in modifyData ::: ",err.message)
+  }
+}
 
 module.exports.changeRequestBody = async (req,res,next)=>{
   try{
@@ -11,6 +34,8 @@ module.exports.changeRequestBody = async (req,res,next)=>{
     delete bodyData['data']
     let {design_year} = req.body
     let {data} = req.body 
+    data = modifyData(data)
+    console.log("data :>>>:: ",data)
     if (design_year == years['2023-24']) {
       req.body =await  payloadParser(data,req)
     }

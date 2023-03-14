@@ -25,6 +25,7 @@ const CurrentStatus = require('../../models/CurrentStatus');
 var modifiedShortKeys = {
     "cert_declaration":"cert"
 }
+module.exports.modifiedShortKeys  = modifiedShortKeys
 var shortKeysWithModelName = {
     "rating":"Rating"
 }
