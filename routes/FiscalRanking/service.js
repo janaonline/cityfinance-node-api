@@ -604,16 +604,14 @@ exports.getView = async function (req, res, next) {
       let subData = fyDynemic[sortKey];
       // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
-        
         for (let pf of subData[key]?.yearData) {
-          
           if (pf?.code?.length > 0) {
             pf['status'] = null
             pf["modelName"] = "FiscalRanking"
             if (fyData.length) {
-              
               let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
               if (singleFydata) {
+                
                 if (singleFydata?.date !== null) {
                   pf['date'] = singleFydata ? singleFydata.date : null;
                 } else {
@@ -623,6 +621,7 @@ exports.getView = async function (req, res, next) {
                 pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
+                
                 pf['value'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA" : "PENDING";
                 pf['readonly'] = ulbFyAmount > 0 ? true : false;
@@ -630,6 +629,7 @@ exports.getView = async function (req, res, next) {
               }
             } else {
               if (viewOne.isDraft == null) {
+                
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['value'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA" : "PENDING";
@@ -711,7 +711,8 @@ exports.getView = async function (req, res, next) {
  * @param objData - The object that contains the data to be filtered.
  */
 const getUlbLedgerDataFilter = (objData) => {
-  const { code, year, data } = objData;
+  let { code, year, data } = objData;
+  code = code.map(item => item.toString())
   if (code.length) {
     let ulbFyData = data.length ? data.filter(
       (el) => {
@@ -758,7 +759,6 @@ const ulbLedgerFy = (condition) => {
           }
         }
       ])
-
       resolve(data)
     } catch (error) {
       reject(error);
