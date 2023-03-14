@@ -23,7 +23,7 @@ module.exports.getAll = async (req, res) =>{
 
 module.exports.getValue = async (req, res) =>{
     try {
-        const {_id} = req.query
+        const {_id} = req.params
         if(!_id) return Response.BadRequest(res, {}, "Pass Mandatory Fields");
         let output = await MasterStatus.findOne({statusId: _id},{status:1, statusId:1}).lean();
         if(!output) return Response.BadRequest(res, {}, "Failed")
