@@ -12,7 +12,7 @@ const userTypes = require("../../util/userTypes")
 // const converter = require('json-2-csv');
 const { calculateKeys, canTakeActionOrViewOnly, calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
-const { fiscalRankingFormJson, inputKeys, getInputKeysByType,jsonObject, fiscalRankingTabs,notRequiredValidations } = require('./fydynemic');
+const { fiscalRankingFormJson,financialYearTableHeader, inputKeys, getInputKeysByType,jsonObject, fiscalRankingTabs,notRequiredValidations } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
 const State = require('../../models/State');
 const fs = require('fs');
@@ -149,6 +149,8 @@ function filterQuery(type, year) {
     console.log("error in filter query")
   }
 }
+
+
 
 function fetchAmountFromQuery(arrVariable) {
   try {
@@ -620,14 +622,18 @@ exports.getView = async function (req, res, next) {
                   pf['value'] = singleFydata ? singleFydata.value : "";
                 }
                 pf['status'] = singleFydata.status;
-                pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                if(subData[key].calculatedFrom === undefined){
+                  pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                }
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 
                 pf['value'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA" : "PENDING";
-                pf['readonly'] = ulbFyAmount > 0 ? true : false;
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
+                if(subData[key].calculatedFrom === undefined){
+                  pf['readonly'] = ulbFyAmount > 0 ? true : false;
+                }
               }
             } else {
               if (viewOne.isDraft == null) {
@@ -635,8 +641,10 @@ exports.getView = async function (req, res, next) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 pf['value'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA" : "PENDING";
-                pf['readonly'] = ulbFyAmount > 0 ? true : false;
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
+                if(subData[key].calculatedFrom === undefined){
+                  pf['readonly'] = ulbFyAmount > 0 ? true : false;
+                }
               }
             }
           } else {
@@ -646,19 +654,25 @@ exports.getView = async function (req, res, next) {
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
-                  pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                  if(subData[key].calculatedFrom === undefined){
+                    pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                  }
                 } else {
                   if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
-                    pf['readonly'] = chekFile ? true : false;
+                    if(subData[key].calculatedFrom === undefined){
+                      pf['readonly'] = chekFile ? true : false;
+                    }
                   }
                 }
               } else {
                 if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "PENDING";
-                  pf['readonly'] = chekFile ? true : false;
+                  if(subData[key].calculatedFrom === undefined){
+                    pf['readonly'] = chekFile ? true : false;
+                  }
                 }
               }
             } else {
@@ -677,7 +691,9 @@ exports.getView = async function (req, res, next) {
                     }
                     pf['value'] = singleFydata ? singleFydata.value : "";
                     pf['status'] = singleFydata ? singleFydata.status : "PENDING";
-                    pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                    if(subData[key].calculatedFrom  === undefined){
+                      pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                    }
                 }
                 }
               }
@@ -697,7 +713,8 @@ exports.getView = async function (req, res, next) {
       "ulb": viewOne.ulb ? viewOne.ulb :  req.query.ulb,
       "design_year": viewOne.design_year ? viewOne.design_year : req.query.design_year,
       "isDraft": viewOne.isDraft,
-      "tabs": modifiedTabs
+      "tabs": modifiedTabs,
+      financialYearTableHeader
     }
     return res.status(200).json({ status: true, message: "Success fetched data!", "data": viewData });
   } catch (error) {
