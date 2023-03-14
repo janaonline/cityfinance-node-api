@@ -8,10 +8,9 @@ const ObjectId = require("mongoose").Types.ObjectId;
 function modifyData(data){
   try{
     let keys = Object.keys(modifiedShortKeys)
+    keys = keys.concat(Object.values(modifiedShortKeys))
     let removable = ''
-    
-    let objects = data.filter((item) => keys.includes(item.shortKey) || keys.includes(modifiedShortKeys[item.shortKey])) 
-    console.log("objects :::: ",objects)
+    let objects = data.filter((item) => keys.includes(item.shortKey)) 
     for(let obj of objects){
       let answerArr = obj.answer
       for(let answerObj of answerArr){
@@ -35,7 +34,6 @@ module.exports.changeRequestBody = async (req,res,next)=>{
     let {design_year} = req.body
     let {data} = req.body 
     data = modifyData(data)
-    console.log("data :>>>:: ",data)
     if (design_year == years['2023-24']) {
       req.body =await  payloadParser(data,req)
     }
