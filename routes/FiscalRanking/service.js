@@ -334,7 +334,9 @@ const getReadOnly = (status, isDraft) => {
     return true
   }
 }
+
 const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
+
   switch (key) {
     case "populationFr":
       return {
@@ -394,7 +396,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
       case "caMembershipNo":
         return {
           ...getInputKeysByType(
-            "text",
+            "number",
             "",
             "Ca Membership number",
             dataSource,
@@ -439,7 +441,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
     case "mobile":
       return {
         ...getInputKeysByType(
-          "number",
+          "mobile",
           "",
           "Mobile number",
           dataSource,

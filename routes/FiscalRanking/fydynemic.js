@@ -6185,10 +6185,21 @@ const fiscalRankingFormJson = () => {
   }
 }
 function getInputKeysByType(formType, type, label, dataSource = null, position, required = true) {
+  let maximum = 9999999999
+  let min = 0
+  if(formType != "number"){
+    min = 0
+    maximum = 50
+  }
+  else if(formType != "mobile"){
+    min = 1000000000
+    maximum = 99999999999
+    formType = "number"
+  }
   return {
     label: label,
-    max: "10",
-    min: "0",
+    max: maximum ,
+    min:min,
     placeHolder: "",
     postion: position,
     modelName: dataSource, // USER | LEDGER
