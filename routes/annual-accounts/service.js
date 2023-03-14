@@ -1812,6 +1812,11 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
   let Audited_data = await AnnualAccountData.aggregate([
     // {$match : {"ulb" : ObjectId("5fa2465f072dab780a6f1292")}},
     {
+      $match: {
+        design_year: ObjectId(YEAR_CONSTANTS["21_22"]),
+      },
+    },
+    {
       $lookup: {
         from: "years",
         localField: "design_year",
@@ -1992,6 +1997,11 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
     'Rejected By MoHUA'
   ]
   let Unaudited_data = await AnnualAccountData.aggregate([
+    {
+      $match: {
+        design_year: ObjectId(YEAR_CONSTANTS["21_22"]),
+      },
+    },
     {
       $lookup: {
         from: "years",
