@@ -260,6 +260,13 @@ router.use('/fiscal-ranking', FiscalRanking);
 router.use(require('./s3ServerFile'));
 
 const CommonHistory = require('./CommonHistory')
-router.use('/common-history', CommonHistory)
+router.use('/common-history', CommonHistory);
+
+const MasterStatus = require('./MasterStatus');
+router.use('/master-status', MasterStatus)
+
+const MasterSkipValue = require('./MasterSkipValues');
+router.use('/master-skip-value', MasterSkipValue)
+
 
 module.exports = router;
