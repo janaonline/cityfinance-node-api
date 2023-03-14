@@ -490,7 +490,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
     case "propertySanitationTax":
       return {
         ...statusObj(
-          "Does your Property Tax include Water Tax?",
+          "Does your Property Tax include Sanitation/Sewerage Tax?",
           "radio-toggle",
           "",
           dataSource,
