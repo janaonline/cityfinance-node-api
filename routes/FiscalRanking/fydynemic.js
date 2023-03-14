@@ -6191,7 +6191,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
     min = 0
     maximum = 50
   }
-  else if(formType != "mobile"){
+  else if(formType == "mobile"){
     min = 1000000000
     maximum = 99999999999
     formType = "number"
