@@ -925,6 +925,46 @@ module.exports.canTakeActionOrViewOnly = (data, userRole, adminLevel = false) =>
             break;
     }
 }
+
+module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
+    const { status, userRole, adminLevel = false }  = params;
+    switch (true) {
+        case status == MASTER_STATUS['Not Started']:
+            return false;
+            break;
+        case status == MASTER_STATUS['In Progress']:
+            return false;
+            break;
+        case status == MASTER_STATUS['Under Review by State'] && userRole == 'STATE':
+            return true;
+            break;
+        case status == MASTER_STATUS['Under Review by MoHUA'] && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            console.log("adminglevel ::: ", adminLevel)
+            return true
+            break;
+        case status == MASTER_STATUS['Under Review by State'] && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            return false;
+            break;
+        case status == MASTER_STATUS['Rejected by State']:
+            return false;
+            break;
+        case status == MASTER_STATUS['Rejected by MoHUA']:
+            return false;
+            break;
+        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'STATE':
+            return false;
+            break;
+        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'MoHUA':
+            return true;
+            break;
+        case status == MASTER_STATUS['Approved by MoHUA']:
+            return false;
+            break;
+
+        default:
+            break;
+    }
+}
 class AggregationServices {
     static dateFormat = "%d-%m-%Y"
     /**
