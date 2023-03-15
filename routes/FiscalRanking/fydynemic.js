@@ -3379,6 +3379,7 @@ const fiscalRankingFormJson = () => {
                     "5.3",
                     "6"
                 ],
+                "logic":"sum",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
