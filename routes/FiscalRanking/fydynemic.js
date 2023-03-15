@@ -1695,7 +1695,6 @@ const fiscalRankingFormJson = () => {
                 "key": "otherCompensation",
                 "label": "All other assigned revenues & compensation (combined)",
                 "displayPriority": "4.2",
-                "logic":"sum",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
