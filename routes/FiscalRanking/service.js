@@ -673,6 +673,9 @@ exports.getView = async function (req, res, next) {
                 if (subData[key].calculatedFrom === undefined) {
                   pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                 }
+                else{
+                  pf['readonly'] = true;
+                }
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 // parameters['valueObj'] = {value:ulbFyAmount}
@@ -682,6 +685,9 @@ exports.getView = async function (req, res, next) {
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 if (subData[key].calculatedFrom === undefined) {
                   pf['readonly'] = ulbFyAmount > 0 ? true : false;
+                }
+                else{
+                  pf['readonly'] = true;
                 }
               }
             } else {
@@ -696,6 +702,9 @@ exports.getView = async function (req, res, next) {
                 if (subData[key].calculatedFrom === undefined) {
                   pf['readonly'] = ulbFyAmount > 0 ? true : false;
                 }
+                else{
+                  pf['readonly'] = true;
+                }
               }
             }
           } else {
@@ -708,12 +717,18 @@ exports.getView = async function (req, res, next) {
                   if (subData[key].calculatedFrom === undefined) {
                     pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                   }
+                  else{
+                    pf['readonly'] = true;
+                  }
                 } else {
                   if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = chekFile ? true : false;
+                    }
+                    else{
+                      pf['readonly'] = true;
                     }
                   }
                 }
@@ -723,6 +738,9 @@ exports.getView = async function (req, res, next) {
                   pf['status'] = chekFile ? "NA" : "PENDING";
                   if (subData[key].calculatedFrom === undefined) {
                     pf['readonly'] = chekFile ? true : false;
+                  }
+                  else{
+                    pf['readonly'] = true;
                   }
                 }
               }
