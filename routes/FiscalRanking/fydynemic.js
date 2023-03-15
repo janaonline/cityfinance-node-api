@@ -7,7 +7,7 @@ const fiscalRankingFormJson = () => {
             "totalRecActual": {
                 "key": "totalRecActual",
                 "label": "Total Receipts (Actual)",
-                "displayPriority": "26",
+                "displayPriority": "20",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -82,7 +82,7 @@ const fiscalRankingFormJson = () => {
             "totalRcptWaterSupply": {
                 "key": "totalRcptWaterSupply",
                 "label": "Total Receipts (Actual) for Water Supply",
-                "displayPriority": "27",
+                "displayPriority": "21",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -170,7 +170,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "sewerageTax",
                         "code": [
-                            11003
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -189,7 +189,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "sewerageTax",
                         "code": [
-                            11003
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -208,7 +208,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "sewerageTax",
                         "code": [
-                            11003
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -227,7 +227,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "sewerageTax",
                         "code": [
-                            11003
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -236,12 +236,12 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "totalRcptSanitation": {
                 "key": "totalRcptSanitation",
                 "label": "Total Receipts (Actual) for Sanitation/Sewerage",
-                "displayPriority": "28",
+                "displayPriority": "22",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -313,10 +313,10 @@ const fiscalRankingFormJson = () => {
                     }
                 ]
             },
-            "totalRecBudgetEst": {
-                "key": "totalRecBudgetEst",
+            "RcptBudget": {
+                "key": "RcptBudget",
                 "label": "Total Receipts (Budget Estimate)",
-                "displayPriority": "29",
+                "displayPriority": "23",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -327,10 +327,10 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRecBudgetEst",
+                        "type": "RcptBudget",
                         "year": years["2018-19"],
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -388,105 +388,6 @@ const fiscalRankingFormJson = () => {
                     }
                 ]
             },
-            "totalOwnRevenues": {
-                "key": "totalOwnRevenues",
-                "label": "Total Own Revenues ",
-                "displayPriority": "20",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRvnue",
-                        "code": [
-                            "110",
-                            "130",
-                            "140",
-                            "150",
-                            "180"
-                        ],
-                        "readonly": false,
-                        "year": years["2018-19"],
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from AuditedAnnual Budget of FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRvnue",
-                        "year": years["2019-20"],
-                        "code": [
-                            "110",
-                            "130",
-                            "140",
-                            "150",
-                            "180"
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from Audited Annual Budget of FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRvnue",
-                        "code": [
-                            "110",
-                            "130",
-                            "140",
-                            "150",
-                            "180"
-                        ],
-                        "readonly": false,
-                        "year": years["2020-21"],
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from AuditedAnnual Budget of FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRvnue",
-                        "code": [
-                            "110",
-                            "130",
-                            "140",
-                            "150",
-                            "180"
-                        ],
-                        "readonly": false,
-                        "year": years["2021-22"],
-                        "formFieldType": "number",
-                        "bottomText": " ",
-                        "placeHolder": ""
-                    }
-                ]
-            },
             "propertyTax": {
                 "key": "propertyTax",
                 "label": "Property Tax",
@@ -504,7 +405,6 @@ const fiscalRankingFormJson = () => {
                         "type": "propertyTax",
                         "year": years["2018-19"],
                         "code": [
-                            "11001"
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -522,7 +422,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "propertyTax",
                         "code": [
-                            "11001"
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -541,7 +441,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "propertyTax",
                         "code": [
-                            "11001"
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -560,7 +460,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "propertyTax",
                         "code": [
-                            "11001"
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -569,7 +469,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "waterTax": {
                 "key": "waterTax",
@@ -588,7 +488,7 @@ const fiscalRankingFormJson = () => {
                         "type": "waterTax",
                         "year": years["2018-19"],
                         "code": [
-                            11002
+                        
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -606,7 +506,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "waterTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -625,7 +525,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "waterTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -644,7 +544,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "waterTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -653,7 +553,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "taxRevenue": {
                 "key": "taxRevenue",
@@ -755,7 +655,7 @@ const fiscalRankingFormJson = () => {
                         "type": "drainageTax",
                         "year": years["2018-19"],
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -773,7 +673,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "drainageTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -792,7 +692,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "drainageTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -811,7 +711,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "drainageTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -820,7 +720,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "profTax": {
                 "key": "profTax",
@@ -839,7 +739,7 @@ const fiscalRankingFormJson = () => {
                         "type": "profTax",
                         "year": years["2018-19"],
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -857,7 +757,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "profTax",
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -876,7 +776,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "profTax",
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -895,7 +795,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "profTax",
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -904,7 +804,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "entertainTax": {
                 "key": "entertainTax",
@@ -923,7 +823,7 @@ const fiscalRankingFormJson = () => {
                         "type": "entertainTax",
                         "year": years["2018-19"],
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -941,7 +841,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "entertainTax",
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -960,7 +860,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "entertainTax",
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -979,7 +879,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "entertainTax",
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -988,7 +888,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "advTax": {
                 "key": "advTax",
@@ -1007,7 +907,7 @@ const fiscalRankingFormJson = () => {
                         "type": "advTax",
                         "year": years["2018-19"],
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1025,7 +925,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "advTax",
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1044,7 +944,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "advTax",
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1063,7 +963,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "advTax",
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1072,7 +972,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherTaxRev": {
                 "key": "otherTaxRev",
@@ -1148,7 +1048,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "feeUserChrg": {
                 "key": "feeUserChrg",
@@ -1173,7 +1073,7 @@ const fiscalRankingFormJson = () => {
                         "type": "feeUserChrg",
                         "year": years["2018-19"],
                         "code": [
-                            140
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1191,7 +1091,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "feeUserChrg",
                         "code": [
-                            140
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1210,7 +1110,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "feeUserChrg",
                         "code": [
-                            140
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1229,7 +1129,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "feeUserChrg",
                         "code": [
-                            140
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1313,7 +1213,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "sanitationFee": {
                 "key": "sanitationFee",
@@ -1389,7 +1289,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "garbageFee": {
                 "key": "garbageFee",
@@ -1465,7 +1365,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherFee": {
                 "key": "otherFee",
@@ -1541,7 +1441,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "rentInc": {
                 "key": "rentInc",
@@ -1560,7 +1460,7 @@ const fiscalRankingFormJson = () => {
                         "type": "rentInc",
                         "year": years["2018-19"],
                         "code": [
-                            130
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1578,7 +1478,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "rentInc",
                         "code": [
-                            130
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1597,7 +1497,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "rentInc",
                         "code": [
-                            130
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1616,7 +1516,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "rentInc",
                         "code": [
-                            130
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1625,7 +1525,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "assignedCompensation": {
                 "key": "assignedCompensation",
@@ -1649,9 +1549,9 @@ const fiscalRankingFormJson = () => {
                         "type": "assignedCompensation",
                         "year": years["2018-19"],
                         "code": [
-                            120
+                            
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "bottomText": "to be taken from Audited Annual Budget of FY 2018-19 ",
                         "placeHolder": ""
@@ -1667,9 +1567,9 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "assignedCompensation",
                         "code": [
-                            120
+                            
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2019-20"],
                         "bottomText": "to be taken from Audited Annual Budget of FY 2019-20 ",
@@ -1686,9 +1586,9 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "assignedCompensation",
                         "code": [
-                            120
+                            
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2020-21"],
                         "bottomText": "to be taken from Audited Annual Budget of FY 2020-21 ",
@@ -1705,9 +1605,9 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "assignedCompensation",
                         "code": [
-                            120
+                            
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2021-22"],
                         "bottomText": "to be taken from Audited Annual Budget of FY 2021-22 ",
@@ -1729,7 +1629,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "assignedCompensation",
+                        "type": "octroiCompensation",
                         "year": years["2018-19"],
                         "code": [],
                         "readonly": false,
@@ -1746,7 +1646,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "assignedCompensation",
+                        "type": "octroiCompensation",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1763,7 +1663,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "assignedCompensation",
+                        "type": "octroiCompensation",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1780,7 +1680,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "assignedCompensation",
+                        "type": "octroiCompensation",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1789,12 +1689,13 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherCompensation": {
                 "key": "otherCompensation",
                 "label": "All other assigned revenues & compensation (combined)",
                 "displayPriority": "4.2",
+                "logic":"sum",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1865,7 +1766,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "revGrants": {
                 "key": "revGrants",
@@ -1890,7 +1791,7 @@ const fiscalRankingFormJson = () => {
                         "type": "revGrants",
                         "year": years["2018-19"],
                         "code": [
-                            160
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1908,7 +1809,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "revGrants",
                         "code": [
-                            160
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1927,7 +1828,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "revGrants",
                         "code": [
-                            160
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1946,7 +1847,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "revGrants",
                         "code": [
-                            160
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -1962,6 +1863,8 @@ const fiscalRankingFormJson = () => {
                 "displayPriority": "5.1",
                 "calculatedFrom": [
                     "5.11",
+                    "5.12",
+                    "5.13",
                     "5.14"
                 ],
                 "logic": "sum",
@@ -2039,7 +1942,7 @@ const fiscalRankingFormJson = () => {
             "faLandBuild": {
                 "key": "faLandBuild",
                 "label": "Land & Buildings",
-                "displayPriority": "23.1",
+                "displayPriority": "17.1",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2110,12 +2013,12 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "faOther": {
                 "key": "faOther",
                 "label": "Other Fixed Assets",
-                "displayPriority": "23.2",
+                "displayPriority": "17.2",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2186,12 +2089,12 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "debtOs": {
                 "key": "debtOs",
                 "label": "Total Debt outstanding",
-                "displayPriority": "24",
+                "displayPriority": "18",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2262,15 +2165,15 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "assetsSale": {
                 "key": "assetsSale",
                 "label": "Income from Sale of Assets",
-                "displayPriority": "25",
+                "displayPriority": "19",
                 "calculatedFrom": [
-                    "25.1",
-                    "25.2"
+                    "19.1",
+                    "19.2"
                 ],
                 "logic": "sum",
                 "yearData": [
@@ -2347,7 +2250,7 @@ const fiscalRankingFormJson = () => {
             "incmLandSale": {
                 "key": "incmLandSale",
                 "label": "Income from Sale of Land",
-                "displayPriority": "25.1",
+                "displayPriority": "19.1",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2418,12 +2321,12 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "incmOtherAssets": {
                 "key": "incmOtherAssets",
                 "label": "Income from Sale of Other Assets",
-                "displayPriority": "25.2",
+                "displayPriority": "19.2",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2494,7 +2397,85 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
+            },
+            "netRevenue":{
+                "key": "netRevenue",
+                "label": "Revenue surplus/ (Deficit) ",
+                "displayPriority": "15",
+                "calculatedFrom":["7.1","7.2"],
+                "logic":"sum",
+                "yearData": [
+                    {
+                        "label": "FY 2018-19",
+                        "key": "FY2018-19",
+                        "postion": "1",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "netRevenue",
+                        "year": years["2018-19"],
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2018-19 ",
+                        "placeHolder": ""
+                    },
+                    {
+                        "label": "FY 2019-20",
+                        "key": "FY2019-20",
+                        "postion": "2",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "netRevenue",
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "year": years["2019-20"],
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2019-20 ",
+                        "placeHolder": ""
+                    },
+                    {
+                        "label": "FY 2020-21",
+                        "key": "FY2020-21",
+                        "postion": "3",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "netRevenue",
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "year": years["2020-21"],
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2020-21 ",
+                        "placeHolder": ""
+                    },
+                    {
+                        "label": "FY 2021-22",
+                        "key": "FY2021-22",
+                        "postion": "4",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "netRevenue",
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "year": years["2021-22"],
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2021-22 ",
+                        "placeHolder": ""
+                    }
+                ],
+                "info": "To be taken from Approved Annual Budget"
             },
             "cfcGrant": {
                 "key": "cfcGrant",
@@ -2570,7 +2551,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "cssGrant": {
                 "key": "cssGrant",
@@ -2646,7 +2627,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "centralscheme": {
                 "key": "centralscheme",
@@ -2722,7 +2703,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "centralTransfer": {
                 "key": "centralTransfer",
@@ -2798,7 +2779,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "stateGrant": {
                 "key": "stateGrant",
@@ -2955,7 +2936,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "stateScheme": {
                 "key": "stateScheme",
@@ -3031,7 +3012,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherStateTrans": {
                 "key": "otherStateTrans",
@@ -3107,7 +3088,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherGrant": {
                 "key": "otherGrant",
@@ -3126,11 +3107,7 @@ const fiscalRankingFormJson = () => {
                         "type": "otherGrant",
                         "year": years["2018-19"],
                         "code": [
-                            100,
-                            150,
-                            170,
-                            171,
-                            180
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3148,11 +3125,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "otherGrant",
                         "code": [
-                            100,
-                            150,
-                            170,
-                            171,
-                            180
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3171,11 +3144,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "otherGrant",
                         "code": [
-                            100,
-                            150,
-                            170,
-                            171,
-                            180
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3194,11 +3163,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "otherGrant",
                         "code": [
-                            100,
-                            150,
-                            170,
-                            171,
-                            180
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3207,7 +3172,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherIncome": {
                 "key": "otherIncome",
@@ -3283,12 +3248,105 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
+            },
+            "totalOwnRevenue":{
+                "key": "totalOwnRevenue",
+                "label": "TOTAL OWN REVENUE",
+                "displayPriority": "7.1",
+                "calculatedFrom":[
+                    "1",
+                    "1.1",
+                    "1.2",
+                    "1.3",
+                    "1.4",
+                    "1.5",
+                    "1.6",
+                    "1.7",
+                    "1.8",
+                    "2",
+                    "2.1",
+                    "2.2",
+                    "2.3",
+                    "2.4",
+                    "3"],
+                "logic":"sum",
+                "yearData": [
+                    {
+                        "label": "FY 2018-19",
+                        "key": "FY2018-19",
+                        "postion": "1",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "totalOwnRevenue",
+                        "year": years["2018-19"],
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2018-19 ",
+                        "placeHolder": ""
+                    },
+                    {
+                        "label": "FY 2019-20",
+                        "key": "FY2019-20",
+                        "postion": "2",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "totalOwnRevenue",
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "year": years["2019-20"],
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2019-20 ",
+                        "placeHolder": ""
+                    },
+                    {
+                        "label": "FY 2020-21",
+                        "key": "FY2020-21",
+                        "postion": "3",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "totalOwnRevenue",
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "year": years["2020-21"],
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2020-21 ",
+                        "placeHolder": ""
+                    },
+                    {
+                        "label": "FY 2021-22",
+                        "key": "FY2021-22",
+                        "postion": "4",
+                        "value": "",
+                        "file": "",
+                        "min": 0,
+                        "max": 999999999999999,
+                        "required": true,
+                        "type": "totalOwnRevenue",
+                        "code": [],
+                        "readonly": true,
+                        "formFieldType": "number",
+                        "year": years["2021-22"],
+                        "bottomText": "to be taken from Audited Annual Budget of FY 2021-22 ",
+                        "placeHolder": ""
+                    }
+                ],
+                "info": "To be taken from Approved Annual Budget"
             },
             "totalIncome": {
                 "key": "totalIncome",
                 "label": "TOTAL INCOME (sum of 1 to 6)",
-                "displayPriority": "7",
+                "displayPriority": "7.2",
                 "calculatedFrom": [
                     "1",
                     "1.1",
@@ -3321,6 +3379,7 @@ const fiscalRankingFormJson = () => {
                     "5.3",
                     "6"
                 ],
+                "logic":"sum",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3416,7 +3475,7 @@ const fiscalRankingFormJson = () => {
                         "type": "establishExpense",
                         "year": years["2018-19"],
                         "code": [
-                            210
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -3434,7 +3493,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "establishExpense",
                         "code": [
-                            210
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -3453,7 +3512,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "establishExpense",
                         "code": [
-                            210
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -3472,7 +3531,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "establishExpense",
                         "code": [
-                            210
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -3481,7 +3540,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "categoryA": {
                 "key": "categoryA",
@@ -3557,7 +3616,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "categoryB": {
                 "key": "categoryB",
@@ -3633,7 +3692,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "categoryC": {
                 "key": "categoryC",
@@ -3709,7 +3768,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherEstExpense": {
                 "key": "otherEstExpense",
@@ -3785,7 +3844,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "adminExpense": {
                 "key": "adminExpense",
@@ -3804,7 +3863,6 @@ const fiscalRankingFormJson = () => {
                         "type": "adminExpense",
                         "year": years["2018-19"],
                         "code": [
-                            220
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3822,7 +3880,6 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "adminExpense",
                         "code": [
-                            220
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3841,7 +3898,6 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "adminExpense",
                         "code": [
-                            220
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3860,7 +3916,6 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "adminExpense",
                         "code": [
-                            220
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -3869,90 +3924,15 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
-            },
-            "totalCaptlExp": {
-                "key": "totalCaptlExp",
-                "label": "Total Capital Expenditure",
-                "displayPriority": "22",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalCaptlExp",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalCaptlExp",
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalCaptlExp",
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalCaptlExp",
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": "",
-                        "placeHolder": ""
-                    }
-                ]
+                "info": "To be taken from Approved Annual Budget"
             },
             "fixedAsset": {
                 "key": "fixedAsset",
                 "label": "Total Fixed Assets (Gross Block)",
-                "displayPriority": "23",
+                "displayPriority": "17",
                 "calculatedFrom": [
-                    "23.1",
-                    "23.2"
+                    "17.1",
+                    "17.2"
                 ],
                 "logic": "sum",
                 "yearData": [
@@ -4037,7 +4017,7 @@ const fiscalRankingFormJson = () => {
             "CaptExpOther": {
                 "key": "CaptExpOther",
                 "label": "Other Capital Expenditure (combined)",
-                "displayPriority": "22.3",
+                "displayPriority": "16.3",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4108,7 +4088,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "totalOmExp": {
                 "key": "totalOmExp",
@@ -4133,7 +4113,7 @@ const fiscalRankingFormJson = () => {
                         "type": "totalOmExp",
                         "year": years["2018-19"],
                         "code": [
-                            230
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -4151,7 +4131,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "totalOmExp",
                         "code": [
-                            230
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -4170,7 +4150,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "totalOmExp",
                         "code": [
-                            230
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -4189,7 +4169,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "totalOmExp",
                         "code": [
-                            230
+                            
                         ],
                         "readonly": true,
                         "formFieldType": "number",
@@ -4273,87 +4253,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
-            },
-            "grossBeforePrior": {
-                "key": "grossBeforePrior",
-                "label": "Gross surplus/ (deficit) of income over expenditure before Prior Period Items",
-                "displayPriority": "15",
-                "calculatedFrom": [
-                    "7",
-                    "14"
-                ],
-                "logic": "subtraction",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossBeforePrior",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossBeforePrior",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossBeforePrior",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossBeforePrior",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": " ",
-                        "placeHolder": ""
-                    }
-                ]
+                "info": "To be taken from Approved Annual Budget"
             },
             "totalOMCaptlExpWaterSupply": {
                 "key": "totalOMCaptlExpWaterSupply",
@@ -4372,7 +4272,7 @@ const fiscalRankingFormJson = () => {
                         "type": "totalOMCaptlExpWaterSupply",
                         "year": years["2018-19"],
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -4447,7 +4347,7 @@ const fiscalRankingFormJson = () => {
                         "type": "totalOMCaptlExpSanitation",
                         "year": years["2018-19"],
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -4522,7 +4422,7 @@ const fiscalRankingFormJson = () => {
                         "type": "finExpense",
                         "year": years["2018-19"],
                         "code": [
-                            240
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4540,7 +4440,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "finExpense",
                         "code": [
-                            240
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4559,7 +4459,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "finExpense",
                         "code": [
-                            240
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4578,7 +4478,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "finExpense",
                         "code": [
-                            240
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4587,7 +4487,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "misExpense": {
                 "key": "misExpense",
@@ -4606,9 +4506,7 @@ const fiscalRankingFormJson = () => {
                         "type": "misExpense",
                         "year": years["2018-19"],
                         "code": [
-                            270,
-                            271,
-                            272
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4626,9 +4524,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "misExpense",
                         "code": [
-                            270,
-                            271,
-                            272
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4647,9 +4543,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "misExpense",
                         "code": [
-                            270,
-                            271,
-                            272
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4668,9 +4562,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "misExpense",
                         "code": [
-                            270,
-                            271,
-                            272
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4679,7 +4571,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "otherExpense": {
                 "key": "otherExpense",
@@ -4698,9 +4590,7 @@ const fiscalRankingFormJson = () => {
                         "type": "otherExpense",
                         "year": years["2018-19"],
                         "code": [
-                            200,
-                            250,
-                            260
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4718,9 +4608,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "otherExpense",
                         "code": [
-                            200,
-                            250,
-                            260
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4739,9 +4627,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "otherExpense",
                         "code": [
-                            200,
-                            250,
-                            260
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4760,9 +4646,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "otherExpense",
                         "code": [
-                            200,
-                            250,
-                            260
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4771,7 +4655,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "totalExpend": {
                 "key": "totalExpend",
@@ -4863,513 +4747,14 @@ const fiscalRankingFormJson = () => {
                     }
                 ]
             },
-            "grossAfterPrior": {
-                "key": "grossAfterPrior",
-                "label": "Gross surplus/ (deficit) of income over expenditure before Prior Period Items",
-                "displayPriority": "17",
-                "calculatedFrom": [
-                    "15",
-                    "16"
-                ],
-                "logic": "subtraction",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossAfterPrior",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossAfterPrior",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossAfterPrior",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "grossAfterPrior",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
-                        "placeHolder": ""
-                    }
-                ]
-            },
-            "priorItems": {
-                "key": "priorItems",
-                "label": "Add: Prior Period Items (Net)",
-                "displayPriority": "16",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "priorItems",
-                        "year": years["2018-19"],
-                        "code": [
-                            280
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "priorItems",
-                        "code": [
-                            280
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "priorItems",
-                        "code": [
-                            280
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "priorItems",
-                        "code": [
-                            280
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
-                        "placeHolder": ""
-                    }
-                ],
-                "info": "To be taken from Audited Annual Accounts"
-            },
-            "reservFunds": {
-                "key": "reservFunds",
-                "label": "Less: Transfer to Reserve Funds",
-                "displayPriority": "18",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "reservFunds",
-                        "year": years["2018-19"],
-                        "code": [
-                            290
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "reservFunds",
-                        "code": [
-                            290
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "reservFunds",
-                        "code": [
-                            290
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "reservFunds",
-                        "code": [
-                            290
-                        ],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
-                        "placeHolder": ""
-                    }
-                ],
-                "info": "To be taken from Audited Annual Accounts"
-            },
-            "netBal": {
-                "key": "netBal",
-                "label": "Net Balance Being Surplus/ Deficit Carried Over to Municipal Accounts",
-                "displayPriority": "19",
-                "calculatedFrom": [
-                    "17",
-                    "18"
-                ],
-                "logic": "subtraction",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "netBal",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "netBal",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "netBal",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "netBal",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
-                        "placeHolder": ""
-                    }
-                ]
-            },
-            "OwnRvnue": {
-                "key": "OwnRvnue",
-                "label": "Total Own Revenues (sum of 1 to 3 above)",
-                "displayPriority": "20",
-                "calculatedFrom": [
-                    "1.1",
-                    "1.2",
-                    "1.3",
-                    "1.4",
-                    "1.5",
-                    "1.6",
-                    "1.7",
-                    "1.8",
-                    "2",
-                    "2.1",
-                    "2.2",
-                    "2.3",
-                    "2.4",
-                    "3"
-                ],
-                "logic": "sum",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "OwnRvnue",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "OwnRvnue",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "OwnRvnue",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "OwnRvnue",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
-                        "placeHolder": ""
-                    }
-                ]
-            },
-            "RvnueExp": {
-                "key": "RvnueExp",
-                "label": "Total Revenue Expenditure (14 above)",
-                "displayPriority": "21",
-                "calculatedFrom": [
-                    "14"
-                ],
-                "logic": "equal",
-                "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "RvnueExp",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "RvnueExp",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "RvnueExp",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2021-22",
-                        "key": "FY2021-22",
-                        "postion": "4",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": false,
-                        "type": "RvnueExp",
-                        "code": [],
-                        "readonly": true,
-                        "formFieldType": "number",
-                        "year": years["2021-22"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
-                        "placeHolder": ""
-                    }
-                ]
-            },
             "CaptlExp": {
                 "key": "CaptlExp",
-                "label": "Total Revenue Expenditure (14 above)",
-                "displayPriority": "22",
+                "label": "Total Capital Expenditure",
+                "displayPriority": "16",
                 "calculatedFrom": [
-                    "22.1",
-                    "22.2",
-                    "22.3"
+                    "16.1",
+                    "16.2",
+                    "16.3"
                 ],
                 "logic": "sum",
                 "yearData": [
@@ -5446,7 +4831,7 @@ const fiscalRankingFormJson = () => {
             "CaptlExpWaterSupply": {
                 "key": "CaptlExpWaterSupply",
                 "label": "Capital Expenditure for Water Supply",
-                "displayPriority": "22.1",
+                "displayPriority": "16.1",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -5517,12 +4902,12 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "CaptlExpSanitation": {
                 "key": "CaptlExpSanitation",
                 "label": "Capital Expenditure for Water Supply",
-                "displayPriority": "22.2",
+                "displayPriority": "16.2",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -5593,12 +4978,12 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                "info": "To be taken from Approved Annual Budget"
             },
             "auditAnnualReport": {
                 "key": "auditAnnualReport",
                 "label": "Date of Audit Report for audited annual accounts",
-                "displayPriority": "30",
+                "displayPriority": "24",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -5677,7 +5062,7 @@ const fiscalRankingFormJson = () => {
             "totalOwnRevenueArea": {
                 "key": "totalOwnRevenueArea",
                 "label": "Total Own Revenue Arrears as on 31st March 2022",
-                "displayPriority": "31",
+                "displayPriority": "25",
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -5752,8 +5137,11 @@ const fiscalRankingFormJson = () => {
             "webUrlAnnual": {
                 "key": "webUrlAnnual",
                 "label": "ULB website URL link where Audited Accounts are available",
-                "displayPriority": "32",
+                "displayPriority": "26",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -5771,16 +5159,14 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
+                   
                 ],
                 "info": "Self-reported"
             },
             "registerGis": {
                 "key": "registerGis",
                 "label": "Is the property tax register GIS-based?",
-                "displayPriority": "33",
+                "displayPriority": "27",
                 "yearData": [
                     {
                         "label": "FY 2021-22",
@@ -5805,8 +5191,11 @@ const fiscalRankingFormJson = () => {
             "registerGisProof": {
                 "key": "registerGisProof",
                 "label": "Please upload proof?",
-                "displayPriority": "34",
+                "displayPriority": "27",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -5827,16 +5216,13 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
                 ],
                 "info": "Self-reported"
             },
             "accountStwre": {
                 "label": "Do you use accounting software? ( Eg.Tally, State-prescribed ERP etc)",
                 "key": "accountStwre",
-                "displayPriority": "35",
+                "displayPriority": "28",
                 "value": "",
                 "min": "",
                 "max": "",
@@ -5846,6 +5232,9 @@ const fiscalRankingFormJson = () => {
                 "bottomText": "",
                 "placeHolder": "",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -5863,17 +5252,18 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
+                   
                 ],
                 "info": "Self-reported"
             },
             "accountStwreProof": {
                 "key": "accountStwreProof",
                 "label": "Please upload proof?",
-                "displayPriority": "36",
+                "displayPriority": "28",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -5894,16 +5284,14 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
+                   
                 ],
                 "info": "Self-reported"
             },
             "fy_21_22_cash": {
                 "label": "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD",
                 "key": "fy_21_22_cash",
-                "displayPriority": "37",
+                "displayPriority": "29",
                 "postion": "2",
                 "value": "",
                 "min": "",
@@ -5917,6 +5305,9 @@ const fiscalRankingFormJson = () => {
                 "placeHolder": "",
                 "input": "number",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -5934,9 +5325,7 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
+                   
                 ],
                 "info": "Self-reported"
             },
@@ -5944,7 +5333,7 @@ const fiscalRankingFormJson = () => {
                 "label": "Own Revenue collection amount for FY 2021-22 - by Online modes/channels",
                 "key": "fy_21_22_online",
                 "postion": "3",
-                "displayPriority": "38",
+                "displayPriority": "30",
                 "value": "",
                 "min": "",
                 "max": "",
@@ -5957,6 +5346,9 @@ const fiscalRankingFormJson = () => {
                 "placeHolder": "",
                 "input": "number",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2018-19",
                         "key": "FY2018-19",
@@ -5974,16 +5366,13 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
                 ],
                 "info": "Self-reported"
             },
             "property_tax_register": {
                 "label": "Number of Properties assessed/listed as per Property Tax Register",
                 "key": "property_tax_register",
-                "displayPriority": "39",
+                "displayPriority": "31",
                 "postion": "1",
                 "value": "",
                 "min": "",
@@ -5996,6 +5385,9 @@ const fiscalRankingFormJson = () => {
                 "placeHolder": "",
                 "input": "number",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -6013,9 +5405,6 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
                 ],
                 "info": "Self-reported"
             },
@@ -6023,7 +5412,7 @@ const fiscalRankingFormJson = () => {
                 "label": "Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)",
                 "key": "paying_property_tax",
                 "postion": "1",
-                "displayPriority": "40",
+                "displayPriority": "32",
                 "value": "",
                 "min": "",
                 "max": "",
@@ -6035,6 +5424,9 @@ const fiscalRankingFormJson = () => {
                 "placeHolder": "",
                 "input": "number",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -6052,9 +5444,6 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
                 ],
                 "info": "Self-reported"
             },
@@ -6062,7 +5451,7 @@ const fiscalRankingFormJson = () => {
                 "label": "Number of Properties exempt from paying Property Tax",
                 "key": "paid_property_tax",
                 "postion": "3",
-                "displayPriority": "41",
+                "displayPriority": "33",
                 "value": "",
                 "min": "",
                 "max": "",
@@ -6075,6 +5464,9 @@ const fiscalRankingFormJson = () => {
                 "placeHolder": "",
                 "input": "number",
                 "yearData": [
+                    {},
+                    {},
+                    {},
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -6092,9 +5484,6 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
-                    {},
-                    {},
-                    {}
                 ],
                 "info": "Self-reported"
             }
@@ -6107,19 +5496,19 @@ const fiscalRankingFormJson = () => {
                 yearData: [
                     {
                         title: '',
-                        pos: '1',
-                        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, and Auditor's Report.`
+                        pos: '3',
+                        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB`
                     },
                     {
                         title: '',
                         pos: '2',
-                        desc: `Annual Budgets should be the detailed final approved version and should be in English language.`
+                        desc: `Annual Budgets should be the detailed final approved version and should preferably be in English language.`
                     },
                     {
                         title: '',
-                        pos: '3',
-                        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB.`
-                    }
+                        pos: '1',
+                        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement. `
+                    }, 
                 ]
             },
             appAnnualBudget: {
@@ -6184,6 +5573,26 @@ const fiscalRankingFormJson = () => {
                         },
                         readonly: false,
                         year: "606aafb14dff55e6c075d3ae",
+                        bottomText: 'Maximum Size  5MB (pdf files only) ',
+                        placeHolder: ''
+                    },
+                    {
+                        label: 'FY 2023-24',
+                        key: 'appAnnualBudget_2023-24',
+                        postion: '3',
+                        value: '',
+                        min: 0,
+                        max: 999999999999999,
+                        required: true,
+                        type: 'appAnnualBudget',
+                        formFieldType: "file",
+                        code: [],
+                        file: {
+                            name: "",
+                            url: ""
+                        },
+                        readonly: false,
+                        year: years['2023-24'],
                         bottomText: 'Maximum Size  5MB (pdf files only) ',
                         placeHolder: ''
                     }
@@ -6423,7 +5832,13 @@ function createJson(objects) {
 }
 // let json = createJson(objects)
 // let sorted = json.sort((a, b) => { return (+a.displayPriority > +b.displayPriority ? 1 : -1) })
-let financialYearTableHeader = { 1: ['', 'SECTION A:  Details from Income & Expenditure Statement', '2021-22', '2020-21', '2019-20', '2018-19'], 20: ['', 'SECTION B:  Other Details from Audited Annual Accounts', '2021-22', '2020-21', '2019-20', '2018-19'], 25: ['', 'SECTION C:  Details from Receipts & Payments Statement', '2021-22', '2020-21', '2019-20', '2018-19'], 26: ['', 'SECTION D:  Details from Approved Annual Budgets', '2021-22', '2020-21', '2019-20', '2018-19'], 30: ['', 'SECTION E:  Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', '2018-19'], }
+let financialYearTableHeader = { 
+    1: ['', 'SECTION A:  Details from Approved Annual Budget', '2021-22', '2020-21', '2019-20', '2018-19'],
+    8: ['', 'SECTION A:  Details from Approved Annual Budget', '2021-22', '2020-21', '2019-20', '2018-19'],  
+16: ['', 'SECTION B: Details from Audited Annual Accounts (Balance Sheet) ', '2021-22', '2020-21', '2019-20', '2018-19'],
+ 19: ['', 'SECTION C:  Details from Audited Annual Accounts (Receipts & Payments Statement) ', '2021-22', '2020-21', '2019-20', '2018-19'], 
+ 20: ['', 'SECTION D:  Other details from Approved Annual Budgets ', '2021-22', '2020-21', '2019-20', '2018-19'], 
+ 24: ['', 'SECTION E: Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', '2018-19'], }
 
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.jsonObject = jsonObject
