@@ -770,6 +770,9 @@ exports.getView = async function (req, res, next) {
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                     }
+                    else {
+                      pf['readonly'] = true;
+                    }
                   }
                 }
               }
