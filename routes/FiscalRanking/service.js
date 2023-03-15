@@ -660,6 +660,7 @@ exports.getView = async function (req, res, next) {
             pf['status'] = null
             pf["modelName"] = "FiscalRanking"
             if (fyData.length) {
+              
               let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
@@ -698,9 +699,6 @@ exports.getView = async function (req, res, next) {
               }
             }
           } else {
-            if (key === "taxRevenue") {
-              console.log("key :: ", key)
-            }
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
@@ -1819,7 +1817,7 @@ async function sendCsv(res, aggregateQuery) {
     console.log("error in sendCsv :: ", err.message)
   }
 }
-async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft) {
+async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft,session) {
   try {
     for (var years of yearData) {
       let upsert = false
@@ -1833,7 +1831,6 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
         }
         if (updateForm) {
           upsert = true
-
           payload['value'] = years.value
           payload['date'] = years.date
           payload['file'] = years.file
@@ -1868,7 +1865,7 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
 /**
  * 
  */
-async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isDraft) {
+async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isDraft,session) {
   try {
     let filter = {
       "_id": ObjectId(formId),
@@ -1958,14 +1955,14 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
             }
           })
           temp["status"].push(status)
-          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft)
+          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft,session)
         }
         else {
           if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
             let statueses = getStatusesFromObject(tab.data, "status", ["population11"])
             let finalStatus = statueses.every(item => item === "APPROVED")
             temp['status'].push(finalStatus)
-            await updateFiscalRankingForm(tab.data, ulbId, formId, year, updateForm, isDraft)
+            await updateFiscalRankingForm(tab.data, ulbId, formId, year, updateForm, isDraft,session)
           }
         }
         conditionalObj[tab._id.toString()] = (temp)
@@ -2205,7 +2202,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message
       return res.status(500).json(response)
     }
-
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(session, actions, ulbId, formId, design_year, true, isDraft)
     response.success = true
     response.formId = formId
