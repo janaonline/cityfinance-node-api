@@ -667,7 +667,7 @@ exports.getView = async function (req, res, next) {
                   pf['date'] = singleFydata ? singleFydata.date : null;
                 } else {
                   // parameters['valueObj'] = singleFydata
-                  pf['value'] = singleFydata
+                  pf['value'] = singleFydata ? singleFydata.value : "";
                 }
                 pf['status'] = singleFydata.status;
                 if (subData[key].calculatedFrom === undefined) {
@@ -742,8 +742,8 @@ exports.getView = async function (req, res, next) {
                     }
 
                     // parameters['valueObj'] = singleFydata
-                    pf['value'] = singleFydata
-                    // pf['value'] = singleFydata ? singleFydata.value : "";
+                    // pf['value'] = singleFydata
+                    pf['value'] = singleFydata ? singleFydata.value : "";
                     pf['status'] = singleFydata ? singleFydata.status : "PENDING";
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
