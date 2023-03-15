@@ -1156,6 +1156,7 @@ const fiscalRankingFormJson = () => {
                 "displayPriority": "2",
                 "calculatedFrom": [
                     "2.1",
+                    "2.2",
                     "2.3"
                 ],
                 "logic": "sum",
@@ -2804,6 +2805,7 @@ const fiscalRankingFormJson = () => {
                 "displayPriority": "5.2",
                 "calculatedFrom": [
                     "5.21",
+                    "5.22",
                     "5.23"
                 ],
                 "logic": "sum",
@@ -5365,6 +5367,7 @@ const fiscalRankingFormJson = () => {
                 "displayPriority": "22",
                 "calculatedFrom": [
                     "22.1",
+                    "22.2",
                     "22.3"
                 ],
                 "logic": "sum",
