@@ -4747,7 +4747,7 @@ const fiscalRankingFormJson = () => {
             },
             "CaptlExp": {
                 "key": "CaptlExp",
-                "label": "Total Revenue Expenditure (14 above)",
+                "label": "Total Capital Expenditure",
                 "displayPriority": "16",
                 "calculatedFrom": [
                     "16.1",
@@ -5494,8 +5494,8 @@ const fiscalRankingFormJson = () => {
                 yearData: [
                     {
                         title: '',
-                        pos: '1',
-                        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement. `
+                        pos: '3',
+                        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB`
                     },
                     {
                         title: '',
@@ -5504,9 +5504,9 @@ const fiscalRankingFormJson = () => {
                     },
                     {
                         title: '',
-                        pos: '3',
-                        desc: `Files uploaded should be in PDF only and file size should not exceed 5MB`
-                    }
+                        pos: '1',
+                        desc: `Audited Annual Accounts should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement. `
+                    }, 
                 ]
             },
             appAnnualBudget: {
@@ -5830,7 +5830,13 @@ function createJson(objects) {
 }
 // let json = createJson(objects)
 // let sorted = json.sort((a, b) => { return (+a.displayPriority > +b.displayPriority ? 1 : -1) })
-let financialYearTableHeader = { 1: ['', 'SECTION A:  Details from Income & Expenditure Statement', '2021-22', '2020-21', '2019-20', '2018-19'], 20: ['', 'SECTION B:  Other Details from Audited Annual Accounts', '2021-22', '2020-21', '2019-20', '2018-19'], 25: ['', 'SECTION C:  Details from Receipts & Payments Statement', '2021-22', '2020-21', '2019-20', '2018-19'], 26: ['', 'SECTION D:  Details from Approved Annual Budgets', '2021-22', '2020-21', '2019-20', '2018-19'], 30: ['', 'SECTION E:  Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', '2018-19'], }
+let financialYearTableHeader = { 
+    1: ['', 'SECTION A:  Details from Approved Annual Budget', '2021-22', '2020-21', '2019-20', '2018-19'],
+    8: ['', 'SECTION A:  Details from Approved Annual Budget', '2021-22', '2020-21', '2019-20', '2018-19'],  
+16: ['', 'SECTION B: Details from Audited Annual Accounts (Balance Sheet) ', '2021-22', '2020-21', '2019-20', '2018-19'],
+ 19: ['', 'SECTION C:  Details from Audited Annual Accounts (Receipts & Payments Statement) ', '2021-22', '2020-21', '2019-20', '2018-19'], 
+ 20: ['', 'SECTION D:  Other details from Approved Annual Budgets ', '2021-22', '2020-21', '2019-20', '2018-19'], 
+ 24: ['', 'SECTION E: Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', '2018-19'], }
 
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.jsonObject = jsonObject
