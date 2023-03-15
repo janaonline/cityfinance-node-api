@@ -25,6 +25,32 @@ var formIdCollections= {
     "80":"PropertyTaxOp"
 }
 
+var customkeys = {
+    "general":{
+        "ulbName":"ulbName",
+        "grantType":"grantType"
+    },
+    "grantPosition":{"unUtilizedPrevYr":"grantPosition.unUtilizedPrevYr",
+    "receivedDuringYr":"grantPosition.receivedDuringYr",
+    "expDuringYr":"grantPosition.expDuringYr",
+    },
+    "waterManagement_tableView":{
+        "category_name":"category_name",
+        "grantUtilised":"grantUtilised",
+        "numberOfProjects":"numberOfProjects",
+        "totalProjectCost":"totalProjectCost"
+    },
+    "solidWasteManagement_tableView":{
+        "category_name":"category_name",
+        "grantUtilised":"grantUtilised",
+        "numberOfProjects":"numberOfProjects",
+        "totalProjectCost":"totalProjectCost"
+
+    },
+    "projectDetails_tableView_addButton":{}
+
+}
+
 var modifiedShortKeys = {
     "cert_declaration":"cert"
 }
@@ -1292,7 +1318,7 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
             // }
             }
             var value = currentNode[key];
-            if (typeof value === "object") {
+            if (typeof value === "object" && !Array.isArray(value)) {
                 traverseAndFlatten(value, target, newKey);
             } else {
                 target[newKey] = value;
@@ -1441,6 +1467,7 @@ async function payloadParser(body,req) {
         let payload = {}
         let modifiedBody = [...body]
         for (let objects of modifiedBody) {
+            console.log("modifiedBody :::: ",modifiedBody)
             let temp = await  returnParsedObj(objects,req)
             if (objects.child) {
                 temp['data'] = []
@@ -1529,13 +1556,34 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
         console.log("error in mutateJson ::: ",err.message)
     }
 }
+
+function appendvalues(childQuestionData,flattedForm,shortKey){
+    try{
+        for(let arr of childQuestionData){
+            for(let obj of arr){
+                console.log("obj.shortKey ::::",obj.shortKey)
+                console.log("obj :::",obj)
+            }
+        }
+    }
+    catch(err){
+        console.log("error in appendValues :::: ",err.message)
+    }
+}
 function appendChildQues(question,obj,flattedForm){
     try{
-        let childElements = question.childQuestionData
-        if(question.order === "1"){
-            console.log(": ::: ",childElements[0])
+        // console.log("flattedform ::: ",flattedForm)
+        let customShortKeys = Object.keys(customkeys)
+        if(customShortKeys.includes(question.shortKey)){
+            let childQuestionData = question.childQuestionData
+        //    console.log(childQuestionData.length)
+            appendvalues(childQuestionData,flattedForm,question.shortKey)
         }
-        console.log("flattedForm :::: ",flattedForm)
+        let childElements = question.childQuestionData
+        // if(question.order === "1"){
+        //     console.log(": ::: ",childElements[0])
+        // }
+        // console.log("flattedForm :::: ",flattedForm)
     }
     catch(err){
         console.log("error in getChildrens :::: ",err.message)

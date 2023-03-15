@@ -15,7 +15,8 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         let yearId = req.query.design_year
         let year = getKeyByValue(years,yearId)
         let form = {...req.form}
-        let {role} = req.decoded
+        let {name,role} = req.decoded
+        form['ulbName'] = name
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId
         let formJson = await FormsJson.findOne({ formId: jsonFormId ,design_year:ObjectId(yearId) }).lean()
