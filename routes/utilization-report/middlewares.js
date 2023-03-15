@@ -17,6 +17,8 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         let form = {...req.form}
         let {name,role} = req.decoded
         form['ulbName'] = name
+        delete form['history']
+        delete form['projects']
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId
         let formJson = await FormsJson.findOne({ formId: jsonFormId ,design_year:ObjectId(yearId) }).lean()
@@ -30,6 +32,8 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             let flattedForm = await getFlatObj(form)
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
+            response.data = obj
+            return res.status(200).json(response)
         }
         else{
             response.success = true

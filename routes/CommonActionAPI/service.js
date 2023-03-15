@@ -25,6 +25,12 @@ var formIdCollections= {
     "80":"PropertyTaxOp"
 }
 
+var arrFields = {
+    "waterManagement_tableView":"categoryWiseData_wm",
+    "solidWasteManagement_tableView":"categoryWiseData_swm"
+
+}
+
 var customkeys = {
     "general":{
         "ulbName":"ulbName",
@@ -1467,7 +1473,6 @@ async function payloadParser(body,req) {
         let payload = {}
         let modifiedBody = [...body]
         for (let objects of modifiedBody) {
-            console.log("modifiedBody :::: ",modifiedBody)
             let temp = await  returnParsedObj(objects,req)
             if (objects.child) {
                 temp['data'] = []
@@ -1520,8 +1525,23 @@ async function handleSelectCase(question,obj,flattedForm){
                 obj['value'] = tempObj['_id']
                 question['modelValue'] = tempObj['_id']
                 question['value'] = tempObj['_id']
+            }  
+        }
+        else if(question.answer_option.length){
+            // console.log("here i am ")
+            let keys = question.answer_option.map(item => item.name)
+            let value = flattedForm[question.shortKey]
+            if(keys.includes(value)){
+                let tempObj = question.answer_option.find(item => item.name === value)
+                obj['label'] = tempObj['name']
+                obj['value'] = tempObj['_id']
+                question['modelValue'] = tempObj['name']
+                question['value'] = tempObj['_id']
+                question['selectedAnswerOption'] = {'name':tempObj['_id']}
             }
-            
+            // console.log(question.answer_option)
+            // console.log("question.shortKey:::",question.shortKey)
+            // console.log(flattedForm[question.shortKey])
         }
         return obj
         // console.log("question :: ",question)
@@ -1557,14 +1577,44 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
     }
 }
 
+function handleArrayFields(shortKey,flattedForm){
+    try{
+        
+    }
+    catch(err){
+        console.log("error in handleArrayFields :: ",err.message)
+    }
+}
+
 function appendvalues(childQuestionData,flattedForm,shortKey){
     try{
+        let arrKeys = Object.keys(arrFields)
         for(let arr of childQuestionData){
+            
             for(let obj of arr){
-                console.log("obj.shortKey ::::",obj.shortKey)
-                console.log("obj :::",obj)
+                console.log(obj)
+                
+                let questionKeys = Object.keys(customkeys[shortKey])
+                
+                for(let questionkey of questionKeys){
+                    // console.log("obj.shortKey  :: ",obj.shortKey )
+                    // console.log("shortKey :: ",shortKey)
+                    if(obj.shortKey === questionkey){
+                        let answer = { label: '', textValue: '', value: '' }
+                        handleValues(obj,answer,flattedForm,shortKey)
+                        obj.selectedValue = answer
+                        // console.log()
+                        // console.log("shortKey ::: ",shortKey)
+                        // if(shortKey === "grantPosition"){
+                        //     console.log("cs ::::::::: ",obj)
+                        // }
+                    }
+                }
+                // console.log("obj.shortKey ::::",questionKeys)
+                // console.log("obj :::",obj)
             }
         }
+        return childQuestionData
     }
     catch(err){
         console.log("error in appendValues :::: ",err.message)
@@ -1575,11 +1625,15 @@ function appendChildQues(question,obj,flattedForm){
         // console.log("flattedform ::: ",flattedForm)
         let customShortKeys = Object.keys(customkeys)
         if(customShortKeys.includes(question.shortKey)){
-            let childQuestionData = question.childQuestionData
+            // let childQuestionData = question.childQuestionData
         //    console.log(childQuestionData.length)
-            appendvalues(childQuestionData,flattedForm,question.shortKey)
+           let childQuestionData =  appendvalues(question.childQuestionData,flattedForm,question.shortKey)
+        //    if(question.shortKey === "grantPosition"){
+        //         console.log("cs ::::::::: ",childQuestionData)
+        //     }
+           return childQuestionData
         }
-        let childElements = question.childQuestionData
+        // let childElements = question.childQuestionData
         // if(question.order === "1"){
         //     console.log(": ::: ",childElements[0])
         // }
@@ -1592,27 +1646,80 @@ function appendChildQues(question,obj,flattedForm){
 const handleChildCase = async(question,obj,flattedForm)=>{
     try{
         let order = question.order
-        appendChildQues(question,obj,flattedForm)
+        let childQuestionData = appendChildQues(question,obj,flattedForm)
+        question.childQuestionData = childQuestionData  
+    
     }
     catch(err){
         console.log("error in handleChildCase :::: ",err.message)
     }
 }
-const handleValues = async(question,obj,flattedForm)=>{
+
+const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
+    try{
+        let value = ''
+        if(mainKey){
+            let key = mainKey + "."+question.shortKey
+            question['modelValue'] = flattedForm[key]
+            question['value'] = flattedForm[key]
+            obj['textValue'] = flattedForm[key]
+            obj['value'] = flattedForm[key]
+        }
+        else{
+            
+            let key = question.shortKey
+            question['modelValue'] = flattedForm[key]
+            question['value'] = flattedForm[key]
+            obj['textValue'] = flattedForm[key]
+            obj['value'] = flattedForm[key]
+            // if(shortKey === "waterManagement_tableView"){
+            //     console.log("cs ::::::::: ",obj)
+            // }
+            // console.log("obj ::::::::::: ",obj)
+        }
+        // console.log(">>>>>>>>>>>>",flattedForm)
+        // console.log("question :::::: ",question.shortKey)
+        // console.log()
+    }
+    catch(err){
+        console.log("error in handleNumericCase ::: ",err.message)
+    }
+}
+
+const handleTextCase = async(question,obj,flattedForm)=>{
+    try{
+        let mainKey = question.shortKey
+        question['modelValue'] = flattedForm[mainKey]
+        question['value'] = flattedForm[mainKey]
+        obj['textValue'] = flattedForm[mainKey]
+        obj['value'] = flattedForm[mainKey]
+        // return obj
+    }
+    catch(err){
+        console.log("error in handleTextCase :: ",err.message)
+    }
+}
+const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
     let answerKey = inputType[question.input_type]
     try{
         switch (question.input_type){
+            case "1":
+                await handleTextCase(question,obj,flattedForm,mainKey)
+                break
+            case "2":
+                await handleNumericCase(question,obj,flattedForm,mainKey)
+                break
             case "11":
-                await handleFileCase(question,obj,flattedForm)
+                await handleFileCase(question,obj,flattedForm,mainKey)
                 break
             case "14":
-                await handledateCase(question,obj,flattedForm)
+                await handledateCase(question,obj,flattedForm,mainKey)
                 break
             case "3":
-                await handleSelectCase(question,obj,flattedForm)
+                await handleSelectCase(question,obj,flattedForm,mainKey)
                 break
             case "20":
-                await handleChildCase(question,obj,flattedForm)
+                await handleChildCase(question,obj,flattedForm,mainKey)
             default:
                 let shortKey = question.shortKey.replace(" ", "")
                 obj[answerKey] = flattedForm[shortKey]
@@ -1674,6 +1781,7 @@ async function deleteExtraKeys(question){
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
         let obj = [...jsonFormat]
+        // console.log("flattedForm ::: ",flattedForm)
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
         // }
