@@ -1650,7 +1650,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             120
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "bottomText": "to be taken from Audited Annual Budget of FY 2018-19 ",
                         "placeHolder": ""
@@ -1668,7 +1668,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             120
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2019-20"],
                         "bottomText": "to be taken from Audited Annual Budget of FY 2019-20 ",
@@ -1687,7 +1687,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             120
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2020-21"],
                         "bottomText": "to be taken from Audited Annual Budget of FY 2020-21 ",
@@ -1706,7 +1706,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             120
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2021-22"],
                         "bottomText": "to be taken from Audited Annual Budget of FY 2021-22 ",
