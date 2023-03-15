@@ -651,7 +651,6 @@ exports.getView = async function (req, res, next) {
 
       // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
-        
         let calculationField = subData[key].calculatedFrom ? true : false
         let calculatedFrom = subData[key].calculatedFrom
         for (let pf of subData[key]?.yearData) {
@@ -671,9 +670,9 @@ exports.getView = async function (req, res, next) {
                   pf['value'] = singleFydata ? singleFydata.value : "";
                 }
                 pf['status'] = singleFydata.status;
-                
-                pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
-                
+                if (subData[key].calculatedFrom === undefined) {
+                  pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
+                }
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
                 // parameters['valueObj'] = {value:ulbFyAmount}
