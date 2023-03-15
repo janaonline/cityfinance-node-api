@@ -330,7 +330,7 @@ const fiscalRankingFormJson = () => {
                         "type": "totalRecBudgetEst",
                         "year": years["2018-19"],
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -1962,6 +1962,8 @@ const fiscalRankingFormJson = () => {
                 "displayPriority": "5.1",
                 "calculatedFrom": [
                     "5.11",
+                    "5.12",
+                    "5.13",
                     "5.14"
                 ],
                 "logic": "sum",
@@ -4372,7 +4374,7 @@ const fiscalRankingFormJson = () => {
                         "type": "totalOMCaptlExpWaterSupply",
                         "year": years["2018-19"],
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -4447,7 +4449,7 @@ const fiscalRankingFormJson = () => {
                         "type": "totalOMCaptlExpSanitation",
                         "year": years["2018-19"],
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -4962,7 +4964,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             280
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -4980,7 +4982,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             280
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2019-20"],
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
@@ -4999,7 +5001,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             280
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2020-21"],
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
@@ -5018,7 +5020,7 @@ const fiscalRankingFormJson = () => {
                         "code": [
                             280
                         ],
-                        "readonly": false,
+                        "readonly": true,
                         "formFieldType": "number",
                         "year": years["2021-22"],
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
@@ -5225,7 +5227,7 @@ const fiscalRankingFormJson = () => {
                         "type": "OwnRvnue",
                         "year": years["2018-19"],
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
@@ -5241,7 +5243,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "OwnRvnue",
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "year": years["2019-20"],
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
@@ -5258,7 +5260,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "OwnRvnue",
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "year": years["2020-21"],
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
@@ -5275,7 +5277,7 @@ const fiscalRankingFormJson = () => {
                         "required": false,
                         "type": "OwnRvnue",
                         "code": [],
-                        "readonly": true,
+                        "readonly": false,
                         "formFieldType": "number",
                         "year": years["2021-22"],
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2021-22 ",
