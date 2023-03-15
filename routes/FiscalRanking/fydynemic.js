@@ -1531,7 +1531,7 @@ const fiscalRankingFormJson = () => {
                 "key": "assignedCompensation",
                 "label": "Assigned Revenues & Compensation",
                 "displayPriority": "4",
-                "calculateFrom": [
+                "calculatedFrom": [
                     "4.1",
                     "4.2"
                 ],
