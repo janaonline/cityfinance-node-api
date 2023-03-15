@@ -504,7 +504,6 @@ const fiscalRankingFormJson = () => {
                         "type": "propertyTax",
                         "year": years["2018-19"],
                         "code": [
-                            "11001"
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -522,7 +521,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "propertyTax",
                         "code": [
-                            "11001"
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -541,7 +540,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "propertyTax",
                         "code": [
-                            "11001"
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -560,7 +559,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "propertyTax",
                         "code": [
-                            "11001"
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -588,7 +587,7 @@ const fiscalRankingFormJson = () => {
                         "type": "waterTax",
                         "year": years["2018-19"],
                         "code": [
-                            11002
+                        
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -606,7 +605,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "waterTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -625,7 +624,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "waterTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -644,7 +643,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "waterTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -755,7 +754,7 @@ const fiscalRankingFormJson = () => {
                         "type": "drainageTax",
                         "year": years["2018-19"],
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -773,7 +772,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "drainageTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -792,7 +791,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "drainageTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -811,7 +810,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "drainageTax",
                         "code": [
-                            11002
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -839,7 +838,7 @@ const fiscalRankingFormJson = () => {
                         "type": "profTax",
                         "year": years["2018-19"],
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -857,7 +856,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "profTax",
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -876,7 +875,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "profTax",
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -895,7 +894,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "profTax",
                         "code": [
-                            11010
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -923,7 +922,7 @@ const fiscalRankingFormJson = () => {
                         "type": "entertainTax",
                         "year": years["2018-19"],
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -941,7 +940,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "entertainTax",
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -960,7 +959,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "entertainTax",
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -979,7 +978,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "entertainTax",
                         "code": [
-                            11011
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1007,7 +1006,7 @@ const fiscalRankingFormJson = () => {
                         "type": "advTax",
                         "year": years["2018-19"],
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1025,7 +1024,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "advTax",
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1044,7 +1043,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "advTax",
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
@@ -1063,7 +1062,7 @@ const fiscalRankingFormJson = () => {
                         "required": true,
                         "type": "advTax",
                         "code": [
-                            11012
+                            
                         ],
                         "readonly": false,
                         "formFieldType": "number",
