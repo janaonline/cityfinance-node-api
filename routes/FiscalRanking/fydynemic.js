@@ -1057,7 +1057,8 @@ const fiscalRankingFormJson = () => {
                 "calculatedFrom": [
                     "2.1",
                     "2.2",
-                    "2.3"
+                    "2.3",
+                    "2.4"
                 ],
                 "logic": "sum",
                 "yearData": [
@@ -5174,7 +5175,7 @@ const fiscalRankingFormJson = () => {
             "registerGisProof": {
                 "key": "registerGisProof",
                 "label": "Please upload proof?",
-                "displayPriority": "27",
+                "displayPriority": "27.1",
                 "yearData": [
                     {},
                     {},
@@ -5242,7 +5243,7 @@ const fiscalRankingFormJson = () => {
             "accountStwreProof": {
                 "key": "accountStwreProof",
                 "label": "Please upload proof?",
-                "displayPriority": "28",
+                "displayPriority": "28.1",
                 "yearData": [
                     {},
                     {},
