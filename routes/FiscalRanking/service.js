@@ -1,5 +1,6 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const mongose = require("mongoose");
+const { years } = require("../../service/years");
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const UlbLedger = require('../../models/UlbLedger');
@@ -10,7 +11,7 @@ const Service = require('../../service');
 const { csvColsFr, getCsvProjectionQueries, updateCsvCols } = require("../../util/fiscalRankingsConst")
 const userTypes = require("../../util/userTypes")
 // const converter = require('json-2-csv');
-const { calculateKeys, canTakeActionOrViewOnly, calculateStatusForFiscalRankingForms } = require('../CommonActionAPI/service');
+const { calculateKeys, canTakeActionOrViewOnly, calculateStatusForFiscalRankingForms,getKeyByValue } = require('../CommonActionAPI/service');
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson, financialYearTableHeader, inputKeys, getInputKeysByType, jsonObject, fiscalRankingTabs, notRequiredValidations } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
@@ -776,6 +777,32 @@ exports.getView = async function (req, res, next) {
                     else {
                       pf['readonly'] = true;
                     }
+                  }
+                }
+              }
+              else if(pf?.previousYearCodes?.length){
+                console.log(pf.year)
+                let yearName = getKeyByValue(years,pf.year)
+                let year = parseInt(yearName)
+                let previousYear = year - 1 
+                let previousYearString = `${previousYear}-${year.toString().slice(-2)}`
+                let previousYearId = years[previousYearString]
+                let calculatableYears = [years[previousYearString],pf.year]
+                let temp = {}
+                for(let year of calculatableYears){
+                  temp[year] = []
+                  for(let code of pf?.previousYearCodes){
+                    let ulbFyAmount =await getUlbLedgerDataFilter({ code: [code], year: year, data: ulbData });
+                    if(ulbFyAmount){
+                      temp[year].push(ulbFyAmount)
+                    }
+
+                  }
+                  if(temp[previousYearId].length == 2 && temp[pf.year].length == 2 ){
+                    let sumOfPreviousYear = temp[previousYearId].reduce(a,b => a +b)
+                    let sumOfCurrentYear = temp[previousYearId].reduce(a,b => a +b)
+                    pf['value'] = sumOfPreviousYear - sumOfCurrentYear
+                    pf['modelValue'] = 'ULBLedger'
                   }
                 }
               }
