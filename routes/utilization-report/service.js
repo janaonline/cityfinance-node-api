@@ -1,4 +1,5 @@
 const UtilizationReport = require("../../models/UtilizationReport");
+const FormsJson = require("../../models/FormsJson");
 const Ulb = require("../../models/Ulb");
 const User = require("../../models/User");
 const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
@@ -8,8 +9,7 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus } = require('../CommonActionAPI/service')
-const { canTakenAction } = require('../CommonActionAPI/service')
+const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload } = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -911,7 +911,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
     ulb: ObjectId(ulb),
     designYear: ObjectId(currentYear._id)
   }
-  let fetchedData = await UtilizationReport.findOne(condition).lean()
+  let fetchedData = await UtilizationReport.findOne(condition,{history:0}).lean()
 
   if (fetchedData) {
     Object.assign(fetchedData, { canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB", role) })
@@ -1292,3 +1292,52 @@ const roundGrantPosition = (objData) => {
   })
 }
 
+module.exports.getProjects = catchAsync(async(req,res,next)=>{
+  let response = {
+    "success":true,
+    "message":""
+  }
+  try{
+    let index = 0
+    let {ulb,design_year,formId} = req.query
+    let {role} = req.decoded
+    let validation = await checkForUndefinedVaribales({
+      "ulb id":ulb,
+      "design year":design_year,
+      "form id":formId
+    })
+    if(!validation.valid){
+      console.log("1")
+      response.success = false
+      response.message = validation.message
+      return res.status(400).json(response)
+    }
+    let projectObj = await UtilizationReport.findOne({
+      "ulb":ObjectId(ulb),
+      "designYear":ObjectId(design_year)
+    },{projects:1}).lean()
+    if(!projectObj){
+      response.message = "No utilization report found with this ulb and design year"
+      response.success = true
+      return res.json(response)
+    }
+    let formJson = await FormsJson.findOne({"formId":formId}).lean()
+    // console.log(">>>>>>",formJson)
+    let projectJson = {...formJson}
+    let questions = projectJson.data[index].question.filter(item => item.shortKey === "projectDetails_tableView_addButton")
+    projectJson.data[0].question = questions
+    let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
+    // console.log("projectObj :: ",projectObj)
+    projectJson = await mutuateGetPayload(projectJson.data, projectObj,keysToBeDeleted,role)
+    console.log("projectJson ::: ",projectJson)
+    response.data = projectJson
+    response.success = true
+    return res.json(response)
+
+  }
+  catch(err){
+    console.log("error in getProjects :: ",err.message)
+    response.message  = "Something went wrong"
+  }
+  return res.json(response)
+})

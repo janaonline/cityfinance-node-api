@@ -6,6 +6,7 @@ const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const PropertyTaxOp = require('../../models/PropertyTaxOp');
 const moongose = require('mongoose')
+const {DurProjectJson} = require("./jsons")
 const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -21,15 +22,17 @@ const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
+
 var formIdCollections= {
     "80":"PropertyTaxOp"
 }
 
 var arrFields = {
     "waterManagement_tableView":"categoryWiseData_wm",
-    "solidWasteManagement_tableView":"categoryWiseData_swm"
-
+    "solidWasteManagement_tableView":"categoryWiseData_swm",
+    "projectDetails_tableView_addButton":"projects"
 }
+var specialCases = ['projectDetails_tableView_addButton']
 
 var customkeys = {
     "general":{
@@ -54,7 +57,7 @@ var customkeys = {
 
     },
     "projectDetails_tableView_addButton":{
-        "cost": 'cost',
+        "cost": 'totalProjectCost',
         "expenditure": 'expenditure',
         "modifiedAt": 'modifiedAt',
         "createdAt": 'createdAt',
@@ -62,7 +65,7 @@ var customkeys = {
         "_id": '_id',
         "category": 'category',
         "name": 'name',
-        "location": 'location',
+        "location": ['lat','long'],
         "capitalExpenditureState": 'capitalExpenditureState',
         "capitalExpenditureUlb": 'capitalExpenditureUlb',
         "omExpensesState": 'omExpensesState',
@@ -1574,7 +1577,7 @@ async function handleSelectCase(question,obj,flattedForm){
     try{
         if(question.modelName){
             let value = flattedForm[question.shortKey]
-            let tempObj = question.answer_option.find(item => item.option_id == value)
+            let tempObj = question.answer_option.find(item => item.option_id.toString() == value.toString())
             if(tempObj){
                 obj['label'] = tempObj['name']
                 obj['value'] = tempObj['_id']
@@ -1617,7 +1620,6 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
             let questions = obj[key].question
             if (obj[key].question) {
                 for (let question of questions) {
-                    let answer = []
                     let obj = { ...answerObj }
                     obj = await handleCasesByInputType(question,obj)
                     await deleteExtraKeys(question)
@@ -1632,16 +1634,80 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
     }
 }
 
-function handleArrayFields(shortKey,flattedForm){
+async function handleProjectCaseForDur(question,flattedForm){
     try{
+        let order = parseInt(question.order)
+        let dbKey = arrFields[question.shortKey]
+        let values = flattedForm[dbKey]
+        var project_arr = []
+        let a = 0
+        for(let obj of values){
+            var nested_arr = []
+            for(let keys in obj){
+                // console.log("keys:",keys)
+                order += 0.001
+                let keysObj = customkeys[question.shortKey]
+                let jsonKey = keysObj[keys]
+                let questionObj = DurProjectJson[jsonKey]
+                if(questionObj){
+                    let answer = {}
+                    let formObj = {}
+                    formObj[jsonKey] = obj[keys]
+                    // console.log(formObj)
+                    await handleCasesByInputType(questionObj)
+                    await handleValues(questionObj,answer,formObj)
+                    questionObj.selectedValue = answer
+                    questionObj.order = order.toFixed(2).toString()
+                    nested_arr.push(questionObj)
+                }
+            }
+            // console.log("temp_ar :: ",project_arr)
+            a += 1
+            project_arr.push(nested_arr)
+            // console.log("=====================================")
+            // console.log(project_arr.length)
+            // console.log("============================",values.length)
+            // if(a == values.length){
+            //     break
+            // }
+            // console.log("nested_arr",nested_arr)
+            
+        }
+
+        // question.childQuestionData = project_arr
         
+        // for(let temp of temp_arr){
+        //     for(let temp2 of temp){
+        //         console.log("temp2 :::",temp2.modelValue)
+        //     }
+        // }
+    }
+    catch(err){
+        console.log("error in handleProjectCaseForDur ::: ",err.message)
+    }
+}
+
+function handleArrayFields(shortKey,flattedForm,childQuestionData){
+    try{
+        let valKey = arrFields[shortKey]
+        let answerObjects = flattedForm[valKey]
+        for(let index in answerObjects){
+            let questionArr = childQuestionData[index]
+            for(let arrIndex in questionArr){
+                let formObj = answerObjects[index]
+                let question = questionArr[arrIndex]
+                let answer = { label: '', textValue: '', value: '' }
+                handleValues(question,answer,formObj)
+                question.selectedValue = answer
+            }
+        }
     }
     catch(err){
         console.log("error in handleArrayFields :: ",err.message)
     }
 }
 
-function appendvalues(childQuestionData,flattedForm,shortKey){
+function appendvalues(childQuestionData,flattedForm,shortKey,question){
     try{
         let arrKeys = Object.keys(arrFields)
 
@@ -1650,49 +1716,39 @@ function appendvalues(childQuestionData,flattedForm,shortKey){
             for(let obj of arr){
                 let questionKeys = Object.keys(customkeys[shortKey])
                 for(let questionkey of questionKeys){
-                    // console.log("obj.shortKey  :: ",obj.shortKey )
-                    // console.log("shortKey :: ",shortKey)
                     if(obj.shortKey === questionkey){
                         let answer = { label: '', textValue: '', value: '' }
+                        
                         handleValues(obj,answer,flattedForm,shortKey)
                         obj.selectedValue = answer
-                        // console.log()
-                        // console.log("shortKey ::: ",shortKey)
-                        // if(shortKey === "grantPosition"){
-                        //     console.log("cs ::::::::: ",obj)
-                        // }
                     }
                 }
-                // console.log("obj.shortKey ::::",questionKeys)
-                // console.log("obj :::",obj)
             }
         }
        }
        if(arrKeys.includes(shortKey)){
-            let valKey = arrFields[shortKey]
-            let answerObjects = flattedForm[valKey]
-            for(let index in answerObjects){
-                // console.log("answerObjects ::: ",answerObjects)
-                let questionArr = childQuestionData[index]
-               
-                for(let arrIndex in questionArr){
-                    let formObj = answerObjects[index]
-                    let question = questionArr[arrIndex]
-                    // console.log("formObj ::: ",formObj)
-                    // if(question.shortKey == "grantUtilised"){
-                    //     // console.log("question ::: ",question)
-                    //     // console.log("flattedForm :: ",formObj)
-                    // }
-                    let answer = { label: '', textValue: '', value: '' }
-                    handleValues(question,answer,formObj)
-                    question.selectedValue = answer
-                    // console.log("question :::: ",question )
-                }
-            }
+         handleArrayFields(shortKey,flattedForm,childQuestionData)
+        }
+        if(specialCases.includes(shortKey)){
+            // console.log("question ::: ",question.order)
+            handleProjectCaseForDur(question,flattedForm)
+        }
+            // let valKey = arrFields[shortKey]
+            // let answerObjects = flattedForm[valKey]
+            // for(let index in answerObjects){
+            //     let questionArr = childQuestionData[index]
+            //     for(let arrIndex in questionArr){
+            //         let formObj = answerObjects[index]
+            //         let question = questionArr[arrIndex]
+            //         let answer = { label: '', textValue: '', value: '' }
+            //         handleValues(question,answer,formObj)
+            //         question.selectedValue = answer
+            //     }
+            // }
             // console.log("valKey ::: ",valKey)
             // console.log(">>>>>>>> ",flattedForm[valKey].length)
             // console.log("childQesruin ::: ",childQuestionData.length)
-       }
+       
         
         return childQuestionData
     }
@@ -1702,12 +1758,13 @@ function appendvalues(childQuestionData,flattedForm,shortKey){
 }
 function appendChildQues(question,obj,flattedForm){
     try{
+        // console.log("i am here ::: ")
         // console.log("flattedform ::: ",flattedForm)
         let customShortKeys = Object.keys(customkeys)
         if(customShortKeys.includes(question.shortKey)){
             // let childQuestionData = question.childQuestionData
         //    console.log(childQuestionData.length)
-           let childQuestionData =  appendvalues(question.childQuestionData,flattedForm,question.shortKey)
+           let childQuestionData =  appendvalues(question.childQuestionData,flattedForm,question.shortKey,question)
         //    if(question.shortKey === "grantPosition"){
         //         console.log("cs ::::::::: ",childQuestionData)
         //     }
@@ -1862,6 +1919,7 @@ async function deleteExtraKeys(question){
 
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
+        // console.log(">>>>>>>>>> obj ::: ",jsonFormat)
         let obj = [...jsonFormat]
         // console.log("flattedForm ::: ",flattedForm)
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
@@ -1947,7 +2005,8 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
             }
             answerOptions.push(answerObj)
         })
-        obj['answer_option'] = answerOptions 
+        obj['answer_option'] = answerOptions
+        // console.log("this is object ::: ",obj)
         // obj['child'] = childOptions
         return obj
     }
@@ -1959,12 +2018,13 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
 function checkForUndefinedVaribales(obj) {
     let validator = {
         message: "",
-        success: true
+        valid: true
     }
     try {
         for (let key in obj) {
-            if (!validator[key]) {
-                validator.success = false
+            if (!obj[key]) {
+                console.log(validator[key])
+                validator.valid = false
                 validator.message = `${key} is required`
                 return validator
             }
@@ -1976,7 +2036,7 @@ function checkForUndefinedVaribales(obj) {
     }
     return validator
 }
-
+module.exports.checkForUndefinedVaribales = checkForUndefinedVaribales
 module.exports.mutuateGetPayload = mutuateGetPayload
 
 function appendExtraKeys(keys, jsonObj, form) {
