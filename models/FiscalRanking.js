@@ -93,6 +93,10 @@ const fiscalRankingSchema = new Schema(
             status:statusSchema(),
             value: { type: String, default: null },
         },
+        otherUpload:{
+            status:statusSchema(),
+            value: { type: String, default: null },
+        },
         email: {
             status:statusSchema(),
             value:{

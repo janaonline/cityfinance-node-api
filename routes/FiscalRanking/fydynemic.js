@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-module.exports.notRequiredValidations = ['caMembershipNo']
+module.exports.notRequiredValidations = ['caMembershipNo','population11','otherUpload']
 
 const fiscalRankingFormJson = () => {
     return {
@@ -5610,7 +5610,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
         maximum = 50
     }
     if (label == "Mobile number") {
-        min = 1000000000
+        min = 6000000000
         maximum = 9999999999
     }
     return {
