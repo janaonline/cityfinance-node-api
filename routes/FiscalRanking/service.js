@@ -722,6 +722,7 @@ exports.getView = async function (req, res, next) {
                   pf['status'] = singleFydata.status;
                   pf['modelName'] = singleFydata.modelName;
                   if (subData[key].calculatedFrom === undefined) {
+                    pf['required'] = singleFydata.status && singleFydata.status == "NA" ? false : true;
                     pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                   }
                   else {
@@ -733,7 +734,9 @@ exports.getView = async function (req, res, next) {
                     pf['status'] = chekFile ? "NA" : "PENDING"
                     pf['modelName'] = chekFile ? "ULBLedger" : ""
                     if (subData[key].calculatedFrom === undefined) {
+                      console.log("chekFile", chekFile)
                       pf['readonly'] = chekFile ? true : false;
+                      pf['required'] = chekFile ? false : true;
                     }
                     else {
                       pf['readonly'] = true;
@@ -746,7 +749,10 @@ exports.getView = async function (req, res, next) {
                   pf['status'] = chekFile ? "NA" : "PENDING";
                   pf['modelName'] = chekFile ? "ULBLedger" : ""
                   if (subData[key].calculatedFrom === undefined) {
+                    console.log("chekFile", chekFile)
+
                     pf['readonly'] = chekFile ? true : false;
+                    pf['required'] = chekFile ? false : true;
                   }
                   else {
                     pf['readonly'] = true;
@@ -770,8 +776,7 @@ exports.getView = async function (req, res, next) {
                     pf['modelName'] = singleFydata ? singleFydata.modelName : "";
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
-                    }
-                    else {
+                    } else {
                       pf['readonly'] = true;
                     }
                   }
