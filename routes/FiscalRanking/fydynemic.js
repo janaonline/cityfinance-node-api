@@ -4623,7 +4623,7 @@ const fiscalRankingFormJson = () => {
             },
             "totalExpend": {
                 "key": "totalExpend",
-                "label": "TOTAL EXPENDITURE (sum of 8 to 13)",
+                "label": "TOTAL REVENUE EXPENDITURE - ACTUAL ",
                 "displayPriority": "14",
                 "calculatedFrom": [
                    "8",
