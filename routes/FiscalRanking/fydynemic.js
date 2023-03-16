@@ -4984,24 +4984,7 @@ const fiscalRankingFormJson = () => {
                 "label": "Date of Audit Report for audited annual accounts",
                 "displayPriority": "24",
                 "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "date": null,
-                        "type": "auditAnnualReport",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "date",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
+                    {},
                     {
                         "label": "FY 2019-20",
                         "key": "FY2019-20",
@@ -5063,23 +5046,24 @@ const fiscalRankingFormJson = () => {
                 "label": "Total Own Revenue Arrears as on 31st March 2022",
                 "displayPriority": "25",
                 "yearData": [
-                    {
-                        "label": "FY 2018-19",
-                        "key": "FY2018-19",
-                        "postion": "1",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRevenueArea",
-                        "year": years["2018-19"],
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
-                        "placeHolder": ""
-                    },
+                    {},
+                    // {
+                    //     "label": "FY 2018-19",
+                    //     "key": "FY2018-19",
+                    //     "postion": "1",
+                    //     "value": "",
+                    //     "file": "",
+                    //     "min": 0,
+                    //     "max": 999999999999999,
+                    //     "required": true,
+                    //     "type": "totalOwnRevenueArea",
+                    //     "year": years["2018-19"],
+                    //     "code": [],
+                    //     "readonly": false,
+                    //     "formFieldType": "number",
+                    //     "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
+                    //     "placeHolder": ""
+                    // },
                     {
                         "label": "FY 2019-20",
                         "key": "FY2019-20",
@@ -5512,7 +5496,7 @@ const fiscalRankingFormJson = () => {
             },
             appAnnualBudget: {
                 key: 'appAnnualBudget',
-                label: 'Copy of Approved Annual Budget in English',
+                label: 'Copy of Approved Annual Budget preferably in English',
                 displayPriority: "2",
                 yearData: [
                     {
