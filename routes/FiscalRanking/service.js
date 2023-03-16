@@ -267,6 +267,7 @@ class tabsUpdationServiceFR {
   }
   getDataForSignedDoc() {
     return {
+      otherUpload:{...this.detail.otherUpload},
       signedCopyOfFile: { ...this.detail.signedCopyOfFile }
     }
   }
@@ -567,7 +568,7 @@ exports.getView = async function (req, res, next) {
       }
       data['population11'] = {
         'value': data.population11.value ? data.population11.value : ulbPData ? ulbPData?.population : "",
-        'readonly': ulbPData?.population > 0 ? true : false,
+        'readonly':true,
         "modelName": ulbPData?.population > 0 ? "Ulb" : ""
       }
       data['fyData'] = fyData
@@ -578,7 +579,7 @@ exports.getView = async function (req, res, next) {
         "design_year": null,
         "population11": {
           "value": ulbPData?.population,
-          "readonly": ulbPData?.population > 0 ? true : false,
+          "readonly": true,
           "status": ulbPData?.population > 0 ? "NA" : "PENDING",
           "modelName": ulbPData?.population > 0 ? "TwentyEightSlbForm" : ""
         },
@@ -595,6 +596,11 @@ exports.getView = async function (req, res, next) {
           "status": "PENDING"
         },
         "signedCopyOfFile": {
+          "name": null,
+          "url": null,
+          "status": "PENDING"
+        },
+        "otherUpload":{
           "name": null,
           "url": null,
           "status": "PENDING"
@@ -1933,8 +1939,7 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
     }
     let payload = {}
     for (let key in obj) {
-      if (updateForm) {
-        if (key === "signedCopyOfFile") {
+        if (key === "signedCopyOfFile" || key === "otherUpload") {
           payload[key] = obj[key]
         }
         else {
