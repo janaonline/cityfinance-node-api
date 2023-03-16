@@ -645,7 +645,7 @@ exports.getView = async function (req, res, next) {
     // await assignCalculatedValues(fyDynemic, viewOne)
 
     let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
-    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2018-19', '2019-20', '2020-21', '2021-22','2022-23'] }, "ulb": ObjectId(req.query.ulb) });
+    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2018-19', '2019-20', '2020-21', '2021-22','2022-23','2023-24'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
 
@@ -712,6 +712,7 @@ exports.getView = async function (req, res, next) {
               }
             }
           } else {
+           
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
@@ -725,9 +726,10 @@ exports.getView = async function (req, res, next) {
                     pf['readonly'] = true;
                   }
                 } else {
-                  if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
+                  if (subData[key]?.key !== "auditedAnnualFySt" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
+                    pf['modelName'] = chekFile ? "ULBLedger" : "FiscalRanking"
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = chekFile ? true : false;
                     }
@@ -737,22 +739,23 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else {
-                if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
+                if (subData[key]?.key !== "auditedAnnualFySt" && viewOne.isDraft == null) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "PENDING";
+                  pf['modelName'] = chekFile ? "ULBLedger" : "FiscalRanking"
                   if (subData[key].calculatedFrom === undefined) {
                     pf['readonly'] = chekFile ? true : false;
                   }
                   else {
                     pf['readonly'] = true;
                   }
+                  
+                  
                 }
               }
             } else {
               if (fyData.length) {
-
                 if (pf.year && pf.type) {
-
                   let singleFydata = fyData.find(e => (e.year.toString() == pf.year.toString() && e.type == pf.type));
                   if (singleFydata) {
                     if (singleFydata?.date !== null) {
@@ -762,7 +765,7 @@ exports.getView = async function (req, res, next) {
                       "name": "",
                       "url": ""
                     }
-
+                   
                     // parameters['valueObj'] = singleFydata
                     // pf['value'] = singleFydata
                     pf['value'] = singleFydata ? singleFydata.value : "";
