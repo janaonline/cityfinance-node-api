@@ -12,7 +12,6 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         "message":""
     }
     try{
-        let {projects} =req.query
         let yearId = req.query.design_year
         let year = getKeyByValue(years,yearId)
         let form = {...req.form}
