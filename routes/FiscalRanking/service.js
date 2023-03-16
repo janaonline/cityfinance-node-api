@@ -722,7 +722,7 @@ exports.getView = async function (req, res, next) {
                     pf['readonly'] = true;
                   }
                 } else {
-                  if (subData[key]?.key !== "auditedAnnualFySt" && viewOne.isDraft == null) {
+                  if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
                     pf['modelName'] = chekFile ? "ULBLedger" : ""
@@ -735,7 +735,7 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else {
-                if (subData[key]?.key !== "auditedAnnualFySt" && viewOne.isDraft == null) {
+                if (subData[key]?.key !== "appAnnualBudget" && viewOne.isDraft == null) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "PENDING";
                   pf['modelName'] = chekFile ? "ULBLedger" : ""
