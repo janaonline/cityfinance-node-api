@@ -1762,285 +1762,298 @@ module.exports.masterAction =  async (req, res) => {
 }
 
 async function takeActionOnForms(params, res) {
-    try {
-        let {
-            bodyData,
-            actionTakenBy,
-            actionTakenByRole,
-            formData,
-          } = params;
-          let {
-            formId,
-            multi,
-            shortKeys,
-            responses,
-            form_level,
-            } = bodyData
-          let count = 0;
-          let path = modelPath(formId);
-          const model = require(`../../models/${path}`);
-          for (let form of formData) {
-            let bodyData = {
+  try {
+    let { bodyData, actionTakenBy, actionTakenByRole, formData } = params;
+    let { formId, multi, shortKeys, responses, form_level } = bodyData;
+    let count = 0;
+    let path = modelPath(formId);
+    const model = require(`../../models/${path}`);
+    for (let form of formData) {
+      let bodyData = {
+        formId,
+        recordId: ObjectId(form._id),
+        data: form,
+      };
+      /* Saving the form history of the user. */
+      let formHistoryResponse = await saveFormHistory({ body: bodyData });
+      if (formHistoryResponse !== 1)
+        throw "Action failed to save form history!";
+      let saveStatusResponse;
+      /* Saving the status of the form of form_level type. */
+      if (form_level === FORM_LEVEL["form"]) {
+        let [response] = responses;
+        let [shortKey] = shortKeys;
+        let params = {
+          formId,
+          form,
+          response,
+          form_level,
+          actionTakenByRole,
+          actionTakenBy,
+          multi,
+          shortKey,
+          res,
+        };
+        saveStatusResponse = await saveStatus(params);
+        let updatedFormCurrentStatus = await updateFormCurrentStatus(
+          model,
+          form._id,
+          response
+        );
+        if (updatedFormCurrentStatus !== 1)
+          throw "Action failed to update form current Status!";
+      } else if (form_level === FORM_LEVEL["question"]) {
+        //multi = true=>> review table action
+        if (multi) {
+          let [response] = responses;
+          for (let shortKey of shortKeys) {
+            let params = {
               formId,
-              recordId: ObjectId(form._id),
-              data: form,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
             };
-            /* Saving the form history of the user. */
-            let formHistoryResponse = await saveFormHistory({ body: bodyData });
-            if(formHistoryResponse !== 1)  throw( "Action failed to save form history!");
-            let saveStatusResponse;
-            if (form_level === FORM_LEVEL["form"]) {
-              let [response] = responses;
-              let [shortKey] = shortKeys
-              let params = {formId,
-                form,
-                response,
-                form_level,
-                actionTakenByRole,
-                actionTakenBy,
-                multi,
-                shortKey,
-                res}
-              saveStatusResponse = await saveStatus(params);
-              let updatedFormCurrentStatus = await updateFormCurrentStatus(model, form._id, response);
-                if(updatedFormCurrentStatus !== 1) throw ("Action failed to update form current Status!");
-              
-            } else if (form_level === FORM_LEVEL["question"]) {
-              if (multi) {
-                let [response] = responses;
-                for (let shortKey of shortKeys) {
-                    let params = {formId,
-                        form,
-                        response,
-                        form_level,
-                        actionTakenByRole,
-                        actionTakenBy,
-                        multi,
-                        shortKey,
-                        res}
-                  saveStatusResponse = await saveStatus(
-                    params
-                  );
-                }
-                let updatedFormCurrentStatus = await updateFormCurrentStatus(
-                  model,
-                  form._id,
-                  response
-                );
-                if (updatedFormCurrentStatus !== 1)
-                  throw "Action failed to update form current Status!";
-              } else {
-                let rejectStatusCount = 0;
-                for (let response of responses) {
-                    let params = {formId,
-                        form,
-                        response,
-                        form_level,
-                        actionTakenByRole,
-                        actionTakenBy,
-                        multi,
-                        shortKey,
-                        res
-                    }
-                  saveStatusResponse = await saveStatus(
-                    params
-                  );
-                  if (
-                    [
-                      MASTER_STATUS["Rejected by MoHUA"],
-                      MASTER_STATUS["Rejected by State"],
-                    ].includes(response.status)
-                  ) {
-                    rejectStatusCount++;
-                  }
-                }
-                if (rejectStatusCount) {
-                  response.status =
-                    actionTakenByRole === "MoHUA"
-                      ? MASTER_STATUS["Rejected by MoHUA"]
-                      : MASTER_STATUS["Rejected by State"];
-                  let updatedFormCurrentStatus = await updateFormCurrentStatus(
-                    model,
-                    form._id,
-                    response
-                  );
-
-                  if (updatedFormCurrentStatus !== 1)
-                    throw "Action failed to update form current Status!";
-                } else {
-                    response.status =
-                    actionTakenByRole === "MoHUA"
-                      ? MASTER_STATUS['Approved by MoHUA']
-                      : MASTER_STATUS['Under Review by MoHUA'];
-                  let updatedFormCurrentStatus = await updateFormCurrentStatus(
-                    model,
-                    form._id,
-                    response
-                  );
-                  if (updatedFormCurrentStatus !== 1)
-                    throw "Action failed to update form current Status!";
-                }
-              }
-            } else if (form_level === FORM_LEVEL["tab"]) {
-                if (multi) {
-                  let [response] = responses;
-                  let shortKeysResponse = getSeparatedShortKeys(shortKeys);
-                  for (let shortKey of shortKeysResponse["inner"]) {
-                    let params = {
-                      formId,
-                      form,
-                      response,
-                      form_level,
-                      actionTakenByRole,
-                      actionTakenBy,
-                      multi,
-                      shortKey,
-                      res,
-                    };
-                    saveStatusResponse = await saveStatus(params);
-                  }
-                  for (let shortKey of shortKeysResponse["outer"]) {
-                    shortKey = `tab_${shortKey}`;
-                    let params = {
-                      formId,
-                      form,
-                      response,
-                      form_level,
-                      actionTakenByRole,
-                      actionTakenBy,
-                      multi,
-                      shortKey,
-                      res,
-                    };
-                    saveStatusResponse = await saveStatus(params);
-                  }
-
-                  let updatedFormCurrentStatus = await updateFormCurrentStatus(
-                    model,
-                    form._id,
-                    response
-                  );
-                  if (updatedFormCurrentStatus !== 1)
-                    throw "Action failed to update form current Status!";
-                } else {
-                  let rejectStatusAllTab = 0;
-                  let { outer: tabLevelShortKeys } =
-                    getSeparatedShortKeys(shortKeys);
-                  let tabShortKeyObj = {}, tabShortKeyResponse = {};
-                  for (let tab of tabLevelShortKeys) {
-                    tabShortKeyObj[tab] = 0;
-                  }
-                  const separator = ".";
-                  for (let response of responses) {
-
-                    let splitedArrayTab =
-                      response.shortKey.split(separator).length > 1
-                        ? response.shortKey.split(separator)[0]
-                        : "";
-
-                    if (
-                      splitedArrayTab !== "" &&
-                      [
-                        MASTER_STATUS["Rejected by MoHUA"],
-                        MASTER_STATUS["Rejected by State"],
-                      ].includes(response.status)
-                    ) {
-                        tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[splitedArrayTab]++;
-                    }
-                    if(tabShortKeyObj[response.shortKey]){
-                        tabShortKeyResponse[response.shortKey] = response;
-                        continue;
-                    }
-                    let params = {
-                        formId,
-                        form,
-                        response,
-                        form_level,
-                        actionTakenByRole,
-                        actionTakenBy,
-                        multi,
-                        shortKey: "",
-                        res,
-                      };
-  
-                    saveStatusResponse = await saveStatus(params);
-                  }
-
-                  for (let obj in tabShortKeyObj) {
-
-                      let response = tabShortKeyResponse[obj];
-                      if (
-                        response 
-                        &&
-                        [
-                          MASTER_STATUS["Rejected by MoHUA"],
-                          MASTER_STATUS["Rejected by State"],
-                        ].includes(response.status)
-                      ){
-                        rejectStatusAllTab++;
-                        response.shortKey = `tab_${obj}`;
-                       }
-                       if(!response){
-                        let status;
-                        if(tabShortKeyObj[obj]){
-                            status = actionTakenByRole === "MoHUA" ? MASTER_STATUS['Rejected by MoHUA'] : MASTER_STATUS['Rejected by State'];
-                            rejectStatusAllTab++;
-                        }else{
-                            status = actionTakenByRole === "MoHUA" ? MASTER_STATUS['Approved by MoHUA'] : MASTER_STATUS['Under Review by MoHUA'];
-                        }
-                        response = {
-                            status,
-                            rejectReason : "",
-                            responseFile : {url: "", name : ""},
-                            shortKey: `tab_${obj}`
-                        }
-                       }                    
-                    let params = {
-                        formId,
-                        form,
-                        response,
-                        form_level,
-                        actionTakenByRole,
-                        actionTakenBy,
-                        multi,
-                        obj,
-                        res,
-                      };
-                      saveStatusResponse = await saveStatus(params);
-                    
-                  }
-                  if (rejectStatusAllTab) {
-                    response.status =
-                      actionTakenByRole === "MoHUA"
-                        ? MASTER_STATUS["Rejected by MoHUA"]
-                        : MASTER_STATUS["Rejected by State"];
-                    let updatedFormCurrentStatus =
-                      await updateFormCurrentStatus(model, formId, response);
-                    if (updatedFormCurrentStatus !== 1)
-                      throw "Action failed to update form current Status!";
-                  } else {
-                    response.status =
-                      actionTakenByRole === "MoHUA"
-                        ? MASTER_STATUS["Approved by MoHUA"]
-                        : MASTER_STATUS["Under Review by MoHUA"];
-                    let updatedFormCurrentStatus =
-                      await updateFormCurrentStatus(model, form._id, response);
-                    if (updatedFormCurrentStatus !== 1)
-                      throw "Action failed to update form current Status!";
-                  }
-                }
-            }
-            if(saveStatusResponse !== 1){
-                  throw("Action failed to save status!");
-            } else {
-                count++;
+            saveStatusResponse = await saveStatus(params);
+          }
+          let updatedFormCurrentStatus = await updateFormCurrentStatus(
+            model,
+            form._id,
+            response
+          );
+          if (updatedFormCurrentStatus !== 1)
+            throw "Action failed to update form current Status!";
+        } else {
+          let rejectStatusCount = 0;
+          for (let response of responses) {
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+            if (
+              [
+                MASTER_STATUS["Rejected by MoHUA"],
+                MASTER_STATUS["Rejected by State"],
+              ].includes(response.status)
+            ) {
+              rejectStatusCount++;
             }
           }
-        return count;
-    } catch (error) {
-      return  error.message;
+          if (rejectStatusCount) {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Rejected by MoHUA"]
+                : MASTER_STATUS["Rejected by State"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              form._id,
+              response
+            );
+
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          } else {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Approved by MoHUA"]
+                : MASTER_STATUS["Under Review by MoHUA"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              form._id,
+              response
+            );
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          }
+        }
+      } else if (form_level === FORM_LEVEL["tab"]) {
+        if (multi) {
+          let [response] = responses;
+        /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
+          let shortKeysResponse = getSeparatedShortKeys(shortKeys);
+          /* Saving the status of the form for questions */
+          for (let shortKey of shortKeysResponse["inner"]) {
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+          }
+            /* Saving the status of the form for tabs */
+          for (let shortKey of shortKeysResponse["outer"]) {
+            shortKey = `tab_${shortKey}`;
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+          }
+          //Updating form Level status
+          let updatedFormCurrentStatus = await updateFormCurrentStatus(
+            model,
+            form._id,
+            response
+          );
+          if (updatedFormCurrentStatus !== 1)
+            throw "Action failed to update form current Status!";
+        } else {
+          let rejectStatusAllTab = 0;
+          //gets tabs array
+          let { outer: tabLevelShortKeys } = getSeparatedShortKeys(shortKeys);
+          let tabShortKeyObj = {},
+            tabShortKeyResponse = {};
+          for (let tab of tabLevelShortKeys) {
+            tabShortKeyObj[tab] = 0;
+          }
+          const separator = ".";
+          for (let response of responses) {
+            let splitedArrayTab =
+              response.shortKey.split(separator).length > 1
+                ? response.shortKey.split(separator)[0]
+                : "";
+
+            if (
+              splitedArrayTab !== "" &&
+              [
+                MASTER_STATUS["Rejected by MoHUA"],
+                MASTER_STATUS["Rejected by State"],
+              ].includes(response.status)
+            ) {
+              tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[
+                splitedArrayTab
+              ]++;
+            }
+            //storing response of tabs if questions are not provided
+            if (tabShortKeyObj[response.shortKey]) {
+              tabShortKeyResponse[response.shortKey] = response;
+              continue;
+            }
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey: "",
+              res,
+            };
+
+            saveStatusResponse = await saveStatus(params);
+          }
+          //saving status of tabs
+          for (let obj in tabShortKeyObj) {
+            let response = tabShortKeyResponse[obj];
+            if (
+              response &&
+              [
+                MASTER_STATUS["Rejected by MoHUA"],
+                MASTER_STATUS["Rejected by State"],
+              ].includes(response.status)
+            ) {
+              rejectStatusAllTab++;
+              response.shortKey = `tab_${obj}`;
+            }
+            if (!response) {
+              let status;
+              if (tabShortKeyObj[obj]) {
+                status =
+                  actionTakenByRole === "MoHUA"
+                    ? MASTER_STATUS["Rejected by MoHUA"]
+                    : MASTER_STATUS["Rejected by State"];
+                rejectStatusAllTab++;
+              } else {
+                status =
+                  actionTakenByRole === "MoHUA"
+                    ? MASTER_STATUS["Approved by MoHUA"]
+                    : MASTER_STATUS["Under Review by MoHUA"];
+              }
+              response = {
+                status,
+                rejectReason: "",
+                responseFile: { url: "", name: "" },
+                shortKey: `tab_${obj}`,
+              };
+            }
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              obj,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+          }
+          //form level status  updation
+          if (rejectStatusAllTab) {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Rejected by MoHUA"]
+                : MASTER_STATUS["Rejected by State"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              formId,
+              response
+            );
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          } else {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Approved by MoHUA"]
+                : MASTER_STATUS["Under Review by MoHUA"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              form._id,
+              response
+            );
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          }
+        }
+      }
+      if (saveStatusResponse !== 1) {
+        throw "Action failed to save status!";
+      } else {
+        count++;
+      }
     }
- }
+    return count;
+  } catch (error) {
+    return error.message;
+  }
+}
 
 async function updateFormCurrentStatus(model, formId, response) {
     try {
