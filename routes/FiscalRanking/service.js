@@ -1939,7 +1939,8 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
     }
     let payload = {}
     for (let key in obj) {
-        if (key === "signedCopyOfFile" || key === "otherUpload") {
+      if (updateForm) {
+        if (key === "signedCopyOfFile" ||  key === "otherUpload") {
           payload[key] = obj[key]
         }
         else {
