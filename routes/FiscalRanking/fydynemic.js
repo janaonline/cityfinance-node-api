@@ -5006,6 +5006,8 @@ const fiscalRankingFormJson = () => {
                 "displayPriority": "25",
                 "yearData": [
                     {},
+                    {},
+                    {},
                     // {
                     //     "label": "FY 2018-19",
                     //     "key": "FY2018-19",
@@ -5023,40 +5025,6 @@ const fiscalRankingFormJson = () => {
                     //     "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                     //     "placeHolder": ""
                     // },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRevenueArea",
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRevenueArea",
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
