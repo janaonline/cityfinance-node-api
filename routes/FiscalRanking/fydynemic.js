@@ -4984,6 +4984,7 @@ const fiscalRankingFormJson = () => {
                 "label": "Date of Audit Report for audited annual accounts",
                 "displayPriority": "24",
                 "yearData": [
+                    {},
                     {
                         "label": "FY 2019-20",
                         "key": "FY2019-20",
@@ -5045,6 +5046,7 @@ const fiscalRankingFormJson = () => {
                 "label": "Total Own Revenue Arrears as on 31st March 2022",
                 "displayPriority": "25",
                 "yearData": [
+                    {},
                     // {
                     //     "label": "FY 2018-19",
                     //     "key": "FY2018-19",
