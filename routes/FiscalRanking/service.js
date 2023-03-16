@@ -557,6 +557,7 @@ exports.getView = async function (req, res, next) {
     let viewOne = {};
     let fyData = [];
     if (data) {
+
       fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
       data['populationFr'] = {
         'value': data.populationFr.value ? data.populationFr.value : twEightSlbs ? twEightSlbs?.population : "",
@@ -566,7 +567,7 @@ exports.getView = async function (req, res, next) {
       data['population11'] = {
         'value': data.population11.value ? data.population11.value : ulbPData ? ulbPData?.population : "",
         'readonly': ulbPData?.population > 0 ? true : false,
-        "modelName": twEightSlbs?.population > 0 ? "Ulb" : ""
+        "modelName": ulbPData?.population > 0 ? "Ulb" : ""
       }
       data['fyData'] = fyData
       viewOne = data
@@ -666,6 +667,7 @@ exports.getView = async function (req, res, next) {
                 } else {
                   pf['value'] = singleFydata ? singleFydata.value : "";
                 }
+                pf['modelName'] = singleFydata ? singleFydata.modelName : "";
                 pf['status'] = singleFydata.status;
                 if (subData[key].calculatedFrom === undefined) {
                   pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
@@ -758,6 +760,7 @@ exports.getView = async function (req, res, next) {
                     }
                     pf['value'] = singleFydata ? singleFydata.value : "";
                     pf['status'] = singleFydata ? singleFydata.status : "PENDING";
+                    pf['modelName'] = singleFydata ? singleFydata.modelName : "";
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                     }
@@ -1903,7 +1906,6 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
     }
     let payload = {}
     for (let key in obj) {
-
       if (updateForm) {
         if (key === "signedCopyOfFile") {
           payload[key] = obj[key]
@@ -1913,6 +1915,8 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
             throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
           }
           payload[`${key}.value`] = obj[key].value
+          payload[`${key}.status`] = obj[key].status
+          payload[`${key}.modelName`] = obj[key].modelName
         }
       }
       else {
@@ -1923,7 +1927,7 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
         payload[`${key}.status`] = status
       }
     }
-
+    // console.log("payload",payload);process.exit()
     await FiscalRanking.findOneAndUpdate(filter, payload)
   }
   catch (err) {
