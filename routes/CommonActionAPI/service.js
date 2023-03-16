@@ -1777,6 +1777,8 @@ async function takeActionOnForms(params, res) {
             form_level,
             } = bodyData
           let count = 0;
+          let path = modelPath(formId);
+          const model = require(`../../models/${path}`);
           for (let form of formData) {
             let bodyData = {
               formId,
@@ -1790,8 +1792,7 @@ async function takeActionOnForms(params, res) {
             if (form_level === FORM_LEVEL["form"]) {
               let [response] = responses;
               let [shortKey] = shortKeys
-              saveStatusResponse = await saveStatus(
-                formId,
+              let params = {formId,
                 form,
                 response,
                 form_level,
@@ -1799,41 +1800,235 @@ async function takeActionOnForms(params, res) {
                 actionTakenBy,
                 multi,
                 shortKey,
-                res
-              );
+                res}
+              saveStatusResponse = await saveStatus(params);
+              let updatedFormCurrentStatus = await updateFormCurrentStatus(model, form._id, response);
+                if(updatedFormCurrentStatus !== 1) throw ("Action failed to update form current Status!");
+              
             } else if (form_level === FORM_LEVEL["question"]) {
               if (multi) {
                 let [response] = responses;
                 for (let shortKey of shortKeys) {
-                    saveStatusResponse = await saveStatus(
-                    formId,
-                    form,
-                    response,
-                    form_level,
-                    actionTakenByRole,
-                    actionTakenBy,
-                    multi,
-                    shortKey,
-                    res
+                    let params = {formId,
+                        form,
+                        response,
+                        form_level,
+                        actionTakenByRole,
+                        actionTakenBy,
+                        multi,
+                        shortKey,
+                        res}
+                  saveStatusResponse = await saveStatus(
+                    params
                   );
                 }
+                let updatedFormCurrentStatus = await updateFormCurrentStatus(
+                  model,
+                  form._id,
+                  response
+                );
+                if (updatedFormCurrentStatus !== 1)
+                  throw "Action failed to update form current Status!";
               } else {
+                let rejectStatusCount = 0;
                 for (let response of responses) {
-                    saveStatusResponse = await saveStatus(
-                    formId,
-                    form,
-                    response,
-                    form_level,
-                    actionTakenByRole,
-                    actionTakenBy,
-                    multi,
-                    shortKey,
-                    res
+                    let params = {formId,
+                        form,
+                        response,
+                        form_level,
+                        actionTakenByRole,
+                        actionTakenBy,
+                        multi,
+                        shortKey,
+                        res
+                    }
+                  saveStatusResponse = await saveStatus(
+                    params
                   );
+                  if (
+                    [
+                      MASTER_STATUS["Rejected by MoHUA"],
+                      MASTER_STATUS["Rejected by State"],
+                    ].includes(response.status)
+                  ) {
+                    rejectStatusCount++;
+                  }
+                }
+                if (rejectStatusCount) {
+                  response.status =
+                    actionTakenByRole === "MoHUA"
+                      ? MASTER_STATUS["Rejected by MoHUA"]
+                      : MASTER_STATUS["Rejected by State"];
+                  let updatedFormCurrentStatus = await updateFormCurrentStatus(
+                    model,
+                    form._id,
+                    response
+                  );
+
+                  if (updatedFormCurrentStatus !== 1)
+                    throw "Action failed to update form current Status!";
+                } else {
+                    response.status =
+                    actionTakenByRole === "MoHUA"
+                      ? MASTER_STATUS['Approved by MoHUA']
+                      : MASTER_STATUS['Under Review by MoHUA'];
+                  let updatedFormCurrentStatus = await updateFormCurrentStatus(
+                    model,
+                    form._id,
+                    response
+                  );
+                  if (updatedFormCurrentStatus !== 1)
+                    throw "Action failed to update form current Status!";
                 }
               }
             } else if (form_level === FORM_LEVEL["tab"]) {
-            
+                if (multi) {
+                  let [response] = responses;
+                  let shortKeysResponse = getSeparatedShortKeys(shortKeys);
+                  for (let shortKey of shortKeysResponse["inner"]) {
+                    let params = {
+                      formId,
+                      form,
+                      response,
+                      form_level,
+                      actionTakenByRole,
+                      actionTakenBy,
+                      multi,
+                      shortKey,
+                      res,
+                    };
+                    saveStatusResponse = await saveStatus(params);
+                  }
+                  for (let shortKey of shortKeysResponse["outer"]) {
+                    shortKey = `tab_${shortKey}`;
+                    let params = {
+                      formId,
+                      form,
+                      response,
+                      form_level,
+                      actionTakenByRole,
+                      actionTakenBy,
+                      multi,
+                      shortKey,
+                      res,
+                    };
+                    saveStatusResponse = await saveStatus(params);
+                  }
+
+                  let updatedFormCurrentStatus = await updateFormCurrentStatus(
+                    model,
+                    form._id,
+                    response
+                  );
+                  if (updatedFormCurrentStatus !== 1)
+                    throw "Action failed to update form current Status!";
+                } else {
+                  let rejectStatusAllTab = 0;
+                  let { outer: tabLevelShortKeys } =
+                    getSeparatedShortKeys(shortKeys);
+                  let tabShortKeyObj = {}, tabShortKeyResponse = {};
+                  for (let tab of tabLevelShortKeys) {
+                    tabShortKeyObj[tab] = 0;
+                  }
+                  const separator = ".";
+                  for (let response of responses) {
+
+                    let splitedArrayTab =
+                      response.shortKey.split(separator).length > 1
+                        ? response.shortKey.split(separator)[0]
+                        : "";
+
+                    if (
+                      splitedArrayTab !== "" &&
+                      [
+                        MASTER_STATUS["Rejected by MoHUA"],
+                        MASTER_STATUS["Rejected by State"],
+                      ].includes(response.status)
+                    ) {
+                        tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[splitedArrayTab]++;
+                    }
+                    if(tabShortKeyObj[response.shortKey]){
+                        tabShortKeyResponse[response.shortKey] = response;
+                        continue;
+                    }
+                    let params = {
+                        formId,
+                        form,
+                        response,
+                        form_level,
+                        actionTakenByRole,
+                        actionTakenBy,
+                        multi,
+                        shortKey: "",
+                        res,
+                      };
+  
+                    saveStatusResponse = await saveStatus(params);
+                  }
+
+                  for (let obj in tabShortKeyObj) {
+
+                      let response = tabShortKeyResponse[obj];
+                      if (
+                        response 
+                        &&
+                        [
+                          MASTER_STATUS["Rejected by MoHUA"],
+                          MASTER_STATUS["Rejected by State"],
+                        ].includes(response.status)
+                      ){
+                        rejectStatusAllTab++;
+                        response.shortKey = `tab_${obj}`;
+                       }
+                       if(!response){
+                        let status;
+                        if(tabShortKeyObj[obj]){
+                            status = actionTakenByRole === "MoHUA" ? MASTER_STATUS['Rejected by MoHUA'] : MASTER_STATUS['Rejected by State'];
+                            rejectStatusAllTab++;
+                        }else{
+                            status = actionTakenByRole === "MoHUA" ? MASTER_STATUS['Approved by MoHUA'] : MASTER_STATUS['Under Review by MoHUA'];
+                        }
+                        response = {
+                            status,
+                            rejectReason : "",
+                            responseFile : {url: "", name : ""},
+                            shortKey: `tab_${obj}`
+                        }
+                       }                    
+                    let params = {
+                        formId,
+                        form,
+                        response,
+                        form_level,
+                        actionTakenByRole,
+                        actionTakenBy,
+                        multi,
+                        obj,
+                        res,
+                      };
+                      saveStatusResponse = await saveStatus(params);
+                    
+                  }
+                  if (rejectStatusAllTab) {
+                    response.status =
+                      actionTakenByRole === "MoHUA"
+                        ? MASTER_STATUS["Rejected by MoHUA"]
+                        : MASTER_STATUS["Rejected by State"];
+                    let updatedFormCurrentStatus =
+                      await updateFormCurrentStatus(model, formId, response);
+                    if (updatedFormCurrentStatus !== 1)
+                      throw "Action failed to update form current Status!";
+                  } else {
+                    response.status =
+                      actionTakenByRole === "MoHUA"
+                        ? MASTER_STATUS["Approved by MoHUA"]
+                        : MASTER_STATUS["Under Review by MoHUA"];
+                    let updatedFormCurrentStatus =
+                      await updateFormCurrentStatus(model, form._id, response);
+                    if (updatedFormCurrentStatus !== 1)
+                      throw "Action failed to update form current Status!";
+                  }
+                }
             }
             if(saveStatusResponse !== 1){
                   throw("Action failed to save status!");
@@ -1847,18 +2042,38 @@ async function takeActionOnForms(params, res) {
     }
  }
 
-async function saveStatus(
-  formId,
-  form,
-  response,
-  form_level,
-  actionTakenByRole,
-  actionTakenBy,
-  multi,
-  shortKey,
-  res
-) {
+async function updateFormCurrentStatus(model, formId, response) {
     try {
+        const updatedFormResponse = await model
+            .findOneAndUpdate(
+                { _id: formId },
+                {
+                    $set: {
+                        currentFormStatus: response.status,
+                    },
+                }
+            )
+            .lean();
+        if (!updatedFormResponse){
+            throw ("Action failed to update form current Status!");
+        }
+        return 1;
+    } catch (error) {
+        return  error.message; 
+    }
+}
+
+async function saveStatus(params) {
+    try {
+        let {formId,
+            form,
+            response,
+            form_level,
+            actionTakenByRole,
+            actionTakenBy,
+            multi,
+            shortKey,
+            res} = params;
         let currentStatusData = {
             formId,
             recordId: ObjectId(form._id),
@@ -1933,4 +2148,26 @@ module.exports.getMasterAction = async (req, res) => {
         return Response.BadRequest(res, {}, error.message);
 
     }
+}
+
+
+async function getSeparatedShortKeys(params) {
+  const { shortKeys } = params;
+  const First_Index = 0;
+  let output = {
+    outer: [],
+    inner: [],
+  };
+  const separator = ".";
+  for (let shortKey of shortKeys) {
+    let splitedArray = shortKey.split[separator];
+    let splitedArrayLength = splitedArray.length - 1;
+    if (Array.isArray(splitedArray) && splitedArrayLength) {
+      splitedArray[First_Index] === splitedArray[splitedArrayLength]
+        ? output["inner"].push(shortKey)
+        : output["outer"].push(shortKey);
+    }
+  }
+
+  return output;
 }
