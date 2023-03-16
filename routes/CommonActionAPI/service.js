@@ -53,7 +53,22 @@ var customkeys = {
         "totalProjectCost":"totalProjectCost"
 
     },
-    "projectDetails_tableView_addButton":{}
+    "projectDetails_tableView_addButton":{
+        "cost": 'cost',
+        "expenditure": 'expenditure',
+        "modifiedAt": 'modifiedAt',
+        "createdAt": 'createdAt',
+        "isActive": 'isActive',
+        "_id": '_id',
+        "category": 'category',
+        "name": 'name',
+        "location": 'location',
+        "capitalExpenditureState": 'capitalExpenditureState',
+        "capitalExpenditureUlb": 'capitalExpenditureUlb',
+        "omExpensesState": 'omExpensesState',
+        "omExpensesUlb": 'omExpensesUlb',
+        "stateShare": 'stateShare'
+      }
 
 }
 
@@ -1619,18 +1634,19 @@ function appendvalues(childQuestionData,flattedForm,shortKey){
             for(let index in answerObjects){
                 // console.log("answerObjects ::: ",answerObjects)
                 let questionArr = childQuestionData[index]
-                let answer = { label: '', textValue: '', value: '' }
+               
                 for(let arrIndex in questionArr){
-                    let formObj = answerObjects[arrIndex]
+                    let formObj = answerObjects[index]
                     let question = questionArr[arrIndex]
-                    console.log("formObj :::: ",formObj)
                     // console.log("formObj ::: ",formObj)
                     // if(question.shortKey == "grantUtilised"){
                     //     // console.log("question ::: ",question)
                     //     // console.log("flattedForm :: ",formObj)
                     // }
+                    let answer = { label: '', textValue: '', value: '' }
                     handleValues(question,answer,formObj)
                     question.selectedValue = answer
+                    // console.log("question :::: ",question )
                 }
             }
             // console.log("valKey ::: ",valKey)
@@ -1691,10 +1707,6 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
             obj['value'] = flattedForm[key]
         }
         else{
-            if(question.shortKey == "grantUtilised"){
-                console.log("question ::: ",question)
-                console.log("flattedForm :: ",flattedForm)
-            }
             let key = question.shortKey
             question['modelValue'] = flattedForm[key]
             question['value'] = flattedForm[key]
