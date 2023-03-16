@@ -5496,7 +5496,7 @@ const fiscalRankingFormJson = () => {
             },
             appAnnualBudget: {
                 key: 'appAnnualBudget',
-                label: 'Copy of Approved Annual Budget in English',
+                label: 'Copy of Approved Annual Budget preferably in English',
                 displayPriority: "2",
                 yearData: [
                     {
