@@ -65,6 +65,7 @@ const calculateFormStatus = async (
           };
           const ulbsCount = await Ulb.find({
             state: state._id,
+            "access_2223" : true,
           }).countDocuments();
           for (let j = 0; j < collections.length; j++) {
             let collection = collections[j];

@@ -57,7 +57,9 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             }
         }
         let msg = `Your OTP to login into CityFinance.in is ${otp}. Do not share this code. If not requested, please contact us at contact@cityfinance.in - City Finance`;
-        let mobile = user.accountantConatactNumber
+/* If the user is a state, then the mobile number is the mobile number of the state. If the user is not
+a state, then the mobile number is the mobile number of the accountant. */
+        let mobile = user?.role === "STATE" ? user.mobile : user.accountantConatactNumber ; 
         if (OtpMethods.validatePhoneNumber(mobile) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
@@ -120,7 +122,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 message: "OTP SENT SUCCESSFULLY",
                 mobile: mobile,
                 email: user.email,
-                name: entity.name,
+                name: user.name,
                 requestId: Otp._id,
                 state: state.name
             })

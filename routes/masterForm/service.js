@@ -17,6 +17,8 @@ const MasterForm = require("../../models/MasterForm");
 const UtilizationReport = require("../../models/UtilizationReport");
 const Category = require("../../models/Category");
 const statusTypes = require("../../util/statusTypes");
+
+const { dateFormatter}  = require('../../util/dateformatter')
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
 
@@ -1071,8 +1073,18 @@ module.exports.getAllForms = catchAsync(async (req, res) => {
       });
     });
     data[0]["utilizationReport"][0]["analytics"] = arr;
-    data[0]["submissionByUlb"] = submissionByUlb;
-    data[0]["actionInfo"] = actionInfo;
+    //index of "on" in the text output
+    let onIndexInSubmissionByUlb = -1;
+    const addOnIndex = 4
+    submissionByUlb.search(" on ") !== -1 ? onIndexInSubmissionByUlb = submissionByUlb.search(" on ") : "" ;
+    let newSubmisionByUlbDate = submissionByUlb.slice(0, onIndexInSubmissionByUlb + addOnIndex).concat( dateFormatter(submissionByUlb.slice(onIndexInSubmissionByUlb, submissionByUlb.length),'-'));
+
+    let onIndexInActionInfo = -1;
+    actionInfo.search(" on ") !== -1 ? onIndexInActionInfo = actionInfo.search(" on ") : "" ;
+    let newActonInfoDate = actionInfo.slice(0, onIndexInActionInfo + addOnIndex).concat( dateFormatter(actionInfo.slice(onIndexInActionInfo, actionInfo.length),'-'));
+    
+    data[0]["submissionByUlb"] = newSubmisionByUlbDate;
+    data[0]["actionInfo"] = newActonInfoDate;
     // console.log(util.inspect(data, { showHidden: false, depth: null, colors: true }))
     return res.json(data);
   } catch (error) {

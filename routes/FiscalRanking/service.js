@@ -558,16 +558,17 @@ exports.getView = async function (req, res, next) {
     let viewOne = {};
     let fyData = [];
     if (data) {
+
       fyData = await FiscalRankingMapper.find({ fiscal_ranking: data._id }).lean();
       data['populationFr'] = {
         'value': data.populationFr.value ? data.populationFr.value : twEightSlbs ? twEightSlbs?.population : "",
         'readonly': false,
-        "modelName": twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "FiscalRanking"
+        "modelName": twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : ""
       }
       data['population11'] = {
         'value': data.population11.value ? data.population11.value : ulbPData ? ulbPData?.population : "",
         'readonly': ulbPData?.population > 0 ? true : false,
-        "modelName": twEightSlbs?.population > 0 ? "Ulb" : "FiscalRanking"
+        "modelName": ulbPData?.population > 0 ? "Ulb" : ""
       }
       data['fyData'] = fyData
       viewOne = data
@@ -579,13 +580,13 @@ exports.getView = async function (req, res, next) {
           "value": ulbPData?.population,
           "readonly": ulbPData?.population > 0 ? true : false,
           "status": ulbPData?.population > 0 ? "NA" : "PENDING",
-          "modelName": ulbPData?.population > 0 ? "TwentyEightSlbForm" : "FiscalRanking"
+          "modelName": ulbPData?.population > 0 ? "TwentyEightSlbForm" : ""
         },
         "populationFr": {
           "value": twEightSlbs ? twEightSlbs?.population : "",
           "readonly": false,
           "status": "PENDING",
-          "modelName": twEightSlbs?.population > 0 ? "Ulb" : "FiscalRanking"
+          "modelName": twEightSlbs?.population > 0 ? "Ulb" : ""
         },
         "fy_21_22_cash": {
           "year": null,
@@ -633,12 +634,12 @@ exports.getView = async function (req, res, next) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
 
-        viewOne[keys[index]] = getColumnWiseData(keys[index], obj, viewOne.isDraft, "FiscalRanking")
+        viewOne[keys[index]] = getColumnWiseData(keys[index], obj, viewOne.isDraft, "")
       } else {
         viewOne[keys[index]] = getColumnWiseData(keys[index], {
           "value": "",
           "status": "PENDING"
-        }, null, "FiscalRanking")
+        }, null, "")
       }
     }
 
@@ -646,7 +647,7 @@ exports.getView = async function (req, res, next) {
     // await assignCalculatedValues(fyDynemic, viewOne)
 
     let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
-    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2018-19', '2019-20', '2020-21', '2021-22','2022-23','2023-24'] }, "ulb": ObjectId(req.query.ulb) });
+    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2018-19', '2019-20', '2020-21', '2021-22', '2022-23', '2023-24'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
 
@@ -657,21 +658,17 @@ exports.getView = async function (req, res, next) {
         for (let pf of subData[key]?.yearData) {
           let parameters = { calculationField, calculatedFrom, pf, fyDynemic: subData }
           if (pf?.code?.length > 0) {
-
             pf['status'] = null
-            
-            pf["modelName"] = "FiscalRanking"
+            pf["modelName"] = ""
             if (fyData.length) {
-
               let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
-
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
                   pf['date'] = singleFydata ? singleFydata.date : null;
                 } else {
-                  // parameters['valueObj'] = singleFydata
                   pf['value'] = singleFydata ? singleFydata.value : "";
                 }
+                pf['modelName'] = singleFydata ? singleFydata.modelName : "";
                 pf['status'] = singleFydata.status;
                 if (subData[key].calculatedFrom === undefined) {
                   pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
@@ -685,8 +682,8 @@ exports.getView = async function (req, res, next) {
                 pf['value'] = ulbFyAmount
                 // pf['value'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA" : "PENDING";
-                subData[key]["modelName"]  = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
-                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
+                // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
+                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : ""
                 if (subData[key].calculatedFrom === undefined) {
                   pf['readonly'] = ulbFyAmount > 0 ? true : false;
                 }
@@ -697,13 +694,11 @@ exports.getView = async function (req, res, next) {
             } else {
               if (viewOne.isDraft == null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({ code: pf.code, year: pf.year, data: ulbData });
-                // parameters['valueObj'] = {value:ulbFyAmount}
-
                 pf['value'] = ulbFyAmount
                 // pf['value'] = ulbFyAmount;
                 pf['status'] = ulbFyAmount ? "NA" : "PENDING";
-                subData[key]["modelName"]  = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
-                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
+                // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
+                pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : ""
                 if (subData[key].calculatedFrom === undefined) {
                   pf['readonly'] = ulbFyAmount > 0 ? true : false;
                 }
@@ -713,13 +708,13 @@ exports.getView = async function (req, res, next) {
               }
             }
           } else {
-           
             if (['appAnnualBudget', 'auditedAnnualFySt'].includes(subData[key]?.key)) {
               if (fyData.length) {
                 let singleFydata = fyData.find(e => (e?.year?.toString() == pf?.year?.toString() && e.type == pf.type));
                 if (singleFydata) {
                   pf['file'] = singleFydata.file;
                   pf['status'] = singleFydata.status;
+                  pf['modelName'] = singleFydata.modelName;
                   if (subData[key].calculatedFrom === undefined) {
                     pf['readonly'] = singleFydata.status && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                   }
@@ -730,7 +725,7 @@ exports.getView = async function (req, res, next) {
                   if (subData[key]?.key !== "auditedAnnualFySt" && viewOne.isDraft == null) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
-                    pf['modelName'] = chekFile ? "ULBLedger" : "FiscalRanking"
+                    pf['modelName'] = chekFile ? "ULBLedger" : ""
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = chekFile ? true : false;
                     }
@@ -743,15 +738,13 @@ exports.getView = async function (req, res, next) {
                 if (subData[key]?.key !== "auditedAnnualFySt" && viewOne.isDraft == null) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "PENDING";
-                  pf['modelName'] = chekFile ? "ULBLedger" : "FiscalRanking"
+                  pf['modelName'] = chekFile ? "ULBLedger" : ""
                   if (subData[key].calculatedFrom === undefined) {
                     pf['readonly'] = chekFile ? true : false;
                   }
                   else {
                     pf['readonly'] = true;
                   }
-                  
-                  
                 }
               }
             } else {
@@ -766,11 +759,9 @@ exports.getView = async function (req, res, next) {
                       "name": "",
                       "url": ""
                     }
-                   
-                    // parameters['valueObj'] = singleFydata
-                    // pf['value'] = singleFydata
                     pf['value'] = singleFydata ? singleFydata.value : "";
                     pf['status'] = singleFydata ? singleFydata.status : "PENDING";
+                    pf['modelName'] = singleFydata ? singleFydata.modelName : "";
                     if (subData[key].calculatedFrom === undefined) {
                       pf['readonly'] = singleFydata && singleFydata.status == "NA" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                     }
@@ -811,6 +802,7 @@ exports.getView = async function (req, res, next) {
         }
       }
     }
+
     let tabs = await TabsFiscalRankings.find({}).sort({ displayPriority: 1 }).lean()
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null
@@ -1896,13 +1888,15 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
           "fiscal_ranking": ObjectId(formId),
           "type": years.type
         }
+
         if (updateForm) {
           upsert = true
           payload['value'] = years.value
           payload['date'] = years.date
           payload['file'] = years.file
-        }
-        else {
+          payload['status'] = years.status
+          payload['modelName'] = years.modelName
+        } else {
           payload["status"] = years.status
         }
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, { "upsert": upsert })
@@ -1939,7 +1933,6 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
     }
     let payload = {}
     for (let key in obj) {
-
       if (updateForm) {
         if (key === "signedCopyOfFile") {
           payload[key] = obj[key]
@@ -1949,6 +1942,8 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
             throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
           }
           payload[`${key}.value`] = obj[key].value
+          payload[`${key}.status`] = obj[key].status
+          payload[`${key}.modelName`] = obj[key].modelName
         }
       }
       else {
@@ -1959,7 +1954,7 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
         payload[`${key}.status`] = status
       }
     }
-
+    // console.log("payload",payload);process.exit()
     await FiscalRanking.findOneAndUpdate(filter, payload)
   }
   catch (err) {

@@ -60,3 +60,8 @@ module.exports.CollectionNames = {
     slb: "xvfcgrantulbforms"
 }
 
+
+module.exports.FolderName = {
+    'IndicatorForWaterSupply': "indicators_wss",
+
+}
