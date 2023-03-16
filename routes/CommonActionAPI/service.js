@@ -1617,12 +1617,21 @@ function appendvalues(childQuestionData,flattedForm,shortKey){
             let valKey = arrFields[shortKey]
             let answerObjects = flattedForm[valKey]
             for(let index in answerObjects){
-                let question = childQuestionData[index]
-                let formObj = answerObjects[index]
+                // console.log("answerObjects ::: ",answerObjects)
+                let questionArr = childQuestionData[index]
                 let answer = { label: '', textValue: '', value: '' }
-                handleValues(question,answer,formObj,shortKey)
-                question.selectedValue = answer
-                console.log("question ::::: ",question)
+                for(let arrIndex in questionArr){
+                    let formObj = answerObjects[arrIndex]
+                    let question = questionArr[arrIndex]
+                    console.log("formObj :::: ",formObj)
+                    // console.log("formObj ::: ",formObj)
+                    // if(question.shortKey == "grantUtilised"){
+                    //     // console.log("question ::: ",question)
+                    //     // console.log("flattedForm :: ",formObj)
+                    // }
+                    handleValues(question,answer,formObj)
+                    question.selectedValue = answer
+                }
             }
             // console.log("valKey ::: ",valKey)
             // console.log(">>>>>>>> ",flattedForm[valKey].length)
@@ -1673,6 +1682,7 @@ const handleChildCase = async(question,obj,flattedForm)=>{
 const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
     try{
         let value = ''
+        
         if(mainKey){
             let key = mainKey + "."+question.shortKey
             question['modelValue'] = flattedForm[key]
@@ -1681,7 +1691,10 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
             obj['value'] = flattedForm[key]
         }
         else{
-            
+            if(question.shortKey == "grantUtilised"){
+                console.log("question ::: ",question)
+                console.log("flattedForm :: ",flattedForm)
+            }
             let key = question.shortKey
             question['modelValue'] = flattedForm[key]
             question['value'] = flattedForm[key]
@@ -1709,6 +1722,7 @@ const handleTextCase = async(question,obj,flattedForm)=>{
         obj['textValue'] = flattedForm[mainKey]
         obj['value'] = flattedForm[mainKey]
         // return obj
+        // console.log("obj ::::: ")
     }
     catch(err){
         console.log("error in handleTextCase :: ",err.message)
@@ -1735,6 +1749,7 @@ const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
                 break
             case "20":
                 await handleChildCase(question,obj,flattedForm,mainKey)
+                break
             default:
                 let shortKey = question.shortKey.replace(" ", "")
                 obj[answerKey] = flattedForm[shortKey]
