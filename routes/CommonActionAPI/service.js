@@ -1589,13 +1589,11 @@ function handleArrayFields(shortKey,flattedForm){
 function appendvalues(childQuestionData,flattedForm,shortKey){
     try{
         let arrKeys = Object.keys(arrFields)
+
+       if(!arrKeys.includes(shortKey)){
         for(let arr of childQuestionData){
-            
             for(let obj of arr){
-                console.log(obj)
-                
                 let questionKeys = Object.keys(customkeys[shortKey])
-                
                 for(let questionkey of questionKeys){
                     // console.log("obj.shortKey  :: ",obj.shortKey )
                     // console.log("shortKey :: ",shortKey)
@@ -1614,6 +1612,23 @@ function appendvalues(childQuestionData,flattedForm,shortKey){
                 // console.log("obj :::",obj)
             }
         }
+       }
+       if(arrKeys.includes(shortKey)){
+            let valKey = arrFields[shortKey]
+            let answerObjects = flattedForm[valKey]
+            for(let index in answerObjects){
+                let question = childQuestionData[index]
+                let formObj = answerObjects[index]
+                let answer = { label: '', textValue: '', value: '' }
+                handleValues(question,answer,formObj,shortKey)
+                question.selectedValue = answer
+                console.log("question ::::: ",question)
+            }
+            // console.log("valKey ::: ",valKey)
+            // console.log(">>>>>>>> ",flattedForm[valKey].length)
+            // console.log("childQesruin ::: ",childQuestionData.length)
+       }
+        
         return childQuestionData
     }
     catch(err){
