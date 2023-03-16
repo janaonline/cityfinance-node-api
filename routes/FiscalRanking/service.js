@@ -1998,7 +1998,7 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
   try {
     let conditionalObj = {}
     let ignorablevariables = ["guidanceNotes"]
-    const fiscalRankingKeys = ["ownRevDetails", "webLink", "totalOwnRevenueArea", "signedCopyOfFile"]
+    const fiscalRankingKeys = ["ownRevDetails", "webLink", "totalOwnRevenueArea", "signedCopyOfFile","otherUpload"]
 
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {}
