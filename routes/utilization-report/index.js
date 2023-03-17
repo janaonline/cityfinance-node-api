@@ -11,7 +11,8 @@ const {
   report,
   read2223,
   dataRepair,
-  GrantPositionDesiMalvalueUpdate
+  GrantPositionDesiMalvalueUpdate,
+  getProjects
 } = require("./service");
 
 const {changeGetApiForm} = require("./middlewares")
@@ -53,5 +54,5 @@ router.get("/utilReport", verifyToken, read2223,changeGetApiForm);
 router.get("/repair_data",dataRepair);
 
 router.get("/grantPositionDesiMalvalueUpdate",GrantPositionDesiMalvalueUpdate);
-
+router.get("/getProjects",verifyToken,getProjects)
 module.exports = router;
