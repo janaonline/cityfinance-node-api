@@ -1882,7 +1882,7 @@ async function takeActionOnForms(params, res) {
         if (multi) {
           let [response] = responses;
         /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = getSeparatedShortKeys(shortKeys);
+          let shortKeysResponse = getSeparatedShortKeys({shortKeys});
           /* Saving the status of the form for questions */
           for (let shortKey of shortKeysResponse["inner"]) {
             let params = {
@@ -1925,7 +1925,7 @@ async function takeActionOnForms(params, res) {
         } else {
           let rejectStatusAllTab = 0;
           //gets tabs array
-          let { outer: tabLevelShortKeys } = getSeparatedShortKeys(shortKeys);
+          let { outer: tabLevelShortKeys } = getSeparatedShortKeys({shortKeys});
           let tabShortKeyObj = {},
             tabShortKeyResponse = {};
           for (let tab of tabLevelShortKeys) {
