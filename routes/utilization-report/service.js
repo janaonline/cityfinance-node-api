@@ -1330,6 +1330,7 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     // console.log("projectObj :: ",projectObj)
     projectJson = await mutuateGetPayload(projectJson.data, projectObj,keysToBeDeleted,role)
     console.log("projectJson ::: ",projectJson)
+    console.log(">>>>>>>>>> formJson :: <<<<<<<<<<< ",formJson)
     response.data = projectJson
     response.success = true
     return res.json(response)
