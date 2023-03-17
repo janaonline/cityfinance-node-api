@@ -267,8 +267,8 @@ class tabsUpdationServiceFR {
   }
   getDataForSignedDoc() {
     return {
-      otherUpload:{...this.detail.otherUpload},
-      signedCopyOfFile: { ...this.detail.signedCopyOfFile }
+      otherUpload:{...this.detail.otherUpload ,required:false},
+      signedCopyOfFile: { ...this.detail.signedCopyOfFile ,required:true}
     }
   }
   async getFeedbackForTabs(condition, tabId) {
@@ -598,11 +598,13 @@ exports.getView = async function (req, res, next) {
         "signedCopyOfFile": {
           "name": null,
           "url": null,
+          "required":true,
           "status": "PENDING"
         },
         "otherUpload":{
           "name": null,
           "url": null,
+          "required":false,
           "status": "PENDING"
         },
         "fy_21_22_online": {
