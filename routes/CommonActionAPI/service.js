@@ -1644,7 +1644,6 @@ async function handleProjectCaseForDur(question,flattedForm){
         for(let obj of values){
             var nested_arr = []
             for(let keys in obj){
-                // console.log("keys:",keys)
                 order += 0.001
                 let keysObj = customkeys[question.shortKey]
                 let jsonKey = keysObj[keys]
@@ -1653,34 +1652,18 @@ async function handleProjectCaseForDur(question,flattedForm){
                     let answer = {}
                     let formObj = {}
                     formObj[jsonKey] = obj[keys]
-                    // console.log(formObj)
                     await handleCasesByInputType(questionObj)
                     await handleValues(questionObj,answer,formObj)
                     questionObj.selectedValue = answer
                     questionObj.order = order.toFixed(2).toString()
-                    nested_arr.push(questionObj)
+                    nested_arr.push({...questionObj})
                 }
             }
-            // console.log("temp_ar :: ",project_arr)
             a += 1
             project_arr.push(nested_arr)
-            // console.log("=====================================")
-            // console.log(project_arr.length)
-            // console.log("============================",values.length)
-            // if(a == values.length){
-            //     break
-            // }
-            // console.log("nested_arr",nested_arr)
-            
         }
+        question.childQuestionData = project_arr
 
-        // question.childQuestionData = project_arr
-        
-        // for(let temp of temp_arr){
-        //     for(let temp2 of temp){
-        //         console.log("temp2 :::",temp2.modelValue)
-        //     }
-        // }
     }
     catch(err){
         console.log("error in handleProjectCaseForDur ::: ",err.message)
