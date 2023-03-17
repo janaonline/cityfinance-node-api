@@ -93,10 +93,6 @@ const fiscalRankingSchema = new Schema(
             status:statusSchema(),
             value: { type: String, default: null },
         },
-        otherUpload:{
-            status:statusSchema(),
-            value: { type: String, default: null },
-        },
         email: {
             status:statusSchema(),
             value:{
@@ -190,6 +186,17 @@ const fiscalRankingSchema = new Schema(
         // paying_property_tax: numberOfQuestion,
         // paid_property_tax: numberOfQuestion,
         signedCopyOfFile: {
+            name: { type: String },
+            url: { type: String },
+            status: {
+                type: String,
+                enum: {
+                    values: ["PENDING", "APPROVED", "REJECTED"],
+                    message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+                },
+            }
+        },
+        otherUpload:{
             name: { type: String },
             url: { type: String },
             status: {
