@@ -267,7 +267,7 @@ class tabsUpdationServiceFR {
   }
   getDataForSignedDoc() {
     return {
-      otherUpload:{...this.detail.otherUpload ,required:false},
+      otherUpload:{...this.detail.otherUpload ,required:false}, // IMPORTANT :: if changed inform frotend
       signedCopyOfFile: { ...this.detail.signedCopyOfFile ,required:true}
     }
   }
@@ -604,7 +604,7 @@ exports.getView = async function (req, res, next) {
         "otherUpload":{
           "name": null,
           "url": null,
-          "required":false,
+          "required":false, // IMPORTANT :: if changed inform frotend
           "status": "PENDING"
         },
         "fy_21_22_online": {
@@ -785,30 +785,36 @@ exports.getView = async function (req, res, next) {
                 }
               }
               else if(pf?.previousYearCodes?.length){
-                console.log(pf.year)
                 let yearName = getKeyByValue(years,pf.year)
                 let year = parseInt(yearName)
                 let previousYear = year - 1 
                 let previousYearString = `${previousYear}-${year.toString().slice(-2)}`
-                let previousYearId = years[previousYearString]
+                let previousYearId = years[previousYearString].toString()
                 let calculatableYears = [years[previousYearString],pf.year]
                 let temp = {}
+                
                 for(let year of calculatableYears){
                   temp[year] = []
                   for(let code of pf?.previousYearCodes){
+                    let yearName = getKeyByValue(years,year)
+                    
                     let ulbFyAmount =await getUlbLedgerDataFilter({ code: [code], year: year, data: ulbData });
                     if(ulbFyAmount){
                       temp[year].push(ulbFyAmount)
                     }
-
                   }
-                  if(temp[previousYearId].length == 2 && temp[pf.year].length == 2 ){
-                    let sumOfPreviousYear = temp[previousYearId].reduce(a,b => a +b)
-                    let sumOfCurrentYear = temp[previousYearId].reduce(a,b => a +b)
-                    pf['value'] = sumOfPreviousYear - sumOfCurrentYear
+              
+              }
+              
+                if(temp[previousYearId].length == 2 && temp[pf.year.toString()].length == 2 ){
+                    let sumOfPreviousYear = temp[previousYearId].reduce((a,b) => a +b)
+                    let sumOfCurrentYear = temp[pf.year].reduce((a,b) => a +b)
+                    // console.log("sumOfPreviousYear :: ",sumOfPreviousYear)
+                    // console.log("sumOfCurrentYear :: ",sumOfCurrentYear)
+                    pf['value'] = sumOfCurrentYear - sumOfPreviousYear 
                     pf['modelValue'] = 'ULBLedger'
                   }
-                }
+                
               }
             }
           }
@@ -941,7 +947,7 @@ const ulbLedgersData = (objData) => {
                 '210', '220', '410', '230',
                 '240', '270', '271', '272',
                 '200', '250', '260', '280',
-                '290'
+                '290','412'
               ]
             },
             year: { $in: ['2018-19', '2019-20', '2020-21', "2021-22"] }
