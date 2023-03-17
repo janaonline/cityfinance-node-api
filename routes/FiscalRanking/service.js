@@ -364,7 +364,6 @@ const getReadOnly = (status, isDraft) => {
 }
 
 const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
-
   switch (key) {
     case "populationFr":
       return {
@@ -386,7 +385,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           dataSource,
           "3"),
         ...obj,
-        "readonly": getReadOnly(obj.status, isDraft)
+        "readonly": true
       }
     case "webLink":
       return {
@@ -573,6 +572,7 @@ exports.getView = async function (req, res, next) {
       }
       data['fyData'] = fyData
       viewOne = data
+      // console.log("viewOne ::: ",viewOne.population11)
     } else {
       viewOne = {
         "ulb": null,
@@ -635,7 +635,7 @@ exports.getView = async function (req, res, next) {
       "auditorName",
       "caMembershipNo"
     ];
-
+    console.log(viewOne.po)
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
@@ -2033,6 +2033,7 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
         else {
           if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
             let statueses = getStatusesFromObject(tab.data, "status", ["population11"])
+            
             let finalStatus = statueses.every(item => item === "APPROVED")
             temp['status'].push(finalStatus)
             await updateFiscalRankingForm(tab.data, ulbId, formId, year, updateForm, isDraft, session)
