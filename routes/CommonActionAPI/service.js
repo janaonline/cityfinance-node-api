@@ -1662,7 +1662,7 @@ async function handleProjectCaseForDur(question,flattedForm){
             a += 1
             project_arr.push(nested_arr)
         }
-        question.childQuestionData = project_arr
+        question.childQuestionData = [...project_arr]
 
     }
     catch(err){
@@ -1690,10 +1690,9 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
     }
 }
 
-function appendvalues(childQuestionData,flattedForm,shortKey,question){
+async function appendvalues(childQuestionData,flattedForm,shortKey,question){
     try{
         let arrKeys = Object.keys(arrFields)
-
        if(!arrKeys.includes(shortKey)){
         for(let arr of childQuestionData){
             for(let obj of arr){
@@ -1701,8 +1700,7 @@ function appendvalues(childQuestionData,flattedForm,shortKey,question){
                 for(let questionkey of questionKeys){
                     if(obj.shortKey === questionkey){
                         let answer = { label: '', textValue: '', value: '' }
-                        
-                        handleValues(obj,answer,flattedForm,shortKey)
+                        await handleValues(obj,answer,flattedForm,shortKey)
                         obj.selectedValue = answer
                     }
                 }
@@ -1714,7 +1712,7 @@ function appendvalues(childQuestionData,flattedForm,shortKey,question){
         }
         if(specialCases.includes(shortKey)){
             // console.log("question ::: ",question.order)
-            handleProjectCaseForDur(question,flattedForm)
+            await handleProjectCaseForDur(question,flattedForm)
         }
             // let valKey = arrFields[shortKey]
             // let answerObjects = flattedForm[valKey]
