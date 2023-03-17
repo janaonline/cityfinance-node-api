@@ -23,7 +23,7 @@ module.exports.getAll = async (req, res) =>{
 
 module.exports.getValue = async (req, res) =>{
     try {
-        const {_id} = req.query
+        const {_id} = req.params;
         if(!_id) return Response.BadRequest(res, {}, "Pass Mandatory Fields");
         let output = await MasterSkipValue.findOne({skipId: _id},{skipId:1, value: 1, category:1}).lean();
         if(!output) return Response.BadRequest(res, {}, "Failed")

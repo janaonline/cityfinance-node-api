@@ -5,8 +5,8 @@ const { verifyToken } = require('../auth/services/verifyToken')
 const Service = require('./service')
 
 
-router.get('/',Service.getValue );
-router.get('/all',Service.getAll);
+router.get('/:_id',Service.getValue );
+router.get('/',Service.getAll);
 router.post('/', verifyToken , Service.createValue);
 
 module.exports = router

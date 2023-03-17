@@ -105,7 +105,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
         "_id": req?.form?._id ,
         "formId": req.query.formId,
         "language":[],
-        "canTakeAction":true
+        "canTakeAction":false
       }
     ]
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
