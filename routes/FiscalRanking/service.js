@@ -655,7 +655,7 @@ exports.getView = async function (req, res, next) {
     // await assignCalculatedValues(fyDynemic, viewOne)
 
     let ulbData = await ulbLedgersData({ "ulb": ObjectId(req.query.ulb) });
-    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2018-19', '2019-20', '2020-21', '2021-22', '2022-23', '2023-24'] }, "ulb": ObjectId(req.query.ulb) });
+    let ulbDataUniqueFy = await ulbLedgerFy({ "financialYear": { $in: ['2017-18','2018-19', '2019-20', '2020-21', '2021-22', '2022-23', '2023-24'] }, "ulb": ObjectId(req.query.ulb) });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
 
@@ -797,15 +797,16 @@ exports.getView = async function (req, res, next) {
                   temp[year] = []
                   for(let code of pf?.previousYearCodes){
                     let yearName = getKeyByValue(years,year)
-                    
+                    // console.log("yearName :::: ",yearName,"yearID:::",year,"code :::: ",code)
                     let ulbFyAmount =await getUlbLedgerDataFilter({ code: [code], year: year, data: ulbData });
+                    // console.log("ulbFyAmount :::: ",ulbFyAmount)
                     if(ulbFyAmount){
                       temp[year].push(ulbFyAmount)
                     }
                   }
               
               }
-              
+              // console.log("temp :::: ",temp)
                 if(temp[previousYearId].length == 2 && temp[pf.year.toString()].length == 2 ){
                     let sumOfPreviousYear = temp[previousYearId].reduce((a,b) => a +b)
                     let sumOfCurrentYear = temp[pf.year].reduce((a,b) => a +b)
@@ -813,6 +814,7 @@ exports.getView = async function (req, res, next) {
                     // console.log("sumOfCurrentYear :: ",sumOfCurrentYear)
                     pf['value'] = sumOfCurrentYear - sumOfPreviousYear 
                     pf['modelName'] = 'ULBLedger'
+                    // console.log(">>>>>>>>>>>> ",pf['value'])
                   }
                 
               }
@@ -950,7 +952,7 @@ const ulbLedgersData = (objData) => {
                 '290','412'
               ]
             },
-            year: { $in: ['2018-19', '2019-20', '2020-21', "2021-22"] }
+            year: { $in: ['2017-18','2018-19', '2019-20', '2020-21', "2021-22"] }
           }
         },
         {
