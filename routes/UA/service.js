@@ -957,7 +957,7 @@ function durProjects(service,csv,ulbId){
         },
         "moreInformation": {
             "name": "More information",
-            "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"[process.env.ENV] + "/UA/get-mou-project/"
+            "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
         },
     }
     let obj = {

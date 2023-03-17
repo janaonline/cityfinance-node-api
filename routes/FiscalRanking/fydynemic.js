@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-module.exports.notRequiredValidations = ['caMembershipNo']
+module.exports.notRequiredValidations = ['caMembershipNo','population11','otherUpload']
 
 const fiscalRankingFormJson = () => {
     return {
@@ -4623,7 +4623,7 @@ const fiscalRankingFormJson = () => {
             },
             "totalExpend": {
                 "key": "totalExpend",
-                "label": "TOTAL EXPENDITURE (sum of 8 to 13)",
+                "label": "TOTAL REVENUE EXPENDITURE - ACTUAL ",
                 "displayPriority": "14",
                 "calculatedFrom": [
                    "8",
@@ -4726,6 +4726,7 @@ const fiscalRankingFormJson = () => {
                         "max": 999999999999999,
                         "required": false,
                         "type": "CaptlExp",
+                        "previousYearCodes":["410","412"],
                         "year": years["2018-19"],
                         "code": [],
                         "readonly": true,
@@ -4743,6 +4744,7 @@ const fiscalRankingFormJson = () => {
                         "max": 999999999999999,
                         "required": false,
                         "type": "CaptlExp",
+                        "previousYearCodes":["410","412"],
                         "code": [],
                         "readonly": true,
                         "formFieldType": "number",
@@ -4760,6 +4762,7 @@ const fiscalRankingFormJson = () => {
                         "max": 999999999999999,
                         "required": false,
                         "type": "CaptlExp",
+                        "previousYearCodes":["410","412"],
                         "code": [],
                         "readonly": true,
                         "formFieldType": "number",
@@ -4777,6 +4780,7 @@ const fiscalRankingFormJson = () => {
                         "max": 999999999999999,
                         "required": false,
                         "type": "CaptlExp",
+                        "previousYearCodes":["410","412"],
                         "code": [],
                         "readonly": true,
                         "formFieldType": "number",
@@ -5006,6 +5010,8 @@ const fiscalRankingFormJson = () => {
                 "displayPriority": "25",
                 "yearData": [
                     {},
+                    {},
+                    {},
                     // {
                     //     "label": "FY 2018-19",
                     //     "key": "FY2018-19",
@@ -5023,40 +5029,6 @@ const fiscalRankingFormJson = () => {
                     //     "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                     //     "placeHolder": ""
                     // },
-                    {
-                        "label": "FY 2019-20",
-                        "key": "FY2019-20",
-                        "postion": "2",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRevenueArea",
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2019-20"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2019-20 ",
-                        "placeHolder": ""
-                    },
-                    {
-                        "label": "FY 2020-21",
-                        "key": "FY2020-21",
-                        "postion": "3",
-                        "value": "",
-                        "file": "",
-                        "min": 0,
-                        "max": 999999999999999,
-                        "required": true,
-                        "type": "totalOwnRevenueArea",
-                        "code": [],
-                        "readonly": false,
-                        "formFieldType": "number",
-                        "year": years["2020-21"],
-                        "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2020-21 ",
-                        "placeHolder": ""
-                    },
                     {
                         "label": "FY 2021-22",
                         "key": "FY2021-22",
@@ -5300,11 +5272,11 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "accountStwre",
+                        "type": "fy_21_22_online",
                         "year": years["2018-19"],
                         "code": [],
                         "readonly": false,
-                        "formFieldType": "radio-toggle",
+                        "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
@@ -5343,7 +5315,7 @@ const fiscalRankingFormJson = () => {
                         "year": years["2021-22"],
                         "code": [],
                         "readonly": false,
-                        "formFieldType": "radio-toggle",
+                        "formFieldType": "number",
                         "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                         "placeHolder": ""
                     },
@@ -5638,7 +5610,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
         maximum = 50
     }
     if (label == "Mobile number") {
-        min = 1000000000
+        min = 6000000000
         maximum = 9999999999
     }
     return {

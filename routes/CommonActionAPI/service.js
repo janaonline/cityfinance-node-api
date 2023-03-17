@@ -88,7 +88,6 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
                 case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Approved_By_MoHUA
                     break;
-
                 default:
                     return StatusList.Not_Started
                     break;
@@ -794,8 +793,12 @@ function findTarget(target, arr) {
 }
 
 
-function findForm(formArray, stateId) {
-    let forms = formArray.filter((element) => {
+function getKeyByValue(object, value) {
+    return Object.keys(object).find(key => object[key] === value);
+  }
+module.exports.getKeyByValue = getKeyByValue
+function findForm(formArray, stateId){
+   let forms = formArray.filter((element)=>{
         return element.state.toString() === stateId.toString()
     })
     return forms;
