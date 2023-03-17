@@ -1641,28 +1641,50 @@ async function handleProjectCaseForDur(question,flattedForm){
         let values = flattedForm[dbKey]
         var project_arr = []
         let a = 0
-        for(let obj of values){
-            var nested_arr = []
-            for(let keys in obj){
-                order += 0.001
-                let keysObj = customkeys[question.shortKey]
-                let jsonKey = keysObj[keys]
-                let questionObj = DurProjectJson[jsonKey]
-                if(questionObj){
-                    let answer = {}
-                    let formObj = {}
-                    formObj[jsonKey] = obj[keys]
-                    await handleCasesByInputType(questionObj)
-                    await handleValues(questionObj,answer,formObj)
-                    questionObj.selectedValue = answer
-                    questionObj.order = order.toFixed(2).toString()
-                    nested_arr.push({...questionObj})
+        if(values){
+            for(let obj of values){
+                var nested_arr = []
+                for(let keys in obj){
+                    order += 0.001
+                    let keysObj = customkeys[question.shortKey]
+                    let jsonKey = keysObj[keys]
+                    let questionObj = DurProjectJson[jsonKey]
+                    if(Array.isArray(jsonKey)){
+                        for(let arr of jsonKey){
+                            questionObj = DurProjectJson[arr]
+                            if(questionObj){
+                                let answer = {}
+                                let formObj = {}
+                                formObj[arr] = obj[keys][arr]
+                                await handleCasesByInputType(questionObj)
+                                await handleValues(questionObj,answer,formObj)
+                                questionObj.selectedValue = answer
+                                questionObj.order = order.toFixed(4).toString()
+                                nested_arr.push({...questionObj})
+                            }
+    
+                        }
+                    }
+                    if(questionObj){
+                        let answer = {}
+                        let formObj = {}
+                        formObj[jsonKey] = obj[keys]
+                        await handleCasesByInputType(questionObj)
+                        await handleValues(questionObj,answer,formObj)
+                        questionObj.selectedValue = answer
+                        let questionOrder = order.toFixed(3)
+                        question.order.toString(questionOrder)
+                        nested_arr.push({...questionObj})
+                    }
                 }
+                a += 1
+                project_arr.push(nested_arr)
             }
-            a += 1
-            project_arr.push(nested_arr)
         }
-        question.childQuestionData = [...project_arr]
+        
+         let  childData = [...project_arr]
+         return childData
+        // console.log("question.childQuestionData  inside function:: ",question.childQuestionData.length)
 
     }
     catch(err){
@@ -1684,10 +1706,12 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
                 question.selectedValue = answer
             }
         }
+        
     }
     catch(err){
         console.log("error in handleArrayFields :: ",err.message)
     }
+    return childQuestionData
 }
 
 async function appendvalues(childQuestionData,flattedForm,shortKey,question){
@@ -1708,11 +1732,11 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         }
        }
        if(arrKeys.includes(shortKey)){
-         handleArrayFields(shortKey,flattedForm,childQuestionData)
+         await handleArrayFields(shortKey,flattedForm,childQuestionData)
         }
         if(specialCases.includes(shortKey)){
             // console.log("question ::: ",question.order)
-            await handleProjectCaseForDur(question,flattedForm)
+            childQuestionData = await handleProjectCaseForDur(question,flattedForm)
         }
             // let valKey = arrFields[shortKey]
             // let answerObjects = flattedForm[valKey]
@@ -1737,7 +1761,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         console.log("error in appendValues :::: ",err.message)
     }
 }
-function appendChildQues(question,obj,flattedForm){
+async function appendChildQues(question,obj,flattedForm){
     try{
         // console.log("i am here ::: ")
         // console.log("flattedform ::: ",flattedForm)
@@ -1745,7 +1769,7 @@ function appendChildQues(question,obj,flattedForm){
         if(customShortKeys.includes(question.shortKey)){
             // let childQuestionData = question.childQuestionData
         //    console.log(childQuestionData.length)
-           let childQuestionData =  appendvalues(question.childQuestionData,flattedForm,question.shortKey,question)
+           let childQuestionData = await appendvalues(question.childQuestionData,flattedForm,question.shortKey,question)
         //    if(question.shortKey === "grantPosition"){
         //         console.log("cs ::::::::: ",childQuestionData)
         //     }
@@ -1764,8 +1788,11 @@ function appendChildQues(question,obj,flattedForm){
 const handleChildCase = async(question,obj,flattedForm)=>{
     try{
         let order = question.order
-        let childQuestionData = appendChildQues(question,obj,flattedForm)
-        question.childQuestionData = childQuestionData  
+        let childQuestionData = await appendChildQues(question,obj,flattedForm)
+        if(childQuestionData){
+            question.childQuestionData = childQuestionData  
+        }
+        // console.log("childQuestionData ::::::::::",question)
     
     }
     catch(err){
@@ -1790,14 +1817,7 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
             question['value'] = flattedForm[key]
             obj['textValue'] = flattedForm[key]
             obj['value'] = flattedForm[key]
-            // if(shortKey === "waterManagement_tableView"){
-            //     console.log("cs ::::::::: ",obj)
-            // }
-            // console.log("obj ::::::::::: ",obj)
         }
-        // console.log(">>>>>>>>>>>>",flattedForm)
-        // console.log("question :::::: ",question.shortKey)
-        // console.log()
     }
     catch(err){
         console.log("error in handleNumericCase ::: ",err.message)
@@ -1920,6 +1940,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
                     await handleCasesByInputType(question)
                     // if (Array.isArray(answerKey)) {
                     await handleValues(question,obj,flattedForm)
+                    // console.log("question  ::: ",question.childQuestionData )
                     // }
                     // else {
                     //     let shortKey = question.shortKey.replace(" ", "")
