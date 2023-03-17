@@ -23,11 +23,13 @@ const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const { groupByKey } = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
-const { canTakenAction } = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
-const { FormNames, YEAR_CONSTANTS } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY } = require('../../util/FormNames');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
+const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = require('../../util/masterFunctions');
+const CurrentStatus = require("../../models/CurrentStatus");
 
 var https = require('https');
 var request = require('request')
@@ -354,6 +356,7 @@ exports.createUpdate = async (req, res) => {
     req.body.actionTakenBy = req?.decoded._id;
     req.body.actionTakenByRole = req?.decoded.role;
     const formName = FormNames["annualAcc"];
+    const masterFormId = FORMIDs['AnnualAccount']
     const { name: ulbName } = req.decoded;
 
     req.body.ulb = req?.decoded.ulb;
@@ -488,6 +491,163 @@ exports.createUpdate = async (req, res) => {
     }
 
     const submittedForm = await AnnualAccountData.findOne(condition);
+
+    if (data.design_year === YEAR_CONSTANTS["23_24"] && data.ulb) {
+      // const session = await mongoose.startSession();
+      // await session.startTransaction();
+      try {
+        const formBodyStatus = formData.status;
+        formData.status = "";
+        formData.currentFormStatus = formBodyStatus;
+        /* Finding the data from the database for 23-24 form */
+        let formData2324 = await AnnualAccountData.findOne({
+          ulb: data.ulb,
+          design_year: data.design_year,
+        }).lean();
+        let formCurrentStatus;
+        //if no form found status is Not Started
+        if (!formData2324) {
+          formCurrentStatus = {
+            status: MASTER_STATUS["Not Started"],
+          };
+        } else {
+          formCurrentStatus = await CurrentStatus.findOne({
+            recordId: formData2324._id,
+          }).lean();
+        }
+
+        if (
+          formCurrentStatus &&
+          [
+            MASTER_STATUS["Not Started"],
+            MASTER_STATUS["In Progress"],
+            MASTER_STATUS["Rejected by State"],
+            MASTER_STATUS["Rejected by MoHUA"],
+          ].includes(formCurrentStatus.status)
+        ) {
+          let formSubmit;
+          formData["ulbSubmit"] =
+            formBodyStatus === MASTER_STATUS["Under Review by State"]
+              ? new Date()
+              : "";
+          if (formData2324) {
+            formSubmit = await AnnualAccountData.findOneAndUpdate(
+              {
+                _id: formData2324._id,
+              },
+              {
+                $set: formData,
+              },
+              {
+                new: true,
+                // session: session
+              }
+            );
+          } else {
+            formSubmit = await AnnualAccountData.create(
+              formData
+              // { session }
+            );
+          }
+          let shortKeys = await getShortKeys(masterFormId);
+          if (!Array.isArray(shortKeys) || shortKeys.length <= 0) {
+            return Response.BadRequest(res, {}, "ShortKeys not found");
+          }
+          // const {outer : tabLevelShortKeysArray} = getSeparatedShortKeys(shortKeys);
+          //filter shortKeys based on Tab selection
+          shortKeys = filterTabShortKeys(req, shortKeys);
+
+          if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+            for (let shortKey of shortKeys) {
+              if (TAB_OBJ[shortKey]) {
+                shortKey = `tab_${shortKey}`;
+              }
+              let currentStatusData = {
+                formId: masterFormId,
+                recordId: ObjectId(formSubmit._id),
+                status: MASTER_STATUS["In Progress"],
+                level: FORM_LEVEL["tab"],
+                shortKey,
+                rejectReason: "",
+                responseFile: "",
+                actionTakenByRole: actionTakenByRole,
+                actionTakenBy: ObjectId(actionTakenBy),
+              };
+              await saveCurrentStatus({
+                body: currentStatusData,
+                // session
+              });
+            }
+            // await session.commitTransaction();
+            return Response.OK(res, {}, "Form Submitted");
+          } else if (
+            formBodyStatus === MASTER_STATUS["Under Review by State"]
+          ) {
+            let bodyData = {
+              formId: masterFormId,
+              recordId: ObjectId(formSubmit._id),
+              data: formSubmit,
+            };
+            /* Saving the form history of the user. */
+            await saveFormHistory({
+              body: bodyData,
+              // session
+            });
+            for (let shortKey of shortKeys) {
+              if (TAB_OBJ[shortKey]) {
+                shortKey = `tab_${shortKey}`;
+              }
+              let currentStatusData = {
+                formId: masterFormId,
+                recordId: ObjectId(formSubmit._id),
+                status: MASTER_STATUS["Under Review by State"],
+                level: FORM_LEVEL["tab"],
+                shortKey,
+                rejectReason: "",
+                responseFile: "",
+                actionTakenByRole: actionTakenByRole,
+                actionTakenBy: ObjectId(actionTakenBy),
+              };
+              await saveCurrentStatus({
+                body: currentStatusData,
+                // session
+              });
+
+              let statusHistory = {
+                formId: masterFormId,
+                recordId: ObjectId(formSubmit._id),
+                shortKey: FORM_LEVEL_SHORTKEY["tab"],
+                data: currentStatusData,
+              };
+              await saveStatusHistory({
+                body: statusHistory,
+                //  session
+              });
+            }
+            // await session.commitTransaction();
+            return Response.OK(res, {}, "Form Submitted");
+          }
+        } else if (
+          ![
+            MASTER_STATUS["Approved by MoHUA"],
+            MASTER_STATUS["Under Review by MoHUA"],
+            MASTER_STATUS["Under Review by State"],
+          ].includes(formData2324.status)
+        ) {
+          return res.status(200).json({
+            status: true,
+            message: "Form already submitted.",
+          });
+        }
+      } catch (error) {
+        // await session.abortTransaction();
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+      // await session.endSession();
+    }
     if (formData['design_year'] == '606aaf854dff55e6c075d219') {
       formData.modifiedAt = Date.now();
       if (
@@ -1732,7 +1892,18 @@ exports.getAccounts = async (req, res) => {
 
     }
     Object.assign(annualAccountData, obj)
-    Object.assign(annualAccountData, { canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB", role) })
+    if (design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+      let params = {
+        status: annualAccountData.currentFormStatus,
+        formType: "ULB",
+        loggedInUser: role,
+      };
+      Object.assign(annualAccountData, {
+        canTakeAction: canTakenActionMaster(params),
+      });
+    }else{
+      Object.assign(annualAccountData, { canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB", role) })
+    }
     // Object.assign(annualAccountData, {canTakeAction: false })
     if (annualAccountData?.status === "PENDING" && (role === "STATE" || role === "MoHUA")) {
       annualAccountData.unAudited.rejectReason_state = "";
@@ -1765,6 +1936,25 @@ exports.getAccounts = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+const TAB_OBJ = {
+  audited: 'audited',
+  unAudited: 'unAudited'
+}
+function filterTabShortKeys(req, shortKeys) {
+  const separator = ".";
+  let output= shortKeys;
+  if (!req.body.audited.submit_annual_accounts) {
+    output = shortKeys.filter(el => {
+      return el.split(separator)[0] === TAB_OBJ['audited'];
+    });
+  }
+  if (!req.body.unAudited.submit_annual_accounts) {
+    output = shortKeys.filter(el => {
+      return el.split(separator)[0] === TAB_OBJ['unAudited'];
+    });
+  }
+  return output;
+}
 
 function clearResponseReason(formData) {
 

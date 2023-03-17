@@ -102,7 +102,7 @@ const AnnualAccountDataSchema = new Schema(
     status: {
       type: String,
       enum: {
-        values: ["PENDING", "APPROVED", "REJECTED", "N/A"],
+        values: ["PENDING", "APPROVED", "REJECTED", "N/A", ""],
         message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
       },
     },
@@ -123,6 +123,10 @@ const AnnualAccountDataSchema = new Schema(
       type: String,
       default: null,
     },
+    currentFormStatus: {
+      type: Number,
+      required: true
+    }
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
