@@ -23,6 +23,14 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
         let formJson = await FormsJson.findOne(condition).lean()
         let obj = formJson ? formJson.data : {}
+        let responseData = [
+            {
+              "_id": req?.form?._id ,
+              "formId": req.query.formId,
+              "language":[],
+              "canTakeAction":false
+            }
+          ]
         if(latestYear){
             if(!jsonFormId){
                 response.message = "formId is required"
@@ -32,7 +40,12 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             let flattedForm = await getFlatObj(form)
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
-            response.data = obj
+            responseData[0]['language'] = obj
+            response.success = true
+            response.data = responseData
+            response.message = 'Form Questionare!'
+            response.data = responseData
+            console.log("! ::")
             return res.status(200).json(response)
         }
         else{
