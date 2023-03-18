@@ -44,8 +44,6 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             response.success = true
             response.data = responseData
             response.message = 'Form Questionare!'
-            response.data = responseData
-            console.log("! ::")
             return res.status(200).json(response)
         }
         else{

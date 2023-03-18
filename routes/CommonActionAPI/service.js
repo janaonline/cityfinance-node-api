@@ -42,6 +42,7 @@ var customkeys = {
     "grantPosition":{"unUtilizedPrevYr":"grantPosition.unUtilizedPrevYr",
     "receivedDuringYr":"grantPosition.receivedDuringYr",
     "expDuringYr":"grantPosition.expDuringYr",
+    "closingBal":"closingBal",
     },
     "waterManagement_tableView":{
         "category_name":"category_name",
@@ -1662,7 +1663,7 @@ async function handleProjectCaseForDur(question,flattedForm){
                                 formObj[arr] = obj[keys][arr]
                                 await handleCasesByInputType(questionObj)
                                 await handleValues(questionObj,answer,formObj)
-                                questionObj.selectedValue = answer
+                                questionObj.selectedValue = [answer]
                                 questionObj.order = order.toFixed(4).toString()
                                 nested_arr.push({...questionObj})
                             }
@@ -1675,7 +1676,7 @@ async function handleProjectCaseForDur(question,flattedForm){
                         formObj[jsonKey] = obj[keys]
                         await handleCasesByInputType(questionObj)
                         await handleValues(questionObj,answer,formObj)
-                        questionObj.selectedValue = answer
+                        questionObj.selectedValue = [answer]
                         let questionOrder = order.toFixed(3)
                         question.order.toString(questionOrder)
                         nested_arr.push({...questionObj})
@@ -1707,7 +1708,7 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
                 let question = questionArr[arrIndex]
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question,answer,formObj)
-                question.selectedValue = answer
+                question.selectedValue = [answer]
             }
         }
         
@@ -1729,7 +1730,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                     if(obj.shortKey === questionkey){
                         let answer = { label: '', textValue: '', value: '' }
                         await handleValues(obj,answer,flattedForm,shortKey)
-                        obj.selectedValue = answer
+                        obj.selectedValue = [answer]
                     }
                 }
             }
