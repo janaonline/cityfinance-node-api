@@ -39,10 +39,11 @@ var customkeys = {
         "ulbName":"ulbName",
         "grantType":"grantType"
     },
-    "grantPosition":{"unUtilizedPrevYr":"grantPosition.unUtilizedPrevYr",
-    "receivedDuringYr":"grantPosition.receivedDuringYr",
-    "expDuringYr":"grantPosition.expDuringYr",
-    "closingBal":"closingBal",
+    "grantPosition":{
+        "grantPosition.unUtilizedPrevYr":"grantPosition.unUtilizedPrevYr",
+        "grantPosition.receivedDuringYr":"grantPosition.receivedDuringYr",
+        "grantPosition.expDuringYr":"grantPosition.expDuringYr",
+        "grantPosition.closingBal":"grantPosition.closingBal",
     },
     "waterManagement_tableView":{
         "category_name":"category_name",
@@ -1639,6 +1640,22 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
     }
 }
 
+async function handleDbValues(questionObj,formObj,order){
+    try{
+        let answer = { label: '', textValue: '', value: '' }
+        await handleCasesByInputType(questionObj)
+        await handleValues(questionObj,answer,formObj)
+        questionObj.selectedValue = [answer]
+        let questionOrder = order.toFixed(3)
+        questionObj.order = questionOrder
+        return {...questionObj}
+    }
+    catch(err){
+        console.log("error in handleProjectedArr ::: ",err.message)
+    }
+}
+
+
 async function handleProjectCaseForDur(question,flattedForm){
     try{
         let order = parseInt(question.order)
@@ -1650,35 +1667,27 @@ async function handleProjectCaseForDur(question,flattedForm){
             for(let obj of values){
                 var nested_arr = []
                 for(let keys in obj){
-                    order += 0.001
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
                     let questionObj = DurProjectJson[jsonKey]
                     if(Array.isArray(jsonKey)){
                         for(let arr of jsonKey){
-                            questionObj = DurProjectJson[arr]
-                            if(questionObj){
-                                let answer = {}
+                            let question =  DurProjectJson[arr]
+                            if(question){
+                                order += 0.001
                                 let formObj = {}
                                 formObj[arr] = obj[keys][arr]
-                                await handleCasesByInputType(questionObj)
-                                await handleValues(questionObj,answer,formObj)
-                                questionObj.selectedValue = [answer]
-                                questionObj.order = order.toFixed(4).toString()
-                                nested_arr.push({...questionObj})
+                                question =  await handleDbValues(question,formObj,order)
+                                nested_arr.push({...question})
                             }
     
                         }
                     }
                     if(questionObj){
-                        let answer = {}
+                        order += 0.001
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
-                        await handleCasesByInputType(questionObj)
-                        await handleValues(questionObj,answer,formObj)
-                        questionObj.selectedValue = [answer]
-                        let questionOrder = order.toFixed(3)
-                        question.order.toString(questionOrder)
+                        questionObj =  await handleDbValues(questionObj,formObj,order)
                         nested_arr.push({...questionObj})
                     }
                 }
@@ -1728,8 +1737,11 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                 let questionKeys = Object.keys(customkeys[shortKey])
                 for(let questionkey of questionKeys){
                     if(obj.shortKey === questionkey){
+                        // console.log("flattedForm ::: ",flattedForm)
+                        // console.log("obj.shortKey ::::: ",obj.shortKey)
+                        // console.log("questionkey :::: ",questionkey)
                         let answer = { label: '', textValue: '', value: '' }
-                        await handleValues(obj,answer,flattedForm,shortKey)
+                        await handleValues(obj,answer,flattedForm)
                         obj.selectedValue = [answer]
                     }
                 }
@@ -1795,7 +1807,7 @@ const handleChildCase = async(question,obj,flattedForm)=>{
         let order = question.order
         let childQuestionData = await appendChildQues(question,obj,flattedForm)
         if(childQuestionData){
-            question.childQuestionData = childQuestionData  
+            question.childQuestionData = childQuestionData
         }
         // console.log("childQuestionData ::::::::::",question)
     
