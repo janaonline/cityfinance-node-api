@@ -459,7 +459,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ...getInputKeysByType(
           "email",
           "",
-          "Email",
+          "Email ID of the Nodal Officer",
           dataSource,
           "3"),
         ...obj,
@@ -470,7 +470,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ...getInputKeysByType(
           "number",
           "",
-          "Mobile number",
+          "Mobile number of the Nodal Officer",
           dataSource,
           "4"),
         ...obj,

@@ -77,7 +77,8 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "",
                         "placeHolder": ""
                     }
-                ]
+                ],
+                "info": "Receipts include both revenue and capital receipts; and includes own revenues, assigned revenues, grants, transfers etc."
             },
             "totalRcptWaterSupply": {
                 "key": "totalRcptWaterSupply",
@@ -152,7 +153,8 @@ const fiscalRankingFormJson = () => {
                         "bottomText": "",
                         "placeHolder": ""
                     }
-                ]
+                ],
+                "info": "Receipts include both revenue and capital receipts; and includes own revenues, assigned revenues, grants, transfers etc."
             },
             "sewerageTax": {
                 "key": "sewerageTax",
@@ -228,7 +230,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "Sewerage tax shall include tax levied for provision of sanitation and/or sewerage service delivery"
             },
             "totalRcptSanitation": {
                 "key": "totalRcptSanitation",
@@ -303,7 +305,8 @@ const fiscalRankingFormJson = () => {
                         "bottomText": " ",
                         "placeHolder": ""
                     }
-                ]
+                ],
+                "info": "Receipts include both revenue and capital receipts; and includes own revenues, assigned revenues, grants, transfers etc."
             },
             "RcptBudget": {
                 "key": "RcptBudget",
@@ -378,7 +381,8 @@ const fiscalRankingFormJson = () => {
                         "bottomText": " ",
                         "placeHolder": ""
                     }
-                ]
+                ],
+                "info": "Receipts include both revenue and capital receipts; and includes own revenues, assigned revenues, grants, transfers etc."
             },
             "propertyTax": {
                 "key": "propertyTax",
@@ -454,7 +458,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "Property tax shall include cesses levied by ULBs with property tax, eg. Library cess, SWM cess, education cess"
             },
             "waterTax": {
                 "key": "waterTax",
@@ -530,7 +534,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "Water tax shall include tax levied for provision of water supply services"
             },
             "taxRevenue": {
                 "key": "taxRevenue",
@@ -692,7 +696,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "profTax": {
                 "key": "profTax",
@@ -768,7 +772,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "entertainTax": {
                 "key": "entertainTax",
@@ -844,7 +848,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "advTax": {
                 "key": "advTax",
@@ -920,7 +924,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherTaxRev": {
                 "key": "otherTaxRev",
@@ -996,7 +1000,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "feeUserChrg": {
                 "key": "feeUserChrg",
@@ -1154,11 +1158,11 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "sanitationFee": {
                 "key": "sanitationFee",
-                "label": "Fees & user charges from Sanitation/seweragee",
+                "label": "Fees & user charges from Sanitation / Sewerage", 
                 "displayPriority": "2.2",
                 "yearData": [
                     {
@@ -1230,11 +1234,11 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "garbageFee": {
                 "key": "garbageFee",
-                "label": "Fees & user charges from Garbage collection / Solid waste managemente",
+                "label": "Fees & user charges from Garbage collection / Solid waste management",
                 "displayPriority": "2.3",
                 "yearData": [
                     {
@@ -1306,7 +1310,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherFee": {
                 "key": "otherFee",
@@ -1382,7 +1386,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "rentInc": {
                 "key": "rentInc",
@@ -1458,7 +1462,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "assignedCompensation": {
                 "key": "assignedCompensation",
@@ -1614,7 +1618,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherCompensation": {
                 "key": "otherCompensation",
@@ -1690,7 +1694,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "revGrants": {
                 "key": "revGrants",
@@ -1929,7 +1933,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "faOther": {
                 "key": "faOther",
@@ -2005,7 +2009,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "debtOs": {
                 "key": "debtOs",
@@ -2081,7 +2085,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "assetsSale": {
                 "key": "assetsSale",
@@ -2237,7 +2241,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "To be taken from Audited Annual Accounts"
             },
             "incmOtherAssets": {
                 "key": "incmOtherAssets",
@@ -2313,7 +2317,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "To be taken from Audited Annual Accounts"
             },
             "netRevenue": {
                 "key": "netRevenue",
@@ -2394,7 +2398,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "cfcGrant": {
                 "key": "cfcGrant",
@@ -2470,11 +2474,11 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "cssGrant": {
                 "key": "cssGrant",
-                "label": "Centrally sponsored schemes (CSS) grants",
+                "label": "Centrally Sponsored Schemes (CSS) grants", 
                 "displayPriority": "5.12",
                 "yearData": [
                     {
@@ -2546,7 +2550,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "centralscheme": {
                 "key": "centralscheme",
@@ -2622,7 +2626,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "centralTransfer": {
                 "key": "centralTransfer",
@@ -2698,7 +2702,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "stateGrant": {
                 "key": "stateGrant",
@@ -2855,7 +2859,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "stateScheme": {
                 "key": "stateScheme",
@@ -2931,7 +2935,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherStateTrans": {
                 "key": "otherStateTrans",
@@ -3007,7 +3011,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherGrant": {
                 "key": "otherGrant",
@@ -3083,7 +3087,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherIncome": {
                 "key": "otherIncome",
@@ -3159,7 +3163,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "totalOwnRevenue": {
                 "key": "totalOwnRevenue",
@@ -3241,11 +3245,11 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "totalIncome": {
                 "key": "totalIncome",
-                "label": "TOTAL REVENUE RECIEPTS - ACTUAL",
+                "label": "TOTAL REVENUE RECEIPTS – ACTUAL (sum of 1 to 6)",
                 "displayPriority": "7.2",
                 "calculatedFrom": [
                     "1",
@@ -3408,7 +3412,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "categoryA": {
                 "key": "categoryA",
@@ -3484,7 +3488,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "categoryB": {
                 "key": "categoryB",
@@ -3560,7 +3564,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "categoryC": {
                 "key": "categoryC",
@@ -3636,7 +3640,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherEstExpense": {
                 "key": "otherEstExpense",
@@ -3712,7 +3716,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "adminExpense": {
                 "key": "adminExpense",
@@ -3788,7 +3792,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "fixedAsset": {
                 "key": "fixedAsset",
@@ -3952,7 +3956,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "Capital Expenditure = (closing balance Gross Block + closing balance Capital Work-In-Progress) – (opening balance Gross Block + opening balance Capital Work-In-Progress)"
             },
             "totalOmExp": {
                 "key": "totalOmExp",
@@ -4109,11 +4113,11 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "totalOMCaptlExpWaterSupply": {
                 "key": "totalOMCaptlExpWaterSupply",
-                "label": "O & M Expenditure for Water Supply",
+                "label": "O&M expense on Water Supply",
                 "displayPriority": "10.1",
                 "yearData": [
                     {
@@ -4188,7 +4192,7 @@ const fiscalRankingFormJson = () => {
             },
             "totalOMCaptlExpSanitation": {
                 "key": "totalOMCaptlExpSanitation",
-                "label": "O & M Expenditure for Sanitation/Sewerage",
+                "label": "O&M expense on Sanitation / Sewerage",
                 "displayPriority": "10.2",
                 "yearData": [
                     {
@@ -4335,7 +4339,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "misExpense": {
                 "key": "misExpense",
@@ -4411,7 +4415,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "otherExpense": {
                 "key": "otherExpense",
@@ -4487,7 +4491,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                // "info": "To be taken from Approved Annual Budget"
             },
             "totalExpend": {
                 "key": "totalExpend",
@@ -4744,11 +4748,11 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "Capital Expenditure = (closing balance Gross Block + closing balance Capital Work-In-Progress) – (opening balance Gross Block + opening balance Capital Work-In-Progress)"
             },
             "CaptlExpSanitation": {
                 "key": "CaptlExpSanitation",
-                "label": "Capital Expenditure for Water Supply",
+                "label": "Capital Expenditure for Sanitation/Sewerage",
                 "displayPriority": "16.2",
                 "yearData": [
                     {
@@ -4820,7 +4824,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Approved Annual Budget"
+                "info": "Capital Expenditure = (closing balance Gross Block + closing balance Capital Work-In-Progress) – (opening balance Gross Block + opening balance Capital Work-In-Progress)"
             },
             "auditAnnualReport": {
                 "key": "auditAnnualReport",
@@ -4939,7 +4943,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             },
             "registerGis": {
                 "key": "registerGis",
@@ -4964,7 +4968,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             },
             "registerGisProof": {
                 "key": "registerGisProof",
@@ -4995,7 +4999,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             },
             "accountStwre": {
                 "label": "Do you use accounting software? ( Eg.Tally, State-prescribed ERP etc)",
@@ -5031,7 +5035,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             },
             "accountStwreProof": {
                 "key": "accountStwreProof",
@@ -5062,7 +5066,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             },
             "fy_21_22_cash": {
                 "label": "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD",
@@ -5102,7 +5106,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             },
             "fy_21_22_online": {
                 "label": "Own Revenue collection amount for FY 2021-22 - by Online modes/channels",
@@ -5142,7 +5146,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                "info": "Online payment modes/channels shall include: Net Banking, NEFT, RTGS, Credit Card, Debit card, UPI, Payment wallets & others"
             },
             "property_tax_register": {
                 "label": "Number of Properties assessed/listed as per Property Tax Register",
@@ -5181,10 +5185,10 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                "info": "Assessed properties is the sum total of all properties (across all categories such as residential, commercial, industrial, government, education etc) which have been identified (through surveys etc) by the municipality and included as part of the municipality’s official property records / register."
             },
             "paying_property_tax": {
-                "label": "Number of Properties assessed/listed as per Property Tax Register (as on 1st April 2022)",
+                "label": "Number of Properties exempt from paying Property Tax",
                 "key": "paying_property_tax",
                 "postion": "1",
                 "displayPriority": "32",
@@ -5220,10 +5224,10 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             },
             "paid_property_tax": {
-                "label": "Number of Properties exempt from paying Property Tax",
+                "label": "Number of Properties for which Property Tax has been paid",
                 "key": "paid_property_tax",
                 "postion": "3",
                 "displayPriority": "33",
@@ -5260,7 +5264,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "Self-reported"
+                // "info": "Self-reported"
             }
         },
         uploadFyDoc: {
@@ -5375,7 +5379,7 @@ const fiscalRankingFormJson = () => {
             },
             auditedAnnualFySt: {
                 key: 'auditedAnnualFySt',
-                label: 'Copy of Audited Annual Financial Statements in English',
+                label: 'Copy of Audited Annual Financial Statements preferably in English',
                 displayPriority: "3",
                 yearData: [
                     {
