@@ -639,6 +639,7 @@ exports.createUpdate = async (req, res) => {
       isCompleted: !annualAccountData.isDraft,
     });
   } catch (err) {
+    console.log("error :: ",err.message)
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
@@ -1638,7 +1639,7 @@ exports.nmpcEligibility = catchAsync(async (req, res) => {
   })
 
 })
-exports.getAccounts = async (req, res) => {
+exports.getAccounts = async (req, res,next) => {
   try {
     let role = req.decoded.role;
     let { design_year, ulb } = req.query;
@@ -1695,15 +1696,16 @@ exports.getAccounts = async (req, res) => {
 
     ulb = req?.decoded.ulb ?? ulb;
 
-
     annualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year
     }).select({ history: 0 });
+    // console.log("annualAccountData :::: ",annualAccountData)
     if (!annualAccountData) {
-
-      return res.status(400).json(obj);
-
+      req.form = false
+      req.obj = obj
+      next()
+      return
     }
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
@@ -1759,7 +1761,9 @@ exports.getAccounts = async (req, res) => {
       clearResponseReason(annualAccountData);
 
     }
-    return res.status(200).json(annualAccountData);
+    req.form = annualAccountData
+    next()
+    // return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
