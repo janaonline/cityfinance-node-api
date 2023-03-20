@@ -2,6 +2,7 @@ const express = require("express");
 const { verify } = require("jsonwebtoken");
 const router = express.Router();
 const { verifyToken } = require("../auth/services/verifyToken");
+const {changePayload} = require("./middlewares")
 const { getAccounts, action, createUpdate, getCSVAudited, getCSVUnaudited,nmpcEligibility, dashboard, dataset, datasetDownload, fileDeFuncFiles, updateAnnualAccForms } = require("./service");
 const { userAuth } = require("../../middlewares/actionUserAuth");
 // const {emailTrigger} =  require('../../cronjob/stateEmail')
@@ -12,7 +13,7 @@ router.get("/nmpcUntiedEligibility", verifyToken, nmpcEligibility);
 router.get("/getCSV-Audited", getCSVAudited);
 router.get("/getCSV-Unaudited", getCSVUnaudited);
 router.get("/dashboard", dashboard);
-router.post("/create", verifyToken, createUpdate);
+router.post("/create", verifyToken,changePayload ,createUpdate);
 router.post("/action", verifyToken, userAuth, action);
 router.get("/datasets", dataset);
 router.post("/datasets", datasetDownload);
