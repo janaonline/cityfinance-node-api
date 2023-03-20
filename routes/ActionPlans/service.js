@@ -69,6 +69,16 @@ exports.saveActionPlans = async (req, res) => {
     condition["design_year"] = data.design_year;
     condition["state"] = data.state;
 
+    if(formData.isDraft ===  false && formData['uaData']){
+      
+      let [validatedSuccess, response] = await validateFormData(formData['uaData']);
+      if(!validatedSuccess){
+        return res.status(400).json({
+          status: false,
+          message: response
+        });
+      }
+    }
     if(data.state && data.design_year){
       const submittedForm = await ActionPlans.findOne(condition);
       if (
@@ -184,6 +194,22 @@ exports.saveActionPlans = async (req, res) => {
   }
 };
 
+async function validateFormData(uaData){
+  let success = true, response="";
+  for(let ua of uaData){
+    for(let yearData of ua['yearOutlay']){
+      
+    }
+
+    for(let project of ua['sourceFund']){
+
+    }
+
+    for(let project of ua['projectExecute'] ){
+
+    }
+  }
+}
 exports.getActionPlans = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
