@@ -37,7 +37,7 @@ module.exports.login = async (req, res) => {
     }
     
     if (isMatch) {
-      let token = await createToken(user, sessionId);
+      let token = await createToken(user, sessionId,req.body);
       const allYears = await getYears();
       return res.status(200).json({
         success: true,
