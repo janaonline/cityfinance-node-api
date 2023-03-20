@@ -1947,7 +1947,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
           return validator
         }
     }
-    else if(dynamicObj.modelName === "FiscalRanking"){
+    else if(!dynamicObj.modelName === "ULBLedger" && dynamicObj.calculatedFrom){
       let sum = getTotalForCalculatedValues(dynamicObj,displayPriorities,years)
       if(years.value === sum){
         validator.valid = true,
@@ -1960,7 +1960,6 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
     }
   }
   catch(err){
-    console.log("error  in validateAccordingtoLedgers ::: ")
     console.log("error in validateAccordingtoLedgers :: ",err.message)
   }
   return validator
