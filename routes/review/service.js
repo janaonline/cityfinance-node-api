@@ -1,7 +1,7 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
 const CollectionNames = require('../../util/collectionName')
-const { calculateStatus } = require('../CommonActionAPI/service')
+const { calculateStatus,canTakeActionOrViewOnly } = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
@@ -1827,41 +1827,41 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
   return oldQuery;
 }
 
-function canTakeActionOrViewOnly(data, userRole) {
-  let status = data['formStatus'];
-  switch (true) {
-    case status == STATUS_LIST.Not_Started:
-      return false;
-      break;
-    case status == STATUS_LIST.In_Progress:
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_State && userRole == 'STATE':
-      return true;
-      break;
-    case status == STATUS_LIST.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-      return false;
-      break;
-    case status == STATUS_LIST.Rejected_By_State:
-      return false;
-      break;
-    case status == STATUS_LIST.Rejected_By_MoHUA:
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'STATE':
-      return false;
-      break;
-    case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'MoHUA':
-      return true;
-      break;
-    case status == STATUS_LIST.Approved_By_MoHUA:
-      return false;
-      break;
+// function canTakeActionOrViewOnly(data, userRole) {
+//   let status = data['formStatus'];
+//   switch (true) {
+//     case status == STATUS_LIST.Not_Started:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.In_Progress:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_State && userRole == 'STATE':
+//       return true;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Rejected_By_State:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Rejected_By_MoHUA:
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'STATE':
+//       return false;
+//       break;
+//     case status == STATUS_LIST.Under_Review_By_MoHUA && userRole == 'MoHUA':
+//       return true;
+//       break;
+//     case status == STATUS_LIST.Approved_By_MoHUA:
+//       return false;
+//       break;
 
-    default:
-      break;
-  }
-}
+//     default:
+//       break;
+//   }
+// }
 
 module.exports.get = catchAsync(async (req, res) => {
   let loggedInUserRole = req.decoded.role
@@ -1978,13 +1978,14 @@ module.exports.get = catchAsync(async (req, res) => {
     delete ulbColumnNames.filled_provisional
   }
   let isFormOptional = formTab.optional
-  const model = require(`../../models/${path}`)
+  // const model = require(`../../models/${path}`)
   let newFilter = await Service.mapFilterNew(filter);
   if (req.query.status === STATUS_LIST.Not_Started) {// to apply not started filter
     Object.assign(newFilter, { formData: "" });
-  }
+  }  
+  let folderName = formTab?.folderName;
 
-  let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName);
+  let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
   if (getQuery) return res.json({
     query: query[0]
   })
@@ -2244,7 +2245,7 @@ function countStatusData(element, collectionName) {
     }
   }
 }
-const computeQuery = (formName, userRole, isFormOptional, state, design_year, csv, skip, limit, filter, dbCollectionName) => {
+const computeQuery = (formName, userRole, isFormOptional, state, design_year, csv, skip, limit, filter, dbCollectionName, folderName) => {
   let filledQueryExpression = {}
   if (isFormOptional) {
     // if form is optional check if the deciding condition is true or false
@@ -2631,7 +2632,25 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
       ];
 
       query_s = createDynamicQuery(formName, query_s, userRole, csv);
+      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
+      if( folderName === List['FolderName']['IndicatorForWaterSupply'] ){
+        let startIndex = query_s.findIndex((el)=>{
+          return el.hasOwnProperty("$lookup");
+        })
 
+      /* Splicing the query_s string starting at the startIndex. */
+         query_s.splice(startIndex);
+         query_s.push({
+          $project: {
+            state: "$_id",
+            stateName: "$name",
+            stateCode: "$code",
+            regionalName: 1,
+            filled: "Not Applicable"
+          },
+          
+         })
+      }
       let filterApplied_s = Object.keys(filter).length > 0
       if (filterApplied_s) {
         query_s.push({

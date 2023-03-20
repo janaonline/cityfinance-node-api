@@ -25,6 +25,7 @@ module.exports.getForm = async (req, res) => {
         const condition = {};
         const ulb = req.decoded.ulb;
         let actionTakenByRole = req.decoded.role;
+
         condition.design_year = data.design_year;
         condition.state = data.state;
         let mpc = false;
@@ -86,7 +87,6 @@ module.exports.getForm = async (req, res) => {
             }
         }
         if (prevFormData) {
-
             if (prevFormData?.nonmillion_tied) {
                 obj["type"] = "nonmillion_tied";
                 obj["file"]["name"] = prevFormData["nonmillion_tied"]["pdfName"];
@@ -115,12 +115,12 @@ module.exports.getForm = async (req, res) => {
                 obj["key"] = `nonmillion_untied_2021-22_2`
                 result.push(JSON.parse(JSON.stringify(obj)))
             }
-
         }
+
         let form = await GrantTransferCertificate.find(condition, { history: 0 }).lean();
+
         form = JSON.parse(JSON.stringify(form))
         form.forEach((entity) => {
-
             if (entity.year.toString() == "606aadac4dff55e6c075c507") {
                 entity.key = `${entity.type}_2020-21_${entity.installment}`
             }
@@ -132,8 +132,8 @@ module.exports.getForm = async (req, res) => {
             if (entity.year.toString() == "606aafb14dff55e6c075d3ae") {
                 entity.key = `${entity.type}_2022-23_${entity.installment}`
             }
-
         })
+
         //remove old form data if present in new form using key
         for (let i = 0; i < result.length; i++) {
             for (let j = 0; j < form.length; j++) {
@@ -142,7 +142,7 @@ module.exports.getForm = async (req, res) => {
                 }
             }
         }
-
+        
         let forms = [...form, ...result]
         let output = [];
         if (ulb) {
@@ -551,10 +551,12 @@ function doRequest(url) {
             method: 'HEAD'
         }
         request(options, (error, resp, body) => {
-            if (!error && resp?.statusCode == 404) {
-                resolve(url)
+            if (!error && resp?.statusCode == 200) {
+                reject(url)
+            } else if (resp?.statusCode == undefined) {
+                reject(url)
             } else {
-                reject(url);
+                resolve(url);
             }
         });
     });
