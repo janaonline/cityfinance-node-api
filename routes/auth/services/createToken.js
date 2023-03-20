@@ -32,7 +32,7 @@ module.exports.createToken = (user, sessionId, body) => {
                 loggedInAt: new Date(),
                 visitSession: ObjectId(sessionId),
                 inactiveSessionTime: inactiveTime,
-                type: body?.type == "Fisical Ranking" ? "Fisical Ranking" : "15th FC"
+                type: body?.type == "fiscalRankings" ? "fiscalRankings" : "15thFC"
             });
             let lh = await loginHistory.save();
             data['purpose'] = 'WEB';
