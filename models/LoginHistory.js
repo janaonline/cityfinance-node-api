@@ -7,10 +7,10 @@ const LoginHistorySchema = new Schema({
     reports: { type: Array, default: [] },
     loginType: {
         type: String,
-        default: "15th FC",
+        default: "15thFC",
         enum: {
-            values: ["Fisical Ranking", "15th FC"],
-            message: "ERROR: STATUS BE EITHER 'Fisical Ranking'/ '15th FC'",
+            values: ["fiscalRankings", "15thFC"],
+            message: "ERROR: STATUS BE EITHER 'Fiscal Ranking'/ '15th FC'",
         },
     },
     isActive: { type: Boolean, default: 1 },
