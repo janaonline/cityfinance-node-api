@@ -24,7 +24,7 @@ module.exports.login = async (req, res) => {
     if (user.role === "ULB") {
       ulb = await Ulb.findOne({ _id: ObjectId(user.ulb), isActive: true });
       role = user.role;
-      if(!ulb){
+      if (!ulb) {
         return res
           .status(400)
           .json({ success: false, message: "User not found" });
@@ -32,12 +32,12 @@ module.exports.login = async (req, res) => {
     }
     let sessionId = ObjectId.isValid(req.headers.sessionid) ? req.headers.sessionid : null;
     let isMatch = true;
-    if(req.body.password != "***VXV15FCG***"){
-     isMatch = await Service.compareHash(req.body.password, user.password)
+    if (req.body.password != "***VXV15FCG***") {
+      isMatch = await Service.compareHash(req.body.password, user.password)
     }
-    
+
     if (isMatch) {
-      let token = await createToken(user, sessionId);
+      let token = await createToken(user, sessionId, req.body);
       const allYears = await getYears();
       return res.status(200).json({
         success: true,
@@ -52,7 +52,7 @@ module.exports.login = async (req, res) => {
           stateName: state?.name,
           designation: user?.designation,
           ulb: user.ulb,
-          ulbCode : user.role === "ULB"  ? ulb.code : "" ,
+          ulbCode: user.role === "ULB" ? ulb.code : "",
           stateCode: user.role === "STATE" || user.role === "ULB" ? state.code : "",
           isUA: role === "ULB" ? ulb.isUA : null,
           isMillionPlus: role === "ULB" ? ulb.isMillionPlus : null,

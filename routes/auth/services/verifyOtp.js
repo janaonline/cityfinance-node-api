@@ -51,25 +51,25 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
 
         let user = await getUSer({ email });
         let state;
-    if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
-    if (state && state['accessToXVFC'] == false) {
-        return res.status(403).json({
-          success: false,
-          message: "Sorry! You are not Authorized To Access XV FC Grants Module"
-        })
-      }
-      let role = ''
+        if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
+        if (state && state['accessToXVFC'] == false) {
+            return res.status(403).json({
+                success: false,
+                message: "Sorry! You are not Authorized To Access XV FC Grants Module"
+            })
+        }
+        let role = ''
         if (user.role === "ULB") {
             ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
             role = user.role;
-          }
+        }
         let expirytime = verification.expireAt.getTime()
         let currentTime = Date.now();
         if (currentTime < expirytime) {
             if (otp == verification.otp) {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
                 let sessionId = req.headers.sessionid;
-                let token = await createToken(user, sessionId);
+                let token = await createToken(user, sessionId, req.body);
                 const allYears = await getYears()
                 return res.status(200).json({
                     token: token,
