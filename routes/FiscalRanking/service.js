@@ -1933,23 +1933,30 @@ async function sendCsv(res, aggregateQuery) {
   }
 }
 
-async function getTotalForCalculatedValues(dynamicObj,displayPriorities,yearObj){
+async function getTotalForCalculatedValues(dynamicObj,displayPriorities,yearObj,financialInfo){
   try{
     let sum = 0
-    for(let obj in dynamicObj){
-      if(displayPriorities.includes(obj.position)){
-        let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
-        sum += parseInt(sumYear.value)
-      }
-      return sum
+    let objs = []
+    for(let indexName in financialInfo){
+      let obj = financialInfo[indexName]
+      if(displayPriorities.includes(obj.position.toString())){
+        objs.push(obj)
+      //   let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
+      //   sum += parseInt(sumYear.value)
+      }    
     }
+    for(let obj of objs){
+      let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
+     sum += parseInt(sumYear.value)
+    }
+    return sum
   }
   catch(err){
     console.log("error in getTotalForCalculatedValues :: ",err.message)
   }
 }
 
-async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
+async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financialInfo){
   let validator = {
     value:years.value,
     valid:true,
@@ -1958,7 +1965,9 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
   try{
     let ulbData = await ulbLedgersData({ "ulb": ulbId });
     let value = years.value
+    // console.log("years :::",years.modelName)
     if(years.modelName === "ULBLedger"){
+      // console.log("inside if")
       let ulbValue = await getUlbLedgerDataFilter({ code: years.code, year: years.year, data: ulbData })
       if(years.previousYearCodes){
         ulbValue = await getPreviousYearValues(years,ulbData)
@@ -1973,9 +1982,11 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
           validator.value = value
           return validator
         }
+        
         else if(isDraft === false && dynamicObj.calculatedFrom){
+          // console.log("dynamicObj ::: ",dynamicObj)
           let displayPriorities = dynamicObj.calculatedFrom
-          let sum = getTotalForCalculatedValues(dynamicObj,displayPriorities,years)
+          let sum = await getTotalForCalculatedValues(dynamicObj,displayPriorities,years,financialInfo)
           if(ulbValue === sum){
             validator.valid = true,
             validator.value = years.value
@@ -2006,7 +2017,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
   return validator
 }
 
-async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft, session,dynamicObj) {
+async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft, session,dynamicObj,financialInfo) {
   try {
     for (var years of yearData) {
       let upsert = false
@@ -2021,7 +2032,8 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
         if (updateForm) {
           upsert = true
           if(dynamicObj.calculatedFrom){
-            let validator = await validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft)
+            let validator = await validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financialInfo)
+            // console.log("validator :::",validator)
             if(validator.valid){
               years.value = validator.value
               // years.modelName = 
@@ -2150,6 +2162,7 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
         if (obj[k].yearData) {
           let yearArr = obj[k].yearData
           let dynamicObj = obj[k]
+          let financialInfo = obj
           let status = yearArr.every((item) => {
             if (Object.keys(item).length) {
               return item.status === "APPROVED"
@@ -2159,7 +2172,7 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
             }
           })
           temp["status"].push(status)
-          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft, session,dynamicObj)
+          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft, session,dynamicObj,financialInfo)
         }
         else {
           if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
@@ -2419,7 +2432,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
     console.log(err.message)
     await FiscalRanking.findOneAndUpdate({
       "ulb" : ObjectId(req.body.ulbId),
-      "design_year" : ObjectId(design_year),
+      "design_year" : ObjectId(req.body.design_year),
       "isDraft":true
     })
     response.message = "some server error occured"
