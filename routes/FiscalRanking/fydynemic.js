@@ -5467,14 +5467,14 @@ const fiscalRankingFormJson = () => {
         }
     }
 }
-function getInputKeysByType(formType, type, label, dataSource = null, position, required = true) {
+function getInputKeysByType(formType, type, label, dataSource = null, position, required = true,mn=false) {
     let maximum = 9999999999
     let min = 0
     if (formType != "number") {
         min = 0
         maximum = 50
     }
-    if (label == "Mobile number") {
+    if (mn == true) {
         min = 6000000000
         maximum = 9999999999
     }
