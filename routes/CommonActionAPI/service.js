@@ -1424,6 +1424,7 @@ class PayloadManager{
                 filters[identifier] = parseInt(this.value)
                 if(Object.keys(this.req.body).includes("isGfc")){
                     filters['formName'] = this.req.body.isGfc ? "gfc" :"odf"
+                    filters['financialYear'] = this.req.body.design_year
                 }
                 let ratingObj = await moongose.model(modelName).findOne(filters)
                 let mainvalue = ratingObj._id
