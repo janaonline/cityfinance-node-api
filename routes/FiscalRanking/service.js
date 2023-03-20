@@ -1938,26 +1938,26 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
           if(ulbValue === sum){
             validator.valid = true,
             validator.value = years.value
-            validator.message = "ulb ledger data is not matching with the calculated value"
           }
           else{
             validator.valid = false,
-            validator.message = "ulb ledger data is not matching with the calculated value"
+            validator.message =  `ulb ledger data is not matching with the calculated value for ${years.type}`
           }
           return validator
         }
     }
-    else if(!dynamicObj.modelName === "ULBLedger" && dynamicObj.calculatedFrom){
-      let sum = getTotalForCalculatedValues(dynamicObj,displayPriorities,years)
-      if(years.value === sum){
-        validator.valid = true,
-        validator.value =  years.sum
-      }
-      else{
-        validator.valid = false
-        validator.message = "Sum is not matching"
-      }
-    }
+    // else if((!dynamicObj.modelName === "ULBLedger" || dynamicObj.modelName === undefined) && dynamicObj.calculatedFrom){
+    //   let displayPriorities = dynamicObj.calculatedFrom
+    //   let sum = getTotalForCalculatedValues(dynamicObj,displayPriorities,years)
+    //   if(parseInt(years.value) === sum){
+    //     validator.valid = true,
+    //     validator.value =  years.sum
+    //   }
+    //   else{
+    //     validator.valid = false
+    //     validator.message = `sum is not matching for ${years.type}`
+    //   }
+    // }
   }
   catch(err){
     console.log("error in validateAccordingtoLedgers :: ",err.message)
