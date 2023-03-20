@@ -3867,7 +3867,7 @@ const fiscalRankingFormJson = () => {
                         "postion": "4",
                         "value": "",
                         "file": "",
-                        "min": 0,
+                        "min": "",
                         "max": 999999999999999,
                         "required": false,
                         "type": "fixedAsset",
