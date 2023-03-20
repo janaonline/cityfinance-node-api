@@ -1502,8 +1502,9 @@ async function returnParsedObj(objects,req) {
 
             if (answers.length > 1) {
                 value = objects['answer'].map(item => item[inputName])
-            }
-            let obj = splittedShortKey.reduceRight((obj, key) => ({ [key]: obj }), value)
+            }   
+            console.log("value ::: ",value)
+            let obj = splittedShortKey.reduceRight((obj, key) => ( { [key]: obj }), value)
             return obj
         }
         else {
