@@ -546,6 +546,40 @@ function decideValues(params) {
   }
 }
 
+async function getPreviousYearValues(pf,ulbData){
+  try{
+    let yearName = getKeyByValue(years,pf.year)
+    let year = parseInt(yearName)
+    let previousYear = year - 1 
+    let previousYearString = `${previousYear}-${year.toString().slice(-2)}`
+    let previousYearId = years[previousYearString].toString()
+    let calculatableYears = [years[previousYearString],pf.year]
+    let temp = {}
+    for(let year of calculatableYears){
+      temp[year] = []
+      for(let code of pf?.previousYearCodes){
+        let yearName = getKeyByValue(years,year)
+        let ulbFyAmount =await getUlbLedgerDataFilter({ code: [code], year: year, data: ulbData });
+        if(ulbFyAmount){
+          temp[year].push(ulbFyAmount)
+        }
+      }
+  }
+    if(temp[previousYearId].length == 2 && temp[pf.year.toString()].length == 2 ){
+        let sumOfPreviousYear = temp[previousYearId].reduce((a,b) => a +b)
+        let sumOfCurrentYear = temp[pf.year].reduce((a,b) => a +b)
+        return sumOfCurrentYear - sumOfPreviousYear 
+      }
+    else{
+      return 0
+    }
+    
+  }
+  catch(err){
+    console.log("error in getPreviousYearValues ::: ",err.message)
+  }
+}
+
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
@@ -792,7 +826,6 @@ exports.getView = async function (req, res, next) {
                 let previousYearId = years[previousYearString].toString()
                 let calculatableYears = [years[previousYearString],pf.year]
                 let temp = {}
-                
                 for(let year of calculatableYears){
                   temp[year] = []
                   for(let code of pf?.previousYearCodes){
@@ -1925,7 +1958,13 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
     let value = years.value
     if(years.modelName === "ULBLedger"){
       let ulbValue = await getUlbLedgerDataFilter({ code: years.code, year: years.year, data: ulbData })
-      ulbValue = parseInt(ulbValue)
+      if(years.previousYearCodes){
+        ulbValue = await getPreviousYearValues(years,ulbData)
+      }
+      else{
+        ulbValue = parseInt(ulbValue)
+      }
+      // 
         if(isDraft === true){
           value = ulbValue || 0
           validator.valid = true
@@ -1983,6 +2022,7 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
             let validator = await validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft)
             if(validator.valid){
               years.value = validator.value
+              // years.modelName = 
             }
             else{
               throw { "message": validator.message, "type": "ValidationError" }
