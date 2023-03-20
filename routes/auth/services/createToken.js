@@ -6,7 +6,7 @@ const Helper = require('../../../_helper/constants');
 const ObjectId = require('mongoose').Types.ObjectId;
 
 
-module.exports.createToken = (user, sessionId) => {
+module.exports.createToken = (user, sessionId, body) => {
     return new Promise(async (resolve, reject) => {
         try {
             let keys = [
@@ -32,6 +32,7 @@ module.exports.createToken = (user, sessionId) => {
                 loggedInAt: new Date(),
                 visitSession: ObjectId(sessionId),
                 inactiveSessionTime: inactiveTime,
+                type: body?.type == "fiscalRankings" ? "fiscalRankings" : "15thFC"
             });
             let lh = await loginHistory.save();
             data['purpose'] = 'WEB';
