@@ -12,7 +12,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require("axios");
 const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
-
+const User = require('../../models/User')
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
   let query1 = {};
@@ -3492,6 +3492,7 @@ module.exports.bulkUpdate = async function (req, res) {
        if (actionAllowed.indexOf(user.role) > -1) {
          let count =0;
          let updatedObjArray = [];
+         let notUpdatedArray = [];
          for(let obj of objArray){
    
            
@@ -3504,26 +3505,41 @@ module.exports.bulkUpdate = async function (req, res) {
          try {
            
            // if(ulbDoc){
-             let ulbDoc = await Ulb.updateOne(
+             let ulbDoc = await Ulb.findOneAndUpdate(
+              
                condition,
                // {
                //   "_id" : ObjectId("5dcfca53df6f59198c4ac3d5"),
                // },
-                { $set: newObj }
+                { $set: newObj },
+                {
+                  new: true
+                }
                 );      
                if(ulbDoc){
+                const user = await User.findOneAndUpdate({
+                  ulb: ulbDoc._id
+                },{
+                  $set:{
+                    censusCode: newObj['censusCode'],
+                    sbCode: newObj['sbCode']
+                  }
+                })
                  count++;
                  updatedObjArray.push(newObj);
+               }
+               else{
+                notUpdatedArray.push(ulbDoc)
                }
            // }
                // break;
          } catch (err) {
           console.log("Error caught", err);
-          return Response.BadRequest(res, e);
+          return Response.BadRequest(res, err);
         }
            }  
            updatedObjArray.push({length: updatedObjArray.length, count})
-       return Response.OK(res, updatedObjArray, `updated successfully.`);
+       return Response.OK(res, {updatedObjArray,notUpdatedArray}, `updated successfully.`);
        } else {
        }
      }
