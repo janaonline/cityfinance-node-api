@@ -472,7 +472,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           "Mobile number of the Nodal Officer",
           dataSource,
-          "4"),
+          "4",
+          true,
+          true),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
       }
