@@ -69,7 +69,7 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
             if (otp == verification.otp) {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
                 let sessionId = req.headers.sessionid;
-                let token = await createToken(user, sessionId);
+                let token = await createToken(user, sessionId,req.body);
                 const allYears = await getYears()
                 return res.status(200).json({
                     token: token,
