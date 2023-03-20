@@ -140,6 +140,10 @@ const LinkPfmsState = require("./LinkPfmsState");
 router.use(LinkPfmsState);
 
 
+//tabs
+const Tabs = require("./Tabs");
+router.use(Tabs)
+
 //SideMenu
 const Sidemenu = require("./sidemenu");
 router.use(Sidemenu);
@@ -257,5 +261,8 @@ router.use(require('./s3ServerFile'));
 
 const CommonHistory = require('./CommonHistory')
 router.use('/common-history', CommonHistory)
+
+
+router.use(require('./Master'))
 
 module.exports = router;

@@ -83,6 +83,12 @@ const projectDetails = () => {
   };
 };
 
+const pdfSchema = ()=>{
+  return {
+    url: { type: String},
+    name: { type: String}
+  }
+}
 const projectDetails2 = () => {
   return {
     name: {
@@ -170,6 +176,8 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
       },
       status: statusType(),
       _id: false,
+      responseFile: pdfSchema(),
+
     },
   ],
   status: statusType(),
