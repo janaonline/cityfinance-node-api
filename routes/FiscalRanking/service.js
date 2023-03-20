@@ -1923,7 +1923,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
   try{
     let ulbData = await ulbLedgersData({ "ulb": ulbId });
     let value = years.value
-    if(dynamicObj.modelName === "ULBLedger"){
+    if(years.modelName === "ULBLedger"){
       let ulbValue = await getUlbLedgerDataFilter({ code: years.code, year: years.year, data: ulbData })
       ulbValue = parseInt(ulbValue)
         if(isDraft === true){
@@ -1946,7 +1946,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
           return validator
         }
     }
-    // else if((!dynamicObj.modelName === "ULBLedger" || dynamicObj.modelName === undefined) && dynamicObj.calculatedFrom){
+    // else if((!years.modelName === "ULBLedger" || dynamicObj.modelName === undefined) && dynamicObj.calculatedFrom){
     //   let displayPriorities = dynamicObj.calculatedFrom
     //   let sum = getTotalForCalculatedValues(dynamicObj,displayPriorities,years)
     //   if(parseInt(years.value) === sum){
