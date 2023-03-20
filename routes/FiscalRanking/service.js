@@ -2417,6 +2417,11 @@ module.exports.createForm = catchAsync(async (req, res) => {
     await session.abortTransaction()
     await session.endSession()
     console.log(err.message)
+    await FiscalRanking.findOneAndUpdate({
+      "ulb" : ObjectId(req.body.ulbId),
+      "design_year" : ObjectId(design_year),
+      "isDraft":true
+    })
     response.message = "some server error occured"
     if (err.type && (err.type === "ValidationError")) {
       response.message = err.message
