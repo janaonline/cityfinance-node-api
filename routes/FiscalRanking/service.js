@@ -2433,7 +2433,10 @@ module.exports.createForm = catchAsync(async (req, res) => {
     await FiscalRanking.findOneAndUpdate({
       "ulb" : ObjectId(req.body.ulbId),
       "design_year" : ObjectId(req.body.design_year),
-      "isDraft":true
+    },{
+      "$set":{
+        "isDraft":true
+      }
     })
     response.message = "some server error occured"
     if (err.type && (err.type === "ValidationError")) {
