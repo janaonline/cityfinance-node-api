@@ -1558,7 +1558,6 @@ async function payloadParser(body,req) {
         }
         return payload
     }
-
     catch (err) {
         console.log("error in payloadParser ::: ", err.message)
     }
@@ -1627,7 +1626,7 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
         roleWiseJson(obj[0],role)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
         // await deleteKeys(flattedForm, keysToBeDeleted)
-        
+
         for (let key in obj) {
             let questions = obj[key].question
             if (obj[key].question) {
