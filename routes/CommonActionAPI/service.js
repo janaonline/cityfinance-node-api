@@ -859,7 +859,6 @@ function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr,cb=null)
         res.write(cols.join(","))
         res.write("\r\n")
         cursor.on("data", (document) => {
-            console.log("document",document)
             if (fromArr) {
                 for (let ele of document[fromArr]) {
                     writeCsv(cols,csvCols, ele, res,cb)
