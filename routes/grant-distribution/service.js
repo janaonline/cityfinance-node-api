@@ -132,7 +132,10 @@ exports.uploadTemplate = async (req, res) => {
       // validate data
       let queryState = [ 
         {
-              $match:{state: ObjectId(state)}
+              $match:{
+                state: ObjectId(state),
+                isActive: true
+              }
         },
         {
             $group:{
