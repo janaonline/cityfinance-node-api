@@ -1991,7 +1991,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financi
           }
           else{
             validator.valid = false,
-            validator.message =  `Data in our ledger records in not matching the sub of break up. Please check the below fields. ${dynamicObj.calculatedFrom.join(",")}`
+            validator.message =  `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(",")}`
           }
           return validator
         }
