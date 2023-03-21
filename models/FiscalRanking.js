@@ -161,10 +161,6 @@ const fiscalRankingSchema = new Schema(
             },
             year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
         },
-        accountStwreProof:{
-            name: { type: String },
-            url: { type: String },
-        },
         fy_21_22_online: {
             type: {
                 type: String,

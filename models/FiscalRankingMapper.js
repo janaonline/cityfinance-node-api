@@ -102,7 +102,8 @@ const fiscalRankingMapperSchema = new Schema(
                 'property_tax_register',
                 'paying_property_tax',
                 'paid_property_tax',
-                'appAnnualBudget'
+                'appAnnualBudget',
+                'accountStwreProof'
             ],
                 message: "ERROR: STATUS BE EITHER",
             },
