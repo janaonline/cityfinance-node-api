@@ -5,16 +5,33 @@ let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 const {getKeyByValue} = require("../../util/masterFunctions")
 const FormsJson = require("../../models/FormsJson");
 const ObjectId = require("mongoose").Types.ObjectId;
+
+const getPreviousYearsID = (year,from)=>{
+    try{
+        let yearToDegrade = from ==2 ? 1 : 0
+        let currentYear = parseInt(year)
+        let previousYearString = `${currentYear -from}-${(currentYear-yearToDegrade).toString().substr(2,4)}`
+        let yearId = years[previousYearString]
+        return yearId
+    }
+    catch(err){
+        console.log("error in getPreviousYearsID ::: ",err.message)
+    }
+}
+
 module.exports.changePayload = async(req,res,next)=>{
     try{
         let { design_year,data, isDraft } = req.body
         let year = getKeyByValue(years,design_year)
         let latestYear = !outDatedYears.includes(year)
-        // console.log("latest year :::: ",latestYear)
         if(latestYear){
             let payload = await nestedObjectParser(data,req)
+            let auditedYear = getPreviousYearsID(year,2)
+            let unAuditedYear = getPreviousYearsID(year,1)
+            payload.audited.year = auditedYear
+            payload.unAudited.year = unAuditedYear
             Object.assign(req.body,payload)
-            console.log("payload :::::",payload)
+            delete req.body['data']
         }
         next()
     }

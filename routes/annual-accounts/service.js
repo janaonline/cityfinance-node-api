@@ -510,7 +510,6 @@ exports.createUpdate = async (req, res) => {
     }
     if (design_year != "606aaf854dff55e6c075d219")
       formData = calculateTabwiseStatus(formData);
-
     if (submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB') {// form already submitted
       return res.status(200).json({
         status: true,

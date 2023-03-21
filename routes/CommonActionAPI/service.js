@@ -23,20 +23,24 @@ const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
 
+
 var formIdCollections= {
     "80":"PropertyTaxOp"
 }
 
-var arrFields = {
+var arrFields = { // if there is any change in short keys then please update here
     "waterManagement_tableView":"categoryWiseData_wm",
     "solidWasteManagement_tableView":"categoryWiseData_swm",
     "projectDetails_tableView_addButton":"projects"
 }
 var specialCases = ['projectDetails_tableView_addButton']
-var annualRadioButtons = {
+var annualRadioButtons = { // if there are any label changes for radio button in frontend please update here
     "Yes":true,
     "No":false,
     "Agree":true
+}
+var customBtnsWithFormID = {
+    "5":annualRadioButtons
 }
 var customkeys = {
     "general":{
@@ -1417,7 +1421,7 @@ class PayloadManager{
         this.shortKeysWithModelName = shortKeysWithModelName
         this.inputName = inputType[objects.input_type]
         this.value = objects['answer'][0][this.inputName]
-        this.formId = req.body.formId
+        this.formId = req.body.formId || ""
     }
     async getValuesFromModel(){
         try{
@@ -1462,6 +1466,14 @@ class PayloadManager{
             // let enums = mongoose.model(collectionName).schema.path(this.shortKey).enumValues.filter(item => item != "")
             // console.log("enums :: ",enums)
             let label =  this.objects['answer'][0]['label']
+            if(Object.keys(customBtnsWithFormID).includes(this.formId.toString())){
+                let radioButtonObj = customBtnsWithFormID[this.formId.toString()]
+                this.value = radioButtonObj[label]
+            }
+            // if(Object.keys.includes(annualRadioButtons)){
+            //     thi
+            //     this.value = formIds
+            // }
             return this.value 
         }
         catch(err){
@@ -2609,6 +2621,7 @@ async function nestedObjectParser(data,req){
         let pointer = result;
         let temp = {}
         let value = await decideValues(temp,shortKey,item,req)
+        // console.log("value :: ",value)
         await keys.forEach((key, index) => {
                 if (!pointer.hasOwnProperty(key)) {
                 pointer[key] = {};
