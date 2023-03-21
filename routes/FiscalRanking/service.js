@@ -1982,9 +1982,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financi
           validator.value = value
           return validator
         }
-        
         else if(isDraft === false && dynamicObj.calculatedFrom){
-          // console.log("dynamicObj ::: ",dynamicObj)
           let displayPriorities = dynamicObj.calculatedFrom
           let sum = await getTotalForCalculatedValues(dynamicObj,displayPriorities,years,financialInfo)
           if(ulbValue === sum){
@@ -1993,7 +1991,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financi
           }
           else{
             validator.valid = false,
-            validator.message =  `ulb ledger data is not matching with the calculated value for ${years.type}`
+            validator.message =  `Data in our ledger records in not matching the sub of break up. Please check the below fields. ${dynamicObj.calculatedFrom.join(",")}`
           }
           return validator
         }
