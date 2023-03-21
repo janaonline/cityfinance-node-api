@@ -16,7 +16,7 @@ module.exports.loginHistory = async (req, res, next) => {
         if (req.query.type) {
             condition["type"] = req.query.type;
         }
-        
+
         let query = [
             { $match: condition },
             {
@@ -50,27 +50,33 @@ module.exports.loginHistory = async (req, res, next) => {
                 $project: {
                     "state": "$state.name",
                     "ulb_code": "$ulb.code",
+                    "population": "$ulb.population",
                     "census_code": "$ulb.censusCode",
+                    "sbCode": "$ulb.sbCode",
                     "ulb_name": "$ulb.name",
-                    "login_time": { $dateToString: { format: "%Y-%m-%d %H:%M:%S", date: "$loggedInAt" } }
+                    "login_time": { $dateToString: { format: "%Y-%m-%d %H:%M:%S", date: "$loggedInAt", timezone: "Asia/Kolkata" } }
                 }
             }
         ];
         let keyObj = {
             "state": "",
             "ulb_code": "",
+            "population": "",
             "census_code": "",
+            "sbCode": "",
             "ulb_name": "",
             "login_time": ""
         };
         let cols = [
             "state",
             "ulb_code",
+            "population",
             "census_code",
+            "sbCode",
             "ulb_name",
             "login_time"
         ];
-        let d = await sendCsv("Fiscal Ranking.csv", "LoginHistory", query, res, cols, keyObj);
+        let d = await sendCsv("LoginHistory.csv", "LoginHistory", query, res, cols, keyObj);
         return;
     } catch (error) {
         console.log("error", error)
