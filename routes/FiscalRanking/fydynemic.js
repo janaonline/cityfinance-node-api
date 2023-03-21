@@ -5384,7 +5384,7 @@ const fiscalRankingFormJson = () => {
                 yearData: [
                     {
                         label: 'FY 2018-19',
-                        key: 'auditedAnnualFySt_2018-19',
+                        key: 'auditedAnnualFySt',
                         postion: '1',
                         value: '',
                         file: {

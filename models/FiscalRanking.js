@@ -161,6 +161,10 @@ const fiscalRankingSchema = new Schema(
             },
             year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
         },
+        accountStwreProof:{
+            name: { type: String },
+            url: { type: String },
+        },
         fy_21_22_online: {
             type: {
                 type: String,
@@ -214,6 +218,7 @@ const fiscalRankingSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
+        
         actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
         actionTakenByRole: { type: String, default: null },
         rejectReason: { type: String, default: null },
