@@ -8,13 +8,14 @@ const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.changePayload = async(req,res,next)=>{
     try{
         let { design_year,data, isDraft } = req.body
-        // console.log("data ::::::",data)
         let year = getKeyByValue(years,design_year)
         let latestYear = !outDatedYears.includes(year)
-        // if(!latestYear){
+        // console.log("latest year :::: ",latestYear)
+        if(latestYear){
             let payload = await nestedObjectParser(data,req)
             Object.assign(req.body,payload)
-        // }
+            console.log("payload :::::",payload)
+        }
         next()
     }
     catch(err){
