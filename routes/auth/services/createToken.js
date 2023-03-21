@@ -6,7 +6,7 @@ const Helper = require('../../../_helper/constants');
 const ObjectId = require('mongoose').Types.ObjectId;
 
 
-module.exports.createToken = (user, sessionId,body) => {
+module.exports.createToken = (user, sessionId, body) => {
     return new Promise(async (resolve, reject) => {
         try {
             let keys = [
@@ -32,8 +32,9 @@ module.exports.createToken = (user, sessionId,body) => {
                 loggedInAt: new Date(),
                 visitSession: ObjectId(sessionId),
                 inactiveSessionTime: inactiveTime,
-                type: body?.type == "fiscalRankings" ? "fiscalRankings" : "15thFC"
+                loginType: body?.type == "fiscalRankings" ? "fiscalRankings" : "15thFC"
             });
+            
             let lh = await loginHistory.save();
             data['purpose'] = 'WEB';
             data['lh_id'] = lh._id;
@@ -43,7 +44,6 @@ module.exports.createToken = (user, sessionId,body) => {
             const token = jwt.sign(data, Config.JWT.SECRET, {
                 expiresIn: Config.JWT.TOKEN_EXPIRY,
             });
-
             var updates = {
                 $set: { loginAttempts: 0 },
             };

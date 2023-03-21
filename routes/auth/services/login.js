@@ -10,6 +10,7 @@ const State = require("../../../models/State");
 module.exports.login = async (req, res) => {
   /**Conditional Query For CensusCode/ULB Code **/
   try {
+
     let ulb, role;
     let user = await getUSer(req.body);
     let state;
