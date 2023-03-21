@@ -1761,9 +1761,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         for(let arr of childQuestionData){
             for(let obj of arr){
                 let questionKeys = Object.keys(customkeys[shortKey])
-                console.log("questionKeys ::: ",questionKeys)
                 for(let questionkey of questionKeys){
-                    console.log("obj.shortKey ::: ",obj.shortKey)
                     if(obj.shortKey === questionkey){
                         // console.log("flattedForm ::: ",flattedForm)
                         // console.log("obj.shortKey ::::: ",obj.shortKey)
