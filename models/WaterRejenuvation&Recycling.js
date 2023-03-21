@@ -74,6 +74,10 @@ const projectDetails = () => {
       type: String,
       enum: ["Yes", "No",""]
     },
+    dprPreparation:{
+      type: String,
+      enum: ["Yes", "No",""]
+    },
     workCompletion: {
       type: Number
     },
@@ -114,6 +118,10 @@ const projectDetails2 = () => {
       type: String,
       enum: ["Yes", "No",""]
     },
+    dprPreparation:{
+      type: String,
+      enum: ["Yes", "No",""]
+    },
     workCompletion: {
       type: Number
     },
@@ -135,10 +143,10 @@ const projectDetails3 = () => {
       type: String,
     },
     existing: {
-      type: String,
+      type: Number,
     },
     after: {
-      type: String,
+      type: Number,
     },
     cost: {
       type: Number,
@@ -148,8 +156,13 @@ const projectDetails3 = () => {
       type: String,
       enum: ["Yes", "No",""]
     },
+    dprPreparation:{
+      type: String,
+      enum: ["Yes", "No",""]
+    },
     workCompletion: {
-      type: Number
+      type: Number,
+      max: [100, "Max % can be 100"]
     },
     isDisable:{
       type: Boolean

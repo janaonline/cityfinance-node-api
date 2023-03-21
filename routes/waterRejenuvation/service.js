@@ -10,6 +10,7 @@ const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const {canTakenAction} = require('../CommonActionAPI/service');
 const StateMasterForm = require('../../models/StateMasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
+const IndicatorLineItem = require('../../models/indicatorLineItems')
 
 
 function response(form, res, successMsg ,errMsg){
@@ -51,7 +52,35 @@ exports.saveWaterRejenuvation = async (req, res) => {
     const user = req.decoded;
     let formData = {};
     formData = {...data};
+    let indicatorCondition = {type: "water supply"};
+    let lineItems = await IndicatorLineItem.find({indicatorCondition}).lean();
 
+    let uaData = JSON.parse(JSON.stringify(formData['uaData']));
+    const slbIndicatorObj = {};
+    for(let lineItem of lineItems){
+      let [min, max] =  lineItem['range'].split('-');
+      slbIndicatorObj[lineItem['_id']] = {
+        min: Number(min),
+        max: Number(max)
+      }
+    }
+    
+    for(let ua of uaData){
+      let serviceLevelIndicatorsOfUA = ua['serviceLevelIndicators'];
+      for(let indicator of serviceLevelIndicatorsOfUA){
+        if(
+          !slbIndicatorObj[indicator['indicator']]['min'] < indicator['existing'] ||
+          !slbIndicatorObj[indicator['indicator']]['max'] > indicator['existing'] ||
+          !slbIndicatorObj[indicator['indicator']]['min'] < indicator['after'] ||
+          !slbIndicatorObj[indicator['indicator']]['max'] > indicator['after'] 
+          ){
+            return res.status(400).json({
+              status: false,
+              message: "validation failed",
+            });
+        }
+      }
+    }
     const {_id: actionTakenBy, role: actionTakenByRole, } = user;
 
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
@@ -398,3 +427,95 @@ exports.action = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+
+module.exports.updateIndicatorId = async(  req, res)=>{
+  try {
+    const forms = await WaterRejenuvation.find({
+      "design_year" : ObjectId("606aaf854dff55e6c075d219"),
+    }).lean();
+    
+    let lineItems = await IndicatorLineItem.find({type: "water supply"}).lean();
+
+    // let uaData = JSON.parse(JSON.stringify(forms['uaData']));
+    const slbIndicatorObj = { };
+    for(let lineItem of lineItems){
+      slbIndicatorObj[lineItem['name'].toLowerCase()] = lineItem['_id']
+    }
+
+    let slbIndicatorObj2 = {
+      "Per Capita Supply of Water": ObjectId("6284d6f65da0fa64b423b53c") ,
+      "Coverage of Water Supply connections": ObjectId("6284d6f65da0fa64b423b53a"),
+      "Continuity of Water supplied": ObjectId("6284d6f65da0fa64b423b542"),
+      "Extent of Non-revenue WaterSanitationComponent": ObjectId("6284d6f65da0fa64b423b540"),
+      "Quality of Water Supplied": ObjectId("6284d6f65da0fa64b423b546"),
+      "Cost Recovery": ObjectId('6284d6f65da0fa64b423b548'),
+      "Extent of Metering": ObjectId("6284d6f65da0fa64b423b53e")
+    }
+    let outputArray = [];
+
+    for(let form of forms){
+      delete form['history']
+      let uaData = form['uaData'];
+      for(let ua of uaData){
+        let indicators = ua['serviceLevelIndicators'];
+        for(let obj of indicators ){
+
+          if(obj['indicator'] 
+          && 
+          typeof(obj['indicator']) === "string"
+          ){
+            let flag1= true;
+            if(
+              slbIndicatorObj.hasOwnProperty([obj['indicator'].toLowerCase()]) 
+            ){
+              flag1 = false;
+              obj['indicator'] = ObjectId(slbIndicatorObj[obj['indicator'].toLowerCase()]) ;
+            }
+            if(          
+               flag1
+              &&
+              slbIndicatorObj2.hasOwnProperty([obj['indicator']]) 
+            ){
+              obj['indicator'] =  ObjectId(slbIndicatorObj2[obj['indicator']]) 
+            }
+            // outputArray.push(obj['indicator']);
+          }
+            // outputArray.push(obj.indicator)
+        }
+      }
+      // if (
+      //   ![
+      //     "6177be3700610849afca6e83",
+      //     "6175321e57edc55c1536d56c",
+      //     "62179aca323b779b9f30a0b8",
+      //   ].includes(form._id.toString())
+      // ) {
+        const updatedForm = await WaterRejenuvation.findOneAndUpdate(
+          {
+            _id: form._id,
+          },
+          {
+            $set: {
+              uaData: form.uaData,
+            },
+          }
+        );
+      // }
+
+    }
+
+    // outputArray =  Array.from(new Set(outputArray))
+
+    return res.status(200).json({
+      success: true,
+      data: forms
+    })
+
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
