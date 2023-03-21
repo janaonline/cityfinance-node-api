@@ -472,7 +472,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           "Mobile number of the Nodal Officer",
           dataSource,
-          "4"),
+          "4",
+          true,
+          true),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
       }
@@ -543,6 +545,40 @@ function decideValues(params) {
   catch (err) {
     console.log("error in decideValue :::: ", err.message)
     return ""
+  }
+}
+
+async function getPreviousYearValues(pf,ulbData){
+  try{
+    let yearName = getKeyByValue(years,pf.year)
+    let year = parseInt(yearName)
+    let previousYear = year - 1 
+    let previousYearString = `${previousYear}-${year.toString().slice(-2)}`
+    let previousYearId = years[previousYearString].toString()
+    let calculatableYears = [years[previousYearString],pf.year]
+    let temp = {}
+    for(let year of calculatableYears){
+      temp[year] = []
+      for(let code of pf?.previousYearCodes){
+        let yearName = getKeyByValue(years,year)
+        let ulbFyAmount =await getUlbLedgerDataFilter({ code: [code], year: year, data: ulbData });
+        if(ulbFyAmount){
+          temp[year].push(ulbFyAmount)
+        }
+      }
+  }
+    if(temp[previousYearId].length == 2 && temp[pf.year.toString()].length == 2 ){
+        let sumOfPreviousYear = temp[previousYearId].reduce((a,b) => a +b)
+        let sumOfCurrentYear = temp[pf.year].reduce((a,b) => a +b)
+        return sumOfCurrentYear - sumOfPreviousYear 
+      }
+    else{
+      return 0
+    }
+    
+  }
+  catch(err){
+    console.log("error in getPreviousYearValues ::: ",err.message)
   }
 }
 
@@ -792,7 +828,6 @@ exports.getView = async function (req, res, next) {
                 let previousYearId = years[previousYearString].toString()
                 let calculatableYears = [years[previousYearString],pf.year]
                 let temp = {}
-                
                 for(let year of calculatableYears){
                   temp[year] = []
                   for(let code of pf?.previousYearCodes){
@@ -1897,7 +1932,90 @@ async function sendCsv(res, aggregateQuery) {
     console.log("error in sendCsv :: ", err.message)
   }
 }
-async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft, session) {
+
+async function getTotalForCalculatedValues(dynamicObj,displayPriorities,yearObj,financialInfo){
+  try{
+    let sum = 0
+    let objs = []
+    for(let indexName in financialInfo){
+      let obj = financialInfo[indexName]
+      if(displayPriorities.includes(obj.position.toString())){
+        objs.push(obj)
+      //   let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
+      //   sum += parseInt(sumYear.value)
+      }    
+    }
+    for(let obj of objs){
+      let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
+     sum += parseInt(sumYear.value)
+    }
+    return sum
+  }
+  catch(err){
+    console.log("error in getTotalForCalculatedValues :: ",err.message)
+  }
+}
+
+async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financialInfo){
+  let validator = {
+    value:years.value,
+    valid:true,
+    message:""
+  }
+  try{
+    let ulbData = await ulbLedgersData({ "ulb": ulbId });
+    let value = years.value
+    // console.log("years :::",years.modelName)
+    if(years.modelName === "ULBLedger"){
+      // console.log("inside if")
+      let ulbValue = await getUlbLedgerDataFilter({ code: years.code, year: years.year, data: ulbData })
+      if(years.previousYearCodes){
+        ulbValue = await getPreviousYearValues(years,ulbData)
+      }
+      else{
+        ulbValue = parseInt(ulbValue)
+      }
+      // 
+        if(isDraft === true){
+          value = ulbValue || 0
+          validator.valid = true
+          validator.value = value
+          return validator
+        }
+        else if(isDraft === false && dynamicObj.calculatedFrom){
+          let displayPriorities = dynamicObj.calculatedFrom
+          let sum = await getTotalForCalculatedValues(dynamicObj,displayPriorities,years,financialInfo)
+          if(ulbValue === sum){
+            validator.valid = true,
+            validator.value = years.value
+          }
+          else{
+            validator.valid = false,
+            validator.message =  `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(",")}`
+          }
+          return validator
+        }
+    }
+    // else if((!years.modelName === "ULBLedger" || dynamicObj.modelName === undefined) && dynamicObj.calculatedFrom){
+    //   let displayPriorities = dynamicObj.calculatedFrom
+    //   let sum = getTotalForCalculatedValues(dynamicObj,displayPriorities,years)
+    //   if(parseInt(years.value) === sum){
+    //     validator.valid = true,
+    //     validator.value =  years.sum
+    //   }
+    //   else{
+    //     validator.valid = false
+    //     validator.message = `sum is not matching for ${years.type}`
+    //   }
+    // }
+  }
+  catch(err){
+    console.log("error in validateAccordingtoLedgers :: ",err.message)
+  }
+  return validator
+}
+
+async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft, session,dynamicObj,financialInfo) {
   try {
     for (var years of yearData) {
       let upsert = false
@@ -1909,9 +2027,19 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
           "fiscal_ranking": ObjectId(formId),
           "type": years.type
         }
-
         if (updateForm) {
           upsert = true
+          if(dynamicObj.calculatedFrom){
+            let validator = await validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financialInfo)
+            // console.log("validator :::",validator)
+            if(validator.valid){
+              years.value = validator.value
+              // years.modelName = 
+            }
+            else{
+              throw { "message": validator.message, "type": "ValidationError" }
+            }
+          }
           payload['value'] = years.value
           payload['date'] = years.date
           payload['file'] = years.file
@@ -1940,7 +2068,9 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
     }
   }
   catch (err) {
-    console.log("error in updateQueryForFiscalRanking ::: ", err.message)
+    if(err.type === 'ValidationError' ){
+      throw err
+    }
   }
 }
 
@@ -1959,9 +2089,9 @@ async function updateFiscalRankingForm(obj, ulbId, formId, year, updateForm, isD
           payload[key] = obj[key]
         }
         else {
-          if (!obj[key].value && !notRequiredValidations.includes(key) && !isDraft) {
-            throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
-          }
+          // if (!obj[key].value && !notRequiredValidations.includes(key) && !isDraft) {
+          //   throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
+          // }
           payload[`${key}.value`] = obj[key].value
           payload[`${key}.status`] = obj[key].status
           payload[`${key}.modelName`] = obj[key].modelName
@@ -2029,6 +2159,8 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
         }
         if (obj[k].yearData) {
           let yearArr = obj[k].yearData
+          let dynamicObj = obj[k]
+          let financialInfo = obj
           let status = yearArr.every((item) => {
             if (Object.keys(item).length) {
               return item.status === "APPROVED"
@@ -2038,7 +2170,7 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
             }
           })
           temp["status"].push(status)
-          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft, session)
+          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft, session,dynamicObj,financialInfo)
         }
         else {
           if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
@@ -2296,6 +2428,14 @@ module.exports.createForm = catchAsync(async (req, res) => {
     await session.abortTransaction()
     await session.endSession()
     console.log(err.message)
+    await FiscalRanking.findOneAndUpdate({
+      "ulb" : ObjectId(req.body.ulbId),
+      "design_year" : ObjectId(req.body.design_year),
+    },{
+      "$set":{
+        "isDraft":true
+      }
+    })
     response.message = "some server error occured"
     if (err.type && (err.type === "ValidationError")) {
       response.message = err.message
