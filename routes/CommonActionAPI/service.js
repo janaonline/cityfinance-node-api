@@ -2621,6 +2621,9 @@ async function nestedObjectParser(data,req){
         let pointer = result;
         let temp = {}
         let value = await decideValues(temp,shortKey,item,req)
+        if(shortKey == "audited.submit_annual_accounts"){
+            console.log("Value ;:: ",value)
+        }
         // console.log("value :: ",value)
         await keys.forEach((key, index) => {
                 if (!pointer.hasOwnProperty(key)) {
