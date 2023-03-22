@@ -15,7 +15,7 @@ const {
   getProjects
 } = require("./service");
 
-const {changeGetApiForm} = require("./middlewares")
+const {changeGetApiForm,changePayloadFormat} = require("./middlewares")
 
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
@@ -30,6 +30,7 @@ const { reportCreateValidator } = require("./validator");
 router.post(
   "/utilization-report",
   verifyToken,
+  changePayloadFormat,
   reportCreateValidator,
   draftChecker,
   createOrUpdate

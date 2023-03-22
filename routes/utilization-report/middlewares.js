@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
@@ -58,5 +58,24 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         response.data = req.form
         response.message = "Some server error occured"
         console.log("error in changeGetApiForm ::: ",err.message)
+    }
+}
+
+module.exports.changePayloadFormat = async(req,res,next)=>{
+    try{
+        let {designYear,financialYear,ulb,data} = req.body
+        let year = getKeyByValue(years,designYear)
+        let latestYear = !outDatedYears.includes(year)
+        if(latestYear){
+            let payload = await nestedObjectParser(data,req)
+            delete req.body['data']
+            console.log("payload ::: ",payload)
+            Object.assign(req.body,payload)
+        }
+        next()
+        // console.log("change Payload form::")
+    }
+    catch(err){
+        console.log("error in changePayloadFormat ::: ",err.message)
     }
 }
