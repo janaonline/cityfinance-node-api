@@ -1783,9 +1783,6 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                 let questionKeys = Object.keys(customkeys[shortKey])
                 for(let questionkey of questionKeys){
                     if(obj.shortKey === questionkey){
-                        // console.log("flattedForm ::: ",flattedForm)
-                        // console.log("obj.shortKey ::::: ",obj.shortKey)
-                        // console.log("questionkey :::: ",questionkey)
                         let answer = { label: '', textValue: '', value: '' }
                         await handleValues(obj,answer,flattedForm)
                         obj.selectedValue = [answer]
