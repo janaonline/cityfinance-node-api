@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,getSeparatedShortKeys } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
@@ -67,10 +67,11 @@ module.exports.changePayloadFormat = async(req,res,next)=>{
         let year = getKeyByValue(years,designYear)
         let latestYear = !outDatedYears.includes(year)
         if(latestYear){
-            let payload = getSeparatedShortKeys(data,req)
-            console.log("payload :::: ",payload)
+            let payload = await nestedObjectParser(data,req)
+            delete req.body['data']
+            console.log("payload ::: ",payload)
+            Object.assign(req.body,payload)
         }
-
         next()
         // console.log("change Payload form::")
     }

@@ -94,7 +94,9 @@ var customkeys = {
         "omExpensesState": 'omExpensesState',
         "omExpensesUlb": 'omExpensesUlb',
         "stateShare": 'stateShare',
-        "percProjectCost":"percProjectCost"
+        "percProjectCost":"percProjectCost",
+        "completionDate":"completionDate",
+        "startDate":"startDate"
       }
 
 }
@@ -1457,6 +1459,8 @@ class PayloadManager{
                 return mainvalue
             }
             else{
+                let answer = this.objects.answer.find(item => this.value)
+                this.value = answer.label
                 return this.value
             }
         }
@@ -1507,6 +1511,25 @@ class PayloadManager{
             console.log("error in  getNumericValues ::: ",err.message)
         }
     }
+    async getTextValues(){
+        try{
+            this.value = this.objects['answer'][0]['textValue']
+            return this.value
+        }
+        catch(err){
+            console.log("error in getTextValues :",err.message)
+        }
+    }
+    async handleConsentValues(){
+        try{
+            let answer = JSON.parse(this.objects['answer'][0]['value'])
+            this.value = answer
+            return this.value
+        } 
+        catch(err){
+            console.log("error in handleConsentValue ::: ",err.message)
+        }
+    }
 }
 
 
@@ -1515,8 +1538,10 @@ async function decideValues(temp,shortKey,objects,req){
         let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
         let value = objects['answer'][0][inputName]
-        // console.log("value ::: ",value)
         switch (objects.input_type){
+            case "1":
+                value = await service.getTextValues()
+                break
             case "2":
                 value = await service.getNumericValues()
                 break
@@ -1528,6 +1553,9 @@ async function decideValues(temp,shortKey,objects,req){
                 break
             case "5":
                 value = await service.handleRadioButtons()
+                break
+            case "22":
+                value = await service.handleConsentValues()
                 break
             default:
                 value = value
@@ -2702,30 +2730,97 @@ async function getSeparatedShortKeys(params) {
 }
 
 
+function reverseKeyValues(originalObj){
+    return  Object.entries(originalObj).reduce((acc, [key, value]) => {
+        acc[value] = key;
+        return acc;
+      }, {});
+}
+
+const handleChildValues = async(childObj,item,req)=>{
+    try{
+        if(item && item.nestedAnswer){
+            if(Object.keys(arrFields).includes(item.shortKey)  && !Array.isArray(childObj[item.shortKey])){
+                childObj[item.shortKey] = []
+            }
+            for(let nestedAnswer in item.nestedAnswer){
+                    let questions = item.nestedAnswer[nestedAnswer].answerNestedData
+                    let temp_obj = await nestedObjectParser(questions,req)
+                    if(Object.keys(arrFields).includes(item.shortKey)){
+                        let keyMappers = customkeys[item.shortKey]
+                        keyMappers = await reverseKeyValues(keyMappers)
+                        let filteredObj = await createCustomizedKeys(temp_obj,keyMappers)
+                        if(childObj[item.shortKey]){
+                            childObj[item.shortKey].push(filteredObj)
+                        }
+                    }
+                    else{
+                        Object.assign(childObj,temp_obj)
+                    }
+                }
+            }
+        return childObj
+    }
+    catch(err){
+        console.log("error in handleChildValues ::: ",err.message)
+    }
+}
+
+
 async function nestedObjectParser(data,req){
     try{
         const result = {};
-        await data.forEach(async(item) => {
-        let shortKey = item.shortKey
-        const keys = shortKey.split(".");
-        let pointer = result;
-        let temp = {}
-        let value = await decideValues(temp,shortKey,item,req)
-        await keys.forEach((key, index) => {
-                if (!pointer.hasOwnProperty(key)) {
-                pointer[key] = {};
-                }
-                if (index === keys.length - 1) {
-                pointer[key] = value;
-                }
-                pointer = pointer[key];
-            });
-        });
-        return result
+        for(let item of data){
+            let shortKey = item.shortKey
+            const keys = shortKey.split(".");
+            let pointer = result;
+            let temp = {}
+            if(item.input_type === "20"){
+                pointer = await handleChildValues(pointer,item,req)
+            }
+            else{
+                let value = await decideValues(temp,shortKey,item,req)
+                await keys.forEach((key, index) => {
+                        if (!pointer.hasOwnProperty(key)) {
+                        pointer[key] = {};
+                        }
+                        if (index === keys.length - 1) {
+                        pointer[key] = value;
+                        }
+                        pointer = pointer[key];
+                    });
+            }
+            };
+            return result
+        }
+        // await data.forEach(async(item) => {
+        // let shortKey = item.shortKey
+        // const keys = shortKey.split(".");
+        // let pointer = result;
+        // let temp = {}
+        // if(item.input_type === "20"){
+        //     pointer = await handleChildValues(pointer,item,req)
+        //     console.log("waiting ::: ",)
+        // }
+        // else{
+        //     let value = await decideValues(temp,shortKey,item,req)
+        //     await keys.forEach((key, index) => {
+        //             if (!pointer.hasOwnProperty(key)) {
+        //             pointer[key] = {};
+        //             }
+        //             if (index === keys.length - 1) {
+        //             pointer[key] = value;
+        //             }
+        //             pointer = pointer[key];
+        //         });
+        // }
+        // });
+        // console.log("returning")
+        // return result
 
-    }
+    
     catch(err){
-        console.log("error in nestedObjectParser: ::: ",err.message)
+        console.log("error in nestedObjectParser: ::: ",err)
     }
 }
 module.exports.nestedObjectParser = nestedObjectParser
