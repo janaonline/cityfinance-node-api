@@ -1672,7 +1672,7 @@ async function handleDbValues(questionObj,formObj,order){
     try{
         let answer = { label: '', textValue: '', value: '' }
         let questionOrder = order.toFixed(3)
-        questionObj.order = questionOrder
+        // questionObj.order = questionOrder
         // console.log("questionObj.shortKey :: ",questionObj.shortKey)
         if(Object.keys(groupedQuestions).includes(questionObj.shortKey)){
             questionObj = await handleGroupedQuestions(questionObj,formObj)
