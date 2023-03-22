@@ -33,10 +33,12 @@ const UtilizationReportProjectSchema = new Schema({
   capitalExpenditureUlb:{type:Number,default:0},
   omExpensesState:{type:Number,default:0},
   omExpensesUlb:{type:Number,default:0},
+  startDate:{type:Date, default: Date.now},
+  completionDate:{type:Date, default: Date.now},
   // engineerName: { type: String },
   // engineerContact: { type: String },
-  modifiedAt: { type: Date, default: Date.now() },
-  createdAt: { type: Date, default: Date.now() },
+  modifiedAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now },
   isActive: { type: Boolean, default: 1 },
 });
 const CategoryWiseDataSchema = new Schema({
