@@ -56,7 +56,7 @@ var customkeys = {
         "grantType":"grantType"
     },
     "selfDec":{
-        "name":"name",
+        "name_":"name",
         "designation":"designation"
     },
     "grantPosition":{
@@ -66,16 +66,17 @@ var customkeys = {
         "grantPosition.closingBal":"grantPosition.closingBal",
     },
     "waterManagement_tableView":{
-        "category_name":"category_name",
-        "grantUtilised":"grantUtilised",
-        "numberOfProjects":"numberOfProjects",
-        "totalProjectCost":"totalProjectCost"
+        "category_name":"wm_category_name",
+        "grantUtilised":"wm_grantUtilised",
+        "numberOfProjects":"wm_numberOfProjects",
+        "totalProjectCost":"wm_totalProjectCost"
+
     },
     "solidWasteManagement_tableView":{
-        "category_name":"category_name",
-        "grantUtilised":"grantUtilised",
-        "numberOfProjects":"numberOfProjects",
-        "totalProjectCost":"totalProjectCost"
+        "category_name":"sw_category_name",
+        "grantUtilised":"sw_grantUtilised",
+        "numberOfProjects":"sw_numberOfProjects",
+        "totalProjectCost":"sw_totalProjectCost"
 
     },
     "projectDetails_tableView_addButton":{
@@ -1750,14 +1751,33 @@ async function handleProjectCaseForDur(question,flattedForm){
     }
 }
 
+function createCustomizedKeys(answerObj,keysMapper){
+    try{
+        let obj = {}
+        for(let key in answerObj){
+            if(key === "_id") continue;
+            obj[keysMapper[key]] = answerObj[key]
+            // console.log("key ::: ",key)
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in createCustomizedKeys ::: ",err.message)
+    }
+    return answerObj
+}
+
 function handleArrayFields(shortKey,flattedForm,childQuestionData){
     try{
         let valKey = arrFields[shortKey]
         let answerObjects = flattedForm[valKey]
+        // console.log("customKeys ::: ",customkeys)
+        let keysMapper = customkeys[shortKey]
+        // console.log("keysMapper :: ",keysMapper)
         for(let index in answerObjects){
             let questionArr = childQuestionData[index]
             for(let arrIndex in questionArr){
-                let formObj = answerObjects[index]
+                let formObj = createCustomizedKeys(answerObjects[index],keysMapper)
                 let question = questionArr[arrIndex]
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question,answer,formObj)
@@ -1898,8 +1918,6 @@ const handleTextCase = async(question,obj,flattedForm)=>{
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
         obj['value'] = flattedForm[mainKey]
-        // return obj
-        // console.log("obj ::::: ")
     }
     catch(err){
         console.log("error in handleTextCase :: ",err.message)
