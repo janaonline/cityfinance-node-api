@@ -106,7 +106,8 @@ var modifiedShortKeys = {
 }
 module.exports.modifiedShortKeys  = modifiedShortKeys
 var shortKeysWithModelName = {
-    "rating":{"modelName":"Rating","identifier":"option_id"},
+    "rating":{"modelName":"Rating","identifier":"option_id","from":"value"},
+    "category":{"modelName":"Category","identifier":"name","from":"label"}
 }
 var answerObj = {
     "label": "",
@@ -1451,15 +1452,18 @@ class PayloadManager{
         try{
             if(Object.keys(this.shortKeysWithModelName).includes(this.shortKey)){
                 let modelName = shortKeysWithModelName[this.shortKey].modelName
+                let fromValue = shortKeysWithModelName[this.shortKey].from
                 let identifier = shortKeysWithModelName[this.shortKey].identifier
+                let fromString = this.objects['answer'][0][fromValue]
                 let filters = {}
-                filters[identifier] = parseInt(this.value)
+                filters[identifier] = fromString
                 if(Object.keys(this.req.body).includes("isGfc")){
+                    filters[identifier] = parseInt(filters[identifier])
                     filters['formName'] = this.req.body.isGfc ? "gfc" :"odf"
                     filters['financialYear'] = this.req.body.design_year
                 }
-                let ratingObj = await moongose.model(modelName).findOne(filters)
-                let mainvalue = ratingObj._id
+                let databaseObj = await moongose.model(modelName).findOne(filters)
+                let mainvalue = databaseObj._id
                 return mainvalue
             }
             else{
@@ -1534,6 +1538,21 @@ class PayloadManager{
             console.log("error in handleConsentValue ::: ",err.message)
         }
     }
+    async handleGpsValues(){
+        try{
+            console.log("1")
+            let answer = this.objects['answer'][0]['value'].split(",")
+            let locationObj = {
+                'lat':answer[0],
+                'long':answer[1]
+            }
+            this.value = locationObj
+            return this.value
+        }
+        catch(err){
+            console.log("error in handleGps values ::: ",err.message)
+        }
+    }
 }
 
 
@@ -1560,6 +1579,9 @@ async function decideValues(temp,shortKey,objects,req){
                 break
             case "22":
                 value = await service.handleConsentValues()
+                break
+            case "19":
+                value = await service.handleGpsValues()
                 break
             default:
                 value = value
@@ -2745,7 +2767,8 @@ const handleChildValues = async(childObj,item,req)=>{
     try{
         if(item && item.nestedAnswer){
             if(Object.keys(arrFields).includes(item.shortKey)  && !Array.isArray(childObj[item.shortKey])){
-                childObj[item.shortKey] = []
+                var arrKey = arrFields[item.shortKey]
+                childObj[arrKey] = []
             }
             for(let nestedAnswer in item.nestedAnswer){
                     let questions = item.nestedAnswer[nestedAnswer].answerNestedData
@@ -2754,8 +2777,8 @@ const handleChildValues = async(childObj,item,req)=>{
                         let keyMappers = customkeys[item.shortKey]
                         keyMappers = await reverseKeyValues(keyMappers)
                         let filteredObj = await createCustomizedKeys(temp_obj,keyMappers)
-                        if(childObj[item.shortKey]){
-                            childObj[item.shortKey].push(filteredObj)
+                        if(childObj[arrKey]){
+                            childObj[arrKey].push(filteredObj)
                         }
                     }
                     else{
@@ -2782,7 +2805,7 @@ async function nestedObjectParser(data,req){
             if(item.input_type === "20"){
                 pointer = await handleChildValues(pointer,item,req)
             }
-            else{
+            else{createCustomizedKeys
                 let value = await decideValues(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                         if (!pointer.hasOwnProperty(key)) {
