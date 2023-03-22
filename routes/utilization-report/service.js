@@ -34,8 +34,7 @@ function checkForCalculations(reports){
   try{
     let exp = parseInt(reports.grantPosition.expDuringYr)
     let projectSum = reports.projects.reduce((a,b)=> parseInt(a.cost) + parseInt(b.cost))
-    let closingBal = reports.closingBal
-    // console.log("projectSum :: ",projectSum)
+    let closingBal = reports.grantPosition.closingBal
     let expWm = 0
     for(let a of reports.categoryWiseData_wm){
       expWm += parseInt(a.grantUtilised)
@@ -290,7 +289,7 @@ module.exports.createOrUpdate = async (req, res) => {
       if (!submittedForm && !isDraft) {// final submit in first attempt
         formData['ulbSubmit'] = new Date();
         let validation = await checkForCalculations(req.body)
-          if(!validation.valid){
+        if(!validation.valid){
             return Response.BadRequest(res, {}, validation.messages);
           }
         const form = await new UtilizationReport(formData);
@@ -363,6 +362,10 @@ module.exports.createOrUpdate = async (req, res) => {
       let savedData;
       if (currentSavedUtilRep) {
         req.body['ulbSubmit'] = new Date();
+        let validation = await checkForCalculations(req.body)
+        if(!validation.valid){
+            return Response.BadRequest(res, {}, validation.messages);
+        }
         savedData = await UtilizationReport.findOneAndUpdate(
           { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
           { $set: req.body, $push: { history: req.body } },
