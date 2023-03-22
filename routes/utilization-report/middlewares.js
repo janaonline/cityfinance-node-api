@@ -38,6 +38,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
                 return res.json(response)
             }
             let flattedForm = await getFlatObj(form)
+            flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
             responseData[0]['language'] = obj
