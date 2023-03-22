@@ -1898,8 +1898,6 @@ const handleTextCase = async(question,obj,flattedForm)=>{
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
         obj['value'] = flattedForm[mainKey]
-        // return obj
-        // console.log("obj ::::: ")
     }
     catch(err){
         console.log("error in handleTextCase :: ",err.message)
