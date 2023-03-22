@@ -1414,6 +1414,10 @@ module.exports.getFlatObj = (obj) => {
 
 class PayloadManager{
     constructor(temp,shortKey,objects,req,shortKeysWithModelName){
+        this.answerLabels = {
+            "2":"value",
+            "1":"textValue"
+        }
         this.temp = temp
         this.shortKey = shortKey
         this.objects = objects
@@ -1480,6 +1484,15 @@ class PayloadManager{
             console.log("error in handleRadioButtons ::: ",err.message)
         }
     }
+    async getNumericValues(){
+        try{
+            this.value = this.objects['answer'][0]['value']
+            return this.value
+        }
+        catch(err){
+            console.log("error in  getNumericValues ::: ",err.message)
+        }
+    }
 }
 
 
@@ -1488,7 +1501,11 @@ async function decideValues(temp,shortKey,objects,req){
         let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
         let value = objects['answer'][0][inputName]
+        // console.log("value ::: ",value)
         switch (objects.input_type){
+            case "2":
+                value = await service.getNumericValues()
+                break
             case "3":
                 value = await service.getValuesFromModel()
                 break
@@ -1499,6 +1516,7 @@ async function decideValues(temp,shortKey,objects,req){
                 value = await service.handleRadioButtons()
                 break
             default:
+                value = value
                 temp[shortKey] = value
                 break
         }
@@ -1834,8 +1852,9 @@ const handleChildCase = async(question,obj,flattedForm)=>{
 const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
     try{
         let value = ''
-        
+        // console.log("question ",question.shortKey)
         if(mainKey){
+            console.log("mainKey :: ",mainKey)
             let key = mainKey + "."+question.shortKey
             question['modelValue'] = flattedForm[key]
             question['value'] = flattedForm[key]
@@ -1844,6 +1863,8 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         }
         else{
             let key = question.shortKey
+            console.log("flatted :: ",flattedForm)
+            console.log("flattedForm[key] ::: ",flattedForm[key])
             question['modelValue'] = flattedForm[key]
             question['value'] = flattedForm[key]
             obj['textValue'] = flattedForm[key]
@@ -2621,9 +2642,6 @@ async function nestedObjectParser(data,req){
         let pointer = result;
         let temp = {}
         let value = await decideValues(temp,shortKey,item,req)
-        if(shortKey == "audited.submit_annual_accounts"){
-            console.log("Value ;:: ",value)
-        }
         // console.log("value :: ",value)
         await keys.forEach((key, index) => {
                 if (!pointer.hasOwnProperty(key)) {
