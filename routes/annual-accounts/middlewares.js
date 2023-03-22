@@ -30,6 +30,7 @@ module.exports.changePayload = async(req,res,next)=>{
             let unAuditedYear = getPreviousYearsID(year,1)
             payload.audited.year = auditedYear
             payload.unAudited.year = unAuditedYear
+            console.log("payload ::; ",payload.audited)
             Object.assign(req.body,payload)
             delete req.body['data']
         }
