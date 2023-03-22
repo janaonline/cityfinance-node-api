@@ -1676,9 +1676,15 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
 }
 async function handleGroupedQuestions(questionObj,formObj){
     try{
+        let answerObj = { label: '', textValue: '', value: '' }
         let question = {...questionObj}
         let answer = formObj[questionObj.shortKey]
-        question.value = answer
+        let value = Object.values(answer).join(",")
+        question.value = value
+        question.modelValue = value
+        answerObj.textValue = value
+        answerObj.value = value
+        question.selectedValue  = [answerObj]
         // question.selectedValue = [answer]
         // question.answer = {
         //     "answer":[answer]
