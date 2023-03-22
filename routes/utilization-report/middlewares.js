@@ -68,6 +68,7 @@ module.exports.changePayloadFormat = async(req,res,next)=>{
         let latestYear = !outDatedYears.includes(year)
         if(latestYear){
             let payload = await nestedObjectParser(data,req)
+            payload['name'] = payload['name_']
             delete req.body['data']
             Object.assign(req.body,payload)
         }
