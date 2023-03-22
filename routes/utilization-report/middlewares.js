@@ -60,3 +60,14 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         console.log("error in changeGetApiForm ::: ",err.message)
     }
 }
+
+module.exports.changePayloadFormat = async()=>{
+    try{
+        console.log(">>>>>>>>>>>>>>>>>>>>>>>>")
+        return
+        // console.log("change Payload form::")
+    }
+    catch(err){
+        console.log("error in changePayloadFormat ::: ",err.message)
+    }
+}
