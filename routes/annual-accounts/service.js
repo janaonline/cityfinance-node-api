@@ -244,8 +244,6 @@ module.exports.fileDeFuncFiles = async (req, res) => {
     await Promise.all(
       slice.map(async el => {
         for (let key in el) {
-
-
           if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
             documnetcounter++;
             let url = el[key];
@@ -465,7 +463,7 @@ exports.createUpdate = async (req, res) => {
     }
     formData['unAudited']['provisional_data'] = proData ?? req.body.unAudited.provisional_data;
     formData['audited']['provisional_data'] = audData ?? req.body.audited.provisional_data;
-
+    // console.log("formData :::::::::::::::::::",formData['audited']['provisional_data'])
     req.body.status = "PENDING";
     currentAnnualAccounts = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
@@ -512,7 +510,6 @@ exports.createUpdate = async (req, res) => {
     }
     if (design_year != "606aaf854dff55e6c075d219")
       formData = calculateTabwiseStatus(formData);
-
     if (submittedForm && !submittedForm.isDraft && submittedForm.actionTakenByRole == 'ULB') {// form already submitted
       return res.status(200).json({
         status: true,
@@ -639,6 +636,7 @@ exports.createUpdate = async (req, res) => {
       isCompleted: !annualAccountData.isDraft,
     });
   } catch (err) {
+    console.log("error :: ",err.message)
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
@@ -1638,7 +1636,7 @@ exports.nmpcEligibility = catchAsync(async (req, res) => {
   })
 
 })
-exports.getAccounts = async (req, res) => {
+exports.getAccounts = async (req, res,next) => {
   try {
     let role = req.decoded.role;
     let { design_year, ulb } = req.query;
@@ -1695,15 +1693,16 @@ exports.getAccounts = async (req, res) => {
 
     ulb = req?.decoded.ulb ?? ulb;
 
-
     annualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year
     }).select({ history: 0 });
+    // console.log("annualAccountData :::: ",annualAccountData)
     if (!annualAccountData) {
-
-      return res.status(400).json(obj);
-
+      req.form = false
+      req.obj = obj
+      next()
+      return
     }
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
@@ -1759,7 +1758,9 @@ exports.getAccounts = async (req, res) => {
       clearResponseReason(annualAccountData);
 
     }
-    return res.status(200).json(annualAccountData);
+    req.form = annualAccountData
+    next()
+    // return res.status(200).json(annualAccountData);
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);

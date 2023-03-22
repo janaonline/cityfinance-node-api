@@ -30,9 +30,9 @@ const { reportCreateValidator } = require("./validator");
 router.post(
   "/utilization-report",
   verifyToken,
+  changePayloadFormat,
   reportCreateValidator,
   draftChecker,
-  changePayloadFormat,
   createOrUpdate
 );
 //read all

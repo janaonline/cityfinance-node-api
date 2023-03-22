@@ -42,7 +42,14 @@ var arrFields = {
     "projectDetails_tableView_addButton":"projects"
 }
 var specialCases = ['projectDetails_tableView_addButton']
-
+var annualRadioButtons = { // if there are any label changes for radio button in frontend please update here
+    "Yes":true,
+    "No":false,
+    "Agree":true
+}
+var customBtnsWithFormID = {
+    "5":annualRadioButtons
+}
 var customkeys = {
     "general":{
         "ulbName":"ulbName",
@@ -1421,6 +1428,10 @@ module.exports.getFlatObj = (obj) => {
 
 class PayloadManager{
     constructor(temp,shortKey,objects,req,shortKeysWithModelName){
+        this.answerLabels = {
+            "2":"value",
+            "1":"textValue"
+        }
         this.temp = temp
         this.shortKey = shortKey
         this.objects = objects
@@ -1428,7 +1439,7 @@ class PayloadManager{
         this.shortKeysWithModelName = shortKeysWithModelName
         this.inputName = inputType[objects.input_type]
         this.value = objects['answer'][0][this.inputName]
-        this.formId = req.body.formId
+        this.formId = req.body.formId || ""
     }
     async getValuesFromModel(){
         try{
@@ -1444,6 +1455,9 @@ class PayloadManager{
                 let ratingObj = await moongose.model(modelName).findOne(filters)
                 let mainvalue = ratingObj._id
                 return mainvalue
+            }
+            else{
+                return this.value
             }
         }
         catch(err){
@@ -1470,10 +1484,27 @@ class PayloadManager{
             // let enums = mongoose.model(collectionName).schema.path(this.shortKey).enumValues.filter(item => item != "")
             // console.log("enums :: ",enums)
             let label =  this.objects['answer'][0]['label']
+            if(Object.keys(customBtnsWithFormID).includes(this.formId.toString())){
+                let radioButtonObj = customBtnsWithFormID[this.formId.toString()]
+                this.value = radioButtonObj[label]
+            }
+            // if(Object.keys.includes(annualRadioButtons)){
+            //     thi
+            //     this.value = formIds
+            // }
             return this.value 
         }
         catch(err){
             console.log("error in handleRadioButtons ::: ",err.message)
+        }
+    }
+    async getNumericValues(){
+        try{
+            this.value = this.objects['answer'][0]['value']
+            return this.value
+        }
+        catch(err){
+            console.log("error in  getNumericValues ::: ",err.message)
         }
     }
 }
@@ -1484,7 +1515,11 @@ async function decideValues(temp,shortKey,objects,req){
         let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
         let value = objects['answer'][0][inputName]
+        // console.log("value ::: ",value)
         switch (objects.input_type){
+            case "2":
+                value = await service.getNumericValues()
+                break
             case "3":
                 value = await service.getValuesFromModel()
                 break
@@ -1495,10 +1530,13 @@ async function decideValues(temp,shortKey,objects,req){
                 value = await service.handleRadioButtons()
                 break
             default:
+                value = value
                 temp[shortKey] = value
                 break
         }
         temp[shortKey] = value
+        // console.log("value :::: ",value)
+        return value
     }
     catch(err){
         console.log("error in decideValues ::: ",err.message)
@@ -1517,8 +1555,8 @@ async function returnParsedObj(objects,req) {
 
             if (answers.length > 1) {
                 value = objects['answer'].map(item => item[inputName])
-            }
-            let obj = splittedShortKey.reduceRight((obj, key) => ({ [key]: obj }), value)
+            }   
+            let obj = splittedShortKey.reduceRight((obj, key) => ( { [key]: obj }), value)
             return obj
         }
         else {
@@ -1564,7 +1602,6 @@ async function payloadParser(body,req) {
         }
         return payload
     }
-
     catch (err) {
         console.log("error in payloadParser ::: ", err.message)
     }
@@ -1633,7 +1670,7 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
         roleWiseJson(obj[0],role)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
         // await deleteKeys(flattedForm, keysToBeDeleted)
-        
+
         for (let key in obj) {
             let questions = obj[key].question
             if (obj[key].question) {
@@ -1698,8 +1735,6 @@ async function handleDbValues(questionObj,formObj,order){
         console.log("error in handleProjectedArr ::: ",err.message)
     }
 }
-
-
 async function handleProjectCaseForDur(question,flattedForm){
     try{
         let order = parseInt(question.order)
@@ -1772,7 +1807,6 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
                 }
             }
         }
-        
     }
     catch(err){
         console.log("error in handleArrayFields :: ",err.message)
@@ -1872,7 +1906,7 @@ const handleChildCase = async(question,obj,flattedForm)=>{
 const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
     try{
         let value = ''
-        
+        // console.log("question ",question.shortKey)
         if(mainKey){
             let key = mainKey + "."+question.shortKey
             question['modelValue'] = flattedForm[key]
@@ -1923,6 +1957,44 @@ async function handleConsentCase(question,obj,flattedForm,mainKey){
         console.log("error in handleConsentCase :::: ",err.message)
     }
 }
+const getFilteredOptions =(answerKeys,annualRadioButtons)=>{
+    try{
+        const filteredObj = Object.keys(annualRadioButtons)
+            .filter((key) => answerKeys.includes(key))
+            .reduce((obj, key) => {
+            return Object.assign(obj, {
+            [key]: annualRadioButtons[key]
+            });
+            }, {});
+        return filteredObj
+        }
+
+    catch(err){
+        console.log("error in getFilteredOptions :: ",err.message)
+        return annualRadioButtons
+    }
+}
+
+const handleRadioButtonCase = async(question,obj,flattedForm,mainKey) =>{
+    try{
+        let shortKey = question.shortKey
+        let value = flattedForm[shortKey]
+        let answerIds = question.answer_option.map(item => ({[item.name]:item._id}))
+        let answerKeys = question.answer_option.map(item => item.name)
+        let filteredObj = getFilteredOptions(answerKeys,annualRadioButtons)
+        let mformValue = getKeyByValue(filteredObj,value)
+        if(mformValue){
+            let answerObj = question.answer_option.find(item => item.name === mformValue)
+            question['modelValue'] = answerObj._id
+            question['value'] = answerObj._id
+            obj['textValue'] = mformValue
+            obj['value'] = answerObj._id
+        }
+    }
+    catch(err){
+        console.log("error in handleRadioButtonCase ::: ",err.message)
+    }
+}
 
 const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
     let answerKey = inputType[question.input_type]
@@ -1942,6 +2014,9 @@ const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
                 break
             case "3":
                 await handleSelectCase(question,obj,flattedForm,mainKey)
+                break
+            case "5":
+                await handleRadioButtonCase(question,obj,flattedForm,mainKey)
                 break
             case "20":
                 await handleChildCase(question,obj,flattedForm,mainKey)
@@ -1977,7 +2052,11 @@ function handledateCase(question,obj,flattedForm){
 
 function handleFileCase(question,obj,flattedForm){
     try{
-        let mainKey = question.shortKey.split(".")[0].replace(" ", "")
+        let spiltArr = question.shortKey.split(".")
+        let mainKey = spiltArr[0].replace(" ", "")
+        if(spiltArr.length > 2){
+            mainKey = spiltArr.slice(0,spiltArr.length).join(".")
+        }
         let modifiedKeys = Object.keys(modifiedShortKeys)
         if(modifiedKeys.includes(mainKey)){
             mainKey = modifiedShortKeys[mainKey]
@@ -1989,6 +2068,7 @@ function handleFileCase(question,obj,flattedForm){
         obj['textValue'] = flattedForm[url]
         question['modelValue'] = flattedForm[url]
         question['value'] = flattedForm[url]
+        // console.log("question ::: ",question)
     }
     catch(err){
         console.log("error in handleObjectCase :: ",err.message)
@@ -2020,7 +2100,6 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         for (let key in obj) {
             let questions = obj[key].question
             if (questions) {
-                
                 for (let question of questions) {    
                     let answer = []
                     let obj = { ...answerObj }
@@ -2059,7 +2138,7 @@ async function handleCasesByInputType(question){
         switch(question.input_type){
             case "3":
                 if(question.modelName){
-                obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
+                    obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
                 }
                 break
             // case "11":
@@ -2621,3 +2700,32 @@ async function getSeparatedShortKeys(params) {
 
   return output;
 }
+
+
+async function nestedObjectParser(data,req){
+    try{
+        const result = {};
+        await data.forEach(async(item) => {
+        let shortKey = item.shortKey
+        const keys = shortKey.split(".");
+        let pointer = result;
+        let temp = {}
+        let value = await decideValues(temp,shortKey,item,req)
+        await keys.forEach((key, index) => {
+                if (!pointer.hasOwnProperty(key)) {
+                pointer[key] = {};
+                }
+                if (index === keys.length - 1) {
+                pointer[key] = value;
+                }
+                pointer = pointer[key];
+            });
+        });
+        return result
+
+    }
+    catch(err){
+        console.log("error in nestedObjectParser: ::: ",err.message)
+    }
+}
+module.exports.nestedObjectParser = nestedObjectParser
