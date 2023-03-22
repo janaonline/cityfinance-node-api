@@ -1912,7 +1912,6 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         let value = ''
         // console.log("question ",question.shortKey)
         if(mainKey){
-            console.log("mainKey :: ",mainKey)
             let key = mainKey + "."+question.shortKey
             question['modelValue'] = flattedForm[key]
             question['value'] = flattedForm[key]
@@ -1921,8 +1920,6 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         }
         else{
             let key = question.shortKey
-            console.log("flatted :: ",flattedForm)
-            console.log("flattedForm[key] ::: ",flattedForm[key])
             question['modelValue'] = flattedForm[key]
             question['value'] = flattedForm[key]
             obj['textValue'] = flattedForm[key]
@@ -2718,7 +2715,6 @@ async function nestedObjectParser(data,req){
         let pointer = result;
         let temp = {}
         let value = await decideValues(temp,shortKey,item,req)
-        // console.log("value :: ",value)
         await keys.forEach((key, index) => {
                 if (!pointer.hasOwnProperty(key)) {
                 pointer[key] = {};
