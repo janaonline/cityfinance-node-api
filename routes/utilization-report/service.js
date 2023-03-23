@@ -34,7 +34,7 @@ function checkForCalculations(reports){
   try{
     let exp = parseInt(reports.grantPosition.expDuringYr)
     let projectSum = 0
-    if(reports.projects){
+    if(reports.projects.length > 0){
       projectSum = reports.projects.reduce((a,b)=> parseInt(a.cost) + parseInt(b.cost))
     }
     let closingBal = reports.grantPosition.closingBal
@@ -88,6 +88,7 @@ const {
 } = require("../../service");
 const { ElasticBeanstalk } = require("aws-sdk");
 const { forever } = require("request");
+const { years } = require("../../service/years");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -96,7 +97,7 @@ const time = () => {
 };
 module.exports.createOrUpdate = async (req, res) => {
   try {
-    const { financialYear, isDraft, designYear } = req.body;
+    const { financialYear, isDraft, designYear,isProjectLoaded } = req.body;
     const ulb = req.decoded?.ulb;
     req.body.ulb = ulb;
     req.body.actionTakenBy = req.decoded?._id;
@@ -362,7 +363,7 @@ module.exports.createOrUpdate = async (req, res) => {
         req.body['ulbSubmit'] = new Date();
         let body = req.body
         if(!req.body.projects || req.body.projects.length === 0){
-            body.projects = currentSavedUtilRep.projects
+          body.projects = currentSavedUtilRep.projects
         }
         let validation = await checkForCalculations(body)
         if(!validation.valid){
@@ -378,7 +379,9 @@ module.exports.createOrUpdate = async (req, res) => {
           Service.sendEmail(mailOptions);
         }
       } else {
-        
+        if(!isProjectLoaded && years['2023-24']){
+          delete req.body['projects']
+        }
         savedData = await UtilizationReport.findOneAndUpdate(
           { ulb: ObjectId(ulb), financialYear, designYear },
           { $set: req.body },
