@@ -63,6 +63,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
 
 module.exports.changePayloadFormat = async(req,res,next)=>{
     try{
+        // console.log("1111111")
         let {designYear,financialYear,ulb,data} = req.body
         let year = getKeyByValue(years,designYear)
         let latestYear = !outDatedYears.includes(year)
@@ -70,6 +71,7 @@ module.exports.changePayloadFormat = async(req,res,next)=>{
             let payload = await nestedObjectParser(data,req)
             payload['name'] = payload['name_']
             delete req.body['data']
+            // console.log("payload ;: ",payload.projects)
             Object.assign(req.body,payload)
         }
         next()
