@@ -166,7 +166,7 @@ let DurProjectJson = {
     "startDate": {
         "information": "",
         "_id": "6409b860235a2809db04c501",
-        "order": "6.008",
+        "order": "6.003",
         "answer_option": [],
         "title": "Project Start Date",
         "hint": "",
@@ -231,7 +231,7 @@ let DurProjectJson = {
     "completionDate": {
         "information": "",
         "_id": "6409b8cb235a2809db04c550",
-        "order": "6.009",
+        "order": "6.004",
         "answer_option": [],
         "title": "Project Completion Date",
         "hint": "",
@@ -296,7 +296,7 @@ let DurProjectJson = {
     "location": {
         "information": "",
         "_id": "64194d9138d5190d4dcda08d",
-        "order": "6.010",
+        "order": "6.005",
         "answer_option": [],
         "title": "Location",
         "hint": "",
@@ -341,7 +341,7 @@ let DurProjectJson = {
     "cost": {
         "information": "i = The total project cost is as per the DPR.",
         "_id": "64097e763b2eb509dc61e671",
-        "order": "6.005",
+        "order": "6.006",
         "answer_option": [],
         "title": "Total Project Cost (INR in lakhs)",
         "hint": "",
@@ -417,7 +417,7 @@ let DurProjectJson = {
     "expenditure": {
         "information": "i = This is the outlay from 15th FC grant out of the total project cost. For Ex: If project total cost is 100 Cr, out of which 80 Cr is sourced from AMRUT 2.0, rest 20 Cr is sourced from 15th FC tied grants, then 20 Cr should be entered here. Please do not enter the expenditure incurred.",
         "_id": "64097e903b2eb509dc61e6b2",
-        "order": "6.006",
+        "order": "6.007",
         "answer_option": [],
         "title": "Amount of 15th FC Grants in Total Project Cost (INR in lakhs)",
         "hint": "",
@@ -493,7 +493,7 @@ let DurProjectJson = {
     "percProjectCost": {
         "information": "",
         "_id": "64097eb23b2eb509dc61e6f5",
-        "order": "6.007",
+        "order": "6.008",
         "answer_option": [],
         "title": "% of 15th FC Grants in Total Project Cost",
         "hint": "",
