@@ -1560,11 +1560,18 @@ class PayloadManager{
         }
         catch(err){
             console.log("error in handleGps values ::: ",err.message)
+            return this.value = {
+                "lat":0,
+                "long":0,
+            }
         }
     }
     async handleDateValues(){
         try{
             let answer = this.objects['answer'][0]['value']
+            if(!answer){
+                answer = new Date().toISOString() // static code because of issue in mform json
+            }
             this.value = new Date(answer)
             return this.value
         }
@@ -2836,6 +2843,7 @@ async function nestedObjectParser(data,req){
             }
             else{
                 if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
+                    console.log("item :: ",item)
                     item.answer = [
                         {
                             "label":"",
@@ -2843,6 +2851,7 @@ async function nestedObjectParser(data,req){
                             "value":"0,0"
                         }
                     ]
+                    console.log("item :: ",item)
                 }
                 let value = await decideValues(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
