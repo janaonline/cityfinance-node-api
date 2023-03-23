@@ -2241,7 +2241,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                // "info": "To be taken from Audited Annual Accounts"
             },
             "incmOtherAssets": {
                 "key": "incmOtherAssets",
@@ -2317,7 +2317,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                "info": "To be taken from Audited Annual Accounts"
+                // "info": "To be taken from Audited Annual Accounts"
             },
             "netRevenue": {
                 "key": "netRevenue",
@@ -5224,7 +5224,7 @@ const fiscalRankingFormJson = () => {
                         "placeHolder": ""
                     }
                 ],
-                // "info": "Self-reported"
+                "info": "The exempt properties are a subset of the assessed properties, and include those categories of properties which have been exempt by the municipal government from paying property tax in full or in part."
             },
             "paid_property_tax": {
                 "label": "Number of Properties for which Property Tax has been paid during FY 2021-22.",

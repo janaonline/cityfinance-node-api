@@ -319,14 +319,17 @@ async function getModifiedTabsFiscalRanking(tabs, viewOne, fyDynemic, conditionF
     console.log("error in getModifiedTabsFiscalRanking ::: ", err.message)
   }
 }
-function statusObj(label, fieldType, type, dataSource, position) {
+function statusObj(label, fieldType, type, dataSource, position,required=true,mn=false,info="") {
   return {
     ...getInputKeysByType(
       fieldType,
       type,
       label,
       dataSource,
-      position
+      position,
+      required,
+      mn,
+      info
     ),
     value: null,
     status: "PENDING"
