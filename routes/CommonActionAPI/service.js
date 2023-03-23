@@ -1579,7 +1579,7 @@ async function decideValues(temp,shortKey,objects,req){
     try{
         let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
-        let value = objects['answer'][0][inputName]
+        let value = objects['answer'][0][inputName] || ''
         switch (objects.input_type){
             case "1":
                 value = await service.getTextValues()
@@ -1774,6 +1774,9 @@ async function handleGroupedQuestions(questionObj,formObj){
         answerObj.textValue = value
         answerObj.value = value
         question.selectedValue  = [answerObj]
+        question.answer = {
+            answer:[answerObj]
+        }
         // question.selectedValue = [answer]
         // question.answer = {
         //     "answer":[answer]
@@ -2832,6 +2835,15 @@ async function nestedObjectParser(data,req){
                 pointer = await handleChildValues(pointer,item,req)
             }
             else{
+                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
+                    item.answer = [
+                        {
+                            "label":"",
+                            "textValue":"",
+                            "value":"0,0"
+                        }
+                    ]
+                }
                 let value = await decideValues(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                         if (!pointer.hasOwnProperty(key)) {

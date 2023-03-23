@@ -382,6 +382,7 @@ module.exports.createOrUpdate = async (req, res) => {
         if(!isProjectLoaded && years['2023-24']){
           delete req.body['projects']
         }
+        // console.log(req.body)
         savedData = await UtilizationReport.findOneAndUpdate(
           { ulb: ObjectId(ulb), financialYear, designYear },
           { $set: req.body },
