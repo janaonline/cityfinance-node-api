@@ -1687,18 +1687,25 @@ exports.getAccounts = async (req, res,next) => {
 
 
     ulb = req?.decoded.ulb ?? ulb;
-
+    let filters = {
+      ulb: ObjectId(ulb),
+      design_year
+    }
+    if( YEAR_CONSTANTS["23_24"] === design_year.toString()){
+      filters['design_year'] = prevYearData._id
+      filters['audited.submit_annual_accounts'] = true
+    }
     annualAccountData = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year
     }).select({ history: 0 });
-    // console.log("annualAccountData :::: ",annualAccountData)
     if (!annualAccountData) {
       req.form = false
       req.obj = obj
       next()
       return
     }
+    
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
