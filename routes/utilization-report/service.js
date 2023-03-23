@@ -360,7 +360,11 @@ module.exports.createOrUpdate = async (req, res) => {
       let savedData;
       if (currentSavedUtilRep) {
         req.body['ulbSubmit'] = new Date();
-        let validation = await checkForCalculations(req.body)
+        let body = req.body
+        if(!req.body.projects || req.body.projects.length === 0){
+            body.projects = currentSavedUtilRep.projects
+        }
+        let validation = await checkForCalculations(body)
         if(!validation.valid){
             return Response.BadRequest(res, {}, validation.messages);
         }
@@ -1387,7 +1391,6 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     projectJson.data[0].question = questions
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
     projectJson = await mutuateGetPayload(projectJson.data, projectObj,keysToBeDeleted,role)
-    console.log("projectJson :: ",projectJson)
     response.data = projectJson[0].question[0].childQuestionData
     response.success = true
     return res.json(response)

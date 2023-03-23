@@ -492,6 +492,7 @@ let DurProjectJson = {
     },
     "percProjectCost": {
         "information": "",
+        "isQuestionDisabled": true,
         "_id": "64097eb23b2eb509dc61e6f5",
         "order": "6.008",
         "answer_option": [],
