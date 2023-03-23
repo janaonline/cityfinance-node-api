@@ -80,7 +80,7 @@ module.exports.changeResponse = async(req,res,next) =>{
             response.message = 'Form Questionare!'
             response.success = true
             console.log("1")
-            mutatedJson[0].prevStatus = req.obj.url
+            mutatedJson[0].prevStatus = req.obj?.url || ""
             responseData[0]['language'] = mutatedJson
             if(Object.keys(form).length > 0){
                 let flattedForm = getFlatObj(form)
@@ -105,6 +105,7 @@ module.exports.changeResponse = async(req,res,next) =>{
 
     }
     catch(err){
+        console.log("err :: ",err.message)
         response.message = "Some server error occured"
         response.success = false
         return res.status(400).json(response)
