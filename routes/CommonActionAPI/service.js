@@ -26,7 +26,7 @@ const CurrentStatus = require('../../models/CurrentStatus');
 let groupedQuestions = {
     "location":['lat','long']
 }
-
+let dynamicTables = ['Category']
 var formIdCollections= {
     "80":"PropertyTaxOp"
 }
@@ -40,6 +40,10 @@ var arrFields = {
     "waterManagement_tableView":"categoryWiseData_wm",
     "solidWasteManagement_tableView":"categoryWiseData_swm",
     "projectDetails_tableView_addButton":"projects"
+}
+
+var categoryTable = {
+
 }
 var specialCases = ['projectDetails_tableView_addButton']
 var annualRadioButtons = { // if there are any label changes for radio button in frontend please update here
@@ -1457,8 +1461,14 @@ class PayloadManager{
                     filters[identifier] = parseInt(filters[identifier])
                     filters['formName'] = this.req.body.isGfc ? "gfc" :"odf"
                     filters['financialYear'] = this.req.body.design_year
+                } 
+                let databaseObj;
+                if(dynamicTables.includes(modelName)){
+                    databaseObj = categoryTable[fromString]
                 }
-                let databaseObj = await moongose.model(modelName).findOne(filters)
+                else{
+                    databaseObj = await moongose.model(modelName).findOne(filters)
+                }
                 let mainvalue = databaseObj._id
                 return mainvalue
             }
@@ -2802,6 +2812,12 @@ const handleChildValues = async(childObj,item,req)=>{
 
 async function nestedObjectParser(data,req){
     try{
+        if(req.body.formId === 4 && Object.keys(categoryTable).length === 0){
+            let databaseArr = await moongose.model('Category').find({}).lean()
+            for(let db of databaseArr){
+                categoryTable[db.name.toString()] = db._id
+            } 
+        }
         const result = {};
         for(let item of data){
             let shortKey = item.shortKey
@@ -2811,7 +2827,7 @@ async function nestedObjectParser(data,req){
             if(item.input_type === "20"){
                 pointer = await handleChildValues(pointer,item,req)
             }
-            else{createCustomizedKeys
+            else{
                 let value = await decideValues(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                         if (!pointer.hasOwnProperty(key)) {
@@ -2850,7 +2866,7 @@ async function nestedObjectParser(data,req){
         // });
         // console.log("returning")
         // return result
-
+        
     
     catch(err){
         console.log("error in nestedObjectParser: ::: ",err)
