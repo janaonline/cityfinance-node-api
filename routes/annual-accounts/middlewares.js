@@ -57,6 +57,9 @@ module.exports.changeResponse = async(req,res,next) =>{
           ]
         let yearId = req.query.design_year
         let year = getKeyByValue(years,yearId)
+        if(req.form && req.form.isDraft && req.form.isDraft === ""){
+            req.form.isDraft = true
+        }
         let form = {...req.form}
         let {name,role} = req.decoded
         let latestYear = !outDatedYears.includes(year)
