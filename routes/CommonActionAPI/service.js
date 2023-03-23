@@ -1536,7 +1536,6 @@ class PayloadManager{
     }
     async handleGpsValues(){
         try{
-            console.log("1")
             let answer = this.objects['answer'][0]['value'].split(",")
             let locationObj = {
                 'lat':answer[0],
@@ -1801,7 +1800,6 @@ async function handleProjectCaseForDur(question,flattedForm){
                     let jsonKey = keysObj[keys]
                     let questionObj = DurProjectJson[jsonKey]
                     if(questionObj){
-                        order += 0.001
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
@@ -1812,7 +1810,7 @@ async function handleProjectCaseForDur(question,flattedForm){
                 project_arr.push(nested_arr)
             }
         }
-        
+        project_arr = project_arr.map(item => item.sort((a, b) => a.order > b.order ? 1 : -1))
          let  childData = [...project_arr]
          return childData
     }
