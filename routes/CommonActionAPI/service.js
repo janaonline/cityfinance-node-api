@@ -1538,14 +1538,24 @@ class PayloadManager{
         try{
             let answer = this.objects['answer'][0]['value'].split(",")
             let locationObj = {
-                'lat':answer[0],
-                'long':answer[1]
+                'lat':answer?.[0],
+                'long':answer?.[1]
             }
             this.value = locationObj
             return this.value
         }
         catch(err){
             console.log("error in handleGps values ::: ",err.message)
+        }
+    }
+    async handleDateValues(){
+        try{
+            let answer = this.objects['answer'][0]['value']
+            this.value = new Date(answer)
+            return this.value
+        }
+        catch(err){
+            console.log("error in handleDateValues :: ",err.message)
         }
     }
 }
@@ -1578,6 +1588,8 @@ async function decideValues(temp,shortKey,objects,req){
             case "19":
                 value = await service.handleGpsValues()
                 break
+            case "14":
+                value = await service.handleDateValues()
             default:
                 value = value
                 temp[shortKey] = value
