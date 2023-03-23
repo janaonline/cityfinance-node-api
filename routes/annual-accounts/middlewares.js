@@ -80,7 +80,6 @@ module.exports.changeResponse = async(req,res,next) =>{
             }
             response.message = 'Form Questionare!'
             response.success = true
-            console.log("1")
             mutatedJson[0].prevStatus = req.obj?.url || ""
             responseData[0]['language'] = mutatedJson
             if(Object.keys(form).length > 0){
@@ -88,7 +87,6 @@ module.exports.changeResponse = async(req,res,next) =>{
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
                 response.data = responseData
-                console.log("2")
                 return res.status(200).json(response)
             }
             response.data = responseData
