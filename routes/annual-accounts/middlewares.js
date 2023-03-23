@@ -75,14 +75,18 @@ module.exports.changeResponse = async(req,res,next) =>{
         if(latestYear){
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
             let mutatedJson = await mutateJson(obj,keysToBeDeleted,req.query,role)
+            if(mutatedJson[0].isDraft === ""){
+                mutatedJson[0].isDraft = true
+            }
             response.message = 'Form Questionare!'
             response.success = true
             responseData[0]['language'] = mutatedJson
-            if(Object.keys(form).length){
+            if(Object.keys(form).length > 0){
                 let flattedForm = getFlatObj(form)
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
                 response.data = responseData
+                console.log("2")
                 return res.status(200).json(response)
             }
             response.data = responseData
