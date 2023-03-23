@@ -33,7 +33,10 @@ function checkForCalculations(reports){
   }
   try{
     let exp = parseInt(reports.grantPosition.expDuringYr)
-    let projectSum = reports.projects.reduce((a,b)=> parseInt(a.cost) + parseInt(b.cost))
+    let projectSum = 0
+    if(reports.projects){
+      projectSum = reports.projects.reduce((a,b)=> parseInt(a.cost) + parseInt(b.cost))
+    }
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
     for(let a of reports.categoryWiseData_wm){
@@ -300,7 +303,6 @@ module.exports.createOrUpdate = async (req, res) => {
           if (formData.projects.length > 0) {
             for (let i = 0; i < formData.projects.length; i++) {
               let project = formData.projects[i];
-
               project.modifiedAt = form.projects[i].modifiedAt;
               project.createdAt = form.projects[i].createdAt;
               sum += parseInt(project.cost)
@@ -310,7 +312,6 @@ module.exports.createOrUpdate = async (req, res) => {
               if (project._id) {
                 project._id = ObjectId(project._id);
               }
-
             }
           }
           
@@ -356,9 +357,6 @@ module.exports.createOrUpdate = async (req, res) => {
           { history: 0 }
         );
       }
-
-
-
       let savedData;
       if (currentSavedUtilRep) {
         req.body['ulbSubmit'] = new Date();
