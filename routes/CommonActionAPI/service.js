@@ -1540,12 +1540,13 @@ class PayloadManager{
     }
     async handleConsentValues(){
         try{
-            let answer = JSON.parse(this.objects['answer'][0]['value'])
+            let answer = consentCases[this.objects['answer'][0]['value']]
             this.value = answer
             return this.value
         } 
         catch(err){
             console.log("error in handleConsentValue ::: ",err.message)
+            return this.value = false
         }
     }
     async handleGpsValues(){
