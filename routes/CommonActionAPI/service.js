@@ -1826,6 +1826,7 @@ async function handleProjectCaseForDur(question,flattedForm){
         let order = parseInt(question.order)
         let dbKey = arrFields[question.shortKey]
         let values = flattedForm[dbKey]
+        let isDraft = flattedForm['isDraft']
         var project_arr = []
         let a = 0
         if(values){
@@ -1840,6 +1841,9 @@ async function handleProjectCaseForDur(question,flattedForm){
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
+                        if(questionObj.isQuestionDisabled !== true){
+                            questionObj.isQuestionDisabled = handleIsDraftCases({isDraft})
+                        }
                         nested_arr.push({...questionObj})
                     }
                 }
