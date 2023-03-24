@@ -28,7 +28,9 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
               "_id": req?.form?._id ,
               "formId": req.query.formId,
               "language":[],
-              "canTakeAction":false
+              "canTakeAction":form?.canTakeAction || false,
+              "isDraft":form?.isDraft || true,
+              "status":form?.status || null
             }
           ]
         if(latestYear){
@@ -37,6 +39,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
                 repsonse.success = false
                 return res.json(response)
             }
+            console.log("form ::: ",form)
             let flattedForm = await getFlatObj(form)
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
