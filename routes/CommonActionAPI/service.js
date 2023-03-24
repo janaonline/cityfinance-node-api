@@ -2125,6 +2125,10 @@ function handledateCase(question,obj,flattedForm){
     try{
         
         let mainKey = question.shortKey
+        if(flattedForm[mainKey] === undefined){
+            flattedForm[mainKey] = new Date().toISOString()
+        }
+        flattedForm[mainKey] = flattedForm[mainKey].toISOString().split("T")[0]
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
