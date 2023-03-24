@@ -325,14 +325,17 @@ async function getModifiedTabsFiscalRanking(tabs, viewOne, fyDynemic, conditionF
     console.log("error in getModifiedTabsFiscalRanking ::: ", err.message)
   }
 }
-function statusObj(label, fieldType, type, dataSource, position) {
+function statusObj(label, fieldType, type, dataSource, position,required=true,mn=false,info="") {
   return {
     ...getInputKeysByType(
       fieldType,
       type,
       label,
       dataSource,
-      position
+      position,
+      required,
+      mn,
+      info
     ),
     value: null,
     status: "PENDING"
@@ -516,6 +519,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           dataSource,
           "11",
+          true,
+          false,
+          "Tax revenue levied for provision of water supply services."
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -528,6 +534,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           dataSource,
           "12",
+          true,
+          false,
+          "Tax revenue levied for provision of sanitation & sewerage service delivery."
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -777,6 +786,10 @@ exports.getView = async function (req, res, next) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
                     pf['modelName'] = chekFile ? "ULBLedger" : ""
+                    console.log("chekFile :: ",chekFile)
+                    if(chekFile){
+                      pf['info'] =  `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`
+                    }
                     if (subData[key].calculatedFrom === undefined) {
                       console.log("chekFile", chekFile)
                       pf['readonly'] = chekFile ? true : false;
@@ -792,8 +805,10 @@ exports.getView = async function (req, res, next) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "PENDING";
                   pf['modelName'] = chekFile ? "ULBLedger" : ""
+                  if(chekFile){
+                    pf['info'] =  `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`
+                  }
                   if (subData[key].calculatedFrom === undefined) {
-                    console.log("chekFile", chekFile)
 
                     pf['readonly'] = chekFile ? true : false;
                     pf['required'] = chekFile ? false : true;
@@ -1988,9 +2003,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financi
           validator.value = value
           return validator
         }
-        
         else if(isDraft === false && dynamicObj.calculatedFrom){
-          // console.log("dynamicObj ::: ",dynamicObj)
           let displayPriorities = dynamicObj.calculatedFrom
           let sum = await getTotalForCalculatedValues(dynamicObj,displayPriorities,years,financialInfo)
           if(ulbValue === sum){
@@ -1999,7 +2012,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financi
           }
           else{
             validator.valid = false,
-            validator.message =  `ulb ledger data is not matching with the calculated value for ${years.type}`
+            validator.message =  `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(",")}`
           }
           return validator
         }

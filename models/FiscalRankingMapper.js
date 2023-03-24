@@ -20,7 +20,8 @@ const fiscalRankingMapperSchema = new Schema(
         type: {
             type: String,
             enum: {
-                values: [ 
+                values: [
+                'auditedAnnualFySt',
                 'auditAnnualReport',    
                 'totalRecActual',
                 'totalRcptWaterSupply',
@@ -100,7 +101,9 @@ const fiscalRankingMapperSchema = new Schema(
                 'fy_21_22_online',
                 'property_tax_register',
                 'paying_property_tax',
-                'paid_property_tax'
+                'paid_property_tax',
+                'appAnnualBudget',
+                'accountStwreProof'
             ],
                 message: "ERROR: STATUS BE EITHER",
             },
