@@ -53,7 +53,7 @@ const UtilizationReportSchema = new Schema(
     name: { type: String },
     designation: { type: String },
     ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
-    grantType: { type: String, required: true, enum: ["Tied", "Untied"] },
+    grantType: { type: String, default:"Tied" ,required: true, enum: ["Tied", "Untied"] },
     grantPosition: {
       unUtilizedPrevYr: { type: Number, default: null },
       receivedDuringYr: { type: Number, default: null },
