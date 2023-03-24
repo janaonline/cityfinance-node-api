@@ -1731,7 +1731,7 @@ async function handleSelectCase(question,obj,flattedForm){
                 let tempObj = question.answer_option.find(item => item.name === value)
                 obj['label'] = tempObj['name']
                 obj['value'] = tempObj['_id']
-                question['modelValue'] = tempObj['name']
+                question['modelValue'] = tempObj['_id']
                 question['value'] = tempObj['_id']
                 question['selectedAnswerOption'] = {'name':tempObj['_id']}
             }
