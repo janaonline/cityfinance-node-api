@@ -5056,7 +5056,7 @@ const fiscalRankingFormJson = () => {
                         },
                         "min": 0,
                         "max": 999999999999999,
-                        "required": false,
+                        "required": true,
                         "type": "accountStwreProof",
                         "year": years['2021-22'],
                         "code": [],
