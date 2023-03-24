@@ -1872,6 +1872,21 @@ function createCustomizedKeys(answerObj,keysMapper){
     return answerObj
 }
 
+function handleIsDraftCases(flattedForm){
+    try{
+        // console.log("flattedForm.isDraft :: ",flattedForm.isDraft)
+        if(flattedForm.isDraft === false){
+            return true
+        }
+        else{
+            return false
+        }
+    }
+    catch(err){
+        console.log("error in handleIsDraftCases")
+    }
+}
+
 function handleArrayFields(shortKey,flattedForm,childQuestionData){
     try{
         let valKey = arrFields[shortKey]
@@ -1884,6 +1899,9 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
             for(let arrIndex in questionArr){
                 let formObj = createCustomizedKeys(answerObjects[index],keysMapper)
                 let question = questionArr[arrIndex]
+                if(question.isQuestionDisabled !== true){
+                    question.isQuestionDisabled = handleIsDraftCases(flattedForm)
+                }
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question,answer,formObj)
                 question.selectedValue = [answer]
@@ -1911,6 +1929,9 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                         let answer = { label: '', textValue: '', value: '' }
                         await handleValues(obj,answer,flattedForm)
                         obj.selectedValue = [answer]
+                        if(obj.isQuestionDisabled !== true){
+                            obj.isQuestionDisabled = handleIsDraftCases(flattedForm)
+                        }
                         obj.answer = {
                             answer : [answer]
                         }
