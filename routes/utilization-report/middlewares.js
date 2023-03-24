@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,clearVariables } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
@@ -28,7 +28,9 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
               "_id": req?.form?._id ,
               "formId": req.query.formId,
               "language":[],
-              "canTakeAction":false
+              "canTakeAction":form?.canTakeAction || false,
+              "isDraft":form?.isDraft || true,
+              "status":form?.status || null
             }
           ]
         if(latestYear){
@@ -63,7 +65,6 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
 
 module.exports.changePayloadFormat = async(req,res,next)=>{
     try{
-        // console.log("1111111")
         let {designYear,financialYear,ulb,data} = req.body
         let year = getKeyByValue(years,designYear)
         let latestYear = !outDatedYears.includes(year)
@@ -71,7 +72,7 @@ module.exports.changePayloadFormat = async(req,res,next)=>{
             let payload = await nestedObjectParser(data,req)
             payload['name'] = payload['name_']
             delete req.body['data']
-            // console.log("payload ;: ",payload.projects)
+            await clearVariables('category')
             Object.assign(req.body,payload)
         }
         next()

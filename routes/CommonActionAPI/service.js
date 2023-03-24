@@ -2823,14 +2823,40 @@ const handleChildValues = async(childObj,item,req)=>{
     }
 }
 
-
-async function nestedObjectParser(data,req){
-    try{
-        if(req.body.formId === 4 && Object.keys(categoryTable).length === 0){
+async function fillCategoryTable(){
+    let promise = await new Promise(async(resolve,reject)=>{
+        try{
+            console.log("---")
             let databaseArr = await moongose.model('Category').find({}).lean()
             for(let db of databaseArr){
                 categoryTable[db.name.toString()] = db._id
             } 
+            resolve(true)
+        }
+        catch(err){
+            reject(err)
+        }
+    })
+    return promise
+}
+
+async function clearVariables(type){
+    try{
+        switch (type){
+            case "category":
+                categoryTable = {}
+                break
+        }
+    }
+    catch(err){
+        console.log("error in clearVariables::",err.message)
+    }
+}
+
+async function nestedObjectParser(data,req){
+    try{
+        if(req.body.formId === 4 && Object.keys(categoryTable).length === 0){
+            await fillCategoryTable()
         }
         const result = {};
         for(let item of data){
@@ -2843,7 +2869,6 @@ async function nestedObjectParser(data,req){
             }
             else{
                 if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
-                    console.log("item :: ",item)
                     item.answer = [
                         {
                             "label":"",
@@ -2851,7 +2876,6 @@ async function nestedObjectParser(data,req){
                             "value":"0,0"
                         }
                     ]
-                    console.log("item :: ",item)
                 }
                 let value = await decideValues(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
@@ -2867,34 +2891,9 @@ async function nestedObjectParser(data,req){
             };
             return result
         }
-        // await data.forEach(async(item) => {
-        // let shortKey = item.shortKey
-        // const keys = shortKey.split(".");
-        // let pointer = result;
-        // let temp = {}
-        // if(item.input_type === "20"){
-        //     pointer = await handleChildValues(pointer,item,req)
-        //     console.log("waiting ::: ",)
-        // }
-        // else{
-        //     let value = await decideValues(temp,shortKey,item,req)
-        //     await keys.forEach((key, index) => {
-        //             if (!pointer.hasOwnProperty(key)) {
-        //             pointer[key] = {};
-        //             }
-        //             if (index === keys.length - 1) {
-        //             pointer[key] = value;
-        //             }
-        //             pointer = pointer[key];
-        //         });
-        // }
-        // });
-        // console.log("returning")
-        // return result
-        
-    
     catch(err){
         console.log("error in nestedObjectParser: ::: ",err)
     }
 }
 module.exports.nestedObjectParser = nestedObjectParser
+module.exports.clearVariables = clearVariables
