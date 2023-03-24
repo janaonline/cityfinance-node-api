@@ -1386,6 +1386,7 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     if(!projectObj){
       response.message = "No utilization report found with this ulb and design year"
       response.success = true
+      response.data = []
       return res.json(response)
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()
