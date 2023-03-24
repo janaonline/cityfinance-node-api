@@ -2321,7 +2321,7 @@ const fiscalRankingFormJson = () => {
             },
             "netRevenue": {
                 "key": "netRevenue",
-                "label": "Revenue surplus/ (Deficit) ",
+                "label": "REVENUE SURPLUS / (DEFICIT) (difference of 7.2 and 14)",
                 "displayPriority": "15",
                 "calculatedFrom": [
                     "7.2",
@@ -4958,7 +4958,7 @@ const fiscalRankingFormJson = () => {
                         "file": "",
                         "min": 0,
                         "max": "",
-                        "required": true,
+                        "required": false,
                         "type": "registerGis",
                         "year": years['2021-22'],
                         "code": [],
@@ -4972,7 +4972,7 @@ const fiscalRankingFormJson = () => {
             },
             "registerGisProof": {
                 "key": "registerGisProof",
-                "label": "Please upload proof?",
+                "label": "Please upload proof",
                 "displayPriority": "27.1",
                 "yearData": [
                     {},
@@ -4989,7 +4989,7 @@ const fiscalRankingFormJson = () => {
                         },
                         "min": 0,
                         "max": "",
-                        "required": true,
+                        "required": false,
                         "type": "registerGisProof",
                         "year": years['2021-22'],
                         "code": [],
@@ -5039,7 +5039,7 @@ const fiscalRankingFormJson = () => {
             },
             "accountStwreProof": {
                 "key": "accountStwreProof",
-                "label": "Please upload proof?",
+                "label": "Please upload proof",
                 "displayPriority": "28.1",
                 "yearData": [
                     {},
@@ -5056,7 +5056,7 @@ const fiscalRankingFormJson = () => {
                         },
                         "min": 0,
                         "max": 999999999999999,
-                        "required": true,
+                        "required": false,
                         "type": "accountStwreProof",
                         "year": years['2021-22'],
                         "code": [],
@@ -5149,7 +5149,7 @@ const fiscalRankingFormJson = () => {
                 "info": "Online payment modes/channels shall include: Net Banking, NEFT, RTGS, Credit Card, Debit card, UPI, Payment wallets & others"
             },
             "property_tax_register": {
-                "label": "Number of Properties assessed/listed as per Property Tax Register",
+                "label": "Number of Properties assessed/listed as per Property Tax during FY 2021-22.",
                 "key": "property_tax_register",
                 "displayPriority": "31",
                 "postion": "1",
@@ -5188,7 +5188,7 @@ const fiscalRankingFormJson = () => {
                 "info": "Assessed properties is the sum total of all properties (across all categories such as residential, commercial, industrial, government, education etc) which have been identified (through surveys etc) by the municipality and included as part of the municipality’s official property records / register."
             },
             "paying_property_tax": {
-                "label": "Number of Properties exempt from paying Property Tax",
+                "label": "Number of Properties exempt from paying Property Tax during FY 2021-22.",
                 "key": "paying_property_tax",
                 "postion": "1",
                 "displayPriority": "32",
@@ -5227,7 +5227,7 @@ const fiscalRankingFormJson = () => {
                 // "info": "Self-reported"
             },
             "paid_property_tax": {
-                "label": "Number of Properties for which Property Tax has been paid",
+                "label": "Number of Properties for which Property Tax has been paid during FY 2021-22.",
                 "key": "paid_property_tax",
                 "postion": "3",
                 "displayPriority": "33",
@@ -5384,7 +5384,7 @@ const fiscalRankingFormJson = () => {
                 yearData: [
                     {
                         label: 'FY 2018-19',
-                        key: 'auditedAnnualFySt_2018-19',
+                        key: 'auditedAnnualFySt',
                         postion: '1',
                         value: '',
                         file: {
@@ -5467,7 +5467,7 @@ const fiscalRankingFormJson = () => {
         }
     }
 }
-function getInputKeysByType(formType, type, label, dataSource = null, position, required = true,mn=false) {
+function getInputKeysByType(formType, type, label, dataSource = null, position, required = true,mn=false,info="") {
     let maximum = 9999999999
     let min = 0
     if (formType != "number") {
@@ -5478,7 +5478,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
         min = 6000000000
         maximum = 9999999999
     }
-    return {
+    let obj = {
         label: label,
         max: maximum,
         min: min,
@@ -5488,8 +5488,12 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
         formFieldType: formType, // text | number | radio-toggle | file
         required: required,
         type: type,
-        canShow: true
+        canShow: true,
     }
+    if(info !== ""){
+        obj.info = info
+    }
+    return  obj
 }
 
 let fiscalRankingTabs = () => {

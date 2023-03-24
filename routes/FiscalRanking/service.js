@@ -510,6 +510,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           dataSource,
           "11",
+          true,
+          false,
+          "Tax revenue levied for provision of water supply services."
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -522,6 +525,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           dataSource,
           "12",
+          true,
+          false,
+          "Tax revenue levied for provision of sanitation & sewerage service delivery."
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
