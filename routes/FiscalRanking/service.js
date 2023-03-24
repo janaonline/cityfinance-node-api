@@ -780,6 +780,10 @@ exports.getView = async function (req, res, next) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
                     pf['modelName'] = chekFile ? "ULBLedger" : ""
+                    console.log("chekFile :: ",chekFile)
+                    if(chekFile){
+                      pf['info'] =  `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`
+                    }
                     if (subData[key].calculatedFrom === undefined) {
                       console.log("chekFile", chekFile)
                       pf['readonly'] = chekFile ? true : false;
@@ -795,8 +799,10 @@ exports.getView = async function (req, res, next) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "PENDING";
                   pf['modelName'] = chekFile ? "ULBLedger" : ""
+                  if(chekFile){
+                    pf['info'] =  `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`
+                  }
                   if (subData[key].calculatedFrom === undefined) {
-                    console.log("chekFile", chekFile)
 
                     pf['readonly'] = chekFile ? true : false;
                     pf['required'] = chekFile ? false : true;
