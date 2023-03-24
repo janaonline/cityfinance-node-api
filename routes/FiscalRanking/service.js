@@ -1,5 +1,6 @@
 const ObjectId = require("mongoose").Types.ObjectId;
-const mongose = require("mongoose");
+const moongose = require("mongoose");
+const Response = require("../../service").response;
 const { years } = require("../../service/years");
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
@@ -11,7 +12,12 @@ const Service = require('../../service');
 const { csvColsFr, getCsvProjectionQueries, updateCsvCols } = require("../../util/fiscalRankingsConst")
 const userTypes = require("../../util/userTypes")
 // const converter = require('json-2-csv');
-const { calculateKeys, canTakeActionOrViewOnly, calculateStatusForFiscalRankingForms,getKeyByValue } = require('../CommonActionAPI/service');
+const {
+  calculateKeys,
+  canTakeActionOrViewOnly,
+  calculateStatusForFiscalRankingForms,
+  getKeyByValue,
+} = require("../CommonActionAPI/service");
 const Sidemenu = require('../../models/Sidemenu')
 const { fiscalRankingFormJson, financialYearTableHeader, inputKeys, getInputKeysByType, jsonObject, fiscalRankingTabs, notRequiredValidations } = require('./fydynemic');
 const catchAsync = require('../../util/catchAsync');
@@ -2445,3 +2451,530 @@ module.exports.createForm = catchAsync(async (req, res) => {
   }
   return res.status(500).json(response)
 })
+
+module.exports.FRUlbFinancialData = async (req, res) => {
+  try {
+    let filters = { ...req.query };
+    let skip = parseInt(filters.skip) || 0;
+    let limit = parseInt(filters.limit) || 10;
+    let { getQuery, sortBy, csv } = filters;
+    csv = csv === "true" ? true : false;
+  
+    let params = { FRUlbFinancialData: true };
+    let {FRUlbFinancialData: query} = await computeQuery(params);
+    if (getQuery === "true") {
+      return res.status(200).json(query);
+    }
+  
+    filters["csv"] ? delete filters["csv"] : "";
+  
+    let newFilter = await Service.mapFilterNew(filters);
+    let {financialInformation} = await fiscalRankingFormJson();
+  
+      const FinancialRankingFilename = "ULB Ranking Financial Data.csv";
+      let {csvCols,dbCols} = await columnsForCSV(params);
+
+      let csv2 = createCsv({
+        query,
+        res,
+        filename: FinancialRankingFilename,
+        modelName: "FiscalRankingMapper",
+        dbCols,
+        csvCols
+      }
+      );   
+    
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message)
+  }
+};
+
+module.exports.FROverAllUlbData = async (req, res) => {
+  try {
+    let filters = { ...req.query };
+    let skip = parseInt(filters.skip) || 0;
+    let limit = parseInt(filters.limit) || 10;
+    let { getQuery, sortBy, csv } = filters;
+    csv = csv === "true" ? true : false;
+  
+    let params = {FROverAllUlbData: true };
+    let {FROverAllUlbData: query} = await computeQuery(params);
+    if (getQuery === "true") {
+      return res.status(200).json(query);
+    }
+  
+    filters["csv"] ? delete filters["csv"] : "";
+  
+    let newFilter = await Service.mapFilterNew(filters);
+    let {financialInformation} = await fiscalRankingFormJson();
+  
+     const OverallRankingFilename = "ULB Ranking Overall Data.csv";
+      // let dbCols = Object.values(FRShortKeyObj);
+      let {csvCols,dbCols} = await columnsForCSV(params);
+      let csv2 = createCsv(
+        {
+          query,
+        res,
+        filename: OverallRankingFilename,
+        modelName:"Ulb",
+        dbCols,
+        csvCols
+      }
+      );
+         
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message)
+  }
+};
+
+async function columnsForCSV(params) {
+  let { FROverAllUlbData, FRUlbFinancialData } = params;
+  let output = {};
+  if (FROverAllUlbData) {
+    output["csvCols"] = [
+      "State Name",
+      "ULB Name",
+      "City Finance Code",
+      "Census Code",
+      "ULB Type",
+      "Design Year",
+      "Created Date",
+      "Last Submitted Date",
+      "Overall Form Status",
+      "I. BASIC ULB DETAILS_Comments",
+      "II CONTACT INFORMATION_Comments",
+      "III FINANCIAL INFORMATION_Comments",
+      "IV UPLOAD FINANCIAL DOCUMENTS_Comments",
+      "V SELF DECLARATION_Comments",
+      "PMU Review File URL",
+      "Population as per 2011 Census",
+      "Population as on 1st April 2022",
+      "ULB website URL link",
+      "Name of Commissioner / Executive Officer ",
+      "Auditor Name",
+      "CA Membership Number",
+      "Name of the Nodal Officer",
+      "Designation of the Nodal Officer",
+      "Email ID of the Nodal Officer",
+      "Mobile number of the Nodal Officer",
+      "Does the ULB handle water supply services?",
+      "Does the ULB handle sanitation service delivery?",
+      "Does your Property Tax include Water Tax?",
+      "Does your Property Tax include Sanitation/Sewerage Tax?",
+      "Date of Audit Report for audited annual accounts, FY 2021-22",
+      "Date of Audit Report for audited annual accounts, FY 2020-21",
+      "Date of Audit Report for audited annual accounts, FY 2019-20",
+      "Total Own Revenue Arrears as on 31st March 2022",
+      "ULB website URL link where Audited Accounts are available",
+      "Is the property tax register GIS-based?",
+      "Please upload proof",
+      "Do you use accounting software? ( Eg.Tally, State-prescribed ERP etc)",
+      "Please upload proof",
+      "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD",
+      "Own Revenue collection amount for FY 2021-22 - by Online modes/channels",
+      "Number of Properties assessed/listed as per Property Tax during FY 2021-22.",
+      "Number of Properties exempt from paying Property Tax during FY 2021-22.",
+      "Number of Properties for which Property Tax has been paid during FY 2021-22.",
+      "Copy of Approved Annual Budget preferably in English, FY 2023-24",
+      "Copy of Approved Annual Budget preferably in English, FY 2023-24",
+      "Copy of Approved Annual Budget preferably in English, FY 2022-23",
+      "Copy of Approved Annual Budget preferably in English, FY 2021-22",
+      "Copy of Approved Annual Budget preferably in English, FY 2020-21",
+      "Copy of Audited Annual Financial Statements preferably in English, FY 2021-22",
+      "Copy of Audited Annual Financial Statements preferably in English, FY 2020-21",
+      "Copy of Audited Annual Financial Statements preferably in English, FY 2019-20",
+      "Copy of Audited Annual Financial Statements preferably in English, FY 2018-19",
+      "Any other information that you would like to provide us?",
+    ];
+    output["dbCols"] = [
+      "stateName",
+      "ulbName",
+      "cityFinanceCode",
+      "ulbType",
+      "designYear",
+      "createdAt",
+      "modifiedAt",
+      "formStatus",
+      "comment_1",
+      "II CONTACT INFORMATION_Comments",
+      "III FINANCIAL INFORMATION_Comments",
+      "IV UPLOAD FINANCIAL DOCUMENTS_Comments",
+      "V SELF DECLARATION_Comments",
+      "PMU Review File URL",
+      "population11",
+      "populationFr",
+      "webLink",
+      "nameCmsnr",
+      "auditorName",
+      "caMembershipNo",
+      "nameOfNodalOfficer",
+      "designationOftNodalOfficer",
+      "email",
+      "mobile",
+      "waterSupply",
+      "sanitationService",
+      "propertyWaterTax",
+      "propertySanitationTax",
+    ];
+    let {financialInformation} = await fiscalRankingFormJson();
+  
+    let FRShortKeyObj = {};
+    if (financialInformation) {
+      for (let fyKey in financialInformation) {
+        FRShortKeyObj[financialInformation[fyKey].key] =
+        financialInformation[fyKey].label;
+      }
+    }
+    output.push('auditAnnualReport_2021-22','auditAnnualReport_2020-21','auditAnnualReport_2019-20',"webUrlAnnual_2021-22",
+    "registerGis_2021-22","registerGisProof_2021-22","accountStwre_2021-22", "accountStwreProof_2021-22","AppAnnualBudget",
+    "AppAnnualBudget","AppAnnualBudget","AppAnnualBudget","auditedAnnualFySt_2021-22","auditedAnnualFySt_2020-21","auditedAnnualFySt_2019-20",
+    "auditedAnnualFySt_2018-19"
+    )
+
+  } else if (FRUlbFinancialData) {
+    output["dbCols"] = [
+      "stateName",
+      "ulbName",
+      "cityFinanceCode",
+      "censusCode",
+      "formStatus",
+      "dataYear",
+      "indicator",
+      "amount",
+    ];
+    output["csvCols"] = [
+      "State Name",
+      "ULB Name",
+      "City Finance Code",
+      "Census Code",
+      "Overall Form Status",
+      "Design Year",
+      "Data Year",
+      "Indicator",
+      "Amount",
+    ];
+  }
+  return output;
+}
+
+function createCsv(params) {
+  try {
+    let {query, res, filename, modelName, dbCols,csvCols} = params
+    // if(!dbCols.length){
+    //   dbCols =  Object.keys(cols)
+    // }
+    // if(!csvCols.length){
+    //   csvCols = Object.values(cols)
+    // }
+      let cursor = moongose
+      .model(modelName)
+      .aggregate(query)
+      .cursor({ batchSize: 500 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write(csvCols.join(","));
+    res.write("\r\n");
+    cursor.on("data", (document) => {
+      try {
+          let str = "";
+          for (let key of dbCols) {
+                  str += document[key] + ","
+            
+          }
+          res.write(str + "\r\n")
+      }
+      catch (err) {
+          console.log("error in writeCsv :: ", err.message)
+      }
+    });
+  
+    cursor.on("end", (el) => {
+      // res.flushHeaders();
+      // console.log("ended");
+      return res.end();
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message)
+  }
+}
+
+function computeQuery(params) {
+  const { FRUlbFinancialData, FROverAllUlbData } = params;
+  let output = {};
+  if (FRUlbFinancialData) {
+    output["FRUlbFinancialData"] = [
+      {
+        $lookup: {
+          from: "ulbs",
+          let: {
+            firstUser: "$ulb",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$_id", "$$firstUser"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: "states",
+                localField: "state",
+                foreignField: "_id",
+                as: "state",
+              },
+            },
+            {
+              $unwind: {
+                path: "$state",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+          as: "ulb",
+        },
+      },
+
+      {
+        $unwind: {
+          path: "$ulb",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "years",
+          localField: "year",
+          foreignField: "_id",
+          as: "dataYear",
+        },
+      },
+      {
+        $unwind: {
+          path: "$dataYear",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          stateName: "$ulb.state.name",
+          ulbName: "$ulb.name",
+          cityFinanceCode: "$ulb.code",
+          censusCode: {
+            $cond: {
+              if: {
+                $or: [
+                  { $eq: ["$censusCode", ""] },
+                  { $eq: ["$censusCode", null] },
+                ],
+              },
+              then: "$ulb.sbCode",
+              else: "$ulb.censusCode",
+            },
+          },
+          formStatus: "",
+          dataYear: "$dataYear.year",
+          indicator: "$type",
+          amount: "$value",
+        },
+      },
+      {
+        $sort: {
+          cityFinanceCode: 1,
+          indicator: 1,
+        },
+      },
+    ];
+  }
+  if (FROverAllUlbData) {
+    output["FROverAllUlbData"] = [
+      {
+        $match: {
+          _id: ObjectId("5fa2465e072dab780a6f11d4"),
+        },
+      },
+
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "state",
+        },
+      },
+      {
+        $unwind: "$state",
+      },
+      {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulbType",
+          foreignField: "_id",
+          as: "ulbType",
+        },
+      },
+      {
+        $unwind: "$ulbType",
+      },
+      {
+        $lookup: {
+          from: "fiscalrankings",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "fiscalrankings",
+        },
+      },
+      {
+        $unwind: {
+          path: "$fiscalrankings",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "fiscalrankingmappers",
+          let: {
+            firstUser: ObjectId("606aafb14dff55e6c075d3ae"),
+            ulbId: "$_id",
+            thirdUser: "$fiscalrankings._id",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$fiscal_ranking", "$$thirdUser"],
+                    },
+                    {
+                      $eq: ["$ulb", "$$ulbId"],
+                    },
+                  ],
+                },
+                type: {
+                  $in: [
+                    "totalOwnRevenueArea",
+                    "auditAnnualReport",
+                    "webUrlAnnual",
+                    "registerGis",
+                    "registerGisProof",
+                    "accountStwre",
+                    "accountStwreProof",
+                    "fy_21_22_online",
+                    "property_tax_register",
+                    "paying_property_tax",
+                    "paid_property_tax",
+                    "AppAnnualBudget",
+                    "auditedAnnualFySt",
+                    "otherUpload",
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: "years",
+                localField: "year",
+                foreignField: "_id",
+                as: "year",
+              },
+            },
+            {
+              $unwind: {
+                path: "$year",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                fiscal_ranking: 1,
+                type: 1,
+                year: "$year.year",
+                date: 1,
+                file: 1,
+                modelName: 1,
+                status: 1,
+                value: 1,
+                key: { $concat: ["$type", "_", "$year.year"] },
+              },
+            },
+            {
+              $sort: {
+                key: 1,
+              },
+            },
+          ],
+          as: "fiscalrankingmappers",
+        },
+      },
+      {
+        $project: {
+          stateName: "$state.name",
+          ulbName: "$name",
+          cityFinanceCode: "$code",
+          censusCode: {
+            $cond: {
+              if: {
+                $or: [
+                  { $eq: ["$censusCode", ""] },
+                  { $eq: ["$censusCode", null] },
+                ],
+              },
+              then: "$sbCode",
+              else: "$censusCode",
+            },
+          },
+          ulbType: "$ulbType.name",
+          designYear: { $ifNull: ["$fiscalrankings.designYear", ""] },
+          createdAt: { $ifNull: ["$fiscalrankings.createdAt", ""] },
+          modifiedAt: { $ifNull: ["$fiscalrankings.modifedAt", ""] },
+          formStatus: "",
+          comment_1: "",
+          "II CONTACT INFORMATION_Comments": "",
+          "III FINANCIAL INFORMATION_Comments": "",
+          "IV UPLOAD FINANCIAL DOCUMENTS_Comments": "",
+          "V SELF DECLARATION_Comments": "",
+          population11: { $ifNull: ["$fiscalrankings.population11.value", ""] },
+          populationFr: { $ifNull: ["$fiscalrankings.populationFr.value", ""] },
+          webLink: { $ifNull: ["$fiscalrankings.webLink.value", ""] },
+          nameCmsnr: { $ifNull: ["$fiscalrankings.nameCmsnr.value", ""] },
+          auditorName: { $ifNull: ["$fiscalrankings.nameCmsnr.value", ""] },
+          caMembershipNo: {
+            $ifNull: ["$fiscalrankings.caMembershipNo.value", ""],
+          },
+          nameOfNodalOfficer: {
+            $ifNull: ["$fiscalrankings.nameOfNodalOfficer.value", ""],
+          },
+          designationOftNodalOfficer: {
+            $ifNull: ["$fiscalrankings.designationOftNodalOfficer.value", ""],
+          },
+          email: { $ifNull: ["$fiscalrankings.email.value", ""] },
+          mobile: { $ifNull: ["$fiscalrankings.mobile.value", ""] },
+          waterSupply: { $ifNull: ["$fiscalrankings.waterSupply.value", ""] },
+          sanitationService: {
+            $ifNull: ["$fiscalrankings.sanitationService.value", ""],
+          },
+          propertyWaterTax: {
+            $ifNull: ["$fiscalrankings.propertyWaterTax.value", ""],
+          },
+          propertySanitationTax: {
+            $ifNull: ["$fiscalrankings.propertySanitationTax.value", ""],
+          },
+          fy_21_22_cash: {
+            $ifNull: ["$fiscalrankings.fy_21_22_cash.value", ""],
+          },
+          otherUpload: { $ifNull: ["$fiscalrankings.otherUpload.value", ""] },
+          fiscalrankingmappers: 1,
+        },
+      },
+    ];
+  }
+  return output;
+}
