@@ -850,6 +850,38 @@ let DurProjectJson = {
             }
         ]
     },
+    "waterSupply_type":{
+        "information": "",
+        "_id": "641e83c1cc09cd11d2100bdd",
+        "order": "1.006",
+        "answer_option": [],
+        "title": "Type",
+        "hint": "",
+        "resource_urls": [],
+        "label": "",
+        "shortKey": "waterSupply_type",
+        "viewSequence": "7",
+        "child": [],
+        "parent": [],
+        "pattern": "",
+        "validation": [],
+        "restrictions": [],
+        "min": 1,
+        "max": null,
+        "input_type": "1",
+        "weightage": [],
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "1",
+        "visibility": true,
+        "nestedConfig": {
+            "parentOrder": "1",
+            "index": 5,
+            "loopIndex": 0
+        }
+    },
     "solidWaste_question":{
         "information": "",
         "_id": "641da2b3cc09cd11d20fef18",
@@ -941,6 +973,38 @@ let DurProjectJson = {
         "max": null,
         "input_type": "1",
         "weightage": []
+    },
+    "solidWaste_type": {
+        "information": "",
+        "_id": "641e8412cc09cd11d2100c79",
+        "order": "3.006",
+        "answer_option": [],
+        "title": "Type",
+        "hint": "",
+        "resource_urls": [],
+        "label": "",
+        "shortKey": "solidWaste_type",
+        "viewSequence": "21",
+        "child": [],
+        "parent": [],
+        "pattern": "",
+        "validation": [],
+        "restrictions": [],
+        "min": 1,
+        "max": null,
+        "input_type": "1",
+        "weightage": [],
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "1",
+        "visibility": true,
+        "nestedConfig": {
+            "parentOrder": "3",
+            "index": 5,
+            "loopIndex": 0
+        }
     },
     "solidWaste_indicatorLineItem":{
         "information" : "",
@@ -1063,6 +1127,38 @@ let DurProjectJson = {
         "max": null,
         "input_type": "1",
         "weightage": []
+    },
+    "stormWater_type":{
+        "information": "",
+        "_id": "641e842bcc09cd11d2100cc0",
+        "order": "4.006",
+        "answer_option": [],
+        "title": "Type",
+        "hint": "",
+        "resource_urls": [],
+        "label": "",
+        "shortKey": "stormWater_type",
+        "viewSequence": "28",
+        "child": [],
+        "parent": [],
+        "pattern": "",
+        "validation": [],
+        "restrictions": [],
+        "min": 1,
+        "max": null,
+        "input_type": "1",
+        "weightage": [],
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "1",
+        "visibility": true,
+        "nestedConfig": {
+            "parentOrder": "4",
+            "index": 5,
+            "loopIndex": 0
+        }
     },
     "stormWater_indicatorLineItem":{
         "information" : "",
@@ -1232,6 +1328,38 @@ let DurProjectJson = {
         "weightage" : [
 
         ]
+    },
+    "sanitation_type":{
+        "information": "",
+        "_id": "641e83e6cc09cd11d2100c33",
+        "order": "2.006",
+        "answer_option": [],
+        "title": "Type",
+        "hint": "",
+        "resource_urls": [],
+        "label": "",
+        "shortKey": "sanitation_type",
+        "viewSequence": "14",
+        "child": [],
+        "parent": [],
+        "pattern": "",
+        "validation": [],
+        "restrictions": [],
+        "min": 1,
+        "max": null,
+        "input_type": "1",
+        "weightage": [],
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "1",
+        "visibility": true,
+        "nestedConfig": {
+            "parentOrder": "2",
+            "index": 5,
+            "loopIndex": 0
+        }
     },
 }
 

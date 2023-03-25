@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,clearVariables } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,clearVariables,decideDisabledFields } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
@@ -39,8 +39,12 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
                 repsonse.success = false
                 return res.json(response)
             }
+            let formStatus = false
+            if(form){
+                formStatus = decideDisabledFields(form,"ULB")
+            }
             let flattedForm = await getFlatObj(form)
-            // flattedForm.isDraft = false
+            flattedForm.disableFields = formStatus
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)

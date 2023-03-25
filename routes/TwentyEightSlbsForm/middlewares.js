@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,clearVariables } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,decideDisabledFields } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
@@ -25,16 +25,25 @@ module.exports.changeApiGetForm = async(req,res)=>{
         let responseData = [
             {
               "_id": req?.form?._id ,
-              "formId": req.query.formId,
+              "formId": req?.query?.formId,
               "language":[],
-              "canTakeAction":req.form?.canTakeAction ,
-              "isDraft":req.form?.isDraft,
-              "status":req.form?.status || null
+              "canTakeAction":req?.form?.canTakeAction ,
+              "isDraft":req?.form?.isDraft,
+              "population":req?.form?.population || null
             }
         ]
         if(latestYear){
-            let ignorableKeys = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
+            if(req.json){
+                Object.assign(response,req.json)
+                return res.status(200).json(response)
+            }
+            let formStatus = false
+            if(form){
+                formStatus = decideDisabledFields(form,"ULB")
+            }
+    
             let flattedForm = getFlatObj(req.form)
+            flattedForm.disableFields = formStatus
             let obj = formJson.data
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
@@ -45,12 +54,18 @@ module.exports.changeApiGetForm = async(req,res)=>{
             return res.status(200).json(response)
         }
         else{
-            return res.json({
-                  success: true,
-                  show: false,
-                  data: req.form,
-                  slbDataNotFilled:req.slbDataNotFilled
-                })
+            if(req.json){
+                return res.json(req.json)
+            }
+            else{
+                return res.json({
+                    success: true,
+                    show: false,
+                    data: req.form,
+                    slbDataNotFilled:req.slbDataNotFilled
+                  })
+            }
+            
         }
         
     }
