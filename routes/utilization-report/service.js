@@ -1374,7 +1374,6 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
       "form id":formId
     })
     if(!validation.valid){
-      console.log("1")
       response.success = false
       response.message = validation.message
       return res.status(400).json(response)
