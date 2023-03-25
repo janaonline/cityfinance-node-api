@@ -416,6 +416,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         }
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
+        
         let slbDataNotFilled;
         if (formData) {
           let slb28FormStatus = calculateStatus(
@@ -429,6 +430,7 @@ module.exports.getForm = async (req, res,next) => {
             ulb: ObjectId(data.ulb),
             design_year: YEAR_CONSTANTS["21_22"],
           }).lean();
+         
         if(slbData){
           slbDataNotFilled = slbData.blank;
                 formData["data"].forEach((element) => {
@@ -556,6 +558,7 @@ module.exports.getForm = async (req, res,next) => {
             ulb: ObjectId(data.ulb),
             design_year: ObjectId("606aaf854dff55e6c075d219"),
           }).lean();
+          console.log("slbData :: ",slbData)
           if (slbData) {
             slbDataNotFilled = slbData.blank
             pipedSupply =
