@@ -52,7 +52,7 @@ exports.saveWaterRejenuvation = async (req, res) => {
     let formData = {};
     formData = {...data};
     let indicatorCondition = {type: "water supply"};
-    let lineItems = await IndicatorLineItem.find({indicatorCondition}).lean();
+    let lineItems = await IndicatorLineItem.find(indicatorCondition).lean();
 
     let uaData = JSON.parse(JSON.stringify(formData['uaData']));
     const slbIndicatorObj = {};
@@ -68,14 +68,14 @@ exports.saveWaterRejenuvation = async (req, res) => {
       let serviceLevelIndicatorsOfUA = ua['serviceLevelIndicators'];
       for(let indicator of serviceLevelIndicatorsOfUA){
         if(
-          !slbIndicatorObj[indicator['indicator']]['min'] < indicator['existing'] ||
-          !slbIndicatorObj[indicator['indicator']]['max'] > indicator['existing'] ||
-          !slbIndicatorObj[indicator['indicator']]['min'] < indicator['after'] ||
-          !slbIndicatorObj[indicator['indicator']]['max'] > indicator['after'] 
+          !(slbIndicatorObj[indicator['indicator']]['min'] < indicator['existing']) ||
+          !(slbIndicatorObj[indicator['indicator']]['max'] > indicator['existing']) ||
+          !(slbIndicatorObj[indicator['indicator']]['min'] < indicator['after']) ||
+          !(slbIndicatorObj[indicator['indicator']]['max'] > indicator['after']) 
           ){
             return res.status(400).json({
               status: false,
-              message: "validation failed",
+              message: `Validation failed for ${indicator['name']}` ,
             });
         }
       }
