@@ -9,7 +9,7 @@ const User = require('../../models/User')
 const Year = require('../../models/Year');
 const {canTakenAction} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
-const StateMasterForm = require('../../models/StateMasterForm')
+const StateMasterForm = require('../../models/StateMasterForm');
 
 
 function response(form, res, successMsg ,errMsg){
@@ -71,11 +71,11 @@ exports.saveActionPlans = async (req, res) => {
 
     if(formData.isDraft ===  false && formData['uaData']){
       
-      let [validatedSuccess, response] = await validateFormData(formData['uaData']);
+      let [validatedSuccess, validateResponse] = await validateFormData(formData['uaData']);
       if(!validatedSuccess){
         return res.status(400).json({
           status: false,
-          message: response
+          message: validateResponse
         });
       }
     }
@@ -198,17 +198,41 @@ async function validateFormData(uaData){
   let success = true, response="";
   for(let ua of uaData){
     for(let yearData of ua['yearOutlay']){
-      
+      let keyArray = Object.keys(yearData);
+      let rangeObj = {min:0, max:999999};
+      for(let key of keyArray){
+        if(key[0] === "2"){
+         if(!checkRange(yearData[key], rangeObj)){
+            success = false;
+            response = `Validation failed for year ${key}`
+         }
+        }
+      }
     }
 
     for(let project of ua['sourceFund']){
-
+      let keyArray = Object.keys(project);
+      let rangeObj = {min:0, max:999999};
+      for(let key of keyArray){
+      if(key[0] === "2" || ["XV_FC"].includes(key)){
+        if(!checkRange(project[key], rangeObj)){
+          success = false;
+          response = `Validation failed for year ${key}`
+       }
+      }
+    }
+      
     }
 
-    for(let project of ua['projectExecute'] ){
-
-    }
+    // for(let project of ua['projectExecute'] ){
+    // }
   }
+  return [success, response];
+}
+function checkRange(value,range){
+    let validate= false;
+    validate = (range['min']<= value && range['max']>= value) ?  true : false;
+    return validate;
 }
 exports.getActionPlans = async (req, res) => {
   const { state_id } = req.query;
