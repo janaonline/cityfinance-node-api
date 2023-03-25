@@ -71,6 +71,11 @@ var annualRadioButtons = { // if there are any label changes for radio button in
 var customBtnsWithFormID = {
     "5":annualRadioButtons
 }
+
+const customDisableFields = {
+    "actual":"targetDisable",
+    "target_1":"actualDisable"
+}
 var customkeys = {
     "general":{
         "ulbName":"ulbName",
@@ -1883,7 +1888,11 @@ async function handleArrOfObjects(question,flattedForm){
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
                         if(questionObj.isQuestionDisabled !== true){
                             questionObj.isQuestionDisabled = handleDisableFields({disableFields})
+                            if(Object.keys(customDisableFields).includes(keys)){
+                                questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
+                            }
                         }
+
                         nested_arr.push({...questionObj})
                     }
                 }
