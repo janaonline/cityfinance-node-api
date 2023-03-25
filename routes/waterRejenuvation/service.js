@@ -68,10 +68,10 @@ exports.saveWaterRejenuvation = async (req, res) => {
       let serviceLevelIndicatorsOfUA = ua['serviceLevelIndicators'];
       for(let indicator of serviceLevelIndicatorsOfUA){
         if(
-          !(slbIndicatorObj[indicator['indicator']]['min'] < indicator['existing']) ||
-          !(slbIndicatorObj[indicator['indicator']]['max'] > indicator['existing']) ||
-          !(slbIndicatorObj[indicator['indicator']]['min'] < indicator['after']) ||
-          !(slbIndicatorObj[indicator['indicator']]['max'] > indicator['after']) 
+          !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['existing']) ||
+          !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['existing']) ||
+          !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['after']) ||
+          !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['after']) 
           ){
             return res.status(400).json({
               status: false,
