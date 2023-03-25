@@ -1,11 +1,13 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,clearVariables,decideDisabledFields } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,decideDisabledFields } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
 let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
-module.exports.changeGetApiForm = async (req,res,next)=>{
+
+
+module.exports.changeApiGetForm = async(req,res)=>{
     let response = {
         "success":false,
         "data":[],
@@ -16,36 +18,33 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         let year = getKeyByValue(years,yearId)
         let form = {...req.form}
         let {name,role} = req.decoded
-        form['ulbName'] = name
-        delete form['projects']
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
         let formJson = await FormsJson.findOne(condition).lean()
-        let obj = formJson ? formJson.data : {}
         let responseData = [
             {
               "_id": req?.form?._id ,
-              "formId": req.query.formId,
+              "formId": req?.query?.formId,
               "language":[],
-              "canTakeAction":form?.canTakeAction || false,
-              "isDraft":form?.isDraft || true,
-              "status":form?.status || null
+              "canTakeAction":req?.form?.canTakeAction ,
+              "isDraft":req?.form?.isDraft,
+              "population":req?.form?.population || null
             }
-          ]
+        ]
         if(latestYear){
-            if(!jsonFormId){
-                response.message = "formId is required"
-                repsonse.success = false
-                return res.json(response)
+            if(req.json){
+                Object.assign(response,req.json)
+                return res.status(200).json(response)
             }
             let formStatus = false
             if(form){
                 formStatus = decideDisabledFields(form,"ULB")
             }
-            let flattedForm = await getFlatObj(form)
+    
+            let flattedForm = getFlatObj(req.form)
             flattedForm.disableFields = formStatus
-            flattedForm['name_'] = flattedForm['name']
+            let obj = formJson.data
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
             responseData[0]['language'] = obj
@@ -55,35 +54,43 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             return res.status(200).json(response)
         }
         else{
-            response.success = true
-            response.data = req.form
-            return res.status(200).json(response)
+            if(req.json){
+                return res.json(req.json)
+            }
+            else{
+                return res.json({
+                    success: true,
+                    show: false,
+                    data: req.form,
+                    slbDataNotFilled:req.slbDataNotFilled
+                  })
+            }
+            
         }
+        
     }
     catch(err){
-        response.success = false
-        response.data = req.form
-        response.message = "Some server error occured"
-        console.log("error in changeGetApiForm ::: ",err.message)
+        console.log("error in changeApiGetForm ::: ",err.message)
     }
 }
 
-module.exports.changePayloadFormat = async(req,res,next)=>{
+module.exports.changePayloadForm = async(req,res,next)=>{
     try{
-        let {designYear,financialYear,ulb,data} = req.body
-        let year = getKeyByValue(years,designYear)
+        let yearId = req.body.design_year
+        let year = getKeyByValue(years,yearId)
+        let {data} = req.body
+        let {name,role} = req.decoded
         let latestYear = !outDatedYears.includes(year)
         if(latestYear){
             let payload = await nestedObjectParser(data,req)
-            payload['name'] = payload['name_']
-            delete req.body['data']
-            await clearVariables('category')
-            Object.assign(req.body,payload)
+            req.body['data'] = payload.data
+            next()
         }
-        next()
-        // console.log("change Payload form::")
+        else{
+            next()
+        }
     }
     catch(err){
-        console.log("error in changePayloadFormat ::: ",err.message)
+        console.log("error in changePayloadForm ::: ",err.message)
     }
 }
