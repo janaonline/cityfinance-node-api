@@ -26,6 +26,20 @@ var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
 }
+let yearValueField = {
+    "year":"",
+    "value":""
+}
+let objectFields = {
+    "waterSupply_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "waterSupply_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+    "sanitation_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "sanitation_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+    "stormWater_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "stormWater_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+    "solidWaste_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "solidWaste_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+}
 let dynamicTables = ['Category']
 var formIdCollections= {
     "80":"PropertyTaxOp"
@@ -92,6 +106,7 @@ var customkeys = {
         "actual":  "waterSupply_actualIndicator",
         "target_1": "waterSupply_targetIndicator",
         "indicatorLineItem":"waterSupply_indicatorLineItem",
+        "type":"waterSupply_type",
         "unit": "waterSupply_unit"
     },
     "solidWaste_tableView":{
@@ -99,6 +114,7 @@ var customkeys = {
         "actual":  "solidWaste_actualIndicator",
         "target_1": "solidWaste_targetIndicator",
         "indicatorLineItem":"solidWaste_indicatorLineItem",
+        "type":"solidWaste_type",
         "unit": "solidWaste_unit"
     },
     "sanitation_tableView":{
@@ -106,14 +122,16 @@ var customkeys = {
         "actual":  "sanitation_actualIndicator",
         "target_1": "sanitation_targetIndicator",
         "indicatorLineItem":"sanitation_indicatorLineItem",
-        "unit": "sanitation_unit"
+        "unit": "sanitation_unit",
+        "type":"sanitation_type",
     },
     "stormWater_tableView":{
         "question": "stormWater_question",
         "actual":  "stormWater_actualIndicator",
         "target_1": "stormWater_targetIndicator",
         "indicatorLineItem":"stormWater_indicatorLineItem",
-        "unit": "stormWater_unit"
+        "unit": "stormWater_unit",
+        "type":"stormWater_type",
     },
     "projectDetails_tableView_addButton":{
         "cost": 'cost',
@@ -157,7 +175,8 @@ var inputType = {
     "11": ["value", "label"],
     "14":"value"
 }
-module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
+
+const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
             switch (true) {
@@ -1543,7 +1562,14 @@ class PayloadManager{
     }
     async getNumericValues(){
         try{
+            let shortKey = this.objects['shortKey']
             this.value = this.objects['answer'][0]['value']
+            if (Object.keys(objectFields).includes(shortKey)){
+                let object = objectFields[shortKey]['object']
+                object['year'] = this.req.body[objectFields[shortKey]['fieldName']]
+                object['value'] = this.objects['answer'][0]['value']
+                this.value = object
+            }
             return this.value
         }
         catch(err){
@@ -1835,8 +1861,7 @@ async function handleArrOfObjects(question,flattedForm){
         let order = parseInt(question.order)
         let dbKey = arrFields[question.shortKey]
         let values = flattedForm[dbKey]
-        let isDraft = flattedForm['isDraft']
-        console.log("isDraft :: ",isDraft)
+        let disableFields = flattedForm['disableFields']
         var project_arr = []
         let a = 0
         if(values){
@@ -1857,7 +1882,7 @@ async function handleArrOfObjects(question,flattedForm){
                         }
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
                         if(questionObj.isQuestionDisabled !== true){
-                            questionObj.isQuestionDisabled = handleIsDraftCases({isDraft})
+                            questionObj.isQuestionDisabled = handleDisableFields({disableFields})
                         }
                         nested_arr.push({...questionObj})
                     }
@@ -1890,17 +1915,13 @@ function createCustomizedKeys(answerObj,keysMapper){
     return answerObj
 }
 
-function handleIsDraftCases(flattedForm){
+function handleDisableFields(flattedForm){
     try{
-        if(flattedForm.isDraft === false){
-            return true
-        }
-        else{
-            return false
-        }
+        return flattedForm.disableFields
     }
     catch(err){
-        console.log("error in handleIsDraftCases")
+        console.log("error in handleDisableFields")
+        return false
     }
 }
 
@@ -1915,7 +1936,7 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
                 let formObj = createCustomizedKeys(answerObjects[index],keysMapper)
                 let question = questionArr[arrIndex]
                 if(question.isQuestionDisabled !== true){
-                    question.isQuestionDisabled = handleIsDraftCases(flattedForm)
+                    question.isQuestionDisabled = handleDisableFields(flattedForm)
                 }
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question,answer,formObj)
@@ -1945,7 +1966,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                         await handleValues(obj,answer,flattedForm)
                         obj.selectedValue = [answer]
                         if(obj.isQuestionDisabled !== true){
-                            obj.isQuestionDisabled = handleIsDraftCases(flattedForm)
+                            obj.isQuestionDisabled = handleDisableFields(flattedForm)
                         }
                         obj.answer = {
                             answer : [answer]
@@ -2917,5 +2938,19 @@ async function nestedObjectParser(data,req){
         console.log("error in nestedObjectParser: ::: ",err)
     }
 }
+
+module.exports.decideDisabledFields = (form,formType)=>{
+    let formStatus = calculateStatus(form.status, form.actionTakenByRole,form.isDraft,
+        formType)
+    let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+    if(allowedStatuses.includes(formStatus)){
+        return false 
+    }
+    else{
+        return true
+    }
+    
+}
+module.exports.calculateStatus = calculateStatus
 module.exports.nestedObjectParser = nestedObjectParser
 module.exports.clearVariables = clearVariables
