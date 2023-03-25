@@ -571,13 +571,13 @@ let DurProjectJson = {
     },
     "waterSupply_question":{
         "information": "",
-        "_id": "641d8e35e38c98116eb6148b",
+        "_id": "641eae1acc09cd11d2104974",
         "order": "1.001",
         "answer_option": [],
-        "title": "Sections/Indicators",
+        "title": "Question",
         "hint": "",
         "resource_urls": [],
-        "label": "Label",
+        "label": "",
         "shortKey": "waterSupply_question",
         "viewSequence": "2",
         "child": [],
@@ -600,24 +600,40 @@ let DurProjectJson = {
         "selectedAnswerOption": {
             "name": " 1"
         },
-        "forParentValue": 1
+        "forParentValue": 1,
+        "answer": {
+            "answer": [
+                {
+                    "label": "",
+                    "textValue": "",
+                    "value": ""
+                }
+            ],
+            "input_type": "29",
+            "nestedAnswer": [],
+            "order": "1.001",
+            "shortKey": "waterSupply_question"
+        }
     },
     "waterSupply_actualIndicator":{
         "information": "",
-        "_id": "641d8fab775541116f87db5b",
-        "order": "1.003",
+        "_id": "641eae91e6aa5311d3f1e1d2",
+        "order": "1.002",
         "answer_option": [],
         "title": "Actual Indicator 2021-22",
         "hint": "",
         "resource_urls": [],
         "label": "",
-        "modelType":"Object",
-        "valueKey":"value",
         "shortKey": "waterSupply_actualIndicator",
         "viewSequence": "3",
         "child": [],
         "parent": [],
-        "validation": [],
+        "validation": [
+            {
+                "error_msg": "",
+                "_id": "1"
+            }
+        ],
         "restrictions": [],
         "minRange": null,
         "maxRange": null,
@@ -628,7 +644,7 @@ let DurProjectJson = {
         "weightage": [],
         "valueHolder": "",
         "isQuestionDisabled": false,
-        "value": "566",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "2",
@@ -643,78 +659,97 @@ let DurProjectJson = {
         },
         "forParentValue": 1,
         "isSelectValue": false,
-        "previousValue": "",
-        "modelValue": "566",
-        "selectedValue": [
-            {
-                "label": "",
-                "textValue": "",
-                "value": "566"
-            }
-        ]
+        "previousValue": "50",
+        "modelValue": "",
+        "selectedValue": [],
+        "answer": {
+            "answer": [
+                {
+                    "label": "",
+                    "textValue": "",
+                    "value": ""
+                }
+            ],
+            "input_type": "2",
+            "nestedAnswer": [],
+            "order": "1.002",
+            "pattern": "",
+            "shortKey": "waterSupply_actualIndicator"
+        }
     },
-    "waterSupply_targetIndicator":{
-        "information": "",
-        "_id": "641d90b0775541116f87db72",
-        "order": "1.004",
-        "answer_option": [],
-        "title": "Target Indicator 2022-23",
-        "hint": "",
-        "modelType":"Object",
-        "valueKey":"value",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "waterSupply_targetIndicator",
-        "viewSequence": "4",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [
-            {
-                "_id": "641d9af4e38c98116eb61b14",
-                "orders": [
-                    {
-                        "_id": "641d9af4e38c98116eb61b15",
-                        "order": "1.003",
-                        "value": ""
-                    }
-                ],
-                "type": "3"
-            }
-        ],
-        "minRange": null,
-        "maxRange": null,
-        "min": 1,
-        "max": 3,
-        "pattern": "",
-        "input_type": "2",
-        "weightage": [],
-        "valueHolder": "",
-        "isQuestionDisabled": false,
-        "value": "9889",
-        "acceptableType": "",
-        "acceptableFileType": "",
-        "type": "2",
-        "visibility": true,
-        "nestedConfig": {
-            "parentOrder": "1",
-            "index": 2,
-            "loopIndex": 0
-        },
-        "selectedAnswerOption": {
-            "name": " 1"
-        },
-        "forParentValue": 1,
-        "isSelectValue": false,
-        "previousValue": "",
-        "modelValue": "9889",
-        "selectedValue": [
-            {
-                "label": "",
-                "textValue": "",
-                "value": "9889"
-            }
-        ]
+    "waterSupply_targetIndicator": {
+                            "information": "",
+                            "_id": "641eaf0be6aa5311d3f1e285",
+                            "order": "1.003",
+                            "answer_option": [],
+                            "title": "Target Indicator 2022-23",
+                            "hint": "",
+                            "resource_urls": [],
+                            "label": "",
+                            "shortKey": "waterSupply_targetIndicator",
+                            "viewSequence": "4",
+                            "child": [],
+                            "parent": [],
+                            "validation": [
+                                {
+                                    "error_msg": "",
+                                    "_id": "1"
+                                }
+                            ],
+                            "restrictions": [
+                                {
+                                    "_id": "641eaf0ce6aa5311d3f1e2a6",
+                                    "orders": [
+                                        {
+                                            "_id": "641eaf0ce6aa5311d3f1e2a7",
+                                            "order": "1.002",
+                                            "value": ""
+                                        }
+                                    ],
+                                    "type": "3"
+                                }
+                            ],
+                            "minRange": null,
+                            "maxRange": null,
+                            "min": 1,
+                            "max": 3,
+                            "pattern": "",
+                            "input_type": "2",
+                            "weightage": [],
+                            "valueHolder": "",
+                            "isQuestionDisabled": false,
+                            "value": "",
+                            "acceptableType": "",
+                            "acceptableFileType": "",
+                            "type": "2",
+                            "visibility": true,
+                            "nestedConfig": {
+                                "parentOrder": "1",
+                                "index": 2,
+                                "loopIndex": 0
+                            },
+                            "selectedAnswerOption": {
+                                "name": " 1"
+                            },
+                            "forParentValue": 1,
+                            "isSelectValue": false,
+                            "previousValue": "42",
+                            "modelValue": "",
+                            "selectedValue": [],
+                            "answer": {
+                                "answer": [
+                                    {
+                                        "label": "",
+                                        "textValue": "",
+                                        "value": ""
+                                    }
+                                ],
+                                "input_type": "2",
+                                "nestedAnswer": [],
+                                "order": "1.003",
+                                "pattern": "",
+                                "shortKey": "waterSupply_targetIndicator"
+                            }
     },
     "waterSupply_indicatorLineItem":{
         "information" : "",
@@ -787,9 +822,9 @@ let DurProjectJson = {
             }
         ]
     },
-    "waterSupply_unit":{
+    "waterSupply_unit": {
         "information": "",
-        "_id": "641d978ee38c98116eb61878",
+        "_id": "641eaf88e6aa5311d3f1e367",
         "order": "1.005",
         "answer_option": [],
         "title": "Unit",
@@ -801,31 +836,14 @@ let DurProjectJson = {
         "child": [],
         "parent": [],
         "pattern": "",
-        "validation": [
-            {
-                "_id": "3",
-                "error_msg": ""
-            },
-            {
-                "_id": "184",
-                "error_msg": ""
-            },
-            {
-                "error_msg": "",
-                "_id": "183"
-            },
-            {
-                "_id": "96",
-                "error_msg": ""
-            }
-        ],
+        "validation": [],
         "restrictions": [],
         "min": 1,
         "max": null,
         "input_type": "1",
         "weightage": [],
         "isQuestionDisabled": false,
-        "value": "10",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
@@ -840,23 +858,31 @@ let DurProjectJson = {
         },
         "forParentValue": 1,
         "isSelectValue": false,
-        "previousValue": "",
-        "modelValue": "10",
-        "selectedValue": [
-            {
-                "label": "",
-                "textValue": "10",
-                "value": ""
-            }
-        ]
+        "previousValue": "%",
+        "modelValue": "",
+        "selectedValue": [],
+        "answer": {
+            "answer": [
+                {
+                    "label": "",
+                    "textValue": "",
+                    "value": ""
+                }
+            ],
+            "input_type": "1",
+            "nestedAnswer": [],
+            "order": "1.005",
+            "pattern": "",
+            "shortKey": "waterSupply_unit"
+        }
     },
     "waterSupply_type":{
         "information": "",
-        "_id": "641e83c1cc09cd11d2100bdd",
-        "order": "1.006",
+        "_id": "641eafb2cc09cd11d2104b52",
         "answer_option": [],
         "title": "Type",
         "hint": "",
+        "order": "1.006",
         "resource_urls": [],
         "label": "",
         "shortKey": "waterSupply_type",
@@ -880,6 +906,24 @@ let DurProjectJson = {
             "parentOrder": "1",
             "index": 5,
             "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+            "name": " 1"
+        },
+        "forParentValue": 1,
+        "answer": {
+            "answer": [
+                {
+                    "label": "",
+                    "textValue": "",
+                    "value": ""
+                }
+            ],
+            "input_type": "1",
+            "nestedAnswer": [],
+            "order": "1.006",
+            "pattern": "",
+            "shortKey": "waterSupply_type"
         }
     },
     "solidWaste_question":{
