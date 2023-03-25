@@ -783,7 +783,7 @@ let DurProjectJson = {
         "restrictions" : [
 
         ],
-        "min" :1,
+        "min" : 1,
         "max" : null,
         "input_type" : "1",
         "weightage" : [
@@ -798,7 +798,7 @@ let DurProjectJson = {
         "nestedConfig" : {
             "parentOrder" : "1",
             "index" : 3,
-            "loopIndex" :0
+            "loopIndex" : 0
         }
     },
     "waterSupply_unit": {
@@ -905,255 +905,537 @@ let DurProjectJson = {
             "shortKey": "waterSupply_type"
         }
     },
-    "solidWaste_question": {
-        "information": "",
-        "_id": "641da2b3cc09cd11d20fef18",
-        "order": "3.001",
-        "answer_option": [],
-        "title": "Sections/Indicators",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "solidWaste_question",
-        "viewSequence": "14",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [],
-        "input_type": "29",
-        "weightage": []
-    },
+    "solidWaste_question":  {
+        "information" : "",
+        "_id" : "641da2b3cc09cd11d20fef18",
+        "order" : "3.001",
+        "answer_option" : [
 
-    "solidWaste_actualIndicator": {
-        "information": "",
-        "_id": "641da332cc09cd11d20fef73",
-        "order": "3.002",
-        "answer_option": [],
-        "title": "Actual Indicator 2021-22",
-        "hint": "",
-        "resource_urls": [],
+        ],
+        "title" : "Sections/Indicators",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "solidWaste_question",
+        "viewSequence" : "16",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "input_type" : "29",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "29",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "3",
+            "index" : 0,
+            "loopIndex" : 0
+        }
+    },
+    "solidWaste_actualIndicator":{
+        "information" : "",
+        "_id" : "641da332cc09cd11d20fef73",
+        "order" : "3.002",
+        "answer_option" : [
+
+        ],
+        "title" : "Actual Indicator 2021-22",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
         "modelType": "Object",
         "valueKey": "value",
-        "label": "",
-        "shortKey": "solidWaste_actualIndicator",
-        "viewSequence": "15",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [],
-        "minRange": null,
-        "maxRange": null,
-        "min": 1,
-        "max": 3,
-        "pattern": "",
-        "input_type": "2",
-        "weightage": [],
-        "valueHolder": ""
+        "shortKey" : "solidWaste_actualIndicator",
+        "viewSequence" : "17",
+        "modelType": "Object",
+        "valueKey": "value",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+            {
+                "error_msg" : "",
+                "_id" : "1"
+            }
+        ],
+        "restrictions" : [
+
+        ],
+        "minRange" : null,
+        "maxRange" : null,
+        "min" : 1,
+        "max" : 3,
+        "pattern" : "",
+        "input_type" : "2",
+        "weightage" : [
+
+        ],
+        "valueHolder" : "",
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "2",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "3",
+            "index" : 1,
+            "loopIndex" : 0
+        }
     },
     "solidWaste_targetIndicator": {
-        "information": "",
-        "_id": "641da36fcc09cd11d20fefa3",
-        "order": "3.003",
-        "answer_option": [],
-        "title": "Target Indicator 2022-23",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
+        "information" : "",
+        "_id" : "641da36fcc09cd11d20fefa3",
+        "order" : "3.003",
+        "answer_option" : [
+
+        ],
         "modelType": "Object",
         "valueKey": "value",
-        "shortKey": "solidWaste_targetIndicator",
-        "viewSequence": "16",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [],
-        "minRange": null,
-        "maxRange": null,
-        "min": 1,
-        "max": 3,
-        "pattern": "",
-        "input_type": "2",
-        "weightage": [],
-        "valueHolder": ""
+        "title" : "Target Indicator 2022-23",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "solidWaste_targetIndicator",
+        "viewSequence" : "18",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+            {
+                "error_msg" : "",
+                "_id" : "1"
+            }
+        ],
+        "restrictions" : [
+            {
+                "_id" : "641e89b9cc09cd11d210111b",
+                "orders" : [
+                    {
+                        "_id" : "641e89b9cc09cd11d210111c",
+                        "order" : "3.002",
+                        "value" : ""
+                    }
+                ],
+                "type" : "4"
+            }
+        ],
+        "minRange" : null,
+        "maxRange" : null,
+        "min" : 1,
+        "max" :3,
+        "pattern" : "",
+        "input_type" : "2",
+        "weightage" : [
+
+        ],
+        "valueHolder" : "",
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "2",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "3",
+            "index" : 2,
+            "loopIndex" : 0
+        }
     },
     "solidWaste_unit": {
-        "information": "",
-        "_id": "641da3f1cc09cd11d20ff009",
-        "order": "3.005",
-        "answer_option": [],
-        "title": "Unit",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "solidWaste_unit",
-        "viewSequence": "18",
-        "child": [],
-        "parent": [],
-        "pattern": "",
-        "validation": [],
-        "restrictions": [],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": []
+        "information" : "",
+        "_id" : "641da3f1cc09cd11d20ff009",
+        "order" : "3.005",
+        "answer_option" : [
+
+        ],
+        "title" : "Unit",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "solidWaste_unit",
+        "viewSequence" : "20",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "3",
+            "index" : 4,
+            "loopIndex" : 0
+        }
     },
-    "solidWaste_type": {
-        "information": "",
-        "_id": "641e8412cc09cd11d2100c79",
-        "order": "3.006",
-        "answer_option": [],
-        "title": "Type",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "solidWaste_type",
-        "viewSequence": "21",
-        "child": [],
-        "parent": [],
-        "pattern": "",
-        "validation": [],
-        "restrictions": [],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": [],
-        "isQuestionDisabled": false,
-        "value": "",
-        "acceptableType": "",
-        "acceptableFileType": "",
-        "type": "1",
-        "visibility": true,
-        "nestedConfig": {
-            "parentOrder": "3",
-            "index": 5,
-            "loopIndex": 0
+    "solidWaste_type":{
+        "information" : "",
+        "_id" : "641e8412cc09cd11d2100c79",
+        "order" : "3.006",
+        "answer_option" : [
+
+        ],
+        "title" : "Type",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "solidWaste_type",
+        "viewSequence" : "21",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "3",
+            "index" : 5,
+            "loopIndex" : 0
         }
     },
     "solidWaste_indicatorLineItem": {
-        "information": "",
-        "_id": "641da3cacc09cd11d20fefd6",
-        "order": "3.004",
-        "answer_option": [
+        "information" : "",
+        "_id" : "641da3cacc09cd11d20fefd6",
+        "order" : "3.004",
+        "answer_option" : [
 
         ],
-        "title": "Indicator LineItem",
-        "hint": "",
-        "resource_urls": [
+        "title" : "Indicator LineItem",
+        "hint" : "",
+        "resource_urls" : [
 
         ],
-        "label": "",
-        "shortKey": "solidWaste_indicatorLineItem",
-        "viewSequence": "17",
-        "child": [
+        "label" : "",
+        "shortKey" : "solidWaste_indicatorLineItem",
+        "viewSequence" : "19",
+        "child" : [
 
         ],
-        "parent": [
+        "parent" : [
 
         ],
-        "pattern": "",
-        "validation": [
+        "pattern" : "",
+        "validation" : [
 
         ],
-        "restrictions": [
+        "restrictions" : [
 
         ],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": [
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
 
-        ]
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "3",
+            "index" : 3,
+            "loopIndex" : 0
+        },
+        "selectedAnswerOption" : {
+            "name" : " 1"
+        },
+        "forParentValue" : 1,
+        "answer" : {
+            "answer" : [
+                {
+                    "label" : "",
+                    "textValue" : "",
+                    "value" : ""
+                }
+            ],
+            "input_type" : "1",
+            "nestedAnswer" : [
+
+            ],
+            "order" : "3.004",
+            "pattern" : "",
+            "shortKey" : "solidWaste_indicatorLineItem"
+        }
     },
-    "stormWater_question": {
-        "information": "",
-        "_id": "641da461cc09cd11d20ff158",
-        "order": "4.001",
-        "answer_option": [],
-        "title": "Sections/Indicators",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "stormWater_question",
-        "viewSequence": "20",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [],
-        "input_type": "29",
-        "weightage": []
+    "stormWater_question":{
+        "information" : "",
+        "_id" : "641da461cc09cd11d20ff158",
+        "order" : "4.001",
+        "answer_option" : [
+
+        ],
+        "title" : "Sections/Indicators",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "stormWater_question",
+        "viewSequence" : "23",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "input_type" : "29",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "29",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "4",
+            "index" : 0,
+            "loopIndex" : 0
+        }
     },
-    "stormWater_actualIndicator": {
-        "information": "",
-        "_id": "641da488cc09cd11d20ff1a3",
-        "order": "4.002",
-        "answer_option": [],
-        "title": "Actual Indicator 2021-22",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
+    "stormWater_actualIndicator":  {
+        "information" : "",
+        "_id" : "641da488cc09cd11d20ff1a3",
+        "order" : "4.002",
+        "answer_option" : [
+
+        ],
         "modelType": "Object",
         "valueKey": "value",
-        "shortKey": "stormWater_actualIndicator",
-        "viewSequence": "21",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [],
-        "minRange": null,
-        "maxRange": null,
-        "min": 1,
-        "max": 3,
-        "pattern": "",
-        "input_type": "2",
-        "weightage": [],
-        "valueHolder": ""
-    },
-    "stormWater_targetIndicator": {
-        "information": "",
-        "_id": "641da4b6cc09cd11d20ff1df",
-        "order": "4.003",
-        "answer_option": [],
-        "title": "Target Indicator 2022-23",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "stormWater_targetIndicator",
-        "viewSequence": "22",
+        "title" : "Actual Indicator 2021-22",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "stormWater_actualIndicator",
+        "viewSequence" : "24",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+            {
+                "error_msg" : "",
+                "_id" : "1"
+            }
+        ],
+        "restrictions" : [
+
+        ],
+        "minRange" : null,
+        "maxRange" : null,
+        "min" : 1,
+        "max" : 3,
+        "pattern" : "",
+        "input_type" : "2",
+        "weightage" : [
+
+        ],
+        "valueHolder" : "",
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "2",
+        "visibility" : true,
         "modelType": "Object",
         "valueKey": "value",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [],
-        "minRange": null,
-        "maxRange": null,
-        "min": 1,
-        "max": 3,
-        "pattern": "",
-        "input_type": "2",
-        "weightage": [],
-        "valueHolder": ""
+        "nestedConfig" : {
+            "parentOrder" : "4",
+            "index" : 1,
+            "loopIndex" : 0,
+        }
+    },
+    "stormWater_targetIndicator":{
+        "information" : "",
+        "_id" : "641da4b6cc09cd11d20ff1df",
+        "order" : "4.003",
+        "answer_option" : [
+
+        ],
+        "title" : "Target Indicator 2022-23",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "stormWater_targetIndicator",
+        "viewSequence" : "25",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+            {
+                "error_msg" : "",
+                "_id" : "1"
+            }
+        ],
+        "modelType": "Object",
+        "valueKey": "value",
+        "restrictions" : [
+            {
+                "_id" : "641e8a3fcc09cd11d210122c",
+                "orders" : [
+                    {
+                        "_id" : "641e8a3fcc09cd11d210122d",
+                        "order" : "4.002",
+                        "value" : ""
+                    }
+                ],
+                "type" : "4"
+            }
+        ],
+        "minRange" : null,
+        "maxRange" : null,
+        "min" : 1,
+        "max" : 3,
+        "pattern" : "",
+        "input_type" : "2",
+        "weightage" : [
+
+        ],
+        "valueHolder" : "",
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "2",
+        "modelType": "Object",
+        "valueKey": "value",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "4",
+            "index" : 2,
+            "loopIndex" : 0
+        }
     },
     "stormWater_unit": {
-        "information": "",
-        "_id": "641da4f6e6aa5311d3f19a6e",
-        "answer_option": [],
-        "title": "Unit",
-        "hint": "",
-        "order": "4.005",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "stormWater_unit",
-        "viewSequence": "24",
-        "child": [],
-        "parent": [],
-        "pattern": "",
-        "validation": [],
-        "restrictions": [],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": []
+        "information" : "",
+        "_id" : "641da4f6e6aa5311d3f19a6e",
+        "order" : "4.005",
+        "answer_option" : [
+
+        ],
+        "title" : "Unit",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "stormWater_unit",
+        "viewSequence" : "27",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "4",
+            "index" : 4,
+            "loopIndex" : 0
+        }
     },
     "stormWater_type": {
         "information": "",
@@ -1188,206 +1470,427 @@ let DurProjectJson = {
         }
     },
     "stormWater_indicatorLineItem": {
-        "information": "",
-        "_id": "641da4e4e6aa5311d3f19a24",
-        "order": "4.004",
-        "answer_option": [
+        "information" : "",
+        "_id" : "641da4e4e6aa5311d3f19a24",
+        "order" : "4.004",
+        "answer_option" : [
 
         ],
-        "title": "Indicator LineItem",
-        "hint": "",
-        "resource_urls": [
+        "title" : "Indicator LineItem",
+        "hint" : "",
+        "resource_urls" : [
 
         ],
-        "label": "",
-        "shortKey": "stormWater_indicatorLineItem",
-        "viewSequence": "23",
-        "child": [
+        "label" : "",
+        "shortKey" : "stormWater_indicatorLineItem",
+        "viewSequence" : "26",
+        "child" : [
 
         ],
-        "parent": [
+        "parent" : [
 
         ],
-        "pattern": "",
-        "validation": [
+        "pattern" : "",
+        "validation" : [
 
         ],
-        "restrictions": [
+        "restrictions" : [
 
         ],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": [
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
 
-        ]
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "4",
+            "index" : 3,
+            "loopIndex" : 0
+        },
+        "selectedAnswerOption" : {
+            "name" : " 1"
+        },
+        "forParentValue" : 1,
+        "answer" : {
+            "answer" : [
+                {
+                    "label" : "",
+                    "textValue" : "",
+                    "value" : ""
+                }
+            ],
+            "input_type" : "1",
+            "nestedAnswer" : [
+
+            ],
+            "order" : "4.004",
+            "pattern" : "",
+            "shortKey" : "stormWater_indicatorLineItem"
+        }
     },
-    "sanitation_question": {
-        "information": "",
-        "_id": "641d9a13775541116f87df02",
-        "order": "2.001",
-        "answer_option": [],
-        "title": "Sections/Indicators",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "sanitation_question",
-        "viewSequence": "8",
-        "child": [],
-        "parent": [],
-        "validation": [],
-        "restrictions": [],
-        "input_type": "29",
-        "weightage": []
+    "sanitation_question":{
+        "information" : "",
+        "_id" : "641d9a13775541116f87df02",
+        "order" : "2.001",
+        "answer_option" : [
+
+        ],
+        "title" : "Sections/Indicators",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "sanitation_question",
+        "viewSequence" : "9",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "input_type" : "29",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "29",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "2",
+            "index" : 0,
+            "loopIndex" :0
+        },
+        "selectedAnswerOption" : {
+            "name" : " 1"
+        },
+        "forParentValue" : 1,
+        "answer" : {
+            "answer" : [
+                {
+                    "label" : "",
+                    "textValue" : "",
+                    "value" : ""
+                }
+            ],
+            "input_type" : "29",
+            "nestedAnswer" : [
+
+            ],
+            "order" : "2.001",
+            "shortKey" : "sanitation_question"
+        }
     },
-    "sanitation_actualIndicator": {
-        "information": "",
-        "_id": "641d9bcecc09cd11d20fe2d8",
-        "order": "2.002",
-        "answer_option": [],
-        "title": "Actual Indicator 2021-22",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "sanitation_actualIndicator",
-        "viewSequence": "9",
+    "sanitation_actualIndicator":{
+        "information" : "",
+        "_id" : "641d9bcecc09cd11d20fe2d8",
+        "order" : "2.002",
+        "answer_option" : [
+
+        ],
         "modelType": "Object",
         "valueKey": "value",
-        "child": [],
-        "parent": [],
-        "validation": [
+        "title" : "Actual Indicator 2021-22",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "sanitation_actualIndicator",
+        "viewSequence" : "10",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
             {
-                "error_msg": "",
-                "_id": "1"
+                "error_msg" : "",
+                "_id" : "1"
             }
         ],
-        "restrictions": [],
-        "minRange": null,
-        "maxRange": null,
-        "min": 1,
-        "max": 3,
-        "pattern": "",
-        "input_type": "2",
-        "weightage": [],
-        "valueHolder": ""
+        "restrictions" : [
+
+        ],
+        "minRange" : null,
+        "maxRange" : null,
+        "min" : 1,
+        "max" : 3,
+        "pattern" : "",
+        "input_type" : "2",
+        "weightage" : [
+
+        ],
+        "valueHolder" : "",
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "2",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "2",
+            "index" : 1,
+            "loopIndex" : 0
+        },
+        "selectedAnswerOption" : {
+            "name" : " 1"
+        },
+        "forParentValue" : 1,
+        "answer" : {
+            "answer" : [
+                {
+                    "label" : "",
+                    "textValue" : "",
+                    "value" : ""
+                }
+            ],
+            "input_type" : "2",
+            "nestedAnswer" : [
+
+            ],
+            "order" : "2.002",
+            "pattern" : "",
+            "shortKey" : "sanitation_actualIndicator"
+        }
     },
-    "sanitation_targetIndicator": {
-        "information": "",
-        "_id": "641d9bcecc09cd11d20fe2d8",
-        "order": "2.002",
-        "answer_option": [],
-        "title": "Actual Indicator 2021-22",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
+    "sanitation_targetIndicator":  {
+        "information" : "",
+        "_id" : "641d9c1ccc09cd11d20fe399",
+        "order" : "2.003",
+        "answer_option" : [
+
+        ],
+        "title" : "Target Indicator 2022-23",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "sanitation_targetIndicator",
+        "viewSequence" : "11",
         "modelType": "Object",
         "valueKey": "value",
-        "shortKey": "sanitation_targetIndicator",
-        "viewSequence": "9",
-        "child": [],
-        "parent": [],
-        "validation": [
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
             {
-                "error_msg": "",
-                "_id": "1"
+                "error_msg" : "",
+                "_id" : "1"
             }
         ],
-        "restrictions": [],
-        "minRange": null,
-        "maxRange": null,
-        "min": 1,
-        "max": 3,
-        "pattern": "",
-        "input_type": "2",
-        "weightage": [],
-        "valueHolder": ""
+        "restrictions" : [
+            {
+                "_id" : "641e8a84e6aa5311d3f1b1a7",
+                "orders" : [
+                    {
+                        "_id" : "641e8a84e6aa5311d3f1b1a8",
+                        "order" : "2.002",
+                        "value" : ""
+                    }
+                ],
+                "type" : "4"
+            }
+        ],
+        "minRange" : null,
+        "maxRange" : null,
+        "min" : 1,
+        "max" : 3,
+        "pattern" : "",
+        "input_type" : "2",
+        "weightage" : [
+
+        ],
+        "valueHolder" : "",
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "2",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "2",
+            "index" : 2,
+            "loopIndex" : 0
+        }
     },
     "sanitation_unit": {
-        "information": "",
-        "_id": "641d9c63cc09cd11d20fe3e6",
-        "order": "2.005",
-        "answer_option": [],
-        "title": "Unit",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "sanitation_unit",
-        "viewSequence": "12",
-        "child": [],
-        "parent": [],
-        "pattern": "",
-        "validation": [],
-        "restrictions": [],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": []
+        "information" : "",
+        "_id" : "641d9c63cc09cd11d20fe3e6",
+        "order" : "2.005",
+        "answer_option" : [
+
+        ],
+        "title" : "Unit",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "sanitation_unit",
+        "viewSequence" : "13",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "2",
+            "index" : 4,
+            "loopIndex" : 0
+        }
     },
     "sanitation_indicatorLineItem": {
-        "information": "",
-        "_id": "641d9c47cc09cd11d20fe3bf",
-        "order": "2.004",
-        "answer_option": [
+        "information" : "",
+        "_id" : "641d9c47cc09cd11d20fe3bf",
+        "order" : "2.004",
+        "answer_option" : [
 
         ],
-        "title": "Indicator LineItem",
-        "hint": "",
-        "resource_urls": [
+        "title" : "Indicator LineItem",
+        "hint" : "",
+        "resource_urls" : [
 
         ],
-        "label": "",
-        "shortKey": "sanitation_indicatorLineItem",
-        "viewSequence": "11",
-        "child": [
+        "label" : "",
+        "shortKey" : "sanitation_indicatorLineItem",
+        "viewSequence" : "12",
+        "child" : [
 
         ],
-        "parent": [
+        "parent" : [
 
         ],
-        "pattern": "",
-        "validation": [
+        "pattern" : "",
+        "validation" : [
 
         ],
-        "restrictions": [
+        "restrictions" : [
 
         ],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": [
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
 
-        ]
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "2",
+            "index" : 3,
+            "loopIndex" : 0
+        },
+        "selectedAnswerOption" : {
+            "name" : " 1"
+        },
+        "forParentValue" : 1,
+        "answer" : {
+            "answer" : [
+                {
+                    "label" : "",
+                    "textValue" : "",
+                    "value" : ""
+                }
+            ],
+            "input_type" : "1",
+            "nestedAnswer" : [
+
+            ],
+            "order" : "2.004",
+            "pattern" : "",
+            "shortKey" : "sanitation_indicatorLineItem"
+        }
     },
-    "sanitation_type": {
-        "information": "",
-        "_id": "641e83e6cc09cd11d2100c33",
-        "order": "2.006",
-        "answer_option": [],
-        "title": "Type",
-        "hint": "",
-        "resource_urls": [],
-        "label": "",
-        "shortKey": "sanitation_type",
-        "viewSequence": "14",
-        "child": [],
-        "parent": [],
-        "pattern": "",
-        "validation": [],
-        "restrictions": [],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": [],
-        "isQuestionDisabled": false,
-        "value": "",
-        "acceptableType": "",
-        "acceptableFileType": "",
-        "type": "1",
-        "visibility": true,
-        "nestedConfig": {
-            "parentOrder": "2",
-            "index": 5,
-            "loopIndex": 0
+    "sanitation_type":  {
+        "information" : "",
+        "_id" : "641e83e6cc09cd11d2100c33",
+        "order" : "2.006",
+        "answer_option" : [
+
+        ],
+        "title" : "Type",
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "label" : "",
+        "shortKey" : "sanitation_type",
+        "viewSequence" : "14",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "min" : 1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "2",
+            "index" : 5,
+            "loopIndex" : 0
         }
     },
 }
