@@ -706,7 +706,7 @@ let DurProjectJson = {
                 "orders": [
                     {
                         "_id": "641eaf0ce6aa5311d3f1e2a7",
-                        "order": "1.002",
+                        "order": "1.003",
                         "value": ""
                     }
                 ],
@@ -755,76 +755,51 @@ let DurProjectJson = {
             "shortKey": "waterSupply_targetIndicator"
         }
     },
-    "waterSupply_indicatorLineItem": {
-        "information": "",
-        "_id": "641d8f50775541116f87db46",
-        "order": "1.002",
-        "answer_option": [
+    "waterSupply_indicatorLineItem":{
+        "information" : "",
+        "_id" : "641eaf5de6aa5311d3f1e31a",
+        "order" : "1.004",
+        "answer_option" : [
 
         ],
-        "title": "Indicator LineItem",
-        "hint": "",
-        "resource_urls": [
+        "title" : "Indicator LineItem",
+        "hint" : "",
+        "resource_urls" : [
 
         ],
-        "label": "",
-        "shortKey": "waterSupply_indicatorLineItem",
-        "viewSequence": "5",
-        "child": [
+        "label" : "",
+        "shortKey" : "waterSupply_indicatorLineItem",
+        "viewSequence" : "5",
+        "child" : [
 
         ],
-        "parent": [
+        "parent" : [
 
         ],
-        "pattern": "",
-        "validation": [
-            {
-                "error_msg": "",
-                "_id": "183"
-            },
-            {
-                "_id": "96",
-                "error_msg": ""
-            },
-            {
-                "_id": "3",
-                "error_msg": ""
-            }
-        ],
-        "restrictions": [
+        "pattern" : "",
+        "validation" : [
 
         ],
-        "min": 1,
-        "max": null,
-        "input_type": "1",
-        "weightage": [
+        "restrictions" : [
 
         ],
-        "isQuestionDisabled": false,
-        "value": "1111",
-        "acceptableType": "",
-        "acceptableFileType": "",
-        "type": "1",
-        "visibility": true,
-        "nestedConfig": {
-            "parentOrder": "1",
-            "index": 3,
-            "loopIndex": 0
-        },
-        "selectedAnswerOption": {
-            "name": " 1"
-        },
-        "forParentValue": 1,
-        "isSelectValue": false,
-        "previousValue": "",
-        "modelValue": "1111",
-        "selectedValue": [
-            {
-                "label": "",
-                "textValue": "1111",
-                "value": ""
-            }
-        ]
+        "min" :1,
+        "max" : null,
+        "input_type" : "1",
+        "weightage" : [
+
+        ],
+        "isQuestionDisabled" : false,
+        "value" : "",
+        "acceptableType" : "",
+        "acceptableFileType" : "",
+        "type" : "1",
+        "visibility" : true,
+        "nestedConfig" : {
+            "parentOrder" : "1",
+            "index" : 3,
+            "loopIndex" :0
+        }
     },
     "waterSupply_unit": {
         "information": "",
@@ -1116,8 +1091,8 @@ let DurProjectJson = {
         "hint": "",
         "resource_urls": [],
         "label": "",
+        "modelType": "Object",
         "valueKey": "value",
-        "shortKey": "solidWaste_targetIndicator",
         "shortKey": "stormWater_actualIndicator",
         "viewSequence": "21",
         "child": [],
@@ -1144,8 +1119,8 @@ let DurProjectJson = {
         "label": "",
         "shortKey": "stormWater_targetIndicator",
         "viewSequence": "22",
+        "modelType": "Object",
         "valueKey": "value",
-        "shortKey": "solidWaste_targetIndicator",
         "child": [],
         "parent": [],
         "validation": [],
@@ -1276,8 +1251,8 @@ let DurProjectJson = {
         "label": "",
         "shortKey": "sanitation_actualIndicator",
         "viewSequence": "9",
+        "modelType": "Object",
         "valueKey": "value",
-        "shortKey": "solidWaste_targetIndicator",
         "child": [],
         "parent": [],
         "validation": [
