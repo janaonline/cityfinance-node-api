@@ -1850,9 +1850,17 @@ async function handleDbValues(questionObj,formObj,order){
             await handleCasesByInputType(questionObj)
             await handleValues(questionObj,answer,formObj)
             questionObj.selectedValue = [answer]
-            questionObj.answer = {
-                "answer":[answer]
+            try{
+                questionObj.answer['answer'] =[answer]
             }
+            catch(err){
+                console.log("answer error ::")
+                questionObj.answer = {
+                    'answer' : [answer]
+                }
+            }
+            
+        
         }
         
         return {...questionObj}
@@ -1950,8 +1958,13 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question,answer,formObj)
                 question.selectedValue = [answer]
-                question.answer = {
-                    answer:[answer]
+                try{
+                    question.answer['answer'] = [answer]
+                }
+                catch(err){
+                    question.answer = {
+                        'answer' : [answer]
+                    }
                 }
             }
         }
@@ -2052,6 +2065,7 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
 const handleTextCase = async(question,obj,flattedForm)=>{
     try{
         let mainKey = question.shortKey
+        
         // console.log("flattedFrom ::::",flattedForm)
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
