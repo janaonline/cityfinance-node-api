@@ -73,8 +73,8 @@ var customBtnsWithFormID = {
 }
 
 const customDisableFields = {
-    "actual":"targetDisable",
-    "target_1":"actualDisable"
+    "actual":"actualDisable",
+    "target_1":"targetDisable"
 }
 var customkeys = {
     "general":{
