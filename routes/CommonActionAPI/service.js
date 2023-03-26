@@ -1903,7 +1903,7 @@ async function handleArrOfObjects(question,flattedForm){
                     if(questionObj){
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
-                        if(questionObj.modelType && questionObj.modelType === "Object"){
+                        if(questionObj.modelType && questionObj.modelType === "object"){
                             formObj[jsonKey] = obj[keys][questionObj.valueKey]
                         }
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
