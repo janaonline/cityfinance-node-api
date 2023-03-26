@@ -1876,7 +1876,6 @@ async function handleArrOfObjects(question,flattedForm){
         let disableFields = flattedForm['disableFields']
         var project_arr = []
         let a = 0
-        console.log("values :: ",values.length)
         if(values){
             for(let obj of values){
                 if(DurCase.includes(question.shortKey)){
