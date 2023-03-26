@@ -114,6 +114,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)
+        console.log("flattedForm ::: ",form)
         responseData[0].canTakeAction = req.form.canTakeAction
         obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
       }

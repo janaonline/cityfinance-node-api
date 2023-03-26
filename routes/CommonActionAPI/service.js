@@ -159,6 +159,7 @@ var customkeys = {
       }
 
 }
+const {MASTER_STATUS_ID} =  require('../../util/FormNames');
 
 var modifiedShortKeys = {
     "cert_declaration":"cert"
@@ -233,6 +234,14 @@ const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
                     break;
             }
             break;
+    }
+}
+
+module.exports.calculateStatusMaster = (status)=>{
+    if(MASTER_STATUS_ID.hasOwnProperty(status)){
+        return MASTER_STATUS_ID[status];
+    }else{
+        return MASTER_STATUS_ID['1'];
     }
 }
 
@@ -2184,10 +2193,11 @@ function handledateCase(question,obj,flattedForm){
     try{
         
         let mainKey = question.shortKey
+        flattedForm[mainKey] = typeof flattedForm[mainKey] == "string"  ? new Date(flattedForm[mainKey]) : flattedForm[mainKey]
         if(flattedForm[mainKey] === undefined){
             flattedForm[mainKey] = new Date()
         }
-        flattedForm[mainKey] = flattedForm[mainKey].toISOString().split("T")[0]
+        flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
@@ -2536,7 +2546,7 @@ async function takeActionOnForms(params, res) {
         if (multi) {
           let [response] = responses;
         /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = getSeparatedShortKeys(shortKeys);
+          let shortKeysResponse = getSeparatedShortKeys({shortKeys});
           /* Saving the status of the form for questions */
           for (let shortKey of shortKeysResponse["inner"]) {
             let params = {
@@ -2579,7 +2589,7 @@ async function takeActionOnForms(params, res) {
         } else {
           let rejectStatusAllTab = 0;
           //gets tabs array
-          let { outer: tabLevelShortKeys } = getSeparatedShortKeys(shortKeys);
+          let { outer: tabLevelShortKeys } = getSeparatedShortKeys({shortKeys});
           let tabShortKeyObj = {},
             tabShortKeyResponse = {};
           for (let tab of tabLevelShortKeys) {

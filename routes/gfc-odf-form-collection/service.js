@@ -226,7 +226,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
               });
 
               let statusHistory = {
-                formId: 1,
+                formId: masterFormId,
                 recordId: ObjectId(formSubmit._id),
                 shortKey: "form_level",
                 data: currentStatusData,

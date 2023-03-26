@@ -50,7 +50,11 @@ module.exports.FORMIDs = {
     "AnnualAccount": 4,
 }
 
-
+module.exports.FORM_LEVEL_SHORTKEY = {
+    form: "form_level",
+    tab: "tab_level",
+    question: "question_level"
+}
 module.exports.FORM_LEVEL = {
     "form": 1,
     "tab": 2,
