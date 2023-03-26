@@ -21,6 +21,7 @@ const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
+const {MASTER_STATUS_ID} =  require('../../util/FormNames');
 
 var modifiedShortKeys = {
     "cert_declaration":"cert"
@@ -94,6 +95,14 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
                     break;
             }
             break;
+    }
+}
+
+module.exports.calculateStatusMaster = (status)=>{
+    if(MASTER_STATUS_ID.hasOwnProperty(status)){
+        return MASTER_STATUS_ID[status];
+    }else{
+        return MASTER_STATUS_ID['1'];
     }
 }
 
