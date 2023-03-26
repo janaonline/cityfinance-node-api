@@ -3053,21 +3053,13 @@ function createCsv(params) {
               : "";
           }
           if(removeEscapesFromArr.includes(key)){
-            removeEscapeChars(document[key]);
+            document[key] = removeEscapeChars(document[key]);
           }
           if (key.split("_")[0] !== "FR") {
             if (document[key]) {
-              if(key === "indicator"){
-                if(document[key]=== "totalOwnRevenueArea"){
-                  FRFlag = true;
-                  str2= str;
-                  str2 += `${totalownOwnRevenueAreaLabel}, ${document['fy_21_22_cash'] ?? ""}`
-                }
-                document[key]= labelObj[document[key]]
-                // if(!labelObj[document[key]]){
-                //   console.log(document["indicator"])
-                // }
-              }
+            /* A destructuring assignment.FR case in Fiscal Mapper */
+              ({ FRFlag, str2 } = FRFinancialCsvCase(key, document, FRFlag, str2, str, totalownOwnRevenueAreaLabel, labelObj));
+
               str += document[key] + ",";
             } else {
               str += " " + ",";
@@ -3101,6 +3093,34 @@ function createCsv(params) {
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
   }
+}
+
+/**
+ * If the key is "indicator", then if the document[key] is "totalOwnRevenueArea", then set FRFlag to
+ * true, set str2 to str, and set str2 to the value of totalownOwnRevenueAreaLabel, the value of
+ * document['fy_21_22_cash'] if it exists, and an empty string if it doesn't
+ * @param key - the key of the document
+ * @param document - the document object
+ * @param FRFlag - This is a flag that is used to determine if the current row is a total row.
+ * @param str2 - the string that will be returned
+ * @param str - The string that will be written to the CSV file.
+ * @param totalownOwnRevenueAreaLabel - This is the label for the totalownOwnRevenueArea indicator.
+ * @param labelObj - This is the object that contains the labels for the indicators.
+ * @returns An object with two properties, FRFlag and str2.
+ */
+function FRFinancialCsvCase(key, document, FRFlag, str2, str, totalownOwnRevenueAreaLabel, labelObj) {
+  if (key === "indicator") {
+    if (document[key] === "totalOwnRevenueArea") {
+      FRFlag = true;
+      str2 = str;
+      str2 += `${totalownOwnRevenueAreaLabel}, ${document['fy_21_22_cash'] ?? ""}`;
+    }
+    document[key] = labelObj[document[key]];
+    // if(!labelObj[document[key]]){
+    //   console.log(document["indicator"])
+    // }
+  }
+  return { FRFlag, str2 };
 }
 
 function computeQuery(params) {
