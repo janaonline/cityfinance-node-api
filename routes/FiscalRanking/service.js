@@ -9,6 +9,7 @@ const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
+const FiscalRankingArray =  require('./formjson').arr ;
 const {
   csvColsFr,
   getCsvProjectionQueries,
@@ -2821,7 +2822,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
     let { financialInformation } = await fiscalRankingFormJson();
 
     const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
-    let { csvCols, dbCols } = await columnsForCSV(params);
+    let { csvCols, dbCols , FRShortKeyObj} = await columnsForCSV(params);
     let csv2 = createCsv({
       query,
       res,
@@ -2829,7 +2830,8 @@ module.exports.FRUlbFinancialData = async (req, res) => {
       modelName: "FiscalRankingMapper",
       dbCols,
       csvCols,
-      removeEscapesFromArr:[]
+      removeEscapesFromArr:[],
+      labelObj:FRShortKeyObj
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -2869,7 +2871,8 @@ module.exports.FROverAllUlbData = async (req, res) => {
       modelName: "Ulb",
       dbCols,
       csvCols,
-      removeEscapesFromArr
+      removeEscapesFromArr,
+      labelObj:{}
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -2977,15 +2980,8 @@ async function columnsForCSV(params) {
       "FR_auditedAnnualFySt_2018-19",
       "otherUpload"
     ];
-    // let { financialInformation } = await fiscalRankingFormJson();
+    output['FRShortKeyObj'] = {};
 
-    // let FRShortKeyObj = {};
-    // if (financialInformation) {
-    //   for (let fyKey in financialInformation) {
-    //     FRShortKeyObj[financialInformation[fyKey].key] =
-    //       financialInformation[fyKey].label;
-    //   }
-    // }
   } else if (FRUlbFinancialData) {
     output["dbCols"] = [
       "stateName",
@@ -2993,6 +2989,7 @@ async function columnsForCSV(params) {
       "cityFinanceCode",
       "censusCode",
       "formStatus",
+      "designYear",
       "dataYear",
       "indicator",
       "amount",
@@ -3008,13 +3005,22 @@ async function columnsForCSV(params) {
       "Indicator",
       "Amount",
     ];
+    
+    let FRShortKeyObj = {};
+    if (FiscalRankingArray.length>0) {
+      for (let FRObj of FiscalRankingArray) {
+        FRShortKeyObj[FRObj['key']] =
+        FRObj['label'];
+      }
+    }
+    output['FRShortKeyObj'] = FRShortKeyObj;
   }
   return output;
 }
 
 function createCsv(params) {
   try {
-    let { query, res, filename, modelName, dbCols, csvCols , removeEscapesFromArr} = params;
+    let { query, res, filename, modelName, dbCols, csvCols , removeEscapesFromArr, labelObj} = params;
     // if(!dbCols.length){
     //   dbCols =  Object.keys(cols)
     // }
@@ -3048,6 +3054,12 @@ function createCsv(params) {
           }
           if (key.split("_")[0] !== "FR") {
             if (document[key]) {
+              if(key === "indicator"){
+                document[key]= labelObj[document[key]]
+                // if(!document[key]){
+                //   console.log(document._id)
+                // }
+              }
               str += document[key] + ",";
             } else {
               str += " " + ",";
@@ -3141,6 +3153,50 @@ function computeQuery(params) {
           preserveNullAndEmptyArrays: true,
         },
       },
+
+      {
+        $lookup: {
+          from: "fiscalrankings",
+          let: {
+            firstUser: "$fiscal_ranking",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$_id", "$$firstUser"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $lookup: {
+                from: "years",
+                localField: "design_year",
+                foreignField: "_id",
+                as: "design_year",
+              },
+            },
+            {
+              $unwind: {
+                path: "$design_year",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+          ],
+          as: "fiscalrankings",
+        },
+      },
+
+      {
+        $unwind: {
+          path: "$fiscalrankings",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
       {
         $project: {
           stateName: "$ulb.state.name",
@@ -3158,10 +3214,24 @@ function computeQuery(params) {
               else: "$ulb.censusCode",
             },
           },
-          formStatus: "",
+          formStatus: {
+            $cond: {
+              if: {
+                $or: [
+                  {
+                    $eq: ["$fiscalrankings.isDraft", true],
+                  },
+                ],
+              },
+              then: "In Progress",
+              else: "Under Review By MoHUA",
+            },
+          },
           dataYear: "$dataYear.year",
           indicator: "$type",
           amount: "$value",
+          designYear: "$fiscalrankings.design_year.year",
+          fy_21_22_cash: "$fiscalrankings.fy_21_22_cash.value",
         },
       },
       {

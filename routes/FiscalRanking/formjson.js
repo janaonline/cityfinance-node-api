@@ -812,3 +812,4 @@ let arr = [
       input: 'number'
     }
   ]
+module.exports.arr = arr;
