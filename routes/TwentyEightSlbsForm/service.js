@@ -558,7 +558,6 @@ module.exports.getForm = async (req, res,next) => {
             ulb: ObjectId(data.ulb),
             design_year: ObjectId("606aaf854dff55e6c075d219"),
           }).lean();
-          console.log("slbData :: ",slbData)
           if (slbData) {
             slbDataNotFilled = slbData.blank
             pipedSupply =

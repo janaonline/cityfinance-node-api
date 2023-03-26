@@ -1854,7 +1854,6 @@ async function handleDbValues(questionObj,formObj,order){
                 questionObj.answer['answer'] =[answer]
             }
             catch(err){
-                console.log("answer error ::")
                 questionObj.answer = {
                     'answer' : [answer]
                 }
