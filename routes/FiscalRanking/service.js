@@ -3027,6 +3027,7 @@ function createCsv(params) {
     // if(!csvCols.length){
     //   csvCols = Object.values(cols)
     // }
+    let totalownOwnRevenueAreaLabel = "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD"
     let cursor = moongose
       .model(modelName)
       .aggregate(query)
@@ -3040,6 +3041,8 @@ function createCsv(params) {
     cursor.on("data", (document) => {
       try {
         let str = "";
+        let str2 = '';
+        let FRFlag = false;
         for (let key of dbCols) {
           /* *
               this condition converts date to DD/MM/YYYY format
@@ -3055,9 +3058,14 @@ function createCsv(params) {
           if (key.split("_")[0] !== "FR") {
             if (document[key]) {
               if(key === "indicator"){
+                if(document[key]=== "totalOwnRevenueArea"){
+                  FRFlag = true;
+                  str2= str;
+                  str2 += `${totalownOwnRevenueAreaLabel}, ${document['fy_21_22_cash'] ?? ""}`
+                }
                 document[key]= labelObj[document[key]]
-                // if(!document[key]){
-                //   console.log(document._id)
+                // if(!labelObj[document[key]]){
+                //   console.log(document["indicator"])
                 // }
               }
               str += document[key] + ",";
@@ -3076,6 +3084,10 @@ function createCsv(params) {
           }
         }
         res.write(str + "\r\n");
+        if(FRFlag){
+          res.write(str2+ "\r\n")
+          FRFlag=false;
+        }
       } catch (err) {
         console.log("error in writeCsv :: ", err.message);
       }
@@ -3095,7 +3107,84 @@ function computeQuery(params) {
   const { FRUlbFinancialData, FROverAllUlbData } = params;
   let output = {};
   if (FRUlbFinancialData) {
+    const indicatorArray =  [
+      "taxRevenue",
+      "propertyTax",
+      "waterTax",
+      "drainageTax",
+      "sewerageTax",
+      "profTax",
+      "entertainTax",
+      "advTax",
+      "otherTaxRev",
+      "feeUserChrg",
+      "waterSupplyFee",
+      "sanitationFee",
+      "garbageFee",
+      "otherFee",
+      "rentInc",
+      "assignedCompensation",
+      "octroiCompensation",
+      "otherCompensation",
+      "revGrants",
+      "centralGrant",
+      "cfcGrant",
+      "cssGrant",
+      "centralscheme",
+      "centralTransfer",
+      "stateGrant",
+      "sfcGrant",
+      "stateScheme",
+      "otherStateTrans",
+      "otherGrant",
+      "otherIncome",
+      "totalOwnRevenue",
+      "totalIncome",
+      "establishExpense",
+      "categoryA",
+      "categoryB",
+      "categoryC",
+      "otherEstExpense",
+      "adminExpense",
+      "omExp",
+      "omExpWaterSupply",
+      "omExpSanitation",
+      "omExpOther",
+      "finExpense",
+      "misExpense",
+      "otherExpense",
+      "totalExpend",
+      "netRevenue",
+      "CaptlExp",
+      "CaptlExpWaterSupply",
+      "CaptlExpSanitation",
+      "CaptExpOther",
+      "fixedAsset",
+      "faLandBuild",
+      "faOther",
+      "debtOs",
+      "assetsSale",
+      "incmLandSale",
+      "incmOtherAssets",
+      "totalRecActual",
+      "totalRcptWaterSupply",
+      "totalRcptSanitation",
+      "RcptBudget",
+      "totalOwnRevenueArea",
+      "fy_21_22_online",
+      "property_tax_register",
+      "paying_property_tax",
+      "paid_property_tax",
+    ];
     output["FRUlbFinancialData"] = [
+      {
+        $match: {
+          type: {
+            $in: indicatorArray
+          },
+        },
+      },
+
       {
         $lookup: {
           from: "ulbs",

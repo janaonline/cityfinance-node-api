@@ -682,7 +682,7 @@ let arr = [
       input: 'number'
     },
     {
-      key: 'totalRecBudgetEst',
+      key: 'RcptBudget',
       label: 'Total Receipts (Budget Estimate)',
       codes: [],
       years: [ '2018-19', '2019-20', '2020-21', '2021-22' ],
