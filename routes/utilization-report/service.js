@@ -35,7 +35,7 @@ function checkForCalculations(reports){
     let exp = parseInt(reports.grantPosition.expDuringYr)
     let projectSum = 0
     if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseInt(a.cost) + parseInt(b.cost))
+      projectSum = reports.projects.reduce((a,b)=> parseInt(a.expenditure) + parseInt(b.expenditure))
     }
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
