@@ -29,7 +29,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
               "formId": req.query.formId,
               "language":[],
               "canTakeAction":form?.canTakeAction || false,
-              "isDraft":form?.isDraft || true,
+              "isDraft":form.isDraft !== undefined ? form.isDraft : true,
               "status":form?.status || null
             }
           ]
@@ -48,6 +48,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
+            obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
             response.success = true
             response.data = responseData
