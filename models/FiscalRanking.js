@@ -191,8 +191,9 @@ const fiscalRankingSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
-        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
-        actionTakenByRole: { type: String, default: null },
+        
+        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null ,required:true},
+        actionTakenByRole: { type: String, default: null,required:true },
         rejectReason: { type: String, default: null },
         history: { type: Array, default: [] },
         createdAt: { type: Date, default: Date.now() },

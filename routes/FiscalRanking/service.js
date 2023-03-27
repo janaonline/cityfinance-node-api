@@ -319,14 +319,17 @@ async function getModifiedTabsFiscalRanking(tabs, viewOne, fyDynemic, conditionF
     console.log("error in getModifiedTabsFiscalRanking ::: ", err.message)
   }
 }
-function statusObj(label, fieldType, type, dataSource, position) {
+function statusObj(label, fieldType, type, dataSource, position,required=true,mn=false,info="") {
   return {
     ...getInputKeysByType(
       fieldType,
       type,
       label,
       dataSource,
-      position
+      position,
+      required,
+      mn,
+      info
     ),
     value: null,
     status: "PENDING"
@@ -510,6 +513,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           dataSource,
           "11",
+          true,
+          false,
+          "Tax revenue levied for provision of water supply services."
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -522,6 +528,9 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "",
           dataSource,
           "12",
+          true,
+          false,
+          "Tax revenue levied for provision of sanitation & sewerage service delivery."
         ),
         ...obj,
         "readonly": getReadOnly(obj.status, isDraft)
@@ -771,6 +780,10 @@ exports.getView = async function (req, res, next) {
                     let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                     pf['status'] = chekFile ? "NA" : "PENDING"
                     pf['modelName'] = chekFile ? "ULBLedger" : ""
+                    console.log("chekFile :: ",chekFile)
+                    if(chekFile){
+                      pf['info'] =  `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`
+                    }
                     if (subData[key].calculatedFrom === undefined) {
                       console.log("chekFile", chekFile)
                       pf['readonly'] = chekFile ? true : false;
@@ -786,8 +799,10 @@ exports.getView = async function (req, res, next) {
                   let chekFile = ulbDataUniqueFy ? ulbDataUniqueFy.some(el => el?.year_id.toString() === pf?.year.toString()) : false;
                   pf['status'] = chekFile ? "NA" : "PENDING";
                   pf['modelName'] = chekFile ? "ULBLedger" : ""
+                  if(chekFile){
+                    pf['info'] =  `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`
+                  }
                   if (subData[key].calculatedFrom === undefined) {
-                    console.log("chekFile", chekFile)
 
                     pf['readonly'] = chekFile ? true : false;
                     pf['required'] = chekFile ? false : true;
@@ -1933,23 +1948,30 @@ async function sendCsv(res, aggregateQuery) {
   }
 }
 
-async function getTotalForCalculatedValues(dynamicObj,displayPriorities,yearObj){
+async function getTotalForCalculatedValues(dynamicObj,displayPriorities,yearObj,financialInfo){
   try{
     let sum = 0
-    for(let obj in dynamicObj){
-      if(displayPriorities.includes(obj.position)){
-        let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
-        sum += parseInt(sumYear.value)
-      }
-      return sum
+    let objs = []
+    for(let indexName in financialInfo){
+      let obj = financialInfo[indexName]
+      if(displayPriorities.includes(obj.position.toString())){
+        objs.push(obj)
+      //   let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
+      //   sum += parseInt(sumYear.value)
+      }    
     }
+    for(let obj of objs){
+      let sumYear = obj.yearData.find(item => item.year.toString() === yearObj.year.toString())
+     sum += parseInt(sumYear.value)
+    }
+    return sum
   }
   catch(err){
     console.log("error in getTotalForCalculatedValues :: ",err.message)
   }
 }
 
-async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
+async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financialInfo){
   let validator = {
     value:years.value,
     valid:true,
@@ -1958,7 +1980,9 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
   try{
     let ulbData = await ulbLedgersData({ "ulb": ulbId });
     let value = years.value
+    // console.log("years :::",years.modelName)
     if(years.modelName === "ULBLedger"){
+      // console.log("inside if")
       let ulbValue = await getUlbLedgerDataFilter({ code: years.code, year: years.year, data: ulbData })
       if(years.previousYearCodes){
         ulbValue = await getPreviousYearValues(years,ulbData)
@@ -1975,14 +1999,14 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
         }
         else if(isDraft === false && dynamicObj.calculatedFrom){
           let displayPriorities = dynamicObj.calculatedFrom
-          let sum = getTotalForCalculatedValues(dynamicObj,displayPriorities,years)
+          let sum = await getTotalForCalculatedValues(dynamicObj,displayPriorities,years,financialInfo)
           if(ulbValue === sum){
             validator.valid = true,
             validator.value = years.value
           }
           else{
             validator.valid = false,
-            validator.message =  `ulb ledger data is not matching with the calculated value for ${years.type}`
+            validator.message =  `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(",")}`
           }
           return validator
         }
@@ -2006,7 +2030,7 @@ async function validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft){
   return validator
 }
 
-async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft, session,dynamicObj) {
+async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormContent, updateForm, isDraft, session,dynamicObj,financialInfo) {
   try {
     for (var years of yearData) {
       let upsert = false
@@ -2021,7 +2045,8 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
         if (updateForm) {
           upsert = true
           if(dynamicObj.calculatedFrom){
-            let validator = await validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft)
+            let validator = await validateAccordingtoLedgers(ulbId,dynamicObj,years,isDraft,financialInfo)
+            // console.log("validator :::",validator)
             if(validator.valid){
               years.value = validator.value
               // years.modelName = 
@@ -2151,6 +2176,7 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
         if (obj[k].yearData) {
           let yearArr = obj[k].yearData
           let dynamicObj = obj[k]
+          let financialInfo = obj
           let status = yearArr.every((item) => {
             if (Object.keys(item).length) {
               return item.status === "APPROVED"
@@ -2160,7 +2186,7 @@ async function calculateAndUpdateStatusForMappers(session, tabs, ulbId, formId, 
             }
           })
           temp["status"].push(status)
-          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft, session,dynamicObj)
+          await updateQueryForFiscalRanking(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, isDraft, session,dynamicObj,financialInfo)
         }
         else {
           if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
@@ -2334,7 +2360,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   return res.status(500).json(response)
 })
 
-async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft) {
+async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft,role,userId) {
   let validation = {
     message: "",
     valid: true,
@@ -2348,6 +2374,9 @@ async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft) {
         {
           ulb: ObjectId(ulbId),
           design_year: ObjectId(design_year),
+          actionTakenByRole:role,
+          actionTakenBy:userId,
+          status:"PENDING",
           isDraft
         }
       )
@@ -2391,8 +2420,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
   await session.startTransaction()
   try {
     let { ulbId, formId, actions, design_year, isDraft } = req.body
-    let formIdValidations = await checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft)
     let { role, _id: userId } = req.decoded
+    let formIdValidations = await checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft,role,userId)
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message
       return res.status(500).json(response)
@@ -2418,6 +2447,14 @@ module.exports.createForm = catchAsync(async (req, res) => {
     await session.abortTransaction()
     await session.endSession()
     console.log(err.message)
+    await FiscalRanking.findOneAndUpdate({
+      "ulb" : ObjectId(req.body.ulbId),
+      "design_year" : ObjectId(req.body.design_year),
+    },{
+      "$set":{
+        "isDraft":true
+      }
+    })
     response.message = "some server error occured"
     if (err.type && (err.type === "ValidationError")) {
       response.message = err.message
