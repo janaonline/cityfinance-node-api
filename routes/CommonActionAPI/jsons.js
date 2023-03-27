@@ -571,10 +571,10 @@ let DurProjectJson = {
     },
     "waterSupply_question": {
         "information": "",
-        "_id": "641eae1acc09cd11d2104974",
+        "_id": "641fdff0cc09cd11d21088c5",
         "order": "1.001",
         "answer_option": [],
-        "title": "Question",
+        "title": "Sections/Indicators",
         "hint": "",
         "resource_urls": [],
         "label": "",
@@ -582,15 +582,18 @@ let DurProjectJson = {
         "viewSequence": "2",
         "child": [],
         "parent": [],
+        "pattern": "",
         "validation": [],
         "restrictions": [],
-        "input_type": "29",
+        "min": 1,
+        "max": null,
+        "input_type": "1",
         "weightage": [],
         "isQuestionDisabled": false,
-        "value": "",
+        "value": "first water",
         "acceptableType": "",
         "acceptableFileType": "",
-        "type": "29",
+        "type": "1",
         "visibility": true,
         "nestedConfig": {
             "parentOrder": "1",
@@ -601,26 +604,37 @@ let DurProjectJson = {
             "name": " 1"
         },
         "forParentValue": 1,
+        "isSelectValue": false,
+        "previousValue": "first",
+        "modelValue": "first water",
+        "selectedValue": [
+            {
+                "label": "",
+                "textValue": "first water",
+                "value": ""
+            }
+        ],
         "answer": {
             "answer": [
                 {
                     "label": "",
-                    "textValue": "",
+                    "textValue": "first water",
                     "value": ""
                 }
             ],
-            "input_type": "29",
+            "input_type": "1",
             "nestedAnswer": [],
             "order": "1.001",
+            "pattern": "",
             "shortKey": "waterSupply_question"
         }
     },
     "waterSupply_actualIndicator": {
         "information": "",
-        "_id": "641eae91e6aa5311d3f1e1d2",
+        "_id": "641fe0dce6aa5311d3f21656",
         "order": "1.002",
         "answer_option": [],
-        "title": "Actual Indicator 2021-22",
+        "title": "Actual Indicator 2022-23",
         "hint": "",
         "resource_urls": [],
         "label": "",
@@ -632,19 +646,23 @@ let DurProjectJson = {
             {
                 "error_msg": "",
                 "_id": "1"
+            },
+            {
+                "error_msg": "",
+                "_id": "2"
             }
         ],
         "restrictions": [],
-        "minRange": null,
-        "maxRange": null,
+        "minRange": 0,
+        "maxRange": 9999,
         "min": 1,
-        "max": 3,
-        "pattern": "",
+        "max": 4,
+        "pattern": "^((?:[0-9]|[1-9][0-9]{1,3}))$",
         "input_type": "2",
         "weightage": [],
         "valueHolder": "",
         "isQuestionDisabled": false,
-        "value": "",
+        "value": "565",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "2",
@@ -659,21 +677,27 @@ let DurProjectJson = {
         },
         "forParentValue": 1,
         "isSelectValue": false,
-        "previousValue": "50",
-        "modelValue": "",
-        "selectedValue": [],
+        "previousValue": "",
+        "modelValue": "565",
+        "selectedValue": [
+            {
+                "label": "",
+                "textValue": "",
+                "value": "565"
+            }
+        ],
         "answer": {
             "answer": [
                 {
                     "label": "",
                     "textValue": "",
-                    "value": ""
+                    "value": "565"
                 }
             ],
             "input_type": "2",
             "nestedAnswer": [],
             "order": "1.002",
-            "pattern": "",
+            "pattern": "^((?:[0-9]|[1-9][0-9]{1,3}))$",
             "shortKey": "waterSupply_actualIndicator"
         },
         "modelType": "object",
@@ -681,10 +705,10 @@ let DurProjectJson = {
     },
     "waterSupply_targetIndicator": {
         "information": "",
-        "_id": "641eaf0be6aa5311d3f1e285",
+        "_id": "641fe17ee6aa5311d3f21688",
         "order": "1.003",
         "answer_option": [],
-        "title": "Target Indicator 2022-23",
+        "title": "Target Indicator 2023-24",
         "hint": "",
         "resource_urls": [],
         "label": "",
@@ -696,31 +720,35 @@ let DurProjectJson = {
             {
                 "error_msg": "",
                 "_id": "1"
+            },
+            {
+                "error_msg": "",
+                "_id": "2"
             }
         ],
         "restrictions": [
             {
-                "_id": "641eaf0ce6aa5311d3f1e2a6",
+                "_id": "641fe17ee6aa5311d3f2169e",
                 "orders": [
                     {
-                        "_id": "641eaf0ce6aa5311d3f1e2a7",
+                        "_id": "641fe17ee6aa5311d3f2169f",
                         "order": "1.002",
                         "value": ""
                     }
                 ],
-                "type": "3"
+                "type": "7"
             }
         ],
-        "minRange": null,
-        "maxRange": null,
+        "minRange": 0,
+        "maxRange": 9999,
         "min": 1,
-        "max": 3,
-        "pattern": "",
+        "max": 4,
+        "pattern": "^((?:[0-9]|[1-9][0-9]{1,3}))$",
         "input_type": "2",
         "weightage": [],
         "valueHolder": "",
         "isQuestionDisabled": false,
-        "value": "",
+        "value": "899",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "2",
@@ -735,21 +763,27 @@ let DurProjectJson = {
         },
         "forParentValue": 1,
         "isSelectValue": false,
-        "previousValue": "42",
-        "modelValue": "",
-        "selectedValue": [],
+        "previousValue": "",
+        "modelValue": "899",
+        "selectedValue": [
+            {
+                "label": "",
+                "textValue": "",
+                "value": "899"
+            }
+        ],
         "answer": {
             "answer": [
                 {
                     "label": "",
                     "textValue": "",
-                    "value": ""
+                    "value": "899"
                 }
             ],
             "input_type": "2",
             "nestedAnswer": [],
             "order": "1.003",
-            "pattern": "",
+            "pattern": "^((?:[0-9]|[1-9][0-9]{1,3}))$",
             "shortKey": "waterSupply_targetIndicator"
         },
         "modelType": "object",
@@ -757,7 +791,7 @@ let DurProjectJson = {
     },
     "waterSupply_indicatorLineItem": {
         "information": "",
-        "_id": "641eaf5de6aa5311d3f1e31a",
+        "_id": "641fe1aee6aa5311d3f216c1",
         "order": "1.004",
         "answer_option": [],
         "title": "Indicator LineItem",
@@ -776,7 +810,7 @@ let DurProjectJson = {
         "input_type": "1",
         "weightage": [],
         "isQuestionDisabled": false,
-        "value": "",
+        "value": "98",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
@@ -791,14 +825,20 @@ let DurProjectJson = {
         },
         "forParentValue": 1,
         "isSelectValue": false,
-        "previousValue": "some id",
-        "modelValue": "",
-        "selectedValue": [],
+        "previousValue": "",
+        "modelValue": "98",
+        "selectedValue": [
+            {
+                "label": "",
+                "textValue": "98",
+                "value": ""
+            }
+        ],
         "answer": {
             "answer": [
                 {
                     "label": "",
-                    "textValue": "",
+                    "textValue": "98",
                     "value": ""
                 }
             ],
@@ -811,7 +851,7 @@ let DurProjectJson = {
     },
     "waterSupply_unit": {
         "information": "",
-        "_id": "641eaf88e6aa5311d3f1e367",
+        "_id": "641fe1e1e6aa5311d3f21706",
         "order": "1.005",
         "answer_option": [],
         "title": "Unit",
@@ -830,7 +870,7 @@ let DurProjectJson = {
         "input_type": "1",
         "weightage": [],
         "isQuestionDisabled": false,
-        "value": "",
+        "value": "%",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
@@ -845,14 +885,20 @@ let DurProjectJson = {
         },
         "forParentValue": 1,
         "isSelectValue": false,
-        "previousValue": "%",
-        "modelValue": "",
-        "selectedValue": [],
+        "previousValue": "40",
+        "modelValue": "%",
+        "selectedValue": [
+            {
+                "label": "",
+                "textValue": "%",
+                "value": ""
+            }
+        ],
         "answer": {
             "answer": [
                 {
                     "label": "",
-                    "textValue": "",
+                    "textValue": "%",
                     "value": ""
                 }
             ],
@@ -865,11 +911,11 @@ let DurProjectJson = {
     },
     "waterSupply_type": {
         "information": "",
-        "_id": "641eafb2cc09cd11d2104b52",
+        "_id": "641fe24fcc09cd11d21089b8",
+        "order": "1.006",
         "answer_option": [],
         "title": "Type",
         "hint": "",
-        "order": "1.006",
         "resource_urls": [],
         "label": "",
         "shortKey": "waterSupply_type",
@@ -884,7 +930,7 @@ let DurProjectJson = {
         "input_type": "1",
         "weightage": [],
         "isQuestionDisabled": false,
-        "value": "",
+        "value": "water strom",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
@@ -898,11 +944,21 @@ let DurProjectJson = {
             "name": " 1"
         },
         "forParentValue": 1,
+        "isSelectValue": false,
+        "previousValue": "",
+        "modelValue": "water strom",
+        "selectedValue": [
+            {
+                "label": "",
+                "textValue": "water strom",
+                "value": ""
+            }
+        ],
         "answer": {
             "answer": [
                 {
                     "label": "",
-                    "textValue": "",
+                    "textValue": "water strom",
                     "value": ""
                 }
             ],
