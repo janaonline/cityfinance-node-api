@@ -19,7 +19,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         form['ulbName'] = name
         delete form['projects']
         let latestYear = !outDatedYears.includes(year)
-        let jsonFormId = req.query.formId
+        let jsonFormId = req.query.formId || null
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
         let formJson = await FormsJson.findOne(condition).lean()
         let obj = formJson ? formJson.data : {}
@@ -34,6 +34,13 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             }
           ]
         if(latestYear){
+            if(req.form.url){
+                response.success = true
+                response.url = req.form.url
+                response.message =req.form.url
+                response.msg = req.form.url
+                return res.status(400).json(response)
+            }
             if(!jsonFormId){
                 response.message = "formId is required"
                 repsonse.success = false

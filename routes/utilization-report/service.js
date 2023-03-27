@@ -916,7 +916,6 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
 
   prevYear = await Year.findOne({ year: prevYearVal }).lean()
-
   let prevDataQuery = MasterForm.findOne({
     ulb: ObjectId(ulb),
     design_year: prevYear._id
