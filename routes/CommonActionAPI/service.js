@@ -1872,7 +1872,7 @@ async function handleArrOfObjects(question,flattedForm){
     try{
         let order = parseInt(question.order)
         let dbKey = arrFields[question.shortKey]
-        let values = flattedForm[dbKey].slice(0,2)
+        let values = flattedForm[dbKey]
         let disableFields = flattedForm['disableFields']
         var project_arr = []
         let a = 0
