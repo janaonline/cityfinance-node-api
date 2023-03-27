@@ -52,7 +52,7 @@ function checkForCalculations(reports){
       validator.errors.push(false)
       validator.messages.push(validationMessages['expWmSwm'])
     }
-    if(exp < projectSum){
+    if(exp != projectSum){
       validator.errors.push(false)
       validator.messages.push(validationMessages['projectExpMatch'])
     }
