@@ -19,7 +19,7 @@ module.exports.changeApiGetForm = async(req,res)=>{
         let form = {...req.form}
         let {name,role} = req.decoded
         let latestYear = !outDatedYears.includes(year)
-        let jsonFormId = req.query.formId
+        let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
         let formJson = await FormsJson.findOne(condition).lean()
         let responseData = [
