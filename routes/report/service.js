@@ -16,7 +16,7 @@ module.exports.loginHistory = async (req, res, next) => {
         if (req.query.type) {
             condition["loginType"] = req.query.type;
         }
-
+        
         let query = [
             { $match: condition },
             {
