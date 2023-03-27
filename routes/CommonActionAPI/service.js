@@ -2039,21 +2039,23 @@ const handleChildCase = async(question,obj,flattedForm)=>{
 
 const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
     try{
-        let value = ''
+        let value = ""
         // console.log("question ",question.shortKey)
         if(mainKey){
             let key = mainKey + "."+question.shortKey
-            question['modelValue'] = flattedForm[key]
-            question['value'] = flattedForm[key]
-            obj['textValue'] = flattedForm[key]
-            obj['value'] = flattedForm[key]
+            value = flattedForm[key] || ""
+            question['modelValue'] = value
+            question['value'] = value
+            obj['textValue'] = value
+            obj['value'] = value
         }
         else{
             let key = question.shortKey
-            question['modelValue'] = flattedForm[key]
-            question['value'] = flattedForm[key]
-            obj['textValue'] = flattedForm[key]
-            obj['value'] = flattedForm[key]
+            value = flattedForm[key] || ""
+            question['modelValue'] = value
+            question['value'] = value
+            obj['textValue'] = value
+            obj['value'] = value
         }
     }
     catch(err){
@@ -2066,10 +2068,10 @@ const handleTextCase = async(question,obj,flattedForm)=>{
         let mainKey = question.shortKey
         
         // console.log("flattedFrom ::::",flattedForm)
-        question['modelValue'] = flattedForm[mainKey]
-        question['value'] = flattedForm[mainKey]
-        obj['textValue'] = flattedForm[mainKey]
-        obj['value'] = flattedForm[mainKey]
+        question['modelValue'] = flattedForm[mainKey] || ""
+        question['value'] = flattedForm[mainKey] || ""
+        obj['textValue'] = flattedForm[mainKey] || ""
+        obj['value'] = flattedForm[mainKey] || ""
     }
     catch(err){
         console.log("error in handleTextCase :: ",err.message)
