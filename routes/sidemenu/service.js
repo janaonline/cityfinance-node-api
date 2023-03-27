@@ -243,18 +243,21 @@ module.exports.get = catchAsync(async (req, res) => {
         let condition = {
             ulb: ObjectId(_id),
         }
+        let designYearCond  = "design_year"
+
         let formArr = [AnnualAccounts, DUR, ODF, GFC, PFMS, SLB28, PropertyTaxOp]
        for(el of formArr) {
             if (el == DUR) {
                 delete condition['design_year'];
                 condition['designYear'] = ObjectId(year)
+                designYearCond = "designYear";
             } else {
                 delete condition['designYear'];
                 condition['design_year'] = ObjectId(year)
             }
             let formData = await el.findOne(condition).lean()
             if (formData) {
-              if(formData['design_year'].toString() === YEAR_CONSTANTS['23_24']){
+              if(formData[designYearCond].toString() === YEAR_CONSTANTS['23_24']){
                 output.push(findStatusAndTooltipMaster({formData,formId: FormModelMapping_Master[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
               }else{
                 output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role, role))
