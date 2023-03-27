@@ -3405,6 +3405,7 @@ function computeQuery(params) {
         $sort: {
           cityFinanceCode: 1,
           displayPriority: 1,
+          "dataYear" : -1,
         },
       },
     ];
