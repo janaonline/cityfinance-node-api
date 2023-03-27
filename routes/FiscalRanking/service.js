@@ -2359,7 +2359,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   return res.status(500).json(response)
 })
 
-async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft) {
+async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft,role,userId) {
   let validation = {
     message: "",
     valid: true,
@@ -2373,6 +2373,9 @@ async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft) {
         {
           ulb: ObjectId(ulbId),
           design_year: ObjectId(design_year),
+          actionTakenByRole:role,
+          actionTakenBy:userId,
+          status:"PENDING",
           isDraft
         }
       )
@@ -2416,8 +2419,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
   await session.startTransaction()
   try {
     let { ulbId, formId, actions, design_year, isDraft } = req.body
-    let formIdValidations = await checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft)
     let { role, _id: userId } = req.decoded
+    let formIdValidations = await checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft,role,userId)
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message
       return res.status(500).json(response)
