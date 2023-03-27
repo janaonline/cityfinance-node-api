@@ -362,7 +362,8 @@ module.exports.createOrUpdate = async (req, res) => {
       if (currentSavedUtilRep) {
         req.body['ulbSubmit'] = new Date();
         let body = req.body
-        if(!req.body.projects || req.body.projects.length === 0){
+        
+        if(req.body.projects.length === 0){
           body.projects = currentSavedUtilRep.projects
         }
         let validation = await checkForCalculations(body)
