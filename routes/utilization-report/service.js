@@ -9,7 +9,7 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload } = require('../CommonActionAPI/service')
+const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields } = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -17,6 +17,59 @@ const { YEAR_CONSTANTS } = require("../../util/FormNames");
 
 function update2223from2122() {
 
+}
+
+let validationMessages = {
+  "projectExpMatch":"Sum of all project wise expenditure amount does not match total expenditure amount provided in the XVFC summary section. Kindly recheck the amounts.",
+  "expWmSwm":" The total expenditure in the component wise grants must not exceed the amount of expenditure incurred during the year.",
+  "negativeBal":"Closing balance is negative because Expenditure amount is greater than total tied grants amount available. Please recheck the amounts entered."
+}
+
+function checkForCalculations(reports){
+  let validator = {
+    valid : false,
+    messages : [],
+    errors : []
+  }
+  try{
+    let exp = parseInt(reports.grantPosition.expDuringYr)
+    let projectSum = 0
+    if(reports.projects.length > 0){
+      projectSum = reports.projects.reduce((a,b)=> parseInt(a.expenditure) + parseInt(b.expenditure))
+    }
+    let closingBal = reports.grantPosition.closingBal
+    let expWm = 0
+    for(let a of reports.categoryWiseData_wm){
+      expWm += parseInt(a.grantUtilised)
+    }
+    let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseInt(a.grantUtilised) + parseInt(b.grantUtilised))
+    let sumWmSm = expWm + expSwm
+    if(closingBal < 1){
+      validator.errors.push(false)
+      validator.messages.push(validationMessages['negativeBal'])
+    }
+    if(sumWmSm != exp){
+      validator.errors.push(false)
+      validator.messages.push(validationMessages['expWmSwm'])
+    }
+    if(exp != projectSum){
+      validator.errors.push(false)
+      validator.messages.push(validationMessages['projectExpMatch'])
+    }
+
+    if(validator.errors.every(item => item === true)){
+      validator.valid = true
+    }
+    else{
+      validator.valid = false
+    }
+
+
+  }
+  catch(err){
+    console.log("error in checkForCalculations ::: ",err.message)
+  }
+  return validator
 }
 
 const BackendHeaderHost = {
@@ -34,6 +87,8 @@ const {
   sendEmail,
 } = require("../../service");
 const { ElasticBeanstalk } = require("aws-sdk");
+const { forever } = require("request");
+const { years } = require("../../service/years");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -42,7 +97,7 @@ const time = () => {
 };
 module.exports.createOrUpdate = async (req, res) => {
   try {
-    const { financialYear, isDraft, designYear } = req.body;
+    const { financialYear, isDraft, designYear,isProjectLoaded } = req.body;
     const ulb = req.decoded?.ulb;
     req.body.ulb = ulb;
     req.body.actionTakenBy = req.decoded?._id;
@@ -237,27 +292,32 @@ module.exports.createOrUpdate = async (req, res) => {
       }
       if (!submittedForm && !isDraft) {// final submit in first attempt
         formData['ulbSubmit'] = new Date();
-        const form = await UtilizationReport.create(formData);
+        let validation = await checkForCalculations(req.body)
+        if(!validation.valid){
+            return Response.BadRequest(res, {}, validation.messages);
+          }
+        const form = await new UtilizationReport(formData);
         if (form) {
           formData.createdAt = form.createdAt;
           formData.modifiedAt = form.modifiedAt;
-
+          let sum  = 0
           if (formData.projects.length > 0) {
             for (let i = 0; i < formData.projects.length; i++) {
               let project = formData.projects[i];
-
               project.modifiedAt = form.projects[i].modifiedAt;
               project.createdAt = form.projects[i].createdAt;
-
+              sum += parseInt(project.cost)
               if (project.category) {
                 project.category = ObjectId(project.category)
               }
               if (project._id) {
                 project._id = ObjectId(project._id);
               }
-
             }
           }
+          
+         await form.save()
+          
 
           const addedHistory = await UtilizationReport.findOneAndUpdate(
             condition,
@@ -271,13 +331,15 @@ module.exports.createOrUpdate = async (req, res) => {
             })
           } else {
             if (addedHistory) {
+              console.log("function commented because of error")
               //email trigger after form submission
-              Service.sendEmail(mailOptions);
+                // Service.sendEmail(mailOptions);
             }
             return res.status(200).json({
               status: true,
               data: addedHistory
             })
+            
           }
         } else {
           return res.status(400).json({
@@ -286,8 +348,6 @@ module.exports.createOrUpdate = async (req, res) => {
           })
         }
       }
-
-
 
       let currentSavedUtilRep;
       if (req.body?.isDraft === false) {
@@ -298,12 +358,18 @@ module.exports.createOrUpdate = async (req, res) => {
           { history: 0 }
         );
       }
-
-
-
       let savedData;
       if (currentSavedUtilRep) {
         req.body['ulbSubmit'] = new Date();
+        let body = req.body
+        
+        if(req.body.projects.length === 0){
+          body.projects = currentSavedUtilRep.projects
+        }
+        let validation = await checkForCalculations(body)
+        if(!validation.valid){
+            return Response.BadRequest(res, {}, validation.messages);
+        }
         savedData = await UtilizationReport.findOneAndUpdate(
           { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
           { $set: req.body, $push: { history: req.body } },
@@ -314,6 +380,10 @@ module.exports.createOrUpdate = async (req, res) => {
           Service.sendEmail(mailOptions);
         }
       } else {
+        if(!isProjectLoaded && years['2023-24']){
+          delete req.body['projects']
+        }
+        // console.log(req.body)
         savedData = await UtilizationReport.findOneAndUpdate(
           { ulb: ObjectId(ulb), financialYear, designYear },
           { $set: req.body },
@@ -326,8 +396,6 @@ module.exports.createOrUpdate = async (req, res) => {
       }
 
       if (savedData) {
-
-
         return res.status(200).json({
           msg: "Utilization Report Submitted Successfully!",
           isCompleted: !savedData.isDraft,
@@ -1307,7 +1375,6 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
       "form id":formId
     })
     if(!validation.valid){
-      console.log("1")
       response.success = false
       response.message = validation.message
       return res.status(400).json(response)
@@ -1315,11 +1382,17 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     let projectObj = await UtilizationReport.findOne({
       "ulb":ObjectId(ulb),
       "designYear":ObjectId(design_year)
-    },{projects:1}).lean()
+    },{projects:1,isDraft:1,status:1,actionTakenByRole:1}).lean()
+    
     if(!projectObj){
       response.message = "No utilization report found with this ulb and design year"
       response.success = true
+      response.data = []
       return res.json(response)
+    }
+    if(projectObj){
+      formStatus = decideDisabledFields(projectObj,"ULB")
+      projectObj.disableFields = formStatus
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()
     // console.log(">>>>>>",formJson)
@@ -1328,7 +1401,7 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     projectJson.data[0].question = questions
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
     projectJson = await mutuateGetPayload(projectJson.data, projectObj,keysToBeDeleted,role)
-    response.data = projectJson
+    response.data = projectJson[0].question[0].childQuestionData
     response.success = true
     return res.json(response)
 
