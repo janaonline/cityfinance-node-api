@@ -5,6 +5,7 @@ const {
   getWaterRejenuvation,
   removeWaterRejenuvation,
   action,
+  updateIndicatorId
 } = require("./service");
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
@@ -15,6 +16,8 @@ const { userAuth } = require("../../middlewares/actionUserAuth");
 
 //middleware
 // const { draftChecker } = require("../../util/validator");
+//update ids of water reje
+router.get('/WaterRejenuvation/updateIndicatorId', updateIndicatorId);
 
 //create
 router.post("/WaterRejenuvation", verifyToken, saveWaterRejenuvation);

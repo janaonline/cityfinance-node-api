@@ -132,7 +132,10 @@ exports.uploadTemplate = async (req, res) => {
       // validate data
       let queryState = [ 
         {
-              $match:{state: ObjectId(state)}
+              $match:{
+                state: ObjectId(state),
+                isActive: true
+              }
         },
         {
             $group:{
@@ -156,7 +159,9 @@ exports.uploadTemplate = async (req, res) => {
             $or: [
               { censusCode: xslDataCensusCode },
               { sbCode: xslDataCensusCode },
+              
             ],
+            isActive: true
           },
         },
         {
@@ -405,6 +410,7 @@ async function getUlbData(ulbCodes, ulbNames) {
   ulb.forEach((element) => {
     ulbDataMap[element?.sbCode ? element?.sbCode : element?.censusCode] =
       element.name;
+    ulbDataMap[element?.censusCode  ? element?.censusCode :  element?.sbCode] = element.name
   });
   return ulbDataMap;
 }
