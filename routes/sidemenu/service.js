@@ -254,6 +254,8 @@ module.exports.get = catchAsync(async (req, res) => {
             } else {
                 delete condition['designYear'];
                 condition['design_year'] = ObjectId(year)
+                designYearCond = "design_year";
+
             }
             let formData = await el.findOne(condition).lean()
             if (formData) {
