@@ -3398,12 +3398,13 @@ function computeQuery(params) {
           amount: "$value",
           designYear: "$fiscalrankings.design_year.year",
           fy_21_22_cash: "$fiscalrankings.fy_21_22_cash.value",
+          "displayPriority": 1
         },
       },
       {
         $sort: {
           cityFinanceCode: 1,
-          indicator: 1,
+          displayPriority: 1,
         },
       },
     ];
