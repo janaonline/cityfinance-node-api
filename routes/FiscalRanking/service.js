@@ -2831,7 +2831,8 @@ module.exports.FRUlbFinancialData = async (req, res) => {
       dbCols,
       csvCols,
       removeEscapesFromArr:[],
-      labelObj:FRShortKeyObj
+      labelObj:FRShortKeyObj,
+      percentCompletionArr:[]
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -2863,7 +2864,36 @@ module.exports.FROverAllUlbData = async (req, res) => {
     let removeEscapesFromArr = ["nameCmsnr",
     "auditorName","nameOfNodalOfficer",
     "designationOftNodalOfficer","otherUpload"];
-    
+    let percentCompletionArr = [
+      "population11",
+      "populationFr",
+      "webLink",
+      "nameCmsnr",
+      "auditorName",
+      "nameOfNodalOfficer",
+      "designationOftNodalOfficer",
+      "email",
+      "mobile",
+      "waterSupply",
+      "sanitationService",
+      "propertyWaterTax",
+      "propertySanitationTax",
+      "FR_auditAnnualReport_2021-22",
+      "FR_auditAnnualReport_2020-21",
+      "FR_auditAnnualReport_2019-20",
+      "FR_webUrlAnnual_2021-22",
+      "FR_registerGis_2021-22",
+      "FR_accountStwre_2021-22",
+      "FR_accountStwreProof_2021-22",
+      "FR_appAnnualBudget_2023-24",
+      "FR_appAnnualBudget_2022-23",
+      "FR_appAnnualBudget_2021-22",
+      "FR_appAnnualBudget_2020-21",
+      "FR_auditedAnnualFySt_2021-22",
+      "FR_auditedAnnualFySt_2020-21",
+      "FR_auditedAnnualFySt_2019-20",
+      "FR_auditedAnnualFySt_2018-19",
+    ]
     let csv2 = createCsv({
       query,
       res,
@@ -2872,7 +2902,8 @@ module.exports.FROverAllUlbData = async (req, res) => {
       dbCols,
       csvCols,
       removeEscapesFromArr,
-      labelObj:{}
+      labelObj:{},
+      percentCompletionArr
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -3020,7 +3051,7 @@ async function columnsForCSV(params) {
 
 function createCsv(params) {
   try {
-    let { query, res, filename, modelName, dbCols, csvCols , removeEscapesFromArr, labelObj} = params;
+    let { query, res, filename, modelName, dbCols, csvCols , removeEscapesFromArr, labelObj,percentCompletionArr} = params;
     // if(!dbCols.length){
     //   dbCols =  Object.keys(cols)
     // }
@@ -3043,6 +3074,10 @@ function createCsv(params) {
         let str = "";
         let str2 = '';
         let FRFlag = false;
+        let completionPercent = 0;
+        const denominatorMandatory = 28; 
+        let FROverallFlag = false;
+
         for (let key of dbCols) {
           /* *
               this condition converts date to DD/MM/YYYY format
@@ -3055,10 +3090,18 @@ function createCsv(params) {
           if(removeEscapesFromArr.includes(key)){
             document[key] = removeEscapeChars(document[key]);
           }
+          if(percentCompletionArr.length>0 && percentCompletionArr.includes(key) && document[key]){
+            completionPercent++;
+            FROverallFlag = true;
+          }
           if (key.split("_")[0] !== "FR") {
             if (document[key]) {
             /* A destructuring assignment.FR case in Fiscal Mapper */
               ({ FRFlag, str2 } = FRFinancialCsvCase(key, document, FRFlag, str2, str, totalownOwnRevenueAreaLabel, labelObj));
+              if(key === "formStatus"){
+                let {status, actionTakenByRole, isDraft} = document[key];
+                document[key] = calculateStatusForFiscalRankingForms(status,actionTakenByRole,isDraft,"ULB")
+              }
 
               str += document[key] + ",";
             } else {
@@ -3074,6 +3117,13 @@ function createCsv(params) {
               str += " " + ",";
             }
           }
+        }
+        if(FROverallFlag){
+          let percent =  ((completionPercent/denominatorMandatory)*100).toFixed();
+          str2 = str.split(',')
+          str2.splice(9, 0, `${percent}%`)
+         str = str2.join(',')
+
         }
         res.write(str + "\r\n");
         if(FRFlag){
@@ -3123,6 +3173,13 @@ function FRFinancialCsvCase(key, document, FRFlag, str2, str, totalownOwnRevenue
   return { FRFlag, str2 };
 }
 
+/**
+ * It takes in a parameter called params, which is an object containing the names of the collections
+ * that need to be queried. It then creates an object called output, which will contain the query for
+ * each collection
+ * @param params - This is the object that is passed to the function.
+ * @returns The query returns the data for the fiscal ranking dashboard.
+ */
 function computeQuery(params) {
   const { FRUlbFinancialData, FROverAllUlbData } = params;
   let output = {};
@@ -3390,6 +3447,11 @@ function computeQuery(params) {
         },
       },
       {
+        $match: {
+          "fiscalrankings.isDraft": true,
+        },
+      },
+      {
         $lookup: {
           from: "fiscalrankingmappers",
           let: {
@@ -3481,7 +3543,11 @@ function computeQuery(params) {
           designYear: { $ifNull: ["$fiscalrankings.designYear", ""] },
           createdAt: { $ifNull: ["$fiscalrankings.createdAt", ""] },
           modifiedAt: { $ifNull: ["$fiscalrankings.modifiedAt", ""] },
-          formStatus: "",
+          formStatus: {
+            isDraft: "$fiscalrankings.isDraft",
+            actionTakenByRole: "$fiscalrankings.actionTakenByRole",
+            status: { $ifNull: ["$fiscalrankings.status", ""] },
+          },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
@@ -3524,6 +3590,12 @@ function computeQuery(params) {
   }
   return output;
 }
+/**
+ * It removes newline and comma characters from a string
+ * @param entity - The entity to be cleaned up.
+ * @returns A function that takes an entity as an argument and returns the entity with all newline and
+ * comma characters replaced with a space.
+ */
 function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
