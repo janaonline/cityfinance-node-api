@@ -2213,7 +2213,7 @@ function handledateCase(question,obj,flattedForm){
         let mainKey = question.shortKey
         flattedForm[mainKey] = typeof flattedForm[mainKey] == "string"  ? new Date(flattedForm[mainKey]) : flattedForm[mainKey]
         if(flattedForm[mainKey] === undefined){
-            flattedForm[mainKey] = new Date()
+            flattedForm[mainKey] = ""
         }
         console.log("handledateCase ::: ",flattedForm[mainKey])
         flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
