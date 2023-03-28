@@ -44,7 +44,7 @@ function checkForCalculations(reports){
     }
     let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseInt(a.grantUtilised) + parseInt(b.grantUtilised))
     let sumWmSm = expWm + expSwm
-    if(closingBal < 1){
+    if(closingBal < 0){
       validator.errors.push(false)
       validator.messages.push(validationMessages['negativeBal'])
     }
