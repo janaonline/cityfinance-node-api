@@ -3021,7 +3021,7 @@ async function columnsForCSV(params) {
       "ulbName",
       "cityFinanceCode",
       "censusCode",
-      "formStatus",
+      "formStatus2",
       "designYear",
       "dataYear",
       "indicator",
@@ -3167,7 +3167,7 @@ function FRFinancialCsvCase(key, document, FRFlag, str2, str, totalownOwnRevenue
       str2 = str;
       str2 += `${totalownOwnRevenueAreaLabel}, ${document['fy_21_22_cash'] ?? ""}`;
     }
-    document[key] = labelObj[document[key]];
+    document[key] = removeEscapeChars(labelObj[document[key]]);
     // if(!labelObj[document[key]]){
     //   console.log(document["indicator"])
     // }
@@ -3263,7 +3263,18 @@ function computeQuery(params) {
           },
         },
       },
-
+{
+      $addFields: {
+           "displayPriority": {
+       $convert:
+         {
+            input: "$displayPriority",
+            to: "decimal",
+            onError: "$displayPriority",
+         }            
+               }
+      }    
+   },
       {
         $lookup: {
           from: "ulbs",
@@ -3382,7 +3393,7 @@ function computeQuery(params) {
               else: "$ulb.censusCode",
             },
           },
-          formStatus: {
+          formStatus2: {
             $cond: {
               if: {
                 $or: [
@@ -3410,7 +3421,8 @@ function computeQuery(params) {
           dataYear: -1,
         },
       },
-    ];
+    
+]
   }
   if (FROverAllUlbData) {
     output["FROverAllUlbData"] = [
