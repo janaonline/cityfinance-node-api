@@ -24,15 +24,27 @@ const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../u
 const CurrentStatus = require('../../models/CurrentStatus');
 const {MASTER_STATUS_ID} =  require('../../util/FormNames');
 
-
+let groupedQuestions = {
+    "location":['lat','long']
+}
+let dynamicTables = ['Category']
 var formIdCollections= {
     "80":"PropertyTaxOp"
 }
 
-var arrFields = { // if there is any change in short keys then please update here
+var consentCases = {
+    "1":true,
+    "2":false
+}
+
+var arrFields = {
     "waterManagement_tableView":"categoryWiseData_wm",
     "solidWasteManagement_tableView":"categoryWiseData_swm",
     "projectDetails_tableView_addButton":"projects"
+}
+
+var categoryTable = {
+
 }
 var specialCases = ['projectDetails_tableView_addButton']
 var annualRadioButtons = { // if there are any label changes for radio button in frontend please update here
@@ -48,6 +60,10 @@ var customkeys = {
         "ulbName":"ulbName",
         "grantType":"grantType"
     },
+    "selfDec":{
+        "name_":"name",
+        "designation":"designation"
+    },
     "grantPosition":{
         "grantPosition.unUtilizedPrevYr":"grantPosition.unUtilizedPrevYr",
         "grantPosition.receivedDuringYr":"grantPosition.receivedDuringYr",
@@ -55,20 +71,21 @@ var customkeys = {
         "grantPosition.closingBal":"grantPosition.closingBal",
     },
     "waterManagement_tableView":{
-        "category_name":"category_name",
-        "grantUtilised":"grantUtilised",
-        "numberOfProjects":"numberOfProjects",
-        "totalProjectCost":"totalProjectCost"
+        "category_name":"wm_category_name",
+        "grantUtilised":"wm_grantUtilised",
+        "numberOfProjects":"wm_numberOfProjects",
+        "totalProjectCost":"wm_totalProjectCost"
+
     },
     "solidWasteManagement_tableView":{
-        "category_name":"category_name",
-        "grantUtilised":"grantUtilised",
-        "numberOfProjects":"numberOfProjects",
-        "totalProjectCost":"totalProjectCost"
+        "category_name":"sw_category_name",
+        "grantUtilised":"sw_grantUtilised",
+        "numberOfProjects":"sw_numberOfProjects",
+        "totalProjectCost":"sw_totalProjectCost"
 
     },
     "projectDetails_tableView_addButton":{
-        "cost": 'totalProjectCost',
+        "cost": 'cost',
         "expenditure": 'expenditure',
         "modifiedAt": 'modifiedAt',
         "createdAt": 'createdAt',
@@ -76,12 +93,15 @@ var customkeys = {
         "_id": '_id',
         "category": 'category',
         "name": 'name',
-        "location": ['lat','long'],
+        "location": 'location',
         "capitalExpenditureState": 'capitalExpenditureState',
         "capitalExpenditureUlb": 'capitalExpenditureUlb',
         "omExpensesState": 'omExpensesState',
         "omExpensesUlb": 'omExpensesUlb',
-        "stateShare": 'stateShare'
+        "stateShare": 'stateShare',
+        "percProjectCost":"percProjectCost",
+        "completionDate":"completionDate",
+        "startDate":"startDate"
       }
 
 }
@@ -91,7 +111,8 @@ var modifiedShortKeys = {
 }
 module.exports.modifiedShortKeys  = modifiedShortKeys
 var shortKeysWithModelName = {
-    "rating":{"modelName":"Rating","identifier":"option_id"},
+    "rating":{"modelName":"Rating","identifier":"option_id","from":"value"},
+    "category":{"modelName":"Category","identifier":"name","from":"label"}
 }
 var answerObj = {
     "label": "",
@@ -1440,18 +1461,29 @@ class PayloadManager{
         try{
             if(Object.keys(this.shortKeysWithModelName).includes(this.shortKey)){
                 let modelName = shortKeysWithModelName[this.shortKey].modelName
+                let fromValue = shortKeysWithModelName[this.shortKey].from
                 let identifier = shortKeysWithModelName[this.shortKey].identifier
+                let fromString = this.objects['answer'][0][fromValue]
                 let filters = {}
-                filters[identifier] = parseInt(this.value)
+                filters[identifier] = fromString
                 if(Object.keys(this.req.body).includes("isGfc")){
+                    filters[identifier] = parseInt(filters[identifier])
                     filters['formName'] = this.req.body.isGfc ? "gfc" :"odf"
                     filters['financialYear'] = this.req.body.design_year
+                } 
+                let databaseObj;
+                if(dynamicTables.includes(modelName)){
+                    databaseObj = categoryTable[fromString]
                 }
-                let ratingObj = await moongose.model(modelName).findOne(filters)
-                let mainvalue = ratingObj._id
+                else{
+                    databaseObj = await moongose.model(modelName).findOne(filters)
+                }
+                let mainvalue = databaseObj._id
                 return mainvalue
             }
             else{
+                let answer = this.objects.answer.find(item => this.value)
+                this.value = answer.label
                 return this.value
             }
         }
@@ -1502,6 +1534,60 @@ class PayloadManager{
             console.log("error in  getNumericValues ::: ",err.message)
         }
     }
+    async getTextValues(){
+        try{
+            this.value = this.objects['answer'][0]['textValue']
+            return this.value
+        }
+        catch(err){
+            console.log("error in getTextValues :",err.message)
+        }
+    }
+    async handleConsentValues(){
+        try{
+            let answer = consentCases[this.objects['answer'][0]['value']]
+            this.value = answer
+            return this.value
+        } 
+        catch(err){
+            console.log("error in handleConsentValue ::: ",err.message)
+            return this.value = false
+        }
+    }
+    async handleGpsValues(){
+        try{
+            let answer = this.objects['answer'][0]['value'].split(",")
+            let locationObj = {
+                'lat':answer?.[0],
+                'long':answer?.[1]
+            }
+            this.value = locationObj
+            return this.value
+        }
+        catch(err){
+            console.log("error in handleGps values ::: ",err.message)
+            return this.value = {
+                "lat":0,
+                "long":0,
+            }
+        }
+    }
+    async handleDateValues(){
+        try{
+            let answer = this.objects['answer'][0]['value']
+            if(!answer ){ // check if the date object is array because mform returns array if if empty
+                answer = new Date().toISOString() // static code because of issue in mform json
+            }
+            this.value = new Date(answer)
+            if(Array.isArray(answer)){
+                this.value = ""
+            }
+            return this.value
+        }
+        catch(err){
+            console.log("error in handleDateValues :: ",err.message)
+        }
+    }
 }
 
 
@@ -1509,9 +1595,11 @@ async function decideValues(temp,shortKey,objects,req){
     try{
         let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
-        let value = objects['answer'][0][inputName]
-        // console.log("value ::: ",value)
+        let value = objects['answer'][0][inputName] || ''
         switch (objects.input_type){
+            case "1":
+                value = await service.getTextValues()
+                break
             case "2":
                 value = await service.getNumericValues()
                 break
@@ -1524,6 +1612,14 @@ async function decideValues(temp,shortKey,objects,req){
             case "5":
                 value = await service.handleRadioButtons()
                 break
+            case "22":
+                value = await service.handleConsentValues()
+                break
+            case "19":
+                value = await service.handleGpsValues()
+                break
+            case "14":
+                value = await service.handleDateValues()
             default:
                 value = value
                 temp[shortKey] = value
@@ -1643,7 +1739,7 @@ async function handleSelectCase(question,obj,flattedForm){
                 let tempObj = question.answer_option.find(item => item.name === value)
                 obj['label'] = tempObj['name']
                 obj['value'] = tempObj['_id']
-                question['modelValue'] = tempObj['name']
+                question['modelValue'] = tempObj['_id']
                 question['value'] = tempObj['_id']
                 question['selectedAnswerOption'] = {'name':tempObj['_id']}
             }
@@ -1683,15 +1779,50 @@ module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
         console.log("error in mutateJson ::: ",err.message)
     }
 }
-
+async function handleGroupedQuestions(questionObj,formObj){
+    try{
+        let answerObj = { label: '', textValue: '', value: '' }
+        let question = {...questionObj}
+        let answer = formObj[questionObj.shortKey]
+        let value = Object.values(answer).join(",")
+        question.value = value
+        question.modelValue = value
+        answerObj.textValue = value
+        answerObj.value = value
+        question.selectedValue  = [answerObj]
+        question.answer = {
+            answer:[answerObj]
+        }
+        // question.selectedValue = [answer]
+        // question.answer = {
+        //     "answer":[answer]
+        // }
+        // question.modelValue = 
+        return question
+    }
+    catch(err){
+        console.log("error in  handleGroupedQuestions:::",err.message)
+    }
+    return questionObj
+}
 async function handleDbValues(questionObj,formObj,order){
     try{
         let answer = { label: '', textValue: '', value: '' }
-        await handleCasesByInputType(questionObj)
-        await handleValues(questionObj,answer,formObj)
-        questionObj.selectedValue = [answer]
         let questionOrder = order.toFixed(3)
-        questionObj.order = questionOrder
+        // questionObj.order = questionOrder
+        // console.log("questionObj.shortKey :: ",questionObj.shortKey)
+        if(Object.keys(groupedQuestions).includes(questionObj.shortKey)){
+            questionObj = await handleGroupedQuestions(questionObj,formObj)
+        }
+        else{
+            await handleCasesByInputType(questionObj)
+            await handleValues(questionObj,answer,formObj)
+            questionObj.selectedValue = [answer]
+            questionObj.answer = {
+                "answer":[answer]
+            }
+        }
+        
         return {...questionObj}
     }
     catch(err){
@@ -1703,33 +1834,24 @@ async function handleProjectCaseForDur(question,flattedForm){
         let order = parseInt(question.order)
         let dbKey = arrFields[question.shortKey]
         let values = flattedForm[dbKey]
+        let isDraft = flattedForm['isDraft']
         var project_arr = []
         let a = 0
         if(values){
             for(let obj of values){
+                obj.percProjectCost = ((obj.expenditure / obj.cost)*100).toFixed(2)
                 var nested_arr = []
                 for(let keys in obj){
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
                     let questionObj = DurProjectJson[jsonKey]
-                    if(Array.isArray(jsonKey)){
-                        for(let arr of jsonKey){
-                            let question =  DurProjectJson[arr]
-                            if(question){
-                                order += 0.001
-                                let formObj = {}
-                                formObj[arr] = obj[keys][arr]
-                                question =  await handleDbValues(question,formObj,order)
-                                nested_arr.push({...question})
-                            }
-    
-                        }
-                    }
                     if(questionObj){
-                        order += 0.001
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
-                        questionObj =  await handleDbValues(questionObj,formObj,order)
+                        questionObj =  await handleDbValues(questionObj,formObj,order) 
+                        if(questionObj.isQuestionDisabled !== true){
+                            questionObj.isQuestionDisabled = handleIsDraftCases({isDraft})
+                        }
                         nested_arr.push({...questionObj})
                     }
                 }
@@ -1737,14 +1859,43 @@ async function handleProjectCaseForDur(question,flattedForm){
                 project_arr.push(nested_arr)
             }
         }
-        
+        project_arr = project_arr.map(item => item.sort((a, b) => a.order > b.order ? 1 : -1))
          let  childData = [...project_arr]
          return childData
-        // console.log("question.childQuestionData  inside function:: ",question.childQuestionData.length)
-
     }
     catch(err){
         console.log("error in handleProjectCaseForDur ::: ",err.message)
+    }
+}
+
+function createCustomizedKeys(answerObj,keysMapper){
+    try{
+        let obj = {}
+        for(let key in answerObj){
+            if(key === "_id") continue;
+            obj[keysMapper[key]] = answerObj[key]
+            // console.log("key ::: ",key)
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in createCustomizedKeys ::: ",err.message)
+    }
+    return answerObj
+}
+
+function handleIsDraftCases(flattedForm){
+    try{
+        // console.log("flattedForm.isDraft :: ",flattedForm.isDraft)
+        if(flattedForm.isDraft === false){
+            return true
+        }
+        else{
+            return false
+        }
+    }
+    catch(err){
+        console.log("error in handleIsDraftCases")
     }
 }
 
@@ -1752,14 +1903,23 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
     try{
         let valKey = arrFields[shortKey]
         let answerObjects = flattedForm[valKey]
+        // console.log("customKeys ::: ",customkeys)
+        let keysMapper = customkeys[shortKey]
+        // console.log("keysMapper :: ",keysMapper)
         for(let index in answerObjects){
             let questionArr = childQuestionData[index]
             for(let arrIndex in questionArr){
-                let formObj = answerObjects[index]
+                let formObj = createCustomizedKeys(answerObjects[index],keysMapper)
                 let question = questionArr[arrIndex]
+                if(question.isQuestionDisabled !== true){
+                    question.isQuestionDisabled = handleIsDraftCases(flattedForm)
+                }
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question,answer,formObj)
                 question.selectedValue = [answer]
+                question.answer = {
+                    answer:[answer]
+                }
             }
         }
     }
@@ -1778,12 +1938,15 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                 let questionKeys = Object.keys(customkeys[shortKey])
                 for(let questionkey of questionKeys){
                     if(obj.shortKey === questionkey){
-                        // console.log("flattedForm ::: ",flattedForm)
-                        // console.log("obj.shortKey ::::: ",obj.shortKey)
-                        // console.log("questionkey :::: ",questionkey)
                         let answer = { label: '', textValue: '', value: '' }
                         await handleValues(obj,answer,flattedForm)
                         obj.selectedValue = [answer]
+                        if(obj.isQuestionDisabled !== true){
+                            obj.isQuestionDisabled = handleIsDraftCases(flattedForm)
+                        }
+                        obj.answer = {
+                            answer : [answer]
+                        }
                     }
                 }
             }
@@ -1885,18 +2048,33 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
 const handleTextCase = async(question,obj,flattedForm)=>{
     try{
         let mainKey = question.shortKey
+        // console.log("flattedFrom ::::",flattedForm)
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
         obj['value'] = flattedForm[mainKey]
-        // return obj
-        // console.log("obj ::::: ")
     }
     catch(err){
         console.log("error in handleTextCase :: ",err.message)
     }
 }
 
+async function handleConsentCase(question,obj,flattedForm,mainKey){
+    try{
+        let mainKey = question.shortKey
+        if(Object.keys(flattedForm).includes(mainKey)){
+            let answerByBoolean = getKeyByValue(consentCases,flattedForm[mainKey])
+            let answer = question.answer_option.find(item => item._id === answerByBoolean)
+            question['modelValue'] = answer['_id']
+            question['value'] = answer['_id']
+            obj['textValue'] = answer['name']
+            obj['value'] = answer['_id']
+        }
+    }
+    catch(err){
+        console.log("error in handleConsentCase :::: ",err.message)
+    }
+}
 const getFilteredOptions =(answerKeys,annualRadioButtons)=>{
     try{
         const filteredObj = Object.keys(annualRadioButtons)
@@ -1961,6 +2139,9 @@ const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
             case "20":
                 await handleChildCase(question,obj,flattedForm,mainKey)
                 break
+            case "22":
+                await handleConsentCase(question,obj,flattedForm,mainKey)
+                break
             default:
                 let shortKey = question.shortKey.replace(" ", "")
                 obj[answerKey] = flattedForm[shortKey]
@@ -1981,6 +2162,7 @@ function handledateCase(question,obj,flattedForm){
         if(flattedForm[mainKey] === undefined){
             flattedForm[mainKey] = new Date()
         }
+        console.log("handledateCase ::: ",flattedForm[mainKey])
         flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
@@ -2644,30 +2826,114 @@ async function getSeparatedShortKeys(params) {
 }
 
 
-async function nestedObjectParser(data,req){
-    try{
-        const result = {};
-        await data.forEach(async(item) => {
-        let shortKey = item.shortKey
-        const keys = shortKey.split(".");
-        let pointer = result;
-        let temp = {}
-        let value = await decideValues(temp,shortKey,item,req)
-        await keys.forEach((key, index) => {
-                if (!pointer.hasOwnProperty(key)) {
-                pointer[key] = {};
-                }
-                if (index === keys.length - 1) {
-                pointer[key] = value;
-                }
-                pointer = pointer[key];
-            });
-        });
-        return result
+function reverseKeyValues(originalObj){
+    return  Object.entries(originalObj).reduce((acc, [key, value]) => {
+        acc[value] = key;
+        return acc;
+      }, {});
+}
 
+const handleChildValues = async(childObj,item,req)=>{
+    try{
+        if(item && item.nestedAnswer){
+            if(Object.keys(arrFields).includes(item.shortKey)  && !Array.isArray(childObj[item.shortKey])){
+                var arrKey = arrFields[item.shortKey]
+                childObj[arrKey] = []
+            }
+            for(let nestedAnswer in item.nestedAnswer){
+                    let questions = item.nestedAnswer[nestedAnswer].answerNestedData
+                    let temp_obj = await nestedObjectParser(questions,req)
+                    if(Object.keys(arrFields).includes(item.shortKey)){
+                        let keyMappers = customkeys[item.shortKey]
+                        keyMappers = await reverseKeyValues(keyMappers)
+                        let filteredObj = await createCustomizedKeys(temp_obj,keyMappers)
+                        if(childObj[arrKey]){
+                            childObj[arrKey].push(filteredObj)
+                        }
+                    }
+                    else{
+                        Object.assign(childObj,temp_obj)
+                    }
+                }
+            }
+        return childObj
     }
     catch(err){
-        console.log("error in nestedObjectParser: ::: ",err.message)
+        console.log("error in handleChildValues ::: ",err.message)
+    }
+}
+
+async function fillCategoryTable(){
+    let promise = await new Promise(async(resolve,reject)=>{
+        try{
+            console.log("---")
+            let databaseArr = await moongose.model('Category').find({}).lean()
+            for(let db of databaseArr){
+                categoryTable[db.name.toString()] = db._id
+            } 
+            resolve(true)
+        }
+        catch(err){
+            reject(err)
+        }
+    })
+    return promise
+}
+
+async function clearVariables(type){
+    try{
+        switch (type){
+            case "category":
+                categoryTable = {}
+                break
+        }
+    }
+    catch(err){
+        console.log("error in clearVariables::",err.message)
+    }
+}
+
+async function nestedObjectParser(data,req){
+    try{
+        if(req.body.formId === 4 && Object.keys(categoryTable).length === 0){
+            await fillCategoryTable()
+        }
+        const result = {};
+        for(let item of data){
+            let shortKey = item.shortKey
+            const keys = shortKey.split(".");
+            let pointer = result;
+            let temp = {}
+            if(item.input_type === "20"){
+                pointer = await handleChildValues(pointer,item,req)
+            }
+            else{
+                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
+                    item.answer = [
+                        {
+                            "label":"",
+                            "textValue":"",
+                            "value":"0,0"
+                        }
+                    ]
+                }
+                let value = await decideValues(temp,shortKey,item,req)
+                await keys.forEach((key, index) => {
+                        if (!pointer.hasOwnProperty(key)) {
+                        pointer[key] = {};
+                        }
+                        if (index === keys.length - 1) {
+                        pointer[key] = value;
+                        }
+                        pointer = pointer[key];
+                    });
+            }
+            };
+            return result
+        }
+    catch(err){
+        console.log("error in nestedObjectParser: ::: ",err)
     }
 }
 module.exports.nestedObjectParser = nestedObjectParser
+module.exports.clearVariables = clearVariables

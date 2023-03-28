@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,nestedObjectParser,clearVariables } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
@@ -19,7 +19,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         form['ulbName'] = name
         delete form['projects']
         let latestYear = !outDatedYears.includes(year)
-        let jsonFormId = req.query.formId
+        let jsonFormId = req.query.formId || null
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
         let formJson = await FormsJson.findOne(condition).lean()
         let obj = formJson ? formJson.data : {}
@@ -28,18 +28,30 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
               "_id": req?.form?._id ,
               "formId": req.query.formId,
               "language":[],
-              "canTakeAction":false
+              "canTakeAction":form?.canTakeAction || false,
+              "isDraft":form.isDraft !== undefined ? form.isDraft : true,
+              "status":form?.status || null
             }
           ]
         if(latestYear){
+            if(req.form.url){
+                response.success = true
+                response.url = req.form.url
+                response.message =req.form.url
+                response.msg = req.form.url
+                return res.status(400).json(response)
+            }
             if(!jsonFormId){
                 response.message = "formId is required"
                 repsonse.success = false
                 return res.json(response)
             }
             let flattedForm = await getFlatObj(form)
-            let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
+            // flattedForm.isDraft = false
+            flattedForm['name_'] = flattedForm['name']
+            let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
+            obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
             response.success = true
             response.data = responseData
@@ -57,5 +69,25 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         response.data = req.form
         response.message = "Some server error occured"
         console.log("error in changeGetApiForm ::: ",err.message)
+    }
+}
+
+module.exports.changePayloadFormat = async(req,res,next)=>{
+    try{
+        let {designYear,financialYear,ulb,data} = req.body
+        let year = getKeyByValue(years,designYear)
+        let latestYear = !outDatedYears.includes(year)
+        if(latestYear){
+            let payload = await nestedObjectParser(data,req)
+            payload['name'] = payload['name_']
+            delete req.body['data']
+            await clearVariables('category')
+            Object.assign(req.body,payload)
+        }
+        next()
+        // console.log("change Payload form::")
+    }
+    catch(err){
+        console.log("error in changePayloadFormat ::: ",err.message)
     }
 }
