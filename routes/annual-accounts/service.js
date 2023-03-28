@@ -353,6 +353,7 @@ exports.createUpdate = async (req, res) => {
 
     req.body.actionTakenBy = req?.decoded._id;
     req.body.actionTakenByRole = req?.decoded.role;
+    const {_id: actionTakenBy, role: actionTakenByRole} =  req?.decoded;
     const formName = FormNames["annualAcc"];
     const masterFormId = FORMIDs['AnnualAccount']
     const { name: ulbName } = req.decoded;
@@ -360,6 +361,7 @@ exports.createUpdate = async (req, res) => {
     req.body.ulb = req?.decoded.ulb;
     const ulb = req?.decoded.ulb;
     req.body.modifiedAt = new Date();
+    let currentFormStatusAnnual = req.body['status']
     req.body['status'] = "PENDING";
     let userData = await User.find({
       $or: [
@@ -494,9 +496,9 @@ exports.createUpdate = async (req, res) => {
       // const session = await mongoose.startSession();
       // await session.startTransaction();
       try {
-        const formBodyStatus = formData.status;
+        const formBodyStatus = currentFormStatusAnnual;
         formData.status = "";
-        formData.currentFormStatus = formBodyStatus;
+        formData.currentFormStatus = currentFormStatusAnnual;
         /* Finding the data from the database for 23-24 form */
         let formData2324 = await AnnualAccountData.findOne({
           ulb: data.ulb,
@@ -547,7 +549,7 @@ exports.createUpdate = async (req, res) => {
               // { session }
             );
           }
-          let shortKeys = await getShortKeys(masterFormId);
+          let shortKeys = await getShortKeys({formId: masterFormId});
           if (!Array.isArray(shortKeys) || shortKeys.length <= 0) {
             return Response.BadRequest(res, {}, "ShortKeys not found");
           }
