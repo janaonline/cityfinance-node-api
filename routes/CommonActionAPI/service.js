@@ -1892,11 +1892,13 @@ async function handleArrOfObjects(question,flattedForm){
         var project_arr = []
         let a = 0
         if(values){
+            let index = 1
             for(let obj of values){
                 if(DurCase.includes(question.shortKey)){
                     obj.percProjectCost = ((obj.expenditure / obj.cost)*100).toFixed(2)
                 }
                 var nested_arr = []
+                
                 for(let keys in obj){
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
@@ -1913,12 +1915,14 @@ async function handleArrOfObjects(question,flattedForm){
                             if(Object.keys(customDisableFields).includes(keys)){
                                 questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
                             }
-                        }
-
+                        }  
+                        questionObj.forParentValue = index
+                        
                         nested_arr.push({...questionObj})
                     }
                 }
                 a += 1
+                index +=1
                 project_arr.push(nested_arr)
             }
         }
@@ -2907,7 +2911,7 @@ const handleChildValues = async(childObj,item,req)=>{
                     if(Object.keys(arrFields).includes(item.shortKey)){
                         let keyMappers = customkeys[item.shortKey]
                         keyMappers = await reverseKeyValues(keyMappers)
-                        let filteredObj = await createCustomizedKeys(temp_obj,keyMappers)
+                        const filteredObj = await createCustomizedKeys(temp_obj,keyMappers)
                         if(childObj[arrKey]){
                             childObj[arrKey].push(filteredObj)
                         }
