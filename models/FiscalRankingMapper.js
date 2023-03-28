@@ -101,6 +101,8 @@ const fiscalRankingMapperSchema = new Schema(
                 'fy_21_22_online',
                 'property_tax_register',
                 'paying_property_tax',
+                "RcptBudget",
+                "totalCaptlExpWaterSupply",
                 'paid_property_tax',
                 'appAnnualBudget',
                 'accountStwreProof'

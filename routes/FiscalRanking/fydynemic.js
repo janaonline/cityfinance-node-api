@@ -339,7 +339,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptBudget",
+                        "type": "RcptBudget",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -356,7 +356,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptBudget",
+                        "type": "RcptBudget",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -373,7 +373,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptBudget",
+                        "type": "RcptBudget",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4115,8 +4115,8 @@ const fiscalRankingFormJson = () => {
                 ],
                 // "info": "To be taken from Approved Annual Budget"
             },
-            "totalOMCaptlExpWaterSupply": {
-                "key": "totalOMCaptlExpWaterSupply",
+            "totalCaptlExpWaterSupply": {
+                "key": "totalCaptlExpWaterSupply",
                 "label": "O&M expense on Water Supply",
                 "displayPriority": "10.1",
                 "yearData": [
@@ -4129,7 +4129,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalOMCaptlExpWaterSupply",
+                        "type": "totalCaptlExpWaterSupply",
                         "year": years['2018-19'],
                         "code": [],
                         "readonly": false,

@@ -2924,6 +2924,7 @@ async function columnsForCSV(params) {
       "Created Date",
       "Last Submitted Date",
       "Overall Form Status",
+      "% Completion",
       "I. BASIC ULB DETAILS_Comments",
       "II CONTACT INFORMATION_Comments",
       "III FINANCIAL INFORMATION_Comments",
@@ -2973,6 +2974,7 @@ async function columnsForCSV(params) {
       "createdAt",
       "modifiedAt",
       "formStatus",
+      "compeletionPercent",
       "comment_1",
       "II CONTACT INFORMATION_Comments",
       "III FINANCIAL INFORMATION_Comments",
@@ -3121,7 +3123,7 @@ function createCsv(params) {
         if(FROverallFlag){
           let percent =  ((completionPercent/denominatorMandatory)*100).toFixed();
           str2 = str.split(',')
-          str2.splice(9, 0, `${percent}%`)
+          str2.splice(9, 1, `${percent}%`)
          str = str2.join(',')
 
         }
@@ -3437,8 +3439,36 @@ function computeQuery(params) {
       {
         $lookup: {
           from: "fiscalrankings",
-          localField: "_id",
-          foreignField: "ulb",
+          let:{
+            firstUser: "$_id"  
+          },
+          pipeline:[
+              {
+                  $match:{
+                      $expr:{
+                          $and:[
+                          {$eq:["$$firstUser", "$ulb"]}
+                          ]
+                      }
+                  }
+              },
+              {
+                 
+              $lookup: {
+                from: "years",
+                localField: "design_year",
+                foreignField: "_id",
+                as: "designYear",
+              },
+            },
+            {
+              $unwind: {
+                path: "$designYear",
+                preserveNullAndEmptyArrays: true,
+              },
+             
+              }
+          ],
           as: "fiscalrankings",
         },
       },
@@ -3542,7 +3572,7 @@ function computeQuery(params) {
             },
           },
           ulbType: "$ulbType.name",
-          designYear: { $ifNull: ["$fiscalrankings.designYear", ""] },
+          designYear: { $ifNull: ["$fiscalrankings.designYear.year", ""] },
           createdAt: { $ifNull: ["$fiscalrankings.createdAt", ""] },
           modifiedAt: { $ifNull: ["$fiscalrankings.modifiedAt", ""] },
           formStatus: {
@@ -3588,7 +3618,7 @@ function computeQuery(params) {
           fiscalrankingmappers: 1,
         },
       },
-    ];
+    ]
   }
   return output;
 }
