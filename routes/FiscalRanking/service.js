@@ -4,12 +4,13 @@ const Response = require("../../service").response;
 const { years } = require("../../service/years");
 const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
+const {FRTypeShortKey} = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
-const FiscalRankingArray =  require('./formjson').arr ;
+const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
   getCsvProjectionQueries,
@@ -51,12 +52,10 @@ exports.CreateorUpdate = async (req, res, next) => {
   try {
     let { ulb, design_year } = req.body;
     if (!ulb && !design_year) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "ULB and Design year required fields!",
-        });
+      return res.status(400).json({
+        status: false,
+        message: "ULB and Design year required fields!",
+      });
     }
     let condition = { ulb: ObjectId(ulb), design_year: ObjectId(design_year) };
     let fsData = await FiscalRanking.findOne(condition).lean();
@@ -1390,13 +1389,11 @@ exports.approvedByMohua = async function (req, res, next) {
   try {
     let { ulb, design_year, year, type, actionTakenByRole, status } = req.body;
     if (!ulb && !design_year && !type && !actionTakenByRole && !status) {
-      return res
-        .status(400)
-        .json({
-          status: false,
-          message: "Required fields!",
-          keys: ["ulb", "design_year", "type", "actionTakenByRole", "status"],
-        });
+      return res.status(400).json({
+        status: false,
+        message: "Required fields!",
+        keys: ["ulb", "design_year", "type", "actionTakenByRole", "status"],
+      });
     }
     let condition = { ulb: ObjectId(ulb), design_year: ObjectId(design_year) };
     let fsData = await FiscalRanking.findOne(condition).lean();
@@ -2325,6 +2322,7 @@ async function updateQueryForFiscalRanking(
           payload["file"] = years.file;
           payload["status"] = years.status;
           payload["modelName"] = years.modelName;
+          payload["displayPriority"] = dynamicObj.displayPriority;
         } else {
           payload["status"] = years.status;
         }
@@ -2688,7 +2686,14 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   return res.status(500).json(response);
 });
 
-async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft) {
+async function checkIfFormIdExistsOrNot(
+  formId,
+  ulbId,
+  design_year,
+  isDraft,
+  role,
+  userId
+) {
   let validation = {
     message: "",
     valid: true,
@@ -2704,6 +2709,9 @@ async function checkIfFormIdExistsOrNot(formId, ulbId, design_year, isDraft) {
       let form = await FiscalRanking.create({
         ulb: ObjectId(ulbId),
         design_year: ObjectId(design_year),
+        actionTakenByRole: role,
+        actionTakenBy: userId,
+        status: "PENDING",
         isDraft,
       });
       form.save();
@@ -2744,13 +2752,15 @@ module.exports.createForm = catchAsync(async (req, res) => {
   await session.startTransaction();
   try {
     let { ulbId, formId, actions, design_year, isDraft } = req.body;
+    let { role, _id: userId } = req.decoded;
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
       ulbId,
       design_year,
-      isDraft
+      isDraft,
+      role,
+      userId
     );
-    let { role, _id: userId } = req.decoded;
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
@@ -2822,7 +2832,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
     let { financialInformation } = await fiscalRankingFormJson();
 
     const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
-    let { csvCols, dbCols , FRShortKeyObj} = await columnsForCSV(params);
+    let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
     let csv2 = createCsv({
       query,
       res,
@@ -2830,9 +2840,9 @@ module.exports.FRUlbFinancialData = async (req, res) => {
       modelName: "FiscalRankingMapper",
       dbCols,
       csvCols,
-      removeEscapesFromArr:[],
-      labelObj:FRShortKeyObj,
-      percentCompletionArr:[]
+      removeEscapesFromArr: [],
+      labelObj: FRShortKeyObj,
+      percentCompletionArr: [],
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -2861,9 +2871,13 @@ module.exports.FROverAllUlbData = async (req, res) => {
     const OverallRankingFilename = "ULB_Ranking_Overall_Data.csv";
     // let dbCols = Object.values(FRShortKeyObj);
     let { csvCols, dbCols } = await columnsForCSV(params);
-    let removeEscapesFromArr = ["nameCmsnr",
-    "auditorName","nameOfNodalOfficer",
-    "designationOftNodalOfficer","otherUpload"];
+    let removeEscapesFromArr = [
+      "nameCmsnr",
+      "auditorName",
+      "nameOfNodalOfficer",
+      "designationOftNodalOfficer",
+      "otherUpload",
+    ];
     let percentCompletionArr = [
       "population11",
       "populationFr",
@@ -2893,7 +2907,7 @@ module.exports.FROverAllUlbData = async (req, res) => {
       "FR_auditedAnnualFySt_2020-21",
       "FR_auditedAnnualFySt_2019-20",
       "FR_auditedAnnualFySt_2018-19",
-    ]
+    ];
     let csv2 = createCsv({
       query,
       res,
@@ -2902,8 +2916,8 @@ module.exports.FROverAllUlbData = async (req, res) => {
       dbCols,
       csvCols,
       removeEscapesFromArr,
-      labelObj:{},
-      percentCompletionArr
+      labelObj: {},
+      percentCompletionArr,
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -3011,10 +3025,9 @@ async function columnsForCSV(params) {
       "FR_auditedAnnualFySt_2020-21",
       "FR_auditedAnnualFySt_2019-20",
       "FR_auditedAnnualFySt_2018-19",
-      "otherUpload"
+      "otherUpload",
     ];
-    output['FRShortKeyObj'] = {};
-
+    output["FRShortKeyObj"] = {};
   } else if (FRUlbFinancialData) {
     output["dbCols"] = [
       "stateName",
@@ -3038,29 +3051,39 @@ async function columnsForCSV(params) {
       "Indicator",
       "Amount",
     ];
-    
+
     let FRShortKeyObj = {};
-    if (FiscalRankingArray.length>0) {
+    if (FiscalRankingArray.length > 0) {
       for (let FRObj of FiscalRankingArray) {
-        FRShortKeyObj[FRObj['key']] =
-        FRObj['label'];
+        FRShortKeyObj[FRObj["key"]] = FRObj["label"];
       }
     }
-    output['FRShortKeyObj'] = FRShortKeyObj;
+    output["FRShortKeyObj"] = FRShortKeyObj;
   }
   return output;
 }
 
 function createCsv(params) {
   try {
-    let { query, res, filename, modelName, dbCols, csvCols , removeEscapesFromArr, labelObj,percentCompletionArr} = params;
+    let {
+      query,
+      res,
+      filename,
+      modelName,
+      dbCols,
+      csvCols,
+      removeEscapesFromArr,
+      labelObj,
+      percentCompletionArr,
+    } = params;
     // if(!dbCols.length){
     //   dbCols =  Object.keys(cols)
     // }
     // if(!csvCols.length){
     //   csvCols = Object.values(cols)
     // }
-    let totalownOwnRevenueAreaLabel = "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD"
+    let totalownOwnRevenueAreaLabel =
+      "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD";
     let cursor = moongose
       .model(modelName)
       .aggregate(query)
@@ -3074,10 +3097,10 @@ function createCsv(params) {
     cursor.on("data", (document) => {
       try {
         let str = "";
-        let str2 = '';
+        let str2 = "";
         let FRFlag = false;
         let completionPercent = 0;
-        const denominatorMandatory = 28; 
+        const denominatorMandatory = 28;
         let FROverallFlag = false;
 
         for (let key of dbCols) {
@@ -3089,20 +3112,37 @@ function createCsv(params) {
               ? (document[key] = dateFormatter(document[key], "/"))
               : "";
           }
-          if(removeEscapesFromArr.includes(key)){
+          if (removeEscapesFromArr.includes(key)) {
             document[key] = removeEscapeChars(document[key]);
           }
-          if(percentCompletionArr.length>0 && percentCompletionArr.includes(key) && document[key]){
+          if (
+            percentCompletionArr.length > 0 &&
+            percentCompletionArr.includes(key) &&
+            document[key]
+          ) {
             completionPercent++;
             FROverallFlag = true;
           }
           if (key.split("_")[0] !== "FR") {
             if (document[key]) {
-            /* A destructuring assignment.FR case in Fiscal Mapper */
-              ({ FRFlag, str2 } = FRFinancialCsvCase(key, document, FRFlag, str2, str, totalownOwnRevenueAreaLabel, labelObj));
-              if(key === "formStatus"){
-                let {status, actionTakenByRole, isDraft} = document[key];
-                document[key] = calculateStatusForFiscalRankingForms(status,actionTakenByRole,isDraft,"ULB")
+              /* A destructuring assignment.FR case in Fiscal Mapper */
+              ({ FRFlag, str2 } = FRFinancialCsvCase(
+                key,
+                document,
+                FRFlag,
+                str2,
+                str,
+                totalownOwnRevenueAreaLabel,
+                labelObj
+              ));
+              if (key === "formStatus") {
+                let { status, actionTakenByRole, isDraft } = document[key];
+                document[key] = calculateStatusForFiscalRankingForms(
+                  status,
+                  actionTakenByRole,
+                  isDraft,
+                  "ULB"
+                );
               }
 
               str += document[key] + ",";
@@ -3120,17 +3160,19 @@ function createCsv(params) {
             }
           }
         }
-        if(FROverallFlag){
-          let percent =  ((completionPercent/denominatorMandatory)*100).toFixed();
-          str2 = str.split(',')
-          str2.splice(9, 1, `${percent}%`)
-         str = str2.join(',')
-
+        if (FROverallFlag) {
+          let percent = (
+            (completionPercent / denominatorMandatory) *
+            100
+          ).toFixed();
+          str2 = str.split(",");
+          str2.splice(9, 1, `${percent}%`);
+          str = str2.join(",");
         }
         res.write(str + "\r\n");
-        if(FRFlag){
-          res.write(str2+ "\r\n")
-          FRFlag=false;
+        if (FRFlag) {
+          res.write(str2 + "\r\n");
+          FRFlag = false;
         }
       } catch (err) {
         console.log("error in writeCsv :: ", err.message);
@@ -3160,12 +3202,22 @@ function createCsv(params) {
  * @param labelObj - This is the object that contains the labels for the indicators.
  * @returns An object with two properties, FRFlag and str2.
  */
-function FRFinancialCsvCase(key, document, FRFlag, str2, str, totalownOwnRevenueAreaLabel, labelObj) {
+function FRFinancialCsvCase(
+  key,
+  document,
+  FRFlag,
+  str2,
+  str,
+  totalownOwnRevenueAreaLabel,
+  labelObj
+) {
   if (key === "indicator") {
     if (document[key] === "totalOwnRevenueArea") {
       FRFlag = true;
       str2 = str;
-      str2 += `${totalownOwnRevenueAreaLabel}, ${document['fy_21_22_cash'] ?? ""}`;
+      str2 += `${totalownOwnRevenueAreaLabel}, ${
+        document["fy_21_22_cash"] ?? ""
+      }`;
     }
     document[key] = removeEscapeChars(labelObj[document[key]]);
     // if(!labelObj[document[key]]){
@@ -3186,95 +3238,54 @@ function computeQuery(params) {
   const { FRUlbFinancialData, FROverAllUlbData } = params;
   let output = {};
   if (FRUlbFinancialData) {
-    const indicatorArray =  [
-      "taxRevenue",
-      "propertyTax",
-      "waterTax",
-      "drainageTax",
-      "sewerageTax",
-      "profTax",
-      "entertainTax",
-      "advTax",
-      "otherTaxRev",
-      "feeUserChrg",
-      "waterSupplyFee",
-      "sanitationFee",
-      "garbageFee",
-      "otherFee",
-      "rentInc",
-      "assignedCompensation",
-      "octroiCompensation",
-      "otherCompensation",
-      "revGrants",
-      "centralGrant",
-      "cfcGrant",
-      "cssGrant",
-      "centralscheme",
-      "centralTransfer",
-      "stateGrant",
-      "sfcGrant",
-      "stateScheme",
-      "otherStateTrans",
-      "otherGrant",
-      "otherIncome",
-      "totalOwnRevenue",
-      "totalIncome",
-      "establishExpense",
-      "categoryA",
-      "categoryB",
-      "categoryC",
-      "otherEstExpense",
-      "adminExpense",
-      "omExp",
-      "omExpWaterSupply",
-      "omExpSanitation",
-      "omExpOther",
-      "finExpense",
-      "misExpense",
-      "otherExpense",
-      "totalExpend",
-      "netRevenue",
-      "CaptlExp",
-      "CaptlExpWaterSupply",
-      "CaptlExpSanitation",
-      "CaptExpOther",
-      "fixedAsset",
-      "faLandBuild",
-      "faOther",
-      "debtOs",
-      "assetsSale",
-      "incmLandSale",
-      "incmOtherAssets",
-      "totalRecActual",
-      "totalRcptWaterSupply",
-      "totalRcptSanitation",
-      "RcptBudget",
-      "totalOwnRevenueArea",
-      "fy_21_22_online",
-      "property_tax_register",
-      "paying_property_tax",
-      "paid_property_tax",
-    ];
+    const removeKeysFromTypeArray = [
+      'auditedAnnualFySt',
+      'auditAnnualReport',
+      'totalRecBudgetEst',
+      'totalOwnRevenues',
+      'totalCaptlExp',
+      'totalOmExp',
+      'grossBeforePrior',
+      'totalOMCaptlExpWaterSupply',
+      'totalOMCaptlExpSanitation',
+      'grossAfterPrior',
+      'priorItems',
+      'reservFunds',
+      'netBal',
+      'OwnRvnue',
+      'RvnueExp',
+      'auditAnnualReport',
+      'webUrlAnnual',
+      'registerGis',
+      'registerGisProof',
+      'accountStwre',
+      'totalCaptlExpWaterSupply',
+      'appAnnualBudget',
+      'accountStwreProof'
+    ]
+
+    let indicatorArr = FRTypeShortKey.filter(el=>{
+        return !removeKeysFromTypeArray.includes(el)
+    })
     output["FRUlbFinancialData"] = [
       {
         $match: {
           type: {
-            $in: indicatorArray
+            $in: indicatorArr,
           },
         },
       },
-{
-      $addFields: {
-           "displayPriority": {
-       $convert:
-         {
-            input: "$displayPriority",
-            to: "decimal",
-            onError: "$displayPriority",
-         }            
-               }
-      }    
-   },
+      {
+        $addFields: {
+          displayPriority: {
+            $convert: {
+              input: "$displayPriority",
+              to: "decimal",
+              onError: "$displayPriority",
+            },
+          },
+        },
+      },
       {
         $lookup: {
           from: "ulbs",
@@ -3421,8 +3432,7 @@ function computeQuery(params) {
           dataYear: -1,
         },
       },
-    
-]
+    ];
   }
   if (FROverAllUlbData) {
     output["FROverAllUlbData"] = [
@@ -3451,21 +3461,18 @@ function computeQuery(params) {
       {
         $lookup: {
           from: "fiscalrankings",
-          let:{
-            firstUser: "$_id"  
+          let: {
+            firstUser: "$_id",
           },
-          pipeline:[
-              {
-                  $match:{
-                      $expr:{
-                          $and:[
-                          {$eq:["$$firstUser", "$ulb"]}
-                          ]
-                      }
-                  }
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [{ $eq: ["$$firstUser", "$ulb"] }],
+                },
               },
-              {
-                 
+            },
+            {
               $lookup: {
                 from: "years",
                 localField: "design_year",
@@ -3478,8 +3485,7 @@ function computeQuery(params) {
                 path: "$designYear",
                 preserveNullAndEmptyArrays: true,
               },
-             
-              }
+            },
           ],
           as: "fiscalrankings",
         },
@@ -3630,7 +3636,7 @@ function computeQuery(params) {
           fiscalrankingmappers: 1,
         },
       },
-    ]
+    ];
   }
   return output;
 }
