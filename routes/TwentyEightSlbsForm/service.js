@@ -338,7 +338,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
 }
 
 
-module.exports.getForm = async (req, res) => {
+module.exports.getForm = async (req, res,next) => {
     try {
         let userRole = req.decoded.role
         const data = req.query;
@@ -395,26 +395,40 @@ module.exports.getForm = async (req, res) => {
               StatusList.Approved_By_State,
             ].includes(status)
           ) {
-
             let msg = userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
               status ? status : "Not Submitted"
             }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`
-            return res.status(200).json({
-              status: true,
-              show: true,
-              message: msg,
-            });
+            req.json = {
+                status: true,
+                show: true,
+                message: msg,
+              }
+            // return res.status(200).json({
+            //   status: true,
+            //   show: true,
+            //   message: msg,
+            // });
+            next()
+            return
           }
         } else {
-
-          return res.status(200).json({
-            status: true,
-            show: true,
-            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
-          });
+          console.log("2")
+          req.json = {
+              status: true,
+              show: true,
+              message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
+            }
+           next()
+           return
+          // return res.status(200).json({
+          //   status: true,
+          //   show: true,
+          //   message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
+          // });
         }
         }
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
+        
         let slbDataNotFilled;
         if (formData) {
           let slb28FormStatus = calculateStatus(
@@ -428,6 +442,7 @@ module.exports.getForm = async (req, res) => {
             ulb: ObjectId(data.ulb),
             design_year: YEAR_CONSTANTS["21_22"],
           }).lean();
+         
         if(slbData){
           slbDataNotFilled = slbData.blank;
                 formData["data"].forEach((element) => {
@@ -534,13 +549,17 @@ module.exports.getForm = async (req, res) => {
           });
           let groupedData = groupByKey(formData["data"], "type");
           formData["data"] = groupedData;
-
-          return res.status(200).json({
-            success: true,
-            show: false,
-            data: formData,
-            slbDataNotFilled
-          });
+          req.form = formData
+          req.slbDataNotFilled = slbDataNotFilled
+          console.log("slbDataNotFilled ::: ",slbDataNotFilled)
+          next()
+          return
+          // return res.status(200).json({
+          //   success: true,
+          //   show: false,
+          //   data: formData,
+          //   slbDataNotFilled
+          // });
         } else {
           let pipedSupply,
             waterSuppliedPerDay,
@@ -656,17 +675,24 @@ module.exports.getForm = async (req, res) => {
             "solid waste": groupedData["solid waste"],
             "storm water": groupedData["storm water"],
           });
-
-          return res.status(200).json({
-            success: true,
-            show: false,
-            slbDataNotFilled,
-            data: {
-              canTakeAction: false,
-              data: output,
-              population: null,
-            },
-          });
+          req.form = {
+                canTakeAction: false,
+                data: output,
+                population: null,
+              }
+          req.slbDataNotFilled = slbDataNotFilled
+          next()
+          return
+          // return res.status(200).json({
+          //   success: true,
+          //   show: false,
+          //   slbDataNotFilled,
+          //   data: {
+          //     canTakeAction: false,
+          //     data: output,
+          //     population: null,
+          //   },
+          // });
         }
     } catch (error) {
         return res.status(400).json({

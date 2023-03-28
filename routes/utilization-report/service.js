@@ -9,7 +9,7 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat } = require('../CommonActionAPI/service')
+const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields } = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -1374,7 +1374,6 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
       "form id":formId
     })
     if(!validation.valid){
-      console.log("1")
       response.success = false
       response.message = validation.message
       return res.status(400).json(response)
@@ -1382,12 +1381,17 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     let projectObj = await UtilizationReport.findOne({
       "ulb":ObjectId(ulb),
       "designYear":ObjectId(design_year)
-    },{projects:1,isDraft:1}).lean()
+    },{projects:1,isDraft:1,status:1,actionTakenByRole:1}).lean()
+    
     if(!projectObj){
       response.message = "No utilization report found with this ulb and design year"
       response.success = true
       response.data = []
       return res.json(response)
+    }
+    if(projectObj){
+      formStatus = decideDisabledFields(projectObj,"ULB")
+      projectObj.disableFields = formStatus
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()
     // console.log(">>>>>>",formJson)
