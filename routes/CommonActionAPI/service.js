@@ -2304,6 +2304,21 @@ async function handleCasesByInputType(question){
     }
 }
 
+function findId(answerOption,name,idx,type="id"){
+    try{
+        if(answerOption){
+            let objectFind = answerOption.find((item)=>item.name === name)
+            return objectFind._id.toString()
+        }
+        else{
+            return idx.toString()
+        }
+    }
+    catch(err){
+        console.log("")
+    }
+}
+
 async function appendAnswerOptions(modelName,obj,modelFilter){
     try{
         let documents = await moongose.model(modelName).find(modelFilter).lean()
@@ -2313,9 +2328,9 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
             let  answerObj = {
                 "name":item.name,
                 "did":[],
-                "_id":JSON.stringify(index+1),
+                "_id":obj.answer_option ?  findId(obj['answer_option'],item.name,index) : index.toString(),
                 "option_id":item._id,
-                "viewSequence":index+1
+                "viewSequence":obj.answer_option ?  findId(obj['answer_option'],item.name,index) : (index+1).toString(),
             }
              childObj = {
                 "type":item._id,
