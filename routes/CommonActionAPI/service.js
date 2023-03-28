@@ -1635,10 +1635,13 @@ class PayloadManager{
     async handleDateValues(){
         try{
             let answer = this.objects['answer'][0]['value']
-            if(!answer){
+            if(!answer ){ // check if the date object is array because mform returns array if if empty
                 answer = new Date().toISOString() // static code because of issue in mform json
             }
             this.value = new Date(answer)
+            if(Array.isArray(answer)){
+                this.value = ""
+            }
             return this.value
         }
         catch(err){
@@ -2212,6 +2215,7 @@ function handledateCase(question,obj,flattedForm){
         if(flattedForm[mainKey] === undefined){
             flattedForm[mainKey] = new Date()
         }
+        console.log("handledateCase ::: ",flattedForm[mainKey])
         flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
