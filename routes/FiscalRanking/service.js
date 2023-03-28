@@ -2060,6 +2060,7 @@ async function updateQueryForFiscalRanking(yearData, ulbId, formId, mainFormCont
           payload['file'] = years.file
           payload['status'] = years.status
           payload['modelName'] = years.modelName
+          payload['displayPriority'] = dynamicObj.displayPriority
         } else {
           payload["status"] = years.status
         }

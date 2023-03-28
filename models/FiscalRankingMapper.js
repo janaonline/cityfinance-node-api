@@ -116,10 +116,11 @@ const fiscalRankingMapperSchema = new Schema(
             type: String,
             default: "number",
             enum: {
-                values: ["number", "file", "date","radio-toggle","text","url"],
+                values: ["number", "file", "date", "radio-toggle", "text", "url"],
                 message: "ERROR: STATUS BE EITHER",
             },
         },
+        displayPriority: { type: String, default: null },
         createdAt: { type: Date, default: Date.now() },
         modifiedAt: { type: Date, default: Date.now() },
     },
