@@ -82,6 +82,9 @@ module.exports.changePayloadForm = async(req,res,next)=>{
         let latestYear = !outDatedYears.includes(year)
         if(latestYear){
             let payload = await nestedObjectParser(data,req)
+            // console.log("payload.data :: ",payload.data)
+            let obj = payload.data.find((item)=>item.question === "Per capita supply of water(lpcd)")
+            console.log("obj :: ",obj)
             req.body['data'] = payload.data
             next()
         }
