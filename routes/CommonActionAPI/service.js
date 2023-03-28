@@ -22,6 +22,8 @@ const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
+const {MASTER_STATUS_ID} =  require('../../util/FormNames');
+
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
@@ -159,10 +161,7 @@ var customkeys = {
       }
 
 }
-const {MASTER_STATUS_ID} =  require('../../util/FormNames');
-
 var modifiedShortKeys = {
-    "cert_declaration":"cert"
 }
 module.exports.modifiedShortKeys  = modifiedShortKeys
 var shortKeysWithModelName = {
@@ -2238,6 +2237,8 @@ function handleFileCase(question,obj,flattedForm){
         if(modifiedKeys.includes(mainKey)){
             mainKey = modifiedShortKeys[mainKey]
         }
+        console.log("flattedForm :: ",flattedForm)
+        console.log("mainKey ::: ",mainKey)
         let name = mainKey + "." + "name"
         let url = mainKey + "." + "url"
         obj['label'] = flattedForm[name]

@@ -62,6 +62,7 @@ const GfcFormCollectionSchema = new Schema({
     responseFile: pdfSchema(),
     responseFile_state:pdfSchema(),
     responseFile_mohua:pdfSchema(),
+    cert_declaration:pdfSchema(),
     rejectReason_state:{ type: String, default: "" },
     rejectReason_mohua: { type: String, default: "" },
     history:{

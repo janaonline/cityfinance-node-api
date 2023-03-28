@@ -33,7 +33,8 @@ module.exports.changeRequestBody = async (req,res,next)=>{
     delete bodyData['data']
     let {design_year} = req.body
     let {data} = req.body 
-    data = modifyData(data)
+    // data = modifyData(data)
+    console.log("data ::::: ",data[2])
     if (design_year == years['2023-24']) {
       req.body =await  payloadParser(data,req)
     }
@@ -114,7 +115,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)
-        console.log("flattedForm ::: ",form)
+        // console.log("flattedForm >>>>>>",flattedForm)
         responseData[0].canTakeAction = req.form.canTakeAction
         obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
       }
