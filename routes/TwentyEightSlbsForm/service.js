@@ -148,7 +148,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
             actionTakenByRole,
             actionTakenBy
           };
-          await createAndUpdateFormMaster(params);
+          return await createAndUpdateFormMaster(params);
         }
             const submittedForm = await TwentyEightSlbsForm.findOne(condition).lean();
             if ( (submittedForm) && submittedForm.isDraft === false &&
