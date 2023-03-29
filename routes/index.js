@@ -259,6 +259,9 @@ router.use('/fiscal-ranking', FiscalRanking);
 
 router.use(require('./s3ServerFile'));
 
+const FormJson  = require("./FormJsons")
+router.use('/form-json',FormJson)
+
 const CommonHistory = require('./CommonHistory')
 router.use('/common-history', CommonHistory)
 const MasterStatus = require('./MasterStatus');
