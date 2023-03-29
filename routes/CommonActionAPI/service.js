@@ -1876,6 +1876,26 @@ async function handleDbValues(questionObj,formObj,order){
         console.log("error in handleProjectedArr ::: ",err.message)
     }
 }
+async function handleRangeIfExists(questionObj,formObj){
+    try{
+        let obj = {...questionObj}
+        obj.max = ""
+        if(formObj.range){
+            if(["Nos./Year","%","lpcd"].includes(formObj.unit)){
+                obj.max = 3
+            }
+            else if(formObj.unit === "Hours/day") {
+                obj.max = 2
+            }
+        }
+        return {...obj}
+    }
+    catch(err){
+        console.log("error in handleRangeIfExists ::: ",err.message)
+    }
+    return {...questionObj}
+}
+
 async function handleArrOfObjects(question,flattedForm){
     try{
         let order = parseInt(question.order)
@@ -1890,8 +1910,7 @@ async function handleArrOfObjects(question,flattedForm){
                 if(DurCase.includes(question.shortKey)){
                     obj.percProjectCost = ((obj.expenditure / obj.cost)*100).toFixed(2)
                 }
-                var nested_arr = []
-                
+                var nested_arr = [] 
                 for(let keys in obj){
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
@@ -1910,8 +1929,8 @@ async function handleArrOfObjects(question,flattedForm){
                             }
                         }  
                         questionObj.forParentValue = index
-                        
-                        nested_arr.push({...questionObj})
+                        let modifiedObj  = await handleRangeIfExists({...questionObj},obj)
+                        nested_arr.push({...modifiedObj})
                     }
                 }
                 a += 1
