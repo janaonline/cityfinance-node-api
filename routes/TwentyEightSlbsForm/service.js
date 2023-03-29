@@ -57,6 +57,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         
         formData['actionTakenBy'] = ObjectId(user._id);
         formData['actionTakenByRole'] = "ULB";
+        let currentMasterFormStatus = req.body['status']
         formData['status'] = "PENDING"
         formData['ulbSubmit'] = "";
 
@@ -139,10 +140,13 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         
 
         if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+          formData.status = currentMasterFormStatus
           let params = {
             modelName: ModelNames["twentyEightSlbs"],
             formData,
             res,
+            actionTakenByRole,
+            actionTakenBy
           };
           await createAndUpdateFormMaster(params);
         }
