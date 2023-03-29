@@ -30,26 +30,32 @@ const getFormById = async(req,res,next)=>{
     }
 }
 
-// const updateFormById = async(req,res,next)=>{
-//     let response = {
-//         "success":false,
-//         "message":""
-//     }
-//     try{
-//         let {formId,data} = req.body
-//         if(!formId && formId){
-//             response.success = true
-//             response.message = "form Id not found"
-//             return res.status(400).json(response)
-//         }
-//         if(data.length <= 0){
-//             response.
-//             console.log("response :::::::::::::")
-//         }
-//         let formObject = await FormJson.findOne()
-//     }
-//     catch(err){
-//         console.log
-//     }
-// }
+const updateFormById = async(req,res,next)=>{
+    let response = {
+        "success":false,
+        "message":""
+    }
+    try{
+        let {formId,data,type} = req.body
+        if(!formId && formId){
+            response.success = false
+            response.message = "form Id not found"
+            return res.status(400).json(response)
+        }
+        if(data.length <= 0){
+            response.success = false
+            response.message = "data is required"
+            return res.status(400).json(response)
+        }
+        let formObject = await FormJson.findOneAndUpdate({
+            "formId":formId,
+            type
+        },{
+            data:data
+        })
+    }
+    catch(err){
+        console.log("error in updateFormById ::: ",err.message)
+    }
+}
 module.exports.getFormById = getFormById

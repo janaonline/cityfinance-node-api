@@ -8,7 +8,7 @@ const FormsJson = new Schema(
         data : {type:Array},
         isActive:{type:Boolean,default:true}
     },
-    { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+    { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 FormsJson.index(
     {design_year: 1 ,

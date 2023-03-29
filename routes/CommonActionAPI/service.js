@@ -1894,7 +1894,6 @@ async function handleDbValues(questionObj,formObj,order){
 async function handleRangeIfExists(questionObj,formObj){
     try{
         let obj = {...questionObj}
-        obj.max = ""
         if(formObj.range){
             if(["Nos./Year","%","lpcd"].includes(formObj.unit)){
                 obj.max = 3
@@ -2951,7 +2950,6 @@ const handleChildValues = async(childObj,item,req)=>{
                         }
                     }
                     else{
-                        console.log("else part ")
                         childObj = Object.assign({...childObj},temp_obj)
                     }
                 }
