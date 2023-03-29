@@ -112,7 +112,9 @@ var customkeys = {
         "target_1": "waterSupply_targetIndicator",
         "indicatorLineItem":"waterSupply_indicatorLineItem",
         "type":"waterSupply_type",
-        "unit": "waterSupply_unit"
+        "unit": "waterSupply_unit",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
     },
     "solidWaste_tableView":{
         "question": "solidWaste_question",
@@ -120,7 +122,9 @@ var customkeys = {
         "target_1": "solidWaste_targetIndicator",
         "indicatorLineItem":"solidWaste_indicatorLineItem",
         "type":"solidWaste_type",
-        "unit": "solidWaste_unit"
+        "unit": "solidWaste_unit",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
     },
     "sanitation_tableView":{
         "question": "sanitation_question",
@@ -129,6 +133,8 @@ var customkeys = {
         "indicatorLineItem":"sanitation_indicatorLineItem",
         "unit": "sanitation_unit",
         "type":"sanitation_type",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
     },
     "stormWater_tableView":{
         "question": "stormWater_question",
@@ -137,6 +143,8 @@ var customkeys = {
         "indicatorLineItem":"stormWater_indicatorLineItem",
         "unit": "stormWater_unit",
         "type":"stormWater_type",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
     },
     "projectDetails_tableView_addButton":{
         "cost": 'cost',
@@ -1608,7 +1616,7 @@ class PayloadManager{
                 'lat':answer?.[0],
                 'long':answer?.[1]
             }
-            this.value = locationObj
+            this.value = {...locationObj}
             return this.value
         }
         catch(err){
