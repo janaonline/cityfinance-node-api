@@ -14,9 +14,9 @@ const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
 const Response = require("../../service").response;
-const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission')
+const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
 const {ModelNames} =  require('../../util/15thFCstatus')
- 
+
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -138,10 +138,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         };
         
 
-        if (
-          formData.design_year === YEAR_CONSTANTS["23_24"] &&
-          formData.ulb
-        ) {
+        if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
           let params = {
             modelName: ModelNames["twentyEightSlbs"],
             formData,
@@ -551,7 +548,6 @@ module.exports.getForm = async (req, res,next) => {
           formData["data"] = groupedData;
           req.form = formData
           req.slbDataNotFilled = slbDataNotFilled
-          console.log("slbDataNotFilled ::: ",slbDataNotFilled)
           next()
           return
           // return res.status(200).json({

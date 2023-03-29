@@ -63,7 +63,7 @@ module.exports.createAndUpdateFormMaster = async(params)=>{
                     } else {
                       formSubmit = await moongose
                         .model(modelName)
-                        .create(savedBody,
+                        .create(formData,
                         // { session }
                         );
                     }
