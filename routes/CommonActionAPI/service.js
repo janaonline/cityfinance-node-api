@@ -1573,7 +1573,7 @@ class PayloadManager{
                 let object = objectFields[shortKey]['object']
                 object['year'] = this.req.body[objectFields[shortKey]['fieldName']]
                 object['value'] = this.objects['answer'][0]['value']
-                this.value = object
+                this.value = {...object}
             }
             return this.value
         }
@@ -1877,11 +1877,13 @@ async function handleArrOfObjects(question,flattedForm){
         var project_arr = []
         let a = 0
         if(values){
+            let index = 1
             for(let obj of values){
                 if(DurCase.includes(question.shortKey)){
                     obj.percProjectCost = ((obj.expenditure / obj.cost)*100).toFixed(2)
                 }
                 var nested_arr = []
+                
                 for(let keys in obj){
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
@@ -1898,12 +1900,14 @@ async function handleArrOfObjects(question,flattedForm){
                             if(Object.keys(customDisableFields).includes(keys)){
                                 questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
                             }
-                        }
-
+                        }  
+                        questionObj.forParentValue = index
+                        
                         nested_arr.push({...questionObj})
                     }
                 }
                 a += 1
+                index +=1
                 project_arr.push(nested_arr)
             }
         }
@@ -1919,11 +1923,12 @@ async function handleArrOfObjects(question,flattedForm){
 function createCustomizedKeys(answerObj,keysMapper){
     try{
         let obj = {}
-        for(let key in answerObj){
+        let answer = {...answerObj}
+        for(let key in answer){
             if(key === "_id") continue;
-            obj[keysMapper[key]] = answerObj[key]
+            obj[keysMapper[key]] = answer[key]
         }
-        return obj
+        return {...obj}
     }
     catch(err){
         console.log("error in createCustomizedKeys ::: ",err.message)
@@ -2879,7 +2884,13 @@ const handleChildValues = async(childObj,item,req)=>{
             if(Object.keys(arrFields).includes(item.shortKey)  && !Array.isArray(childObj[item.shortKey])){
                 var arrKey = arrFields[item.shortKey].split(".")[0]
                 if(!Object.keys(childObj).includes(arrKey)){
-                    childObj[arrKey] = []
+                    
+                    try{
+                        childObj[arrKey] = [...childObj[arrKey]]
+                    }
+                    catch(err){
+                        childObj[arrKey] = []
+                    }                
                 }
             }
             for(let nestedAnswer in item.nestedAnswer){
@@ -2890,15 +2901,16 @@ const handleChildValues = async(childObj,item,req)=>{
                         keyMappers = await reverseKeyValues(keyMappers)
                         let filteredObj = await createCustomizedKeys(temp_obj,keyMappers)
                         if(childObj[arrKey]){
-                            childObj[arrKey].push(filteredObj)
+                            childObj[arrKey].push({...filteredObj})
                         }
                     }
                     else{
-                        Object.assign(childObj,temp_obj)
+                        console.log("else part ")
+                        childObj = Object.assign({...childObj},temp_obj)
                     }
                 }
             }
-        return childObj
+        return {...childObj}
     }
     catch(err){
         console.log("error in handleChildValues ::: ",err.message)
@@ -2946,7 +2958,9 @@ async function nestedObjectParser(data,req){
             let pointer = result;
             let temp = {}
             if(item.input_type === "20" ||  item.input_type === "29"){
-                pointer = await handleChildValues(pointer,item,req)
+                pointer = await handleChildValues({...pointer},item,req)
+                // console.log("pointer :: ",pointer.data[1])
+                Object.assign(result,pointer)
             }
             else{
                 if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
