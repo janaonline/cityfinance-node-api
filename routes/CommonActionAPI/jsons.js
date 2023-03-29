@@ -814,7 +814,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "1",
             "index": 3,
@@ -874,7 +874,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "1",
             "index": 4,
@@ -934,7 +934,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "1",
             "index": 5,
@@ -1210,11 +1210,11 @@ let DurProjectJson = {
         "input_type": "1",
         "weightage": [],
         "isQuestionDisabled": false,
-        "value": "fasdjlsfj",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "2",
             "index": 3,
@@ -1226,11 +1226,11 @@ let DurProjectJson = {
         "forParentValue": 1,
         "isSelectValue": false,
         "previousValue": "",
-        "modelValue": "fasdjlsfj",
+        "modelValue": "",
         "selectedValue": [
             {
                 "label": "",
-                "textValue": "fasdjlsfj",
+                "textValue": "",
                 "value": ""
             }
         ],
@@ -1238,7 +1238,7 @@ let DurProjectJson = {
             "answer": [
                 {
                     "label": "",
-                    "textValue": "fasdjlsfj",
+                    "textValue": "",
                     "value": ""
                 }
             ],
@@ -1274,7 +1274,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "2",
             "index": 4,
@@ -1334,7 +1334,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "2",
             "index": 5,
@@ -1610,11 +1610,11 @@ let DurProjectJson = {
         "input_type": "1",
         "weightage": [],
         "isQuestionDisabled": false,
-        "value": "sfkjlsdlf",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "3",
             "index": 3,
@@ -1626,11 +1626,11 @@ let DurProjectJson = {
         "forParentValue": 1,
         "isSelectValue": false,
         "previousValue": "",
-        "modelValue": "sfkjlsdlf",
+        "modelValue": "",
         "selectedValue": [
             {
                 "label": "",
-                "textValue": "sfkjlsdlf",
+                "textValue": "",
                 "value": ""
             }
         ],
@@ -1638,7 +1638,7 @@ let DurProjectJson = {
             "answer": [
                 {
                     "label": "",
-                    "textValue": "sfkjlsdlf",
+                    "textValue": "",
                     "value": ""
                 }
             ],
@@ -1674,7 +1674,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "3",
             "index": 4,
@@ -1734,7 +1734,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "3",
             "index": 5,
@@ -2014,7 +2014,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "4",
             "index": 3,
@@ -2074,7 +2074,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "4",
             "index": 4,
@@ -2134,7 +2134,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
-        "visibility": true,
+        "visibility": false,
         "nestedConfig": {
             "parentOrder": "4",
             "index": 5,

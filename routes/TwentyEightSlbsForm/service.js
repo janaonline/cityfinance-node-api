@@ -552,7 +552,6 @@ module.exports.getForm = async (req, res,next) => {
           formData["data"] = groupedData;
           req.form = formData
           req.slbDataNotFilled = slbDataNotFilled
-          console.log("slbDataNotFilled ::: ",slbDataNotFilled)
           next()
           return
           // return res.status(200).json({
