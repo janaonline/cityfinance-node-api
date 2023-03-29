@@ -14,6 +14,8 @@ const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
 const Response = require("../../service").response;
+const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
+const {ModelNames} =  require('../../util/15thFCstatus')
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -136,7 +138,14 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         };
         
 
-      
+        if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+          let params = {
+            modelName: ModelNames["twentyEightSlbs"],
+            formData,
+            res,
+          };
+          await createAndUpdateFormMaster(params);
+        }
             const submittedForm = await TwentyEightSlbsForm.findOne(condition).lean();
             if ( (submittedForm) && submittedForm.isDraft === false &&
             submittedForm.actionTakenByRole === "ULB" ){//Form already submitted

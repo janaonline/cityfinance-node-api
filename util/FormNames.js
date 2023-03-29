@@ -48,6 +48,8 @@ module.exports.FORMIDs = {
     "GFC":2,
     "PTO":3,
     "AnnualAccount": 4,
+    "twentyEightSlb": 5,
+    'dur':6
 }
 
 
@@ -59,7 +61,10 @@ module.exports.FORM_LEVEL = {
 
 
 module.exports.MODEL_PATH = {
-    4: "AnnualAccounts",
     1: "OdfFormCollection",
-    2: "GfcFromCollection"
+    2: "GfcFromCollection",
+    3: "PropertyTaxOp",
+    4: "AnnualAccounts",
+    5: "TwentyEightSlbsForm",
+    6: "UtilizationReport"
 }
