@@ -14,9 +14,10 @@ const GFC = require('../../models/GfcFormCollection')
 const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
-const {calculateStatus} = require('../CommonActionAPI/service')
+const {calculateStatus, calculateStatusMaster} = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
+const {  YEAR_CONSTANTS } = require('../../util/FormNames');
 
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
@@ -38,6 +39,13 @@ let FormModelMapping = {
     "PropertyTaxOp" : ObjectId("62aa1ceac9a98b2254632a92")
     
 }
+let FormModelMapping_Master = {
+  "AnnualAccountData": ObjectId("63ff31d63ae39326f4b2f460"),
+  "UtilizationReport": ObjectId("63ff31d63ae39326f4b2f462"),
+  "TwentyEightSlbForm" : ObjectId("63ff31d63ae39326f4b2f46e"),
+  "PropertyTaxOp" : ObjectId("63ff31d63ae39326f4b2f464")
+}
+
 let FormModelMapping_State = {
     "GrantTransferCertificate": ObjectId("62c552c52954384b44b3c386"),
     "PropertyTaxFloorRate": ObjectId("62c5534e2954384b44b3c38a"),
@@ -179,6 +187,21 @@ const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole, vie
 
 }
 
+const findStatusAndTooltipMaster = (params)=>{
+
+    let {formData, formId,loggedInUserRole, viewFor} = params;
+    let status = formData.currentFormStatus
+    let tooltip = calculateStatusMaster(status);
+    let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
+
+    return {
+        [formId]: {
+            tooltip: tooltip,
+            tick: tick
+        }
+    }
+}
+
 module.exports.get = catchAsync(async (req, res) => {
     let user = req.decoded;
     let role = req.query.role;
@@ -211,25 +234,36 @@ module.exports.get = catchAsync(async (req, res) => {
         isUA = ulbInfo.isUA
         FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
         FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
-        FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1cc9c9a98b2254632a8e") : ObjectId("62aa1dadc9a98b2254632aa6")
+        FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1d4fc9a98b2254632a96") : ObjectId("62aa1dadc9a98b2254632aa6")
         
-
+        FormModelMapping_Master["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("63ff31d63ae39326f4b2f467") : ObjectId("63ff31d63ae39326f4b2f46b")
+        FormModelMapping_Master["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("63ff31d63ae39326f4b2f466") : ObjectId("63ff31d63ae39326f4b2f46a")
+        FormModelMapping_Master["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("63ff31d63ae39326f4b2f465") : ObjectId("63ff31d63ae39326f4b2f469")
+        
         let condition = {
             ulb: ObjectId(_id),
         }
+        let designYearCond  = "design_year"
+
         let formArr = [AnnualAccounts, DUR, ODF, GFC, PFMS, SLB28, PropertyTaxOp]
        for(el of formArr) {
             if (el == DUR) {
                 delete condition['design_year'];
                 condition['designYear'] = ObjectId(year)
+                designYearCond = "designYear";
             } else {
                 delete condition['designYear'];
                 condition['design_year'] = ObjectId(year)
+                designYearCond = "design_year";
+
             }
             let formData = await el.findOne(condition).lean()
             if (formData) {
-
+              if(formData[designYearCond].toString() === YEAR_CONSTANTS['23_24']){
+                output.push(findStatusAndTooltipMaster({formData,formId: FormModelMapping_Master[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
+              }else{
                 output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role, role))
+             }
             }
         }
     }else if (role == 'STATE') {
@@ -391,7 +425,7 @@ if(role=="ULB"){
     })
 }   
 
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         data: tempData,
         card: role == "ULB" ? cardArr : []

@@ -47,10 +47,16 @@ module.exports.FORMIDs = {
     "ODF": 1,
     "GFC":2,
     "PTO":3,
-    "AnnualAccount": 4,
+    'dur':4,
+    "AnnualAccount": 5,
+    "twentyEightSlb": 6,
 }
 
-
+module.exports.FORM_LEVEL_SHORTKEY = {
+    form: "form_level",
+    tab: "tab_level",
+    question: "question_level"
+}
 module.exports.FORM_LEVEL = {
     "form": 1,
     "tab": 2,
@@ -59,7 +65,10 @@ module.exports.FORM_LEVEL = {
 
 
 module.exports.MODEL_PATH = {
-    4: "AnnualAccounts",
     1: "OdfFormCollection",
-    2: "GfcFromCollection"
+    2: "GfcFromCollection",
+    3: "PropertyTaxOp",
+    4: "UtilizationReport",
+    5: "AnnualAccounts",
+    6: "TwentyEightSlbsForm",
 }

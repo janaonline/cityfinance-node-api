@@ -132,6 +132,7 @@ module.exports.get = async (req, res) => {
     let newFilter = await Service.mapFilterNew(filter);
     if (Number(req.query.status) === MASTER_STATUS['Not Started']) {// to apply not started filter
       Object.assign(newFilter, { formData: "" });
+      delete newFilter['formData.currentFormStatus']
     }  
     let folderName = formTab?.folderName;
     let params = {collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName}
