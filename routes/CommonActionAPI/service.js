@@ -16,7 +16,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -3035,6 +3035,20 @@ async function nestedObjectParser(data,req){
     }
 }
 
+function getUlbAccessibleYears(ulbData,userYear){
+    try{
+      let decade = '20'
+      let currentYear = userYear.year
+      let prevYearArr = currentYear.split("-")
+      let prevYear = `${prevYearArr[0]-1}-${prevYearArr[1]-1}`
+      let ulbVariable = ULB_ACCESSIBLE_YEARS[prevYear]
+      return ulbData[ulbVariable]
+    }
+    catch(err){
+      console.log("error in getUlbAccessibleYears ::: ",err.message)
+    }
+  }
+
 module.exports.decideDisabledFields = (form,formType)=>{
     let formStatus = calculateStatus(form.status, form.actionTakenByRole,form.isDraft,
         formType)
@@ -3047,6 +3061,7 @@ module.exports.decideDisabledFields = (form,formType)=>{
     }
     
 }
+module.exports.getUlbAccessibleYears = getUlbAccessibleYears
 module.exports.calculateStatus = calculateStatus
 module.exports.nestedObjectParser = nestedObjectParser
 module.exports.clearVariables = clearVariables

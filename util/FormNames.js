@@ -23,6 +23,13 @@ module.exports.YEAR_CONSTANTS = {
 }
 
 
+module.exports.ULB_ACCESSIBLE_YEARS = {
+    "2021-22":"access_2122",
+    "2022-23":"access_2223",
+    "2023-24":"access_2324"
+}
+
+
 module.exports.MASTER_STATUS = {
     "Not Started": 1,
     "In Progress": 2,
