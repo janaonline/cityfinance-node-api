@@ -14,7 +14,7 @@ const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
 const Response = require("../../service").response;
-const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
+const {createAndUpdateFormMaster, getMasterForm} =  require('../../routes/CommonFormSubmission/service')
 const {ModelNames} =  require('../../util/15thFCstatus');
 const { years } = require('../../service/years');
 
@@ -538,6 +538,11 @@ module.exports.getForm = async (req, res,next) => {
               
         }
         }
+        if (design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole} ;
+          let canTakeActionOnMasterForm =  await getMasterForm(params);
+          Object.assign(formData, canTakeActionOnMasterForm);
+        }else{
           Object.assign(formData, {
             canTakeAction: canTakenAction(
               formData["status"],
@@ -547,6 +552,7 @@ module.exports.getForm = async (req, res,next) => {
               userRole
             ),
           });
+        }
 
 
           formData["data"].forEach((el) => {
