@@ -15,7 +15,8 @@ const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
 const Response = require("../../service").response;
 const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
-const {ModelNames} =  require('../../util/15thFCstatus')
+const {ModelNames} =  require('../../util/15thFCstatus');
+const { years } = require('../../service/years');
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -368,6 +369,8 @@ module.exports.getForm = async (req, res,next) => {
           ulb: data.ulb,
           design_year: prevYearData._id,
         }).lean();
+        
+
         /* Checking the host header and setting the host variable to the appropriate value. */
         let host = "";
         if (req.headers.host === BackendHeaderHost.Demo) {
@@ -376,6 +379,11 @@ module.exports.getForm = async (req, res,next) => {
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
         if(ulbData.access_2122){
+          if(data.design_year === years['2023-24']){
+            var prevFormData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
+            masterFormData = prevFormData
+            console.log("masterFormData ::: ",prevFormData)
+          }
         if (masterFormData) {
           if (masterFormData.history.length > 0) {
             masterFormData =
