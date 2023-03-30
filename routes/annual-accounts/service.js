@@ -632,7 +632,7 @@ exports.createUpdate = async (req, res) => {
             MASTER_STATUS["Approved by MoHUA"],
             MASTER_STATUS["Under Review by MoHUA"],
             MASTER_STATUS["Under Review by State"],
-          ].includes(formData2324.status)
+          ].includes(formCurrentStatus.status)
         ) {
           return res.status(200).json({
             status: true,
