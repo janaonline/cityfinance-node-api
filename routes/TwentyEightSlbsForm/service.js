@@ -342,6 +342,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
 
 module.exports.getForm = async (req, res,next) => {
     try {
+      
         let userRole = req.decoded.role
         const data = req.query;
         const condition = {};
@@ -378,40 +379,34 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
-        let isDraft = false
+        let isDraft = true
         if(ulbData.access_2122){
           if(data.design_year === years['2023-24']){
             var prevFormData = await TwentyEightSlbsForm.findOne({
               ulb: data.ulb,
               design_year: prevYearData._id,
             }, { history: 0} ).lean()
-            prevFormData.history = []
-            masterFormData = prevFormData
-            isDraft = masterFormData.isDraft
-
+            if(prevFormData){
+              prevFormData.history = []
+              masterFormData = prevFormData
+              isDraft = masterFormData.isDraft
+            }
+            
             
 
           }
         if (masterFormData) {
           isDraft = !masterFormData.isSubmit
-          if (masterFormData.history.length > 0) {
+          if (masterFormData?.history?.length > 0) {
             masterFormData =
-              masterFormData.history[masterFormData.history.length - 1];
+              masterFormData.history[masterFormData?.history.length - 1];
           }
           let status = calculateStatus(
             masterFormData.status,
             masterFormData.actionTakenByRole,
-            !masterFormData.isSubmit,
+            isDraft,
             "ULB"
           );
-          if(data.design_year === years['2023-24']){
-            status = calculateStatus(
-            masterFormData.status,
-            masterFormData.actionTakenByRole,
-            masterFormData.isDraft,
-            "ULB"
-          );
-          }
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
           if (
@@ -453,8 +448,8 @@ module.exports.getForm = async (req, res,next) => {
           // });
         }
         }
+       
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
-        
         let slbDataNotFilled;
         if (formData) {
           let slb28FormStatus = calculateStatus(

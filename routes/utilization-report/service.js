@@ -9,13 +9,16 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields } = require('../CommonActionAPI/service')
+const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields,getUlbAccessibleYears } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames } = require('../../util/FormNames');
+const { FormNames,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
 const {ModelNames} =  require('../../util/15thFCstatus')
 const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
+
+
+
 
 function update2223from2122() {
 
@@ -37,7 +40,7 @@ function checkForCalculations(reports){
     let exp = parseInt(reports.grantPosition.expDuringYr)
     let projectSum = 0
     if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseInt(a.cost) + parseInt(b.cost))
+      projectSum = reports.projects.reduce((a,b)=> parseInt(a.expenditure) + parseInt(b.expenditure))
     }
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
@@ -46,7 +49,7 @@ function checkForCalculations(reports){
     }
     let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseInt(a.grantUtilised) + parseInt(b.grantUtilised))
     let sumWmSm = expWm + expSwm
-    if(closingBal < 1){
+    if(closingBal < 0){
       validator.errors.push(false)
       validator.messages.push(validationMessages['negativeBal'])
     }
@@ -54,7 +57,7 @@ function checkForCalculations(reports){
       validator.errors.push(false)
       validator.messages.push(validationMessages['expWmSwm'])
     }
-    if(exp < projectSum){
+    if(exp != projectSum){
       validator.errors.push(false)
       validator.messages.push(validationMessages['projectExpMatch'])
     }
@@ -375,7 +378,8 @@ module.exports.createOrUpdate = async (req, res) => {
       if (currentSavedUtilRep) {//final submit already draft form
         req.body['ulbSubmit'] = new Date();
         let body = req.body
-        if(!req.body.projects || req.body.projects.length === 0){
+        
+        if(req.body.projects.length === 0){
           body.projects = currentSavedUtilRep.projects
         }
         let validation = await checkForCalculations(body)
@@ -903,7 +907,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   let ulb = req.query.ulb;
   let design_year = req.query.design_year;
   let role = req.decoded.role;
-
+  
   if (!ulb || !design_year) {
     return res.status(400).json({
       success: false,
@@ -911,6 +915,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
     })
   }
   let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
+  
   /* Checking if the user has access to the form. */
   // if(!ulbData.access_2122){
   //   return res.status(200).json({
@@ -921,6 +926,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   // }
   let userData = await User.findOne({ isNodalOfficer: true, state: ulbData.state })
   let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean()
+  let ulbAccess = getUlbAccessibleYears(ulbData,currentYear)
   // current year
   let currentYearVal = currentYear['year']
   // find Previous year
@@ -928,7 +934,6 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
 
   prevYear = await Year.findOne({ year: prevYearVal }).lean()
-
   let prevDataQuery = MasterForm.findOne({
     ulb: ObjectId(ulb),
     design_year: prevYear._id
@@ -954,12 +959,23 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   //     data: utilReportObject(),
   //   });
   // }
-  let status = ''
+  let status = ''  
   if (!prevData) {
+    
     status = 'Not Started'
+    if( design_year  === years['2023-24'] && prevUtilReport ){
+      status = prevUtilReport.status
+    }
+    if(!status){
+      status = 'Not Started'
+    }
+
   } else {
     prevData = prevData.history.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
+  }
+  if(design_year  === years['2023-24'] && prevUtilReport){
+    status = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isSubmit, "ULB")
   }
   let host = "";
   if (req.headers.host === BackendHeaderHost.Demo) {
@@ -967,11 +983,12 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   }
   req.headers.host = host !== "" ? host : req.headers.host;
   let obj = {}
-  if (!ulbData.access_2122) {
+  if (!ulbAccess) {
     obj['action'] = 'not_show';
     obj['url'] = ``;
   }
   else {
+    console.log("status :: ",status)
     if ([FORM_STATUS.Under_Review_By_MoHUA, FORM_STATUS.Approved_By_MoHUA, FORM_STATUS.Approved_By_State].includes(status)) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
@@ -999,7 +1016,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
 
     /* Checking if the ulbData.access_2122 is not true, then it is setting the
        unUtilizedPrevYr to 0. */
-    !ulbData.access_2122 ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : "";
+    !ulbAccess ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : "";
 
     /* The code is checking if the action property of the obj object is equal to "note". If it
     is, then it is assigning the fetchedData object to the obj object. */
@@ -1026,7 +1043,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
-    sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
+    sampleData.grantPosition.unUtilizedPrevYr = ulbAccess ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
     sampleData = sampleData.toObject()
     // sampleData = sampleData.lean()
     sampleData['url'] = obj['url']
