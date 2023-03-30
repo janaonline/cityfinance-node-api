@@ -57,7 +57,8 @@ module.exports.changeResponse = async(req,res,next) =>{
             }
           ]
         if(!req.form){
-            return res.status(200).json(req.obj)
+            Object.assign(response,req.obj)
+            // return res.status(200).json(req.obj)
         }
         let yearId = req.query.design_year
         let year = getKeyByValue(years,yearId)
