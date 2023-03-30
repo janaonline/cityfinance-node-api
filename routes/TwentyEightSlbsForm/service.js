@@ -382,7 +382,7 @@ module.exports.getForm = async (req, res,next) => {
           if(data.design_year === years['2023-24']){
             var prevFormData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
             masterFormData = prevFormData
-            console.log("masterFormData ::: ",prevFormData)
+
           }
         if (masterFormData) {
           if (masterFormData.history.length > 0) {

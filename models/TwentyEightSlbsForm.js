@@ -85,7 +85,7 @@ const TwentyEightSlbFormSchema = new Schema({
     ulbSubmit: {type: Date},
     currentFormStatus:{
         type: Number,
-        required: true
+        required: false
     },
     rejectReason: {type: String, default:""},
     
