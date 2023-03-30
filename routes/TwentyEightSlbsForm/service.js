@@ -433,7 +433,6 @@ module.exports.getForm = async (req, res,next) => {
             return
           }
         } else {
-          console.log("2")
           req.json = {
               status: true,
               show: true,
@@ -576,6 +575,7 @@ module.exports.getForm = async (req, res,next) => {
           });
           let groupedData = groupByKey(formData["data"], "type");
           formData["data"] = groupedData;
+          
           req.form = formData
           req.slbDataNotFilled = slbDataNotFilled
           next()

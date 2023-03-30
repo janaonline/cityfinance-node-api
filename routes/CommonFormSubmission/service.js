@@ -354,7 +354,11 @@ module.exports.getMasterForm = async (params) => {
   }
 }
 
-
+let validationMessages = {
+  "projectExpMatch":"Sum of all project wise expenditure amount does not match total expenditure amount provided in the XVFC summary section. Kindly recheck the amounts.",
+  "expWmSwm":" The total expenditure in the component wise grants must not exceed the amount of expenditure incurred during the year.",
+  "negativeBal":"Closing balance is negative because Expenditure amount is greater than total tied grants amount available. Please recheck the amounts entered."
+}
 
 function checkForCalculations(reports){
   let validator = {

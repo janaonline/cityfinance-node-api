@@ -2227,9 +2227,9 @@ function handledateCase(question,obj,flattedForm){
         
         let mainKey = question.shortKey
         if(flattedForm[mainKey] === undefined){
-            flattedForm[mainKey] = new Date()
+            flattedForm[mainKey] = ""
         }
-        flattedForm[mainKey] = flattedForm[mainKey].toISOString().split("T")[0]
+        flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
@@ -2984,11 +2984,10 @@ async function nestedObjectParser(data,req){
             let temp = {}
             if(item.input_type === "20" ||  item.input_type === "29"){
                 pointer = await handleChildValues({...pointer},item,req)
-                // console.log("pointer :: ",pointer.data[1])
                 Object.assign(result,pointer)
             }
             else{
-                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
+                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
                     item.answer = [
                         {
                             "label":"",
@@ -3016,17 +3015,18 @@ async function nestedObjectParser(data,req){
     }
 }
 
-function getUlbAccessibleYears(ulbData,userYear){
+function checkIfUlbHasAccess(ulbData,userYear){
     try{
-      let decade = '20'
+      let ulbVariable = "access_"
       let currentYear = userYear.year
       let prevYearArr = currentYear.split("-")
-      let prevYear = `${prevYearArr[0]-1}-${prevYearArr[1]-1}`
-      let ulbVariable = ULB_ACCESSIBLE_YEARS[prevYear]
+      let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
+      ulbVariable += prevYear
       return ulbData[ulbVariable]
     }
     catch(err){
-      console.log("error in getUlbAccessibleYears ::: ",err.message)
+      console.log("error in checkIfUlbHasAccess ::: ",err.message)
+      return false
     }
   }
 
@@ -3042,7 +3042,7 @@ module.exports.decideDisabledFields = (form,formType)=>{
     }
     
 }
-module.exports.getUlbAccessibleYears = getUlbAccessibleYears
+module.exports.checkIfUlbHasAccess = checkIfUlbHasAccess
 module.exports.calculateStatus = calculateStatus
 module.exports.nestedObjectParser = nestedObjectParser
 module.exports.clearVariables = clearVariables

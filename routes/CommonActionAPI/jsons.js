@@ -13,6 +13,7 @@ let DurProjectJson = {
         "child": [],
         "parent": [],
         "pattern": "",
+        "required": true,
         "validation": [
             {
                 "error_msg": "",
@@ -116,6 +117,7 @@ let DurProjectJson = {
         "viewSequence": "22",
         "child": [],
         "parent": [],
+        "required": true,
         "validation": [
             {
                 "_id": "1",
@@ -176,6 +178,7 @@ let DurProjectJson = {
         "viewSequence": "23",
         "child": [],
         "parent": [],
+        "required": true,
         "validation": [
             {
                 "_id": "24",
@@ -241,6 +244,7 @@ let DurProjectJson = {
         "viewSequence": "24",
         "child": [],
         "parent": [],
+        "required": true,
         "validation": [
             {
                 "error_msg": "",
@@ -351,6 +355,7 @@ let DurProjectJson = {
         "viewSequence": "26",
         "child": [],
         "parent": [],
+        "required": true,
         "validation": [
             {
                 "error_msg": "",
@@ -427,6 +432,7 @@ let DurProjectJson = {
         "viewSequence": "27",
         "child": [],
         "parent": [],
+        "required": true,
         "validation": [
             {
                 "error_msg": "",
@@ -504,6 +510,7 @@ let DurProjectJson = {
         "viewSequence": "28",
         "child": [],
         "parent": [],
+        "required": true,
         "validation": [
             {
                 "error_msg": "",
