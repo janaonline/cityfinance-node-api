@@ -14,6 +14,8 @@ const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
+const {ModelNames} =  require('../../util/15thFCstatus')
+const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
 
 function update2223from2122() {
 
@@ -174,6 +176,7 @@ module.exports.createOrUpdate = async (req, res) => {
     formData = { ...data };
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
+    let currentMasterFormStatus = req.body['status']
     if (req.decoded.role == 'ULB') {
       formData['status'] = 'PENDING'
     }
@@ -200,7 +203,17 @@ module.exports.createOrUpdate = async (req, res) => {
     if (designYear) {
       formData["designYear"] = ObjectId(designYear);
     }
-
+    if (formData.designYear.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+      formData.status = currentMasterFormStatus;
+      let params = {
+        modelName: ModelNames["dur"],
+        formData,
+        res,
+        actionTakenByRole: req.body.actionTakenByRole,
+        actionTakenBy: req.body.actionTakenBy
+      };
+      return await createAndUpdateFormMaster(params);
+    }
 
     const submittedForm = await UtilizationReport.findOne(condition);
     if (designYear == "606aaf854dff55e6c075d219") {
@@ -359,7 +372,7 @@ module.exports.createOrUpdate = async (req, res) => {
         );
       }
       let savedData;
-      if (currentSavedUtilRep) {
+      if (currentSavedUtilRep) {//final submit already draft form
         req.body['ulbSubmit'] = new Date();
         let body = req.body
         if(!req.body.projects || req.body.projects.length === 0){
