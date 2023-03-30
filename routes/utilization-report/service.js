@@ -941,12 +941,23 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   //     data: utilReportObject(),
   //   });
   // }
-  let status = ''
+  let status = ''  
   if (!prevData) {
+    
     status = 'Not Started'
+    if( design_year  === years['2023-24'] && prevUtilReport ){
+      status = prevUtilReport.status
+    }
+    if(!status){
+      status = 'Not Started'
+    }
+
   } else {
     prevData = prevData.history.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
+  }
+  if(design_year  === years['2023-24'] && prevUtilReport){
+    status = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isSubmit, "ULB")
   }
   let host = "";
   if (req.headers.host === BackendHeaderHost.Demo) {
@@ -959,6 +970,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
     obj['url'] = ``;
   }
   else {
+    console.log("status :: ",status)
     if ([FORM_STATUS.Under_Review_By_MoHUA, FORM_STATUS.Approved_By_MoHUA, FORM_STATUS.Approved_By_State].includes(status)) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
