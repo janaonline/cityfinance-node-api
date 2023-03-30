@@ -109,7 +109,7 @@ const UtilizationReportSchema = new Schema(
     designYear: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     status: {
       type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED"],
+      enum: ["PENDING", "APPROVED", "REJECTED",""],
       default: "PENDING",
     },
     actionTakenBy: {
@@ -133,6 +133,10 @@ const UtilizationReportSchema = new Schema(
     isActive: { type: Boolean, default: 1 },
     isDraft: { type: Boolean, default: true },
     declaration:{ type: Boolean, default: 0 },
+    currentFormStatus:{
+      type: Number,
+      required: true
+    }
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
