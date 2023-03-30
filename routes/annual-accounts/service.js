@@ -627,7 +627,7 @@ exports.createUpdate = async (req, res) => {
             MASTER_STATUS["Approved by MoHUA"],
             MASTER_STATUS["Under Review by MoHUA"],
             MASTER_STATUS["Under Review by State"],
-          ].includes(formData2324.status)
+          ].includes(formCurrentStatus.status)
         ) {
           return res.status(200).json({
             status: true,
@@ -1815,7 +1815,7 @@ exports.getAccounts = async (req, res,next) => {
       status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft, "ULB")
     }
     let annualAccountData = {}
-    console.log(status)
+    
     let dataCollection = {}
     dataCollection = await DataCollection.findOne({ ulb: ObjectId(ulb) }).lean()
     let dataSubmittedByOpenPage = false
