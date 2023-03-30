@@ -34,13 +34,13 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             }
           ]
         if(latestYear){
-            if(req.form.url){
-                response.success = true
-                response.url = req.form.url
-                response.message =req.form.url
-                response.msg = req.form.url
-                return res.status(400).json(response)
-            }
+            // if(req.form.url){
+            //     response.success = true
+            //     response.url = req.form.url
+            //     response.message =req.form.url
+            //     response.msg = req.form.url
+            //     return res.status(400).json(response)
+            // }
             if(!jsonFormId){
                 response.message = "formId is required"
                 repsonse.success = false

@@ -33,10 +33,10 @@ module.exports.changeApiGetForm = async(req,res)=>{
             }
         ]
         if(latestYear){
-            if(req.json){
-                Object.assign(response,req.json)
-                return res.status(200).json(response)
-            }
+            // if(req.json){
+            //     Object.assign(response,req.json)
+            //     return res.status(200).json(response)
+            // }
             let formStatus = false
             if(form){
                 formStatus = decideDisabledFields(form,"ULB")
