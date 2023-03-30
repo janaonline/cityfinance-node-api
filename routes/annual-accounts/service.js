@@ -1658,7 +1658,7 @@ exports.getAccounts = async (req, res,next) => {
       status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft, "ULB")
     }
     let annualAccountData = {}
-    console.log(status)
+    
     let dataCollection = {}
     dataCollection = await DataCollection.findOne({ ulb: ObjectId(ulb) }).lean()
     let dataSubmittedByOpenPage = false

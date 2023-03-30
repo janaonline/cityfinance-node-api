@@ -5,7 +5,7 @@ let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 const {getKeyByValue} = require("../../util/masterFunctions")
 const FormsJson = require("../../models/FormsJson");
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const {MASTER_STATUS_ID} = require("../../util/FormNames")
 const getPreviousYearsID = (year,from)=>{
     try{
         let yearToDegrade = from ==2 ? 1 : 0
@@ -30,7 +30,6 @@ module.exports.changePayload = async(req,res,next)=>{
             let unAuditedYear = getPreviousYearsID(year,1)
             payload.audited.year = auditedYear
             payload.unAudited.year = unAuditedYear
-            console.log("payload ::; ",payload.audited)
             Object.assign(req.body,payload)
             delete req.body['data']
         }
@@ -53,9 +52,13 @@ module.exports.changeResponse = async(req,res,next) =>{
               "_id": req?.form?._id ,
               "formId": req.query.formId,
               "language":[],
-              "canTakeAction":false
+              "canTakeAction":false,
+              "status":MASTER_STATUS_ID[parseInt(req.form.status)] || ""
             }
           ]
+        if(!req.form){
+            return res.status(200).json(req.obj)
+        }
         let yearId = req.query.design_year
         let year = getKeyByValue(years,yearId)
         if(req.form && req.form.isDraft && req.form.isDraft === ""){
