@@ -537,7 +537,7 @@ module.exports.getForm = async (req, res,next) => {
               
         }
         }
-        if (design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+        if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
           let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole} ;
           let canTakeActionOnMasterForm =  await getMasterForm(params);
           Object.assign(formData, canTakeActionOnMasterForm);

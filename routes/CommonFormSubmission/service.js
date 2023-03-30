@@ -335,12 +335,13 @@ module.exports.createAndUpdateFormMaster = async (params) => {
 };
 
 
+/* Checking if the user can take action on the form or not. */
 module.exports.getMasterForm = async (params) => {
   try {
     let { modelName, currentFormStatus ,formType, actionTakenByRole} = params;
     
-    switch(modelName){
-      case ModelNames['twentyEightSlbs']:
+    switch(true){
+      case [ModelNames['twentyEightSlbs'], ModelNames['dur']].includes(modelName):
           let params = {
             status: currentFormStatus,
             formType,
@@ -350,7 +351,7 @@ module.exports.getMasterForm = async (params) => {
         break;
     }
   } catch (error) {
-    
+    return Response.BadRequest(res, {}, error.message);
   }
 }
 
