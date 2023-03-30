@@ -356,8 +356,8 @@ module.exports.getForm = async (req, res,next) => {
           _id: ObjectId(data.ulb)
         }).lean();
 
-        condition['ulb'] = data.ulb;
-        condition['design_year'] = data.design_year;
+        condition['ulb'] = ObjectId(data.ulb);
+        condition['design_year'] = ObjectId(data.design_year);
       let yearData =   await Year.findOne({
             _id : ObjectId(data.design_year)
         }).lean()
@@ -378,10 +378,18 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
+        let isDraft = !masterFormData.isSubmit
         if(ulbData.access_2122){
           if(data.design_year === years['2023-24']){
-            var prevFormData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
+            var prevFormData = await TwentyEightSlbsForm.findOne({
+              ulb: data.ulb,
+              design_year: prevYearData._id,
+            }, { history: 0} ).lean()
+            prevFormData.history = []
             masterFormData = prevFormData
+            isDraft = masterFormData.isDraft
+
+            
 
           }
         if (masterFormData) {
@@ -392,9 +400,17 @@ module.exports.getForm = async (req, res,next) => {
           let status = calculateStatus(
             masterFormData.status,
             masterFormData.actionTakenByRole,
-            !masterFormData.isSubmit,
+            isDraft,
             "ULB"
           );
+          if(data.design_year === years['2023-24']){
+            status = calculateStatus(
+            masterFormData.status,
+            masterFormData.actionTakenByRole,
+            masterFormData.isDraft,
+            "ULB"
+          );
+          }
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
           if (
