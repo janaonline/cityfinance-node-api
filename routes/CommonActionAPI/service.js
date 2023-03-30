@@ -2852,7 +2852,6 @@ const handleChildValues = async(childObj,item,req)=>{
 async function fillCategoryTable(){
     let promise = await new Promise(async(resolve,reject)=>{
         try{
-            console.log("---")
             let databaseArr = await moongose.model('Category').find({}).lean()
             for(let db of databaseArr){
                 categoryTable[db.name.toString()] = db._id
