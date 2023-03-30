@@ -2984,11 +2984,10 @@ async function nestedObjectParser(data,req){
             let temp = {}
             if(item.input_type === "20" ||  item.input_type === "29"){
                 pointer = await handleChildValues({...pointer},item,req)
-                // console.log("pointer :: ",pointer.data[1])
                 Object.assign(result,pointer)
             }
             else{
-                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
+                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
                     item.answer = [
                         {
                             "label":"",
