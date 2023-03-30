@@ -394,7 +394,7 @@ module.exports.getForm = async (req, res,next) => {
           }
         if (masterFormData) {
           isDraft = !masterFormData.isSubmit
-          if (masterFormData.history.length > 0) {
+          if (masterFormData?.history?.length > 0) {
             masterFormData =
               masterFormData.history[masterFormData.history.length - 1];
           }
