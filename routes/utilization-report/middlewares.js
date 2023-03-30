@@ -19,7 +19,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         form['ulbName'] = name
         delete form['projects']
         let latestYear = !outDatedYears.includes(year)
-        let jsonFormId = req.query.formId
+        let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
         let formJson = await FormsJson.findOne(condition).lean()
         let obj = formJson ? formJson.data : {}
@@ -29,11 +29,18 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
               "formId": req.query.formId,
               "language":[],
               "canTakeAction":form?.canTakeAction || false,
-              "isDraft":form?.isDraft || true,
+              "isDraft":form.isDraft !== undefined ? form.isDraft : true,
               "status":form?.status || null
             }
           ]
         if(latestYear){
+            // if(req.form.url){
+            //     response.success = true
+            //     response.url = req.form.url
+            //     response.message =req.form.url
+            //     response.msg = req.form.url
+            //     return res.status(400).json(response)
+            // }
             if(!jsonFormId){
                 response.message = "formId is required"
                 repsonse.success = false
@@ -48,6 +55,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
+            obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
             response.success = true
             response.data = responseData

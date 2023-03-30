@@ -24,7 +24,7 @@ let DurProjectJson = {
         "max": 50,
         "input_type": "1",
         "weightage": [],
-        "value": "proj2",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "1",
@@ -40,11 +40,11 @@ let DurProjectJson = {
         "forParentValue": 2,
         "isSelectValue": false,
         "previousValue": "",
-        "modelValue": "proj2",
+        "modelValue": "",
         "selectedValue": [
             {
                 "label": "",
-                "textValue": "proj2",
+                "textValue": "",
                 "value": ""
             }
         ],
@@ -52,7 +52,7 @@ let DurProjectJson = {
             "answer": [
                 {
                     "label": "",
-                    "textValue": "proj2",
+                    "textValue": "",
                     "value": ""
                 }
             ],

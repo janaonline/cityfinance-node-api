@@ -396,7 +396,7 @@ module.exports.getForm = async (req, res,next) => {
           isDraft = !masterFormData.isSubmit
           if (masterFormData?.history?.length > 0) {
             masterFormData =
-              masterFormData.history[masterFormData.history.length - 1];
+              masterFormData.history[masterFormData?.history.length - 1];
           }
           let status = calculateStatus(
             masterFormData.status,

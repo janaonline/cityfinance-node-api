@@ -94,7 +94,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
     // })
     // let jsonFormType = sideMenuObj.collectionName
     // let formJson = await FormsJson.findOne({ type: jsonFormType }).lean()
-    let jsonFormId = req.query.formId ? parseInt(req.query.formId) : null
+    let jsonFormId = req.query.formId ? parseInt(req.query.formId) : 0
     let design_year = req.query.design_year
     let formJson = await FormsJson.findOne({ formId: jsonFormId ,design_year:ObjectId(design_year) }).lean()
     let obj = formJson ? formJson.data : {}
@@ -119,6 +119,9 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       }
       else{
         obj = await mutateJson(obj,keysToBeDeleted,req.query,role)
+        if(obj[0].isDraft == "" || obj[0].isDraft === undefined){
+          obj[0].isDraft = true
+        }
       }
       responseData[0]['language'] = obj
       responseStatus = 200
