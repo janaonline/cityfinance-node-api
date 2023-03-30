@@ -378,7 +378,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
-        let isDraft = !masterFormData.isSubmit
+        let isDraft = false
         if(ulbData.access_2122){
           if(data.design_year === years['2023-24']){
             var prevFormData = await TwentyEightSlbsForm.findOne({
@@ -393,6 +393,7 @@ module.exports.getForm = async (req, res,next) => {
 
           }
         if (masterFormData) {
+          isDraft = !masterFormData.isSubmit
           if (masterFormData.history.length > 0) {
             masterFormData =
               masterFormData.history[masterFormData.history.length - 1];
@@ -400,7 +401,7 @@ module.exports.getForm = async (req, res,next) => {
           let status = calculateStatus(
             masterFormData.status,
             masterFormData.actionTakenByRole,
-            isDraft,
+            !masterFormData.isSubmit,
             "ULB"
           );
           if(data.design_year === years['2023-24']){
