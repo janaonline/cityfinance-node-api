@@ -3497,11 +3497,6 @@ function computeQuery(params) {
         },
       },
       {
-        $match: {
-          "fiscalrankings.isDraft": true,
-        },
-      },
-      {
         $lookup: {
           from: "fiscalrankingmappers",
           let: {
