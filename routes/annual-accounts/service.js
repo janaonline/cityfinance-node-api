@@ -628,7 +628,7 @@ exports.createUpdate = async (req, res) => {
             return Response.OK(res, {}, "Form Submitted");
           }
         } else if (
-          ![
+          [
             MASTER_STATUS["Approved by MoHUA"],
             MASTER_STATUS["Under Review by MoHUA"],
             MASTER_STATUS["Under Review by State"],
