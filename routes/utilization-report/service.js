@@ -225,7 +225,9 @@ module.exports.createOrUpdate = async (req, res) => {
         actionTakenBy: req.body.actionTakenBy
       };
       let response = await createAndUpdateFormMaster(params);
-      await updateForNextForms(designYear,ulb,formData)
+      if(!formData.isDraft){
+        await updateForNextForms(designYear,ulb,formData)
+      }
       return response
     }
 
@@ -426,7 +428,7 @@ module.exports.createOrUpdate = async (req, res) => {
       }
       
       if (savedData) {
-        await updateForNextForms(designYear,ulb,formData)
+        // await updateForNextForms(designYear,ulb,formData)
         return res.status(200).json({
           msg: "Utilization Report Submitted Successfully!",
           isCompleted: !savedData.isDraft,
