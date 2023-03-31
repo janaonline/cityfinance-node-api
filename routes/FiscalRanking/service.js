@@ -2462,3 +2462,4 @@ module.exports.createForm = catchAsync(async (req, res) => {
   }
   return res.status(500).json(response)
 })
+module.exports.checkUndefinedValidations = checkUndefinedValidations;
