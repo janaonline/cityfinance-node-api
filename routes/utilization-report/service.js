@@ -44,32 +44,30 @@ function checkForCalculations(reports){
     errors : []
   }
   try{
-    let exp = parseInt(reports.grantPosition.expDuringYr)
+    let exp = parseFloat(reports.grantPosition.expDuringYr)
     let projectSum = 0
     if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseInt(a) + parseInt(b.expenditure),0)
+      projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
     }
-    for( let obj of reports?.projects){
-      projectSum += obj.expenditure
-    }
+    
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
     for(let a of reports.categoryWiseData_wm){
-      expWm += parseInt(a.grantUtilised)
+      expWm += parseFloat(a.grantUtilised)
     }
-    let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseInt(a.grantUtilised) + parseInt(b.grantUtilised))
+    let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
     let sumWmSm = expWm + expSwm
     if(closingBal < 0){
       console.log("1")
       validator.errors.push(false)
       validator.messages.push(validationMessages['negativeBal'])
     }
-    if(sumWmSm != exp){
+    if(sumWmSm !== exp){
       console.log("2")
       validator.errors.push(false)
       validator.messages.push(validationMessages['expWmSwm'])
     }
-    if(exp != projectSum){
+    if(exp !== projectSum){
       console.log("3")
       validator.errors.push(false)
       validator.messages.push(validationMessages['projectExpMatch'])
@@ -89,7 +87,6 @@ function checkForCalculations(reports){
   }
   return validator
 }
-
 const BackendHeaderHost = {
   Demo: "democityfinanceapi.dhwaniris.in",
   Staging: "staging.cityfinance.in",
@@ -335,7 +332,7 @@ module.exports.createOrUpdate = async (req, res) => {
               let project = formData.projects[i];
               project.modifiedAt = form.projects[i].modifiedAt;
               project.createdAt = form.projects[i].createdAt;
-              sum += parseInt(project.cost)
+              sum += parseFloat(project.cost)
               if (project.category) {
                 project.category = ObjectId(project.category)
               }
@@ -1439,7 +1436,6 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
       projectObj.disableFields = formStatus
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()
-    // console.log(">>>>>>",formJson)
     let projectJson = {...formJson}
     let questions = projectJson.data[index].question.filter(item => item.shortKey === "projectDetails_tableView_addButton")
     projectJson.data[0].question = questions
@@ -1488,5 +1484,4 @@ async function getDataSet(ulb,prevYear,designYear) {
   catch(err){
     console.log("error in getDataSet :::: ",err.message)
   }
- 
 }
