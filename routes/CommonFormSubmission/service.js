@@ -392,7 +392,6 @@ function checkForCalculations(reports){
       validator.errors.push(false)
       validator.messages.push(validationMessages['projectExpMatch'])
     }
-
     if(validator.errors.every(item => item === true)){
       validator.valid = true
     }
