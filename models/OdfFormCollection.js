@@ -65,6 +65,7 @@ const OdfFormCollectionSchema = new Schema({
     },
     odfRating:{type:String,default:""},
     marks : {type:Number,default:""},
+    cert_declaration:pdfSchema(),
     rejectReason: { type: String, default: "" },
     responseFile: pdfSchema(),
     responseFile_state:pdfSchema(),
