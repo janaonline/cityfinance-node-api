@@ -55,7 +55,6 @@ const OdfFormCollectionSchema = new Schema({
     },
     currentFormStatus: {
         type: Number,
-        required: true  
     },
     ulbSubmit:{
         type: Date,

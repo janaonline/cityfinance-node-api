@@ -47,7 +47,6 @@ const GfcFormCollectionSchema = new Schema({
     },
     currentFormStatus: {
       type: Number,
-      required: true  
     },
     isDraft:{
         type: Boolean,
