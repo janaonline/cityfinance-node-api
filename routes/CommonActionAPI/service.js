@@ -1895,11 +1895,9 @@ async function handleRangeIfExists(questionObj,formObj){
     try{
         let obj = {...questionObj}
         if(formObj.range){
-            if(["Nos./Year","%","lpcd"].includes(formObj.unit)){
-                obj.max = 3
-            }
-            else if(formObj.unit === "Hours/day") {
-                obj.max = 2
+            if(["Nos./Year","%","lpcd","Hours/day"].includes(formObj.unit)){
+                obj.minRange = formObj.range.split("-")[0]++
+                obj.maxRange = formObj.range.split("-")[1]++
             }
         }
         return {...obj}
@@ -1944,6 +1942,7 @@ async function handleArrOfObjects(question,flattedForm){
                         }  
                         questionObj.forParentValue = index
                         let modifiedObj  = await handleRangeIfExists({...questionObj},obj)
+                        console.log("modifiedObj :: ",modifiedObj.maxRange)
                         nested_arr.push({...modifiedObj})
                     }
                 }
