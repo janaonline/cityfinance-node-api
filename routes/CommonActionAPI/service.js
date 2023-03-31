@@ -2335,18 +2335,18 @@ async function handleCasesByInputType(question){
     }
 }
 
-function findId(answerOption,name,idx,type="id"){
+function findId(answerOption,name,idx,type="_id"){
     try{
         if(answerOption){
             let objectFind = answerOption.find((item)=>item.name === name)
-            return objectFind._id.toString()
+            return objectFind[type].toString()
         }
         else{
             return idx.toString()
         }
     }
     catch(err){
-        console.log("")
+        console.log("error in findId :::",err.message)
     }
 }
 
@@ -2361,7 +2361,7 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
                 "did":[],
                 "_id":obj.answer_option ?  findId(obj['answer_option'],item.name,index) : index.toString(),
                 "option_id":item._id,
-                "viewSequence":obj.answer_option ?  findId(obj['answer_option'],item.name,index) : (index+1).toString(),
+                "viewSequence":obj.answer_option ?  findId(obj['answer_option'],item.name,index,"viewSequence") : (index+1).toString(),
             }
              childObj = {
                 "type":item._id,
@@ -2370,8 +2370,7 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
             }
             answerOptions.push(answerObj)
         })
-        obj['answer_option'] = answerOptions
-        // console.log("this is object ::: ",obj)
+        obj['answer_option'] = answerOptions.sort((a,b)=>parseInt(a.viewSequence)-parseInt(b.viewSequence))
         // obj['child'] = childOptions
         return obj
     }
