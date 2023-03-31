@@ -218,7 +218,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             }
             if(formCurrentStatus.status === MASTER_STATUS['In Progress']){
               if(!formData.isProjectLoaded && years['2023-24']){
-                delete formData.body['projects']
+                delete formData['projects']
               }
             }
             let formSubmit;
