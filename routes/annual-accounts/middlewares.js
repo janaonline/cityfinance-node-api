@@ -80,6 +80,7 @@ module.exports.changeResponse = async(req,res,next) =>{
                 let flattedForm = getFlatObj(form)
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
+                mutatedJson[0].prevStatus = req.obj?.url || ""
                 response.data = responseData
                 response.url = req.form.url
                 return res.status(200).json(response)
