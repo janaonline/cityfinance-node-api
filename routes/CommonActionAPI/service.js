@@ -16,7 +16,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -2245,7 +2245,6 @@ function handledateCase(question,obj,flattedForm){
         if(flattedForm[mainKey] === undefined){
             flattedForm[mainKey] = ""
         }
-        console.log("handledateCase ::: ",flattedForm[mainKey])
         flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
@@ -2268,8 +2267,6 @@ function handleFileCase(question,obj,flattedForm){
         if(modifiedKeys.includes(mainKey)){
             mainKey = modifiedShortKeys[mainKey]
         }
-        console.log("flattedForm :: ",flattedForm)
-        console.log("mainKey ::: ",mainKey)
         let name = mainKey + "." + "name"
         let url = mainKey + "." + "url"
         obj['label'] = flattedForm[name]
@@ -3003,11 +3000,10 @@ async function nestedObjectParser(data,req){
             let temp = {}
             if(item.input_type === "20" ||  item.input_type === "29"){
                 pointer = await handleChildValues({...pointer},item,req)
-                // console.log("pointer :: ",pointer.data[1])
                 Object.assign(result,pointer)
             }
             else{
-                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform
+                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
                     item.answer = [
                         {
                             "label":"",
@@ -3035,6 +3031,21 @@ async function nestedObjectParser(data,req){
     }
 }
 
+function checkIfUlbHasAccess(ulbData,userYear){
+    try{
+      let ulbVariable = "access_"
+      let currentYear = userYear.year
+      let prevYearArr = currentYear.split("-")
+      let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
+      ulbVariable += prevYear
+      return ulbData[ulbVariable]
+    }
+    catch(err){
+      console.log("error in checkIfUlbHasAccess ::: ",err.message)
+      return false
+    }
+  }
+
 module.exports.decideDisabledFields = (form,formType)=>{
     let formStatus = calculateStatus(form.status, form.actionTakenByRole,form.isDraft,
         formType)
@@ -3047,6 +3058,7 @@ module.exports.decideDisabledFields = (form,formType)=>{
     }
     
 }
+module.exports.checkIfUlbHasAccess = checkIfUlbHasAccess
 module.exports.calculateStatus = calculateStatus
 module.exports.nestedObjectParser = nestedObjectParser
 module.exports.clearVariables = clearVariables

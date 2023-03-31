@@ -9,11 +9,23 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields } = require('../CommonActionAPI/service')
+const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields,checkIfUlbHasAccess } = require('../CommonActionAPI/service')
+const {getKeyByValue} = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames } = require('../../util/FormNames');
+const { FormNames,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
+const {ModelNames} =  require('../../util/15thFCstatus')
+const {createAndUpdateFormMaster, getMasterForm} =  require('../../routes/CommonFormSubmission/service')
+
+let DurPageLinks = {
+  "2021-22":"",
+  "2022-23":"ulbform/ulbform-overview",
+  "2023-24":"ulbform2223/utilisation-report"
+}
+async function getCorrectDataSet(){
+
+}
 
 function update2223from2122() {
 
@@ -35,7 +47,10 @@ function checkForCalculations(reports){
     let exp = parseInt(reports.grantPosition.expDuringYr)
     let projectSum = 0
     if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseInt(a.expenditure) + parseInt(b.expenditure))
+      projectSum = reports.projects.reduce((a,b)=> parseInt(a) + parseInt(b.expenditure),0)
+    }
+    for( let obj of reports?.projects){
+      projectSum += obj.expenditure
     }
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
@@ -45,14 +60,17 @@ function checkForCalculations(reports){
     let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseInt(a.grantUtilised) + parseInt(b.grantUtilised))
     let sumWmSm = expWm + expSwm
     if(closingBal < 0){
+      console.log("1")
       validator.errors.push(false)
       validator.messages.push(validationMessages['negativeBal'])
     }
     if(sumWmSm != exp){
+      console.log("2")
       validator.errors.push(false)
       validator.messages.push(validationMessages['expWmSwm'])
     }
     if(exp != projectSum){
+      console.log("3")
       validator.errors.push(false)
       validator.messages.push(validationMessages['projectExpMatch'])
     }
@@ -174,6 +192,7 @@ module.exports.createOrUpdate = async (req, res) => {
     formData = { ...data };
     formData["actionTakenByRole"] = req.body.actionTakenByRole;
     formData["actionTakenBy"] = ObjectId(req.body.actionTakenBy);
+    let currentMasterFormStatus = req.body['status']
     if (req.decoded.role == 'ULB') {
       formData['status'] = 'PENDING'
     }
@@ -200,7 +219,17 @@ module.exports.createOrUpdate = async (req, res) => {
     if (designYear) {
       formData["designYear"] = ObjectId(designYear);
     }
-
+    if (formData.designYear.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+      formData.status = currentMasterFormStatus;
+      let params = {
+        modelName: ModelNames["dur"],
+        formData,
+        res,
+        actionTakenByRole: req.body.actionTakenByRole,
+        actionTakenBy: req.body.actionTakenBy
+      };
+      return await createAndUpdateFormMaster(params);
+    }
 
     const submittedForm = await UtilizationReport.findOne(condition);
     if (designYear == "606aaf854dff55e6c075d219") {
@@ -359,13 +388,14 @@ module.exports.createOrUpdate = async (req, res) => {
         );
       }
       let savedData;
-      if (currentSavedUtilRep) {
+      if (currentSavedUtilRep) {//final submit already draft form
         req.body['ulbSubmit'] = new Date();
         let body = req.body
         
         if(req.body.projects.length === 0){
           body.projects = currentSavedUtilRep.projects
         }
+        console.log("33")
         let validation = await checkForCalculations(body)
         if(!validation.valid){
             return Response.BadRequest(res, {}, validation.messages);
@@ -891,7 +921,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   let ulb = req.query.ulb;
   let design_year = req.query.design_year;
   let role = req.decoded.role;
-
+  
   if (!ulb || !design_year) {
     return res.status(400).json({
       success: false,
@@ -899,6 +929,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
     })
   }
   let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
+  
   /* Checking if the user has access to the form. */
   // if(!ulbData.access_2122){
   //   return res.status(200).json({
@@ -909,22 +940,16 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   // }
   let userData = await User.findOne({ isNodalOfficer: true, state: ulbData.state })
   let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean()
+  let ulbAccess = checkIfUlbHasAccess(ulbData,currentYear)
   // current year
   let currentYearVal = currentYear['year']
   // find Previous year
   let prevYearVal = currentYearVal.split("-");
   prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
-
+  let currentDesignYear = getKeyByValue(years,design_year)
   prevYear = await Year.findOne({ year: prevYearVal }).lean()
-  let prevDataQuery = MasterForm.findOne({
-    ulb: ObjectId(ulb),
-    design_year: prevYear._id
-  }).lean()
-  let prevUtilReportQuery = UtilizationReport.findOne({
-    ulb: ulb,
-    designYear: prevYear._id
-  }).select({ history: 0 }).lean()
-  let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
+  let prevData = await getDataSet(ulb,prevYear,design_year);
+  let isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
   //check if prevyear util report is atleast approved by state
   // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
 
@@ -943,21 +968,10 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   // }
   let status = ''  
   if (!prevData) {
-    
     status = 'Not Started'
-    if( design_year  === years['2023-24'] && prevUtilReport ){
-      status = prevUtilReport.status
-    }
-    if(!status){
-      status = 'Not Started'
-    }
-
   } else {
-    prevData = prevData.history.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
-    status = calculateStatus(prevData.status, prevData.actionTakenByRole, !prevData.isSubmit, "ULB")
-  }
-  if(design_year  === years['2023-24'] && prevUtilReport){
-    status = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isSubmit, "ULB")
+    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
+    status = calculateStatus(prevData.status, prevData.actionTakenByRole, isDraft, "ULB")
   }
   let host = "";
   if (req.headers.host === BackendHeaderHost.Demo) {
@@ -965,7 +979,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   }
   req.headers.host = host !== "" ? host : req.headers.host;
   let obj = {}
-  if (!ulbData.access_2122) {
+  if (!ulbAccess) {
     obj['action'] = 'not_show';
     obj['url'] = ``;
   }
@@ -979,8 +993,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
       obj['action'] = 'note';
       obj['url'] = msg;
     } else {
-
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/ulbform-overview target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
+      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/${DurPageLinks[currentDesignYear]} target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
       obj['action'] = 'note'
       obj['url'] = msg;
     }
@@ -993,12 +1006,31 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   let fetchedData = await UtilizationReport.findOne(condition,{history:0}).lean()
 
   if (fetchedData) {
-    Object.assign(fetchedData, { canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB", role) })
+    if (fetchedData.designYear.toString() === YEAR_CONSTANTS["23_24"]) {
+      let params = {
+        modelName: ModelNames["twentyEightSlbs"],
+        currentFormStatus: fetchedData.currentFormStatus,
+        formType: "ULB",
+        actionTakenByRole: role,
+      };
+      const canTakeActionOnMasterForm = await getMasterForm(params);
+      Object.assign(fetchedData, canTakeActionOnMasterForm);
+    } else {
+      Object.assign(fetchedData, {
+        canTakeAction: canTakenAction(
+          fetchedData["status"],
+          fetchedData["actionTakenByRole"],
+          fetchedData["isDraft"],
+          "ULB",
+          role
+        ),
+      });
+    }
 
 
     /* Checking if the ulbData.access_2122 is not true, then it is setting the
        unUtilizedPrevYr to 0. */
-    !ulbData.access_2122 ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : "";
+    !ulbAccess ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : "";
 
     /* The code is checking if the action property of the obj object is equal to "note". If it
     is, then it is assigning the fetchedData object to the obj object. */
@@ -1016,6 +1048,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
       typeof(fetchedData?.grantPosition.closingBal) === "number" ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
     }
     req.form = fetchedData
+    Object.assign(req.form,obj)
     next()
     // return res.status(200).json({
     //   success: true,
@@ -1025,7 +1058,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
     condition['designYear'] = ObjectId(prevYear._id)
     fetchedData = await UtilizationReport.findOne(condition).lean()
     let sampleData = new UtilizationReport();
-    sampleData.grantPosition.unUtilizedPrevYr = ulbData.access_2122 ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
+    sampleData.grantPosition.unUtilizedPrevYr = ulbAccess ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
     sampleData = sampleData.toObject()
     // sampleData = sampleData.lean()
     sampleData['url'] = obj['url']
@@ -1423,3 +1456,37 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
   }
   return res.json(response)
 })
+/**
+ * this function checks if we have to check the previous status from master form or prev year data
+ * according to the design year object given
+ * @param {Object} ulb 
+ * @param {Object} prevYear 
+ * @param {Object} designYear 
+ * @returns 
+ */
+async function getDataSet(ulb,prevYear,designYear) {
+  try{
+    let masterFormAccessibleYears = ['2021-22','2022-23']
+    let prevDataQuery = MasterForm.findOne({
+      ulb: ObjectId(ulb),
+      design_year: prevYear._id
+    }).lean();
+    let prevUtilReportQuery = UtilizationReport.findOne({
+      ulb: ulb,
+      designYear: prevYear._id
+    }).select({ history: 0 }).lean();
+    let [prevData, prevUtilReport] = await Promise.all([prevDataQuery, prevUtilReportQuery])
+    let year = getKeyByValue(years,designYear.toString())
+    if(masterFormAccessibleYears.includes(year)){
+      return prevData
+    }
+    else{
+      return prevUtilReport
+    }
+    
+  }
+  catch(err){
+    console.log("error in getDataSet :::: ",err.message)
+  }
+ 
+}

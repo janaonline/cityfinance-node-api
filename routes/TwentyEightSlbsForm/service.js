@@ -14,8 +14,9 @@ const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
 const Response = require("../../service").response;
-const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
-const {ModelNames} =  require('../../util/15thFCstatus')
+const {createAndUpdateFormMaster, getMasterForm} =  require('../../routes/CommonFormSubmission/service')
+const {ModelNames} =  require('../../util/15thFCstatus');
+const { years } = require('../../service/years');
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -341,6 +342,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
 
 module.exports.getForm = async (req, res,next) => {
     try {
+      
         let userRole = req.decoded.role
         const data = req.query;
         const condition = {};
@@ -355,8 +357,8 @@ module.exports.getForm = async (req, res,next) => {
           _id: ObjectId(data.ulb)
         }).lean();
 
-        condition['ulb'] = data.ulb;
-        condition['design_year'] = data.design_year;
+        condition['ulb'] = ObjectId(data.ulb);
+        condition['design_year'] = ObjectId(data.design_year);
       let yearData =   await Year.findOne({
             _id : ObjectId(data.design_year)
         }).lean()
@@ -368,6 +370,8 @@ module.exports.getForm = async (req, res,next) => {
           ulb: data.ulb,
           design_year: prevYearData._id,
         }).lean();
+        
+
         /* Checking the host header and setting the host variable to the appropriate value. */
         let host = "";
         if (req.headers.host === BackendHeaderHost.Demo) {
@@ -375,16 +379,32 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
+        let isDraft = true
         if(ulbData.access_2122){
+          if(data.design_year === years['2023-24']){
+            var prevFormData = await TwentyEightSlbsForm.findOne({
+              ulb: data.ulb,
+              design_year: prevYearData._id,
+            }, { history: 0} ).lean()
+            if(prevFormData){
+              prevFormData.history = []
+              masterFormData = prevFormData
+              isDraft = masterFormData.isDraft
+            }
+            
+            
+
+          }
         if (masterFormData) {
-          if (masterFormData.history.length > 0) {
+          isDraft = !masterFormData.isSubmit
+          if (masterFormData?.history?.length > 0) {
             masterFormData =
-              masterFormData.history[masterFormData.history.length - 1];
+              masterFormData.history[masterFormData?.history.length - 1];
           }
           let status = calculateStatus(
             masterFormData.status,
             masterFormData.actionTakenByRole,
-            !masterFormData.isSubmit,
+            isDraft,
             "ULB"
           );
           /* Checking the status of the form. If the status is not in the list of statuses, it will
@@ -413,7 +433,6 @@ module.exports.getForm = async (req, res,next) => {
             return
           }
         } else {
-          console.log("2")
           req.json = {
               status: true,
               show: true,
@@ -428,8 +447,8 @@ module.exports.getForm = async (req, res,next) => {
           // });
         }
         }
+       
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
-        
         let slbDataNotFilled;
         if (formData) {
           let slb28FormStatus = calculateStatus(
@@ -518,6 +537,11 @@ module.exports.getForm = async (req, res,next) => {
               
         }
         }
+        if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole} ;
+          let canTakeActionOnMasterForm =  await getMasterForm(params);
+          Object.assign(formData, canTakeActionOnMasterForm);
+        }else{
           Object.assign(formData, {
             canTakeAction: canTakenAction(
               formData["status"],
@@ -527,6 +551,7 @@ module.exports.getForm = async (req, res,next) => {
               userRole
             ),
           });
+        }
 
 
           formData["data"].forEach((el) => {
@@ -550,6 +575,7 @@ module.exports.getForm = async (req, res,next) => {
           });
           let groupedData = groupByKey(formData["data"], "type");
           formData["data"] = groupedData;
+          
           req.form = formData
           req.slbDataNotFilled = slbDataNotFilled
           next()
