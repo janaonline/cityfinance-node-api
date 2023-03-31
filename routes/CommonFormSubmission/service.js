@@ -370,11 +370,11 @@ function checkForCalculations(reports){
   try{
     let exp = parseInt(reports.grantPosition.expDuringYr)
     let projectSum = 0
-    if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseInt(a.cost) + parseInt(b.cost))
-    }
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
+    if(reports.projects.length > 0){
+      projectSum = reports.projects.reduce((a,b)=> parseInt(a) + parseInt(b.expenditure),0)
+    }
     for(let a of reports.categoryWiseData_wm){
       expWm += parseInt(a.grantUtilised)
     }
@@ -392,7 +392,6 @@ function checkForCalculations(reports){
       validator.errors.push(false)
       validator.messages.push(validationMessages['projectExpMatch'])
     }
-
     if(validator.errors.every(item => item === true)){
       validator.valid = true
     }

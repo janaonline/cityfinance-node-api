@@ -9,7 +9,8 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields,checkIfUlbHasAccess,getKeyByValue } = require('../CommonActionAPI/service')
+const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields,checkIfUlbHasAccess } = require('../CommonActionAPI/service')
+const {getKeyByValue} = require("../../util/masterFunctions")
 const Service = require('../../service');
 const { FormNames,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -17,7 +18,11 @@ const { YEAR_CONSTANTS } = require("../../util/FormNames");
 const {ModelNames} =  require('../../util/15thFCstatus')
 const {createAndUpdateFormMaster, getMasterForm} =  require('../../routes/CommonFormSubmission/service')
 
-
+let DurPageLinks = {
+  "2021-22":"",
+  "2022-23":"ulbform/ulbform-overview",
+  "2023-24":"ulbform2223/utilisation-report"
+}
 async function getCorrectDataSet(){
 
 }
@@ -33,7 +38,6 @@ let validationMessages = {
 }
 
 function checkForCalculations(reports){
-  console.log("2")
   let validator = {
     valid : false,
     messages : [],
@@ -43,7 +47,10 @@ function checkForCalculations(reports){
     let exp = parseInt(reports.grantPosition.expDuringYr)
     let projectSum = 0
     if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseInt(a.expenditure) + parseInt(b.expenditure))
+      projectSum = reports.projects.reduce((a,b)=> parseInt(a) + parseInt(b.expenditure),0)
+    }
+    for( let obj of reports?.projects){
+      projectSum += obj.expenditure
     }
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
@@ -939,7 +946,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   // find Previous year
   let prevYearVal = currentYearVal.split("-");
   prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
-
+  let currentDesignYear = getKeyByValue(years,design_year)
   prevYear = await Year.findOne({ year: prevYearVal }).lean()
   let prevData = await getDataSet(ulb,prevYear,design_year);
   let isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
@@ -986,13 +993,9 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
       obj['action'] = 'note';
       obj['url'] = msg;
     } else {
-
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/ulbform/ulbform-overview target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
+      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/${DurPageLinks[currentDesignYear]} target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
       obj['action'] = 'note'
       obj['url'] = msg;
-      console.log(">>>>>>.")
-      
-      
     }
   }
 
@@ -1453,7 +1456,14 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
   }
   return res.json(response)
 })
-
+/**
+ * this function checks if we have to check the previous status from master form or prev year data
+ * according to the design year object given
+ * @param {Object} ulb 
+ * @param {Object} prevYear 
+ * @param {Object} designYear 
+ * @returns 
+ */
 async function getDataSet(ulb,prevYear,designYear) {
   try{
     let masterFormAccessibleYears = ['2021-22','2022-23']
