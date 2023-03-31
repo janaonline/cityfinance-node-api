@@ -368,19 +368,19 @@ function checkForCalculations(reports){
     errors : []
   }
   try{
-    let exp = parseInt(reports.grantPosition.expDuringYr)
+    let exp = parseFloat(reports.grantPosition.expDuringYr)
     let projectSum = 0
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
     if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseInt(a) + parseInt(b.expenditure),0)
+      projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
       
     }
     console.log("projectSUm :: ",projectSum)
     for(let a of reports.categoryWiseData_wm){
-      expWm += parseInt(a.grantUtilised)
+      expWm += parseFloat(a.grantUtilised)
     }
-    let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseInt(a.grantUtilised) + parseInt(b.grantUtilised))
+    let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
     let sumWmSm = expWm + expSwm
     if(closingBal < 1){
       validator.errors.push(false)
