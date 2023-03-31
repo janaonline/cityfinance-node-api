@@ -118,8 +118,8 @@ module.exports.createOrUpdate = async (req, res) => {
     req.body.actionTakenBy = req.decoded?._id;
     req.body.actionTakenByRole = req.decoded?.role;
     req.body.modifiedAt = new Date();
-
     const formName = FormNames["dur"];
+    
     const { name: ulbName } = req.decoded;
     let userData = await User.find({
       $or: [
@@ -128,7 +128,6 @@ module.exports.createOrUpdate = async (req, res) => {
       ]
     }
     ).lean();
-
     let emailAddress = [];
     let ulbUserData = {},
       stateUserData = {};
@@ -225,11 +224,13 @@ module.exports.createOrUpdate = async (req, res) => {
         actionTakenByRole: req.body.actionTakenByRole,
         actionTakenBy: req.body.actionTakenBy
       };
-      return await createAndUpdateFormMaster(params);
+      let response = await createAndUpdateFormMaster(params);
+      await updateForNextForms(designYear,ulb,formData)
+      return response
     }
 
     const submittedForm = await UtilizationReport.findOne(condition);
-    if (designYear == "606aaf854dff55e6c075d219") {
+    if (designYear == "606aaf854dff55e6c075d219" ) {
       if(req.body.actionTakenByRole === "ULB"){
         req.body.status = "PENDING"
       }
@@ -316,6 +317,7 @@ module.exports.createOrUpdate = async (req, res) => {
           message: "Form already submitted."
         })
       }
+      
       if (!submittedForm && !isDraft) {// final submit in first attempt
         formData['ulbSubmit'] = new Date();
         let validation = await checkForCalculations(req.body)
@@ -323,6 +325,7 @@ module.exports.createOrUpdate = async (req, res) => {
             return Response.BadRequest(res, {}, validation.messages);
           }
         const form = await new UtilizationReport(formData);
+        
         if (form) {
           formData.createdAt = form.createdAt;
           formData.modifiedAt = form.modifiedAt;
@@ -341,7 +344,7 @@ module.exports.createOrUpdate = async (req, res) => {
               }
             }
           }
-          
+         await updateForNextForms(designYear,ulb,formData)
          await form.save()
           
 
@@ -388,7 +391,6 @@ module.exports.createOrUpdate = async (req, res) => {
       if (currentSavedUtilRep) {//final submit already draft form
         req.body['ulbSubmit'] = new Date();
         let body = req.body
-        
         if(req.body.projects.length === 0){
           body.projects = currentSavedUtilRep.projects
         }
@@ -397,6 +399,7 @@ module.exports.createOrUpdate = async (req, res) => {
         if(!validation.valid){
             return Response.BadRequest(res, {}, validation.messages);
         }
+        
         savedData = await UtilizationReport.findOneAndUpdate(
           { ulb: ObjectId(ulb), isActive: true, financialYear, designYear },
           { $set: req.body, $push: { history: req.body } },
@@ -421,8 +424,9 @@ module.exports.createOrUpdate = async (req, res) => {
           }
         );
       }
-
+      
       if (savedData) {
+        await updateForNextForms(designYear,ulb,formData)
         return res.status(200).json({
           msg: "Utilization Report Submitted Successfully!",
           isCompleted: !savedData.isDraft,
@@ -1478,10 +1482,69 @@ async function getDataSet(ulb,prevYear,designYear) {
     }
     else{
       return prevUtilReport
-    }
-    
+    } 
   }
   catch(err){
     console.log("error in getDataSet :::: ",err.message)
+  }
+}
+
+
+async function updateForNextForms(design_year,ulb,utiData){
+  try{
+    let currentYear = getKeyByValue(years,design_year)
+    let prevYearVal = currentYear.split("-");
+    nextYearVal = Number(prevYearVal[0]) + 1 + "-" + (Number(prevYearVal[1]) + 1);
+    let utilForm = await UtilizationReport.findOne({
+      "designYear":ObjectId(years[nextYearVal]),
+      "ulb":ObjectId(ulb)
+    })
+    let condition = {};
+    condition._id = utilForm._id
+    condition.ulb = ObjectId(ulb)
+    condition.designYear = ObjectId(years[nextYearVal])
+    condition.ulb = ulb;
+    if (utilForm) {
+      let utilFormStatus = calculateStatus(
+        utilForm.status,
+        utilForm.actionTakenByRole,
+        utilForm.isDraft,
+        "ULB"
+      );
+      /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
+      Then update it with latest values */
+      if (
+        [
+          FORM_STATUS.In_Progress,
+          FORM_STATUS.Rejected_By_MoHUA,
+          FORM_STATUS.Rejected_By_State,
+        ].includes(utilFormStatus)
+      ) {
+        /* calculate closing balance and opening balance for 22-23 form */
+        utilForm.grantPosition.unUtilizedPrevYr = utiData
+          ?.grantPosition?.closingBal
+          ? Number(utiData?.grantPosition?.closingBal)
+          : "";
+        utilForm.grantPosition.closingBal =
+          Number(utilForm?.grantPosition?.unUtilizedPrevYr) +
+          Number(utilForm?.grantPosition.receivedDuringYr) -
+          Number(utilForm?.grantPosition?.expDuringYr);
+
+        let updatedFetchedData = await UtilizationReport.findOneAndUpdate(
+          condition,
+          {
+            $set: {
+              grantPosition: utilForm?.grantPosition,
+            },
+          }
+        );
+      }
+    }
+    else{
+      console.log("no form found:::")
+    }
+  }
+  catch(err){
+    console.log("error in checkForNextForms :::: ",err.message)
   }
 }
