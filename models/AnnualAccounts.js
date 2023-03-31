@@ -125,7 +125,6 @@ const AnnualAccountDataSchema = new Schema(
     },
     currentFormStatus: {
       type: Number,
-      required: true
     }
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
