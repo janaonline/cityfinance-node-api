@@ -52,9 +52,11 @@ module.exports.changeResponse = async(req,res,next) =>{
               "_id": req?.form?._id ,
               "formId": req.query.formId,
               "language":[],
-              "canTakeAction":false
+              "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :true,
+              
             }
           ]
+        response.url = req?.form?.url || ""
         let yearId = req.query.design_year
         let year = getKeyByValue(years,yearId)
         let form = {...req.form}
@@ -79,14 +81,18 @@ module.exports.changeResponse = async(req,res,next) =>{
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
                 response.data = responseData
+                response.url = req.form.url
                 return res.status(200).json(response)
             }
             response.data = responseData
+            
+            console.log("repsonse :: ",response)
             return res.status(200).json(response);
             
         }
         else{
             if(Object.keys(form).length){
+
                 return res.status(200).json(req.form);
             }
             else{
