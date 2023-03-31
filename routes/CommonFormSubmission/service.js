@@ -374,7 +374,9 @@ function checkForCalculations(reports){
     let expWm = 0
     if(reports.projects.length > 0){
       projectSum = reports.projects.reduce((a,b)=> parseInt(a) + parseInt(b.expenditure),0)
+      
     }
+    console.log("projectSUm :: ",projectSum)
     for(let a of reports.categoryWiseData_wm){
       expWm += parseInt(a.grantUtilised)
     }
