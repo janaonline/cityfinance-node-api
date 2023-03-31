@@ -2234,8 +2234,6 @@ function handleFileCase(question,obj,flattedForm){
         if(modifiedKeys.includes(mainKey)){
             mainKey = modifiedShortKeys[mainKey]
         }
-        console.log("flattedForm :: ",flattedForm)
-        console.log("mainKey ::: ",mainKey)
         let name = mainKey + "." + "name"
         let url = mainKey + "." + "url"
         obj['label'] = flattedForm[name]
