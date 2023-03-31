@@ -135,7 +135,7 @@ const UtilizationReportSchema = new Schema(
     declaration:{ type: Boolean, default: 0 },
     currentFormStatus:{
       type: Number,
-      required: true
+      required: false
     }
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
