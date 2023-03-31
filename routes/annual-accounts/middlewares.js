@@ -52,8 +52,8 @@ module.exports.changeResponse = async(req,res,next) =>{
               "_id": req?.form?._id ,
               "formId": req.query.formId,
               "language":[],
-              "canTakeAction":false,
-              "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started"
+              "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started",
+              "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :true,
             }
           ]
         if(!req.form){
@@ -90,15 +90,23 @@ module.exports.changeResponse = async(req,res,next) =>{
                 let flattedForm = getFlatObj(form)
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
+                if(mutatedJson[0].isDraft === ""){
+                    mutatedJson[0].isDraft = true
+                }
+                mutatedJson[0].prevStatus = req.form?.url || ""
                 response.data = responseData
+                response.url = req.form.url
                 return res.status(200).json(response)
             }
             response.data = responseData
+            
+            console.log("repsonse :: ",response)
             return res.status(200).json(response);
             
         }
         else{
             if(Object.keys(form).length){
+
                 return res.status(200).json(req.form);
             }
             else{

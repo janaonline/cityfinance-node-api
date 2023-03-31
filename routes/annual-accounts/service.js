@@ -17,7 +17,7 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const { findPreviousYear } = require('../../util/findPreviousYear')
 const { calculateTabwiseStatus } = require('./utilFunc')
-const { calculateStatus } = require('../CommonActionAPI/service')
+const { calculateStatus,checkIfUlbHasAccess } = require('../CommonActionAPI/service')
 const UlbLedger = require('../../models/UlbLedger')
 const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
@@ -1802,6 +1802,7 @@ exports.getAccounts = async (req, res,next) => {
     }
     let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
     let currYearData = await Year.findOne({ _id: ObjectId(design_year) }).lean();
+    let ulbAccess = checkIfUlbHasAccess(ulbData,currYearData)
     let prevYearVal;
     prevYearVal = findPreviousYear(currYearData.year);
     let prevYearData = await Year.findOne({ year: prevYearVal }).lean();
@@ -1831,7 +1832,7 @@ exports.getAccounts = async (req, res,next) => {
     /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
     host = host !== "" ? host : req.headers.host;
 
-    if (!ulbData.access_2122) {
+    if (!ulbAccess) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
     } else {
