@@ -15,7 +15,7 @@ const { FormNames,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
 const {ModelNames} =  require('../../util/15thFCstatus')
-const {createAndUpdateFormMaster} =  require('../../routes/CommonFormSubmission/service')
+const {createAndUpdateFormMaster, getMasterForm} =  require('../../routes/CommonFormSubmission/service')
 
 
 async function getCorrectDataSet(){
@@ -1003,7 +1003,26 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   let fetchedData = await UtilizationReport.findOne(condition,{history:0}).lean()
 
   if (fetchedData) {
-    Object.assign(fetchedData, { canTakeAction: canTakenAction(fetchedData['status'], fetchedData['actionTakenByRole'], fetchedData['isDraft'], "ULB", role) })
+    if (fetchedData.designYear.toString() === YEAR_CONSTANTS["23_24"]) {
+      let params = {
+        modelName: ModelNames["twentyEightSlbs"],
+        currentFormStatus: fetchedData.currentFormStatus,
+        formType: "ULB",
+        actionTakenByRole: role,
+      };
+      const canTakeActionOnMasterForm = await getMasterForm(params);
+      Object.assign(fetchedData, canTakeActionOnMasterForm);
+    } else {
+      Object.assign(fetchedData, {
+        canTakeAction: canTakenAction(
+          fetchedData["status"],
+          fetchedData["actionTakenByRole"],
+          fetchedData["isDraft"],
+          "ULB",
+          role
+        ),
+      });
+    }
 
 
     /* Checking if the ulbData.access_2122 is not true, then it is setting the

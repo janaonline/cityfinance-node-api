@@ -15,6 +15,7 @@ const {
 const moongose = require("mongoose");
 const ObjectId = require('mongoose').Types.ObjectId;
 const Response = require("../../service").response;
+const {canTakenActionMaster} = require('../CommonActionAPI/service')
 // const {checkForCalculations } =  require('../../routes/utilization-report/service');
 // const UtilizationReport =  require('../../models/UtilizationReport');
 const { years } = require("../../service/years");
@@ -334,15 +335,23 @@ module.exports.createAndUpdateFormMaster = async (params) => {
 };
 
 
+/* Checking if the user can take action on the form or not. */
 module.exports.getMasterForm = async (params) => {
   try {
-    let { modelName, formData, res , actionTakenByRole, actionTakenBy} = params;
+    let { modelName, currentFormStatus ,formType, actionTakenByRole} = params;
     
-    switch(modelName){
-
+    switch(true){
+      case [ModelNames['twentyEightSlbs'], ModelNames['dur']].includes(modelName):
+          let params = {
+            status: currentFormStatus,
+            formType,
+            loggedInUser: actionTakenByRole,
+          };
+          return { canTakeAction: canTakenActionMaster(params)};
+        break;
     }
   } catch (error) {
-    
+    return Response.BadRequest(res, {}, error.message);
   }
 }
 
