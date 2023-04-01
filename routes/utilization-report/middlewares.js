@@ -5,6 +5,7 @@ const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
 let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
+const {MASTER_STATUS_ID} = require("../../util/FormNames")
 module.exports.changeGetApiForm = async (req,res,next)=>{
     let response = {
         "success":false,
@@ -30,7 +31,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
               "language":[],
               "canTakeAction":form?.canTakeAction || false,
               "isDraft":form.isDraft !== undefined ? form.isDraft : true,
-              "status":form?.status || null
+              "status":MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
             }
           ]
         if(latestYear){
