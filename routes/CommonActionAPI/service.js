@@ -3028,13 +3028,20 @@ function checkIfUlbHasAccess(ulbData,userYear){
   }
 
 module.exports.decideDisabledFields = (form,formType)=>{
+    
+    console.log("form ::",form.status)
     let formStatus = calculateStatus(form.status, form.actionTakenByRole,form.isDraft,
         formType)
+    if(form.status == ""){
+        formStatus = MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
+    }
     let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
     if(allowedStatuses.includes(formStatus)){
+        console.log("1")
         return false 
     }
     else{
+        console.log("2")
         return true
     }
     
