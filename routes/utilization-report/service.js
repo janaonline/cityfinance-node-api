@@ -951,7 +951,9 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
   let currentDesignYear = getKeyByValue(years,design_year)
   prevYear = await Year.findOne({ year: prevYearVal }).lean()
+  console.log("before ::: ",)
   let prevData = await getDataSet(ulb,prevYear,design_year);
+  console.log("prevData ::: ",prevData)
   let isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
   //check if prevyear util report is atleast approved by state
   // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
@@ -1468,7 +1470,7 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
  */
 async function getDataSet(ulb,prevYear,designYear) {
   try{
-    let masterFormAccessibleYears = ['2021-22','2022-23']
+    let masterFormAccessibleYears = ['2022-23']
     let prevDataQuery = MasterForm.findOne({
       ulb: ObjectId(ulb),
       design_year: prevYear._id

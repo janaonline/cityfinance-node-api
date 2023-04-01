@@ -1927,7 +1927,6 @@ async function handleArrOfObjects(question,flattedForm){
                         }  
                         questionObj.forParentValue = index
                         let modifiedObj  = await handleRangeIfExists({...questionObj},obj)
-                        console.log("modifiedObj :: ",modifiedObj.maxRange)
                         nested_arr.push({...modifiedObj})
                     }
                 }
