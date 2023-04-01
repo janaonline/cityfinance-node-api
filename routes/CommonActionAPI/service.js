@@ -2086,7 +2086,13 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         // console.log("question ",question.shortKey)
         if(mainKey){
             let key = mainKey + "."+question.shortKey
-            value = flattedForm[key] || ""
+            if(flattedForm[key]  == undefined){
+                value = ""
+            }
+            else{
+                value = flattedForm[key]
+            }
+            console.log("flattedForm[key] :: ",flattedForm[key])
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
@@ -2094,7 +2100,12 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         }
         else{
             let key = question.shortKey
-            value = flattedForm[key] || ""
+            if(flattedForm[key]  == undefined){
+                value = ""
+            }
+            else{
+                value = flattedForm[key]
+            }
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
