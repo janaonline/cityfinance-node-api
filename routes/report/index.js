@@ -5,6 +5,7 @@ const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const express = require('express');
 const router = express.Router();
 const dashboards = require('./dashboard');
+const { loginHistory } = require('./service');
 router.post("/ulb-ranking", UlbRanking);
 router.get("/ulb-ranking", UlbRanking);
 
@@ -14,5 +15,6 @@ router.get("/financial-data/ulbtypewise", verifyToken, FinancialData.filter, Fin
 router.get("/financial-data/stateandulbtypewise", verifyToken, FinancialData.filter, FinancialData.stateandulbtypewise);
 router.get("/financial-data/chart", verifyToken, FinancialData.chart);
 router.get("/usage", verifyToken, FinancialData.filter, Usage);
+router.get("/loginHistory", loginHistory);
 router.use('/dashboard', dashboards);
 module.exports = router;

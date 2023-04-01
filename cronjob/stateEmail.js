@@ -205,9 +205,9 @@ module.exports.emailTrigger = async () =>
         let mailOptions = {
           Destination: {
             /* required */
-            // ToAddresses: state[stateName]["emailAddress"],
-            ToAddresses: ["dalbeerk2017@gmail.com"],
-            // ToAddresses: ["aditya003.ay@gmail.com"],
+            ToAddresses: state[stateName]["emailAddress"],
+            // ToAddresses: ["dalbeerk2017@gmail.com"],
+            // ToAddresses: ["aditya.yadav@dhwaniris.com"],
           },
           Message: {
             /* required */

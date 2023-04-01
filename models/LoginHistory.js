@@ -4,7 +4,6 @@ const LoginHistorySchema = new Schema({
     visitSession: { type: Schema.Types.ObjectId, ref: 'VisitSession', default: null },
     loggedInAt: { type: Date, default: Date.now() },
     loggedOutAt: { type: Date, default: null },
-    reports: { type: Array, default: [] },
     loginType: {
         type: String,
         default: "15thFC",
@@ -13,6 +12,7 @@ const LoginHistorySchema = new Schema({
             message: "ERROR: STATUS BE EITHER 'Fiscal Ranking'/ '15th FC'",
         },
     },
+    reports: { type: Array, default: [] },
     isActive: { type: Boolean, default: 1 },
     inactiveSessionTime: { type: Number }
 });

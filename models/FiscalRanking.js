@@ -32,29 +32,6 @@ const enumYesNo = {
     },
 }
 
-const numberOfQuestion1 = {
-    value: { type: String },
-    status: {
-        type: String,
-        default: "PENDING",
-        enum: {
-            values: ["PENDING", "APPROVED", "REJECTED"],
-            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
-        },
-    },
-}
-const numberOfQuestion = {
-    value: { type: Number },
-    status: {
-        type: String,
-        default: "PENDING",
-        enum: {
-            values: ["PENDING", "APPROVED", "REJECTED"],
-            message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
-        },
-    },
-}
-
 const fiscalRankingSchema = new Schema(
     {
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
@@ -214,8 +191,9 @@ const fiscalRankingSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
-        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
-        actionTakenByRole: { type: String, default: null },
+        
+        actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null ,required:true},
+        actionTakenByRole: { type: String, default: null,required:true },
         rejectReason: { type: String, default: null },
         history: { type: Array, default: [] },
         createdAt: { type: Date, default: Date.now() },
