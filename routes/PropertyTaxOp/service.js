@@ -7,6 +7,7 @@ const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
+const { propertyTaxOpFormJson } = require('./fydynemic')
 
 
 module.exports.getForm = async (req, res) => {
@@ -239,7 +240,6 @@ function
     }
     return result;
 }
-
 //// New year
 module.exports.createOrUpdate = async (req, res) => {
     try {
@@ -273,7 +273,6 @@ module.exports.createOrUpdate = async (req, res) => {
         })
     }
 }
-
 async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -339,7 +338,6 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 if (obj[k].yearData) {
                     let yearArr = obj[k].yearData
                     let dynamicObj = obj[k]
-                    let financialInfo = obj
                     let status = yearArr.every((item) => {
                         if (Object.keys(item).length) {
                             return item.status === "APPROVED"
@@ -440,3 +438,47 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, mainFormCont
         }
     }
 }
+
+exports.getView = async function (req, res, next) {
+    try {
+        let condition = {};
+        if (!req.query.ulb && !req.query.design_year) {
+            return res.status(400).json({ status: false, message: "Something error wrong!" });
+        }
+        condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(req.query.design_year) };
+        let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
+        let ptoMaper = null;
+        if (ptoData) {
+            ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).lean();
+        }
+        let fyDynemic = await propertyTaxOpFormJson();
+        for (let sortKey in fyDynemic) {
+            if (sortKey !== "tabs" && ptoData) {
+                fyDynemic[sortKey] = ptoData[sortKey];
+            } else {
+                for (const k of ['tabs']) {
+                    let { data } = fyDynemic[k][0];
+                    for (let el in data) {
+                        let { yearData, mData } = data[el];
+                        if (Array.isArray(yearData) && ptoMaper.length) {
+                            for (const pf of yearData) {
+                                let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
+                                pf.file ? (pf.file = d ? d.file : "") : pf.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
+                            }
+                        } else if (Array.isArray(mData) && ptoData.length) {
+                            for (const dk of mData) {
+                                const { value, status } = ptoData[dk];
+                                dk['status'] = status;
+                                dk['value'] = value;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return res.status(200).json({ status: true, message: "Success fetched data!", data: fyDynemic });
+    } catch (error) {
+        console.log("err", error);
+        return res.status(400).json({ status: false, message: "Something error wrong!" });
+    }
+};

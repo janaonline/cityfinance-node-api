@@ -18,7 +18,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptActl",
+                        "type": "totalRecActual",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -35,7 +35,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptActl",
+                        "type": "totalRecActual",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -52,7 +52,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptActl",
+                        "type": "totalRecActual",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -69,7 +69,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptActl",
+                        "type": "totalRecActual",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -339,7 +339,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptBudget",
+                        "type": "RcptBudget",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -356,7 +356,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptBudget",
+                        "type": "RcptBudget",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -373,7 +373,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalRcptBudget",
+                        "type": "RcptBudget",
                         "code": [],
                         "readonly": false,
                         "formFieldType": "number",
@@ -4115,8 +4115,8 @@ const fiscalRankingFormJson = () => {
                 ],
                 // "info": "To be taken from Approved Annual Budget"
             },
-            "totalOMCaptlExpWaterSupply": {
-                "key": "totalOMCaptlExpWaterSupply",
+            "totalCaptlExpWaterSupply": {
+                "key": "totalCaptlExpWaterSupply",
                 "label": "O&M expense on Water Supply",
                 "displayPriority": "10.1",
                 "yearData": [
@@ -4129,7 +4129,7 @@ const fiscalRankingFormJson = () => {
                         "min": 0,
                         "max": 999999999999999,
                         "required": true,
-                        "type": "totalOMCaptlExpWaterSupply",
+                        "type": "totalCaptlExpWaterSupply",
                         "year": years['2018-19'],
                         "code": [],
                         "readonly": false,
@@ -5271,7 +5271,7 @@ const fiscalRankingFormJson = () => {
             guidanceNotes: {
                 key: 'guidanceNotes',
                 label: 'Guidance Notes:',
-                displayPriority: "1",
+                displayPriority: "34",
                 yearData: [
                     {
                         title: '',
@@ -5293,7 +5293,7 @@ const fiscalRankingFormJson = () => {
             appAnnualBudget: {
                 key: 'appAnnualBudget',
                 label: 'Copy of Approved Annual Budget preferably in English',
-                displayPriority: "2",
+                displayPriority: "35",
                 yearData: [
                     {
                         label: 'FY 2020-21',
@@ -5380,7 +5380,7 @@ const fiscalRankingFormJson = () => {
             auditedAnnualFySt: {
                 key: 'auditedAnnualFySt',
                 label: 'Copy of Audited Annual Financial Statements preferably in English',
-                displayPriority: "3",
+                displayPriority: "36",
                 yearData: [
                     {
                         label: 'FY 2018-19',

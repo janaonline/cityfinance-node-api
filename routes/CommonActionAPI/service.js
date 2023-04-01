@@ -123,7 +123,7 @@ module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole
     }
 }
 
-module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
+module.exports.calculateStatusForFiscalRankingForms = (status="", actionTakenByRole="", isDraft="", formType) => {
     switch(formType){
         case "ULB":
             switch (true) {
