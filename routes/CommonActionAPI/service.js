@@ -22,6 +22,7 @@ const {modelPath, getKeyByValue} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
+const {MASTER_STATUS_ID} = require("../../util/FormNames")
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
@@ -3029,7 +3030,6 @@ function checkIfUlbHasAccess(ulbData,userYear){
 
 module.exports.decideDisabledFields = (form,formType)=>{
     
-    console.log("form ::",form.status)
     let formStatus = calculateStatus(form.status, form.actionTakenByRole,form.isDraft,
         formType)
     if(form.status == ""){
@@ -3037,11 +3037,9 @@ module.exports.decideDisabledFields = (form,formType)=>{
     }
     let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
     if(allowedStatuses.includes(formStatus)){
-        console.log("1")
         return false 
     }
     else{
-        console.log("2")
         return true
     }
     
