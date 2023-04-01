@@ -252,8 +252,8 @@ module.exports.calculateStatusMaster = (status)=>{
     }
 }
 
-module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
-    switch (formType) {
+module.exports.calculateStatusForFiscalRankingForms = (status="", actionTakenByRole="", isDraft="", formType) => {
+    switch(formType){
         case "ULB":
             switch (true) {
                 case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
