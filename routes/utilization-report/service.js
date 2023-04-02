@@ -12,7 +12,7 @@ const catchAsync = require('../../util/catchAsync')
 const { calculateStatus,checkForUndefinedVaribales,canTakenAction,mutuateGetPayload,changePayloadFormat,decideDisabledFields,checkIfUlbHasAccess } = require('../CommonActionAPI/service')
 const {getKeyByValue} = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
+const { FormNames,ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
 const {ModelNames} =  require('../../util/15thFCstatus')
@@ -1515,6 +1515,9 @@ async function updateForNextForms(design_year,ulb,utiData){
         utilForm.isDraft,
         "ULB"
       );
+      if(!utilForm.status){
+        utilFormStatus = MASTER_STATUS_ID[utilForm.currentFormStatus] || "Not Started"
+      }
       /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
       Then update it with latest values */
       if (
