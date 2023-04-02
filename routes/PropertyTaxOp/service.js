@@ -448,7 +448,7 @@ exports.getView = async function (req, res, next) {
                     let { data } = fyDynemic[k][0];
                     for (let el in data) {
                         let { yearData, mData } = data[el];
-                        if (Array.isArray(yearData) && ptoMaper.length) {
+                        if (Array.isArray(yearData) && ptoMaper) {
                             for (const pf of yearData) {
                                 if (Object.keys(pf).length !== 0 && pf.constructor === Object) {
                                     let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
