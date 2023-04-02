@@ -7093,215 +7093,6 @@ const propertyTaxOpFormJson = () => {
                 }
             }
         ],
-        "financialYearTableHeader": {
-            "1.1": [
-                "",
-                "Property Tax Details",
-                "",
-                "",
-                "",
-                "",
-                ""
-            ],
-            "2.1": [
-                "",
-                "Property Tax Demand Details (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "3.1": [
-                "",
-                "Do you collect any user charges along with Property Tax?",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "4.1": [
-                "",
-                "Property Tax Collection Details (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "5.1": [
-                "",
-                "Property Register Details",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "6.1": [
-                "",
-                "Residential Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "7.1": [
-                "",
-                "Commercial Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "8.1": [
-                "",
-                "Industrial Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "9.1": [
-                "",
-                "Government Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "10.1": [
-                "",
-                "Institutional Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "11.1": [
-                "",
-                "Other Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "12.1": [
-                "",
-                "Property Tax Collection Details by Mode of payment",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "13.1": [
-                "",
-                "Extract of Demand Collection Book",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "14.1": [
-                "",
-                "Water Charges: Cost of Service Delivery Details",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "16.1": [
-                "",
-                "Does ULB collects Sewerage charges?",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "17.1": [
-                "",
-                "Sewerage Charges Demand and Collection Details",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "18.1": [
-                "",
-                "Sewerage Connection Details",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "19.1": [
-                "",
-                "Residential households/properties - Sewerage Charges Details by household/property type",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "20.1": [
-                "",
-                "Commercial Properties - Sewerage Charges Details by household/property type",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "21.1": [
-                "",
-                "Industrial Properties - Sewerage Charges Details by household/property type",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "22.1": [
-                "",
-                "Other Properties - Sewerage Charges Details by household/property type",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "24.1": [
-                "",
-                "Extract of Demand Collection Book",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ],
-            "25.1": [
-                "",
-                "Working of the O&M Cost- Sewerage Service",
-                "2018-19",
-                "2019-20",
-                "2020-21",
-                "2021-22",
-                "2022-23"
-            ]
-        }
     }
 }
 
@@ -7338,13 +7129,212 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
     }
     return obj
 }
+
 let financialYearTableHeader = {
-    1: ['', 'SECTION A:  Details from Approved Annual Budget', '2021-22', '2020-21', '2019-20', '2018-19'],
-    8: ['', 'SECTION A:  Details from Approved Annual Budget', '2021-22', '2020-21', '2019-20', '2018-19'],
-    16: ['', 'SECTION B: Details from Audited Annual Accounts (Balance Sheet) ', '2021-22', '2020-21', '2019-20', '2018-19'],
-    19: ['', 'SECTION C:  Details from Audited Annual Accounts (Receipts & Payments Statement) ', '2021-22', '2020-21', '2019-20', '2018-19'],
-    20: ['', 'SECTION D:  Other details from Approved Annual Budgets ', '2021-22', '2020-21', '2019-20', '2018-19'],
-    24: ['', 'SECTION E: Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', '2018-19'],
+    1.1: ["", "Property Tax Details", "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    2.1: [
+        "",
+        "Property Tax Demand Details (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    3.1: [
+        "",
+        "Do you collect any user charges along with Property Tax?",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    4.1: [
+        "",
+        "Property Tax Collection Details (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    5.1: [
+        "",
+        "Property Register Details",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    6.1: [
+        "",
+        "Residential Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    7.1: [
+        "",
+        "Commercial Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    8.1: [
+        "",
+        "Industrial Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    9.1: [
+        "",
+        "Government Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    10.1: [
+        "",
+        "Institutional Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    11.1: [
+        "",
+        "Other Properties - Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    12.1: [
+        "",
+        "Property Tax Collection Details by Mode of payment",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    13.1: [
+        "",
+        "Extract of Demand Collection Book",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    14.1: [
+        "",
+        "Water Charges: Cost of Service Delivery Details",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    16.1: [
+        "",
+        "Does ULB collects Sewerage charges?",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    17.1: [
+        "",
+        "Sewerage Charges Demand and Collection Details",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    18.1: [
+        "",
+        "Sewerage Connection Details",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    19.1: [
+        "",
+        "Residential households/properties - Sewerage Charges Details by household/property type",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    20.1: [
+        "",
+        "Commercial Properties - Sewerage Charges Details by household/property type",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    21.1: [
+        "",
+        "Industrial Properties - Sewerage Charges Details by household/property type",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    22.1: [
+        "",
+        "Other Properties - Sewerage Charges Details by household/property type",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    24.1: [
+        "",
+        "Extract of Demand Collection Book",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    25.1: [
+        "",
+        "Working of the O&M Cost- Sewerage Service",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ]
 }
 
 module.exports.financialYearTableHeader = financialYearTableHeader
