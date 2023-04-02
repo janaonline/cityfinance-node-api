@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson } = require('./fydynemic')
+const { propertyTaxOpFormJson,financialYearTableHeader } = require('./fydynemic')
 
 
 module.exports.getForm = async (req, res) => {
@@ -452,7 +452,6 @@ exports.getView = async function (req, res, next) {
                             for (const pf of yearData) {
                                 if (Object.keys(pf).length !== 0 && pf.constructor === Object) {
                                     let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
-                                    console.log("d", d)
                                     pf.file ? (pf.file = d ? d.file : "") : pf.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                 }
                             }
@@ -467,7 +466,8 @@ exports.getView = async function (req, res, next) {
                 }
             }
         }
-        return res.status(200).json({ status: true, message: "Success fetched data!", data: fyDynemic });
+        // fyDynemic.financialYearTableHeader = financialYearTableHeader();
+        return res.status(200).json({ status: true, message: "Success fetched data!", data:{...fyDynemic,financialYearTableHeader} });
     } catch (error) {
         console.log("err", error);
         return res.status(400).json({ status: false, message: "Something error wrong!" });
