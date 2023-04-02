@@ -3643,3 +3643,4 @@ function computeQuery(params) {
 function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
+ module.exports.checkUndefinedValidations = checkUndefinedValidations
