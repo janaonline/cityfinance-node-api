@@ -243,25 +243,13 @@ function
 //// New year
 module.exports.createOrUpdate = async (req, res) => {
     try {
-        let { ulbId, formId, actions, design_year, isDraft } = req.body
+        let { ulbId, actions, design_year, isDraft } = req.body
         let { role, _id: userId } = req.decoded
         let response = {}
-        let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId)
-        if (!formIdValidations.valid) {
-            response.message = formIdValidations.message
-            return res.status(500).json(response)
-        }
-        let validation = await checkUndefinedValidations({
-            "ulb": ulbId,
-            "formId": formId,
-            "actions": actions,
-            "design_year": design_year
-        })
-        if (!validation.valid) {
-            response.message = validation.message
-            return res.status(500).json(response)
-        }
-        let calculationsTabWise = await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year, true, isDraft)
+        let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId);
+        let formId = formIdValidations.formId;
+        await checkUndefinedValidations({ "ulb": ulbId, "formId": formId, "actions": actions, "design_year": design_year });
+        await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year, true, isDraft)
         response.success = true
         response.formId = formId
         response.message = "Form submitted successfully"
@@ -462,8 +450,11 @@ exports.getView = async function (req, res, next) {
                         let { yearData, mData } = data[el];
                         if (Array.isArray(yearData) && ptoMaper.length) {
                             for (const pf of yearData) {
-                                let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
-                                pf.file ? (pf.file = d ? d.file : "") : pf.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
+                                if (Object.keys(pf).length !== 0 && pf.constructor === Object) {
+                                    let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
+                                    console.log("d", d)
+                                    pf.file ? (pf.file = d ? d.file : "") : pf.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
+                                }
                             }
                         } else if (Array.isArray(mData) && ptoData.length) {
                             for (const dk of mData) {
