@@ -523,7 +523,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         }
         if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
-          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole} ;
+          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole:formData.actionTakenByRole} ;
           let canTakeActionOnMasterForm =  await getMasterForm(params);
           Object.assign(formData, canTakeActionOnMasterForm);
         }else{
@@ -706,6 +706,7 @@ module.exports.getForm = async (req, res,next) => {
           // });
         }
     } catch (error) {
+      console.log("error ::",error)
         return res.status(400).json({
             status: false,
             show: false,
@@ -856,6 +857,7 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async(req, res)=>{
     })
 
   }catch(error){
+    
     return res.status(400).json({
       status: false,
       show: false,
