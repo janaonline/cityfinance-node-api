@@ -1497,8 +1497,8 @@ async function getDataSet(ulb,prevYear,designYear) {
 async function updateForNextForms(design_year,ulb,utiData){
   try{
     let currentYear = getKeyByValue(years,design_year)
-    let prevYearVal = currentYear.split("-");
-    nextYearVal = Number(prevYearVal[0]) + 1 + "-" + (Number(prevYearVal[1]) + 1);
+    let nextYearVal = currentYear.split("-");
+    nextYearVal = Number(nextYearVal[0]) + 1 + "-" + (Number(nextYearVal[1]) + 1);
     let utilForm = await UtilizationReport.findOne({
       "designYear":ObjectId(years[nextYearVal]),
       "ulb":ObjectId(ulb)
