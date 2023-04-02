@@ -245,7 +245,7 @@ module.exports.createOrUpdate = async (req, res) => {
     try {
         let { ulbId, formId, actions, design_year, isDraft } = req.body
         let { role, _id: userId } = req.decoded
-
+        let response = {}
         let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId)
         if (!formIdValidations.valid) {
             response.message = formIdValidations.message
