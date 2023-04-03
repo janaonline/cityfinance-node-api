@@ -1,0 +1,128 @@
+require("./dbConnect");
+const propertyTaxOpMapper = new Schema(
+    {
+        ptoId: { type: Schema.Types.ObjectId, ref: "PropertyTaxOp", required: true },
+        ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
+        year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+        value: { type: Schema.Types.Mixed, default: null },
+        date: { type: Date, default: null }, // audit date
+        status: {
+            type: String,
+            default: "PENDING",
+            enum: {
+                values: ["PENDING", "APPROVED", "REJECTED", "NA"],
+                message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+            },
+        },
+        isActive: { type: Boolean, default: 1 },
+        type: {
+            type: String,
+            enum: {
+                values: [
+                    "notificationPropertyTax",
+                    "notificationAdoptionDate",
+                    "notificationIssuedBy",
+                    "notificationFile",
+                    "dmdIncludingCess",
+                    "dmdexcludingCess",
+                    "taxTypeDemand",
+                    "cessDemand",
+                    "doesUserChargesDmnd",
+                    "userChargesDmnd",
+                    "collectIncludingCess",
+                    "collectExcludingCess",
+                    "taxTypeCollection",
+                    "cessCollect",
+                    "totalMappedPropertiesUlb",
+                    "totalPropertiesTax",
+                    "totalPropertiesTaxDm",
+                    "totalPropertiesTaxDmCollected",
+                    "resValuePropertyTaxDm",
+                    "resNoPropertyTaxDm",
+                    "resValuePropertyTaxCollected",
+                    "resNoPropertyTaxCollected",
+                    "comValuePropertyTaxDm",
+                    "comNoPropertyTaxDm",
+                    "comValuePropertyTaxCollected",
+                    "comNoPropertyTaxCollected",
+                    "indValuePropertyTaxDm",
+                    "indNoPropertyTaxDm",
+                    "indValuePropertyTaxCollected",
+                    "indNoPropertyTaxCollected",
+                    "govValuePropertyTaxDm",
+                    "govNoPropertyTaxDm",
+                    "govValuePropertyTaxCollected",
+                    "govNoPropertyTaxCollected",
+                    "insValuePropertyTaxDm",
+                    "insNoPropertyTaxDm",
+                    "insValuePropertyTaxCollected",
+                    "insNoPropertyTaxCollected",
+                    "otherValuePropertyTaxDm",
+                    "otherNoPropertyTaxDm",
+                    "otherValuePropertyTaxCollected",
+                    "otherNoPropertyTaxCollected",
+                    "noOfPropertiesPaidOnline",
+                    "totalCollectionOnline",
+                    "propertyTaxCollectionBookCurrentDm",
+                    "propertyTaxCollectionBookCurrentCol",
+                    "propertyTaxCollectionBookCurrentArdm",
+                    "propertyTaxCollectionBookCurrentArCol",
+                    "propertyTaxCollectionBookCurrentTotalDm",
+                    "propertyTaxCollectionBookCurrentTotalCol",
+                    "omCostDeleveryWater",
+                    "omCostWaterService",
+                    "doesColSewerageCharges",
+                    "copyGazetteNotificationSewerage",
+                    "totalSewergeChrgDm",
+                    "totalSewergeChrgCol",
+                    "totalSewergeConnectionDm",
+                    "totalSewergeConnectionCol",
+                    "resValueSewerageTaxDm",
+                    "resNoSewerageTaxDm",
+                    "resValueSewerageTaxCollected",
+                    "resNoSewerageTaxCollected",
+                    "comValueSewerageTaxDm",
+                    "comNoSewerageTaxDm",
+                    "comValueSewerageTaxCollected",
+                    "comNoSewerageTaxCollected",
+                    "indValueSewerageTaxDm",
+                    "indNoSewerageTaxDm",
+                    "indValueSewerageTaxCollected",
+                    "indNoSewerageTaxCollected",
+                    "otherValueSewerageTaxDm",
+                    "otherNoSewerageTaxDm",
+                    "otherValueSewerageTaxCollected",
+                    "otherNoSewerageTaxCollected",
+                    "SewerageChrgTarrifSheet",
+                    "sewerageCollectionBookCurrentDm",
+                    "sewerageCollectionBookCurrentCol",
+                    "sewerageCollectionBookCurrentArdm",
+                    "sewerageCollectionBookCurrentArCol",
+                    "sewerageCollectionBookCurrentTotalDm",
+                    "sewerageCollectionBookCurrentTotalCol",
+                    "omCostDeleverySewerage",
+                    "omCostSewerageService"
+                ],
+                message: "ERROR: STATUS BE EITHER",
+            },
+        },
+        file: {
+            name: { type: String },
+            url: { type: String }
+        },
+        displayPriority: { type: Number, default: null },
+        createdAt: { type: Date, default: Date.now() },
+        modifiedAt: { type: Date, default: Date.now() },
+    },
+    { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+);
+module.exports = mongoose.model("PropertyTaxOpMapper", propertyTaxOpMapper);
+
+
+// let arr=[]
+// let tabs = data.tabs[0].data;
+// for(let k in tabs){
+//       arr.push(tabs[k].key)  
+// }
+// console.log("arr",arr)
+

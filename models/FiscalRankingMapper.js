@@ -1,6 +1,6 @@
 require("./dbConnect");
 const { modelSchema } = require('./constants')
-const {FRTypeShortKey} = require('../routes/FiscalRanking/formjson')
+const { FRTypeShortKey } = require('../routes/FiscalRanking/formjson')
 const fiscalRankingMapperSchema = new Schema(
     {
         fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
@@ -37,7 +37,7 @@ const fiscalRankingMapperSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER",
             },
         },
-        displayPriority: { type: String, default: null },
+        displayPriority: { type: Number, default: null },
         createdAt: { type: Date, default: Date.now() },
         modifiedAt: { type: Date, default: Date.now() },
     },

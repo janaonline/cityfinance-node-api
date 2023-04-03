@@ -4,7 +4,7 @@ const Response = require("../../service").response;
 const { years } = require("../../service/years");
 const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
-const {FRTypeShortKey} = require('./formjson')
+const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -655,8 +655,8 @@ exports.getView = async function (req, res, next) {
         value: data.populationFr.value
           ? data.populationFr.value
           : twEightSlbs
-          ? twEightSlbs?.population
-          : "",
+            ? twEightSlbs?.population
+            : "",
         readonly: false,
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
@@ -664,8 +664,8 @@ exports.getView = async function (req, res, next) {
         value: data.population11.value
           ? data.population11.value
           : ulbPData
-          ? ulbPData?.population
-          : "",
+            ? ulbPData?.population
+            : "",
         readonly: true,
         modelName: ulbPData?.population > 0 ? "Ulb" : "",
       };
@@ -889,8 +889,8 @@ exports.getView = async function (req, res, next) {
                   ) {
                     let chekFile = ulbDataUniqueFy
                       ? ulbDataUniqueFy.some(
-                          (el) => el?.year_id.toString() === pf?.year.toString()
-                        )
+                        (el) => el?.year_id.toString() === pf?.year.toString()
+                      )
                       : false;
                     pf["status"] = chekFile ? "NA" : "PENDING";
                     pf["modelName"] = chekFile ? "ULBLedger" : "";
@@ -916,8 +916,8 @@ exports.getView = async function (req, res, next) {
                 ) {
                   let chekFile = ulbDataUniqueFy
                     ? ulbDataUniqueFy.some(
-                        (el) => el?.year_id.toString() === pf?.year.toString()
-                      )
+                      (el) => el?.year_id.toString() === pf?.year.toString()
+                    )
                     : false;
                   pf["status"] = chekFile ? "NA" : "PENDING";
                   pf["modelName"] = chekFile ? "ULBLedger" : "";
@@ -949,9 +949,9 @@ exports.getView = async function (req, res, next) {
                     pf["file"] = singleFydata
                       ? singleFydata.file
                       : {
-                          name: "",
-                          url: "",
-                        };
+                        name: "",
+                        url: "",
+                      };
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf["status"] = singleFydata
                       ? singleFydata.status
@@ -1063,10 +1063,10 @@ const getUlbLedgerDataFilter = (objData) => {
   if (code.length) {
     let ulbFyData = data.length
       ? data.filter((el) => {
-          return (
-            code.includes(el.code) && el.year_id.toString() === year.toString()
-          );
-        })
+        return (
+          code.includes(el.code) && el.year_id.toString() === year.toString()
+        );
+      })
       : [];
     var sum =
       ulbFyData.length > 0
@@ -2589,7 +2589,7 @@ async function saveFeedbacksAndForm(
         design_year: ObjectId(design_year),
         status:
           calculatedStatus[calc].status == false ||
-          calculatedStatus[calc].status == "NA"
+            calculatedStatus[calc].status == "NA"
             ? "REJECTED"
             : "APPROVED",
         tab: calc,
@@ -3215,9 +3215,8 @@ function FRFinancialCsvCase(
     if (document[key] === "totalOwnRevenueArea") {
       FRFlag = true;
       str2 = str;
-      str2 += `${totalownOwnRevenueAreaLabel}, ${
-        document["fy_21_22_cash"] ?? ""
-      }`;
+      str2 += `${totalownOwnRevenueAreaLabel}, ${document["fy_21_22_cash"] ?? ""
+        }`;
     }
     document[key] = removeEscapeChars(labelObj[document[key]]);
     // if(!labelObj[document[key]]){
@@ -3264,8 +3263,8 @@ function computeQuery(params) {
       'accountStwreProof'
     ]
 
-    let indicatorArr = FRTypeShortKey.filter(el=>{
-        return !removeKeysFromTypeArray.includes(el)
+    let indicatorArr = FRTypeShortKey.filter(el => {
+      return !removeKeysFromTypeArray.includes(el)
     })
     output["FRUlbFinancialData"] = [
       {
@@ -3644,3 +3643,4 @@ function computeQuery(params) {
 function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
+ module.exports.checkUndefinedValidations = checkUndefinedValidations

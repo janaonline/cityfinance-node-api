@@ -10,6 +10,7 @@ const Year = require('../../models/Year');
 const {canTakenAction} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const StateMasterForm = require('../../models/StateMasterForm')
+const { YEAR_CONSTANTS } = require("../../util/FormNames");
 
 
 function response(form, res, successMsg ,errMsg){
@@ -69,6 +70,16 @@ exports.saveActionPlans = async (req, res) => {
     condition["design_year"] = data.design_year;
     condition["state"] = data.state;
 
+    if(formData.isDraft ===  false && formData['uaData']){
+      
+      let [validatedSuccess, validateResponse] = await validateFormData(formData['uaData']);
+      if(!validatedSuccess){
+        return res.status(400).json({
+          status: false,
+          message: validateResponse
+        });
+      }
+    }
     if(data.state && data.design_year){
       const submittedForm = await ActionPlans.findOne(condition);
       if (
@@ -184,6 +195,46 @@ exports.saveActionPlans = async (req, res) => {
   }
 };
 
+async function validateFormData(uaData){
+  let success = true, response="";
+  for(let ua of uaData){
+    for(let yearData of ua['yearOutlay']){
+      let keyArray = Object.keys(yearData);
+      let rangeObj = {min:0, max:999999};
+      for(let key of keyArray){
+        if(key[0] === "2"){
+         if(!checkRange(yearData[key], rangeObj)){
+            success = false;
+            response = `Validation failed for year ${key}`
+         }
+        }
+      }
+    }
+
+    for(let project of ua['sourceFund']){
+      let keyArray = Object.keys(project);
+      let rangeObj = {min:0, max:999999};
+      for(let key of keyArray){
+      if(key[0] === "2" || ["XV_FC"].includes(key)){
+        if(!checkRange(project[key], rangeObj)){
+          success = false;
+          response = `Validation failed for year ${key}`
+       }
+      }
+    }
+      
+    }
+
+    // for(let project of ua['projectExecute'] ){
+    // }
+  }
+  return [success, response];
+}
+function checkRange(value,range){
+    let validate= false;
+    validate = (range['min']<= value && range['max']>= value) ?  true : false;
+    return validate;
+}
 exports.getActionPlans = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
@@ -373,7 +424,8 @@ exports.action = async (req, res) => {
       isActive: true,
     }).select({
       history: 0,
-    });
+    }).lean();
+    let formData = req.body;
 
     let finalStatus = "APPROVED",
       allRejectReasons = [];
@@ -392,6 +444,32 @@ exports.action = async (req, res) => {
       }
     });
     req.body.status = finalStatus;
+
+    if(design_year === YEAR_CONSTANTS['22_23']){
+
+      formData.actionTakenByRole = req.decoded.role;
+      formData.actionTakenBy ? formData.actionTakenBy = ObjectId(formData.actionTakenBy): ""
+      formData.state ? formData.state = ObjectId(formData.state): ""
+      formData.design_year ? formData.design_year = ObjectId(formData.design_year): ""
+      formData.createdAt =  currentActionPlans.createdAt
+      formData.actionTakenBy ? formData.actionTakenBy = ObjectId(formData.actionTakenBy): ""
+
+      delete formData.canTakeAction;
+
+      const updatedForm = await ActionPlans.findOneAndUpdate(
+        {
+          state: ObjectId(state),
+          design_year: ObjectId(design_year),
+        },
+        { $set: req.body, $push: { history: formData } }
+      ).lean();
+
+      if(!updatedForm){
+        return Response.BadRequest(res, {}, "Action not Submitted");  
+      }
+      return Response.OK(res, updatedForm, "Action Submitted!");
+
+    }
 
     const newActionPlans = await ActionPlans.findOneAndUpdate(
       {
