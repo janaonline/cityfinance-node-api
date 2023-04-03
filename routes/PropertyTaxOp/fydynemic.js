@@ -57,6 +57,7 @@ const propertyTaxOpFormJson = () => {
                                 "postion": "0",
                                 "value": "",
                                 "file": "",
+                                "date": "",
                                 "min": "",
                                 "max": "",
                                 "required": true,
@@ -114,7 +115,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": "",
                                 "required": true,
@@ -4467,7 +4471,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
@@ -4525,7 +4532,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
@@ -6394,7 +6404,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
@@ -7067,7 +7080,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
