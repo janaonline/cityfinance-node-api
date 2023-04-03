@@ -1947,19 +1947,69 @@ const TAB_OBJ = {
   unAudited: 'unAudited'
 }
 function filterTabShortKeys(req, shortKeys) {
-  const separator = ".";
-  let output= shortKeys;
-  if (!req.body.audited.submit_annual_accounts) {
-    output = shortKeys.filter(el => {
-      return el.split(separator)[0] === TAB_OBJ['audited'];
-    });
+  try {
+    const separator = ".";
+    let output = shortKeys;
+    const provisionalKey = "provisional_data";
+    const keysToRemove = ['pdf', 'excel', provisionalKey];
+    const customKeysForAAToRemove = ['f_assets','assets','s_grant','c_grant','revenue','expense'];
+    let outputAudited =[], outputUnAudited = [];
+    outputAudited = extractTabKeys(req, shortKeys, separator,TAB_OBJ['audited']);
+    outputUnAudited = extractTabKeys(req, shortKeys, separator,TAB_OBJ['unAudited']);
+    output = [...outputAudited, ...outputUnAudited];
+    let result = []
+    for (let element of output) {
+      let elArray = element.split(separator);
+      if (elArray.length > 2 && elArray.includes(provisionalKey)) {
+
+        elArray = removeElementsFromArray(elArray, keysToRemove);
+        let flag =true;
+        for(let customKey of customKeysForAAToRemove ){
+
+          if(elArray.includes(customKey)){
+            flag =false
+            break;
+          }
+        }
+        element = elArray.join(separator);
+        if(!result.includes(element) && flag){
+          result.push(element)
+        }
+
+      }
+    }
+       return result;
+  } catch (error) {
+     throw (error.message);
   }
-  if (!req.body.unAudited.submit_annual_accounts) {
-    output = shortKeys.filter(el => {
-      return el.split(separator)[0] === TAB_OBJ['unAudited'];
+}
+
+function extractTabKeys(req, shortKeys, separator,tabName) {
+  let output = [];
+  const FIRST_INDEX = 0;
+  if (req.body[tabName].submit_annual_accounts) {
+    output = shortKeys.filter((el) => {
+      return el.split(separator)[FIRST_INDEX] === TAB_OBJ[tabName];
     });
+  }else{
+    output.push(`${tabName}.provisional_data.excel`)
   }
   return output;
+}
+
+function removeElementsFromArray(elArray, keysToRemove) {
+  try {
+    for(let key of keysToRemove){
+      let keyToRemoveIndex = elArray.indexOf(key);
+      if(keyToRemoveIndex>=0){
+        elArray.splice(keyToRemoveIndex, 1);
+      }
+    }
+    return elArray
+  } catch (error) {
+    throw(error.message)
+  }
+  // return elArray
 }
 
 function clearResponseReason(formData) {
