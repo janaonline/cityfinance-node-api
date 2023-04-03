@@ -454,7 +454,9 @@ exports.getView = async function (req, res, next) {
                                 for (const pf of yearData) {
                                     if (!isEmptyObj(pf)) {
                                         let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
-                                        pf.file ? (pf.file = d ? d.file : "") : pf.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
+                                        if (d) {
+                                            pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
+                                        }
                                         pf.readonly = isReadOnly({ isDraft, status })
                                     }
                                 }
@@ -468,7 +470,7 @@ exports.getView = async function (req, res, next) {
                         }
                     }
                 }
-            }   
+            }
         }
         return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader } });
     } catch (error) {
