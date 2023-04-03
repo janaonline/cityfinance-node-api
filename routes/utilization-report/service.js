@@ -46,7 +46,8 @@ function checkForCalculations(reports){
   try{
     let exp = parseFloat(reports.grantPosition.expDuringYr)
     let projectSum = 0
-    if(reports.projects.length > 0){
+    
+    if(reports?.projects?.length > 0){
       projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
     }
     
@@ -1506,12 +1507,12 @@ async function updateForNextForms(design_year,ulb,utiData){
       "designYear":ObjectId(years[nextYearVal]),
       "ulb":ObjectId(ulb)
     })
-    let condition = {};
-    condition._id = utilForm._id
-    condition.ulb = ObjectId(ulb)
-    condition.designYear = ObjectId(years[nextYearVal])
-    condition.ulb = ulb;
     if (utilForm) {
+    let condition = {};
+      condition._id = utilForm._id
+      condition.ulb = ObjectId(ulb)
+      condition.designYear = ObjectId(years[nextYearVal])
+      condition.ulb = ulb;
       let utilFormStatus = calculateStatus(
         utilForm.status,
         utilForm.actionTakenByRole,
@@ -1555,6 +1556,7 @@ async function updateForNextForms(design_year,ulb,utiData){
     }
   }
   catch(err){
+    console.log(err)
     console.log("error in checkForNextForms :::: ",err.message)
   }
 }
