@@ -111,6 +111,7 @@ const waterManagementSchema = new Schema({
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
+    accessibleForYears:[],
     status: statusType(),
     rejectReason: { type: String, default: '' },
 });

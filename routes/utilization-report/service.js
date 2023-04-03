@@ -1431,7 +1431,7 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     let projectObj = await UtilizationReport.findOne({
       "ulb":ObjectId(ulb),
       "designYear":ObjectId(design_year)
-    },{projects:1,isDraft:1,status:1,actionTakenByRole:1}).lean()
+    },{projects:1,isDraft:1,status:1,actionTakenByRole:1,currentFormStatus:1}).lean()
     
     if(!projectObj){
       response.message = "No utilization report found with this ulb and design year"
@@ -1441,6 +1441,9 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     }
     if(projectObj){
       formStatus = decideDisabledFields(projectObj,"ULB")
+      if(projectObj.status === ""){
+          formStatus = MASTER_STATUS_ID[projectObj.currentFormStatus]  
+      }
       projectObj.disableFields = formStatus
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()
