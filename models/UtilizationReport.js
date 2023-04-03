@@ -56,7 +56,7 @@ const UtilizationReportSchema = new Schema(
     grantType: { type: String, default:"Tied" ,required: true, enum: ["Tied", "Untied"] },
     grantPosition: {
       unUtilizedPrevYr: { type: Number, default: null },
-      receivedDuringYr: { type: Number, default: 0 },
+      receivedDuringYr: { type: Number, default: null },
       expDuringYr: {
         type: Number, default: 0
       },
@@ -66,41 +66,41 @@ const UtilizationReportSchema = new Schema(
     categoryWiseData_swm: { type: [CategoryWiseDataSchema], default: [
       {
         category_name: "Sanitation",
-        grantUtilised: 0,
-        numberOfProjects: 0,
-        totalProjectCost: 0,
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
     },
     {
         category_name: "Solid Waste Management",
-        grantUtilised: 0,
-        numberOfProjects: 0,
-        totalProjectCost: 0,
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
     },
     ] },
     categoryWiseData_wm: { type: [CategoryWiseDataSchema], default: [
       {
         category_name: "Rejuvenation of Water Bodies",
-        grantUtilised: 0,
-        numberOfProjects: 0,
-        totalProjectCost: 0,
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
     },
     {
         category_name: "Drinking Water",
-        grantUtilised: 0,
-        numberOfProjects: 0,
-        totalProjectCost: 0,
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
     },
     {
         category_name: "Rainwater Harvesting",
-        grantUtilised: 0,
-        numberOfProjects: 0,
-        totalProjectCost: 0,
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
     },
     {
         category_name: "Water Recycling",
-        grantUtilised: 0,
-        numberOfProjects: 0,
-        totalProjectCost: 0,
+        grantUtilised: null,
+        numberOfProjects: null,
+        totalProjectCost: null,
     },
 
     ] },
