@@ -8,5 +8,6 @@ module.exports = {
     'Approved_By_MoHUA': 'Approved By MoHUA',
     'Rejected_By_MoHUA': 'Returned By MoHUA',
     'Submitted': 'Yes',
-    'Not_Submitted': 'No'
+    'Not_Submitted': 'No',
+    'Not Started': 1,
 }

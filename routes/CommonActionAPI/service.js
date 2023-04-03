@@ -6,17 +6,189 @@ const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const PropertyTaxOp = require('../../models/PropertyTaxOp');
 const moongose = require('mongoose')
+const {DurProjectJson} = require("./jsons")
 const StatusList = require('../../util/newStatusList')
 const catchAsync = require('../../util/catchAsync')
 const ObjectId = require("mongoose").Types.ObjectId;
 const Sidemenu = require('../../models/Sidemenu');
+const userTypes = require("../../util/userTypes")
 const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames } = require('../../util/FormNames');
-const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc')
-module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
+const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
+const {modelPath} = require('../../util/masterFunctions')
+const Response = require("../../service").response;
+const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
+const CurrentStatus = require('../../models/CurrentStatus');
+const {MASTER_STATUS_ID} = require("../../util/FormNames")
+var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
+let groupedQuestions = {
+    "location":['lat','long']
+}
+let yearValueField = {
+    "year":"",
+    "value":""
+}
+let objectFields = {
+    "waterSupply_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "waterSupply_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+    "sanitation_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "sanitation_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+    "stormWater_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "stormWater_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+    "solidWaste_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
+    "solidWaste_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
+}
+let dynamicTables = ['Category']
+var formIdCollections= {
+    "80":"PropertyTaxOp"
+}
+var DurCase = ['projectDetails_tableView_addButton']
+var consentCases = {
+    "1":true,
+    "2":false
+}
+
+var arrFields = {
+    "waterManagement_tableView":"categoryWiseData_wm",
+    "solidWasteManagement_tableView":"categoryWiseData_swm",
+    "projectDetails_tableView_addButton":"projects",
+    "waterSupply_tableView":"data.water supply",
+    "sanitation_tableView":"data.sanitation",
+    "solidWaste_tableView":"data.solid waste",
+    "stormWater_tableView":"data.storm water",
+
+}
+
+var categoryTable = {}
+var specialCases = ['projectDetails_tableView_addButton','waterSupply_tableView','solidWaste_tableView','stormWater_tableView','sanitation_tableView']
+var annualRadioButtons = { // if there are any label changes for radio button in frontend please update here
+    "Yes":true,
+    "No":false,
+    "Agree":true
+}
+var customBtnsWithFormID = {
+    "5":annualRadioButtons
+}
+
+const customDisableFields = {
+    "actual":"actualDisable",
+    "target_1":"targetDisable"
+}
+var customkeys = {
+    "general":{
+        "ulbName":"ulbName",
+        "grantType":"grantType"
+    },
+    "selfDec":{
+        "name_":"name",
+        "designation":"designation"
+    },
+    "grantPosition":{
+        "grantPosition.unUtilizedPrevYr":"grantPosition.unUtilizedPrevYr",
+        "grantPosition.receivedDuringYr":"grantPosition.receivedDuringYr",
+        "grantPosition.expDuringYr":"grantPosition.expDuringYr",
+        "grantPosition.closingBal":"grantPosition.closingBal",
+    },
+    
+    "waterManagement_tableView":{
+        "category_name":"wm_category_name",
+        "grantUtilised":"wm_grantUtilised",
+        "numberOfProjects":"wm_numberOfProjects",
+        "totalProjectCost":"wm_totalProjectCost"
+
+    },
+    "solidWasteManagement_tableView":{
+        "category_name":"sw_category_name",
+        "grantUtilised":"sw_grantUtilised",
+        "numberOfProjects":"sw_numberOfProjects",
+        "totalProjectCost":"sw_totalProjectCost"
+
+    },
+    "waterSupply_tableView":{
+        "question": "waterSupply_question",
+        "actual":  "waterSupply_actualIndicator",
+        "target_1": "waterSupply_targetIndicator",
+        "indicatorLineItem":"waterSupply_indicatorLineItem",
+        "type":"waterSupply_type",
+        "unit": "waterSupply_unit",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
+    },
+    "solidWaste_tableView":{
+        "question": "solidWaste_question",
+        "actual":  "solidWaste_actualIndicator",
+        "target_1": "solidWaste_targetIndicator",
+        "indicatorLineItem":"solidWaste_indicatorLineItem",
+        "type":"solidWaste_type",
+        "unit": "solidWaste_unit",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
+    },
+    "sanitation_tableView":{
+        "question": "sanitation_question",
+        "actual":  "sanitation_actualIndicator",
+        "target_1": "sanitation_targetIndicator",
+        "indicatorLineItem":"sanitation_indicatorLineItem",
+        "unit": "sanitation_unit",
+        "type":"sanitation_type",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
+    },
+    "stormWater_tableView":{
+        "question": "stormWater_question",
+        "actual":  "stormWater_actualIndicator",
+        "target_1": "stormWater_targetIndicator",
+        "indicatorLineItem":"stormWater_indicatorLineItem",
+        "unit": "stormWater_unit",
+        "type":"stormWater_type",
+        "actualDisable":"actualDisable",
+        "targetDisable":"targetDisable"
+    },
+    "projectDetails_tableView_addButton":{
+        "cost": 'cost',
+        "expenditure": 'expenditure',
+        "modifiedAt": 'modifiedAt',
+        "createdAt": 'createdAt',
+        "isActive": 'isActive',
+        "_id": '_id',
+        "category": 'category',
+        "name": 'name',
+        "location": 'location',
+        "capitalExpenditureState": 'capitalExpenditureState',
+        "capitalExpenditureUlb": 'capitalExpenditureUlb',
+        "omExpensesState": 'omExpensesState',
+        "omExpensesUlb": 'omExpensesUlb',
+        "stateShare": 'stateShare',
+        "percProjectCost":"percProjectCost",
+        "completionDate":"completionDate",
+        "startDate":"startDate"
+      }
+
+}
+var modifiedShortKeys = {
+}
+module.exports.modifiedShortKeys  = modifiedShortKeys
+var shortKeysWithModelName = {
+    "rating":{"modelName":"Rating","identifier":"option_id","from":"value"},
+    "category":{"modelName":"Category","identifier":"name","from":"label"}
+}
+var answerObj = {
+    "label": "",
+    "textValue": "",
+    "value": "",
+}
+var inputType = {
+    "1": "label",
+    "2": "textValue",
+    "3": "value",
+    "11": ["value", "label"],
+    "14":"value"
+}
+
+const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
             switch (true) {
@@ -71,55 +243,11 @@ module.exports.calculateStatus = (status, actionTakenByRole, isDraft, formType) 
     }
 }
 
-module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
-    switch (formType) {
-        case "ULB":
-            switch (true) {
-                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
-                    return StatusList.In_Progress
-                    break;
-                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
-                    return StatusList.Under_Review_By_MoHUA
-                    break;
-                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
-                    return StatusList.Approved_By_MoHUA
-                    break;
-                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
-                    return StatusList.Rejected_By_MoHUA
-                    break;
-                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
-                    return StatusList.Under_Review_By_MoHUA
-
-                default:
-                    return StatusList.Not_Started
-                    break;
-            }
-
-        case "MoHua":
-            switch (true) {
-                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
-                    return StatusList.In_Progress
-                    break;
-                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
-                    return StatusList.Under_Review_By_MoHUA
-                    break;
-                case status == 'APPROVED' && actionTakenByRole == 'MoHUA' && !isDraft:
-                    return StatusList.Approved_By_MoHUA
-                    break;
-                case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
-                    return StatusList.Rejected_By_MoHUA
-                    break;
-
-                case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
-                    return StatusList.Under_Review_By_MoHUA
-
-                default:
-                    return StatusList.Not_Started
-                    break;
-            }
-            break;
-
-
+module.exports.calculateStatusMaster = (status)=>{
+    if(MASTER_STATUS_ID.hasOwnProperty(status)){
+        return MASTER_STATUS_ID[status];
+    }else{
+        return MASTER_STATUS_ID['1'];
     }
 }
 
@@ -162,7 +290,7 @@ module.exports.calculateStatusForFiscalRankingForms = (status="", actionTakenByR
                 case status == 'REJECTED' && actionTakenByRole == 'MoHUA' && !isDraft:
                     return StatusList.Rejected_By_MoHUA
                     break;
-                    
+
                 case status == "PENDING" && actionTakenByRole == "MoHUA" && isDraft:
                     return StatusList.Under_Review_By_MoHUA
 
@@ -172,7 +300,7 @@ module.exports.calculateStatusForFiscalRankingForms = (status="", actionTakenByR
             }
             break;
 
-   
+
     }
 }
 
@@ -219,6 +347,44 @@ module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, l
     }
 
 }
+
+module.exports.canTakenActionMaster = (params) => {
+  let { status, formType, loggedInUser } = params;
+  switch (formType) {
+    case "ULB":
+      if (loggedInUser == "STATE") {
+        if (status === MASTER_STATUS["Under Review by State"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else if (loggedInUser == "MoHUA") {
+        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+      break;
+
+    case "STATE":
+      if (loggedInUser == "MoHUA") {
+        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+      break;
+
+    default:
+      break;
+  }
+};
 
 module.exports.calculateKeys = (formStatus, formType) => {
     let keys = {
@@ -819,19 +985,19 @@ let apiUrls = {
 //         }  
 //   },
 // ])
-function writeCsv(cols, csvCols,ele, res,cb) {
+function writeCsv(cols, csvCols, ele, res, cb) {
     let dbCOls = Object.keys(csvCols)
     try {
         let str = ""
         for (let key of dbCOls) {
-            if(cb){
+            if (cb) {
                 ele = cb(ele)
             }
             if (ele[key]) {
                 str += ele[key] + ","
             }
             else {
-                str += " "+","
+                str += " " + ","
             }
 
         }
@@ -850,7 +1016,7 @@ function writeCsv(cols, csvCols,ele, res,cb) {
  * @param {*} res 
  * @param {*} cols 
  */
-function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr,cb=null) {
+function sendCsv(filename, modelName, query, res, cols, csvCols, fromArr, cb = null) {
     try {
 
         let cursor = moongose.model(modelName).aggregate(query).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
@@ -861,11 +1027,11 @@ function sendCsv(filename, modelName, query, res, cols,csvCols, fromArr,cb=null)
         cursor.on("data", (document) => {
             if (fromArr) {
                 for (let ele of document[fromArr]) {
-                    writeCsv(cols,csvCols, ele, res,cb)
+                    writeCsv(cols, csvCols, ele, res, cb)
                 }
             }
             else {
-                writeCsv(cols,csvCols, document,res,cb)
+                writeCsv(cols, csvCols, document, res, cb)
             }
         })
         cursor.on("end", (el) => {
@@ -911,6 +1077,46 @@ module.exports.canTakeActionOrViewOnly = (data, userRole, adminLevel = false) =>
             return true;
             break;
         case status == StatusList.Approved_By_MoHUA:
+            return false;
+            break;
+
+        default:
+            break;
+    }
+}
+
+module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
+    const { status, userRole, adminLevel = false }  = params;
+    switch (true) {
+        case status == MASTER_STATUS['Not Started']:
+            return false;
+            break;
+        case status == MASTER_STATUS['In Progress']:
+            return false;
+            break;
+        case status == MASTER_STATUS['Under Review by State'] && userRole == 'STATE':
+            return true;
+            break;
+        case status == MASTER_STATUS['Under Review by MoHUA'] && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            console.log("adminglevel ::: ", adminLevel)
+            return true
+            break;
+        case status == MASTER_STATUS['Under Review by State'] && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            return false;
+            break;
+        case status == MASTER_STATUS['Rejected by State']:
+            return false;
+            break;
+        case status == MASTER_STATUS['Rejected by MoHUA']:
+            return false;
+            break;
+        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'STATE':
+            return false;
+            break;
+        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'MoHUA':
+            return true;
+            break;
+        case status == MASTER_STATUS['Approved by MoHUA']:
             return false;
             break;
 
@@ -1043,86 +1249,86 @@ class AggregationServices {
             $multiply: arr
         }
     }
-    static convertIntoLakhs(field){
+    static convertIntoLakhs(field) {
         return {
-            "$multiply":[field,100000]
+            "$multiply": [field, 100000]
         }
     }
-    static filterArr(fieldName,fromField,cond){
-        try{
-            let obj =  {
-                "$addFields":{}
+    static filterArr(fieldName, fromField, cond) {
+        try {
+            let obj = {
+                "$addFields": {}
             }
-            obj["$addFields"][fieldName] = this.getCommonFilterObj(fromField,cond)
+            obj["$addFields"][fieldName] = this.getCommonFilterObj(fromField, cond)
             return obj
         }
-        catch(err){
-            console.log("error in conditionProj :: ",err.message)
+        catch (err) {
+            console.log("error in conditionProj :: ", err.message)
         }
     }
-    static getCommonFilterObj(field,cond){
-        try{
+    static getCommonFilterObj(field, cond) {
+        try {
             return {
-                "$filter":{
-                    "input":field,
-                    "as":"item",
-                    "cond":cond
+                "$filter": {
+                    "input": field,
+                    "as": "item",
+                    "cond": cond
                 }
             }
         }
-        catch(err){
-            console.log("error in getCommonFilterObj :: ",err.message)
+        catch (err) {
+            console.log("error in getCommonFilterObj :: ", err.message)
         }
     }
-    static addMultipleFields(obj,arrayForm){
+    static addMultipleFields(obj, arrayForm) {
         let temp = []
-        try{
+        try {
             let returnable = {
-                "$addFields":{}
+                "$addFields": {}
             }
-            for(var field in obj){
+            for (var field in obj) {
                 let fieldName = obj[field]['field']
                 let type = obj[field]['type']
-                returnable["$addFields"][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
-                if(arrayForm){
-                    let tempObj = {"$addFields":{}}
-                        tempObj["$addFields"][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
+                returnable["$addFields"][fieldName] = type == "lakhs" ? this.convertIntoLakhs(field) : this.convertToCr(field)
+                if (arrayForm) {
+                    let tempObj = { "$addFields": {} }
+                    tempObj["$addFields"][fieldName] = type == "lakhs" ? this.convertIntoLakhs(field) : this.convertToCr(field)
                     temp.push(tempObj)
                 }
             }
             return arrayForm ? temp : returnable
         }
-        catch(err){
-            console.log("error in addMultipleFields :: ",err.message)
+        catch (err) {
+            console.log("error in addMultipleFields :: ", err.message)
         }
     }
 
-    static addConvertedAmount(field,fieldName,type){
+    static addConvertedAmount(field, fieldName, type) {
         let obj = {
-            "$addFields":{}
+            "$addFields": {}
         }
-        obj['$addFields'][fieldName] = type=="lakhs"? this.convertIntoLakhs(field) :this.convertToCr(field)
+        obj['$addFields'][fieldName] = type == "lakhs" ? this.convertIntoLakhs(field) : this.convertToCr(field)
         return obj
     }
-    static getCondObj(value,then){
+    static getCondObj(value, then) {
         return {
-            "$cond":{
-                "if":{"$gt":[value,0]},
-                "then":then,
-                "else":0
+            "$cond": {
+                "if": { "$gt": [value, 0] },
+                "then": then,
+                "else": 0
             }
         }
     }
-    static addFields(fieldName,field){
-        try{
-            let obj =  {
-                "$addFields":{}
+    static addFields(fieldName, field) {
+        try {
+            let obj = {
+                "$addFields": {}
             }
             obj['$addFields'][fieldName] = field
             return obj
-        } 
-        catch(err){
-            console.log("error in addFields :: ",err.message)
+        }
+        catch (err) {
+            console.log("error in addFields :: ", err.message)
         }
     }
     static getCommonDivObj(arr) {
@@ -1130,23 +1336,23 @@ class AggregationServices {
             $divide: arr
         }
     }
-    static convertToCr(value){
-        return this.getCondObj(value,this.getCommonDivObj([value,10000000]))
+    static convertToCr(value) {
+        return this.getCondObj(value, this.getCommonDivObj([value, 10000000]))
     }
-    static getCommonSubtract(arr){
-        let sub = {$subtract:arr}
+    static getCommonSubtract(arr) {
+        let sub = { $subtract: arr }
         return {
-            "$cond":{
-                "if":{
-                    "$gte":[sub,0],
+            "$cond": {
+                "if": {
+                    "$gte": [sub, 0],
                 },
-                "then":sub,
-                "else":0
+                "then": sub,
+                "else": 0
             }
         }
     }
-    static getCasesForCurrenCon(fieldName,then,value1,value2){
-        let obj =  {
+    static getCasesForCurrenCon(fieldName, then, value1, value2) {
+        let obj = {
             "case": {},
             "then": then
         }
@@ -1154,51 +1360,51 @@ class AggregationServices {
             "$and": [
                 { "$gte": [`$${fieldName}`, value1] },
                 { "$lt": [`$${fieldName}`, value2] }
-        ]
+            ]
         }
         return obj
     }
 
-    static getCommonPerCalc(value,totalValue){
+    static getCommonPerCalc(value, totalValue) {
         let cont = {
-            "$multiply":[
-                this.getCondObj(value,this.getCommonDivObj([value,totalValue])),
+            "$multiply": [
+                this.getCondObj(value, this.getCommonDivObj([value, totalValue])),
                 100
             ]
         }
         return this.getCommonConvertor(
             {
-                "$cond":{
-                    "if":{
-                        "$gte":[cont,
-                        0
-                    ]
+                "$cond": {
+                    "if": {
+                        "$gte": [cont,
+                            0
+                        ]
                     },
-                    "then":cont,
-                    "else":0
+                    "then": cont,
+                    "else": 0
                 }
             },
             "int"
         )
     }
-    static getCommonSubStr(field,start,end){
+    static getCommonSubStr(field, start, end) {
         return {
-            "$substr" :[field,start,end]
+            "$substr": [field, start, end]
         }
     }
-    static getCommonCurrencyConvertor(fieldName,arr,def) {
-        let obj =  {
+    static getCommonCurrencyConvertor(fieldName, arr, def) {
+        let obj = {
             "$switch": {
                 "branches": [
-                    
+
                 ],
-                "default":def
+                "default": def
             },
-            
+
         }
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[0],1000,10000))
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[1],10000,1000000))
-        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName,arr[2],1000000,100000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName, arr[0], 1000, 10000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName, arr[1], 10000, 1000000))
+        obj["$switch"]["branches"].push(this.getCasesForCurrenCon(fieldName, arr[2], 1000000, 100000000))
         return obj
     }
 }
@@ -1206,54 +1412,1664 @@ module.exports.sendCsv = sendCsv
 module.exports.AggregationServices = AggregationServices
 module.exports.apiUrls = apiUrls
 
-module.exports.canTakeActionOrViewOnly =  (data, userRole,adminLevel=false)=>{
+module.exports.canTakeActionOrViewOnly = (data, userRole) => {
     let status = data['formStatus'];
     switch (true) {
-      case status == StatusList.Not_Started:
-        return false;
-        break;
-      case status == StatusList.In_Progress:
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_State && userRole == 'STATE':
-        return true;
-        break;
-        case status == StatusList.Under_Review_By_MoHUA && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-            console.log("adminglevel ::: ",adminLevel)
-        return true
-        break;
-      case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
-        return false;
-        break;
-      case status == StatusList.Rejected_By_State:
-        return false;
-        break;
-      case status == StatusList.Rejected_By_MoHUA:
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
-        return false;
-        break;
-      case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
-        return true;
-        break;
-      case status == StatusList.Approved_By_MoHUA:
-        return false;
-        break;
-  
-      default:
-        break;
-    }
-  }
+        case status == StatusList.Not_Started:
+            return false;
+            break;
+        case status == StatusList.In_Progress:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_State && userRole == 'STATE':
+            return true;
+            break;
+        case status == StatusList.Under_Review_By_State && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+            return false;
+            break;
+        case status == StatusList.Rejected_By_State:
+            return false;
+            break;
+        case status == StatusList.Rejected_By_MoHUA:
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'STATE':
+            return false;
+            break;
+        case status == StatusList.Under_Review_By_MoHUA && userRole == 'MoHUA':
+            return true;
+            break;
+        case status == StatusList.Approved_By_MoHUA:
+            return false;
+            break;
 
-  module.exports.getCurrentFinancialYear = ()=> {
+        default:
+            break;
+    }
+}
+
+
+module.exports.getCurrentFinancialYear = () => {
     var fiscalyear = "";
     var today = new Date();
     if ((today.getMonth() + 1) <= 3) {
-      fiscalyear = (today.getFullYear() - 1) + "-" + today.toLocaleDateString('en', {year: '2-digit'})
-  
+        fiscalyear = (today.getFullYear() - 1) + "-" + today.toLocaleDateString('en', { year: '2-digit' })
+
     } else {
-      fiscalyear = today.getFullYear() + "-" + (parseInt(today.toLocaleDateString('en', {year: '2-digit'})) + 1)
+        fiscalyear = today.getFullYear() + "-" + (parseInt(today.toLocaleDateString('en', { year: '2-digit' })) + 1)
     }
     return fiscalyear
+}
+
+function traverseAndFlatten(currentNode, target, flattenedKey) {
+    /**
+     * TODO:
+     * Pending case for handling array data inside some field
+     */
+    for (let key in currentNode) {
+        let iterator = Number(key)
+        if(!isNaN(iterator)){
+            let iteratorKey = flattenedKey.split(".")[0]
+            if(iteratorKey != "_id"){
+                target.parent_arr.add(iteratorKey)
+            }
+        }
+        if (currentNode.hasOwnProperty(key)) {
+            var newKey;
+            if (flattenedKey === undefined) {
+                newKey = key;
+            } else {
+                let iteratorObjKey = flattenedKey.split(".")[0]
+                newKey = flattenedKey + '.' + key;
+                if(iteratorObjKey != "_id" && !target.parent_arr.has(iteratorObjKey)){
+                    target.parent_obj.add(iteratorObjKey)
+                }
+                
+            // }
+            }
+            var value = currentNode[key];
+            if (typeof value === "object" && !Array.isArray(value) && !ignorableKeys.includes(key)) {
+                traverseAndFlatten(value, target, newKey);
+            } else {
+                target[newKey] = value;
+            }
+        }
+    }
+}
+
+module.exports.getFlatObj = (obj) => {
+    let flattendObj = {}
+    flattendObj['parent_arr'] = new Set()
+    flattendObj['parent_obj'] = new Set()
+    traverseAndFlatten(obj, flattendObj)
+    // let flattenArr = []
+    flattendObj['parent_arr'] = Array.from(flattendObj['parent_arr'])
+    flattendObj['parent_obj'] = Array.from(flattendObj['parent_obj'])
+    return flattendObj
+}
+
+class PayloadManager{
+    constructor(temp,shortKey,objects,req,shortKeysWithModelName){
+        this.answerLabels = {
+            "2":"value",
+            "1":"textValue"
+        }
+        this.temp = temp
+        this.shortKey = shortKey
+        this.objects = objects
+        this.req = req
+        this.shortKeysWithModelName = shortKeysWithModelName
+        this.inputName = inputType[objects.input_type]
+        this.value = objects['answer'][0][this.inputName]
+        this.formId = req.body.formId || ""
+    }
+    async getValuesFromModel(){
+        try{
+            if(Object.keys(this.shortKeysWithModelName).includes(this.shortKey)){
+                let modelName = shortKeysWithModelName[this.shortKey].modelName
+                let fromValue = shortKeysWithModelName[this.shortKey].from
+                let identifier = shortKeysWithModelName[this.shortKey].identifier
+                let fromString = this.objects['answer'][0][fromValue]
+                let filters = {}
+                filters[identifier] = fromString
+                if(Object.keys(this.req.body).includes("isGfc")){
+                    filters[identifier] = parseInt(filters[identifier])
+                    filters['formName'] = this.req.body.isGfc ? "gfc" :"odf"
+                    filters['financialYear'] = this.req.body.design_year
+                } 
+                let databaseObj;
+                if(dynamicTables.includes(modelName)){
+                    databaseObj = categoryTable[fromString]
+                }
+                else{
+                    databaseObj = await moongose.model(modelName).findOne(filters)
+                }
+                let mainvalue = databaseObj._id
+                return mainvalue
+            }
+            else{
+                let answer = this.objects.answer.find(item => this.value)
+                this.value = answer.label
+                return this.value
+            }
+        }
+        catch(err){
+            console.log("getValuesFromModel :::::::: ",err.message)
+        }
+    }
+    async handleFileObjects(){
+        try{
+            if (Array.isArray(this.inputName)) {
+                let mainvalue = {
+                    "name": this.objects['answer'][0]['label'],
+                    "url": this.objects['answer'][0]['value'],
+                }
+                return mainvalue
+            }
+        }
+        catch(err){
+            console.log("error in handleFileObjects ::: ",err.message)
+        }
+    }
+    async handleRadioButtons(){
+        try{
+            let label =  this.objects['answer'][0]['label']
+            if(Object.keys(customBtnsWithFormID).includes(this.formId.toString())){
+                let radioButtonObj = customBtnsWithFormID[this.formId.toString()]
+                this.value = radioButtonObj[label]
+            }
+            return this.value 
+        }
+        catch(err){
+            console.log("error in handleRadioButtons ::: ",err.message)
+        }
+    }
+    async getNumericValues(){
+        try{
+            let shortKey = this.objects['shortKey']
+            this.value = this.objects['answer'][0]['value']
+            if (Object.keys(objectFields).includes(shortKey)){
+                let object = objectFields[shortKey]['object']
+                object['year'] = this.req.body[objectFields[shortKey]['fieldName']]
+                object['value'] = this.objects['answer'][0]['value']
+                this.value = {...object}
+            }
+            return this.value
+        }
+        catch(err){
+            console.log("error in  getNumericValues ::: ",err.message)
+        }
+    }
+    async getTextValues(){
+        try{
+            this.value = this.objects['answer'][0]['textValue']
+            return this.value
+        }
+        catch(err){
+            console.log("error in getTextValues :",err.message)
+        }
+    }
+    async handleConsentValues(){
+        try{
+            let answer = consentCases[this.objects['answer'][0]['value']]
+            this.value = answer
+            return this.value
+        } 
+        catch(err){
+            console.log("error in handleConsentValue ::: ",err.message)
+            return this.value = false
+        }
+    }
+    async handleGpsValues(){
+        try{
+            let answer = this.objects['answer'][0]['value'].split(",")
+            let locationObj = {
+                'lat':answer?.[0],
+                'long':answer?.[1]
+            }
+            this.value = {...locationObj}
+            return this.value
+        }
+        catch(err){
+            console.log("error in handleGps values ::: ",err.message)
+            return this.value = {
+                "lat":0,
+                "long":0,
+            }
+        }
+    }
+    async handleDateValues(){
+        try{
+            let answer = this.objects['answer'][0]['value']
+            if(!answer ){ // check if the date object is array because mform returns array if if empty
+                answer = new Date().toISOString() // static code because of issue in mform json
+            }
+            this.value = new Date(answer)
+            if(Array.isArray(answer)){
+                this.value = ""
+            }
+            return this.value
+        }
+        catch(err){
+            console.log("error in handleDateValues :: ",err.message)
+        }
+    }
+}
+
+
+async function decideValues(temp,shortKey,objects,req){
+    try{
+        let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
+        let inputName = inputType[objects.input_type]
+        let value = objects['answer'][0][inputName] || ''
+        switch (objects.input_type){
+            case "1":
+                value = await service.getTextValues()
+                break
+            case "2":
+                value = await service.getNumericValues()
+                break
+            case "3":
+                value = await service.getValuesFromModel()
+                break
+            case "11":
+                value = await service.handleFileObjects()
+                break
+            case "5":
+                value = await service.handleRadioButtons()
+                break
+            case "22":
+                value = await service.handleConsentValues()
+                break
+            case "19":
+                value = await service.handleGpsValues()
+                break
+            case "14":
+                value = await service.handleDateValues()
+            default:
+                value = value
+                temp[shortKey] = value
+                break
+        }
+        temp[shortKey] = value
+        // console.log("value :::: ",value)
+        return value
+    }
+    catch(err){
+        console.log("error in decideValues ::: ",err.message)
+    }
+}
+
+async function returnParsedObj(objects,req) {
+    try {
+        let keys = {...inputType}
+        let shortKey = objects.shortKey.replace(" ", "")
+        let splittedShortKey = shortKey.split(".")
+        let inputName = keys[objects.input_type]
+        if (splittedShortKey.length > 1) {
+            let answers = objects['answer']
+            let value = objects['answer'][0][inputName]
+
+            if (answers.length > 1) {
+                value = objects['answer'].map(item => item[inputName])
+            }   
+            let obj = splittedShortKey.reduceRight((obj, key) => ( { [key]: obj }), value)
+            return obj
+        }
+        else {
+            let temp = {}
+            let answers = objects['answer'].length
+            let value = objects['answer'][0][inputName]
+            
+            if (answers > 1) {
+                value = objects['answer'].map(item => item[inputName])
+            }
+            let modifiedKeys = Object.keys(modifiedShortKeys)
+            
+            if(modifiedKeys.includes(shortKey)){
+                shortKey = modifiedShortKeys[shortKey]
+            }
+            await decideValues(temp,shortKey,objects,req)
+            return temp
+        }
+    }
+    catch (err) {
+        console.log("error in returnParsedObj ::: ", err.message)
+    }
+}
+
+
+async function payloadParser(body,req) {
+    try {
+        let payload = {}
+        let modifiedBody = [...body]
+        for (let objects of modifiedBody) {
+            let temp = await  returnParsedObj(objects,req)
+            if (objects.child) {
+                temp['data'] = []
+                for (let childern of objects.child) {
+                    let index = modifiedBody.findIndex((item) => item.order === childern)
+                    let object = modifiedBody[index]
+                    modifiedBody.splice(index, 1)
+                    let temp2 = await returnParsedObj(object,req)
+                    temp['data'].push(temp2)
+                }
+            }
+            Object.assign(payload, temp)
+        }
+        return payload
+    }
+    catch (err) {
+        console.log("error in payloadParser ::: ", err.message)
+    }
+}
+module.exports.payloadParser = payloadParser
+
+function roleWiseJson(json,role){
+    let removableObjects = [
+        "responseFile",
+        "status",
+        "rejectReason",
+        "rejectReason_state",
+        "rejectReason_mohua",
+        "responseFile_state",
+        "responseFile_mohua"
+    ]
+    try{
+        // if(role === userTypes.ulb){
+            json.question = json.question.filter(item => !removableObjects.includes(item.shortKey) )
+        // }
+    }
+    catch(err){
+        console.log("error in roleWiseJson ::: ",err.message)
+    }
+}
+
+async function handleSelectCase(question,obj,flattedForm){
+    try{
+        if(question.modelName){
+            let value = flattedForm[question.shortKey]
+            let tempObj = question.answer_option.find(item => item.option_id.toString() == value.toString())
+            if(tempObj){
+                obj['label'] = tempObj['name']
+                obj['value'] = tempObj['_id']
+                question['modelValue'] = tempObj['_id']
+                question['value'] = tempObj['_id']
+            }  
+        }
+        else if(question.answer_option.length){
+            let keys = question.answer_option.map(item => item.name)
+            let value = flattedForm[question.shortKey]
+            if(keys.includes(value)){
+                let tempObj = question.answer_option.find(item => item.name === value)
+                obj['label'] = tempObj['name']
+                obj['value'] = tempObj['_id']
+                question['modelValue'] = tempObj['_id']
+                question['value'] = tempObj['_id']
+                question['selectedAnswerOption'] = {'name':tempObj['_id']}
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in handleSelectCase ::: ",err.message)
+    }
+}
+
+module.exports.mutateJson = async(jsonFormat,keysToBeDeleted,query,role)=>{
+    try{
+        let obj = [...jsonFormat]
+        roleWiseJson(obj[0],role)
+        obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], query)
+        // await deleteKeys(flattedForm, keysToBeDeleted)
+
+        for (let key in obj) {
+            let questions = obj[key].question
+            if (obj[key].question) {
+                for (let question of questions) {
+                    let obj = { ...answerObj }
+                    obj = await handleCasesByInputType(question,obj)
+                    await deleteExtraKeys(question)
+                }
+            }
+        }
+        // await deleteKeys(flattedForm, keysToBeDeleted)
+        return obj
+    }
+    catch(err){
+        console.log("error in mutateJson ::: ",err.message)
+    }
+}
+async function handleGroupedQuestions(questionObj,formObj){
+    try{
+        let answerObj = { label: '', textValue: '', value: '' }
+        let question = {...questionObj}
+        let answer = formObj[questionObj.shortKey]
+        let value = Object.values(answer).join(",")
+        question.value = value
+        question.modelValue = value
+        answerObj.textValue = value
+        answerObj.value = value
+        question.selectedValue  = [answerObj]
+        question.answer = {
+            answer:[answerObj]
+        }
+        return question
+    }
+    catch(err){
+        console.log("error in  handleGroupedQuestions:::",err.message)
+    }
+    return questionObj
+}
+async function handleDbValues(questionObj,formObj,order){
+    try{
+        let answer = { label: '', textValue: '', value: '' }
+        let questionOrder = order.toFixed(3)
+        if(Object.keys(groupedQuestions).includes(questionObj.shortKey)){
+            questionObj = await handleGroupedQuestions(questionObj,formObj)
+        }
+        else{
+            await handleCasesByInputType(questionObj)
+            await handleValues(questionObj,answer,formObj)
+            questionObj.selectedValue = [answer]
+            try{
+                questionObj.answer['answer'] =[answer]
+            }
+            catch(err){
+                questionObj.answer = {
+                    'answer' : [answer]
+                }
+            }
+            
+        
+        }
+        
+        return {...questionObj}
+    }
+    catch(err){
+        console.log("error in handleProjectedArr ::: ",err.message)
+    }
+}
+async function handleRangeIfExists(questionObj,formObj){
+    try{
+        let obj = {...questionObj}
+        if(formObj.range){
+            if(["Nos./Year","%","lpcd","Hours/day"].includes(formObj.unit)){
+                obj.minRange = formObj.range.split("-")[0]++
+                obj.maxRange = formObj.range.split("-")[1]++
+            }
+        }
+        return {...obj}
+    }
+    catch(err){
+        console.log("error in handleRangeIfExists ::: ",err.message)
+    }
+    return {...questionObj}
+}
+
+async function handleArrOfObjects(question,flattedForm){
+    try{
+        let order = parseInt(question.order)
+        let dbKey = arrFields[question.shortKey]
+        let values = flattedForm[dbKey]
+        let disableFields = flattedForm['disableFields']
+        var project_arr = []
+        let a = 0
+        if(values){
+            let index = 1
+            for(let obj of values){
+                if(DurCase.includes(question.shortKey)){
+                    obj.percProjectCost = ((obj.expenditure / obj.cost)*100).toFixed(2)
+                }
+                var nested_arr = [] 
+                for(let keys in obj){
+                    let keysObj = customkeys[question.shortKey]
+                    let jsonKey = keysObj[keys]
+                    let questionObj = DurProjectJson[jsonKey]
+                    if(questionObj){
+                        let formObj = {}
+                        formObj[jsonKey] = obj[keys]
+                        if(questionObj.modelType && questionObj.modelType === "object"){
+                            formObj[jsonKey] = obj[keys][questionObj.valueKey]
+                        }
+                        questionObj =  await handleDbValues(questionObj,formObj,order) 
+                        if(questionObj.isQuestionDisabled !== true){
+                            questionObj.isQuestionDisabled = handleDisableFields({disableFields})
+                            if(Object.keys(customDisableFields).includes(keys)){
+                                questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
+                            }
+                        }  
+                        questionObj.forParentValue = index
+                        let modifiedObj  = await handleRangeIfExists({...questionObj},obj)
+                        nested_arr.push({...modifiedObj})
+                    }
+                }
+                a += 1
+                index +=1
+                project_arr.push(nested_arr)
+            }
+        }
+        project_arr = project_arr.map(item => item.sort((a, b) => a.order > b.order ? 1 : -1))
+         let  childData = [...project_arr]
+         return childData
+    }
+    catch(err){
+        console.log("error in handleArrOfObjects ::: ",err.message)
+    }
+}
+
+function createCustomizedKeys(answerObj,keysMapper){
+    try{
+        let obj = {}
+        let answer = {...answerObj}
+        for(let key in answer){
+            if(key === "_id") continue;
+            obj[keysMapper[key]] = answer[key]
+        }
+        return {...obj}
+    }
+    catch(err){
+        console.log("error in createCustomizedKeys ::: ",err.message)
+    }
+    return answerObj
+}
+
+function handleDisableFields(flattedForm){
+    try{
+        return flattedForm.disableFields
+    }
+    catch(err){
+        console.log("error in handleDisableFields")
+        return false
+    }
+}
+
+function handleArrayFields(shortKey,flattedForm,childQuestionData){
+    try{
+        let valKey = arrFields[shortKey]
+        let answerObjects = flattedForm[valKey]
+        let keysMapper = customkeys[shortKey]
+        for(let index in answerObjects){
+            let questionArr = childQuestionData[index]
+            for(let arrIndex in questionArr){
+                let formObj = createCustomizedKeys(answerObjects[index],keysMapper)
+                let question = questionArr[arrIndex]
+                if(question.isQuestionDisabled !== true){
+                    question.isQuestionDisabled = handleDisableFields(flattedForm)
+                }
+                let answer = { label: '', textValue: '', value: '' }
+                handleValues(question,answer,formObj)
+                question.selectedValue = [answer]
+                try{
+                    question.answer['answer'] = [answer]
+                }
+                catch(err){
+                    question.answer = {
+                        'answer' : [answer]
+                    }
+                }
+            }
+        }
+    }
+    catch(err){
+        console.log("error in handleArrayFields :: ",err.message)
+    }
+    return childQuestionData
+}
+
+async function appendvalues(childQuestionData,flattedForm,shortKey,question){
+    try{
+        let arrKeys = Object.keys(arrFields)
+       if(!arrKeys.includes(shortKey)){
+        for(let arr of childQuestionData){
+            for(let obj of arr){
+                let questionKeys = Object.keys(customkeys[shortKey])
+                for(let questionkey of questionKeys){
+                    if(obj.shortKey === questionkey){
+                        let answer = { label: '', textValue: '', value: '' }
+                        await handleValues(obj,answer,flattedForm)
+                        obj.selectedValue = [answer]
+                        if(obj.isQuestionDisabled !== true){
+                            obj.isQuestionDisabled = handleDisableFields(flattedForm)
+                        }
+                        obj.answer = {
+                            answer : [answer]
+                        }
+                    }
+                }
+            }
+        }
+       }
+       if(arrKeys.includes(shortKey) && !specialCases.includes(shortKey)){
+         await handleArrayFields(shortKey,flattedForm,childQuestionData)
+        }
+        if(specialCases.includes(shortKey)){
+            childQuestionData = await handleArrOfObjects(question,flattedForm)
+        }
+       
+        
+        return childQuestionData
+    }
+    catch(err){
+        console.log("error in appendValues :::: ",err.message)
+    }
+}
+async function appendChildQues(question,obj,flattedForm){
+    try{
+        let customShortKeys = Object.keys(customkeys)
+        if(customShortKeys.includes(question.shortKey)){
+           let childQuestionData = await appendvalues(question.childQuestionData,flattedForm,question.shortKey,question)
+           return childQuestionData
+        }
+    }
+    catch(err){
+        console.log("error in getChildrens :::: ",err.message)
+    }
+}
+const handleChildCase = async(question,obj,flattedForm)=>{
+    try{
+        let order = question.order
+        let childQuestionData = await appendChildQues(question,obj,flattedForm)
+        if(childQuestionData){
+            question.childQuestionData = childQuestionData
+        }
+    
+    }
+    catch(err){
+        console.log("error in handleChildCase :::: ",err.message)
+    }
+}
+
+const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
+    try{
+        let value = ""
+        // console.log("question ",question.shortKey)
+        if(mainKey){
+            let key = mainKey + "."+question.shortKey
+            if(flattedForm[key]  == undefined){
+                value = ""
+            }
+            else{
+                value = flattedForm[key]
+            }
+            console.log("flattedForm[key] :: ",flattedForm[key])
+            question['modelValue'] = value
+            question['value'] = value
+            obj['textValue'] = value
+            obj['value'] = value
+        }
+        else{
+            let key = question.shortKey
+            if(flattedForm[key]  == undefined){
+                value = ""
+            }
+            else{
+                value = flattedForm[key]
+            }
+            question['modelValue'] = value
+            question['value'] = value
+            obj['textValue'] = value
+            obj['value'] = value
+        }
+    }
+    catch(err){
+        console.log("error in handleNumericCase ::: ",err.message)
+    }
+}
+
+const handleTextCase = async(question,obj,flattedForm)=>{
+    try{
+        let mainKey = question.shortKey
+        
+        // console.log("flattedFrom ::::",flattedForm)
+        question['modelValue'] = flattedForm[mainKey] || ""
+        question['value'] = flattedForm[mainKey] || ""
+        obj['textValue'] = flattedForm[mainKey] || ""
+        obj['value'] = flattedForm[mainKey] || ""
+    }
+    catch(err){
+        console.log("error in handleTextCase :: ",err.message)
+    }
+}
+
+async function handleConsentCase(question,obj,flattedForm,mainKey){
+    try{
+        let mainKey = question.shortKey
+        if(Object.keys(flattedForm).includes(mainKey)){
+            let answerByBoolean = getKeyByValue(consentCases,flattedForm[mainKey])
+            let answer = question.answer_option.find(item => item._id === answerByBoolean)
+            question['modelValue'] = answer['_id']
+            question['value'] = answer['_id']
+            obj['textValue'] = answer['name']
+            obj['value'] = answer['_id']
+        }
+    }
+    catch(err){
+        console.log("error in handleConsentCase :::: ",err.message)
+    }
+}
+const getFilteredOptions =(answerKeys,annualRadioButtons)=>{
+    try{
+        const filteredObj = Object.keys(annualRadioButtons)
+            .filter((key) => answerKeys.includes(key))
+            .reduce((obj, key) => {
+            return Object.assign(obj, {
+            [key]: annualRadioButtons[key]
+            });
+            }, {});
+        return filteredObj
+        }
+
+    catch(err){
+        console.log("error in getFilteredOptions :: ",err.message)
+        return annualRadioButtons
+    }
+}
+
+const handleContentCase = async(question,obj,flattedForm,mainKey)=>{
+    try{
+        let mainKey = question.shortKey
+        let answer = flattedForm[mainKey]
+        // console.log("flattedFrom ::::",flattedForm)
+        question['modelValue'] = flattedForm[mainKey]
+        question['value'] = flattedForm[mainKey]
+        obj['textValue'] = flattedForm[mainKey]
+        obj['value'] = flattedForm[mainKey]
+    }
+    catch(err){
+        console.log("error in handleContentCase :: ",err.message)
+    }
+}
+
+const handleRadioButtonCase = async(question,obj,flattedForm,mainKey) =>{
+    try{
+        let shortKey = question.shortKey
+        let value = flattedForm[shortKey]
+        let answerIds = question.answer_option.map(item => ({[item.name]:item._id}))
+        let answerKeys = question.answer_option.map(item => item.name)
+        let filteredObj = getFilteredOptions(answerKeys,annualRadioButtons)
+        let mformValue = getKeyByValue(filteredObj,value)
+        if(mformValue){
+            let answerObj = question.answer_option.find(item => item.name === mformValue)
+            question['modelValue'] = answerObj._id
+            question['value'] = answerObj._id
+            obj['textValue'] = mformValue
+            obj['value'] = answerObj._id
+        }
+    }
+    catch(err){
+        console.log("error in handleRadioButtonCase ::: ",err.message)
+    }
+}
+
+const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
+    let answerKey = inputType[question.input_type]
+    try{
+        switch (question.input_type){
+            case "1":
+                await handleTextCase(question,obj,flattedForm,mainKey)
+                break
+            case "2":
+                await handleNumericCase(question,obj,flattedForm,mainKey)
+                break
+            case "11":
+                await handleFileCase(question,obj,flattedForm,mainKey)
+                break
+            case "14":
+                await handledateCase(question,obj,flattedForm,mainKey)
+                break
+            case "3":
+                await handleSelectCase(question,obj,flattedForm,mainKey)
+                break
+            case "5":
+                await handleRadioButtonCase(question,obj,flattedForm,mainKey)
+                break
+            case "20":
+                await handleChildCase(question,obj,flattedForm,mainKey)
+                break
+            case "22":
+                await handleConsentCase(question,obj,flattedForm,mainKey)
+                break
+            case "29":
+                await handleContentCase(question,obj,flattedForm,mainKey)
+                break
+            default:
+                let shortKey = question.shortKey.replace(" ", "")
+                obj[answerKey] = flattedForm[shortKey]
+                break
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in handleValues ::: ",err.message)
+    }
+}
+
+function handledateCase(question,obj,flattedForm){
+    try{
+        
+        let mainKey = question.shortKey
+        flattedForm[mainKey] = typeof flattedForm[mainKey] == "string"  ? new Date(flattedForm[mainKey]) : flattedForm[mainKey]
+        if(flattedForm[mainKey] === undefined){
+            flattedForm[mainKey] = ""
+        }
+        flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
+        question['modelValue'] = flattedForm[mainKey]
+        question['value'] = flattedForm[mainKey]
+        obj['textValue'] = flattedForm[mainKey]
+        obj['value'] = flattedForm[mainKey]
+    }
+    catch(err){
+        console.log("error in dateCase :::: ",err.message)
+    }
+}
+
+function handleFileCase(question,obj,flattedForm){
+    try{
+        let spiltArr = question.shortKey.split(".")
+        let mainKey = spiltArr[0].replace(" ", "")
+        if(spiltArr.length > 2){
+            mainKey = spiltArr.slice(0,spiltArr.length).join(".")
+        }
+        let modifiedKeys = Object.keys(modifiedShortKeys)
+        if(modifiedKeys.includes(mainKey)){
+            mainKey = modifiedShortKeys[mainKey]
+        }
+        let name = mainKey + "." + "name"
+        let url = mainKey + "." + "url"
+        obj['label'] = flattedForm[name]
+        obj['value'] = flattedForm[url]
+        obj['textValue'] = flattedForm[url]
+        question['modelValue'] = flattedForm[url]
+        question['value'] = flattedForm[url]
+        // console.log("question ::: ",question)
+    }
+    catch(err){
+        console.log("error in handleObjectCase :: ",err.message)
+    }
+}
+
+async function deleteExtraKeys(question){
+    let filterKey = ["modelName","modelFilter"]
+    try{
+        filterKey.forEach((item)=>{
+            delete question[item]
+        })
+    }
+    catch(err){
+        console.log("error in deleteExtraKeys :: ",err.message)
+    }
+}
+
+async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
+    try {
+        // console.log(">>>>>>>>>> obj ::: ",jsonFormat)
+        let obj = [...jsonFormat]
+        // console.log("flattedForm ::: ",flattedForm)
+        // if(flattedForm.actionTakenByRole == userTypes.ulb){
+        roleWiseJson(obj[0],role)
+        // }
+        obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
+        await deleteKeys(flattedForm, keysToBeDeleted)
+        for (let key in obj) {
+            let questions = obj[key].question
+            if (questions) {
+                for (let question of questions) {    
+                    let answer = []
+                    let obj = { ...answerObj }
+                    let answerKey = inputType[question.input_type]
+                    await handleCasesByInputType(question)
+                    await handleValues(question,obj,flattedForm)
+                    answer.push(obj)
+                    question['selectedValue'] = answer
+                   await deleteExtraKeys(question)
+                }
+                let modifiedKeys = Object.keys(modifiedShortKeys)
+                let modifiedObjects =  questions.filter(item => modifiedKeys.includes(item.shortKey))
+            }
+        }
+        return obj
+    }
+    catch (err) {
+        console.log("mutuateGetPayload ::: ", err.message)
+    }
+}
+
+
+async function handleCasesByInputType(question){
+    try{
+        let obj = {...answerObj}
+        switch(question.input_type){
+            case "3":
+                if(question.modelName){
+                    obj =  await appendAnswerOptions(question.modelName,question,question.modelFilter)
+                }
+                break
+            // case "11":
+            //     console.log("inside this case")
+            //     break
+            default:
+                obj = {...answerObj}
+                break
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in handleCasesByInputType ::: ",err.message)
+    }
+}
+
+function findId(answerOption,name,idx,type="_id"){
+    try{
+        if(answerOption){
+            let objectFind = answerOption.find((item)=>item.name === name)
+            return objectFind[type].toString()
+        }
+        else{
+            return idx.toString()
+        }
+    }
+    catch(err){
+        console.log("error in findId :::",err.message)
+    }
+}
+
+async function appendAnswerOptions(modelName,obj,modelFilter){
+    try{
+        let documents = await moongose.model(modelName).find(modelFilter).lean()
+        let answerOptions = []
+        let childOptions = []
+         documents.forEach((item,index)=>{
+            let  answerObj = {
+                "name":item.name,
+                "did":[],
+                "_id":obj.answer_option ?  findId(obj['answer_option'],item.name,index) : index.toString(),
+                "option_id":item._id,
+                "viewSequence":obj.answer_option ?  findId(obj['answer_option'],item.name,index,"viewSequence") : (index+1).toString(),
+            }
+             childObj = {
+                "type":item._id,
+                "value":item.name,
+                "order":JSON.stringify(index+1)
+            }
+            answerOptions.push(answerObj)
+        })
+        obj['answer_option'] = answerOptions.sort((a,b)=>parseInt(a.viewSequence)-parseInt(b.viewSequence))
+        // obj['child'] = childOptions
+        return obj
+    }
+    catch(err){
+        console.log("error in appendFromModel ::: ",err.message)
+    }
+}
+
+function checkForUndefinedVaribales(obj) {
+    let validator = {
+        message: "",
+        valid: true
+    }
+    try {
+        for (let key in obj) {
+            if (!obj[key]) {
+                console.log(validator[key])
+                validator.valid = false
+                validator.message = `${key} is required`
+                return validator
+            }
+        }
+        validator.message = ""
+    }
+    catch (err) {
+        console.log("error in check for undefined variables :: ", err.message)
+    }
+    return validator
+}
+module.exports.checkForUndefinedVaribales = checkForUndefinedVaribales
+module.exports.mutuateGetPayload = mutuateGetPayload
+
+function appendExtraKeys(keys, jsonObj, form) {
+    let obj = { ...jsonObj }
+    try {
+        for (let key of keys) {
+            if (Object.keys(form).includes(key.replace(" ", ""))) {
+                obj[key] = form[key]
+            }
+            else{
+                obj[key] = ""
+            }
+        }
+    }
+    catch (err) {
+        console.log("error in appendExtraKeys ::: ", err.message)
+    }
+    return obj
+}
+
+function deleteKeys(obj, delKeys) {
+    try {
+        for (let del of delKeys) {
+            delete obj[del]
+        }
+
+    }
+    catch (err) {
+        console.log("error in deleteKeys ::::: ", err.message)
+    }
+}
+
+module.exports.masterAction =  async (req, res) => {
+    try {
+      let { decoded: userData, body: bodyData } = req;
+
+      let { role: actionTakenByRole, _id: actionTakenBy } = userData;
+      let {formId, multi, shortKeys, responses, ulbs, form_level, design_year} =  bodyData;
+      
+      if(!formId || !bodyData.hasOwnProperty("multi") || !shortKeys || !responses || !ulbs || !ulbs.length || !design_year || !form_level){
+        return Response.BadRequest(res, {}, "All fields are mandatory")
+      }
+      let path = modelPath(formId);
+      let condition = {
+        ulb: {$in: ulbs},
+        design_year: design_year,
+      };
+
+      const model = require(`../../models/${path}`);
+      const formData = await model.find(condition).lean();
+    //   let level = form_level;
+      if(!formData || !formData.length){
+        return Response.BadRequest(res, {}, "No Form Found!")
+      }
+    //   if(multi){
+        let params = {formData, actionTakenByRole, actionTakenBy,bodyData}
+          let actionResponse = await takeActionOnForms(params,res)
+    //   } else {
+    //     let [form] = formData; 
+    //   }
+      if(actionResponse === formData.length){
+        return Response.OK(res, {}, "Action Successful");
+      }else{
+        return Response.BadRequest(res, {}, actionResponse);
+      }
+    } catch (error) {
+      return Response.BadRequest(res, {}, error.message);
+    }
+}
+
+async function takeActionOnForms(params, res) {
+  try {
+    let { bodyData, actionTakenBy, actionTakenByRole, formData } = params;
+    let { formId, multi, shortKeys, responses, form_level } = bodyData;
+    let count = 0;
+    let path = modelPath(formId);
+    const model = require(`../../models/${path}`);
+    for (let form of formData) {
+      let bodyData = {
+        formId,
+        recordId: ObjectId(form._id),
+        data: form,
+      };
+      /* Saving the form history of the user. */
+      let formHistoryResponse = await saveFormHistory({ body: bodyData });
+      if (formHistoryResponse !== 1)
+        throw "Action failed to save form history!";
+      let saveStatusResponse;
+      /* Saving the status of the form of form_level type. */
+      if (form_level === FORM_LEVEL["form"]) {
+        let [response] = responses;
+        let [shortKey] = shortKeys;
+        let params = {
+          formId,
+          form,
+          response,
+          form_level,
+          actionTakenByRole,
+          actionTakenBy,
+          multi,
+          shortKey,
+          res,
+        };
+        saveStatusResponse = await saveStatus(params);
+        let updatedFormCurrentStatus = await updateFormCurrentStatus(
+          model,
+          form._id,
+          response
+        );
+        if (updatedFormCurrentStatus !== 1)
+          throw "Action failed to update form current Status!";
+      } else if (form_level === FORM_LEVEL["question"]) {
+        //multi = true=>> review table action
+        if (multi) {
+          let [response] = responses;
+          for (let shortKey of shortKeys) {
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+          }
+          let updatedFormCurrentStatus = await updateFormCurrentStatus(
+            model,
+            form._id,
+            response
+          );
+          if (updatedFormCurrentStatus !== 1)
+            throw "Action failed to update form current Status!";
+        } else {
+          let rejectStatusCount = 0;
+          for (let response of responses) {
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+            if (
+              [
+                MASTER_STATUS["Rejected by MoHUA"],
+                MASTER_STATUS["Rejected by State"],
+              ].includes(response.status)
+            ) {
+              rejectStatusCount++;
+            }
+          }
+          if (rejectStatusCount) {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Rejected by MoHUA"]
+                : MASTER_STATUS["Rejected by State"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              form._id,
+              response
+            );
+
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          } else {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Approved by MoHUA"]
+                : MASTER_STATUS["Under Review by MoHUA"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              form._id,
+              response
+            );
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          }
+        }
+      } else if (form_level === FORM_LEVEL["tab"]) {
+        if (multi) {
+          let [response] = responses;
+        /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
+          let shortKeysResponse = getSeparatedShortKeys({shortKeys});
+          /* Saving the status of the form for questions */
+          for (let shortKey of shortKeysResponse["inner"]) {
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+          }
+            /* Saving the status of the form for tabs */
+          for (let shortKey of shortKeysResponse["outer"]) {
+            shortKey = `tab_${shortKey}`;
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+          }
+          //Updating form Level status
+          let updatedFormCurrentStatus = await updateFormCurrentStatus(
+            model,
+            form._id,
+            response
+          );
+          if (updatedFormCurrentStatus !== 1)
+            throw "Action failed to update form current Status!";
+        } else {
+          let rejectStatusAllTab = 0;
+          //gets tabs array
+          let { outer: tabLevelShortKeys } = getSeparatedShortKeys({shortKeys});
+          let tabShortKeyObj = {},
+            tabShortKeyResponse = {};
+          for (let tab of tabLevelShortKeys) {
+            tabShortKeyObj[tab] = 0;
+          }
+          const separator = ".";
+          for (let response of responses) {
+            let splitedArrayTab =
+              response.shortKey.split(separator).length > 1
+                ? response.shortKey.split(separator)[0]
+                : "";
+
+            if (
+              splitedArrayTab !== "" &&
+              [
+                MASTER_STATUS["Rejected by MoHUA"],
+                MASTER_STATUS["Rejected by State"],
+              ].includes(response.status)
+            ) {
+              tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[
+                splitedArrayTab
+              ]++;
+            }
+            //storing response of tabs if questions are not provided
+            if (tabShortKeyObj[response.shortKey]) {
+              tabShortKeyResponse[response.shortKey] = response;
+              continue;
+            }
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              shortKey: "",
+              res,
+            };
+
+            saveStatusResponse = await saveStatus(params);
+          }
+          //saving status of tabs
+          for (let obj in tabShortKeyObj) {
+            let response = tabShortKeyResponse[obj];
+            if (
+              response &&
+              [
+                MASTER_STATUS["Rejected by MoHUA"],
+                MASTER_STATUS["Rejected by State"],
+              ].includes(response.status)
+            ) {
+              rejectStatusAllTab++;
+              response.shortKey = `tab_${obj}`;
+            }
+            if (!response) {
+              let status;
+              if (tabShortKeyObj[obj]) {
+                status =
+                  actionTakenByRole === "MoHUA"
+                    ? MASTER_STATUS["Rejected by MoHUA"]
+                    : MASTER_STATUS["Rejected by State"];
+                rejectStatusAllTab++;
+              } else {
+                status =
+                  actionTakenByRole === "MoHUA"
+                    ? MASTER_STATUS["Approved by MoHUA"]
+                    : MASTER_STATUS["Under Review by MoHUA"];
+              }
+              response = {
+                status,
+                rejectReason: "",
+                responseFile: { url: "", name: "" },
+                shortKey: `tab_${obj}`,
+              };
+            }
+            let params = {
+              formId,
+              form,
+              response,
+              form_level,
+              actionTakenByRole,
+              actionTakenBy,
+              multi,
+              obj,
+              res,
+            };
+            saveStatusResponse = await saveStatus(params);
+          }
+          //form level status  updation
+          if (rejectStatusAllTab) {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Rejected by MoHUA"]
+                : MASTER_STATUS["Rejected by State"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              formId,
+              response
+            );
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          } else {
+            response.status =
+              actionTakenByRole === "MoHUA"
+                ? MASTER_STATUS["Approved by MoHUA"]
+                : MASTER_STATUS["Under Review by MoHUA"];
+            let updatedFormCurrentStatus = await updateFormCurrentStatus(
+              model,
+              form._id,
+              response
+            );
+            if (updatedFormCurrentStatus !== 1)
+              throw "Action failed to update form current Status!";
+          }
+        }
+      }
+      if (saveStatusResponse !== 1) {
+        throw "Action failed to save status!";
+      } else {
+        count++;
+      }
+    }
+    return count;
+  } catch (error) {
+    return error.message;
   }
+}
+
+async function updateFormCurrentStatus(model, formId, response) {
+    try {
+        const updatedFormResponse = await model
+            .findOneAndUpdate(
+                { _id: formId },
+                {
+                    $set: {
+                        currentFormStatus: response.status,
+                    },
+                }
+            )
+            .lean();
+        if (!updatedFormResponse){
+            throw ("Action failed to update form current Status!");
+        }
+        return 1;
+    } catch (error) {
+        return  error.message; 
+    }
+}
+
+async function saveStatus(params) {
+    try {
+        let {formId,
+            form,
+            response,
+            form_level,
+            actionTakenByRole,
+            actionTakenBy,
+            multi,
+            shortKey,
+            res} = params;
+        let currentStatusData = {
+            formId,
+            recordId: ObjectId(form._id),
+            shortKey: response.shortKey,
+            status: response.status,
+            level: form_level,
+            rejectReason: response.rejectReason,
+            responseFile: response.responseFile,
+            actionTakenByRole: actionTakenByRole,
+            actionTakenBy: ObjectId(actionTakenBy),
+          };
+        
+          (multi && form_level === FORM_LEVEL["question"]) ? currentStatusData["shortKey"] = shortKey : ""
+          let currentStatus = await saveCurrentStatus({ body: currentStatusData });
+          
+          let statusHistory = {
+            formId,
+            recordId: ObjectId(form._id),
+            shortKey: response.shortKey,
+            data: currentStatusData,
+          };
+        
+          (multi && form_level === FORM_LEVEL["question"]) ? statusHistory["shortKey"] = shortKey  : ""
+
+          let statusHistoryData = await saveStatusHistory({ body: statusHistory });
+          if (currentStatus === 1 && statusHistoryData === 1){
+            return 1;
+          }
+          return 0;
+          
+    } catch (error) {
+      return  error.message; 
+    }
+}
+
+module.exports.getMasterAction = async (req, res) => {
+    try {
+      let { decoded: userData, body: bodyData } = req;
+
+      let { role } = userData;
+      let { formId, ulb, design_year } = bodyData;
+
+      if (!formId || !ulb || !design_year) {
+        return Response.BadRequest(res, {}, "All fields are mandatory");
+      }
+      let path = modelPath(formId);
+      let condition = {
+        ulb,
+        design_year: design_year,
+      };
+
+      const model = require(`../../models/${path}`);
+      const form = await model.findOne(condition,{_id:1}).lean();
+      if (!form) {
+        return Response.BadRequest(res, {}, "No Form Found!");
+      }
+      const currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      if(!currentStatusResponse || !currentStatusResponse.length){
+        return Response.BadRequest(res, {}, "No Response Found!");
+      }
+    //   let params = {
+    //     status: form.currentFormStatus,
+    //     formType: "ULB",
+    //     loggedInUser: role,
+    //   };
+    //   Object.assign(form, {
+    //     canTakenAction: canTakenActionMaster(params),
+    //   });
+
+      return Response.OK(res, currentStatusResponse);
+    } catch (error) {
+        return Response.BadRequest(res, {}, error.message);
+
+    }
+}
+
+
+async function getSeparatedShortKeys(params) {
+  const { shortKeys } = params;
+  const First_Index = 0;
+  let output = {
+    outer: [],
+    inner: [],
+  };
+  const separator = ".";
+  for (let shortKey of shortKeys) {
+    let splitedArray = shortKey.split[separator];
+    let splitedArrayLength = splitedArray.length - 1;
+    if (Array.isArray(splitedArray) && splitedArrayLength) {
+      splitedArray[First_Index] === splitedArray[splitedArrayLength]
+        ? output["inner"].push(shortKey)
+        : output["outer"].push(shortKey);
+    }
+  }
+
+  return output;
+}
+
+
+function reverseKeyValues(originalObj){
+    return  Object.entries(originalObj).reduce((acc, [key, value]) => {
+        acc[value] = key;
+        return acc;
+      }, {});
+}
+
+const handleChildValues = async(childObj,item,req)=>{
+    try{
+        if(item && item.nestedAnswer){
+            if(Object.keys(arrFields).includes(item.shortKey)  && !Array.isArray(childObj[item.shortKey])){
+                var arrKey = arrFields[item.shortKey].split(".")[0]
+                if(!Object.keys(childObj).includes(arrKey)){
+                    
+                    try{
+                        childObj[arrKey] = [...childObj[arrKey]]
+                    }
+                    catch(err){
+                        childObj[arrKey] = []
+                    }                
+                }
+            }
+            for(let nestedAnswer in item.nestedAnswer){
+                    let questions = item.nestedAnswer[nestedAnswer].answerNestedData
+                    let temp_obj = await nestedObjectParser(questions,req)
+                    if(Object.keys(arrFields).includes(item.shortKey)){
+                        let keyMappers = customkeys[item.shortKey]
+                        keyMappers = await reverseKeyValues(keyMappers)
+                        let filteredObj = await createCustomizedKeys(temp_obj,keyMappers)
+                        if(childObj[arrKey]){
+                            childObj[arrKey].push({...filteredObj})
+                        }
+                    }
+                    else{
+                        childObj = Object.assign({...childObj},temp_obj)
+                    }
+                }
+            }
+        return {...childObj}
+    }
+    catch(err){
+        console.log("error in handleChildValues ::: ",err.message)
+    }
+}
+
+async function fillCategoryTable(){
+    let promise = await new Promise(async(resolve,reject)=>{
+        try{
+            let databaseArr = await moongose.model('Category').find({}).lean()
+            for(let db of databaseArr){
+                categoryTable[db.name.toString()] = db._id
+            } 
+            resolve(true)
+        }
+        catch(err){
+            reject(err)
+        }
+    })
+    return promise
+}
+
+async function clearVariables(type){
+    try{
+        switch (type){
+            case "category":
+                categoryTable = {}
+                break
+        }
+    }
+    catch(err){
+        console.log("error in clearVariables::",err.message)
+    }
+}
+
+async function nestedObjectParser(data,req){
+    try{
+        if(req.body.formId === 4 && Object.keys(categoryTable).length === 0){
+            await fillCategoryTable()
+        }
+        const result = {};
+        for(let item of data){
+            let shortKey = item.shortKey
+            const keys = shortKey.split(".");
+            let pointer = result;
+            let temp = {}
+            if(item.input_type === "20" ||  item.input_type === "29"){
+                pointer = await handleChildValues({...pointer},item,req)
+                Object.assign(result,pointer)
+            }
+            else{
+                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
+                    item.answer = [
+                        {
+                            "label":"",
+                            "textValue":"",
+                            "value":"0,0"
+                        }
+                    ]
+                }
+                let value = await decideValues(temp,shortKey,item,req)
+                await keys.forEach((key, index) => {
+                        if (!pointer.hasOwnProperty(key)) {
+                        pointer[key] = {};
+                        }
+                        if (index === keys.length - 1) {
+                        pointer[key] = value;
+                        }
+                        pointer = pointer[key];
+                    });
+            }
+            };
+            return result
+        }
+    catch(err){
+        console.log("error in nestedObjectParser: ::: ",err)
+    }
+}
+
+function checkIfUlbHasAccess(ulbData,userYear){
+    try{
+      let ulbVariable = "access_"
+      let currentYear = userYear.year
+      let prevYearArr = currentYear.split("-")
+      let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
+      ulbVariable += prevYear
+      return ulbData[ulbVariable]
+    }
+    catch(err){
+      console.log("error in checkIfUlbHasAccess ::: ",err.message)
+      return false
+    }
+  }
+
+module.exports.decideDisabledFields = (form,formType)=>{
+    
+    let formStatus = calculateStatus(form.status, form.actionTakenByRole,form.isDraft,
+        formType)
+    if(form.status == ""){
+        formStatus = MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
+    }
+    let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+    if(allowedStatuses.includes(formStatus)){
+        return false 
+    }
+    else{
+        return true
+    }
+    
+}
+module.exports.checkIfUlbHasAccess = checkIfUlbHasAccess
+module.exports.calculateStatus = calculateStatus
+module.exports.nestedObjectParser = nestedObjectParser
+module.exports.clearVariables = clearVariables

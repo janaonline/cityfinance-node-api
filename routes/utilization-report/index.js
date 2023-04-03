@@ -11,8 +11,11 @@ const {
   report,
   read2223,
   dataRepair,
-  GrantPositionDesiMalvalueUpdate
+  GrantPositionDesiMalvalueUpdate,
+  getProjects
 } = require("./service");
+
+const {changeGetApiForm,changePayloadFormat} = require("./middlewares")
 
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
@@ -27,6 +30,7 @@ const { reportCreateValidator } = require("./validator");
 router.post(
   "/utilization-report",
   verifyToken,
+  changePayloadFormat,
   reportCreateValidator,
   draftChecker,
   createOrUpdate
@@ -46,10 +50,10 @@ router.post("/utilization-report/action", verifyToken, userAuth, action);
 //custom report 
 router.get("/dur/report", report);
 //2223
-router.get("/utilReport", verifyToken, read2223);
+router.get("/utilReport", verifyToken, read2223,changeGetApiForm);
 
 router.get("/repair_data",dataRepair);
 
 router.get("/grantPositionDesiMalvalueUpdate",GrantPositionDesiMalvalueUpdate);
-
+router.get("/getProjects",verifyToken,getProjects)
 module.exports = router;

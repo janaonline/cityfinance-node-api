@@ -14,6 +14,9 @@ const StatusList = require('../../util/newStatusList')
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const Ulb = require('../../models/Ulb');
 const Response = require("../../service").response;
+const {createAndUpdateFormMaster, getMasterForm} =  require('../../routes/CommonFormSubmission/service')
+const {ModelNames} =  require('../../util/15thFCstatus');
+const { years } = require('../../service/years');
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -55,6 +58,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         
         formData['actionTakenBy'] = ObjectId(user._id);
         formData['actionTakenByRole'] = "ULB";
+        let currentMasterFormStatus = req.body['status']
         formData['status'] = "PENDING"
         formData['ulbSubmit'] = "";
 
@@ -136,7 +140,17 @@ module.exports.createOrUpdateForm = async (req, res) =>{
         };
         
 
-      
+        if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+          formData.status = currentMasterFormStatus
+          let params = {
+            modelName: ModelNames["twentyEightSlbs"],
+            formData,
+            res,
+            actionTakenByRole,
+            actionTakenBy
+          };
+          return await createAndUpdateFormMaster(params);
+        }
             const submittedForm = await TwentyEightSlbsForm.findOne(condition).lean();
             if ( (submittedForm) && submittedForm.isDraft === false &&
             submittedForm.actionTakenByRole === "ULB" ){//Form already submitted
@@ -326,7 +340,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
 }
 
 
-module.exports.getForm = async (req, res) => {
+module.exports.getForm = async (req, res,next) => {
     try {
         let userRole = req.decoded.role
         const data = req.query;
@@ -341,15 +355,16 @@ module.exports.getForm = async (req, res) => {
         const ulbData = await Ulb.findOne({
           _id: ObjectId(data.ulb)
         }).lean();
-
-        condition['ulb'] = data.ulb;
-        condition['design_year'] = data.design_year;
+        condition['ulb'] = ObjectId(data.ulb);
+        condition['design_year'] = ObjectId(data.design_year);
       let yearData =   await Year.findOne({
             _id : ObjectId(data.design_year)
         }).lean()
+        let targetYearArr = yearData.year.split("-")
+        let targetYearValue = `${targetYearArr[0].slice(-2)}${targetYearArr[1]}`
         let prevYearVal = findPreviousYear(yearData.year);
         let prevYearData =   await Year.findOne({
-            year : prevYearVal
+            _id : years['2021-22']
         }).lean()
         let masterFormData = await MasterForm.findOne({
           ulb: data.ulb,
@@ -364,9 +379,10 @@ module.exports.getForm = async (req, res) => {
         host = host !== "" ? host : req.headers.host;
         if(ulbData.access_2122){
         if (masterFormData) {
-          if (masterFormData.history.length > 0) {
+          isDraft = !masterFormData.isSubmit
+          if (masterFormData?.history?.length > 0) {
             masterFormData =
-              masterFormData.history[masterFormData.history.length - 1];
+              masterFormData.history[masterFormData?.history.length - 1];
           }
           let status = calculateStatus(
             masterFormData.status,
@@ -374,8 +390,10 @@ module.exports.getForm = async (req, res) => {
             !masterFormData.isSubmit,
             "ULB"
           );
+          console.log("status ::::: ",status)
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
+          
           if (
             ![
               StatusList.Under_Review_By_MoHUA,
@@ -383,25 +401,38 @@ module.exports.getForm = async (req, res) => {
               StatusList.Approved_By_State,
             ].includes(status)
           ) {
-
             let msg = userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
               status ? status : "Not Submitted"
             }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`
-            return res.status(200).json({
-              status: true,
-              show: true,
-              message: msg,
-            });
+            req.json = {
+                status: true,
+                show: true,
+                message: msg,
+              }
+            // return res.status(200).json({
+            //   status: true,
+            //   show: true,
+            //   message: msg,
+            // });
+            next()
+            return
           }
         } else {
-
-          return res.status(200).json({
-            status: true,
-            show: true,
-            message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
-          });
+          req.json = {
+              status: true,
+              show: true,
+              message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
+            }
+           next()
+           return
+          // return res.status(200).json({
+          //   status: true,
+          //   show: true,
+          //   message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
+          // });
         }
         }
+       
         let formData = await TwentyEightSlbsForm.findOne(condition, { history: 0} ).lean()
         let slbDataNotFilled;
         if (formData) {
@@ -416,6 +447,7 @@ module.exports.getForm = async (req, res) => {
             ulb: ObjectId(data.ulb),
             design_year: YEAR_CONSTANTS["21_22"],
           }).lean();
+         
         if(slbData){
           slbDataNotFilled = slbData.blank;
                 formData["data"].forEach((element) => {
@@ -490,6 +522,11 @@ module.exports.getForm = async (req, res) => {
               
         }
         }
+        if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole:formData.actionTakenByRole} ;
+          let canTakeActionOnMasterForm =  await getMasterForm(params);
+          Object.assign(formData, canTakeActionOnMasterForm);
+        }else{
           Object.assign(formData, {
             canTakeAction: canTakenAction(
               formData["status"],
@@ -499,6 +536,7 @@ module.exports.getForm = async (req, res) => {
               userRole
             ),
           });
+        }
 
 
           formData["data"].forEach((el) => {
@@ -522,13 +560,17 @@ module.exports.getForm = async (req, res) => {
           });
           let groupedData = groupByKey(formData["data"], "type");
           formData["data"] = groupedData;
-
-          return res.status(200).json({
-            success: true,
-            show: false,
-            data: formData,
-            slbDataNotFilled
-          });
+          
+          req.form = formData
+          req.slbDataNotFilled = slbDataNotFilled
+          next()
+          return
+          // return res.status(200).json({
+          //   success: true,
+          //   show: false,
+          //   data: formData,
+          //   slbDataNotFilled
+          // });
         } else {
           let pipedSupply,
             waterSuppliedPerDay,
@@ -546,26 +588,26 @@ module.exports.getForm = async (req, res) => {
                 "target"
               )
                 ? slbData.waterManagement.houseHoldCoveredPipedSupply?.target[
-                    "2223"
+                  targetYearValue
                   ]
                 : "";
             waterSuppliedPerDay =
               slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
                 "target"
               )
-                ? slbData.waterManagement.waterSuppliedPerDay?.target["2223"]
+                ? slbData.waterManagement.waterSuppliedPerDay?.target[targetYearValue]
                 : "";
             reduction = slbData.waterManagement.reduction.hasOwnProperty(
               "target"
             )
-              ? slbData.waterManagement.reduction?.target["2223"]
+              ? slbData.waterManagement.reduction?.target[targetYearValue]
               : "";
             houseHoldCoveredWithSewerage =
               slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
                 "target"
               )
                 ? slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
-                    "2223"
+                    targetYearValue
                   ]
                 : "";
           }
@@ -644,19 +686,27 @@ module.exports.getForm = async (req, res) => {
             "solid waste": groupedData["solid waste"],
             "storm water": groupedData["storm water"],
           });
-
-          return res.status(200).json({
-            success: true,
-            show: false,
-            slbDataNotFilled,
-            data: {
-              canTakeAction: false,
-              data: output,
-              population: null,
-            },
-          });
+          req.form = {
+                canTakeAction: false,
+                data: output,
+                population: null,
+              }
+          req.slbDataNotFilled = slbDataNotFilled
+          next()
+          return
+          // return res.status(200).json({
+          //   success: true,
+          //   show: false,
+          //   slbDataNotFilled,
+          //   data: {
+          //     canTakeAction: false,
+          //     data: output,
+          //     population: null,
+          //   },
+          // });
         }
     } catch (error) {
+      console.log("error ::",error)
         return res.status(400).json({
             status: false,
             show: false,
@@ -807,6 +857,7 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async(req, res)=>{
     })
 
   }catch(error){
+    
     return res.status(400).json({
       status: false,
       show: false,

@@ -422,7 +422,14 @@ module.exports = function (req, res) {
                         }
                     }
                 }
+                let fieldsWithCode=0, fieldsWithNoAmount= 0;
                 for (let eachRow of data) {
+                    if (eachRow["code"]) {
+                      fieldsWithCode++;
+                      /* Checking if the amount in inr is empty or not. If it is empty, it is incrementing the
+fieldsWithNoAmount variable. */
+                      !eachRow["amount in inr"] ? fieldsWithNoAmount++ : "";
+                    }
                     // removing all the - values and converting them to 0
                     eachRow["amount in inr"] = eachRow["amount in inr"] == "-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"];
                     // removing commas from all the values
@@ -439,7 +446,9 @@ module.exports = function (req, res) {
                         }
                     }
                 }
-
+                if (fieldsWithCode === fieldsWithNoAmount) {
+                  errors.push("File cannot be blank");
+                }
                 var message = validateBalanceSheet(balanceSheet, inputSheetObj);
 
                 if (message) {

@@ -78,11 +78,15 @@ const TwentyEightSlbFormSchema = new Schema({
     status:{
         type: String,
         enum:{
-            values:["PENDING", "APPROVED", "REJECTED"],
+            values:["PENDING", "APPROVED", "REJECTED",""],
             message: "ERROR: status can be either PENDING/APPROVED/REJECTED"
         }
     },
     ulbSubmit: {type: Date},
+    currentFormStatus:{
+        type: Number,
+        required: false
+    },
     rejectReason: {type: String, default:""},
     
     responseFile_state:pdfSchema(),
