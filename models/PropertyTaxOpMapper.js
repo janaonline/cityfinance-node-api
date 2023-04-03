@@ -5,6 +5,7 @@ const propertyTaxOpMapper = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         value: { type: Schema.Types.Mixed, default: null },
+        date: { type: Date, default: null }, // audit date
         status: {
             type: String,
             default: "PENDING",

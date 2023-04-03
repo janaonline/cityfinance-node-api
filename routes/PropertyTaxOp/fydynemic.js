@@ -57,6 +57,7 @@ const propertyTaxOpFormJson = () => {
                                 "postion": "0",
                                 "value": "",
                                 "file": "",
+                                "date": "",
                                 "min": "",
                                 "max": "",
                                 "required": true,
@@ -114,7 +115,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": "",
                                 "required": true,
@@ -190,8 +194,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -199,6 +203,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "dmdIncludingCess",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -282,8 +287,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -291,6 +296,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "dmdexcludingCess",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -374,8 +380,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -383,6 +389,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "taxTypeDemand",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -466,8 +473,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -475,6 +482,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "cessDemand",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -558,8 +566,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -567,6 +575,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "doesUserChargesDmnd",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -650,8 +659,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -659,6 +668,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "userChargesDmnd",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -742,8 +752,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -751,6 +761,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "collectIncludingCess",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -834,8 +845,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -843,6 +854,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "collectExcludingCess",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -926,8 +938,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -935,6 +947,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "taxTypeCollection",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1018,8 +1031,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1027,6 +1040,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "cessCollect",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1110,8 +1124,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1119,6 +1133,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalMappedPropertiesUlb",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1202,8 +1217,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1211,6 +1226,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalPropertiesTax",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1294,8 +1310,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1303,6 +1319,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalPropertiesTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1386,8 +1403,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1395,6 +1412,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalPropertiesTaxDmCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1478,8 +1496,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1487,6 +1505,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resValuePropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1570,8 +1589,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1579,6 +1598,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resNoPropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1662,8 +1682,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1671,6 +1691,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resValuePropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1754,8 +1775,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1763,6 +1784,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resNoPropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1846,8 +1868,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1855,6 +1877,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comValuePropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -1938,8 +1961,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -1947,6 +1970,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comNoPropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2030,8 +2054,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2039,6 +2063,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comValuePropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2122,8 +2147,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2131,6 +2156,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comNoPropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2214,8 +2240,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2223,6 +2249,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indValuePropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2306,8 +2333,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2315,6 +2342,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indNoPropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2398,8 +2426,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2407,6 +2435,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indValuePropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2490,8 +2519,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2499,6 +2528,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indNoPropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2582,8 +2612,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2591,6 +2621,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "govValuePropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2674,8 +2705,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2683,6 +2714,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "govNoPropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2766,8 +2798,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2775,6 +2807,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "govValuePropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2858,8 +2891,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2867,6 +2900,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "govNoPropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -2950,8 +2984,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -2959,6 +2993,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "insValuePropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3042,8 +3077,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3051,6 +3086,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "insNoPropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3134,8 +3170,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3143,6 +3179,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "insValuePropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3226,8 +3263,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3235,6 +3272,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "insNoPropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3318,8 +3356,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3327,6 +3365,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherValuePropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3410,8 +3449,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3419,6 +3458,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherNoPropertyTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3502,8 +3542,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3511,6 +3551,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherValuePropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3594,8 +3635,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3603,6 +3644,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherNoPropertyTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3686,8 +3728,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3695,6 +3737,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "noOfPropertiesPaidOnline",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3778,8 +3821,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3787,6 +3830,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalCollectionOnline",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3870,8 +3914,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3879,6 +3923,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "propertyTaxCollectionBookCurrentDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -3962,8 +4007,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -3971,6 +4016,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "propertyTaxCollectionBookCurrentCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4054,8 +4100,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4063,6 +4109,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "propertyTaxCollectionBookCurrentArdm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4146,8 +4193,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4155,6 +4202,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "propertyTaxCollectionBookCurrentArCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4238,8 +4286,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4247,6 +4295,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "propertyTaxCollectionBookCurrentTotalDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4330,8 +4379,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4339,6 +4388,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "propertyTaxCollectionBookCurrentTotalCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4422,8 +4472,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4431,6 +4481,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "omCostDeleveryWater",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4467,7 +4518,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
@@ -4525,7 +4579,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
@@ -4601,8 +4658,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4610,6 +4667,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalSewergeChrgDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4693,8 +4751,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4702,6 +4760,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalSewergeChrgCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4785,8 +4844,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4794,6 +4853,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalSewergeConnectionDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4877,8 +4937,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4886,6 +4946,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "totalSewergeConnectionCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -4969,8 +5030,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -4978,6 +5039,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resValueSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5061,8 +5123,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5070,6 +5132,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resNoSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5153,8 +5216,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5162,6 +5225,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resValueSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5245,8 +5309,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5254,6 +5318,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "resNoSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5337,8 +5402,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5346,6 +5411,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comValueSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5429,8 +5495,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5438,6 +5504,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comNoSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5521,8 +5588,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5530,6 +5597,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comValueSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5613,8 +5681,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5622,6 +5690,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "comNoSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5705,8 +5774,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5714,6 +5783,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indValueSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5797,8 +5867,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5806,6 +5876,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indNoSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5889,8 +5960,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5898,6 +5969,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indValueSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -5981,8 +6053,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -5990,6 +6062,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "indNoSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6073,8 +6146,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6082,6 +6155,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherValueSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6165,8 +6239,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6174,6 +6248,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherNoSewerageTaxDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6257,8 +6332,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6266,6 +6341,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherValueSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6349,8 +6425,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6358,6 +6434,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "otherNoSewerageTaxCollected",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6394,7 +6471,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
@@ -6470,8 +6550,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6479,6 +6559,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "sewerageCollectionBookCurrentDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6562,8 +6643,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6571,6 +6652,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "sewerageCollectionBookCurrentCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6654,8 +6736,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6663,6 +6745,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "sewerageCollectionBookCurrentArdm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6746,8 +6829,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6755,6 +6838,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "sewerageCollectionBookCurrentArCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6838,8 +6922,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6847,6 +6931,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "sewerageCollectionBookCurrentTotalDm",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -6930,8 +7015,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -6939,6 +7024,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "sewerageCollectionBookCurrentTotalCol",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -7022,8 +7108,8 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             },
                             {
-                                "label": "FY 2021-2022",
-                                "key": "FY2021-2022",
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
                                 "postion": "3",
                                 "value": "",
                                 "file": "",
@@ -7031,6 +7117,7 @@ const propertyTaxOpFormJson = () => {
                                 "max": 9999999,
                                 "required": true,
                                 "type": "omCostDeleverySewerage",
+                                "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
                                 "formFieldType": "number",
@@ -7067,7 +7154,10 @@ const propertyTaxOpFormJson = () => {
                                 "key": "FY2018-19",
                                 "postion": "0",
                                 "value": "",
-                                "file": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
