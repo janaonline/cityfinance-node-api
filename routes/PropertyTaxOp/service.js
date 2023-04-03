@@ -8,7 +8,7 @@ const { FormNames } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, financialYearTableHeader } = require('./fydynemic')
-
+const { isEmptyObj, isReadOnly } = require('../../util/helper');
 
 module.exports.getForm = async (req, res) => {
     try {
@@ -440,31 +440,35 @@ exports.getView = async function (req, res, next) {
             ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).lean();
         }
         let fyDynemic = await propertyTaxOpFormJson();
-        for (let sortKey in fyDynemic) {
-            if (sortKey !== "tabs" && ptoData) {
-                fyDynemic[sortKey] = ptoData[sortKey];
-            } else {
-                for (const k of ['tabs']) {
-                    let { data } = fyDynemic[k][0];
-                    for (let el in data) {
-                        let { yearData, mData } = data[el];
-                        if (Array.isArray(yearData) && ptoMaper) {
-                            for (const pf of yearData) {
-                                if (Object.keys(pf).length !== 0 && pf.constructor === Object) {
-                                    let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
-                                    pf.file ? (pf.file = d ? d.file : "") : pf.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
+        if (ptoData) {
+            const { isDraft, status } = ptoData;
+            for (let sortKey in fyDynemic) {
+                if (sortKey !== "tabs" && ptoData) {
+                    fyDynemic[sortKey] = ptoData[sortKey];
+                } else {
+                    for (const k of ['tabs']) {
+                        let { data } = fyDynemic[k][0];
+                        for (let el in data) {
+                            let { yearData, mData } = data[el];
+                            if (Array.isArray(yearData) && ptoMaper) {
+                                for (const pf of yearData) {
+                                    if (!isEmptyObj(pf)) {
+                                        let d = ptoMaper.find(({ type, year }) => type === pf.type && year.toString() === pf.year);
+                                        pf.file ? (pf.file = d ? d.file : "") : pf.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
+                                        pf.readonly = isReadOnly({ isDraft, status })
+                                    }
                                 }
-                            }
-                        } else if (Array.isArray(mData) && ptoData.length) {
-                            for (const dk of mData) {
-                                const { value, status } = ptoData[dk];
-                                dk['status'] = status;
-                                dk['value'] = value;
+                            } else if (Array.isArray(mData) && ptoData.length) {
+                                for (const dk of mData) {
+                                    const { value, status } = ptoData[dk];
+                                    dk['status'] = status;
+                                    dk['value'] = value;
+                                }
                             }
                         }
                     }
                 }
-            }
+            }   
         }
         return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader } });
     } catch (error) {
