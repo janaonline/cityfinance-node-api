@@ -4828,7 +4828,7 @@ exports.newFormAction = async (req, res) => {
 async function update28SlbForms(ulbData){
   try{
     // query.design_year = design_year_2223;
-    let yearsIds = [years['2023-24'],years['2024-25']]
+    let yearsIds = [...ulbData.accessibleForYears]
     yearsIds = yearsIds.map(item => ObjectId(item))
     let query = {}
     query["ulb"] = ulbData.ulb;

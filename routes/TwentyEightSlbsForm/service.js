@@ -17,6 +17,14 @@ const Response = require("../../service").response;
 const {createAndUpdateFormMaster, getMasterForm} =  require('../../routes/CommonFormSubmission/service')
 const {ModelNames} =  require('../../util/15thFCstatus');
 const { years } = require('../../service/years');
+const { getKeyByValue } = require('../../util/masterFunctions');
+
+let messages = {
+  "2021-22":"",
+  "2022-23":"Previous",
+  "2023-24":"20-21",
+  "2024-25":"20-21"
+}
 
 function response(form, res, successMsg ,errMsg){
     if(form){
@@ -393,7 +401,7 @@ module.exports.getForm = async (req, res,next) => {
           console.log("status ::::: ",status)
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
-          
+          let keyName = getKeyByValue(data.design_year)
           if (
             ![
               StatusList.Under_Review_By_MoHUA,
@@ -401,7 +409,7 @@ module.exports.getForm = async (req, res,next) => {
               StatusList.Approved_By_State,
             ].includes(status)
           ) {
-            let msg = userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - ${
+            let msg = userRole === "ULB" ? `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - ${
               status ? status : "Not Submitted"
             }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`
             req.json = {
@@ -445,9 +453,9 @@ module.exports.getForm = async (req, res,next) => {
           if(ulbData.access_2122){
           let slbData = await SLB.findOne({
             ulb: ObjectId(data.ulb),
-            design_year: YEAR_CONSTANTS["21_22"],
+            // design_year: YEAR_CONSTANTS["21_22"],
+            accessibleForYears:{"$in":[ObjectId(data.design_year)]}
           }).lean();
-         
         if(slbData){
           slbDataNotFilled = slbData.blank;
                 formData["data"].forEach((element) => {
