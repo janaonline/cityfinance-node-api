@@ -109,7 +109,7 @@ module.exports = function (req, res) {
                                 } else {
                                     try {
 
-                                        processData(file, financialYear, data._id, balanceSheet, design_year, user);
+                                      await processData(file, financialYear, data._id, balanceSheet, design_year, user);
                                         return res.status(200).json({
                                             timestamp: moment().unix(),
                                             success: true,
