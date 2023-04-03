@@ -1152,6 +1152,7 @@ module.exports.create = catchAsync(async (req, res) => {
                 }
               ).lean();
             }
+            console.log(">>>>>>>>>>>")
             await update28SlbForms(ulbData)
           }
           return res.status(response ? 200 : 400).send(value);
@@ -4831,7 +4832,7 @@ async function update28SlbForms(ulbData){
     yearsIds = yearsIds.map(item => ObjectId(item))
     let query = {}
     query["ulb"] = ulbData.ulb;
-    query["design_year"] = {"$in":yearIds}
+    query["design_year"] = {"$in":yearsIds}
     let slb28Forms = await TwentyEightSlbForm.find(query).lean();
     for(let slb28Form of slb28Forms){
       if (slb28Form) {
@@ -4840,7 +4841,7 @@ async function update28SlbForms(ulbData){
         let updationQuery = {
           "_id":slb28Form._id
         }
-        let targetValidator = `${spilltedYear[0].slice(-2)}${spilltedYear[0]}`
+        let targetValidator = `${spilltedYear[0].slice(-2)}${spilltedYear[1]}`
         let slb28FormStatus = calculateStatus(
           slb28Form.status,
           slb28Form.actionTakenByRole,
@@ -4926,6 +4927,7 @@ async function update28SlbForms(ulbData){
     }
   }
   catch(err){
+    console.log(err)
     console.log("error in update28SlbForms :::: ",err.message)
   }
 }
