@@ -1897,6 +1897,7 @@ async function handleRangeIfExists(questionObj,formObj){
             if(["Nos./Year","%","lpcd","Hours/day"].includes(formObj.unit)){
                 obj.minRange = formObj.range.split("-")[0]++
                 obj.maxRange = formObj.range.split("-")[1]++
+                obj.hint = formObj.range
             }
         }
         return {...obj}
