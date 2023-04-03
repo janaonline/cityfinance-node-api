@@ -549,6 +549,9 @@ exports.createUpdate = async (req, res) => {
             return Response.BadRequest(res, {}, "ShortKeys not found");
           }
           // const {outer : tabLevelShortKeysArray} = getSeparatedShortKeys(shortKeys);
+          if(formData2324 ){
+            await checkIfSubmitSelectionChanged(formData2324, req);
+          }
           //filter shortKeys based on Tab selection
           shortKeys = filterTabShortKeys(req, shortKeys);
 
@@ -1982,6 +1985,24 @@ function filterTabShortKeys(req, shortKeys) {
   } catch (error) {
      throw (error.message);
   }
+}
+
+async function checkIfSubmitSelectionChanged(form, req){
+  try {
+    form = JSON.parse(JSON.stringify(form))
+    let formId = form._id;
+    for(let tab in TAB_OBJ){
+      if (req.body[TAB_OBJ[tab]].submit_annual_accounts !== form[TAB_OBJ[tab]].submit_annual_accounts) {
+        await CurrentStatus.deleteMany({
+          recordId: formId
+        })
+      }
+    }
+    return ;
+  } catch (error) {
+    throw(error.message)
+  }
+  
 }
 
 function extractTabKeys(req, shortKeys, separator,tabName) {
