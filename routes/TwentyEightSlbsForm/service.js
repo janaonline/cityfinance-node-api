@@ -342,7 +342,6 @@ module.exports.createOrUpdateForm = async (req, res) =>{
 
 module.exports.getForm = async (req, res,next) => {
     try {
-      
         let userRole = req.decoded.role
         const data = req.query;
         const condition = {};
@@ -356,22 +355,21 @@ module.exports.getForm = async (req, res,next) => {
         const ulbData = await Ulb.findOne({
           _id: ObjectId(data.ulb)
         }).lean();
-
         condition['ulb'] = ObjectId(data.ulb);
         condition['design_year'] = ObjectId(data.design_year);
       let yearData =   await Year.findOne({
             _id : ObjectId(data.design_year)
         }).lean()
+        let targetYearArr = yearData.year.split("-")
+        let targetYearValue = `${targetYearArr[0].slice(-2)}${targetYearArr[1]}`
         let prevYearVal = findPreviousYear(yearData.year);
         let prevYearData =   await Year.findOne({
-            year : prevYearVal
+            _id : years['2021-22']
         }).lean()
         let masterFormData = await MasterForm.findOne({
           ulb: data.ulb,
           design_year: prevYearData._id,
         }).lean();
-        
-
         /* Checking the host header and setting the host variable to the appropriate value. */
         let host = "";
         if (req.headers.host === BackendHeaderHost.Demo) {
@@ -379,22 +377,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
-        let isDraft = true
         if(ulbData.access_2122){
-          if(data.design_year === years['2023-24']){
-            var prevFormData = await TwentyEightSlbsForm.findOne({
-              ulb: data.ulb,
-              design_year: prevYearData._id,
-            }, { history: 0} ).lean()
-            if(prevFormData){
-              prevFormData.history = []
-              masterFormData = prevFormData
-              isDraft = masterFormData.isDraft
-            }
-            
-            
-
-          }
         if (masterFormData) {
           isDraft = !masterFormData.isSubmit
           if (masterFormData?.history?.length > 0) {
@@ -404,11 +387,13 @@ module.exports.getForm = async (req, res,next) => {
           let status = calculateStatus(
             masterFormData.status,
             masterFormData.actionTakenByRole,
-            isDraft,
+            !masterFormData.isSubmit,
             "ULB"
           );
+          console.log("status ::::: ",status)
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
+          
           if (
             ![
               StatusList.Under_Review_By_MoHUA,
@@ -538,7 +523,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         }
         if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
-          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole} ;
+          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole:formData.actionTakenByRole} ;
           let canTakeActionOnMasterForm =  await getMasterForm(params);
           Object.assign(formData, canTakeActionOnMasterForm);
         }else{
@@ -603,26 +588,26 @@ module.exports.getForm = async (req, res,next) => {
                 "target"
               )
                 ? slbData.waterManagement.houseHoldCoveredPipedSupply?.target[
-                    "2223"
+                  targetYearValue
                   ]
                 : "";
             waterSuppliedPerDay =
               slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
                 "target"
               )
-                ? slbData.waterManagement.waterSuppliedPerDay?.target["2223"]
+                ? slbData.waterManagement.waterSuppliedPerDay?.target[targetYearValue]
                 : "";
             reduction = slbData.waterManagement.reduction.hasOwnProperty(
               "target"
             )
-              ? slbData.waterManagement.reduction?.target["2223"]
+              ? slbData.waterManagement.reduction?.target[targetYearValue]
               : "";
             houseHoldCoveredWithSewerage =
               slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
                 "target"
               )
                 ? slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
-                    "2223"
+                    targetYearValue
                   ]
                 : "";
           }
@@ -721,6 +706,7 @@ module.exports.getForm = async (req, res,next) => {
           // });
         }
     } catch (error) {
+      console.log("error ::",error)
         return res.status(400).json({
             status: false,
             show: false,
@@ -871,6 +857,7 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async(req, res)=>{
     })
 
   }catch(error){
+    
     return res.status(400).json({
       status: false,
       show: false,

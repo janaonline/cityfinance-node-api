@@ -218,7 +218,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             }
             if(formCurrentStatus.status === MASTER_STATUS['In Progress']){
               if(!formData.isProjectLoaded && years['2023-24']){
-                delete req.body['projects']
+                delete formData['projects']
               }
             }
             let formSubmit;
@@ -226,9 +226,11 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               formBodyStatus === MASTER_STATUS["Under Review by State"]
                 ? new Date()
                 : "";
-                let validation =  checkForCalculations(formData)
-                if(!validation.valid){
-                  return Response.BadRequest(res, {}, validation.messages);
+                if(formBodyStatus === MASTER_STATUS["Under Review by State"]){
+                  let validation =  checkForCalculations(formData)
+                  if(!validation.valid){
+                    return Response.BadRequest(res, {}, validation.messages);
+                  }
                 }
             if (formData2324) {
               formSubmit = await moongose.model(modelName).findOneAndUpdate(
@@ -376,7 +378,6 @@ function checkForCalculations(reports){
       projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
       
     }
-    console.log("projectSUm :: ",projectSum)
     for(let a of reports.categoryWiseData_wm){
       expWm += parseFloat(a.grantUtilised)
     }

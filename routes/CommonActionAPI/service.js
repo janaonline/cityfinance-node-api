@@ -22,8 +22,7 @@ const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
-const {MASTER_STATUS_ID} =  require('../../util/FormNames');
-
+const {MASTER_STATUS_ID} = require("../../util/FormNames")
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
@@ -252,8 +251,8 @@ module.exports.calculateStatusMaster = (status)=>{
     }
 }
 
-module.exports.calculateStatusForFiscalRankingForms = (status, actionTakenByRole, isDraft, formType) => {
-    switch (formType) {
+module.exports.calculateStatusForFiscalRankingForms = (status="", actionTakenByRole="", isDraft="", formType) => {
+    switch(formType){
         case "ULB":
             switch (true) {
                 case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
@@ -1895,11 +1894,9 @@ async function handleRangeIfExists(questionObj,formObj){
     try{
         let obj = {...questionObj}
         if(formObj.range){
-            if(["Nos./Year","%","lpcd"].includes(formObj.unit)){
-                obj.max = 3
-            }
-            else if(formObj.unit === "Hours/day") {
-                obj.max = 2
+            if(["Nos./Year","%","lpcd","Hours/day"].includes(formObj.unit)){
+                obj.minRange = formObj.range.split("-")[0]++
+                obj.maxRange = formObj.range.split("-")[1]++
             }
         }
         return {...obj}
@@ -2089,7 +2086,13 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         // console.log("question ",question.shortKey)
         if(mainKey){
             let key = mainKey + "."+question.shortKey
-            value = flattedForm[key] || ""
+            if(flattedForm[key]  == undefined){
+                value = ""
+            }
+            else{
+                value = flattedForm[key]
+            }
+            console.log("flattedForm[key] :: ",flattedForm[key])
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
@@ -2097,7 +2100,12 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         }
         else{
             let key = question.shortKey
-            value = flattedForm[key] || ""
+            if(flattedForm[key]  == undefined){
+                value = ""
+            }
+            else{
+                value = flattedForm[key]
+            }
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
@@ -2351,18 +2359,18 @@ async function handleCasesByInputType(question){
     }
 }
 
-function findId(answerOption,name,idx,type="id"){
+function findId(answerOption,name,idx,type="_id"){
     try{
         if(answerOption){
             let objectFind = answerOption.find((item)=>item.name === name)
-            return objectFind._id.toString()
+            return objectFind[type].toString()
         }
         else{
             return idx.toString()
         }
     }
     catch(err){
-        console.log("")
+        console.log("error in findId :::",err.message)
     }
 }
 
@@ -2377,7 +2385,7 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
                 "did":[],
                 "_id":obj.answer_option ?  findId(obj['answer_option'],item.name,index) : index.toString(),
                 "option_id":item._id,
-                "viewSequence":obj.answer_option ?  findId(obj['answer_option'],item.name,index) : (index+1).toString(),
+                "viewSequence":obj.answer_option ?  findId(obj['answer_option'],item.name,index,"viewSequence") : (index+1).toString(),
             }
              childObj = {
                 "type":item._id,
@@ -2386,8 +2394,7 @@ async function appendAnswerOptions(modelName,obj,modelFilter){
             }
             answerOptions.push(answerObj)
         })
-        obj['answer_option'] = answerOptions
-        // console.log("this is object ::: ",obj)
+        obj['answer_option'] = answerOptions.sort((a,b)=>parseInt(a.viewSequence)-parseInt(b.viewSequence))
         // obj['child'] = childOptions
         return obj
     }
@@ -3047,8 +3054,12 @@ function checkIfUlbHasAccess(ulbData,userYear){
   }
 
 module.exports.decideDisabledFields = (form,formType)=>{
+    
     let formStatus = calculateStatus(form.status, form.actionTakenByRole,form.isDraft,
         formType)
+    if(form.status == ""){
+        formStatus = MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
+    }
     let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
     if(allowedStatuses.includes(formStatus)){
         return false 
