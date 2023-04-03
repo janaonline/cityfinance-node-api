@@ -58,7 +58,7 @@ const UtilizationReportSchema = new Schema(
       unUtilizedPrevYr: { type: Number, default: null },
       receivedDuringYr: { type: Number, default: null },
       expDuringYr: {
-        type: Number, default: 0
+        type: Number, default: null
       },
       closingBal: { type: Number, default:0 },
     },
