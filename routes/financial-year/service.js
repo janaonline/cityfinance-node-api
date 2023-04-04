@@ -164,6 +164,7 @@ module.exports.access = catchAsync(async function (req, res) {
             case "MoHUA":
                 case "ADMIN":
                 if(process.env.ENV != "demo"){ 
+                    
                     MoHUA_arr = MoHUA_arr.filter(item => item?.year != '2023-24')
                 }
                 arr = MoHUA_arr
