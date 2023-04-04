@@ -63,15 +63,16 @@ module.exports.changeResponse = async(req,res,next) =>{
         let form = {...req.form}
         let {name,role} = req.decoded
         let latestYear = !outDatedYears.includes(year)
-        let jsonFormId = req.query.formId
-        if(!jsonFormId){
-            response.message = "json form id is required"
-            return res.status(400).json(response)
-        }
-        let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
-        let formJson = await FormsJson.findOne(condition).lean()
-        let obj = formJson ? formJson.data : {}
+        console.log("latestYear :: ",latestYear)
         if(latestYear){
+            let jsonFormId = req?.query?.formId
+            if(!jsonFormId){
+                response.message = "json form id is required"
+                return res.status(400).json(response)
+            }
+            let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
+            let formJson = await FormsJson.findOne(condition).lean()
+            let obj = formJson ? formJson.data : {}
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
             let mutatedJson = await mutateJson(obj,keysToBeDeleted,req.query,role)
             response.message = 'Form Questionare!'
