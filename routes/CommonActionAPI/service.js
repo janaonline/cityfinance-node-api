@@ -1172,9 +1172,6 @@ class AggregationServices {
             return obj
         }
     }
-
-
-
     /**
      * 
      * @param {*} field 
@@ -1211,7 +1208,6 @@ class AggregationServices {
                 else: 0
             }
         }
-
     }
     static getCommonSortArrObj(arr, sortBy) {
         return {
@@ -1302,7 +1298,6 @@ class AggregationServices {
             console.log("error in addMultipleFields :: ", err.message)
         }
     }
-
     static addConvertedAmount(field, fieldName, type) {
         let obj = {
             "$addFields": {}
