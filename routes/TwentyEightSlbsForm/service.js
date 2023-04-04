@@ -370,6 +370,7 @@ module.exports.getForm = async (req, res,next) => {
         }).lean()
         let targetYearArr = yearData.year.split("-")
         let targetYearValue = `${targetYearArr[0].slice(-2)}${targetYearArr[1]}`
+        console.log("targetYearValue ::: ",targetYearValue)
         let prevYearVal = findPreviousYear(yearData.year);
         let prevYearData =   await Year.findOne({
             _id : years['2021-22']
@@ -401,7 +402,8 @@ module.exports.getForm = async (req, res,next) => {
           console.log("status ::::: ",status)
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
-          let keyName = getKeyByValue(data.design_year)
+          let keyName = getKeyByValue(years,data.design_year)
+          console.log("keyName ::: ",keyName)
           if (
             ![
               StatusList.Under_Review_By_MoHUA,
@@ -409,6 +411,7 @@ module.exports.getForm = async (req, res,next) => {
               StatusList.Approved_By_State,
             ].includes(status)
           ) {
+            console.log("keyName ::: ",keyName)
             let msg = userRole === "ULB" ? `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - ${
               status ? status : "Not Submitted"
             }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`
@@ -474,7 +477,7 @@ module.exports.getForm = async (req, res,next) => {
                        )
                          ? Number(
                              slbData.waterManagement.houseHoldCoveredPipedSupply
-                               ?.target["2223"]
+                               ?.target[targetYearValue]
                            )
                          : "";
                      slbDataNotFilled ? (element.targetDisable = false) : "";
@@ -489,7 +492,7 @@ module.exports.getForm = async (req, res,next) => {
                        )
                          ? Number(
                              slbData.waterManagement.waterSuppliedPerDay
-                               ?.target["2223"]
+                               ?.target[targetYearValue]
                            )
                          : "";
                      slbDataNotFilled ? (element.targetDisable = false) : "";
@@ -503,7 +506,7 @@ module.exports.getForm = async (req, res,next) => {
                          "target"
                        )
                          ? Number(
-                             slbData.waterManagement.reduction?.target["2223"]
+                             slbData.waterManagement.reduction?.target[targetYearValue]
                            )
                          : "";
                      slbDataNotFilled ? (element.targetDisable = false) : "";
@@ -520,7 +523,7 @@ module.exports.getForm = async (req, res,next) => {
                        )
                          ? Number(
                              slbData.waterManagement
-                               .houseHoldCoveredWithSewerage?.target["2223"]
+                               .houseHoldCoveredWithSewerage?.target[targetYearValue]
                            )
                          : "";
                      slbDataNotFilled ? (element.targetDisable = false) : "";
