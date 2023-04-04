@@ -70,7 +70,6 @@ module.exports.changeResponse = async(req,res,next) =>{
         let form = {...req.form}
         let {name,role} = req.decoded
         let latestYear = !outDatedYears.includes(year)
-        console.log("latestYear :: ",latestYear)
         if(latestYear){
             let jsonFormId = req?.query?.formId
             if(!jsonFormId){
