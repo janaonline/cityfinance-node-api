@@ -227,6 +227,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 ? new Date()
                 : "";
                 if(formBodyStatus === MASTER_STATUS["Under Review by State"]){
+                  console.log("formData :: ",formData)
                   let validation =  checkForCalculations(formData)
                   if(!validation.valid){
                     return Response.BadRequest(res, {}, validation.messages);
@@ -372,29 +373,34 @@ function checkForCalculations(reports){
   try{
     let exp = parseFloat(reports.grantPosition.expDuringYr)
     let projectSum = 0
+    
+    if(reports?.projects?.length > 0){
+      projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
+    }
+    
     let closingBal = reports.grantPosition.closingBal
     let expWm = 0
-    if(reports.projects.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
-      
-    }
     for(let a of reports.categoryWiseData_wm){
       expWm += parseFloat(a.grantUtilised)
     }
     let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
     let sumWmSm = expWm + expSwm
-    if(closingBal < 1){
+    if(closingBal < 0){
+      console.log("1")
       validator.errors.push(false)
       validator.messages.push(validationMessages['negativeBal'])
     }
-    if(sumWmSm != exp){
+    if(sumWmSm !== exp){
+      console.log("2")
       validator.errors.push(false)
       validator.messages.push(validationMessages['expWmSwm'])
     }
-    if(exp < projectSum){
+    if(exp !== projectSum){
+      console.log("3")
       validator.errors.push(false)
       validator.messages.push(validationMessages['projectExpMatch'])
     }
+
     if(validator.errors.every(item => item === true)){
       validator.valid = true
     }

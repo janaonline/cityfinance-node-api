@@ -46,7 +46,8 @@ function checkForCalculations(reports){
   try{
     let exp = parseFloat(reports.grantPosition.expDuringYr)
     let projectSum = 0
-    if(reports.projects.length > 0){
+    
+    if(reports?.projects?.length > 0){
       projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
     }
     
@@ -428,7 +429,7 @@ module.exports.createOrUpdate = async (req, res) => {
       }
       
       if (savedData) {
-        // await updateForNextForms(designYear,ulb,formData)
+        await updateForNextForms(designYear,ulb,req.body)
         return res.status(200).json({
           msg: "Utilization Report Submitted Successfully!",
           isCompleted: !savedData.isDraft,
@@ -1431,7 +1432,7 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     let projectObj = await UtilizationReport.findOne({
       "ulb":ObjectId(ulb),
       "designYear":ObjectId(design_year)
-    },{projects:1,isDraft:1,status:1,actionTakenByRole:1}).lean()
+    },{projects:1,isDraft:1,status:1,actionTakenByRole:1,currentFormStatus:1}).lean()
     
     if(!projectObj){
       response.message = "No utilization report found with this ulb and design year"
@@ -1441,6 +1442,9 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     }
     if(projectObj){
       formStatus = decideDisabledFields(projectObj,"ULB")
+      if(projectObj.status === ""){
+          formStatus = MASTER_STATUS_ID[projectObj.currentFormStatus]  
+      }
       projectObj.disableFields = formStatus
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()
@@ -1503,12 +1507,12 @@ async function updateForNextForms(design_year,ulb,utiData){
       "designYear":ObjectId(years[nextYearVal]),
       "ulb":ObjectId(ulb)
     })
-    let condition = {};
-    condition._id = utilForm._id
-    condition.ulb = ObjectId(ulb)
-    condition.designYear = ObjectId(years[nextYearVal])
-    condition.ulb = ulb;
     if (utilForm) {
+    let condition = {};
+      condition._id = utilForm._id
+      condition.ulb = ObjectId(ulb)
+      condition.designYear = ObjectId(years[nextYearVal])
+      condition.ulb = ulb;
       let utilFormStatus = calculateStatus(
         utilForm.status,
         utilForm.actionTakenByRole,
@@ -1552,6 +1556,7 @@ async function updateForNextForms(design_year,ulb,utiData){
     }
   }
   catch(err){
+    console.log(err)
     console.log("error in checkForNextForms :::: ",err.message)
   }
 }
