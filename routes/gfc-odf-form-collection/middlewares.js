@@ -32,9 +32,9 @@ module.exports.changeRequestBody = async (req,res,next)=>{
     let bodyData = {...req.body}
     delete bodyData['data']
     let {design_year} = req.body
-    let {data} = req.body 
-    data = modifyData(data)
+    // data = modifyData(data)
     if (design_year == years['2023-24']) {
+      let {data} = req.body 
       req.body =await  payloadParser(data,req)
     }
     
