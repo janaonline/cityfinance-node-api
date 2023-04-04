@@ -181,11 +181,6 @@ let DurProjectJson = {
         "required": true,
         "validation": [
             {
-                "_id": "24",
-                "error_msg": "",
-                "value": ""
-            },
-            {
                 "error_msg": "",
                 "_id": "1"
             }
@@ -250,11 +245,6 @@ let DurProjectJson = {
                 "error_msg": "",
                 "_id": "1"
             },
-            {
-                "_id": "24",
-                "error_msg": "",
-                "value": ""
-            }
         ],
         "restrictions": [],
         "input_type": "14",
