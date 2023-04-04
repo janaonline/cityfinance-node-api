@@ -162,7 +162,6 @@ module.exports.access = catchAsync(async function (req, res) {
             case "MoHUA":
                 case "ADMIN":
                 MoHUA_arr = MoHUA_arr.filter(item => item?.year != '2023-24')
-                console.log("MoHUA_arr :: ",MoHUA_arr)
                 arr = MoHUA_arr
                 break;
 
