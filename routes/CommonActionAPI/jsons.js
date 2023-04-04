@@ -234,7 +234,6 @@ let DurProjectJson = {
         "answer_option": [],
         "title": "Project Completion Date",
         "hint": "",
-        "max":new Date().toISOString().slice(0,10),
         "resource_urls": [],
         "label": "4",
         "shortKey": "completionDate",
