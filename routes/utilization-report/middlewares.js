@@ -51,6 +51,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             if(form){
                 formStatus = decideDisabledFields(form,"ULB")
             }
+            console.log("formStatus ::: ",formStatus)
             let flattedForm = await getFlatObj(form)
             flattedForm.disableFields = formStatus
             flattedForm['name_'] = flattedForm['name']
