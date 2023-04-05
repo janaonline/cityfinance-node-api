@@ -111,7 +111,7 @@ const waterManagementSchema = new Schema({
         status: statusType(),
         rejectReason: { type: String, default: '' },
     },
-    accessibleForYears:[],
+    
     status: statusType(),
     rejectReason: { type: String, default: '' },
 });
@@ -240,6 +240,14 @@ const XVFcGrantULBFormSchema = new Schema(
             type: solidWasteManagementSchema,
             default: null,
         },
+        accessibleForYears:[
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'Year',
+                required: false,
+                default: null
+            },
+        ],
         millionPlusCities: { type: millionPlusCitiesSchema, default: null },
         isCompleted: { type: Boolean, default: 0 },
         isOldForm: { type: Boolean },
