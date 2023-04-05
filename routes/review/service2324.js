@@ -8,105 +8,51 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
+const {ulbColumnNames,stateColumnNames,annualAccountKeys,ulbFilterKeys} = require("./constants")
+const {checkForUndefinedVaribales} = require("../../routes/CommonActionAPI/service");
 // const List = require('../../util/15thFCstatus')
+
+// module.exports.dashboardApi = (req,res,next)=>{
+//   try{
+//     let design_year = req.query.design_year;
+//     let form = req.query.formId
+//     let filter = {};
+//   }
+//   catch(err){
+//     console.log("error in dashboardApi :::: ",err.message)
+//   }
+// }
 
 
 module.exports.get = async (req, res) => {
+  let response = {
+    "success":false,
+    "message":"something went wrong"
+  }
   try {
     
     let loggedInUserRole = req.decoded.role
     let filter = {};
-    const ulbColumnNames = {
-      sNo: "S No.",
-      ulbName: "ULB Name",
-      stateName: "State Name",
-      censusCode: "Census/SB Code",
-      ulbType: "ULB Type",
-      populationType: "Population Type",
-      UA: "UA",
-      formStatus: "Form Status",
-      filled: "Filled Status",
-      filled_audited: "Audited Filled Status",
-      filled_provisional: "Provisional Filled Status",
-      action: "Action"
-    }
-    const stateColumnNames = {
-      sNo: "S No.",
-      stateName: "State Name",
-      formStatus: "Form Status"
-  
-    }
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
     let total;
     let design_year = req.query.design_year;
     let form = req.query.formId
-    if (!design_year || !form) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing FormId or Design Year"
-      })
-    }
+    let validator = checkForUndefinedVaribales({
+      "Form Id":form,
+      "Design Year":design_year
+    })
+    // return user if formId or design year is missing
+    if(!validator.valid) return res.status(400).json({...response,message:validator.message})
     let skip = req.query.skip ? parseInt(req.query.skip) : 0
     let limit = req.query.limit ? parseInt(req.query.limit) : 10
     let csv = req.query.csv == "true"
     let keys;
     let formTab = await Sidemenu.findOne({ _id: ObjectId(form) }).lean();
-    if (loggedInUserRole == "STATE") {
-      delete ulbColumnNames['stateName']
-    }
-    let title_value = formTab.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
-  
-    if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
-      delete ulbColumnNames['stateName']
-    }
-    
-    let dbCollectionName = formTab?.dbCollectionName
+    if(!formTab) return res.status(400).json({})
     let formType = formTab.role
-    if (formType === "ULB") {
-      filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : ""
-      filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : ""
-      filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType : ""
-      filter['state'] = req.query.stateName != 'null' ? req.query.stateName : ""
-      filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType : ""
-      filter['UA'] = req.query.UA != 'null' ? req.query.UA : ""
-      filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : ""
-      // keys = calculateKeys(filter['status'], formType);
-  
-      // Object.assign(filter, keys)
-      // delete filter['status']
-  
-      // filled1 -> will be used for all the forms and Provisional of Annual accounts
-      // filled2 -> only for annual accounts -> audited section
-      filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1 : ""
-      filter['filled2'] = req.query.filled2 != 'null' ? req.query.filled2 : ""
-      if (filter["censusCode"]) {
-        let code = filter["censusCode"];
-        var digit = code.toString()[0];
-        if (digit == "9") {
-          delete filter["censusCode"];
-          filter["sbCode"] = code;
-        }
-      }
-  
-    }
-    if (formTab.collectionName == CollectionNames['annual']) {
-      filter['filled_audited'] = filter['filled1']
-      filter['filled_provisional'] = filter['filled2']
-      delete filter['filled1']
-      delete filter['filled2']
-    } else {
-      filter['filled'] = filter['filled1']
-      delete filter['filled1']
-    }
-    if (formType == 'STATE') {
-      // filter['state'] = req.query.stateName
-      // filter['status'] = req.query.status 
-      filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
-      filter['state'] = req.query.state != 'null' ? req.query.state : ""
-      // keys = calculateKeys(filter['status'], formType);
-      // Object.assign(filter, keys)
-      // delete filter['status']
-    }
+    if(['STATE','MOHUA','ADMIN'].includes(loggedInUserRole) || formType === "ULB"); delete ulbColumnNames['stateName']
+    let dbCollectionName = formTab?.dbCollectionName    
+    manageFilters(formType, filter, req, formTab);
     let state = req.query.state ?? req.decoded.state
     if (req.decoded.role === "STATE") {
       state = req.decoded.state
@@ -722,7 +668,83 @@ const computeQuery = (params) => {
         break;
     }
 
+}
+
+// function 
+
+function censusCodeCondition(item,form){
+  let formObj = {...form}
+  try{
+    if(item == 'censusCode' && form[item]){
+      let code = formObj[item];
+      var digit = code.toString()[0];
+      if (digit == "9") {
+        delete formObj[item];
+        formObj["sbCode"] = code;
+      }
+    }
   }
+  catch(err){
+    console.log("error in censusCodeCondition ::: ",err.message)
+  }
+  return formObj
+}
+function manageFilters(formType, givenFilter, req, formTab) {
+  let filter = {...givenFilter}
+  if (formType === "ULB") {
+    Object.keys(req.query).forEach((item)=> {
+      if(Object.keys(ulbFilterKeys).includes(item)){
+        filter[ulbFilterKeys[item]] = req.query[item] == "null" ? '' : req.query[item] 
+        if(ulbFilterKeys[item] === "formData.currentFormStatus"); req.query[item] != 'null' ? Number(req.query.status) :""
+        filter = censusCodeCondition(item,form)
+      }
+    })
+    // filter['state'] = req.query.stateName != 'null' ? req.query.stateName : "";
+    // filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
+    // // keys = calculateKeys(filter['status'], formType);
+    // filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType : "";
+    // filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : "";
+    // filter['UA'] = req.query.UA != 'null' ? req.query.UA : "";
+    // filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : "";
+    // filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType : "";
+    // console.log(" :::: objectKeys ::: ",Object.keys(req.query))
+    // Object.assign(filter, keys)
+    // delete filter['status']
+
+
+    // filled1 -> will be used for all the forms and Provisional of Annual accounts
+    // filled2 -> only for annual accounts -> audited section
+    // filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1 : "";
+    // filter['filled2'] = req.query.filled2 != 'null' ? req.query.filled2 : "";
+    if (filter["censusCode"]) {
+      let code = filter["censusCode"];
+      var digit = code.toString()[0];
+      if (digit == "9") {
+        delete filter["censusCode"];
+        filter["sbCode"] = code;
+      }
+    }
+
+  }
+  if (formTab.collectionName == CollectionNames['annual']) {
+    filter['filled_audited'] = filter['filled1'];
+    filter['filled_provisional'] = filter['filled2'];
+    delete filter['filled1'];
+    delete filter['filled2'];
+  } else {
+    filter['filled'] = filter['filled1'];
+    delete filter['filled1'];
+  }
+  if (formType == 'STATE') {
+    // filter['state'] = req.query.stateName
+    // filter['status'] = req.query.status 
+    filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
+    filter['state'] = req.query.state != 'null' ? req.query.state : "";
+    // keys = calculateKeys(filter['status'], formType);
+    // Object.assign(filter, keys)
+    // delete filter['status']
+  }
+}
 
 function getFilledQueryExpression(formName, filledQueryExpression) {
     switch (formName) {
