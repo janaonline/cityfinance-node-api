@@ -750,7 +750,7 @@ const FRTypeShortKey = [
   'sewerageTax',
   'totalRcptSanitation',
   'totalRecBudgetEst',
-  'totalOwnRevenues',
+  'totalOwnRevenue',
   'propertyTax',
   'waterTax',
   'taxRevenue',

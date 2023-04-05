@@ -24,7 +24,9 @@ const {
   canTakeActionOrViewOnly,
   calculateStatusForFiscalRankingForms,
   getKeyByValue,
+  AggregationServices
 } = require("../CommonActionAPI/service");
+const {FRFormStatus} = require('../../util/15thFCstatus')
 const Sidemenu = require("../../models/Sidemenu");
 const {
   fiscalRankingFormJson,
@@ -2843,6 +2845,9 @@ module.exports.FRUlbFinancialData = async (req, res) => {
       removeEscapesFromArr: [],
       labelObj: FRShortKeyObj,
       percentCompletionArr: [],
+      FRKeyWithDate: [],
+      FRKeyWithFile: []
+
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -2918,6 +2923,12 @@ module.exports.FROverAllUlbData = async (req, res) => {
       removeEscapesFromArr,
       labelObj: {},
       percentCompletionArr,
+      FRKeyWithDate:["FR_auditAnnualReport_2021-22","FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
+      FRKeyWithFile: ["FR_accountStwreProof_2021-22","FR_appAnnualBudget_2020-21","FR_appAnnualBudget_2021-22","FR_appAnnualBudget_2022-23",
+        "FR_appAnnualBudget_2023-24","FR_auditedAnnualFySt_2018-19","FR_auditedAnnualFySt_2019-20","FR_auditedAnnualFySt_2020-21","FR_auditedAnnualFySt_2021-22",
+        "FR_registerGisProof_2021-22",
+
+        ]
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -2967,7 +2978,6 @@ async function columnsForCSV(params) {
       "Please upload proof",
       "Do you use accounting software? ( Eg.Tally State-prescribed ERP etc)",
       "Please upload proof",
-      "Copy of Approved Annual Budget preferably in English FY 2023-24",
       "Copy of Approved Annual Budget preferably in English FY 2023-24",
       "Copy of Approved Annual Budget preferably in English FY 2022-23",
       "Copy of Approved Annual Budget preferably in English FY 2021-22",
@@ -3075,6 +3085,8 @@ function createCsv(params) {
       removeEscapesFromArr,
       labelObj,
       percentCompletionArr,
+      FRKeyWithDate,
+      FRKeyWithFile
     } = params;
     // if(!dbCols.length){
     //   dbCols =  Object.keys(cols)
@@ -3099,30 +3111,21 @@ function createCsv(params) {
         let str = "";
         let str2 = "";
         let FRFlag = false;
-        let completionPercent = 0;
-        const denominatorMandatory = 28;
-        let FROverallFlag = false;
-
+        const completionKey = "completionPercentFR"
+        document["compeletionPercent"]= completionPercent(percentCompletionArr, document,completionKey );
         for (let key of dbCols) {
           /* *
               this condition converts date to DD/MM/YYYY format
             * */
-          if (["createdAt", "modifiedAt"].includes(key)) {
-            document[key]
-              ? (document[key] = dateFormatter(document[key], "/"))
-              : "";
-          }
+          // if (["createdAt", "modifiedAt"].includes(key)) {
+          //   document[key]
+          //     ? (document[key] = dateFormatter(document[key], "/"))
+          //     : "";
+          // }
           if (removeEscapesFromArr.includes(key)) {
             document[key] = removeEscapeChars(document[key]);
           }
-          if (
-            percentCompletionArr.length > 0 &&
-            percentCompletionArr.includes(key) &&
-            document[key]
-          ) {
-            completionPercent++;
-            FROverallFlag = true;
-          }
+          
           if (key.split("_")[0] !== "FR") {
             if (document[key]) {
               /* A destructuring assignment.FR case in Fiscal Mapper */
@@ -3135,15 +3138,15 @@ function createCsv(params) {
                 totalownOwnRevenueAreaLabel,
                 labelObj
               ));
-              if (key === "formStatus") {
-                let { status, actionTakenByRole, isDraft } = document[key];
-                document[key] = calculateStatusForFiscalRankingForms(
-                  status,
-                  actionTakenByRole,
-                  isDraft,
-                  "ULB"
-                );
-              }
+              // if (key === "formStatus") {
+              //   let { status, actionTakenByRole, isDraft } = document[key];
+              //   document[key] = calculateStatusForFiscalRankingForms(
+              //     status,
+              //     actionTakenByRole,
+              //     isDraft,
+              //     "ULB"
+              //   );
+              // }
 
               str += document[key] + ",";
             } else {
@@ -3154,24 +3157,30 @@ function createCsv(params) {
               "fiscalrankingmappers"
             ].find((el) => key === el.key);
             if (fiscalrankingmappersDocument) {
-              str += fiscalrankingmappersDocument["value"] + ",";
+              let FRMapperKey = "value"
+              if(FRKeyWithDate.length>0 && FRKeyWithDate.includes(key)){
+                FRMapperKey = "date"
+              }else if(FRKeyWithFile.length>0 && FRKeyWithFile.includes(key)){
+                FRMapperKey = "file"
+              }
+              str += fiscalrankingmappersDocument[FRMapperKey] + ",";
             } else {
               str += " " + ",";
             }
           }
         }
-        if (FROverallFlag) {
-          let percent = (
-            (completionPercent / denominatorMandatory) *
-            100
-          ).toFixed();
-          str2 = str.split(",");
-          str2.splice(9, 1, `${percent}%`);
-          str = str2.join(",");
-        }
-        res.write(str + "\r\n");
+        // if (FROverallFlag) {
+        //   let percent = (
+        //     (completionPercent / denominatorMandatory) *
+        //     100
+        //   ).toFixed();
+        //   str2 = str.split(",");
+        //   str2.splice(9, 1, `${percent}%`);
+        //   str = str2.join(",");
+        // }
+        res.write("\ufeff"+ str + "\r\n");
         if (FRFlag) {
-          res.write(str2 + "\r\n");
+          res.write("\ufeff" + str2 + "\r\n");
           FRFlag = false;
         }
       } catch (err) {
@@ -3187,6 +3196,23 @@ function createCsv(params) {
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
   }
+}
+
+function completionPercent(percentCompletionArr, document, key) {
+  let completionPercent = 0;
+  const totalMandatoryFields = 28;
+  // let FROverallFlag = false;
+  for (let percentKey of percentCompletionArr) {
+    if (document[percentKey]) {
+      completionPercent++;
+      // FROverallFlag = true;
+    }
+  }
+  if(document[key]){
+    completionPercent = (completionPercent + Number(document[key]))
+  }
+
+  return  ((completionPercent / totalMandatoryFields) * 100 ).toFixed();
 }
 
 /**
@@ -3244,10 +3270,10 @@ function computeQuery(params) {
       'totalRecBudgetEst',
       'totalOwnRevenues',
       'totalCaptlExp',
-      'totalOmExp',
+      // 'totalOmExp',
       'grossBeforePrior',
       'totalOMCaptlExpWaterSupply',
-      'totalOMCaptlExpSanitation',
+      // 'totalOMCaptlExpSanitation',
       'grossAfterPrior',
       'priorItems',
       'reservFunds',
@@ -3259,7 +3285,7 @@ function computeQuery(params) {
       'registerGis',
       'registerGisProof',
       'accountStwre',
-      'totalCaptlExpWaterSupply',
+      // 'totalCaptlExpWaterSupply',
       'appAnnualBudget',
       'accountStwreProof'
     ]
@@ -3437,6 +3463,11 @@ function computeQuery(params) {
   if (FROverAllUlbData) {
     output["FROverAllUlbData"] = [
       {
+        $match: {
+          censusCode: "801533",
+        },
+      },
+      {
         $lookup: {
           from: "states",
           localField: "state",
@@ -3484,6 +3515,49 @@ function computeQuery(params) {
               $unwind: {
                 path: "$designYear",
                 preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                createdAt: 1,
+                modifiedAt: 1,
+                designYear: 1,
+                isDraft: 1,
+                population11: 1,
+                populationFr: 1,
+                webLink: 1,
+                nameCmsnr: 1,
+                auditorName: 1,
+                caMembershipNo: 1,
+                nameOfNodalOfficer: 1,
+                designationOftNodalOfficer: 1,
+                email: 1,
+                mobile: 1,
+                waterSupply: 1,
+                sanitationService: 1,
+                propertyWaterTax: 1,
+                propertySanitationTax: 1,
+                fy_21_22_cash: 1,
+                otherUpload: 1,
+                arrayOfMandatoryField: [
+                  {
+                    population11: "$population11.value",
+                    populationFr: "$populationFr.value",
+                    webLink: "$webLink.value",
+                    nameCmsnr: "$nameCmsnr.value",
+                    auditorName: "$auditorName.value",
+                    nameOfNodalOfficer: "$nameOfNodalOfficer.value",
+                    designationOftNodalOfficer:
+                      "$designationOftNodalOfficer.value",
+                    email: "$email.value",
+                    mobile: "$mobile.value",
+                    waterSupply: "$waterSupply.value",
+                    sanitationService: "$sanitationService.value",
+                    propertyWaterTax: "$propertyWaterTax.value",
+                    propertySanitationTax: "$propertySanitationTax.value",
+                    fy_21_22_cash: "$fy_21_22_cash.value",
+                  },
+                ],
               },
             },
           ],
@@ -3550,11 +3624,42 @@ function computeQuery(params) {
                 fiscal_ranking: 1,
                 type: 1,
                 year: "$year.year",
-                date: 1,
-                file: 1,
+                date: {
+                  $cond:{
+                    if: {
+                      $and:[
+                        {$ne:["$date", null]},
+                        {$ne: ["$date", ""]}
+                      ]
+                    },
+                    then : "$date",
+                    else: null
+                  }
+                },
+                file: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        { $ne: ["$file.url", null] },
+                        { $ne: ["$file.url", ""] },
+                        { $ne: ["$file", null] },
+                      ],
+                    },
+                    then: "$file.url",
+                    else: null,
+                  },
+                },
                 modelName: 1,
                 status: 1,
-                value: 1,
+                value: {
+                  $cond: {
+                    if: {
+                      $and: [{ $eq: ["$value", ""] }],
+                    },
+                    then: null,
+                    else: "$value",
+                  },
+                },
                 key: { $concat: ["FR_", "$type", "_", "$year.year"] },
               },
             },
@@ -3586,12 +3691,46 @@ function computeQuery(params) {
           },
           ulbType: "$ulbType.name",
           designYear: { $ifNull: ["$fiscalrankings.designYear.year", ""] },
-          createdAt: { $ifNull: ["$fiscalrankings.createdAt", ""] },
-          modifiedAt: { $ifNull: ["$fiscalrankings.modifiedAt", ""] },
+          createdAt: {
+            $ifNull: [
+              AggregationServices.getCommonDateTransformer(
+                "$fiscalrankings.createdAt"
+              ),
+              "",
+            ],
+          },
+          modifiedAt: {
+            $ifNull: [
+              AggregationServices.getCommonDateTransformer(
+                "$fiscalrankings.modifiedAt"
+              ),
+              "",
+            ],
+          },
           formStatus: {
-            isDraft: "$fiscalrankings.isDraft",
-            actionTakenByRole: "$fiscalrankings.actionTakenByRole",
-            status: { $ifNull: ["$fiscalrankings.status", ""] },
+            $cond: {
+              if: {
+                $or: [
+                  {
+                    $eq: [{ $ifNull: ["$fiscalrankings", ""] }, ""],
+                  },
+                ],
+              },
+              then: FRFormStatus["Not_Started"],
+              else: {
+                $cond: {
+                  if: {
+                    $or: [
+                      {
+                        $eq: ["$fiscalrankings.isDraft", true],
+                      },
+                    ],
+                  },
+                  then: FRFormStatus["In_Progress"],
+                  else: FRFormStatus["Under_Review_By_MoHUA"],
+                },
+              },
+            },
           },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
@@ -3602,7 +3741,7 @@ function computeQuery(params) {
           populationFr: { $ifNull: ["$fiscalrankings.populationFr.value", ""] },
           webLink: { $ifNull: ["$fiscalrankings.webLink.value", ""] },
           nameCmsnr: { $ifNull: ["$fiscalrankings.nameCmsnr.value", ""] },
-          auditorName: { $ifNull: ["$fiscalrankings.nameCmsnr.value", ""] },
+          auditorName: { $ifNull: ["$fiscalrankings.auditorName.value", ""] },
           caMembershipNo: {
             $ifNull: ["$fiscalrankings.caMembershipNo.value", ""],
           },
@@ -3627,8 +3766,30 @@ function computeQuery(params) {
           fy_21_22_cash: {
             $ifNull: ["$fiscalrankings.fy_21_22_cash.value", ""],
           },
-          otherUpload: { $ifNull: ["$fiscalrankings.otherUpload.value", ""] },
+          otherUpload: { $ifNull: ["$fiscalrankings.otherUpload.url", ""] },
           fiscalrankingmappers: 1,
+          completionPercentFR: {
+            $size: {
+              $filter: {
+                input: "$fiscalrankingmappers",
+                as: "item",
+                cond: {
+                  $and: [
+                    {
+                      $or: [
+                        { $ne: ["$$item.value", ""] },
+                        { $ne: ["$$item.file", null] },
+                        { $ne: ["$$item.date", null] },
+                      ],
+                    },
+                    {
+                      $ne: ["$$item.type", "registerGisProof"],
+                    },
+                  ],
+                },
+              },
+            },
+          },
         },
       },
     ];
