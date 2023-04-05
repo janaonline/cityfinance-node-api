@@ -115,7 +115,8 @@ var customkeys = {
         "type":"waterSupply_type",
         "unit": "waterSupply_unit",
         "actualDisable":"actualDisable",
-        "targetDisable":"targetDisable"
+        "targetDisable":"targetDisable",
+        "range":"range"
     },
     "solidWaste_tableView":{
         "question": "solidWaste_question",
@@ -125,6 +126,7 @@ var customkeys = {
         "type":"solidWaste_type",
         "unit": "solidWaste_unit",
         "actualDisable":"actualDisable",
+        "range":"range",
         "targetDisable":"targetDisable"
     },
     "sanitation_tableView":{
@@ -135,7 +137,8 @@ var customkeys = {
         "unit": "sanitation_unit",
         "type":"sanitation_type",
         "actualDisable":"actualDisable",
-        "targetDisable":"targetDisable"
+        "targetDisable":"targetDisable",
+        "range":"range"
     },
     "stormWater_tableView":{
         "question": "stormWater_question",
@@ -145,7 +148,8 @@ var customkeys = {
         "unit": "stormWater_unit",
         "type":"stormWater_type",
         "actualDisable":"actualDisable",
-        "targetDisable":"targetDisable"
+        "targetDisable":"targetDisable",
+        "range":"range"
     },
     "projectDetails_tableView_addButton":{
         "cost": 'cost',
@@ -2914,7 +2918,6 @@ const handleChildValues = async(childObj,item,req)=>{
             if(Object.keys(arrFields).includes(item.shortKey)  && !Array.isArray(childObj[item.shortKey])){
                 var arrKey = arrFields[item.shortKey].split(".")[0]
                 if(!Object.keys(childObj).includes(arrKey)){
-                    
                     try{
                         childObj[arrKey] = [...childObj[arrKey]]
                     }
