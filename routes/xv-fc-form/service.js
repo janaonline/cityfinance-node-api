@@ -1022,12 +1022,20 @@ module.exports.create = catchAsync(async (req, res) => {
     } else {
       req.body["status"] = "N/A";
     }
-
+    
     query["ulb"] = ObjectId(data.ulb);
 
     if (design_year && design_year != "") {
       Object.assign(query, { design_year: ObjectId(design_year) });
     }
+    let decade = "20"
+    let targetYears = Object.keys(req?.body?.waterManagement?.waterSuppliedPerDay?.target).map((item)=>{
+      return (years[`${decade}${item.substring(0,2)}-${item.substring(2,item.length)}`])
+    } )
+    if(targetYears){
+      req.body.accessibleForYears = targetYears
+    }
+
     let ulbData = await XVFCGrantULBData.findOne(query);
     if (ulbData && !data.isOldForm) {
       req.body.actionTakenByRole = user.role
@@ -1040,6 +1048,7 @@ module.exports.create = catchAsync(async (req, res) => {
         return Response.BadRequest(res, {}, `Form is already submitted`);
       }
     }
+    
     if (ulbData && ulbData.isCompleted == true && data.isOldForm) {
       req.body["history"] = [...ulbData.history];
       ulbData.history = undefined;
@@ -1068,7 +1077,6 @@ module.exports.create = catchAsync(async (req, res) => {
             then update 22-23 28slb form with latest values  
           */
           if(ulbData?.isCompleted){
-           
             query.design_year = design_year_2223;
             let slb28Form = await TwentyEightSlbForm.findOne(query).lean();
             if (slb28Form) {
@@ -1152,7 +1160,6 @@ module.exports.create = catchAsync(async (req, res) => {
                 }
               ).lean();
             }
-            console.log(">>>>>>>>>>>")
             await update28SlbForms(ulbData)
           }
           return res.status(response ? 200 : 400).send(value);

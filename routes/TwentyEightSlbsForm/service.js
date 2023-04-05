@@ -370,7 +370,6 @@ module.exports.getForm = async (req, res,next) => {
         }).lean()
         let targetYearArr = yearData.year.split("-")
         let targetYearValue = `${targetYearArr[0].slice(-2)}${targetYearArr[1]}`
-        console.log("targetYearValue ::: ",targetYearValue)
         let prevYearVal = findPreviousYear(yearData.year);
         let prevYearData =   await Year.findOne({
             _id : years['2021-22']
