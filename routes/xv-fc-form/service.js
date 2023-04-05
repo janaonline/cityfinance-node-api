@@ -4881,6 +4881,7 @@ async function update28SlbForms(ulbData){
                       ?.target[targetValidator]
                   )
                 : "";
+              element.targetDisable = true
             }
             if (
               element["indicatorLineItem"].toString() ===
@@ -4894,6 +4895,7 @@ async function update28SlbForms(ulbData){
                     ]
                   )
                 : "";
+                element.targetDisable = true
             }
             if (
               element["indicatorLineItem"].toString() ===
@@ -4905,6 +4907,7 @@ async function update28SlbForms(ulbData){
                     ulbData?.waterManagement.reduction?.target[targetValidator]
                   )
                 : "";
+                element.targetDisable = true
             }
             if (
               element["indicatorLineItem"].toString() ===
@@ -4919,6 +4922,7 @@ async function update28SlbForms(ulbData){
                       ?.target[targetValidator]
                   )
                 : "";
+                element.targetDisable = true
             }
           });
         }
