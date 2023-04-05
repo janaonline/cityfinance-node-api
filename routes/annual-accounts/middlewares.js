@@ -37,6 +37,11 @@ module.exports.changePayload = async(req,res,next)=>{
     }
     catch(err){
         console.log("error in changePayload :::: ",err.message)
+        let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "Something went wrong"
+        return res.status(400).json({
+            "message":message,
+            "success":false
+        })
     }
 }
 
