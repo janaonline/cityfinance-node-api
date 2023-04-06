@@ -51,11 +51,11 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             if(form){
                 formStatus = decideDisabledFields(form,"ULB")
             }
-            console.log("formStatus ::: ",formStatus)
             let flattedForm = await getFlatObj(form)
             flattedForm.disableFields = formStatus
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
+            flattedForm['grantPosition.closingBal'] = flattedForm['grantPosition.unUtilizedPrevYr'] + flattedForm['grantPosition.receivedDuringYr'] - flattedForm['grantPosition.expDuringYr']
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
