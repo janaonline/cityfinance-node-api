@@ -18,6 +18,7 @@ const SidemenuSchema = new Schema({
         color_1: {type:String},
         color_2: {type:String}, 
     },
+    cardSequence: {type: Number},
     prevUrl: {type: String},
     nextUrl: {type: String},
     sequence:{type: Number},
