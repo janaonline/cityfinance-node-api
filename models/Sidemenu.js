@@ -20,6 +20,7 @@ const SidemenuSchema = new Schema({
     },
     prevUrl: {type: String},
     nextUrl: {type: String},
+    cardSequence: {type: Number},
     sequence:{type: Number},
     folderName: {type: String},
     groupSequence: {type: Number},
