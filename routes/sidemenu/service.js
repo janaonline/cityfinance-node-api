@@ -400,7 +400,7 @@ if(role=="ULB"){
   const ignoreCardsList = ['overview','resources'];
   // if(years['2022-23'] !== year){
     cardArr = getCards(data, cardObj, ignoreCardsList);
-    cardArr = cardArr.slice(5)
+    cardArr = cardArr.slice(4)
   // }else{
   //   cardArr = getCards(data, cardObj, ignoreCardsList);
   //   cardArr.sort((a,b)=>{
