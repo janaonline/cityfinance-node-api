@@ -2994,15 +2994,15 @@ async function nestedObjectParser(data,req){
                 Object.assign(result,pointer)
             }
             else{
-                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
-                    item.answer = [
-                        {
-                            "label":"",
-                            "textValue":"",
-                            "value":"0,0"
-                        }
-                    ]
-                }
+                // if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
+                //     item.answer = [
+                //         {
+                //             "label":"",
+                //             "textValue":"",
+                //             "value":"0,0"
+                //         }
+                //     ]
+                // }
                 let value = await decideValues(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                         if (!pointer.hasOwnProperty(key)) {
