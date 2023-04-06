@@ -25,7 +25,8 @@ const PTFR = require('../../models/PropertyTaxFloorRate')
 const GTC_STATE = require('../../models/GrantTransferCertificate')
 const ActionPlan = require('../../models/ActionPlans')
 const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
-const USER_TYPES = require('../../util/userTypes')
+const USER_TYPES = require('../../util/userTypes');
+const { years } = require('../../service/years');
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
     "red": "../../../assets/form-icon/cancel.svg"
@@ -396,33 +397,16 @@ tempData = sortByPosition(tempData);
 
 //creating card Data
 if(role=="ULB"){
-    data.forEach(el => {
-        if(el.name.toLowerCase() != 'overview'  &&  el.name.toLowerCase() != 'resources' ){
-            cardObj.image = el?.icon;
-            cardObj.key = el?.collectionName;
-            cardObj.label = el?.name;
-            cardObj.title = el?.cardLabel;
-            cardObj.message = el?.cardMessage;
-            cardObj.tooltip = el?.tooltip;
-            cardObj.link = el?.url;
-            cardObj.background_image = el?.background_image;
-            cardObj.color = el?.color;
-            cardArr.push(cardObj)
-            cardObj =     {
-                label: "",
-                key: "",
-                link: "",
-                title: "",
-                message: '',
-                tooltip: "",
-                image: "",
-                background_image:"",
-                color:{},
-              }
-        }
-        
-    
-    })
+  const ignoreCardsList = ['overview','resources'];
+  // if(years['2022-23'] !== year){
+    cardArr = getCards(data, cardObj, ignoreCardsList);
+    cardArr = cardArr.slice(5)
+  // }else{
+  //   cardArr = getCards(data, cardObj, ignoreCardsList);
+  //   cardArr.sort((a,b)=>{
+  //     return a?.cardSequence - b?.cardSequence
+  //   })
+  // }
 }   
 
     return res.status(200).json({
@@ -516,6 +500,38 @@ const sortByPosition = (data) => {
 };
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
+
+function getCards(data, cardObj, ignoreCardsList) {
+  let cardArr = [];
+  data.forEach(el => {
+    if (!ignoreCardsList.includes(el.name.toLowerCase())) {
+      cardObj.image = el?.icon;
+      cardObj.key = el?.collectionName;
+      cardObj.label = el?.name;
+      cardObj.title = el?.cardLabel;
+      cardObj.message = el?.cardMessage;
+      cardObj.tooltip = el?.tooltip;
+      cardObj.link = el?.url;
+      cardObj.background_image = el?.background_image;
+      cardObj.color = el?.color;
+      cardArr.push(cardObj);
+      cardObj = {
+        label: "",
+        key: "",
+        link: "",
+        title: "",
+        message: '',
+        tooltip: "",
+        image: "",
+        background_image: "",
+        color: {},
+      };
+    }
+
+
+  });
+  return cardArr;
+}
 
 function getGTCFinalForm(formArray){
     let formData = "";
