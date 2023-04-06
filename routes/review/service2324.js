@@ -1,6 +1,6 @@
 const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
-const {CollectionNames} = List = require('../../util/15thFCstatus')
+const CollectionNames = require('../../util/collectionName')
 const Response = require("../../service").response;
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -10,7 +10,7 @@ const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
 const {ulbColumnNames,stateColumnNames,annualAccountKeys,ulbFilterKeys} = require("./constants")
 const {checkForUndefinedVaribales} = require("../../routes/CommonActionAPI/service");
-// const List = require('../../util/15thFCstatus')
+const List = require('../../util/15thFCstatus')
 
 // module.exports.dashboardApi = (req,res,next)=>{
 //   try{
@@ -52,7 +52,7 @@ module.exports.get = async (req, res) => {
     let formType = formTab.role
     if(['STATE','MOHUA','ADMIN'].includes(loggedInUserRole) || formType === "ULB"); delete ulbColumnNames['stateName']
     let dbCollectionName = formTab?.dbCollectionName    
-    manageFilters(formType, filter, req, formTab);
+    filter = manageFilters(formType, filter, req, formTab);
     let state = req.query.state ?? req.decoded.state
     if (req.decoded.role === "STATE") {
       state = req.decoded.state
@@ -671,13 +671,14 @@ const computeQuery = (params) => {
 
 }
 
-function annualFilledKeys(formFilter,formTab,item,query){
+function annualFilledKeys(formFilter,formTab,query){
   let filter = {...formFilter}
-  console.log("formTab.collectionName ::: ",formTab.collectionName)
   try{
-    if (formTab.collectionName == CollectionNames['annualAcc']) {
-      console.log("annualFilter ::: ")
-      filter[annualAccountKey[item]] = query[item]
+    if (formTab.collectionName == CollectionNames['annual']) {
+      Object.keys(annualAccountKeys).forEach((item)=>{
+        filter[annualAccountKeys[item]] =  filter[item]
+        delete filter[item]
+      })
     }
   }
   catch(err){
@@ -705,53 +706,22 @@ function censusCodeCondition(item,form){
 }
 function manageFilters(formType, givenFilter, req, formTab) {
   let filter = {...givenFilter}
-  if (formType === "ULB") {
-    Object.keys(req.query).forEach((item)=> {
-      if(Object.keys(ulbFilterKeys).includes(item)){
-        filter[ulbFilterKeys[item]] = req.query[item] === "null" ? '' : req.query[item] 
-        if(ulbFilterKeys[item] === "formData.currentFormStatus"); req.query[item] != 'null' ? Number(req.query.status) :""
-        filter = annualFilledKeys(filter,formTab,item,req.query)
-        filter = censusCodeCondition(item,filter)
-      }
-    })
-    console.log("filter :::: ",filter)
-    // filter['state'] = req.query.stateName != 'null' ? req.query.stateName : "";
-    // filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
-    // // keys = calculateKeys(filter['status'], formType);
-    // filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType : "";
-    // filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : "";
-    // filter['UA'] = req.query.UA != 'null' ? req.query.UA : "";
-    // filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : "";
-    // filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType : "";
-    // console.log(" :::: objectKeys ::: ",Object.keys(req.query))
-    // Object.assign(filter, keys)
-    // delete filter['status']
-
-
-    // filled1 -> will be used for all the forms and Provisional of Annual accounts
-    // filled2 -> only for annual accounts -> audited section
-    // filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1 : "";
-    // filter['filled2'] = req.query.filled2 != 'null' ? req.query.filled2 : "";
-
+  try{
+    if (formType === "ULB") {
+      Object.keys(req.query).forEach((item)=> {
+        if(Object.keys(ulbFilterKeys).includes(item)){
+          filter[ulbFilterKeys[item]] = req.query[item] === "null" ? '' : req.query[item] 
+          if(ulbFilterKeys[item] === "formData.currentFormStatus"); req.query[item] != 'null' ? Number(req.query.status) :""
+          filter = censusCodeCondition(item,filter)
+        }
+      })
+      filter = annualFilledKeys(filter,formTab)
+      return filter
+    }
   }
-
-  if (formTab.collectionName == CollectionNames['annual']) {
-    filter['filled_audited'] = filter['filled1'];
-    filter['filled_provisional'] = filter['filled2'];
-    delete filter['filled1'];
-    delete filter['filled2'];
-  } else {
-    filter['filled'] = filter['filled1'];
-    delete filter['filled1'];
-  }
-  if (formType == 'STATE') {
-    // filter['state'] = req.query.stateName
-    // filter['status'] = req.query.status 
-    filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
-    filter['state'] = req.query.state != 'null' ? req.query.state : "";
-    // keys = calculateKeys(filter['status'], formType);
-    // Object.assign(filter, keys)
-    // delete filter['status']
+  catch(err){
+    console.log("error in manageFilters :::: ",err.message)
+    return givenFilter
   }
 }
 
