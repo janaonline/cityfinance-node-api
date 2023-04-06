@@ -301,6 +301,7 @@ module.exports.get = async (req, res) => {
     })
   
   } catch (error) {
+    console.log(error)
     return Response.BadRequest(res, {}, error.message);
   }
   }
@@ -670,7 +671,20 @@ const computeQuery = (params) => {
 
 }
 
-// function 
+function annualFilledKeys(formFilter,formTab,item,query){
+  let filter = {...formFilter}
+  console.log("formTab.collectionName ::: ",formTab.collectionName)
+  try{
+    if (formTab.collectionName == CollectionNames['annualAcc']) {
+      console.log("annualFilter ::: ")
+      filter[annualAccountKey[item]] = query[item]
+    }
+  }
+  catch(err){
+    console.log("error in annualFilledKeys :::::: ",err.message)
+  }
+  return filter
+}
 
 function censusCodeCondition(item,form){
   let formObj = {...form}
@@ -694,11 +708,13 @@ function manageFilters(formType, givenFilter, req, formTab) {
   if (formType === "ULB") {
     Object.keys(req.query).forEach((item)=> {
       if(Object.keys(ulbFilterKeys).includes(item)){
-        filter[ulbFilterKeys[item]] = req.query[item] == "null" ? '' : req.query[item] 
+        filter[ulbFilterKeys[item]] = req.query[item] === "null" ? '' : req.query[item] 
         if(ulbFilterKeys[item] === "formData.currentFormStatus"); req.query[item] != 'null' ? Number(req.query.status) :""
-        filter = censusCodeCondition(item,form)
+        filter = annualFilledKeys(filter,formTab,item,req.query)
+        filter = censusCodeCondition(item,filter)
       }
     })
+    console.log("filter :::: ",filter)
     // filter['state'] = req.query.stateName != 'null' ? req.query.stateName : "";
     // filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
     // // keys = calculateKeys(filter['status'], formType);
@@ -716,16 +732,9 @@ function manageFilters(formType, givenFilter, req, formTab) {
     // filled2 -> only for annual accounts -> audited section
     // filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1 : "";
     // filter['filled2'] = req.query.filled2 != 'null' ? req.query.filled2 : "";
-    if (filter["censusCode"]) {
-      let code = filter["censusCode"];
-      var digit = code.toString()[0];
-      if (digit == "9") {
-        delete filter["censusCode"];
-        filter["sbCode"] = code;
-      }
-    }
 
   }
+
   if (formTab.collectionName == CollectionNames['annual']) {
     filter['filled_audited'] = filter['filled1'];
     filter['filled_provisional'] = filter['filled2'];

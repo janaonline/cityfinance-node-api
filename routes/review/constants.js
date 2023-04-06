@@ -35,7 +35,7 @@ let ulbFilterKeys = {
     ulbType: 'ulbType',
     UA: 'UA',
     status: 'formData.currentFormStatus',
-    filled1: 'filled1',
+    filled1: 'filled',
     populationType: 'populationType',
     filled2: 'filled2'
   }
