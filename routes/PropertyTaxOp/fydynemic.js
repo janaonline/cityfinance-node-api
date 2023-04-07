@@ -9654,6 +9654,38 @@ const propertyTaxOpFormJson = () => {
                             {}
                         ],
                         "info": ""
+                    },
+                    "notes": {
+                        "key": "notes",
+                        "label": "Notes",
+                        "displayPriority": "35.1",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": {
+                                    "name": "",
+                                    "url": ""
+                                },
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "notes",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "file",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": ""
                     }
                 },
                 "feedback": {
@@ -9695,7 +9727,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
 }
 
 let financialYearTableHeader = {
-    1.1: [
+    "1.1": [
         "",
         "Property Tax Details",
         "",
@@ -9704,7 +9736,7 @@ let financialYearTableHeader = {
         "",
         ""
     ],
-    2.1: [
+    "2.1": [
         "",
         "Property Tax Demand Details (Amount in INR Lakhs)",
         "2018-19",
@@ -9713,7 +9745,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    4.1: [
+    "4.1": [
         "",
         "Property Tax Collection Details (Amount in INR Lakhs)",
         "2018-19",
@@ -9722,7 +9754,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    5.1: [
+    "5.1": [
         "",
         "Property Register Details",
         "2018-19",
@@ -9731,7 +9763,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    6.1: [
+    "6.1": [
         "",
         "Residential Properties",
         "2018-19",
@@ -9740,7 +9772,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    7.1: [
+    "7.1": [
         "",
         "Commercial Properties",
         "2018-19",
@@ -9749,7 +9781,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    8.1: [
+    "8.1": [
         "",
         "Industrial Properties",
         "2018-19",
@@ -9758,7 +9790,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    9.1: [
+    "9.1": [
         "",
         "Government Properties",
         "2018-19",
@@ -9767,7 +9799,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    10.1: [
+    "10.1": [
         "",
         "Institutional Properties",
         "2018-19",
@@ -9776,7 +9808,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    11.1: [
+    "11.1": [
         "",
         "Other Properties",
         "2018-19",
@@ -9785,7 +9817,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    12.1: [
+    "12.1": [
         "",
         "Property Tax Collection Details by Mode of payment",
         "2018-19",
@@ -9794,7 +9826,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    13.1: [
+    "13.1": [
         "",
         "Extract of Demand Collection Book",
         "2018-19",
@@ -9803,16 +9835,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    14.1: [
-        "",
-        "Water Charges Details",
-        "2018-19",
-        "2019-20",
-        "2020-21",
-        "2021-22",
-        "2022-23"
-    ],
-    15.1: [
+    "15.1": [
         "",
         "Water Charges Demand and Collection Details",
         "2018-19",
@@ -9821,7 +9844,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    16.1: [
+    "16.1": [
         "",
         "Water Connection Details",
         "2018-19",
@@ -9830,7 +9853,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    17.1: [
+    "17.1": [
         "",
         "Residential households/properties",
         "2018-19",
@@ -9839,7 +9862,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    18.1: [
+    "18.1": [
         "",
         "Commercial households/properties",
         "2018-19",
@@ -9848,7 +9871,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    19.1: [
+    "19.1": [
         "",
         "Industrial households/properties",
         "2018-19",
@@ -9857,7 +9880,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    20.1: [
+    "20.1": [
         "",
         "Other households/properties(any other connection type)",
         "2018-19",
@@ -9866,7 +9889,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    21.1: [
+    "21.1": [
         "",
         "Water Charges Tariff Details- Water Charges Tariff Sheet",
         "2018-19",
@@ -9875,7 +9898,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    22.1: [
+    "22.1": [
         "",
         "Extract of Demand Collection Book",
         "2018-19",
@@ -9884,7 +9907,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    23.1: [
+    "23.1": [
         "",
         "Water Charges: Cost of Service Delivery Details",
         "2018-19",
@@ -9893,7 +9916,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    25.1: [
+    "25.1": [
         "",
         "Sewerage Charges Demand and Collection Details",
         "2018-19",
@@ -9902,7 +9925,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    26.1: [
+    "26.1": [
         "",
         "Sewerage Connection Details",
         "2018-19",
@@ -9911,7 +9934,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    27.1: [
+    "27.1": [
         "",
         "Residential households/properties",
         "2018-19",
@@ -9920,7 +9943,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    28.1: [
+    "28.1": [
         "",
         "Commercial Properties",
         "2018-19",
@@ -9929,7 +9952,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    29.1: [
+    "29.1": [
         "",
         "Industrial Properties",
         "2018-19",
@@ -9938,7 +9961,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    30.1: [
+    "30.1": [
         "",
         "Other Properties",
         "2018-19",
@@ -9947,7 +9970,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    32.1: [
+    "32.1": [
         "",
         "Extract of Demand Collection Book",
         "2018-19",
@@ -9956,7 +9979,7 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
-    33.1: [
+    "33.1": [
         "",
         "Working of the O&M Cost- Sewerage Service",
         "2018-19",
