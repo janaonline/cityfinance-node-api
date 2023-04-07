@@ -53,7 +53,8 @@ module.exports.changeResponse = async(req,res,next) =>{
               "formId": req.query.formId,
               "language":[],
               "canTakeAction":false,
-              "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started"
+              "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started",
+              "statusId": req?.form?.currentFormStatus
             }
           ]
         if(!req.form){
