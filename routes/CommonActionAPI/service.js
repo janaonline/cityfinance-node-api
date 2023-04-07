@@ -2849,7 +2849,10 @@ module.exports.getMasterAction = async (req, res) => {
     //   Object.assign(form, {
     //     canTakenAction: canTakenActionMaster(params),
     //   });
-
+      for(let status of currentStatusResponse){
+        status['statusId'] = status['status'];
+        status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
+      }
       return Response.OK(res, currentStatusResponse);
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
