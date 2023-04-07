@@ -32,5 +32,5 @@ const CurrentStatusSchema = new Schema(
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
-CurrentStatusSchema.index({ recordId: 1, shortKey:1 }, { unique: true });
+CurrentStatusSchema.index({ recordId: 1, shortKey:1, actionTakenByRole:1 }, { unique: true });
 module.exports = mongoose.model("CurrentStatus", CurrentStatusSchema);
