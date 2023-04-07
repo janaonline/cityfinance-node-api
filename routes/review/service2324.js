@@ -6,12 +6,12 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
-const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
-const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
-const {ulbColumnNames,stateColumnNames,annualAccountKeys,ulbFilterKeys} = require("./constants")
-const {checkForUndefinedVaribales} = require("../../routes/CommonActionAPI/service");
+const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
+const { ulbColumnNames, stateColumnNames, annualAccountKeys, ulbFilterKeys } = require("./constants")
+const { checkForUndefinedVaribales } = require("../../routes/CommonActionAPI/service");
 const List = require('../../util/15thFCstatus')
-
+const { AggregationServices } = require("../CommonActionAPI/service")
 // module.exports.dashboardApi = (req,res,next)=>{
 //   try{
 //     let design_year = req.query.design_year;
@@ -23,14 +23,124 @@ const List = require('../../util/15thFCstatus')
 //   }
 // }
 
+function FormQuery(service, dbCollectionName, design_year) {
+  try {
+    let query = []
+    let lookUpObj = {
+      "$lookup": {
+        from: dbCollectionName,
+        let: {
+          firstUser: ObjectId(design_year),
+          secondUser: "$_id",
+        },
+        pipeline: [
+        ],
+        as: dbCollectionName,
+      }
+    }
+    let matchQuery = {
+      $match: {
+        $expr: {
+          $and: [
+            {
+              $eq: ["$design_year", "$$firstUser"],
+            },
+            {
+              $eq: ["$state", "$$secondUser"],
+            },
+          ],
+        },
+      }
+    }
+    let yearObj = service.getCommonLookupObj("years","design_year","_id","design_year")
+    let yearUnWind = service.getUnwindObj("$design_year")
+    lookUpObj['$lookup']['pipeline'].push(matchQuery)
+    lookUpObj['$lookup']['pipeline'].push(yearObj)
+    let unWindObj = service.getUnwindObj(`$${dbCollectionName}`)
+    query.push(lookUpObj)
+    query.push(unWindObj)
+    return query
+  }
+  catch (err) {
+    console.log("error in FormQuery ::: ", err.message)
+    return []
+  }
+}
+
+
+class GetQuery {
+  constructor(service, params) {
+    this.service = service
+    this.params = params
+  }
+  ulbQuery() {
+    try {
+      let query = []
+      let matchObj = {
+        "$match": { "access_2223": true }
+      }
+      if (this.params.newFilter['state'] && this.params.newFilter['state'] === '') {
+        matchObj["$match"]['state'] = this.params.filter['state']
+      }
+      // stage1 match for ulb 
+      query.push(matchObj)
+      //stage 2 look up for states
+      query.push(this.service.getCommonLookupObj("states", "state", "_id", "state"))
+      query.push(this.service.getUnwindObj("$state"))
+      //stage 3 match for states
+      let stateMatchObj = {
+        "$match": {
+          "state.accessToXVFC": true
+        }
+      }
+      query.push(stateMatchObj)
+      //stage 4 match form query
+      let formQuery = FormQuery(this.service, this.params.dbCollectionName, this.design_year)
+      query.concat(formQuery)
+      //stage 5 UA lookup
+      query.push(this.service.getCommonLookupObj("uas","UA","_id","UA"))
+      query.push(this.service.getUnwindObj("$UA",true))
+      //stage 6  ulbtypes 
+      query.push(this.service.getCommonLookupObj("ulbtypes","ulbType","_id","ulbType"))
+      query.push(this.service.getUnwindObj("$ulbType"))
+      return query
+    }
+    catch (err) {
+      console.log("error in ulbQuery ::: ", err.message)
+    }
+  }
+}
+
+
+async function queryMaker(params) {
+  try {
+    let service = AggregationServices
+    const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName } = params
+    let queryService = new GetQuery(service, params)
+    let filledQueryExpression = {}
+    if (isFormOptional) {
+      // if form is optional check if the deciding condition is true or false
+      filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression);
+    }
+    switch (userRole) {
+      case "ULB":
+        let query = queryService.ulbQuery()
+        return query
+        break
+    }
+  }
+  catch (err) {
+    console.log("error in queryMaker ::: ", err.message)
+  }
+}
 
 module.exports.get = async (req, res) => {
   let response = {
-    "success":false,
-    "message":"something went wrong"
+    "success": false,
+    "message": "something went wrong"
   }
   try {
-    
+
     let loggedInUserRole = req.decoded.role
     let filter = {};
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
@@ -38,20 +148,20 @@ module.exports.get = async (req, res) => {
     let design_year = req.query.design_year;
     let form = req.query.formId
     let validator = checkForUndefinedVaribales({
-      "Form Id":form,
-      "Design Year":design_year
+      "Form Id": form,
+      "Design Year": design_year
     })
     // return user if formId or design year is missing
-    if(!validator.valid) return res.status(400).json({...response,message:validator.message})
+    if (!validator.valid) return res.status(400).json({ ...response, message: validator.message })
     let skip = req.query.skip ? parseInt(req.query.skip) : 0
     let limit = req.query.limit ? parseInt(req.query.limit) : 10
     let csv = req.query.csv == "true"
     let keys;
     let formTab = await Sidemenu.findOne({ _id: ObjectId(form) }).lean();
-    if(!formTab) return res.status(400).json({})
+    if (!formTab) return res.status(400).json({})
     let formType = formTab.role
-    if(['STATE','MOHUA','ADMIN'].includes(loggedInUserRole) || formType === "ULB"); delete ulbColumnNames['stateName']
-    let dbCollectionName = formTab?.dbCollectionName    
+    if (['STATE', 'MOHUA', 'ADMIN'].includes(loggedInUserRole) || formType === "ULB"); delete ulbColumnNames['stateName']
+    let dbCollectionName = formTab?.dbCollectionName
     filter = manageFilters(formType, filter, req, formTab);
     let state = req.query.state ?? req.decoded.state
     if (req.decoded.role === "STATE") {
@@ -78,24 +188,26 @@ module.exports.get = async (req, res) => {
     let newFilter = await Service.mapFilterNew(filter);
     if (Number(req.query.status) === MASTER_STATUS['Not Started']) {// to apply not started filter
       Object.assign(newFilter, { formData: "" });
-    }  
+    }
     let folderName = formTab?.folderName;
-    let params = {collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName}
+    let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName }
     let query = computeQuery(params);
+    const demoQuery = await queryMaker(params)
     if (getQuery) return res.json({
-      query: query[0]
+      query: query[0],
+      demoQuery:demoQuery
     })
-  
+
     // if csv - then no skip and limit, else with skip and limit
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
-    if(skip === 0){
+    if (skip === 0) {
       total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true);
     }
-    
+
     let allData = await Promise.all([data, total]);
     data = allData[0]
-    if(!total && skip !== 0 ){
-      allData[1] = [{total: 0}]
+    if (!total && skip !== 0) {
+      allData[1] = [{ total: 0 }]
     }
     total = allData[1].length ? allData[1][0]['total'] : 0
 
@@ -105,33 +217,31 @@ module.exports.get = async (req, res) => {
         el['cantakeAction'] = false;
       } else {
         // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-        let params = {status: el.formData.currentStatus, userRole: loggedInUserRole}
+        let params = { status: el.formData.currentStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
         el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
       }
     })
-  
-  
     // if users clicks on Download Button - the data gets downloaded as per the applied filter
     if (csv) {
-  
+
       let filename = `Review_${formType}-${collectionName}.csv`;
-  
+
       // Set approrpiate download headers
       res.setHeader("Content-disposition", "attachment; filename=" + filename);
       res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       if (formType === 'ULB') {
-  
+
         let fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
         let dynamicColumns = createDynamicColumns(collectionName);
-  
-  
+
+
         if (collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']) {
           res.write(
             "\ufeff" +
             `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
           );
-  
+
           res.flushHeaders();
           for (let el of data) {
             let dynamicElementData = await createDynamicElements(collectionName, formType, el);
@@ -162,12 +272,12 @@ module.exports.get = async (req, res) => {
               "," +
               el.UA +
               "," +
-  
+
               dynamicElementData.toString() +
-  
+
               "\r\n"
             )
-  
+
           }
           res.end();
           return
@@ -176,12 +286,12 @@ module.exports.get = async (req, res) => {
             "\ufeff" +
             `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
           );
-  
+
           res.flushHeaders();
           for (let el of data) {
-  
+
             let [row1, row2] = await createDynamicElements(collectionName, formType, el);
-  
+
             if (el.UA === "null") {
               el.UA = "NA"
             }
@@ -193,7 +303,7 @@ module.exports.get = async (req, res) => {
             if (!el.censusCode) {
               el.censusCode = "NA"
             }
-  
+
             res.write(
               "\ufeff" +
               el.stateName +
@@ -211,7 +321,7 @@ module.exports.get = async (req, res) => {
               el.UA +
               "," +
               row1.toString() +
-  
+
               "\r\n"
             )
             res.write(
@@ -231,10 +341,10 @@ module.exports.get = async (req, res) => {
               el.UA +
               "," +
               row2.toString() +
-  
+
               "\r\n"
             )
-  
+
           }
           res.end();
           return
@@ -246,11 +356,11 @@ module.exports.get = async (req, res) => {
           "\ufeff" +
           `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
         );
-  
+
         res.flushHeaders();
         for (let el of data) {
           let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-  
+
           res.write(
             "\ufeff" +
             el.stateName +
@@ -262,13 +372,13 @@ module.exports.get = async (req, res) => {
             dynamicElementData.toString() +
             "\r\n"
           )
-  
+
         }
         res.end();
         return
       }
-  
-  
+
+
     }
     if (
       collectionName === CollectionNames.state_gtc ||
@@ -283,11 +393,11 @@ module.exports.get = async (req, res) => {
         }
       });
     }
-  
+
     //  console.log(data)
-    data.forEach(el=> {
-      if(el.formData || el.formData === "" ) delete el.formData;
-  
+    data.forEach(el => {
+      if (el.formData || el.formData === "") delete el.formData;
+
     })
     return res.status(200).json({
       success: true,
@@ -299,398 +409,398 @@ module.exports.get = async (req, res) => {
       populationType: formType == 'ULB' ? List.populationType : {},
       title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
     })
-  
+
   } catch (error) {
     console.log(error)
     return Response.BadRequest(res, {}, error.message);
   }
-  }
+}
 const computeQuery = (params) => {
-  const {collectionName:formName, formType:userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter:filter, dbCollectionName, folderName} = params
-    let filledQueryExpression = {}
-    if (isFormOptional) {
-      // if form is optional check if the deciding condition is true or false
-      filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression); 
-    }
-    let dY = "$design_year";
-    let designYearField = "design_year"
-    if (formName == CollectionNames.dur) {
-      dY = "$designYear";
-      designYearField = "designYear";
-    }
-    switch (userRole) {
-      case "ULB":
-        let query = [
-          {
-            $match: {
-              "access_2223": true
-            }
-          },
-          {
-            $lookup: {
-  
-              from: "states",
-              localField: "state",
-              foreignField: "_id",
-              as: "state"
-            }
-          }, {
-            $unwind: "$state"
-          },
-          {
-            $match: {
-              "state.accessToXVFC": true
-            }
-          }]
-        if (state && state !== 'null') {
-          query.push({
-            $match: {
-              "state._id": ObjectId(state)
-            }
-  
-          })
-        }
-        let query_2 = [
-          {
-            $lookup: {
-              from: dbCollectionName,
-              let: {
-                firstUser: ObjectId(design_year),
-                secondUser: "$_id",
-              },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        {
-                          $eq: [dY, "$$firstUser"],
-                        },
-                        {
-                          $eq: ["$ulb", "$$secondUser"],
-                        },
-                      ],
-                    },
-                  },
-                },
-                {
-                  $lookup: {
-                    from: "years",
-                    localField: designYearField,
-                    foreignField: "_id",
-                    as: "design_year",
-                  },
-                },
-                {
-                  $unwind: "$design_year",
-                },
-              ],
-              as: dbCollectionName,
+  const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName } = params
+  let filledQueryExpression = {}
+  if (isFormOptional) {
+    // if form is optional check if the deciding condition is true or false
+    filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression);
+  }
+  let dY = "$design_year";
+  let designYearField = "design_year"
+  if (formName == CollectionNames.dur) {
+    dY = "$designYear";
+    designYearField = "designYear";
+  }
+  switch (userRole) {
+    case "ULB":
+      let query = [
+        {
+          $match: {
+            "access_2223": true
+          }
+        },
+        {
+          $lookup: {
+
+            from: "states",
+            localField: "state",
+            foreignField: "_id",
+            as: "state"
+          }
+        }, {
+          $unwind: "$state"
+        },
+        {
+          $match: {
+            "state.accessToXVFC": true
+          }
+        }]
+      if (state && state !== 'null') {
+        query.push({
+          $match: {
+            "state._id": ObjectId(state)
+          }
+
+        })
+      }
+      let query_2 = [
+        {
+          $lookup: {
+            from: dbCollectionName,
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$_id",
             },
-          },
-          {
-            $unwind: {
-              path: `$${dbCollectionName}`,
-              preserveNullAndEmptyArrays: true,
-            },
-          },
-          {
-            $lookup: {
-              from: "uas",
-              localField: "UA",
-              foreignField: "_id",
-              as: "UA",
-            },
-          },
-          {
-            $unwind: {
-              path: "$UA",
-              preserveNullAndEmptyArrays: true,
-            },
-          },
-          {
-            $lookup: {
-              from: "ulbtypes",
-              localField: "ulbType",
-              foreignField: "_id",
-              as: "ulbType",
-            },
-          },
-          {
-            $unwind: "$ulbType",
-          },
-          {
-            $project: {
-              ulbName: "$name",
-              ulbId: "$_id",
-              ulbCode: "$code",
-              censusCode: {
-                $cond: {
-                  if: {
-                    $or: [
-                      { $eq: ["$censusCode", ""] },
-                      { $eq: ["$censusCode", null] },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: [dY, "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$ulb", "$$secondUser"],
+                      },
                     ],
                   },
-                  then: "$sbCode",
-                  else: "$censusCode",
                 },
               },
-              UA: {
-                $cond: {
-                  if: { $eq: ["$isUA", "Yes"] },
-                  then: "$UA.name",
-                  else: "NA",
+              {
+                $lookup: {
+                  from: "years",
+                  localField: designYearField,
+                  foreignField: "_id",
+                  as: "design_year",
                 },
               },
-              UA_id: {
-                $cond: {
-                  if: { $eq: ["$isUA", "Yes"] },
-                  then: "$UA._id",
-                  else: "NA",
-                },
+              {
+                $unwind: "$design_year",
               },
-              ulbType: "$ulbType.name",
-              ulbType_id: "$ulbType._id",
-              population: "$population",
-              state_id: "$state._id",
-              stateName: "$state.name",
-              populationType: {
-                $cond: {
-                  if: { $eq: ["$isMillionPlus", "Yes"] },
-                  then: "Million Plus",
-                  else: "Non Million",
-                },
-              },
-              formData: { $ifNull: [`$${dbCollectionName}`, ""] },
-            },
+            ],
+            as: dbCollectionName,
           },
-          {
-            $project: {
-              ulbName: 1,
-              ulbId: 1,
-              ulbCode: 1,
-              censusCode: 1,
-              UA: 1,
-              UA_id: 1,
-              ulbType: 1,
-              ulbType_id: 1,
-              population: 1,
-              state_id: 1,
-              stateName: 1,
-              populationType: 1,
-              formData: 1,
-              filled: {
-                $cond: {
-                  if: {
-                    $or: [
-                      { $eq: ["$formData", ""] },
-                      {
-                        "$eq": [
-                            "$formData.currentFormStatus",
-                            1
-                        ]
+        },
+        {
+          $unwind: {
+            path: `$${dbCollectionName}`,
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "uas",
+            localField: "UA",
+            foreignField: "_id",
+            as: "UA",
+          },
+        },
+        {
+          $unwind: {
+            path: "$UA",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $lookup: {
+            from: "ulbtypes",
+            localField: "ulbType",
+            foreignField: "_id",
+            as: "ulbType",
+          },
+        },
+        {
+          $unwind: "$ulbType",
+        },
+        {
+          $project: {
+            ulbName: "$name",
+            ulbId: "$_id",
+            ulbCode: "$code",
+            censusCode: {
+              $cond: {
+                if: {
+                  $or: [
+                    { $eq: ["$censusCode", ""] },
+                    { $eq: ["$censusCode", null] },
+                  ],
+                },
+                then: "$sbCode",
+                else: "$censusCode",
+              },
+            },
+            UA: {
+              $cond: {
+                if: { $eq: ["$isUA", "Yes"] },
+                then: "$UA.name",
+                else: "NA",
+              },
+            },
+            UA_id: {
+              $cond: {
+                if: { $eq: ["$isUA", "Yes"] },
+                then: "$UA._id",
+                else: "NA",
+              },
+            },
+            ulbType: "$ulbType.name",
+            ulbType_id: "$ulbType._id",
+            population: "$population",
+            state_id: "$state._id",
+            stateName: "$state.name",
+            populationType: {
+              $cond: {
+                if: { $eq: ["$isMillionPlus", "Yes"] },
+                then: "Million Plus",
+                else: "Non Million",
+              },
+            },
+            formData: { $ifNull: [`$${dbCollectionName}`, ""] },
+          },
+        },
+        {
+          $project: {
+            ulbName: 1,
+            ulbId: 1,
+            ulbCode: 1,
+            censusCode: 1,
+            UA: 1,
+            UA_id: 1,
+            ulbType: 1,
+            ulbType_id: 1,
+            population: 1,
+            state_id: 1,
+            stateName: 1,
+            populationType: 1,
+            formData: 1,
+            filled: {
+              $cond: {
+                if: {
+                  $or: [
+                    { $eq: ["$formData", ""] },
+                    {
+                      "$eq": [
+                        "$formData.currentFormStatus",
+                        1
+                      ]
                     },
                     {
-                        "$eq": [
-                            "$formData.currentFormStatus",
-                            2
-                        ]
-                    } 
+                      "$eq": [
+                        "$formData.currentFormStatus",
+                        2
+                      ]
+                    }
+                  ],
+                },
+                then: "No",
+                else: isFormOptional ? filledQueryExpression : "Yes",
+              },
+            },
+          },
+        },
+        {
+          $sort: { "formData.modifiedAt": -1 },
+        },
+      ];
+      query.push(...query_2)
+      // if (csv) {
+      //   query = createDynamicQuery(formName, query, userRole, csv);
+      // }
+
+      // if (formName == CollectionNames.annual) {
+      //   delete query[query.length - 2]['$project']['filled']
+      //   Object.assign(query[query.length - 2]['$project'], { filled_provisional: filledProvisionalExpression, filled_audited: filledAuditedExpression })
+      // }
+      let filterApplied = Object.keys(filter).length > 0
+      if (filterApplied) {
+        if (filter.sbCode) {
+          delete Object.assign(filter, { ["censusCode"]: filter["sbCode"] })["sbCode"];
+        }
+        query.push({
+          $match: filter
+        },
+        )
+      }
+      let countQuery = query.slice()
+      countQuery.push({
+        $count: "total"
+      })
+
+      let paginator = [
+        { $addFields: { "dummy": [] } },
+        {
+          $unwind: {
+            path: "$dummy",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $skip: skip
+        },
+        { $limit: limit }
+      ]
+      if (!csv) {
+        query.push(...paginator)
+      }
+      // query.push( {
+      //   allowDiskUse: true
+      // })
+      return [query, countQuery]
+      break;
+    case "STATE":
+      let query_s = [
+        {
+          $match: {
+            accessToXVFC: true,
+          },
+        },
+        {
+          $lookup: {
+            from: dbCollectionName,
+            let: {
+              firstUser: ObjectId(design_year),
+              secondUser: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      {
+                        $eq: ["$design_year", "$$firstUser"],
+                      },
+                      {
+                        $eq: ["$state", "$$secondUser"],
+                      },
                     ],
                   },
-                  then: "No",
-                  else: isFormOptional ? filledQueryExpression : "Yes",
                 },
               },
-            },
+              {
+                $lookup: {
+                  from: "years",
+                  localField: "design_year",
+                  foreignField: "_id",
+                  as: "design_year",
+                },
+              },
+              {
+                $unwind: "$design_year",
+              },
+            ],
+            as: dbCollectionName,
           },
-          {
-            $sort: { "formData.modifiedAt": -1 },
+        },
+        {
+          $unwind: {
+            path: `$${dbCollectionName}`,
+            preserveNullAndEmptyArrays: true,
           },
-        ];
-        query.push(...query_2)
-        // if (csv) {
-        //   query = createDynamicQuery(formName, query, userRole, csv);
-        // }
-    
-        // if (formName == CollectionNames.annual) {
-        //   delete query[query.length - 2]['$project']['filled']
-        //   Object.assign(query[query.length - 2]['$project'], { filled_provisional: filledProvisionalExpression, filled_audited: filledAuditedExpression })
-        // }
-        let filterApplied = Object.keys(filter).length > 0
-        if (filterApplied) {
-          if (filter.sbCode) {
-            delete Object.assign(filter, { ["censusCode"]: filter["sbCode"] })["sbCode"];
-          }
-          query.push({
-            $match: filter
-          },
-          )
-        }
-        let countQuery = query.slice()
-        countQuery.push({
-          $count: "total"
-        })
-  
-        let paginator = [
-          { $addFields: { "dummy": [] } },
-          {
-            $unwind: {
-              path: "$dummy",
-              preserveNullAndEmptyArrays: true
+        },
+        {
+          $project: {
+            state: "$_id",
+            stateName: "$name",
+            stateCode: "$code",
+            regionalName: 1,
+            formData: { $ifNull: [`$${dbCollectionName}`, ""] },
+            filled:
+            {
+              $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
             }
           },
-          {
-            $skip: skip
-          },
-          { $limit: limit }
-        ]
-        if (!csv) {
-          query.push(...paginator)
-        }
-        // query.push( {
-        //   allowDiskUse: true
-        // })
-        return [query, countQuery]
-        break;
-      case "STATE":
-        let query_s = [
-          {
-            $match: {
-              accessToXVFC: true,
-            },
-          },
-          {
-            $lookup: {
-              from: dbCollectionName,
-              let: {
-                firstUser: ObjectId(design_year),
-                secondUser: "$_id",
-              },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        {
-                          $eq: ["$design_year", "$$firstUser"],
-                        },
-                        {
-                          $eq: ["$state", "$$secondUser"],
-                        },
-                      ],
-                    },
-                  },
-                },
-                {
-                  $lookup: {
-                    from: "years",
-                    localField: "design_year",
-                    foreignField: "_id",
-                    as: "design_year",
-                  },
-                },
-                {
-                  $unwind: "$design_year",
-                },
-              ],
-              as: dbCollectionName,
-            },
-          },
-          {
-            $unwind: {
-              path: `$${dbCollectionName}`,
-              preserveNullAndEmptyArrays: true,
-            },
-          },
-          {
-            $project: {
-              state: "$_id",
-              stateName: "$name",
-              stateCode: "$code",
-              regionalName: 1,
-              formData: { $ifNull: [`$${dbCollectionName}`, ""] },
-              filled:
-              {
-                $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
-              }
-            },
-          },
-          {
-            $sort: { formData: -1 },
-          },
-        ];
-  
-        query_s = createDynamicQuery(formName, query_s, userRole, csv);
-        /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
-        if( folderName === List['FolderName']['IndicatorForWaterSupply'] ){
-          let startIndex = query_s.findIndex((el)=>{
-            return el.hasOwnProperty("$lookup");
-          })
-  
-        /* Splicing the query_s string starting at the startIndex. */
-           query_s.splice(startIndex);
-           query_s.push({
-            $project: {
-              state: "$_id",
-              stateName: "$name",
-              stateCode: "$code",
-              regionalName: 1,
-              filled: "Not Applicable"
-            },
-            
-           })
-        }
-        let filterApplied_s = Object.keys(filter).length > 0
-        if (filterApplied_s) {
-          query_s.push({
-            $match: filter
-          },
-          )
-        }
-        let countQuery_s = query_s.slice()
-        countQuery_s.push({
-          $count: "total"
+        },
+        {
+          $sort: { formData: -1 },
+        },
+      ];
+
+      query_s = createDynamicQuery(formName, query_s, userRole, csv);
+      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
+      if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
+        let startIndex = query_s.findIndex((el) => {
+          return el.hasOwnProperty("$lookup");
         })
-        let paginator_s = [
-          {
-            $skip: skip
+
+        /* Splicing the query_s string starting at the startIndex. */
+        query_s.splice(startIndex);
+        query_s.push({
+          $project: {
+            state: "$_id",
+            stateName: "$name",
+            stateCode: "$code",
+            regionalName: 1,
+            filled: "Not Applicable"
           },
-          { $limit: limit }
-        ]
-        if (!csv) {
-          query_s.push(...paginator_s)
-        }
-        return [query_s, countQuery_s]
-        break;
-  
-      default:
-        break;
-    }
+
+        })
+      }
+      let filterApplied_s = Object.keys(filter).length > 0
+      if (filterApplied_s) {
+        query_s.push({
+          $match: filter
+        },
+        )
+      }
+      let countQuery_s = query_s.slice()
+      countQuery_s.push({
+        $count: "total"
+      })
+      let paginator_s = [
+        {
+          $skip: skip
+        },
+        { $limit: limit }
+      ]
+      if (!csv) {
+        query_s.push(...paginator_s)
+      }
+      return [query_s, countQuery_s]
+      break;
+
+    default:
+      break;
+  }
 
 }
 
-function annualFilledKeys(formFilter,formTab,query){
-  let filter = {...formFilter}
-  try{
+function annualFilledKeys(formFilter, formTab, query) {
+  let filter = { ...formFilter }
+  try {
     if (formTab.collectionName == CollectionNames['annual']) {
-      Object.keys(annualAccountKeys).forEach((item)=>{
-        filter[annualAccountKeys[item]] =  filter[item]
+      Object.keys(annualAccountKeys).forEach((item) => {
+        filter[annualAccountKeys[item]] = filter[item]
         delete filter[item]
       })
     }
   }
-  catch(err){
-    console.log("error in annualFilledKeys :::::: ",err.message)
+  catch (err) {
+    console.log("error in annualFilledKeys :::::: ", err.message)
   }
   return filter
 }
 
-function censusCodeCondition(item,form){
-  let formObj = {...form}
-  try{
-    if(item == 'censusCode' && form[item]){
+function censusCodeCondition(item, form) {
+  let formObj = { ...form }
+  try {
+    if (item == 'censusCode' && form[item]) {
       let code = formObj[item];
       var digit = code.toString()[0];
       if (digit == "9") {
@@ -699,87 +809,87 @@ function censusCodeCondition(item,form){
       }
     }
   }
-  catch(err){
-    console.log("error in censusCodeCondition ::: ",err.message)
+  catch (err) {
+    console.log("error in censusCodeCondition ::: ", err.message)
   }
   return formObj
 }
 function manageFilters(formType, givenFilter, req, formTab) {
-  let filter = {...givenFilter}
-  try{
+  let filter = { ...givenFilter }
+  try {
     if (formType === "ULB") {
-      Object.keys(req.query).forEach((item)=> {
-        if(Object.keys(ulbFilterKeys).includes(item)){
-          filter[ulbFilterKeys[item]] = req.query[item] === "null" ? '' : req.query[item] 
-          if(ulbFilterKeys[item] === "formData.currentFormStatus"); req.query[item] != 'null' ? Number(req.query.status) :""
-          filter = censusCodeCondition(item,filter)
+      Object.keys(req.query).forEach((item) => {
+        if (Object.keys(ulbFilterKeys).includes(item)) {
+          filter[ulbFilterKeys[item]] = req.query[item] === "null" ? '' : req.query[item]
+          if (ulbFilterKeys[item] === "formData.currentFormStatus"); req.query[item] != 'null' ? Number(req.query.status) : ""
+          filter = censusCodeCondition(item, filter)
         }
       })
-      filter = annualFilledKeys(filter,formTab)
+      filter = annualFilledKeys(filter, formTab)
       return filter
     }
   }
-  catch(err){
-    console.log("error in manageFilters :::: ",err.message)
+  catch (err) {
+    console.log("error in manageFilters :::: ", err.message)
     return givenFilter
   }
 }
 
 function getFilledQueryExpression(formName, filledQueryExpression) {
-    switch (formName) {
-        case CollectionNames.slb:
-            filledQueryExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.blank`, true] },
-                    then: STATUS_LIST.Not_Submitted,
-                    else: STATUS_LIST.Submitted,
-                },
-            };
-            break;
-        case CollectionNames.pfms:
-            filledQueryExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.linkPFMS`, "Yes"] },
-                    then: STATUS_LIST.Submitted,
-                    else: STATUS_LIST.Not_Submitted,
-                },
-            };
-            break;
-        case CollectionNames.propTaxUlb:
-            filledQueryExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.toCollect`, "Yes"] },
-                    then: STATUS_LIST.Submitted,
-                    else: STATUS_LIST.Not_Submitted,
-                },
-            };
-            break;
-        case CollectionNames.annual:
-            filledProvisionalExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.unAudited.submit_annual_accounts`, true] },
-                    then: STATUS_LIST.Submitted,
-                    else: STATUS_LIST.Not_Submitted,
-                },
-            };
-            filledAuditedExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.audited.submit_annual_accounts`, true] },
-                    then: STATUS_LIST.Submitted,
-                    else: STATUS_LIST.Not_Submitted,
-                },
-            };
-            break;
-        case CollectionNames.sfc:
-            filledQueryExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.constitutedSfc`, "Yes"] },
-                    then: STATUS_LIST.Submitted,
-                    else: STATUS_LIST.Not_Submitted,
-                },
-            };
-        default:
-            break;
-    }
-    return filledQueryExpression;
+  switch (formName) {
+    case CollectionNames.slb:
+      filledQueryExpression = {
+        $cond: {
+          if: { $eq: [`$formData.blank`, true] },
+          then: STATUS_LIST.Not_Submitted,
+          else: STATUS_LIST.Submitted,
+        },
+      };
+      break;
+    case CollectionNames.pfms:
+      filledQueryExpression = {
+        $cond: {
+          if: { $eq: [`$formData.linkPFMS`, "Yes"] },
+          then: STATUS_LIST.Submitted,
+          else: STATUS_LIST.Not_Submitted,
+        },
+      };
+      break;
+    case CollectionNames.propTaxUlb:
+      filledQueryExpression = {
+        $cond: {
+          if: { $eq: [`$formData.toCollect`, "Yes"] },
+          then: STATUS_LIST.Submitted,
+          else: STATUS_LIST.Not_Submitted,
+        },
+      };
+      break;
+    case CollectionNames.annual:
+      filledProvisionalExpression = {
+        $cond: {
+          if: { $eq: [`$formData.unAudited.submit_annual_accounts`, true] },
+          then: STATUS_LIST.Submitted,
+          else: STATUS_LIST.Not_Submitted,
+        },
+      };
+      filledAuditedExpression = {
+        $cond: {
+          if: { $eq: [`$formData.audited.submit_annual_accounts`, true] },
+          then: STATUS_LIST.Submitted,
+          else: STATUS_LIST.Not_Submitted,
+        },
+      };
+      break;
+    case CollectionNames.sfc:
+      filledQueryExpression = {
+        $cond: {
+          if: { $eq: [`$formData.constitutedSfc`, "Yes"] },
+          then: STATUS_LIST.Submitted,
+          else: STATUS_LIST.Not_Submitted,
+        },
+      };
+    default:
+      break;
+  }
+  return filledQueryExpression;
 }
