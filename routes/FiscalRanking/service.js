@@ -2998,7 +2998,7 @@ async function columnsForCSV(params) {
       "createdAt",
       "modifiedAt",
       "formStatus",
-      "compeletionPercent",
+      "completionPercent",
       "comment_1",
       "II CONTACT INFORMATION_Comments",
       "III FINANCIAL INFORMATION_Comments",
@@ -3104,15 +3104,16 @@ function createCsv(params) {
       .exec();
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write(csvCols.join(","));
-    res.write("\r\n");
+    res.write("\ufeff"+ `${csvCols.join(",").toString()}` + "\r\n");
+    // res.write();
     cursor.on("data", (document) => {
       try {
         let str = "";
         let str2 = "";
         let FRFlag = false;
-        const completionKey = "completionPercentFR"
-        document["compeletionPercent"]= completionPercent(percentCompletionArr, document,completionKey );
+        const completionKey = "completionPercentFR";
+        const mandatoryFieldsKey = "arrayOfMandatoryField";
+        document["completionPercent"]= completionPercent( document[mandatoryFieldsKey], document[completionKey]);
         for (let key of dbCols) {
           /* *
               this condition converts date to DD/MM/YYYY format
@@ -3163,7 +3164,11 @@ function createCsv(params) {
               }else if(FRKeyWithFile.length>0 && FRKeyWithFile.includes(key)){
                 FRMapperKey = "file"
               }
-              str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+              if(fiscalrankingmappersDocument[FRMapperKey]){
+                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+              }else{
+              str += " " + ",";
+              }
             } else {
               str += " " + ",";
             }
@@ -3198,18 +3203,19 @@ function createCsv(params) {
   }
 }
 
-function completionPercent(percentCompletionArr, document, key) {
+function completionPercent( document, FRCompletionNumber) {
   let completionPercent = 0;
   const totalMandatoryFields = 28;
-  // let FROverallFlag = false;
-  for (let percentKey of percentCompletionArr) {
-    if (document[percentKey]) {
+  const [objOfMandatoryFields] =  document;
+
+  for( let field in objOfMandatoryFields){
+    if(objOfMandatoryFields[field]){
       completionPercent++;
-      // FROverallFlag = true;
     }
   }
-  if(document[key]){
-    completionPercent = (completionPercent + Number(document[key]))
+
+  if(FRCompletionNumber){
+    completionPercent = completionPercent + FRCompletionNumber
   }
 
   return  ((completionPercent / totalMandatoryFields) * 100 ).toFixed();
@@ -3464,7 +3470,7 @@ function computeQuery(params) {
     output["FROverAllUlbData"] = [
       {
         $match: {
-          censusCode: "801533",
+          sbCode: "910101",
         },
       },
       {
@@ -3625,16 +3631,13 @@ function computeQuery(params) {
                 type: 1,
                 year: "$year.year",
                 date: {
-                  $cond:{
+                  $cond: {
                     if: {
-                      $and:[
-                        {$ne:["$date", null]},
-                        {$ne: ["$date", ""]}
-                      ]
+                      $and: [{ $ne: ["$date", null] }, { $ne: ["$date", ""] }],
                     },
-                    then : "$date",
-                    else: null
-                  }
+                    then: AggregationServices.getCommonDateTransformer("$date"),
+                    else: null,
+                  },
                 },
                 file: {
                   $cond: {
@@ -3743,7 +3746,18 @@ function computeQuery(params) {
           nameCmsnr: { $ifNull: ["$fiscalrankings.nameCmsnr.value", ""] },
           auditorName: { $ifNull: ["$fiscalrankings.auditorName.value", ""] },
           caMembershipNo: {
-            $ifNull: ["$fiscalrankings.caMembershipNo.value", ""],
+            $cond: {
+              if: {
+                $or: [
+                  { $eq: ["$fiscalrankings.caMembershipNo.value", ""] },
+                  {
+                    $eq: ["$fiscalrankings.caMembershipNo.value", null],
+                  },
+                ],
+              },
+              then: "N/A",
+              else: "$fiscalrankings.caMembershipNo.value",
+            },
           },
           nameOfNodalOfficer: {
             $ifNull: ["$fiscalrankings.nameOfNodalOfficer.value", ""],
@@ -3768,6 +3782,7 @@ function computeQuery(params) {
           },
           otherUpload: { $ifNull: ["$fiscalrankings.otherUpload.url", ""] },
           fiscalrankingmappers: 1,
+          arrayOfMandatoryField: "$fiscalrankings.arrayOfMandatoryField",
           completionPercentFR: {
             $size: {
               $filter: {
