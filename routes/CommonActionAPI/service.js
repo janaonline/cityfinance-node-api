@@ -22,7 +22,7 @@ const {modelPath, getKeyByValue} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
-const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY} =  require('../../util/FormNames');
+const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
 
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
@@ -2844,13 +2844,14 @@ module.exports.getMasterAction = async (req, res) => {
         ulb,
         design_year: design_year,
       };
+      
 
       const model = require(`../../models/${path}`);
       const form = await model.findOne(condition,{_id:1}).lean();
       if (!form) {
         return Response.BadRequest(res, {}, "No Form Found!");
       }
-      const currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      let currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
       if(!currentStatusResponse || !currentStatusResponse.length){
         return Response.BadRequest(res, {}, "No Response Found!");
       }
@@ -2866,13 +2867,53 @@ module.exports.getMasterAction = async (req, res) => {
         status['statusId'] = status['status'];
         status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
       }
+      if(formId === FORMIDs['AnnualAccount']){
+        currentStatusResponse = appendKeysForAA(currentStatusResponse);
+        currentStatusResponse = groupByKey(currentStatusResponse, "actionTakenByRole")
+      }
       return Response.OK(res, currentStatusResponse);
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
 
     }
 }
+const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
+function appendKeysForAA(currentStatusResponse) {
+    const shortKeysToAppend = {
+        "unAudited.bal_sheet": [
+            "unAudited.assets",
+            "unAudited.f_assets",
+            "unAudited.s_grant",
+            "unAudited.c_grant",
+        ],
+        "audited.bal_sheet": [
+            "audited.assets",
+            "audited.f_assets",
+            "audited.s_grant",
+            "audited.c_grant",
+        ],
+        "unAudited.inc_exp": ["unAudited.revenue", "unAudited.expense"],
+        "audited.inc_exp": ["audited.revenue", "audited.expense"],
+    };
+    currentStatusResponse = appendStatus(currentStatusResponse, shortKeysToAppend);
+    return currentStatusResponse;
+}
+
+function appendStatus(statusResponse, shortKeysObj) {
+  let shortKeysArray = Object.keys(shortKeysObj);
+
+  for (let status of statusResponse) {
+    if (shortKeysArray.includes(status.shortKey)) {
+      for (let key of shortKeysObj[status.shortKey]) {
+        status["shortKey"] = key;
+        statusResponse.push(status);
+      }
+    }
+  }
+
+  return statusResponse;
+}
 
 async function getSeparatedShortKeys(params) {
   const { shortKeys } = params;
