@@ -3471,6 +3471,11 @@ function computeQuery(params) {
   if (FROverAllUlbData) {
     output["FROverAllUlbData"] = [
       {
+        $match: {
+          censusCode :"800220"
+        }
+      },
+      {
         $lookup: {
           from: "states",
           localField: "state",
@@ -3789,7 +3794,7 @@ function computeQuery(params) {
                   $and: [
                     {
                       $or: [
-                        { $ne: ["$$item.value", ""] },
+                        { $ne: ["$$item.value", null] },
                         { $ne: ["$$item.file", null] },
                         { $ne: ["$$item.date", null] },
                       ],
