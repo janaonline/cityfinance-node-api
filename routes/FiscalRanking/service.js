@@ -3471,11 +3471,6 @@ function computeQuery(params) {
   if (FROverAllUlbData) {
     output["FROverAllUlbData"] = [
       {
-        $match: {
-          censusCode :"800220"
-        }
-      },
-      {
         $lookup: {
           from: "states",
           localField: "state",
