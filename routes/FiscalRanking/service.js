@@ -3113,7 +3113,9 @@ function createCsv(params) {
         let FRFlag = false;
         const completionKey = "completionPercentFR";
         const mandatoryFieldsKey = "arrayOfMandatoryField";
-        document["completionPercent"]= completionPercent( document[mandatoryFieldsKey], document[completionKey]);
+        if(Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]){
+          document["completionPercent"]= completionPercent( document[mandatoryFieldsKey], document[completionKey]);
+        }
         for (let key of dbCols) {
           /* *
               this condition converts date to DD/MM/YYYY format
