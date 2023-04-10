@@ -22,7 +22,8 @@ const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
-const {MASTER_STATUS_ID} = require("../../util/FormNames")
+const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
+
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
@@ -2504,7 +2505,7 @@ async function takeActionOnForms(params, res) {
     for (let form of formData) {
       let bodyData = {
         formId,
-        recordId: ObjectId(form._id),
+        recordId: form._id,
         data: form,
       };
       /* Saving the form history of the user. */
@@ -2615,7 +2616,7 @@ async function takeActionOnForms(params, res) {
         if (multi) {
           let [response] = responses;
         /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = getSeparatedShortKeys({shortKeys});
+          let shortKeysResponse = await getSeparatedShortKeys({shortKeys});
           /* Saving the status of the form for questions */
           for (let shortKey of shortKeysResponse["inner"]) {
             let params = {
@@ -2658,19 +2659,29 @@ async function takeActionOnForms(params, res) {
         } else {
           let rejectStatusAllTab = 0;
           //gets tabs array
-          let { outer: tabLevelShortKeys } = getSeparatedShortKeys({shortKeys});
+          let { outer: tabLevelShortKeys } = await getSeparatedShortKeys({shortKeys});
           let tabShortKeyObj = {},
             tabShortKeyResponse = {};
           for (let tab of tabLevelShortKeys) {
             tabShortKeyObj[tab] = 0;
           }
-          const separator = ".";
+          let separator = ".";
+          const tabSeparator = "_";
+          const tabRegex = /^tab_/g;
+          
           for (let response of responses) {
+            if (response.shortKey.match(tabRegex)){
+                separator =  tabSeparator
+            }
             let splitedArrayTab =
               response.shortKey.split(separator).length > 1
                 ? response.shortKey.split(separator)[0]
                 : "";
-
+            if(separator === tabSeparator){
+                splitedArrayTab = response.shortKey.split(separator).length > 1
+                ? response.shortKey.split(separator)[1]
+                : "";
+            }
             if (
               splitedArrayTab !== "" &&
               [
@@ -2680,11 +2691,11 @@ async function takeActionOnForms(params, res) {
             ) {
               tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[
                 splitedArrayTab
-              ]++;
+              ]+1;
             }
-            //storing response of tabs if questions are not provided
-            if (tabShortKeyObj[response.shortKey]) {
-              tabShortKeyResponse[response.shortKey] = response;
+          //storing response of tabs if questions are not provided
+            if (separator === tabSeparator) {
+              tabShortKeyResponse[splitedArrayTab] = response;
               continue;
             }
             let params = {
@@ -2750,18 +2761,21 @@ async function takeActionOnForms(params, res) {
           }
           //form level status  updation
           if (rejectStatusAllTab) {
+            let response = {}
+
             response.status =
               actionTakenByRole === "MoHUA"
                 ? MASTER_STATUS["Rejected by MoHUA"]
                 : MASTER_STATUS["Rejected by State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
-              formId,
+              form._id,
               response
             );
             if (updatedFormCurrentStatus !== 1)
               throw "Action failed to update form current Status!";
           } else {
+            let response = {}
             response.status =
               actionTakenByRole === "MoHUA"
                 ? MASTER_STATUS["Approved by MoHUA"]
@@ -2870,13 +2884,14 @@ module.exports.getMasterAction = async (req, res) => {
         ulb,
         design_year: design_year,
       };
+      
 
       const model = require(`../../models/${path}`);
       const form = await model.findOne(condition,{_id:1}).lean();
       if (!form) {
         return Response.BadRequest(res, {}, "No Form Found!");
       }
-      const currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      let currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
       if(!currentStatusResponse || !currentStatusResponse.length){
         return Response.BadRequest(res, {}, "No Response Found!");
       }
@@ -2892,33 +2907,94 @@ module.exports.getMasterAction = async (req, res) => {
         status['statusId'] = status['status'];
         status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
       }
+      if(formId === FORMIDs['AnnualAccount']){
+        currentStatusResponse = appendKeysForAA(currentStatusResponse);
+        currentStatusResponse = groupByKey(currentStatusResponse, "actionTakenByRole")
+      }
       return Response.OK(res, currentStatusResponse);
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
 
     }
 }
+const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
+function appendKeysForAA(currentStatusResponse) {
+    const shortKeysToAppend = {
+        "unAudited.bal_sheet": [
+            "unAudited.assets",
+            "unAudited.f_assets",
+            "unAudited.s_grant",
+            "unAudited.c_grant",
+        ],
+        "audited.bal_sheet": [
+            "audited.assets",
+            "audited.f_assets",
+            "audited.s_grant",
+            "audited.c_grant",
+        ],
+        "unAudited.inc_exp": ["unAudited.revenue", "unAudited.expense"],
+        "audited.inc_exp": ["audited.revenue", "audited.expense"],
+    };
+    currentStatusResponse = appendStatus(currentStatusResponse, shortKeysToAppend);
+    return currentStatusResponse;
+}
+
+function appendStatus(statusResponse, shortKeysObj) {
+    try {
+        let shortKeysArray = Object.keys(shortKeysObj);
+      
+        for (let status of statusResponse) {
+          if (shortKeysArray.includes(status.shortKey)) {
+            for (let key of shortKeysObj[status.shortKey]) {
+              status["shortKey"] = key;
+              statusResponse.push(status);
+            }
+          }
+        }
+      
+        return statusResponse;
+        
+    } catch (error) {
+        throw("status key Not appended")
+    }
+}
 
 async function getSeparatedShortKeys(params) {
-  const { shortKeys } = params;
-  const First_Index = 0;
-  let output = {
-    outer: [],
-    inner: [],
-  };
-  const separator = ".";
-  for (let shortKey of shortKeys) {
-    let splitedArray = shortKey.split[separator];
-    let splitedArrayLength = splitedArray.length - 1;
-    if (Array.isArray(splitedArray) && splitedArrayLength) {
-      splitedArray[First_Index] === splitedArray[splitedArrayLength]
-        ? output["inner"].push(shortKey)
-        : output["outer"].push(shortKey);
+    try {
+      const { shortKeys } = params;
+      const First_Index = 0;
+      let output = {
+        outer: [],
+        inner: [],
+      };
+      let separator = ".";
+      const tabSeparator = "_";
+      const tabRegex = /^tab_/g;
+      for (let shortKey of shortKeys) {
+        if (shortKey.match(tabRegex)) {
+          separator = tabSeparator;
+        }
+        let splitedArray = shortKey.split(separator);
+        let splitedArrayLength = splitedArray.length - 1;
+        if (Array.isArray(splitedArray) && splitedArrayLength) {
+          separator === tabSeparator
+            ? output["outer"].push(splitedArray[splitedArrayLength])
+            : output["inner"].push(splitedArray[splitedArrayLength]);
+          //push tab name in outer array
+          separator !== tabSeparator
+            ? output["outer"].push(splitedArray[splitedArrayLength - 1])
+            : "";
+        }
+      }
+      if (output["outer"].length) {
+        output["outer"] = Array.from(new Set(output["outer"]));
+      }
+      return output;
+    } catch (error) {
+      throw `getSeparatedShortKeys :: ${error.message} `;
     }
-  }
-
-  return output;
+  
 }
 
 
