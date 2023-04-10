@@ -2901,52 +2901,60 @@ function appendKeysForAA(currentStatusResponse) {
 }
 
 function appendStatus(statusResponse, shortKeysObj) {
-  let shortKeysArray = Object.keys(shortKeysObj);
-
-  for (let status of statusResponse) {
-    if (shortKeysArray.includes(status.shortKey)) {
-      for (let key of shortKeysObj[status.shortKey]) {
-        status["shortKey"] = key;
-        statusResponse.push(status);
-      }
+    try {
+        let shortKeysArray = Object.keys(shortKeysObj);
+      
+        for (let status of statusResponse) {
+          if (shortKeysArray.includes(status.shortKey)) {
+            for (let key of shortKeysObj[status.shortKey]) {
+              status["shortKey"] = key;
+              statusResponse.push(status);
+            }
+          }
+        }
+      
+        return statusResponse;
+        
+    } catch (error) {
+        throw("status key Not appended")
     }
-  }
-
-  return statusResponse;
 }
 
 async function getSeparatedShortKeys(params) {
-  const { shortKeys } = params;
-  const First_Index = 0;
-  let output = {
-    outer: [],
-    inner: [],
-  };
-  let separator = ".";
-  const tabSeparator = "_";
-  const tabRegex = /^tab_/g;
-  for (let shortKey of shortKeys) {
-    if(shortKey.match(tabRegex)){
-        separator = tabSeparator;
+    try {
+      const { shortKeys } = params;
+      const First_Index = 0;
+      let output = {
+        outer: [],
+        inner: [],
+      };
+      let separator = ".";
+      const tabSeparator = "_";
+      const tabRegex = /^tab_/g;
+      for (let shortKey of shortKeys) {
+        if (shortKey.match(tabRegex)) {
+          separator = tabSeparator;
+        }
+        let splitedArray = shortKey.split(separator);
+        let splitedArrayLength = splitedArray.length - 1;
+        if (Array.isArray(splitedArray) && splitedArrayLength) {
+          separator === tabSeparator
+            ? output["outer"].push(splitedArray[splitedArrayLength])
+            : output["inner"].push(splitedArray[splitedArrayLength]);
+          //push tab name in outer array
+          separator !== tabSeparator
+            ? output["outer"].push(splitedArray[splitedArrayLength - 1])
+            : "";
+        }
+      }
+      if (output["outer"].length) {
+        output["outer"] = Array.from(new Set(output["outer"]));
+      }
+      return output;
+    } catch (error) {
+      throw `getSeparatedShortKeys :: ${error.message} `;
     }
-    let splitedArray = shortKey.split(separator);
-    let splitedArrayLength = splitedArray.length - 1;
-    if (Array.isArray(splitedArray) && splitedArrayLength) {
-      separator === tabSeparator
-        ? output["outer"].push(splitedArray[splitedArrayLength])
-        : output["inner"].push(splitedArray[splitedArrayLength]);
-    //push tab name in outer array
-     separator !== tabSeparator 
-     ? output["outer"].push((splitedArray[splitedArrayLength-1]))
-        :""
-    
-    }
-  }
-  if( output["outer"].length){
-    output['outer'] = Array.from(new Set(output["outer"]))
-
-  }
-  return output;
+  
 }
 
 
