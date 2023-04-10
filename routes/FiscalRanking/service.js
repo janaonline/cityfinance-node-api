@@ -3469,11 +3469,6 @@ function computeQuery(params) {
   if (FROverAllUlbData) {
     output["FROverAllUlbData"] = [
       {
-        $match: {
-          sbCode: "910101",
-        },
-      },
-      {
         $lookup: {
           from: "states",
           localField: "state",
